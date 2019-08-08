@@ -89,8 +89,8 @@ isPreconstructedPattern err (_ :< pattern') =
             (Right . Descend) (FunctionalBuiltin $ () <$ domain)
         StringLiteralF (Const str) ->
             Right $ DoNotDescend $ FunctionalStringLiteral str
-        CharLiteralF char ->
-            Right $ DoNotDescend $ FunctionalCharLiteral $ () <$ char
+        CharLiteralF (Const char) ->
+            Right $ DoNotDescend $ FunctionalCharLiteral char
         _ -> Left err
 
 {-|@isConstructorLikeTop@ checks whether the given 'Pattern' is topped in a

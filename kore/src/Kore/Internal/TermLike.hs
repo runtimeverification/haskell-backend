@@ -297,7 +297,7 @@ data TermLikeF variable child
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
-    | CharLiteralF   !(CharLiteral child)
+    | CharLiteralF   !(Const CharLiteral child)
     | VariableF      !(UnifiedVariable variable)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
@@ -1796,7 +1796,7 @@ mkCharLiteral
     :: (Ord variable, SortedVariable variable)
     => Char
     -> TermLike variable
-mkCharLiteral = synthesize . CharLiteralF . CharLiteral
+mkCharLiteral = synthesize . CharLiteralF . Const . CharLiteral
 
 mkInhabitant
     :: (Ord variable, SortedVariable variable)
@@ -2245,7 +2245,7 @@ pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
 
 pattern CharLiteral_ char <-
-    (Recursive.project -> _ :< CharLiteralF (CharLiteral char))
+    (Recursive.project -> _ :< CharLiteralF (Const (CharLiteral char)))
 
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))

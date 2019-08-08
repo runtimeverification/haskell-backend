@@ -472,7 +472,7 @@ test_patternVerifier =
         -- at least in some cases.
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple char pattern"
-        (CharLiteralF (CharLiteral 'c'))
+        (CharLiteralF $ Const $ CharLiteral 'c')
         (NamePrefix "#dummy")
         (TestedPatternSort charMetaSort)
         (SortVariablesThatMustBeDeclared [])

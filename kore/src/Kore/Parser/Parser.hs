@@ -692,7 +692,7 @@ korePatternParser = do
     case c of
         '\\' -> koreMLConstructorParser
         '"'  -> asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
-        '\'' -> asParsedPattern . CharLiteralF <$> charLiteralParser
+        '\'' -> asParsedPattern . CharLiteralF . Const <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
@@ -989,7 +989,7 @@ leveledPatternParser patternParser domainValueParser' = do
     case c of
         '\\' -> leveledMLConstructorParser patternParser domainValueParser'
         '"'  -> StringLiteralF . Const <$> stringLiteralParser
-        '\'' -> CharLiteralF <$> charLiteralParser
+        '\'' -> CharLiteralF . Const <$> charLiteralParser
         _ -> variableOrTermPatternParser patternParser (c == '@')
 
 purePatternParser :: Parser ParsedPattern

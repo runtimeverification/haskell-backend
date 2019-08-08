@@ -26,5 +26,5 @@ test_charLiteralSimplification =
         )
     ]
 
-evaluate :: CharLiteral (OrPattern Variable) -> OrPattern Variable
+evaluate :: CharLiteral -> OrPattern Variable
 evaluate = simplify

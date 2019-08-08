@@ -155,14 +155,10 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asParsedPattern
-                        (CharLiteralF CharLiteral
-                            { getCharLiteral = '\'' }
-                        )
-                    , asParsedPattern
-                        (CharLiteralF CharLiteral
-                            { getCharLiteral = '\'' }
-                        )
+                    [ asParsedPattern $ CharLiteralF $ Const
+                        CharLiteral { getCharLiteral = '\'' }
+                    , asParsedPattern $ CharLiteralF $ Const
+                        CharLiteral { getCharLiteral = '\'' }
                     ]
                 }::Attributes
             )

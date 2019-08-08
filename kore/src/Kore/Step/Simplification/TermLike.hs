@@ -167,7 +167,7 @@ simplifyInternal = simplifyInternalWorker
             StringLiteralF stringLiteralF ->
                 return $ StringLiteral.simplify (getConst stringLiteralF)
             CharLiteralF charLiteralF ->
-                CharLiteral.simplify <$> simplifyChildren charLiteralF
+                return $ CharLiteral.simplify (getConst charLiteralF)
             TopF topF -> Top.simplify <$> simplifyChildren topF
             --
             VariableF variableF -> return $ Variable.simplify variableF

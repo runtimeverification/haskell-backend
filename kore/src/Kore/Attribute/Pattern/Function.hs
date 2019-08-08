@@ -141,7 +141,7 @@ instance Synthetic (Const StringLiteral) Function where
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Function'.
-instance Synthetic CharLiteral Function where
+instance Synthetic (Const CharLiteral) Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 

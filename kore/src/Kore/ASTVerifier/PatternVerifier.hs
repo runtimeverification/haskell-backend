@@ -757,8 +757,8 @@ verifyStringLiteral str = do
 
 verifyCharLiteral
     :: valid ~ Attribute.Pattern Variable
-    => CharLiteral (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (CofreeF CharLiteral valid Verified.Pattern)
+    => Const CharLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF (Const CharLiteral) valid Verified.Pattern)
 verifyCharLiteral char = do
     verified <- sequence char
     let attrs = synthetic (Internal.extractAttributes <$> verified)

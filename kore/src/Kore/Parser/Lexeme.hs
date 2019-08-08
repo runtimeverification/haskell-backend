@@ -115,7 +115,7 @@ stringLiteralParser = lexeme stringLiteralRawParser
 
 Always starts with @'@.
 -}
-charLiteralParser :: Parser (CharLiteral child)
+charLiteralParser :: Parser CharLiteral
 charLiteralParser = lexeme charLiteralRawParser
 
 {-|'moduleNameParser' parses a module name.-}
@@ -255,7 +255,7 @@ stringLiteralRawParser = do
 @charLiteralRawParser@ does not consume whitespace.
 
  -}
-charLiteralRawParser :: Parser (CharLiteral child)
+charLiteralRawParser :: Parser CharLiteral
 charLiteralRawParser = do
     skipChar '\''
     c <- charParser

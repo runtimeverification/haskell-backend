@@ -53,7 +53,7 @@ data ValueF child
     | DomainValue !(Syntax.DomainValue Sort child)
     | Builtin !(Domain.Builtin (TermLike Concrete) child)
     | StringLiteral !StringLiteral
-    | CharLiteral !(CharLiteral child)
+    | CharLiteral !CharLiteral
     deriving (Eq, Foldable, Functor, Generic, Ord, Show, Traversable)
 
 newtype Value =
@@ -126,7 +126,7 @@ fromPattern (attrs :< termLikeF) =
             -- representations only.
             Builtin <$> sequence builtinP
         StringLiteralF (Const stringL) -> pure (StringLiteral stringL)
-        CharLiteralF charL -> CharLiteral <$> sequence charL
+        CharLiteralF (Const charL) -> pure (CharLiteral charL)
         _ -> Nothing
 
 {- | View a 'ConcreteStepPattern' as a normalized value.
@@ -150,7 +150,7 @@ asPattern (Recursive.project -> attrs :< value) =
         DomainValue dvP       -> attrs :< DomainValueF   dvP
         Builtin builtinP      -> attrs :< BuiltinF       builtinP
         StringLiteral stringP -> attrs :< StringLiteralF (Const stringP)
-        CharLiteral charP     -> attrs :< CharLiteralF   charP
+        CharLiteral charP     -> attrs :< CharLiteralF   (Const charP)
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}

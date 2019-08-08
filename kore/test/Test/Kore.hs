@@ -125,7 +125,7 @@ setVarIdGen = testId <$> fmap ("@" <>) objectIdGen
 stringLiteralGen :: MonadGen m => m StringLiteral
 stringLiteralGen = StringLiteral <$> Gen.text (Range.linear 0 256) charGen
 
-charLiteralGen :: MonadGen m => m (CharLiteral child)
+charLiteralGen :: MonadGen m => m CharLiteral
 charLiteralGen = CharLiteral <$> charGen
 
 charGen :: MonadGen m => m Char
@@ -421,7 +421,7 @@ korePatternChildGen patternSort' =
 
     korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =
-        asParsedPattern . Syntax.CharLiteralF <$> charLiteralGen
+        asParsedPattern . Syntax.CharLiteralF . Syntax.Const <$> charLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =

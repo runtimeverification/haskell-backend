@@ -79,7 +79,7 @@ data PatternF variable child
     | TopF           !(Top Sort child)
     | InhabitantF    !(Inhabitant child)
     | StringLiteralF !(Const StringLiteral child)
-    | CharLiteralF   !(CharLiteral child)
+    | CharLiteralF   !(Const CharLiteral child)
     | VariableF      !(UnifiedVariable variable)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
