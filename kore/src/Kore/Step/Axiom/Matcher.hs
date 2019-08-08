@@ -208,13 +208,15 @@ matchBinder
     -> MaybeT (MatcherT variable unifier) ()
 matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
     Monad.guard (variableSort1 == variableSort2)
-    refreshed1 <- refreshVariable unified1
+    -- Lift the bound variable to the top level.
+    lifted1 <- liftVariable unified1
     let term1' = fromMaybe term1 $ do
-            subst1 <- Map.singleton unified1 . mkVar <$> refreshed1
+            subst1 <- Map.singleton unified1 . mkVar <$> lifted1
             return $ substituteTermLike subst1 term1
-    let variable1' = fromMaybe unified1 refreshed1
+    let variable1' = fromMaybe unified1 lifted1
         subst2 = Map.singleton unified2 (mkVar variable1')
         term2' = substituteTermLike subst2 term2
+    -- Record the uniquely-named variable so it will not be shadowed later.
     bindVariable variable1'
     push (Pair term1' term2')
   where
@@ -555,14 +557,17 @@ bindVariable variable = do
     field @"bound" %= Set.insert variable
     field @"avoiding" %= Set.insert variable
 
-{- | Generate a fresh name for the variable, if it shadows another name.
+{- | Lift a (bound) variable to the top level by with a globally-unique name.
+
+Returns 'Nothing' if the variable name is already globally-unique.
+
  -}
-refreshVariable
+liftVariable
     :: FreshVariable variable
     => MonadState (MatcherState variable) matcher
     => UnifiedVariable variable
     -> matcher (Maybe (UnifiedVariable variable))
-refreshVariable variable =
+liftVariable variable =
     flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 
 leftAlignLists
