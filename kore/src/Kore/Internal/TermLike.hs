@@ -39,8 +39,10 @@ module Kore.Internal.TermLike
     , mkDomainValue
     , mkEquals
     , mkExists
+    , mkExistsN
     , mkFloor
     , mkForall
+    , mkForallN
     , mkIff
     , mkImplies
     , mkIn
@@ -177,6 +179,8 @@ import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
+import           Data.Monoid
+                 ( Endo (..) )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -1526,6 +1530,16 @@ mkExists existsVariable existsChild =
   where
     existsSort = termLikeSort existsChild
 
+{- | Construct a sequence of 'Exists' patterns over several variables.
+ -}
+mkExistsN
+    :: (Ord variable, SortedVariable variable)
+    => Foldable foldable
+    => foldable (ElementVariable variable)
+    -> TermLike variable
+    -> TermLike variable
+mkExistsN = appEndo . foldMap (Endo . mkExists)
+
 {- | Construct a 'Floor' pattern in the given sort.
 
 See also: 'mkFloor_'
@@ -1565,6 +1579,16 @@ mkForall forallVariable forallChild =
     synthesize (ForallF Forall { forallSort, forallVariable, forallChild })
   where
     forallSort = termLikeSort forallChild
+
+{- | Construct a sequence of 'Forall' patterns over several variables.
+ -}
+mkForallN
+    :: (Ord variable, SortedVariable variable)
+    => Foldable foldable
+    => foldable (ElementVariable variable)
+    -> TermLike variable
+    -> TermLike variable
+mkForallN = appEndo . foldMap (Endo . mkForall)
 
 {- | Construct an 'Iff' pattern.
  -}

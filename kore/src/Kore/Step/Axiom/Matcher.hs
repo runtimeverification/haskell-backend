@@ -32,12 +32,17 @@ import           Data.Generics.Product
 import           Data.Map
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
 import           Data.Sequence
                  ( pattern (:<|), pattern (:|>), Seq )
 import qualified Data.Sequence as Seq
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 
 import           Kore.Attribute.Pattern.FreeVariables
+                 ( FreeVariables (..) )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
@@ -70,8 +75,10 @@ import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
+import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import qualified Kore.Variables.Fresh as Variables
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
@@ -84,8 +91,6 @@ the constraint in sequence, until one accepts the pair. The matchers may
 introduce substitutions and new constraints. If none of the matchers accepts the
 pair, it is deferred until we have more information.
 
-See also: 'push', 'substitute', 'defer'.
-
  -}
 matchOne
     :: (MatchingVariable variable, MonadUnify unifier)
@@ -94,6 +99,8 @@ matchOne
 matchOne pair =
     (   matchVariable    pair
     <|> matchEqualHeads  pair
+    <|> matchExists      pair
+    <|> matchForall      pair
     <|> matchApplication pair
     <|> matchBuiltinList pair
     <|> matchBuiltinMap  pair
@@ -124,8 +131,12 @@ matchIncremental termLike1 termLike2 =
             , deferred = empty
             , predicate = empty
             , substitution = mempty
-            , targetVariables = TermLike.freeVariables termLike1
+            , bound = mempty
+            , targets = free1
+            , avoiding = free1 <> free2
             }
+    free1 = (getFreeVariables . TermLike.freeVariables) termLike1
+    free2 = (getFreeVariables . TermLike.freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
     done :: MatcherT variable unifier (Predicate variable)
@@ -140,7 +151,8 @@ matchIncremental termLike1 termLike2 =
             substitution' =
                 Predicate.fromSubstitution
                 $ Substitution.fromMap substitution
-        return (predicate' <> substitution')
+            solution = predicate' <> substitution'
+        return solution
 
     throwUnknown =
         Monad.Trans.lift
@@ -173,6 +185,47 @@ matchEqualHeads (Pair (DV_ _ dv1) (DV_ _ dv2)) =
     push (Pair dv1 dv2)
 matchEqualHeads _ = empty
 
+matchExists
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchExists (Pair (Exists_ _ variable1 term1) (Exists_ _ variable2 term2)) =
+    matchBinder (Binder variable1 term1) (Binder variable2 term2)
+matchExists _ = empty
+
+matchForall
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchForall (Pair (Forall_ _ variable1 term1) (Forall_ _ variable2 term2)) =
+    matchBinder (Binder variable1 term1) (Binder variable2 term2)
+matchForall _ = empty
+
+matchBinder
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Binder (ElementVariable variable) (TermLike variable)
+    -> Binder (ElementVariable variable) (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchBinder (Binder variable1 term1) (Binder variable2 term2) = do
+    Monad.guard (variableSort1 == variableSort2)
+    -- Lift the bound variable to the top level.
+    lifted1 <- liftVariable unified1
+    let term1' = fromMaybe term1 $ do
+            subst1 <- Map.singleton unified1 . mkVar <$> lifted1
+            return $ substituteTermLike subst1 term1
+    let variable1' = fromMaybe unified1 lifted1
+        subst2 = Map.singleton unified2 (mkVar variable1')
+        term2' = substituteTermLike subst2 term2
+    -- Record the uniquely-named variable so it will not be shadowed later.
+    bindVariable variable1'
+    push (Pair term1' term2')
+  where
+    unified1 = ElemVar variable1
+    unified2 = ElemVar variable2
+    elementVariableSort = sortedVariableSort . getElementVariable
+    variableSort1 = elementVariableSort variable1
+    variableSort2 = elementVariableSort variable2
+
 matchVariable
     :: (MatchingVariable variable, MonadUnify unifier)
     => Pair (TermLike variable)
@@ -180,11 +233,11 @@ matchVariable
 matchVariable (Pair (Var_ variable1) (Var_ variable2))
   | variable1 == variable2 = return ()
 matchVariable (Pair (ElemVar_ variable1) term2) = do
-    guardTargetVariable (ElemVar variable1)
+    targetCheck (ElemVar variable1)
     Monad.guard (isFunctionPattern term2)
     substitute variable1 term2
 matchVariable (Pair (SetVar_ variable1) term2) = do
-    guardTargetVariable (SetVar variable1)
+    targetCheck (SetVar variable1)
     setSubstitute variable1 term2
 matchVariable _ = empty
 
@@ -293,10 +346,20 @@ data Pair a = Pair !a !a
 data MatcherState variable =
     MatcherState
         { queued :: !(Seq (Pair (TermLike variable)))
+        -- ^ Solvable matching constraints.
         , deferred :: !(Seq (Pair (TermLike variable)))
-        , predicate :: !(MultiAnd (Syntax.Predicate variable))
+        -- ^ Unsolvable matching constraints; may become solvable with more
+        -- information.
         , substitution :: !(Map (UnifiedVariable variable) (TermLike variable))
-        , targetVariables :: !(FreeVariables variable)
+        -- ^ Matching solution: Substitutions for target variables.
+        , predicate :: !(MultiAnd (Syntax.Predicate variable))
+        -- ^ Matching solution: Additional constraints.
+        , bound :: !(Set (UnifiedVariable variable))
+        -- ^ Bound variable that must not escape in the solution.
+        , targets :: !(Set (UnifiedVariable variable))
+        -- ^ Target variables that may be substituted.
+        , avoiding :: !(Set (UnifiedVariable variable))
+        -- ^ Variables that must not be shadowed.
         }
     deriving (GHC.Generic)
 
@@ -337,9 +400,11 @@ defer pair = field @"deferred" %= (:|> pair)
 {- | Record an element substitution in the matching solution.
 
 The substitution is applied to the remaining constraints and to the partial
-matching solution (so that it is always normalized). @substitute@ ensures that
-the variable does not occur on the right-hand side of the substitution and adds
-a constraint that the right-hand side is defined (if necessary).
+matching solution (so that it is always normalized). @substitute@ ensures that:
+
+1. The variable does not occur on the right-hand side.
+2. No bound variable would escape through the right-hand side.
+3. The right-hand side is defined (through a constraint, if necessary).
 
  -}
 substitute
@@ -350,6 +415,8 @@ substitute
 substitute eVariable termLike = do
     -- Ensure that the variable does not occur free in the TermLike.
     occursCheck variable termLike
+    -- Ensure that no bound variable would escape.
+    escapeCheck termLike
     -- Ensure that the TermLike is defined.
     definedTerm termLike
     -- Record the substitution.
@@ -417,7 +484,15 @@ setSubstitute sVariable termLike = do
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
     substitute2 = fmap substitute1
-    substitute1 = Builtin.renormalize . TermLike.substitute subst
+    substitute1 = substituteTermLike subst
+
+substituteTermLike
+    :: (FreshVariable variable, SortedVariable variable)
+    => (Show variable, Unparse variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
+    -> TermLike variable
+    -> TermLike variable
+substituteTermLike subst = Builtin.renormalize . TermLike.substitute subst
 
 occursCheck
     :: (MatchingVariable variable, MonadUnify unifier)
@@ -445,13 +520,55 @@ can also contain non-target variables and this guard is used to ensure that we
 do not attempt to match on them.
 
  -}
-guardTargetVariable
+targetCheck
     :: (MatchingVariable variable, Monad unifier)
     => UnifiedVariable variable
     -> MaybeT (MatcherT variable unifier) ()
-guardTargetVariable variable = do
-    MatcherState { targetVariables } <- Monad.State.get
-    Monad.guard (isFreeVariable variable targetVariables)
+targetCheck variable = do
+    MatcherState { targets } <- Monad.State.get
+    Monad.guard (Set.member variable targets)
+
+{- | Ensure that no bound variables occur free in the pattern.
+
+We must not produce a matching solution which would allow a bound variable to
+escape.
+
+ -}
+escapeCheck
+    :: (MatchingVariable variable, Monad unifier)
+    => TermLike variable
+    -> MaybeT (MatcherT variable unifier) ()
+escapeCheck termLike = do
+    let free = getFreeVariables (TermLike.freeVariables termLike)
+    MatcherState { bound } <- Monad.State.get
+    Monad.guard (Set.disjoint bound free)
+
+{- | Record the bound variable.
+
+The bound variable will not escape, nor will it be shadowed.
+
+ -}
+bindVariable
+    :: Ord variable
+    => MonadState (MatcherState variable) matcher
+    => UnifiedVariable variable
+    -> matcher ()
+bindVariable variable = do
+    field @"bound" %= Set.insert variable
+    field @"avoiding" %= Set.insert variable
+
+{- | Lift a (bound) variable to the top level by with a globally-unique name.
+
+Returns 'Nothing' if the variable name is already globally-unique.
+
+ -}
+liftVariable
+    :: FreshVariable variable
+    => MonadState (MatcherState variable) matcher
+    => UnifiedVariable variable
+    -> matcher (Maybe (UnifiedVariable variable))
+liftVariable variable =
+    flip Variables.refreshVariable variable <$> Lens.use (field @"avoiding")
 
 leftAlignLists
     ::  Builtin.InternalList (TermLike variable)
