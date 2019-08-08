@@ -25,6 +25,7 @@ module Kore.Step.Simplification.Data
     , alternate
     , PredicateSimplifier (..)
     , emptyPredicateSimplifier
+    , simplifyPredicate
     , TermLikeSimplifier
     , termLikeSimplifier
     , emptyTermLikeSimplifier
@@ -565,6 +566,18 @@ newtype PredicateSimplifier =
 
 emptyPredicateSimplifier :: PredicateSimplifier
 emptyPredicateSimplifier = PredicateSimplifier return
+
+simplifyPredicate
+    ::  forall variable simplifier
+    .   ( FreshVariable variable, SortedVariable variable
+        , Show variable, Unparse variable
+        , MonadSimplify simplifier
+        )
+    => Predicate variable
+    -> BranchT simplifier (Predicate variable)
+simplifyPredicate predicate = do
+    PredicateSimplifier simplify <- askSimplifierPredicate
+    simplify predicate
 
 {-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
