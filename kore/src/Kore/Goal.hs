@@ -296,6 +296,7 @@ instance
 
     newtype Rule (OnePathRule variable) =
         Rule { unRule :: RewriteRule variable }
+        deriving (Show, Unparse)
 
     isTrusted =
         Trusted.isTrusted
