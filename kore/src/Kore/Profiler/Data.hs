@@ -7,6 +7,7 @@ module Kore.Profiler.Data
     , profileDurationEvent
     , profileDurationStartEnd
     , ProfileEvent (..)
+    , Configuration (..)
     ) where
 
 import           Control.Monad.IO.Class
@@ -40,7 +41,6 @@ import qualified ListT
 {- Monad that can also handle profiling events.
 -}
 class Monad profiler => MonadProfiler profiler where
-    --
     profileDuration :: [String] -> profiler a -> profiler a
     default profileDuration
         :: (MonadProfiler m, MFunctor t, profiler ~ t m)
@@ -48,9 +48,29 @@ class Monad profiler => MonadProfiler profiler where
     profileDuration a = hoist (profileDuration a)
     {-# INLINE profileDuration #-}
 
+    -- TODO(virgil): Add a command line flag for this.
+    profileConfiguration :: profiler Configuration
+    profileConfiguration =
+        return Configuration
+            {identifierFilter = Nothing, dumpIdentifier = Nothing}
+    {-# INLINE profileConfiguration #-}
+
 -- Instance for tests.
 instance MonadProfiler Identity where
     profileDuration _ = id
+    profileConfiguration =
+        return Configuration
+            { identifierFilter = Nothing
+            , dumpIdentifier = Nothing
+            }
+
+data Configuration =
+    Configuration
+        { identifierFilter :: !(Maybe String)
+        -- ^ If present, only emits events for this identifier.
+        , dumpIdentifier :: !(Maybe String)
+        -- ^ If present, dump extra information for this identifier.
+        }
 
 {- A profiler event.
 
@@ -70,13 +90,19 @@ data ProfileEvent
         }
     deriving (Show, Read)
 
+getTimePicos :: IO Integer
+getTimePicos = timeSpecToPicos <$> getTime Monotonic
+  where
+    timeSpecToPicos TimeSpec {sec, nsec} =
+         ((toInteger sec * 1000 * 1000 * 1000) + toInteger nsec) * 1000
+
 {- Times an action.
 -}
 profileDurationEvent :: MonadIO profiler => [String] -> profiler a -> profiler a
 profileDurationEvent tags action = do
-    startTime <- liftIO (getTime Monotonic)
+    startTime <- liftIO getTimePicos
     let event = ProfileEvent
-            { startPico = timeSpecToPicos startTime
+            { startPico = startTime
             , endPico = Nothing
             , tags
             }
