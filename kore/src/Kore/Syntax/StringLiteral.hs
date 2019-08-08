@@ -47,11 +47,11 @@ instance Unparse StringLiteral where
 
 instance
     Ord variable =>
-    Synthetic (Const StringLiteral) (FreeVariables variable)
+    Synthetic (FreeVariables variable) (Const StringLiteral)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
-instance Synthetic (Const StringLiteral) Sort where
+instance Synthetic Sort (Const StringLiteral) where
     synthetic = const stringMetaSort
     {-# INLINE synthetic #-}

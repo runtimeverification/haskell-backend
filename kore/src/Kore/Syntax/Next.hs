@@ -52,11 +52,11 @@ instance Unparse child => Unparse (Next Sort child) where
     unparse2 Next { nextChild } =
         Pretty.parens (Pretty.fillSep ["\\next", unparse2 nextChild])
 
-instance Ord variable => Synthetic (Next sort) (FreeVariables variable) where
+instance Ord variable => Synthetic (FreeVariables variable) (Next sort) where
     synthetic = nextChild
     {-# INLINE synthetic #-}
 
-instance Synthetic (Next Sort) Sort where
+instance Synthetic Sort (Next Sort) where
     synthetic Next { nextSort, nextChild } =
         nextSort `matchSort` nextChild
     {-# INLINE synthetic #-}

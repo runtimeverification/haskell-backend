@@ -93,7 +93,7 @@ sy = FreeVariables.freeVariable (SetVar Mock.setY)
 sxy = sx <> sy
 
 gives
-    :: (Synthetic base (FreeVariables Variable), GHC.HasCallStack)
+    :: (Synthetic (FreeVariables Variable) base, GHC.HasCallStack)
     => base (FreeVariables Variable)
     -> FreeVariables Variable
     -> String

@@ -41,11 +41,11 @@ instance Unparse (Inhabitant child) where
 
 instance
     Ord variable =>
-    Synthetic Inhabitant (FreeVariables variable)
+    Synthetic (FreeVariables variable) Inhabitant
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
-instance Synthetic Inhabitant Sort where
+instance Synthetic Sort Inhabitant where
     synthetic = inhSort
     {-# INLINE synthetic #-}

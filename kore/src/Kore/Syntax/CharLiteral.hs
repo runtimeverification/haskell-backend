@@ -45,13 +45,11 @@ instance Unparse CharLiteral where
     unparse = Pretty.squotes . fromString . escapeChar . getCharLiteral
     unparse2 = unparse
 
-instance
-    Ord variable =>
-    Synthetic (Const CharLiteral) (FreeVariables variable)
+instance Ord variable => Synthetic (FreeVariables variable) (Const CharLiteral)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
-instance Synthetic (Const CharLiteral) Sort where
+instance Synthetic Sort (Const CharLiteral) where
     synthetic = const charMetaSort
     {-# INLINE synthetic #-}

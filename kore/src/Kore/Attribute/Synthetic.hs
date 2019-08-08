@@ -25,11 +25,11 @@ import qualified Data.Functor.Foldable as Recursive
 that is, a 'Cofree' tree with branching described by a @'Functor' base@.
 
  -}
-class Functor base => Synthetic base syn where
+class Functor base => Synthetic syn base where
     -- | @synthetic@ is the @base@-algebra for synthesizing the attribute @syn@.
     synthetic :: base syn -> syn
 
-instance Synthetic (Const a) a where
+instance Synthetic a (Const a) where
     synthetic (Const a) = a
     {-# INLINE synthetic #-}
 
@@ -50,7 +50,7 @@ resynthesize
         , Recursive t
         , Base s ~ CofreeF base inh
         , Base t ~ CofreeF base syn
-        , Synthetic base syn
+        , Synthetic syn base
         )
     => s  -- ^ Original tree with attributes @a@
     -> t
@@ -87,7 +87,7 @@ resynthesizeAux synth =
 {- | @/synthesize/@ an attribute @a@ from one level of a tree @s@.
  -}
 synthesize
-    ::  ( Functor f, Synthetic f a
+    ::  ( Functor f, Synthetic a f
         , Corecursive s, Recursive s, Base s ~ CofreeF f a
         )
     => f s

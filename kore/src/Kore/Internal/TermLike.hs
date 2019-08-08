@@ -262,7 +262,7 @@ instance Unparse child => Unparse (Evaluated child) where
     unparse2 evaluated =
         Pretty.vsep ["/* evaluated: */", Unparser.unparse2Generic evaluated]
 
-instance Synthetic Evaluated syn where
+instance Synthetic syn Evaluated where
     synthetic = getEvaluated
     {-# INLINE synthetic #-}
 
@@ -321,8 +321,8 @@ instance
     unparse2 = Unparser.unparse2Generic
 
 instance
-    Ord variable =>
-    Synthetic (TermLikeF variable) (FreeVariables variable)
+    Ord variable
+    => Synthetic (FreeVariables variable) (TermLikeF variable)
   where
     -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
     -- Functors.
@@ -357,7 +357,7 @@ instance
     synthetic (NuF nuF) = synthetic nuF
     {-# INLINE synthetic #-}
 
-instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
+instance SortedVariable variable => Synthetic Sort (TermLikeF variable) where
     -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
@@ -391,7 +391,7 @@ instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
     synthetic (NuF nuF) = synthetic nuF
     {-# INLINE synthetic #-}
 
-instance Synthetic (TermLikeF variable) Pattern.Functional where
+instance Synthetic Pattern.Functional (TermLikeF variable) where
     -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
@@ -425,7 +425,7 @@ instance Synthetic (TermLikeF variable) Pattern.Functional where
     synthetic (NuF nuF) = synthetic nuF
     {-# INLINE synthetic #-}
 
-instance Synthetic (TermLikeF variable) Pattern.Function where
+instance Synthetic Pattern.Function (TermLikeF variable) where
     -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF
@@ -459,7 +459,7 @@ instance Synthetic (TermLikeF variable) Pattern.Function where
     synthetic (NuF nuF) = synthetic nuF
     {-# INLINE synthetic #-}
 
-instance Synthetic (TermLikeF variable) Pattern.Defined where
+instance Synthetic Pattern.Defined (TermLikeF variable) where
     -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
     -- Functors.
     synthetic (ForallF forallF) = synthetic forallF

@@ -102,7 +102,7 @@ test_instance_Synthetic =
     range = [defined, nonDefined]
 
     check
-        :: (GHC.HasCallStack, Synthetic term Defined)
+        :: (GHC.HasCallStack, Synthetic Defined term)
         => TestName
         -> (Defined -> Bool)
         -> term Defined
@@ -114,14 +114,14 @@ test_instance_Synthetic =
 
     is
         ::  ( GHC.HasCallStack
-            , Synthetic term Defined
+            , Synthetic Defined term
             )
         => term Defined -> TestTree
     is = check "Defined term" isDefined
 
     isn't
         ::  ( GHC.HasCallStack
-            , Synthetic term Defined
+            , Synthetic Defined term
             )
         => term Defined -> TestTree
     isn't = check "Non-defined pattern" (not . isDefined)

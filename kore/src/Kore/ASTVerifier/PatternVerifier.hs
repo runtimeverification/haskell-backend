@@ -383,7 +383,7 @@ verifyPatternSort patternSort = do
     return ()
 
 verifyOperands
-    :: (Traversable operator, Synthetic operator (Attribute.Pattern Variable))
+    :: (Traversable operator, Synthetic (Attribute.Pattern Variable) operator)
     => (forall a. operator a -> Sort)
     -> operator (PatternVerifier Verified.Pattern)
     ->  PatternVerifier
@@ -467,7 +467,7 @@ verifyRewrites = verifyOperands rewritesSort
 
 verifyPredicate
     ::  ( Traversable predicate
-        , Synthetic predicate (Attribute.Pattern Variable)
+        , Synthetic (Attribute.Pattern Variable) predicate
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. predicate a -> Sort)  -- ^ Operand sort
@@ -580,7 +580,7 @@ verifyApplySymbol getChildAttributes application =
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
 
 verifyApplicationChildren
-    ::  Synthetic (Application head) (Attribute.Pattern Variable)
+    ::  Synthetic (Attribute.Pattern Variable) (Application head)
     =>  (child -> Attribute.Pattern Variable)
     ->  Application head (PatternVerifier child)
     ->  ApplicationSorts
@@ -618,7 +618,7 @@ verifyApplication getChildAttributes application = do
         <$> verifyApplySymbol getChildAttributes application
 
 verifyBinder
-    ::  ( Traversable binder, Synthetic binder (Attribute.Pattern Variable)
+    ::  ( Traversable binder, Synthetic (Attribute.Pattern Variable) binder
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. binder a -> Sort)

@@ -98,7 +98,7 @@ test_instance_Synthetic =
     range = [functional, nonFunctional]
 
     check
-        :: (GHC.HasCallStack, Synthetic term Functional)
+        :: (GHC.HasCallStack, Synthetic Functional term)
         => TestName
         -> (Functional -> Bool)
         -> term Functional
@@ -110,14 +110,14 @@ test_instance_Synthetic =
 
     is
         ::  ( GHC.HasCallStack
-            , Synthetic term Functional
+            , Synthetic Functional term
             )
         => term Functional -> TestTree
     is = check "Functional pattern" isFunctional
 
     isn't
         ::  ( GHC.HasCallStack
-            , Synthetic term Functional
+            , Synthetic Functional term
             )
         => term Functional -> TestTree
     isn't = check "Non-functional pattern" (not . isFunctional)

@@ -60,14 +60,12 @@ instance Unparse child => Unparse (Rewrites Sort child) where
             , unparse2 rewritesSecond
             ])
 
-instance
-    Ord variable =>
-    Synthetic (Rewrites sort) (FreeVariables variable)
+instance Ord variable => Synthetic (FreeVariables variable) (Rewrites sort)
   where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic (Rewrites Sort) Sort where
+instance Synthetic Sort (Rewrites Sort) where
     synthetic Rewrites { rewritesSort, rewritesFirst, rewritesSecond } =
         rewritesSort
         & seq (matchSort rewritesSort rewritesFirst)
