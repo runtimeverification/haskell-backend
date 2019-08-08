@@ -40,7 +40,7 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (RewriteRule),
+                 ( OnePathRule (..), RewriteRule (..),
                  RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
@@ -99,6 +99,7 @@ type Claim claim =
     , Coercible (RulePattern Variable) (Rule claim)
     , Coercible claim (RulePattern Variable)
     , Unparse claim
+    , Unparse (Rule claim)
     , Goal claim
     )
 
@@ -253,7 +254,7 @@ verifyClaimStep
             onePathFirstStep rewrites
         | otherwise =
             onePathFollowupStep
-                (toRule . toRulePattern <$> claims)
+                (coerce . toRulePattern <$> claims)
                 rewrites
 
     rewrites :: [Rule claim]

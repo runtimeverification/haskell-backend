@@ -97,7 +97,10 @@ import           Kore.Syntax.Variable
                  ( Variable )
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph
+emptyExecutionGraph
+    :: Claim claim
+    => axiom ~ Rule claim
+    => claim -> ExecutionGraph axiom
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
   where
@@ -221,11 +224,12 @@ getAxiomOrClaimByIndex =
             (getClaimByIndex . coerce)
 
 getInternalIdentifier
-    :: RewriteRule Variable -> Attribute.RuleIndex
+    :: Coercible rule (RulePattern Variable)
+    => rule -> Attribute.RuleIndex
 getInternalIdentifier =
     Attribute.identifier
     . Rule.attributes
-    . Rule.getRewriteRule
+    . coerce
 
 -- | Update the currently selected claim to prove.
 switchToProof
@@ -247,7 +251,7 @@ getInnerGraph
     :: MonadState (ReplState claim axiom) m
     => axiom ~ Rule claim
     => Claim claim
-    => m InnerGraph
+    => m (InnerGraph axiom)
 getInnerGraph =
     fmap Strategy.graph getExecutionGraph
 
@@ -256,7 +260,7 @@ getExecutionGraph
     :: MonadState (ReplState claim axiom) m
     => axiom ~ Rule claim
     => Claim claim
-    => m ExecutionGraph
+    => m (ExecutionGraph axiom)
 getExecutionGraph = do
     ReplState { claimIndex, graphs, claim } <- get
     let mgraph = Map.lookup claimIndex graphs
@@ -266,21 +270,24 @@ getExecutionGraph = do
 updateInnerGraph
     :: forall claim axiom m
     .  MonadState (ReplState claim axiom) m
-    => InnerGraph
+    => InnerGraph axiom
     -> m ()
 updateInnerGraph ig = do
     ReplState { claimIndex, graphs } <- get
     field @"graphs" Lens..=
         Map.adjust (updateInnerGraph0 ig) claimIndex graphs
   where
-    updateInnerGraph0 :: InnerGraph -> ExecutionGraph -> ExecutionGraph
+    updateInnerGraph0
+        :: InnerGraph axiom
+        -> ExecutionGraph axiom
+        -> ExecutionGraph axiom
     updateInnerGraph0 graph Strategy.ExecutionGraph { root } =
         Strategy.ExecutionGraph { root, graph }
 
 -- | Update the current execution graph.
 updateExecutionGraph
     :: MonadState (ReplState claim axiom) m
-    => ExecutionGraph
+    => ExecutionGraph axiom
     -> m ()
 updateExecutionGraph gph = do
     ReplState { claimIndex, graphs } <- get
@@ -346,16 +353,15 @@ getRuleFor
     => Claim claim
     => Maybe ReplNode
     -- ^ node index
-    -> m (Maybe (RewriteRule Variable))
+    -> m (Maybe axiom)
 getRuleFor maybeNode = do
     targetNode <- getTargetNode maybeNode
     graph' <- getInnerGraph
     pure $ fmap unReplNode targetNode >>= getRewriteRule . Graph.inn graph'
   where
     getRewriteRule
-        :: forall a b
-        .  [(a, b, Seq (RewriteRule Variable))]
-        -> Maybe (RewriteRule Variable)
+        :: [(a, b, Seq axiom)]
+        -> Maybe axiom
     getRewriteRule = listToMaybe . concatMap (toList . third)
 
     third :: forall a b c. (a, b, c) -> c
@@ -425,7 +431,7 @@ runStepper'
     => [claim]
     -> [axiom]
     -> ReplNode
-    -> t m (ExecutionGraph, StepResult)
+    -> t m (ExecutionGraph axiom, StepResult)
 runStepper' claims axioms node = do
     ReplState { claim } <- get
     stepper <- asks stepper
@@ -457,7 +463,7 @@ runUnifier first second = do
         . runUnifierWithExplanation
         $ unifier first second
 
-getNodeState :: InnerGraph -> Graph.Node -> Maybe (NodeState, Graph.Node)
+getNodeState :: InnerGraph axiom -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
         . proofState ProofStateTransformer
@@ -470,7 +476,7 @@ getNodeState graph node =
         $ node
 
 nodeToPattern
-    :: InnerGraph
+    :: InnerGraph axiom
     -> Graph.Node
     -> Maybe (TermLike Variable)
 nodeToPattern graph node =
@@ -593,7 +599,7 @@ generateInProgressOPClaims = do
   where
     startedOPClaims
         :: Claim claim
-        => Map.Map ClaimIndex ExecutionGraph
+        => Map.Map ClaimIndex (ExecutionGraph axiom)
         -> [claim]
         -> [Rule.OnePathRule Variable]
     startedOPClaims graphs claims =
@@ -602,7 +608,7 @@ generateInProgressOPClaims = do
         >>= sequence
     notStartedOPClaims
         :: Claim claim
-        => Map.Map ClaimIndex ExecutionGraph
+        => Map.Map ClaimIndex (ExecutionGraph axiom)
         -> [claim]
         -> [Rule.OnePathRule Variable]
     notStartedOPClaims graphs claims =
@@ -623,7 +629,7 @@ generateInProgressOPClaims = do
                 )
 
 claimsWithPatterns
-    :: Map ClaimIndex ExecutionGraph
+    :: Map ClaimIndex (ExecutionGraph axiom)
     -> [claim]
     -> [(claim, [TermLike Variable])]
 claimsWithPatterns graphs claims =
@@ -633,7 +639,7 @@ claimsWithPatterns graphs claims =
     <$> Map.toList graphs
 
 findTerminalPatterns
-    :: InnerGraph
+    :: InnerGraph axiom
     -> [TermLike Variable]
 findTerminalPatterns graph =
     mapMaybe (nodeToPattern graph)
@@ -653,7 +659,7 @@ currentClaimSort = do
         . coerce
         $ claims
 
-sortLeafsByType :: InnerGraph -> Map.Map NodeState [Graph.Node]
+sortLeafsByType :: InnerGraph axiom -> Map.Map NodeState [Graph.Node]
 sortLeafsByType graph =
     Map.fromList
         . groupSort
@@ -662,7 +668,7 @@ sortLeafsByType graph =
         $ graph
 
 
-findLeafNodes :: InnerGraph -> [Graph.Node]
+findLeafNodes :: InnerGraph axiom -> [Graph.Node]
 findLeafNodes graph =
     filter ((==) 0 . Graph.outdeg graph) $ Graph.nodes graph
 

@@ -69,7 +69,7 @@ import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( CommonProofState )
 import           Kore.Step.Rule
-                 ( RewriteRule (..) )
+                 ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
@@ -362,13 +362,13 @@ shouldStore =
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph =
+type ExecutionGraph rule =
     Strategy.ExecutionGraph
         CommonProofState
-        (RewriteRule Variable)
+        rule
 
-type InnerGraph =
-    Gr CommonProofState (Seq (RewriteRule Variable))
+type InnerGraph rule =
+    Gr CommonProofState (Seq rule)
 
 -- | State for the repl.
 data ReplState claim axiom = ReplState
@@ -380,7 +380,7 @@ data ReplState claim axiom = ReplState
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex ExecutionGraph
+    , graphs     :: Map ClaimIndex (ExecutionGraph axiom)
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -403,9 +403,9 @@ data Config claim axiom m = Config
         :: claim
         -> [claim]
         -> [axiom]
-        -> ExecutionGraph
+        -> ExecutionGraph axiom
         -> ReplNode
-        -> m ExecutionGraph
+        -> m (ExecutionGraph axiom)
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: TermLike Variable

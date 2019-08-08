@@ -113,7 +113,7 @@ import qualified Kore.Syntax.Id as Id
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
-                 ( unparse, unparseToString )
+                 ( Unparse, unparse, unparseToString )
 import           Numeric.Natural
 import           System.Directory
                  ( doesDirectoryExist, doesFileExist, findExecutable )
@@ -211,8 +211,8 @@ replInterpreter0 printAux printKore replCmd = do
     -- and updates the state, returning the writer output along with the
     -- monadic result.
     evaluateCommand
-        :: ReplM claim m ReplStatus
-        -> ReaderT (Config claim m) (StateT (ReplState claim) m) (ReplOutput, ReplStatus)
+        :: ReplM claim axiom m ReplStatus
+        -> ReaderT (Config claim axiom m) (StateT (ReplState claim axiom) m) (ReplOutput, ReplStatus)
     evaluateCommand c = do
         st <- get
         config <- Reader.ask
@@ -291,6 +291,9 @@ showClaim =
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
     :: MonadState (ReplState claim axiom) m
+    => Coercible axiom (RulePattern Variable)
+    => Coercible (RulePattern Variable) axiom
+    => Unparse axiom
     => MonadWriter ReplOutput m
     => Either AxiomIndex RuleName
     -- ^ index in the axioms list
@@ -468,14 +471,14 @@ omitCell =
         Nothing  -> showCells
         Just str -> addOrRemove str
   where
-    showCells :: ReplM claim m ()
+    showCells :: ReplM claim axiom m ()
     showCells = do
         omit <- Lens.use (field @"omit")
         if Set.null omit
             then putStrLn' "Omit list is currently empty."
             else Foldable.traverse_ putStrLn' omit
 
-    addOrRemove :: String -> ReplM claim m ()
+    addOrRemove :: String -> ReplM claim axiom m ()
     addOrRemove str = field @"omit" %= toggle str
 
     toggle :: String -> Set String -> Set String
@@ -526,7 +529,7 @@ allProofs = do
             (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
   where
     inProgressProofs
-        :: ExecutionGraph
+        :: ExecutionGraph axiom
         -> GraphProofStatus
     inProgressProofs =
         findProofStatus
@@ -535,7 +538,7 @@ allProofs = do
 
     notStartedProofs
         :: Claim claim
-        => Map.Map ClaimIndex ExecutionGraph
+        => Map.Map ClaimIndex (ExecutionGraph axiom)
         -> Map.Map ClaimIndex claim
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
@@ -569,13 +572,13 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex rule
+            let ruleIndex = getRuleIndex . coerce $ rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
   where
-    getRuleIndex :: RewriteRule Variable -> Attribute.RuleIndex
-    getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
+    getRuleIndex :: RulePattern Variable -> Attribute.RuleIndex
+    getRuleIndex = Attribute.identifier . Rule.attributes
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -702,15 +705,16 @@ redirect cmd file = do
     appendCommand cmd file
 
 runInterpreterWithOutput
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => PrintAuxOutput
     -> PrintKoreOutput
     -> ReplCommand
-    -> Config claim m
-    -> ReplM claim m ()
+    -> Config claim axiom m
+    -> ReplM claim axiom m ()
 runInterpreterWithOutput printAux printKore cmd config =
     get >>= (\st -> lift
             $ execStateReader config st
@@ -723,35 +727,38 @@ data AlsoApplyRule = Never | IfPossible
 -- | Attempt to use a specific axiom or claim to see if it unifies with the
 -- current node.
 tryAxiomClaim
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => RuleReference
     -- ^ tagged index in the axioms or claims list
-    -> ReplM claim m ()
+    -> ReplM claim axiom m ()
 tryAxiomClaim = tryAxiomClaimWorker Never
 
 -- | Attempt to use a specific axiom or claim to progress the current proof.
 tryFAxiomClaim
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => RuleReference
     -- ^ tagged index in the axioms or claims list
-    -> ReplM claim m ()
+    -> ReplM claim axiom m ()
 tryFAxiomClaim = tryAxiomClaimWorker IfPossible
 
 tryAxiomClaimWorker
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => AlsoApplyRule
     -> RuleReference
     -- ^ tagged index in the axioms or claims list
-    -> ReplM claim m ()
+    -> ReplM claim axiom m ()
 tryAxiomClaimWorker mode ref = do
     maybeAxiomOrClaim <-
         ruleReference
@@ -772,14 +779,14 @@ tryAxiomClaimWorker mode ref = do
     showUnificationFailure
         :: Either axiom claim
         -> ReplNode
-        -> ReplM claim m ()
+        -> ReplM claim axiom m ()
     showUnificationFailure axiomOrClaim' node = do
         let first = extractLeftPattern axiomOrClaim'
         maybeSecond <- getConfigAt (Just node)
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
-                strategyPattern
+                proofState
                     ProofStateTransformer
                         { provenValue        = putStrLn' "Cannot unify bottom"
                         , goalTransformer    = runUnifier' first . term
@@ -809,19 +816,20 @@ tryAxiomClaimWorker mode ref = do
     runUnifier'
         :: TermLike Variable
         -> TermLike Variable
-        -> ReplM claim m ()
+        -> ReplM claim axiom m ()
     runUnifier' first second =
         runUnifier first second
         >>= tell . formatUnificationMessage
 
     extractLeftPattern :: Either axiom claim -> TermLike Variable
-    extractLeftPattern = left . getRewriteRule . either unAxiom coerce
+    extractLeftPattern = left . either coerce coerce
 
 -- | Removes specified node and all its child nodes.
 clear
-    :: forall m claim
-    .  MonadState (ReplState claim) m
+    :: forall m claim axiom
+    .  MonadState (ReplState claim axiom) m
     => Claim claim
+    => axiom ~ Rule claim
     => MonadWriter ReplOutput m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
@@ -844,20 +852,19 @@ clear =
         field @"node" .= ReplNode (prevNode graph' node)
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
-    next :: InnerGraph -> Graph.Node -> [Graph.Node]
+    next :: InnerGraph axiom -> Graph.Node -> [Graph.Node]
     next gr n = fst <$> Graph.lsuc gr n
 
     collect :: (a -> [a]) -> a -> [a]
     collect f x = x : [ z | y <- f x, z <- collect f y]
 
-    prevNode :: InnerGraph -> Graph.Node -> Graph.Node
+    prevNode :: InnerGraph axiom -> Graph.Node -> Graph.Node
     prevNode graph = fromMaybe 0 . listToMaybe . fmap fst . Graph.lpre graph
 
 -- | Save this sessions' commands to the specified file.
 saveSession
-    :: forall m
-    .  forall claim
-    .  MonadState (ReplState claim) m
+    :: forall m claim axiom
+    .  MonadState (ReplState claim axiom) m
     => MonadWriter ReplOutput m
     => MonadIO m
     => FilePath
@@ -878,8 +885,9 @@ saveSession path =
 -- one process for each KoreOut in the command's output. AuxOut will not be piped,
 -- instead it will be sent directly to the repl's output.
 pipe
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadIO m
     => MonadSimplify m
     => ReplCommand
@@ -888,7 +896,7 @@ pipe
     -- ^ path to the program that will receive the command's output
     -> [String]
     -- ^ additional arguments to be passed to the program
-    -> ReplM claim m ()
+    -> ReplM claim axiom m ()
 pipe cmd file args = do
     exists <- liftIO $ findExecutable file
     case exists of
@@ -923,26 +931,28 @@ pipe cmd file args = do
 
 -- | Appends output of a command to a file.
 appendTo
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => ReplCommand
     -- ^ command
     -> FilePath
     -- ^ file to append to
-    -> ReplM claim m ()
+    -> ReplM claim axiom m ()
 appendTo cmd file =
     withExistingDirectory file (appendCommand cmd)
 
 appendCommand
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => ReplCommand
     -> FilePath
-    -> ReplM claim m ()
+    -> ReplM claim axiom m ()
 appendCommand cmd file = do
     config <- ask
     runInterpreterWithOutput
@@ -953,8 +963,8 @@ appendCommand cmd file = do
     putStrLn' $ "Redirected output to \"" <> file <> "\"."
 
 alias
-    :: forall m claim
-    .  MonadState (ReplState claim) m
+    :: forall m claim axiom
+    .  MonadState (ReplState claim axiom) m
     => MonadWriter ReplOutput m
     => AliasDefinition
     -> m ()
@@ -965,14 +975,15 @@ alias a = do
         Right _  -> pure ()
 
 tryAlias
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => ReplAlias
     -> PrintAuxOutput
     -> PrintKoreOutput
-    -> ReplM claim m ReplStatus
+    -> ReplM claim axiom m ReplStatus
 tryAlias replAlias@ReplAlias { name } printAux printKore = do
     res <- findAlias name
     case res of
@@ -989,9 +1000,9 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
   where
     runInterpreter
         :: ReplCommand
-        -> Config claim m
-        -> ReplState claim
-        -> ReplM claim m (ReplStatus, ReplState claim)
+        -> Config claim axiom m
+        -> ReplState claim axiom
+        -> ReplM claim axiom m (ReplStatus, ReplState claim axiom)
     runInterpreter cmd config st =
         lift
             $ (`runStateT` st)
@@ -1003,13 +1014,14 @@ tryAlias replAlias@ReplAlias { name } printAux printKore = do
 --
 -- See 'loopM' for details.
 performStepNoBranching
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => (Natural, StepResult)
     -- ^ (current step, last result)
-    -> ReplM claim m (Either (Natural, StepResult) (Natural, StepResult))
+    -> ReplM claim axiom m (Either (Natural, StepResult) (Natural, StepResult))
 performStepNoBranching =
     \case
         -- Termination branch
@@ -1025,11 +1037,12 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
+    => axiom ~ Rule claim
     => Monad m
     => Natural
-    -> ExecutionGraph
+    -> ExecutionGraph axiom
     -> ReplNode
-    -> ReplM claim m ExecutionGraph
+    -> ReplM claim axiom m (ExecutionGraph axiom)
 recursiveForcedStep n graph node
   | n == 0    = return graph
   | otherwise = do
@@ -1043,21 +1056,22 @@ recursiveForcedStep n graph node
 
 -- | Display a rule as a String.
 showRewriteRule
-    :: Coercible (RewriteRule Variable) rule
+    :: Coercible (RulePattern Variable) rule
+    => Unparse rule
     => rule
     -> ReplOutput
 showRewriteRule rule =
-    makeKoreReplOutput (unparseToString rule')
+    makeKoreReplOutput (unparseToString rule)
     <> makeAuxReplOutput
         (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
     rule' = coerce rule
 
     extractSourceAndLocation
-        :: RewriteRule Variable
+        :: RulePattern Variable
         -> SourceLocation
     extractSourceAndLocation
-        (RewriteRule RulePattern { Axiom.attributes }) =
+        (RulePattern { Axiom.attributes }) =
             Attribute.sourceLocation attributes
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
@@ -1110,12 +1124,16 @@ printNotFound = putStrLn' "Variable or index not found"
 -- | Shows the 'dot' graph. This currently only works on Linux. The 'Int'
 -- parameter is needed in order to distinguish between axioms and claims and
 -- represents the number of available axioms.
-showDotGraph :: Int -> InnerGraph -> IO ()
+showDotGraph
+    :: Coercible axiom (RulePattern Variable)
+    => Int -> InnerGraph axiom -> IO ()
 showDotGraph len =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
 
-saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
+saveDotGraph
+    :: Coercible axiom (RulePattern Variable)
+    => Int -> InnerGraph axiom -> FilePath -> IO ()
 saveDotGraph len gr file =
     withExistingDirectory file saveGraphImg
   where
@@ -1127,11 +1145,12 @@ saveDotGraph len gr file =
         $ path <> ".jpeg"
 
 graphParams
-    :: Int
+    :: Coercible axiom (RulePattern Variable)
+    => Int
     -> Graph.GraphvizParams
          Graph.Node
          CommonProofState
-         (Seq (RewriteRule Variable))
+         (Seq axiom)
          ()
          CommonProofState
 graphParams len = Graph.nonClusteredParams
@@ -1184,12 +1203,13 @@ showAxiomOrClaimName
   | otherwise = Just $ "Claim " <> ruleName
 
 parseEvalScript
-    :: forall claim t m
+    :: forall claim axiom t m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
-    => MonadState (ReplState claim) (t m)
-    => MonadReader (Config claim m) (t m)
+    => MonadState (ReplState claim axiom) (t m)
+    => MonadReader (Config claim axiom m) (t m)
     => Monad.Trans.MonadTrans t
     => FilePath
     -> t m ()
