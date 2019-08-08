@@ -108,7 +108,7 @@ idParser = do
 
 Always starts with @"@.
 -} {- " -}
-stringLiteralParser :: Parser (StringLiteral child)
+stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
 
 {-|'charLiteralParser' parses a C-style char literal, unescaping it.
@@ -245,7 +245,7 @@ setVarIdRawParser = do
 @stringLiteralRawParser@ does not consume whitespace.
 
  -}
-stringLiteralRawParser :: Parser (StringLiteral child)
+stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser = do
     skipChar '"'
     StringLiteral . Text.pack <$> Parser.manyTill charParser (skipChar '"')

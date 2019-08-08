@@ -58,7 +58,6 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
-                 ( PatternF (..) )
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
@@ -123,9 +122,8 @@ objectIdGen =
 setVarIdGen :: MonadGen m => m Id
 setVarIdGen = testId <$> fmap ("@" <>) objectIdGen
 
-stringLiteralGen :: MonadGen m => m (StringLiteral child)
-stringLiteralGen =
-    StringLiteral <$> Gen.text (Range.linear 0 256) charGen
+stringLiteralGen :: MonadGen m => m StringLiteral
+stringLiteralGen = StringLiteral <$> Gen.text (Range.linear 0 256) charGen
 
 charLiteralGen :: MonadGen m => m (CharLiteral child)
 charLiteralGen = CharLiteral <$> charGen
@@ -418,7 +416,8 @@ korePatternChildGen patternSort' =
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Syntax.StringLiteralF <$> stringLiteralGen
+        asParsedPattern . Syntax.StringLiteralF . Syntax.Const
+        <$> stringLiteralGen
 
     korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =

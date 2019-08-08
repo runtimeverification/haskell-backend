@@ -258,10 +258,10 @@ getSymbolOrAlias kore =
 
 {- | Accept a string literal.
  -}
-getStringLiteral :: AttributePattern -> Parser (StringLiteral AttributePattern)
+getStringLiteral :: AttributePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
-        _ :< StringLiteralF lit -> return lit
+        _ :< StringLiteralF (Const lit) -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
 
 {- | Parse a 'Text' through 'ReadS'.
@@ -291,7 +291,7 @@ parseReadS aReadS (Text.unpack -> syntax) =
 
 {- | Parse an 'Integer' from a 'StringLiteral'.
  -}
-parseInteger :: StringLiteral child -> Parser Integer
+parseInteger :: StringLiteral -> Parser Integer
 parseInteger (StringLiteral literal) = parseReadS reads literal
 
 {- | Parse an 'SExpr' for the @smtlib@ attribute.

@@ -638,7 +638,8 @@ domainValueParser =
         <$> inCurlyBracesRemainderParser objectSortParser
         <*> inParenthesesParser childParser
   where
-    childParser = asParsedPattern . StringLiteralF <$> stringLiteralParser
+    childParser =
+        asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
 
 {-|'korePatternParser' parses an unifiedPattern
 
@@ -690,7 +691,7 @@ korePatternParser = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> koreMLConstructorParser
-        '"'  -> asParsedPattern . StringLiteralF <$> stringLiteralParser
+        '"'  -> asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
         '\'' -> asParsedPattern . CharLiteralF <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
@@ -987,7 +988,7 @@ leveledPatternParser patternParser domainValueParser' = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> leveledMLConstructorParser patternParser domainValueParser'
-        '"'  -> StringLiteralF <$> stringLiteralParser
+        '"'  -> StringLiteralF . Const <$> stringLiteralParser
         '\'' -> CharLiteralF <$> charLiteralParser
         _ -> variableOrTermPatternParser patternParser (c == '@')
 

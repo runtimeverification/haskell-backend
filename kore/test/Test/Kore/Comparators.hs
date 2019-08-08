@@ -778,7 +778,7 @@ instance
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance EqualWithExplanation (StringLiteral child) where
+instance EqualWithExplanation StringLiteral where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 

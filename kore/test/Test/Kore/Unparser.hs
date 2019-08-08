@@ -67,8 +67,10 @@ test_unparse =
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
                                 }
-                        , inContainingChild = asParsedPattern (StringLiteralF
-                            StringLiteral { getStringLiteral = "" })
+                        , inContainingChild =
+                            asParsedPattern
+                            $ StringLiteralF $ Const
+                                StringLiteral { getStringLiteral = "" }
                         })
                     ]
                 }

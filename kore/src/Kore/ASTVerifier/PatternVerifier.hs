@@ -748,8 +748,8 @@ verifySortHasDomainValues patternSort = do
 
 verifyStringLiteral
     :: valid ~ Attribute.Pattern Variable
-    => StringLiteral (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (CofreeF StringLiteral valid Verified.Pattern)
+    => Const StringLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF (Const StringLiteral) valid Verified.Pattern)
 verifyStringLiteral str = do
     verified <- sequence str
     let attrs = synthetic (Internal.extractAttributes <$> verified)

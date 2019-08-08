@@ -173,7 +173,7 @@ instance Synthetic (Top sort) Defined where
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
-instance Synthetic StringLiteral Defined where
+instance Synthetic (Const StringLiteral) Defined where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 

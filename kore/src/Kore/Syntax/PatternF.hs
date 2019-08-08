@@ -11,10 +11,13 @@ module Kore.Syntax.PatternF
     -- * Pure pattern heads
     , groundHead
     , constant
+    -- * Re-exports
+    , Const (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import           Data.Functor.Const
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Data.Hashable
@@ -73,11 +76,11 @@ data PatternF variable child
     | NuF            !(Nu variable child)
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
-    | StringLiteralF !(StringLiteral child)
-    | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
-    | VariableF      !(UnifiedVariable variable)
     | InhabitantF    !(Inhabitant child)
+    | StringLiteralF !(Const StringLiteral child)
+    | CharLiteralF   !(CharLiteral child)
+    | VariableF      !(UnifiedVariable variable)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (PatternF variable child)

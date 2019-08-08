@@ -33,6 +33,7 @@ module Kore.Syntax
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
     , module Kore.Syntax.Variable
+    , Const (..)
     ) where
 
 import Kore.Sort
@@ -59,7 +60,7 @@ import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Pattern
 import Kore.Syntax.PatternF
-       ( PatternF (..) )
+       ( Const (..), PatternF (..) )
 import Kore.Syntax.Rewrites
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral

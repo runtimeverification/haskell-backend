@@ -292,13 +292,13 @@ data TermLikeF variable child
     | NuF            !(Nu variable child)
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
-    | StringLiteralF !(StringLiteral child)
-    | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
-    | VariableF      !(UnifiedVariable variable)
     | InhabitantF    !(Inhabitant child)
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
+    | StringLiteralF !(Const StringLiteral child)
+    | CharLiteralF   !(CharLiteral child)
+    | VariableF      !(UnifiedVariable variable)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (TermLikeF variable child)
@@ -1788,7 +1788,7 @@ mkStringLiteral
     :: (Ord variable, SortedVariable variable)
     => Text
     -> TermLike variable
-mkStringLiteral = synthesize . StringLiteralF . StringLiteral
+mkStringLiteral = synthesize . StringLiteralF . Const . StringLiteral
 
 {- | Construct a 'CharLiteral' pattern.
  -}
@@ -2242,7 +2242,7 @@ pattern ElemVar_ elemVariable <-
     (Recursive.project -> _ :< VariableF (ElemVar elemVariable))
 
 pattern StringLiteral_ str <-
-    (Recursive.project -> _ :< StringLiteralF (StringLiteral str))
+    (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
 
 pattern CharLiteral_ char <-
     (Recursive.project -> _ :< CharLiteralF (CharLiteral char))

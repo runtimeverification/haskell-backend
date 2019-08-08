@@ -460,7 +460,7 @@ test_patternVerifier =
         []
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple string pattern"
-        (StringLiteralF (StringLiteral "MetaString"))
+        (StringLiteralF (Const $ StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort stringMetaSort)
         (SortVariablesThatMustBeDeclared [])
@@ -489,7 +489,7 @@ test_patternVerifier =
         (ErrorStack
             [ "(<test data>, <implicitly defined entity>)" ]
         )
-        (StringLiteralF (StringLiteral "MetaString"))
+        (StringLiteralF (Const $ StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort (updateAstLocation charMetaSort AstLocationTest))
         (SortVariablesThatMustBeDeclared [])

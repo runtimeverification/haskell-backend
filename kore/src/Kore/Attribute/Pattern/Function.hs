@@ -136,7 +136,7 @@ instance Synthetic (Top sort) Function where
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Function'.
-instance Synthetic StringLiteral Function where
+instance Synthetic (Const StringLiteral) Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 

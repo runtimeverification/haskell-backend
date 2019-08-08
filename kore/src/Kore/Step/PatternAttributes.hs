@@ -16,6 +16,7 @@ module Kore.Step.PatternAttributes
 
 import           Data.Either
                  ( isRight )
+import           Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Reflection
                  ( give )
@@ -86,8 +87,8 @@ isPreconstructedPattern err (_ :< pattern') =
             (Right . Descend) (FunctionalDomainValue $ () <$ domain)
         BuiltinF domain ->
             (Right . Descend) (FunctionalBuiltin $ () <$ domain)
-        StringLiteralF str ->
-            Right $ DoNotDescend $ FunctionalStringLiteral $ () <$ str
+        StringLiteralF (Const str) ->
+            Right $ DoNotDescend $ FunctionalStringLiteral str
         CharLiteralF char ->
             Right $ DoNotDescend $ FunctionalCharLiteral $ () <$ char
         _ -> Left err
