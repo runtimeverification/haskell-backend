@@ -179,6 +179,14 @@ simplifyInternal
     -> simplifier (OrPattern variable)
 simplifyInternal = simplifyInternalExt Predicate.top
 
+{- | Simplify the 'TermLike' in the context of the 'Predicate'.
+
+@simplifyInternalExt@ 'Recursive.project's one layer of the 'TermLike' and
+dispatches to one of the @Kore.Step.Simplification.*@ modules, after delegating
+child simplification to 'simplifyTerm'.
+
+ -}
+-- TODO (thomas.tuegel): Actually use the context during simplification.
 simplifyInternalExt
     ::  forall variable simplifier
     .   ( SortedVariable variable
@@ -199,8 +207,10 @@ simplifyInternalExt predicate =
         :: Traversable t
         => t (TermLike variable)
         -> simplifier (t (OrPattern variable))
-    -- TODO (thomas.tuegel): Use Simplifier.simplifyTerm.
-    simplifyChildren = traverse simplifyInternalWorker
+    simplifyChildren =
+        -- Simplify the /children/ of the pattern by delegating to the
+        -- 'TermSimplifier' carried by the 'MonadSimplify' constraint.
+        traverse simplifyTerm
 
     simplifyInternalWorker termLike =
         let doNotSimplify = return (OrPattern.fromTermLike termLike)
