@@ -20,6 +20,7 @@ import           Control.Error
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Text
                  ( Text )
@@ -323,7 +324,9 @@ evaluateOnce predicate termLike = do
     result <- Simplifier.runBuiltinAndAxiomSimplifier simplifierAxiom termLike
     case result of
         AttemptedAxiom.NotApplicable -> empty
-        AttemptedAxiom.Applied attemptedAxiomResults ->
+        AttemptedAxiom.Applied attemptedAxiomResults -> do
+            -- TODO (thomas.tuegel): Allow remainders here?
+            Monad.guard (null remainders)
             return $ andPredicate <$> results <> remainders
           where
             AttemptedAxiomResults { results, remainders } =
