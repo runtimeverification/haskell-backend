@@ -45,6 +45,8 @@ import           Kore.Unification.Error
                  ( UnificationError (..), UnificationOrSubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 import qualified SMT
 
@@ -507,7 +509,7 @@ test_matching_Int =
         assertEqualWithExplanation "" expect actual
     , doesn'tMatch "1 does not match x:Int"
         (mkInt 1)
-        (mkVar xInt)
+        (mkElemVar xInt)
     ]
   where
     top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -580,22 +582,16 @@ test_matching_List =
             [Right 1, Left (UnifiedVariable.ElemVar Mock.xInt)]
             [1, 2]
         assertEqualWithExplanation "" expect actual
-    , testCase "two variables (simple)" $ do
-        let expect = substitution [(xInt, 1), (yInt, 2)]
-        actual <- matchVariable
-            [ Left xInt
-            , Left yInt
-            ]
-            [ 1, 2 ]
-        assertEqualWithExplanation "" expect actual
-    , testCase "two variables" $ do
-        let expect = substitution [(xInt, 2), (yInt, 4)]
-        actual <- matchVariable
-            [ Right 1 , Left xInt , Right 3 , Left yInt ]
-            [ 1, 2, 3, 4 ]
-        assertEqualWithExplanation "" expect actual
+    , matches "[x:Int, y:Int] matches [1, 2]"
+        (mkList [mkElemVar xInt, mkElemVar yInt])
+        (mkList [mkInt 1, mkInt 2])
+        [(ElemVar xInt, mkInt 1), (ElemVar yInt, mkInt 2)]
+    , matches "[1, x:Int, 3, y:Int] matches [1, 2, 3, 4]"
+        (mkList [mkInt 1, mkElemVar xInt, mkInt 3, mkElemVar yInt])
+        (mkList [mkInt 1, mkInt 2, mkInt 3, mkInt 4])
+        [(ElemVar xInt, mkInt 2), (ElemVar yInt, mkInt 4)]
     , doesn'tMatch "[1, x:Int] does not match [2, 1]"
-        (mkList [mkInt 1, mkVar xInt])
+        (mkList [mkInt 1, mkElemVar xInt])
         (mkList [mkInt 2, mkInt 1])
     , testCase "concat(empty, var) vs concrete" $ do
         let expect =
@@ -683,39 +679,14 @@ test_matching_List =
             (mkVar xList `concat'` mkList [mkInt 1, mkInt 2, mkInt 3] )
             [1, 2, 3]
         assertEqualWithExplanation "" expect actual
-    , testCase "concat(x, var) vs concrete" $ do
-        let expect =
-                Just $ MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (xInt, mkInt 1)
-                            , (xList, mkList [mkInt 2, mkInt 3])
-                            ]
-                        }
-                    ]
-        actual <- matchConcat
-            (mkList [mkVar xInt] `concat'` mkVar xList)
-            [1, 2, 3]
-        assertEqualWithExplanation "" expect actual
-    , testCase "concat(var, x) vs concrete" $ do
-        let expect =
-                Just $ MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (xInt, mkInt 3)
-                            , (xList, mkList [mkInt 1, mkInt 2])
-                            ]
-                        }
-                    ]
-        actual <- matchConcat
-            (mkVar xList `concat'` mkList [mkVar xInt])
-            [1, 2, 3]
-        assertEqualWithExplanation "" expect actual
-
+    , matches "[x:Int] x:List matches [1, 2, 3]"
+        (mkList [mkElemVar xInt] `concat'` mkVar xList)
+        (mkList [mkInt 1, mkInt 2, mkInt 3])
+        [(ElemVar xInt, mkInt 1), (xList, mkList [mkInt 2, mkInt 3])]
+    , matches "x:List [x:Int] matches [1, 2, 3]"
+        (mkVar xList `concat'` mkList [mkElemVar xInt])
+        (mkList [mkInt 1, mkInt 2, mkInt 3])
+        [(ElemVar xInt, mkInt 3), (xList, mkList [mkInt 1, mkInt 2])]
     , doesn'tMatch "[] does not match y:List" unitList (mkVar yList)
     , doesn'tMatch "[1] x:List does not match y:List"
         (prefixList [one] xList)
@@ -741,9 +712,9 @@ test_matching_List =
         (mkList [one])
         []
     , matches "[x:Int] ~ [1]"
-        (mkList [mkVar xInt])
+        (mkList [mkElemVar xInt])
         (mkList [one       ])
-        [(xInt, one)]
+        [(ElemVar xInt, one)]
     , doesn'tMatch "[1] does not match [1] x:List"
         (mkList [one])
         (prefixList [one] xList)
@@ -759,9 +730,9 @@ test_matching_List =
         (mkList     [one]      )
         [(xList, unitList)]
     , matches "[x:Int] y:List ~ [1]"
-        (prefixList [mkVar xInt] yList)
+        (prefixList [mkElemVar xInt] yList)
         (mkList     [one]             )
-        [ (xInt, one)
+        [ (ElemVar xInt, one)
         , (yList, unitList)
         ]
     , matches "[1] x:List ~ [1, 2]"
@@ -769,9 +740,9 @@ test_matching_List =
         (mkList     [one, two ])
         [(xList, mkList [two])]
     , matches "[x:Int] y:List ~ [1, 2]"
-        (prefixList [mkVar xInt] yList)
+        (prefixList [mkElemVar xInt] yList)
         (mkList     [one,        two ])
-        [ (xInt, one)
+        [ (ElemVar xInt, one)
         , (yList, mkList [two])
         ]
 
@@ -783,9 +754,9 @@ test_matching_List =
         (mkList           [one])
         [(xList, unitList)]
     , matches "y:List [x:Int] ~ [1]"
-        (suffixList yList [mkVar xInt])
+        (suffixList yList [mkElemVar xInt])
         (mkList           [one       ])
-        [ (xInt, one)
+        [ (ElemVar xInt, one)
         , (yList, unitList)
         ]
     , matches "x:List [2] ~ [1, 2]"
@@ -793,9 +764,9 @@ test_matching_List =
         (mkList    [one,   two])
         [(xList, mkList [one])]
     , matches "y:List [x:Int] ~ [1, 2]"
-        (suffixList yList [mkVar xInt])
+        (suffixList yList [mkElemVar xInt])
         (mkList    [one,   two       ])
-        [ (xInt, two)
+        [ (ElemVar xInt, two)
         , (yList, mkList [one])
         ]
     ]
@@ -829,97 +800,97 @@ test_matching_List =
 test_matching_Exists :: [TestTree]
 test_matching_Exists =
     [ matches        "∃ x:Int. x matches ∃ y:Int. y"
-        (mkExists xInt $ mkVar xInt)
-        (mkExists yInt $ mkVar yInt)
+        (mkExists xInt $ mkElemVar xInt)
+        (mkExists yInt $ mkElemVar yInt)
         []
     , matches        "∃ x:Int. (x, z:Int) matches ∃ y:Int. (y, 1)"
-        (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
-        (mkExists yInt $ mkPair (mkVar yInt) (mkInt 1))
-        [(zInt, mkInt 1)]
+        (mkExists xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
+        (mkExists yInt $ mkPair (mkElemVar yInt) (mkInt 1))
+        [(ElemVar zInt, mkInt 1)]
     , matches        "∃ x:Int y:Int. (x, y) matches ∃ y:Int x:Int. (y, x)"
-        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
-        (mkExists yInt . mkExists xInt $ mkPair (mkVar yInt) (mkVar xInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkExists yInt . mkExists xInt $ mkPair (mkElemVar yInt) (mkElemVar xInt))
         []
     , doesn'tMatch   "∃ x:Int. x doesn't match ∃ m:Map. m"
-        (mkExists xInt $ mkVar xInt)
-        (mkExists mMap $ mkVar mMap)
+        (mkExists xInt $ mkElemVar xInt)
+        (mkExists mMap $ mkElemVar mMap)
     , doesn'tMatch   "∃ x:Int. (x, z:Int) doesn't match ∃ y:Int. (y, y)"
-        (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
-        (mkExists yInt $ mkPair (mkVar yInt) (mkVar yInt))
+        (mkExists xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
+        (mkExists yInt $ mkPair (mkElemVar yInt) (mkElemVar yInt))
     , doesn'tMatch   "∃ x:Int y:Int. (x, y) doesn't match ∃ y:Int x:Int. (x, y)"
-        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
-        (mkExists yInt . mkExists xInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkExists yInt . mkExists xInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
     , doesn'tMatch   "∃ x:Int. (x, z:Int) doesn't match ∃ m:Map. (m, 1)"
-        (mkExists xInt $ mkPair (mkVar xInt) (mkVar zInt))
-        (mkExists mMap $ mkPair (mkVar mMap) (mkInt 1))
+        (mkExists xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
+        (mkExists mMap $ mkPair (mkElemVar mMap) (mkInt 1))
 
     -- Renaming bound variables
     , doesn'tMatch   "∃ x:Int x:Int. (x, x) doesn't match ∃ x:Int y:Int. (x, x)"
-        (mkExists xInt . mkExists xInt $ mkPair (mkVar xInt) (mkVar xInt))
-        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar xInt))
+        (mkExists xInt . mkExists xInt $ mkPair (mkElemVar xInt) (mkElemVar xInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar xInt))
     , matches        "∃ x:Int x:Int. (x, x) matches ∃ x:Int y:Int. (y, y)"
-        (mkExists xInt . mkExists xInt $ mkPair (mkVar xInt) (mkVar xInt))
-        (mkExists xInt . mkExists yInt $ mkPair (mkVar yInt) (mkVar yInt))
+        (mkExists xInt . mkExists xInt $ mkPair (mkElemVar xInt) (mkElemVar xInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar yInt) (mkElemVar yInt))
         []
     ]
 
 test_matching_Forall :: [TestTree]
 test_matching_Forall =
     [ matches        "∀ x:Int. x matches ∀ y:Int. y"
-        (mkForall xInt $ mkVar xInt)
-        (mkForall yInt $ mkVar yInt)
+        (mkForall xInt $ mkElemVar xInt)
+        (mkForall yInt $ mkElemVar yInt)
         []
     , matches        "∀ x:Int. (x, z:Int) matches ∀ y:Int. (y, 1)"
-        (mkForall xInt $ mkPair (mkVar xInt) (mkVar zInt))
-        (mkForall yInt $ mkPair (mkVar yInt) (mkInt 1))
-        [(zInt, mkInt 1)]
+        (mkForall xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
+        (mkForall yInt $ mkPair (mkElemVar yInt) (mkInt 1))
+        [(ElemVar zInt, mkInt 1)]
     , matches        "∀ x:Int y:Int. (x, y) matches ∀ y:Int x:Int. (y, x)"
-        (mkForall xInt . mkForall yInt $ mkPair (mkVar xInt) (mkVar yInt))
-        (mkForall yInt . mkForall xInt $ mkPair (mkVar yInt) (mkVar xInt))
+        (mkForall xInt . mkForall yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkForall yInt . mkForall xInt $ mkPair (mkElemVar yInt) (mkElemVar xInt))
         []
     , doesn'tMatch   "∀ x:Int. x doesn't match ∀ m:Map. m"
-        (mkForall xInt $ mkVar xInt)
-        (mkForall mMap $ mkVar mMap)
+        (mkForall xInt $ mkElemVar xInt)
+        (mkForall mMap $ mkElemVar mMap)
     , doesn'tMatch   "∀ x:Int. (x, z:Int) doesn't match ∀ y:Int. (y, y)"
-        (mkForall xInt $ mkPair (mkVar xInt) (mkVar zInt))
-        (mkForall yInt $ mkPair (mkVar yInt) (mkVar yInt))
+        (mkForall xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
+        (mkForall yInt $ mkPair (mkElemVar yInt) (mkElemVar yInt))
     , doesn'tMatch   "∀ x:Int y:Int. (x, y) doesn't match ∀ y:Int x:Int. (x, y)"
-        (mkForall xInt . mkForall yInt $ mkPair (mkVar xInt) (mkVar yInt))
-        (mkForall yInt . mkForall xInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkForall xInt . mkForall yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkForall yInt . mkForall xInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
     , doesn'tMatch   "∀ x:Int. (x, z:Int) doesn't match ∀ m:Map. (m, 1)"
-        (mkForall xInt $ mkPair (mkVar xInt) (mkVar zInt))
-        (mkForall mMap $ mkPair (mkVar mMap) (mkInt 1))
+        (mkForall xInt $ mkPair (mkElemVar xInt) (mkElemVar zInt))
+        (mkForall mMap $ mkPair (mkElemVar mMap) (mkInt 1))
 
     -- Renaming bound variables
     , doesn'tMatch   "∀ x:Int x:Int. (x, x) doesn't match ∀ x:Int y:Int. (x, x)"
-        (mkForall xInt . mkForall xInt $ mkPair (mkVar xInt) (mkVar xInt))
-        (mkForall xInt . mkForall yInt $ mkPair (mkVar xInt) (mkVar xInt))
+        (mkForall xInt . mkForall xInt $ mkPair (mkElemVar xInt) (mkElemVar xInt))
+        (mkForall xInt . mkForall yInt $ mkPair (mkElemVar xInt) (mkElemVar xInt))
     , matches        "∀ x:Int x:Int. (x, x) matches ∀ x:Int y:Int. (y, y)"
-        (mkForall xInt . mkForall xInt $ mkPair (mkVar xInt) (mkVar xInt))
-        (mkForall xInt . mkForall yInt $ mkPair (mkVar yInt) (mkVar yInt))
+        (mkForall xInt . mkForall xInt $ mkPair (mkElemVar xInt) (mkElemVar xInt))
+        (mkForall xInt . mkForall yInt $ mkPair (mkElemVar yInt) (mkElemVar yInt))
         []
     ]
 
 test_matching_Pair :: [TestTree]
 test_matching_Pair =
     [ doesn'tMatch   "(x, x) does not match (y, z)"
-        (mkPair (mkVar xInt) (mkVar xInt))
-        (mkPair (mkVar yInt) (mkVar zInt))
+        (mkPair (mkElemVar xInt) (mkElemVar xInt))
+        (mkPair (mkElemVar yInt) (mkElemVar zInt))
     , matches        "(x, y) matches (y, y)"
-        (mkPair (mkVar xInt) (mkVar xInt))
-        (mkPair (mkVar yInt) (mkVar yInt))
-        [(xInt, mkVar yInt)]
+        (mkPair (mkElemVar xInt) (mkElemVar xInt))
+        (mkPair (mkElemVar yInt) (mkElemVar yInt))
+        [(ElemVar xInt, mkElemVar yInt)]
     , doesn'tMatch   "(x, x) does not match (1, 2)"
-        (mkPair (mkVar xInt) (mkVar xInt))
+        (mkPair (mkElemVar xInt) (mkElemVar xInt))
         (mkPair (mkInt 1) (mkInt 2))
     , matches        "(x, y) matches (y, z)"
-        (mkPair (mkVar xInt) (mkVar yInt))
-        (mkPair (mkVar yInt) (mkVar zInt))
-        [(xInt, mkVar zInt), (yInt, mkVar zInt)]
+        (mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkPair (mkElemVar yInt) (mkElemVar zInt))
+        [(ElemVar xInt, mkElemVar zInt), (ElemVar yInt, mkElemVar zInt)]
     , matches        "(y, x) matches (z, y)"
-        (mkPair (mkVar yInt) (mkVar xInt))
-        (mkPair (mkVar zInt) (mkVar yInt))
-        [(xInt, mkVar zInt), (yInt, mkVar zInt)]
+        (mkPair (mkElemVar yInt) (mkElemVar xInt))
+        (mkPair (mkElemVar zInt) (mkElemVar yInt))
+        [(ElemVar xInt, mkElemVar zInt), (ElemVar yInt, mkElemVar zInt)]
     ]
 
 mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
@@ -946,11 +917,11 @@ test_matching_Set =
         (mkSet []        [])
     , doesn'tMatch
         "[x:Int] does not match [0]"
-        (mkSet [mkVar xInt] [])
+        (mkSet [mkElemVar xInt] [])
         (mkSet [mkInt 0   ] [])
     , doesn'tMatch
         "[x:Int] s:Set does not match [0]"
-        (mkSet [mkVar xInt]         [mkVar sSet])
+        (mkSet [mkElemVar xInt]         [mkVar sSet])
         (mkSet [mkInt 0   , mkInt 1   ] [          ])
     ]
 
@@ -980,33 +951,33 @@ test_matching_Map =
     , doesn'tMatch
         "0 |-> 1 does not match m:Map"
         (mkMap [(mkInt 0, mkInt 1)] [])
-        (mkVar mMap)
+        (mkElemVar mMap)
     , matches "0 |-> x:Int matches 0 |-> 1"
-        (mkMap [(mkInt 0, mkVar xInt)] [])
+        (mkMap [(mkInt 0, mkElemVar xInt)] [])
         (mkMap [(mkInt 0, mkInt 1   )] [])
-        [(xInt, mkInt 1)]
+        [(ElemVar xInt, mkInt 1)]
     , matches "0 |-> x:Int  1 |-> y:Int matches 0 |-> 1  1 |-> 2"
-        (mkMap [(mkInt 0, mkVar xInt), (mkInt 1, mkVar yInt)] [])
+        (mkMap [(mkInt 0, mkElemVar xInt), (mkInt 1, mkElemVar yInt)] [])
         (mkMap [(mkInt 0, mkInt 1   ), (mkInt 1, mkInt 2   )] [])
-        [(xInt, mkInt 1), (yInt, mkInt 2)]
+        [(ElemVar xInt, mkInt 1), (ElemVar yInt, mkInt 2)]
     , matches "0 |-> 1  1 |-> 2  m:Map matches 0 |-> 1  1 |-> 2"
-        (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [mkVar mMap])
+        (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [mkElemVar mMap])
         (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] [          ])
-        [(mMap, mkMap [] [])]
+        [(ElemVar mMap, mkMap [] [])]
     , doesn'tMatch
         "x:Int |-> y:Int  m does not match 0 |-> 1"
-        (mkMap [(mkVar xInt, mkVar yInt)] [mkVar mMap])
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0   , mkInt 1   )] [    ])
     , doesn'tMatch
         "x:Int |-> y:Int  m:Map does not match 0 |-> 1  2 |-> 4"
-        (mkMap [(mkVar xInt, mkVar yInt)] [mkVar mMap])
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0   , mkInt 1   )] [          ])
     , matches "(x:Int, [x:Int -> y:Int] m:Map) matches (0, [0 -> 1, 1 -> 2])"
-        (mkPair (mkVar xInt) (mkMap [(mkVar xInt, mkVar yInt)] [mkVar mMap]))
+        (mkPair (mkElemVar xInt) (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap]))
         (mkPair (mkInt 0   ) (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []))
-        [ (xInt, mkInt 0)
-        , (yInt, mkInt 1)
-        , (mMap, mkMap [(mkInt 1, mkInt 2)] [])
+        [ (ElemVar xInt, mkInt 0)
+        , (ElemVar yInt, mkInt 1)
+        , (ElemVar mMap, mkMap [(mkInt 1, mkInt 2)] [])
         ]
     ]
 

@@ -541,14 +541,14 @@ test_Nat =
     [ matches "plus(0, N) matches plus(0, 1)"
         (plus zero varN)
         (plus zero one)
-        [(natN, one)]
+        [(ElemVar natN, one)]
     , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
         (plus (succ varM) varN)
         (plus zero one)
     , matches "plus(succ(M), N) matches plus(1, 1)"
         (plus (succ varM) varN)
         (plus one one)
-        [(natM, zero), (natN, one)]
+        [(ElemVar natM, zero), (ElemVar natN, one)]
     , applies            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
         (plus zero one)
@@ -952,20 +952,20 @@ test_Pair :: [TestTree]
 test_Pair =
     [ applies "pair constructor axiom applies"
         [pairCtorAxiom]
-        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
     ]
 
 mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 mkPair = Builtin.pair
 
-xInt, yInt :: Variable
-xInt = varS (testId "xInt") intSort
-yInt = varS (testId "yInt") intSort
+xInt, yInt :: ElementVariable Variable
+xInt = elemVarS (testId "xInt") intSort
+yInt = elemVarS (testId "yInt") intSort
 
 pairCtorAxiom :: EqualityRule Variable
 pairCtorAxiom =
     EqualityRule $ rulePattern
-        (mkExists xInt . mkExists yInt $ mkPair (mkVar xInt) (mkVar yInt))
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
         (mkTop $ Builtin.pairSort intSort intSort)
 
 axiomEvaluator
