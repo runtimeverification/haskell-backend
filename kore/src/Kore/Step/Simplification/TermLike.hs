@@ -80,6 +80,8 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
+import           Kore.Step.Substitution
+                 ( normalize )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -144,7 +146,7 @@ simplifyToOr =
             Evaluator.evaluateOnce predicate termLike
             & Error.maybeT (false orOriginal) true
         evaluated <- scatter' orPattern
-        simplifyPatternInternal evaluated >>= scatter'
+        Monad.Trans.lift . Monad.Trans.lift $ simplifyPatternInternal evaluated
 
     scatter'
         :: OrPattern variable
@@ -160,10 +162,10 @@ simplifyPatternInternal
         , MonadSimplify simplifier
         )
     => Pattern variable
-    -> simplifier (OrPattern variable)
-simplifyPatternInternal (Pattern.splitTerm -> (termLike, predicate)) =
-    -- TODO: Figure out how to simplify the predicate.
-    simplifyInternalExt predicate termLike
+    -> BranchT simplifier (Pattern variable)
+simplifyPatternInternal (Pattern.splitTerm -> (termLike, predicate)) = do
+    predicate' <- normalize predicate
+    simplifyInternalExt predicate' termLike >>= scatter
 
 simplifyInternal
     ::  forall variable simplifier
@@ -197,6 +199,7 @@ simplifyInternalExt predicate =
         :: Traversable t
         => t (TermLike variable)
         -> simplifier (t (OrPattern variable))
+    -- TODO (thomas.tuegel): Use Simplifier.simplifyTerm.
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
