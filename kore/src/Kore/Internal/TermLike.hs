@@ -190,6 +190,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
+import           Generically
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import           Kore.Attribute.Pattern.FreeVariables
@@ -302,6 +303,11 @@ data TermLikeF variable child
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic, GHC.Generic1)
+    deriving
+        ( Synthetic (FreeVariables variable), Synthetic Sort
+        , Synthetic Pattern.Functional, Synthetic Pattern.Function
+        , Synthetic Pattern.Defined
+        ) via (Generically1 (TermLikeF variable))
 
 instance SOP.Generic (TermLikeF variable child)
 
@@ -321,179 +327,6 @@ instance
   where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
-
-instance
-    Ord variable
-    => Synthetic (FreeVariables variable) (TermLikeF variable)
-  where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic variable
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance SortedVariable variable => Synthetic Sort (TermLikeF variable) where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic variable
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance Synthetic Pattern.Functional (TermLikeF variable) where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic variable
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance Synthetic Pattern.Function (TermLikeF variable) where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic variable
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance Synthetic Pattern.Defined (TermLikeF variable) where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic variable
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
 
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
 
