@@ -20,6 +20,8 @@ import           Data.Functor.Foldable
 import qualified Data.Functor.Foldable as Recursive
 import           GHC.Generics
 
+import Generically
+
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 
 @Synthetic base syn@ allows synthesizing @syn@ given a @'Cofree' base@ tree;
@@ -32,6 +34,13 @@ class Functor base => Synthetic syn base where
 
 instance Synthetic a (Const a) where
     synthetic (Const a) = a
+    {-# INLINE synthetic #-}
+
+instance
+    (Functor base, Generic1 base, Synthetic syn (Rep1 base))
+    => Synthetic syn (Generically1 base)
+  where
+    synthetic = synthetic . from1 . unGenerically1
     {-# INLINE synthetic #-}
 
 instance (Functor base, Synthetic syn base) => Synthetic syn (M1 i c base) where
