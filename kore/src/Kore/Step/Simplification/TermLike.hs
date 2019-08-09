@@ -9,13 +9,23 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
-import           Control.Error
-                 ( MaybeT )
+import           Control.Applicative
+                 ( Alternative )
 import qualified Control.Error as Error
+import           Control.Monad
+                 ( MonadPlus )
 import qualified Control.Monad as Monad
+import           Control.Monad.Except
+                 ( ExceptT, MonadError, runExceptT )
+import qualified Control.Monad.Except as Monad.Except
+import           Control.Monad.Morph
+                 ( MFunctor )
+import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.State.Strict
-                 ( StateT, evalStateT )
+                 ( MonadState, StateT, evalStateT )
 import qualified Control.Monad.State.Strict as Monad.State
+import           Control.Monad.Trans
+                 ( MonadTrans )
 import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Function
 import qualified Data.Functor.Foldable as Recursive
@@ -30,6 +40,8 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
+import           Kore.Logger
+                 ( LogMessage, WithLog )
 import qualified Kore.Step.Function.Evaluator as Evaluator
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
@@ -84,6 +96,8 @@ import           Kore.Step.Substitution
                  ( normalize )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           SMT
+                 ( MonadSMT )
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -114,39 +128,70 @@ simplifyToOr
     =>  TermLike variable
     ->  simplifier (OrPattern variable)
 simplifyToOr =
-    gatherPatterns . begin . wrapper . Pattern.fromTermLike
+    gatherPatterns . reEvaluate worker . Pattern.fromTermLike
   where
-    begin = flip evalStateT True
-
-    true :: forall a m. Monad m => a -> MaybeT (StateT Bool m) a
-    true a = do
-        Monad.State.put True
-        return a
-
-    false :: forall a m. Monad m => a -> MaybeT (StateT Bool m) a
-    false a = do
-        Monad.guard =<< Monad.State.get
-        Monad.State.put False
-        return a
-
-    wrapper
-        :: Pattern variable
-        -> StateT Bool (BranchT simplifier) (Pattern variable)
-    wrapper original =
-        worker original
-        & Error.maybeT (return original) wrapper
-
     worker
         :: Pattern variable
-        -> MaybeT (StateT Bool (BranchT simplifier)) (Pattern variable)
+        -> ReEvaluateT (Pattern variable) (BranchT simplifier) (Pattern variable)
     worker original = do
         let (termLike, predicate) = Pattern.splitTerm original
-            orOriginal = OrPattern.fromPattern original
-        orPattern <-
-            Evaluator.evaluateOnce predicate termLike
-            & Error.maybeT (false orOriginal) true
-        Monad.Trans.lift . Monad.Trans.lift $ do
-            scatter orPattern >>= simplifyPatternInternal
+        evaluated <-
+            (Evaluator.evaluateOnce predicate termLike >>= scatter')
+            & Error.maybeT (false original) true
+        Monad.Trans.lift $ simplifyPatternInternal evaluated
+
+    scatter' = Monad.Trans.lift . Monad.Trans.lift . scatter
+
+newtype ReEvaluateT result monad a =
+    ReEvaluateT { runReEvaluateT :: ExceptT result (StateT Bool monad) a }
+    deriving (Functor, Applicative, Monad)
+    deriving (Alternative, MonadPlus)
+
+reEvaluate
+    :: Monad monad
+    => (result -> ReEvaluateT result monad result)
+    -> result
+    -> monad result
+reEvaluate worker =
+    flip evalStateT True . wrapper
+  where
+    wrapper original =
+        runReEvaluateT (worker original) & runExceptT >>= either return wrapper
+
+instance MonadTrans (ReEvaluateT result) where
+    lift = ReEvaluateT . Monad.Trans.lift . Monad.Trans.lift
+    {-# INLINE lift #-}
+
+instance MFunctor (ReEvaluateT result) where
+    hoist f =
+        ReEvaluateT . Monad.Morph.hoist (Monad.Morph.hoist f) . runReEvaluateT
+    {-# INLINE hoist #-}
+
+deriving instance Monad monad => MonadState Bool (ReEvaluateT result monad)
+
+deriving instance Monad monad => MonadError result (ReEvaluateT result monad)
+
+deriving instance MonadSMT monad => MonadSMT (ReEvaluateT result monad)
+
+deriving instance MonadSimplify monad => MonadSimplify (ReEvaluateT result monad)
+
+instance WithLog LogMessage monad => WithLog LogMessage (ReEvaluateT result monad)
+
+true :: forall monad result a. Monad monad => a -> ReEvaluateT result monad a
+true a = do
+    Monad.State.put True
+    return a
+
+false
+    ::  forall result monad
+    .   Monad monad
+    =>  result
+    ->  ReEvaluateT result monad result
+false result = do
+    bool <- Monad.State.get
+    Monad.unless bool (Monad.Except.throwError result)
+    Monad.State.put False
+    return result
 
 simplifyPatternInternal
     ::  forall variable simplifier
