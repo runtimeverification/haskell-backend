@@ -389,8 +389,8 @@ evalList2set =
                         _      -> Builtin.wrongArity Set.list2setKey
             _list <- List.expectConcreteBuiltinList Set.list2setKey _list
             let _set = Map.fromList
-                           $ fmap (\x -> (x, Domain.SetValue))
-                               $ Foldable.toList _list
+                            $ fmap (\x -> (x, Domain.SetValue))
+                            $ Foldable.toList _list
             returnConcreteSet resultSort _set
 
 {- | Implement builtin function evaluation.
