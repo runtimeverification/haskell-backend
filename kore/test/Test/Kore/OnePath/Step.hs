@@ -21,15 +21,14 @@ import Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-import           Kore.AllPath
-                 ( transitionRule )
-import qualified Kore.AllPath as AllPath
+
+import           Kore.Goal
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.OnePath.Step as OnePath
-import           Kore.OnePath.StrategyPattern
+import           Kore.OnePath.Verification
+                 ( CommonProofState )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate,
                  makeMultipleAndPredicate, makeNotPredicate,
@@ -80,7 +79,7 @@ test_onePathStrategy =
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (AllPath.Goal $ makeOnePathRule Mock.a Mock.a)
+            (Goal $ makeOnePathRule Mock.a Mock.a)
             actual
     , testCase "testRefactorOnePath2" $ do
         -- Target: a
@@ -96,7 +95,7 @@ test_onePathStrategy =
             )
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation "" AllPath.Proven _actual
+        assertEqualWithExplanation "" Proven _actual
 
         -- Target: d
         -- Coinductive axiom: a => b
@@ -113,7 +112,7 @@ test_onePathStrategy =
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (AllPath.Goal $ makeOnePathRule Mock.c Mock.d)
+            (Goal $ makeOnePathRule Mock.c Mock.d)
             _actual
     , testCase "testRefactorOnePath3" $ do
         -- Target: b
@@ -133,7 +132,7 @@ test_onePathStrategy =
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            AllPath.Proven
+            Proven
             _actual
 
         -- Target: e
@@ -151,7 +150,7 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ AllPath.Goal $ makeOnePathRule Mock.c Mock.e
+                [ Goal $ makeOnePathRule Mock.c Mock.e
                 ]
             )
             (sort
@@ -174,81 +173,13 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ AllPath.Goal $ makeOnePathRule Mock.d Mock.e
+                [ Goal $ makeOnePathRule Mock.d Mock.e
                 ]
             )
             (sort
                 [ _actual
                 ]
             )
-    , testCase "testOldOnePath4" $ do
-        -- Target: constr11(a)
-        -- Coinductive axiom: constr11(a) => g(a)
-        -- Coinductive axiom: constr11(b) => f(b)
-        -- Normal axiom: constr11(a) => g(a)
-        -- Normal axiom: constr11(b) => g(b)
-        -- Normal axiom: constr11(c) => f(c)
-        -- Normal axiom: constr11(x) => h(x)
-        -- Normal axiom: constr10(x) => constr11(x)
-        -- Start pattern: constr10(x)
-        -- Expected:
-        --   (f(b) and x=b)
-        --   or (f(c) and x=c)
-        --   or (h(x) and x!=a and x!=b and x!=c )
-        actual <-
-            runOnePathSteps'
-                (Limit 2)
-                (Pattern.fromTermLike
-                    (Mock.functionalConstr10 (TermLike.mkVar Mock.x))
-                )
-                (Mock.functionalConstr11 Mock.a)
-                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
-                ]
-                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
-                , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
-                , simpleRewrite
-                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
-                    (Mock.h (TermLike.mkVar Mock.y))
-                , simpleRewrite
-                    (Mock.functionalConstr10 (TermLike.mkVar Mock.y))
-                    (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
-                ]
-        assertEqualWithExplanation ""
-            [ RewritePattern Conditional
-                { term = Mock.f Mock.b
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
-                }
-            , RewritePattern Conditional
-                { term = Mock.f Mock.c
-                , predicate = makeTruePredicate
-                , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
-                }
-            , RewritePattern Conditional
-                { term = Mock.h (TermLike.mkVar Mock.x)
-                , predicate =  -- TODO(virgil): Better and simplification.
-                    makeAndPredicate
-                        (makeAndPredicate
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.a
-                                )
-                            )
-                            (makeNotPredicate
-                                (makeEqualsPredicate
-                                    (TermLike.mkVar Mock.x) Mock.b
-                                )
-                            )
-                        )
-                        (makeNotPredicate
-                            (makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c)
-                        )
-                , substitution = mempty
-                }
-            ]
-            actual
     -- FAILS WITH EXCEPTION
      , testCase "testRefactorOnePath4" $ do
          -- Target: constr11(a)
@@ -285,7 +216,7 @@ test_onePathStrategy =
                      (Mock.functionalConstr11 (TermLike.mkVar Mock.y))
                  ]
          assertEqualWithExplanation ""
-             [ AllPath.Goal $ makeOnePathRule
+             [ Goal $ makeOnePathRule
                  ( Pattern.toTermLike Conditional
                      { term = Mock.f Mock.b
                      , predicate = makeTruePredicate
@@ -293,7 +224,7 @@ test_onePathStrategy =
                      }
                  )
                  (Mock.functionalConstr11 Mock.a)
-             , AllPath.Goal $ makeOnePathRule
+             , Goal $ makeOnePathRule
                  ( Pattern.toTermLike $ Conditional
                      { term = Mock.f Mock.c
                      , predicate = makeTruePredicate
@@ -301,7 +232,7 @@ test_onePathStrategy =
                      }
                  )
                  (Mock.functionalConstr11 Mock.a)
-             , AllPath.Goal $ makeOnePathRule
+             , Goal $ makeOnePathRule
                  ( Pattern.toTermLike $ Conditional
                      { term = Mock.h (TermLike.mkVar Mock.x)
                      , predicate =  -- TODO(virgil): Better and simplification.
@@ -356,7 +287,7 @@ test_onePathStrategy =
              equalsXB = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.b
              equalsXC = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c
          assertEqualWithExplanation ""
-             [ AllPath.Goal $ makeOnePathRule
+             [ Goal $ makeOnePathRule
                  ( Pattern.toTermLike Conditional
                      { term = Mock.f Mock.b
                      , predicate = makeTruePredicate
@@ -364,7 +295,7 @@ test_onePathStrategy =
                      }
                  )
                  (Mock.functionalConstr11 Mock.a)
-             , AllPath.Goal $ makeOnePathRule
+             , Goal $ makeOnePathRule
                  ( Pattern.toTermLike Conditional
                      { term = Mock.f Mock.c
                      , predicate = makeTruePredicate
@@ -372,7 +303,7 @@ test_onePathStrategy =
                      }
                  )
                  (Mock.functionalConstr11 Mock.a)
-             , AllPath.GoalRem $ makeOnePathRule
+             , GoalRem $ makeOnePathRule
                  ( Pattern.toTermLike Conditional
                      { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
                      , predicate =
@@ -411,7 +342,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqualWithExplanation ""
-            [ AllPath.GoalRem $ makeOnePathRule
+            [ GoalRem $ makeOnePathRule
                 ( Pattern.toTermLike Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate =
@@ -423,7 +354,7 @@ test_onePathStrategy =
                     }
                 )
                 Mock.a
-            , AllPath.Proven
+            , Proven
             ]
             [ _actual1
             , _actual2
@@ -452,16 +383,17 @@ test_onePathStrategy =
                     )
                 ]
         assertEqualWithExplanation ""
-            AllPath.Proven
+            Proven
             _actual
     ]
 
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> RewriteRule Variable
+    -> Rule (OnePathRule Variable)
 simpleRewrite left right =
-    RewriteRule RulePattern
+    Rule
+    $ RewriteRule RulePattern
         { left = left
         , right = right
         , requires = makeTruePredicate
@@ -473,9 +405,10 @@ rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Syntax.Predicate Variable
-    -> RewriteRule Variable
+    -> Rule (OnePathRule Variable)
 rewriteWithPredicate left right predicate =
-    RewriteRule RulePattern
+    Rule
+    $ RewriteRule RulePattern
         { left = left
         , right = right
         , requires = predicate
@@ -484,18 +417,18 @@ rewriteWithPredicate left right predicate =
         }
 
 runSteps
-    :: (ExecutionGraph (AllPath.ProofState (OnePathRule Variable)) -> Maybe (ExecutionGraph b))
+    :: (ExecutionGraph (ProofState (OnePathRule Variable)) -> Maybe (ExecutionGraph b))
     -> (ExecutionGraph b -> a)
     -> OnePathRule Variable
     -- ^left-hand-side of unification
-    -> [Strategy (AllPath.Prim (RewriteRule Variable))]
+    -> [Strategy (Prim (Rule (OnePathRule Variable)))]
     -> IO a
 runSteps graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
-    <$> runStrategy AllPath.transitionRule strategy (AllPath.Goal configuration)
+    <$> runStrategy transitionRule strategy (Goal configuration)
   where
     mockEnv = Mock.env
 
@@ -503,9 +436,9 @@ runOnePathSteps
     :: Limit Natural
     -> OnePathRule Variable
     -- ^left-hand-side of unification
-    -> [RewriteRule Variable]
-    -> [RewriteRule Variable]
-    -> IO [AllPath.ProofState (OnePathRule Variable)]
+    -> [Rule (OnePathRule Variable)]
+    -> [Rule (OnePathRule Variable)]
+    -> IO [ProofState (OnePathRule Variable)]
 runOnePathSteps
     stepLimit
     goal
@@ -518,12 +451,12 @@ runOnePathSteps
         goal
         (Limit.takeWithin
             stepLimit
-            $ AllPath.strategy
+            $ strategy
                 coinductiveRewrites
                 rewrites
-           -- ( AllPath.onePathFirstStep goal rewrites
+           -- ( onePathFirstStep goal rewrites
            -- : repeat
-           --     (AllPath.onePathFollowupStep
+           --     (onePathFollowupStep
            --         goal
            --         coinductiveRewrites
            --         rewrites
@@ -531,53 +464,3 @@ runOnePathSteps
            -- )
         )
     return (sort $ nub result)
-
-runSteps'
-    :: (ExecutionGraph CommonStrategyPattern -> Maybe (ExecutionGraph b))
-    -> (ExecutionGraph b -> a)
-    -> Pattern Variable
-    -- ^left-hand-side of unification
-    -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
-    -> IO a
-runSteps' graphFilter picker configuration strategy =
-    (<$>) picker
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ fromMaybe (error "Unexpected missing tree") . graphFilter
-    <$> runStrategy OnePath.transitionRule strategy (RewritePattern configuration)
-  where
-    mockEnv = Mock.env
-
-runOnePathSteps'
-    :: Limit Natural
-    -> Pattern Variable
-    -- ^left-hand-side of unification
-    -> TermLike Variable
-    -> [RewriteRule Variable]
-    -> [RewriteRule Variable]
-    -> IO [CommonStrategyPattern]
-runOnePathSteps'
-    stepLimit
-    configuration
-    target
-    coinductiveRewrites
-    rewrites
-  = do
-    result <- runSteps'
-        Just
-        pickFinal
-        configuration
-        (Limit.takeWithin
-            stepLimit
-            ( onePathFirstStep expandedTarget rewrites
-            : repeat
-                (onePathFollowupStep
-                    expandedTarget
-                    coinductiveRewrites
-                    rewrites
-                )
-            )
-        )
-    return (sort $ nub result)
-  where
-    expandedTarget = Pattern.fromTermLike target

@@ -19,6 +19,7 @@ import Numeric.Natural
        ( Natural )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Goal
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
@@ -325,9 +326,9 @@ test_onePathVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePath.Axiom
+    -> Rule (OnePathRule Variable)
 simpleAxiom left right =
-    OnePath.Axiom $ simpleRewrite left right
+    Rule $ simpleRewrite left right
 
 simpleClaim
     :: TermLike Variable
@@ -366,8 +367,10 @@ simpleRewrite left right =
 
 runVerification
     :: OnePath.Claim claim
+    => Show claim
+    => Show (Rule claim)
     => Limit Natural
-    -> [OnePath.Axiom]
+    -> [Rule claim]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
 runVerification stepLimit axioms claims =
@@ -379,5 +382,5 @@ runVerification stepLimit axioms claims =
         (map applyStepLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env
-    applyStepLimit claim = (RewriteRule $ coerce claim, stepLimit)
-    selectUntrusted = filter (not . Claim.isTrusted)
+    applyStepLimit claim = (claim, stepLimit)
+    selectUntrusted = filter (not . isTrusted)
