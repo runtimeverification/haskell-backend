@@ -4,7 +4,6 @@ License     : NCSA
 -}
 module Kore.Profiler.Data
     ( MonadProfiler (..)
-    , nullProfileDuration
     , profileDurationEvent
     , profileDurationStartEnd
     , ProfileEvent (..)
@@ -25,7 +24,7 @@ import           Control.Monad.Trans.Identity
                  ( IdentityT )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT )
-import           Debug.Trace
+import           Debug.Trace.String
                  ( traceEventIO )
 import           System.Clock
                  ( Clock (Monotonic), TimeSpec (TimeSpec), getTime )
@@ -94,11 +93,6 @@ profileDurationStartEnd event action = do
     a <- action
     liftIO $ traceEventIO ("END " ++ show event)
     return a
-
-{- Null timing function, to be used when not interested in profiling.
--}
-nullProfileDuration :: Monad profiler => [String] -> profiler a -> profiler a
-nullProfileDuration _ = id
 
 instance (MonadProfiler m) => MonadProfiler (ReaderT thing m )
 

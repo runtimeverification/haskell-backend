@@ -4,9 +4,6 @@ License     : NCSA
 
 Run like this:
 
-# Switch the MonadProfiler instance in SMT.hs to use `profileDurationEvent`
-# instead of `nullProfileDuration`.
-
 # Build the kore-exec and kore-profiler binaries
 stack build --ghc-options "-eventlog -debug"
 

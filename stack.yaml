@@ -53,6 +53,7 @@ extra-deps:
     commit: 363dbd17d91ba58ac877d205c5e82c1672367008
     sha256: e02e7317509cb1c766b7f591bb7304fb436928ce6d99565a214f70467781aabe
     size: 1248687
+  - ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2
 
 # TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
 allow-newer: true

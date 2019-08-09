@@ -41,6 +41,7 @@ dependencies:
   - filepath
   - generic-lens
   - generics-sop
+  - ghc-trace-events
   - gitrev
   - graphviz
   - groom

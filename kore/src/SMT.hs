@@ -76,7 +76,7 @@ import           Data.Text
 
 import qualified Kore.Logger as Logger
 import           Kore.Profiler.Data
-                 ( MonadProfiler (..), nullProfileDuration )
+                 ( MonadProfiler (..), profileDurationEvent )
 import           ListT
                  ( ListT, mapListT )
 import           SMT.SimpleSMT
@@ -318,9 +318,7 @@ instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
 
 instance MonadIO m => MonadProfiler (SmtT m)
   where
-    profileDuration a action = SmtT (nullProfileDuration a (runSmtT action))
-    -- TODO (virgil): Add a flag for this.
-    -- profileDuration a action = SmtT (profileDurationEvent a (runSmtT action))
+    profileDuration a action = SmtT (profileDurationEvent a (runSmtT action))
     {-# INLINE profileDuration #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
