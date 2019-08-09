@@ -350,7 +350,7 @@ test_list2set =
     testPropertyWithSolver "List to Set" $ do
         someSeq <- forAll Test.List.genSeqInteger
         let
-            set = Set.map Test.Int.asInternal $ Set.fromList 
+            set = Set.map Test.Int.asInternal $ Set.fromList
                 $ Foldable.toList someSeq
             termLike = asTermLike set
             input = Test.List.asTermLike $ Test.Int.asInternal <$> someSeq
