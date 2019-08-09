@@ -37,7 +37,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Goal as Goal
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
@@ -53,7 +52,7 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
 import           Kore.OnePath.Verification
-                 ( Claim, defaultStrategy, verify )
+                 ( Axiom (Axiom), Claim, defaultStrategy, verify )
 import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeMultipleOrPredicate, unwrapPredicate )
@@ -90,34 +89,37 @@ import           SMT
 -- | Configuration used in symbolic execution.
 type Config = Pattern Variable
 
+-- | Semantic rule used during execution.
+type Rewrite = RewriteRule Variable
+
 -- | Function rule used during execution.
 type Equality = EqualityRule Variable
 
-type ExecutionGraph rule = Strategy.ExecutionGraph Config rule
+type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
 
 -- | A collection of rules and simplifiers used during execution.
-data Initialized rule =
+data Initialized =
     Initialized
-        { rewriteRules :: ![rule]
+        { rewriteRules :: ![Rewrite]
         , simplifier :: !TermLikeSimplifier
         , substitutionSimplifier :: !PredicateSimplifier
         , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
         }
 
 -- | The products of execution: an execution graph, and assorted simplifiers.
-data Execution rule =
+data Execution =
     Execution
         { simplifier :: !TermLikeSimplifier
         , substitutionSimplifier :: !PredicateSimplifier
         , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
-        , executionGraph :: ExecutionGraph rule
+        , executionGraph :: !ExecutionGraph
         }
 
 -- | Symbolic execution
 exec
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
-    -> ([rule] -> [Strategy (Prim rule)])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
@@ -156,7 +158,7 @@ emptyPredicateSimplifier = Predicate.create
 execGetExitCode
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
-    -> ([rule] -> [Strategy (Prim rule)])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The final pattern (top cell) to extract the exit code
@@ -179,7 +181,7 @@ execGetExitCode indexedModule strategy' finalTerm =
 search
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
-    -> ([rule] -> [Strategy (Prim rule)])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
@@ -228,7 +230,7 @@ prove limit definitionModule specModule =
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = Goal.Rule <$> rewriteRules
+            axioms = fmap Axiom rewriteRules
             claims = fmap makeClaim specAxioms
         result <-
             runExceptT
@@ -268,7 +270,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = rewriteRules
+            axioms = fmap Axiom rewriteRules
             claims = fmap makeClaim specAxioms
         Repl.runRepl axioms claims mvar replScript replMode outputFile
   where
@@ -297,22 +299,14 @@ boundedModelCheck limit definitionModule specModule searchOrder =
         assertSomeClaims specClaims
         assertSingleClaim specClaims
         let
-            axioms = rewriteRules
-            claims = fmap makeClaim' specClaims
+            axioms = fmap Axiom rewriteRules
+            claims = fmap makeClaim specClaims
 
         Bounded.checkClaim
             (Bounded.bmcStrategy axioms)
             searchOrder
             (head claims, limit)
   where
-    makeClaim' (attr, rule) =
-        ImplicationRule RulePattern
-            { attributes = attr
-            , left = left . coerce $ rule
-            , right = right . coerce $ rule
-            , requires = requires . coerce $ rule
-            , ensures = ensures . coerce $ rule
-            }
     metadataTools = MetadataTools.build definitionModule
     env =
         Simplifier.Env
@@ -349,24 +343,22 @@ simplifyRuleOnSecond
     => (Attribute.Axiom, claim)
     -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond (atts, rule) = do
-    rule' <- Rule.simplifyRewriteRule (coerce rule)
+    rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
     return (atts, coerce . getRewriteRule $ rule')
 
-extractUntrustedClaims
-    :: Claim claim
-    => [claim] -> [claim]
+extractUntrustedClaims :: Claim claim => [claim] -> [Rewrite]
 extractUntrustedClaims =
-    fmap coerce $ filter (not . Goal.isTrusted)
+    map (RewriteRule . coerce) . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
-    -> ([rule] -> [Strategy (Prim rule)])
+    -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
-    -> Simplifier (Execution rule)
+    -> Simplifier Execution
 execute verifiedModule strategy inputPattern =
     Log.withLogScope "setUpConcreteExecution"
     $ initialize verifiedModule $ \initialized -> do
@@ -396,7 +388,7 @@ execute verifiedModule strategy inputPattern =
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
     :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> (Initialized rule -> Simplifier a)
+    -> (Initialized -> Simplifier a)
     -> Simplifier a
 initialize verifiedModule within = do
     functionAxioms <-
