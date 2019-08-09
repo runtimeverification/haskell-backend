@@ -145,13 +145,8 @@ simplifyToOr =
         orPattern <-
             Evaluator.evaluateOnce predicate termLike
             & Error.maybeT (false orOriginal) true
-        evaluated <- scatter' orPattern
-        Monad.Trans.lift . Monad.Trans.lift $ simplifyPatternInternal evaluated
-
-    scatter'
-        :: OrPattern variable
-        -> MaybeT (StateT Bool (BranchT simplifier)) (Pattern variable)
-    scatter' = Monad.Trans.lift . Monad.Trans.lift . scatter
+        Monad.Trans.lift . Monad.Trans.lift $ do
+            scatter orPattern >>= simplifyPatternInternal
 
 simplifyPatternInternal
     ::  forall variable simplifier
