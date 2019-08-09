@@ -17,6 +17,8 @@ cat log.out | kore-profiler > profiler.out
 
 module Main (main) where
 
+import           Control.Monad
+                 ( when )
 import qualified Data.List as List
                  ( foldl', intersperse, isPrefixOf, sort )
 import           Data.Map.Strict
@@ -32,7 +34,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
                  ( getLine, putStr )
 import           System.IO
-                 ( isEOF )
+                 ( hFlush, isEOF, stdout )
 import           Text.Read
                  ( readMaybe )
 
@@ -63,14 +65,12 @@ buildReport = buildReportHelper 0 initialContext Map.empty
         if eof
             then return report
             else do
-                {-
                 when (lineIndex `mod` 100000 == 0)
                     (do
                         putStr (show lineIndex)
                         putStr "\r"
                         hFlush stdout
                     )
-                    -}
                 line <- Text.getLine
                 case parseLine line of
                     Just parsed ->
@@ -79,7 +79,7 @@ buildReport = buildReportHelper 0 initialContext Map.empty
                         in buildReportHelper
                             (lineIndex + 1)
                             newContext
-                            (addProfileEvent newContext fixedParsed report)
+                            $! addProfileEvent newContext fixedParsed report
                     Nothing ->
                         buildReportHelper (lineIndex + 1) context report
 
