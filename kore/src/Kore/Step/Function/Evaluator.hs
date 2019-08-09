@@ -301,7 +301,10 @@ mergeWithConditionAndSubstitution
         , remainders = evaluatedRemainders
         }
 
-{- |
+{- | Attempt once to evaluate the 'TermLike' with user-defined axioms.
+
+The result is 'Nothing' if there are no applicable user-defined axioms. The
+result is not simplified or re-evaluated.
 
  -}
 evaluateOnce
