@@ -14,6 +14,8 @@ module Kore.OnePath.Verification
     , defaultStrategy
     , verify
     , verifyClaimStep
+    , toRulePattern
+    , toRule
     ) where
 
 import           Control.Monad.Except
