@@ -105,7 +105,7 @@ instance MonadProfiler m => MonadProfiler (ExceptT e m) where
 
 instance MonadProfiler m => MonadProfiler (ListT m) where
     profileDuration a action =
-        lift (profileDuration a (ListT.gather action)) >>= ListT.scatter
+        ListT.mapListT (profileDuration a) action
     {-# INLINE profileDuration #-}
 
 instance (MonadProfiler m, Monoid w) => MonadProfiler (AccumT w m)
