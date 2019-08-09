@@ -483,12 +483,22 @@ intersectionSetSymbol :: Internal.Symbol
 intersectionSetSymbol =
     binarySymbol "intersectionSet" setSort & hook "SET.intersection"
 
+list2setSetSymbol :: Internal.Symbol
+list2setSetSymbol =
+    builtinSymbol "list2setSet" setSort [listSort] & hook "SET.list2set"
+
 intersectionSet
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
 intersectionSet set1 set2 =
     mkApplySymbol intersectionSetSymbol [set1, set2]
+
+list2setSet
+    :: TermLike Variable
+    -> TermLike Variable
+list2setSet list =
+    mkApplySymbol list2setSetSymbol [list]
 
 -- ** String
 
@@ -1138,6 +1148,7 @@ setModule =
             , hookedSymbolDecl toListSetSymbol
             , hookedSymbolDecl sizeSetSymbol
             , hookedSymbolDecl intersectionSetSymbol
+            , hookedSymbolDecl list2setSetSymbol
             ]
         }
 
