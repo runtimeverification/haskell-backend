@@ -27,12 +27,14 @@ import           Control.Monad.Trans.Maybe
                  ( MaybeT )
 import           Debug.Trace
                  ( traceEventIO )
+import           System.Clock
+                 ( Clock (Monotonic), TimeSpec (TimeSpec), getTime )
+import qualified System.Clock as Clock.DoNotUse
+
 import           ListT
                  ( ListT (..) )
 import qualified ListT
                  ( mapListT )
-import           System.CPUTime
-                 ( getCPUTime )
 
 {- Monad that can also handle profiling events.
 -}
@@ -67,17 +69,21 @@ data ProfileEvent
 -}
 profileDurationEvent :: MonadIO profiler => [String] -> profiler a -> profiler a
 profileDurationEvent tags action = do
-    startTime <- liftIO getCPUTime
+    startTime <- liftIO (getTime Monotonic)
     let event = ProfileEvent
-            { startPico = startTime
+            { startPico = timeSpecToPicos startTime
             , endPico = Nothing
             , tags
             }
     liftIO $ traceEventIO (show event)
     a <- action
-    endTime <- liftIO getCPUTime
-    liftIO $ traceEventIO (show event {endPico = Just endTime})
+    endTime <- liftIO (getTime Monotonic)
+    liftIO $ traceEventIO
+        (show event {endPico = Just (timeSpecToPicos endTime)})
     return a
+  where
+    timeSpecToPicos TimeSpec {sec, nsec} =
+         ((toInteger sec * 1000 * 1000 * 1000) + toInteger nsec) * 1000
 
 {- Times an action in the format required by @ghc-events-analyze@.
 -}
