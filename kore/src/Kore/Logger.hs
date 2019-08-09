@@ -48,6 +48,8 @@ import           GHC.Stack
 import           Prelude hiding
                  ( log )
 
+import Control.Monad.Stabilize
+       ( StabilizeT )
 import ListT
        ( ListT, mapListT )
 
@@ -115,6 +117,8 @@ instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
 instance (WithLog msg m, Monad m) => WithLog msg (MaybeT m)
 
 instance (WithLog msg m, Monad m) => WithLog msg (ReaderT r m)
+
+instance WithLog message monad => WithLog message (StabilizeT monad)
 
 instance (WithLog msg m, Monad m) => WithLog msg (Strict.StateT s m)
 

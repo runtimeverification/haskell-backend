@@ -78,6 +78,8 @@ import           Data.Typeable
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
+import           Control.Monad.Stabilize
+                 ( StabilizeT )
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
@@ -198,6 +200,8 @@ instance MonadSimplify m => MonadSimplify (ListT m) where
     {-# INLINE localSimplifierAxioms #-}
 
 instance MonadSimplify m => MonadSimplify (MaybeT m)
+
+instance MonadSimplify monad => MonadSimplify (StabilizeT monad)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 

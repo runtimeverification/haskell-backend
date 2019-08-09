@@ -320,14 +320,14 @@ evaluateOnce
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> MaybeT simplifier (OrPattern variable)
+    -> MaybeT (BranchT simplifier) (Pattern variable)
 evaluateOnce predicate termLike = do
     simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
     result <- Simplifier.runBuiltinAndAxiomSimplifier simplifierAxiom termLike
     case result of
         AttemptedAxiom.NotApplicable -> empty
-        AttemptedAxiom.Applied attemptedAxiomResults -> do
-            return $ andPredicate <$> results <> remainders
+        AttemptedAxiom.Applied attemptedAxiomResults ->
+            Monad.Trans.lift . scatter $ andPredicate <$> results <> remainders
           where
             AttemptedAxiomResults { results, remainders } =
                 attemptedAxiomResults
