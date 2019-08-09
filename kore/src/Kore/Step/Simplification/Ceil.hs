@@ -16,8 +16,6 @@ module Kore.Step.Simplification.Ceil
     ) where
 
 import qualified Data.Foldable as Foldable
-import           Data.Function
-                 ( (&) )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -48,7 +46,9 @@ import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate )
+                 ( makeCeilPredicate, makeTruePredicate )
+import qualified Kore.Step.Function.Evaluator as Axiom
+                 ( evaluatePattern )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -186,11 +186,32 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
 
       | BuiltinF child <- projected = makeEvaluateBuiltin child
 
-      | otherwise =
-        makeCeilPredicate term
-        & Conditional.fromPredicate
-        & OrPredicate.fromPredicate
-        & return
+      | otherwise = do
+        evaluation <- Axiom.evaluatePattern
+            Conditional
+                { term = ()
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            (mkCeil_ term)
+            (return $ OrPattern.fromPattern Conditional
+                { term = mkTop_
+                , predicate = makeCeilPredicate term
+                , substitution = mempty
+                }
+            )
+        return (fmap toPredicate evaluation)
+
+    toPredicate Conditional {term = Top_ _, predicate, substitution} =
+        Conditional {term = (), predicate, substitution}
+    toPredicate patt =
+        error
+            (  "Ceil simplification is expected to result ai a predicate, but"
+            ++ " got (" ++ show patt ++ ")."
+            ++ " The most likely cases are: evaluating predicate symbols, "
+            ++ " and predicate symbols are currently unrecognized as such, "
+            ++ "and programming errors."
+            )
 
 {-| Evaluates the ceil of a domain value.
 -}
