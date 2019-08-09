@@ -103,6 +103,7 @@ default-extensions:
   - StandaloneDeriving
   - TypeApplications
   - TypeFamilies
+  - TypeOperators
   - TypeSynonymInstances
   - UndecidableInstances
   - ViewPatterns
