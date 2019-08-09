@@ -299,7 +299,9 @@ data TermLikeF variable child
     | StringLiteralF !(Const StringLiteral child)
     | CharLiteralF   !(Const CharLiteral child)
     | VariableF      !(Const (UnifiedVariable variable) child)
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
 
 instance SOP.Generic (TermLikeF variable child)
 
