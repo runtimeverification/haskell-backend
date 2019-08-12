@@ -24,6 +24,8 @@ import           Control.Monad.Trans.Identity
                  ( IdentityT )
 import           Control.Monad.Trans.Maybe
                  ( MaybeT )
+import           Data.Functor.Identity
+                 ( Identity )
 import           Debug.Trace.String
                  ( traceEventIO )
 import           System.Clock
@@ -45,6 +47,10 @@ class Monad profiler => MonadProfiler profiler where
         => [String] -> profiler a -> profiler a
     profileDuration a = hoist (profileDuration a)
     {-# INLINE profileDuration #-}
+
+-- Instance for tests.
+instance MonadProfiler Identity where
+    profileDuration _ = id
 
 {- A profiler event.
 
