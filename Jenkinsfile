@@ -52,6 +52,9 @@ pipeline {
           }
         }
       }
+      options {
+        timeout(time: 18, unit: 'MINUTES')
+      }
       steps {
         sh '''
           ./scripts/kevm-integration.sh
