@@ -13,6 +13,7 @@ import qualified Control.Error as Error
 import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import           Data.Function
+import           Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.Internal.OrPattern
@@ -263,10 +264,11 @@ simplifyInternalExt predicate =
             OrF orF -> Or.simplify <$> simplifyChildren orF
             RewritesF rewritesF ->
                 Rewrites.simplify <$> simplifyChildren rewritesF
-            StringLiteralF stringLiteralF ->
-                StringLiteral.simplify <$> simplifyChildren stringLiteralF
-            CharLiteralF charLiteralF ->
-                CharLiteral.simplify <$> simplifyChildren charLiteralF
             TopF topF -> Top.simplify <$> simplifyChildren topF
             --
-            VariableF variableF -> return $ Variable.simplify variableF
+            StringLiteralF stringLiteralF ->
+                return $ StringLiteral.simplify (getConst stringLiteralF)
+            CharLiteralF charLiteralF ->
+                return $ CharLiteral.simplify (getConst charLiteralF)
+            VariableF variableF ->
+                return $ Variable.simplify (getConst variableF)

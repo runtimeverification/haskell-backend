@@ -38,10 +38,10 @@ test_instance_Synthetic =
     , testGroup "TopF" [ is $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF (ElemVar Mock.x) ]
+    , testGroup "VariableF" [ is $ VariableF $ Const (ElemVar Mock.x) ]
     , testGroup "MuF" $ map (isn't . MuF) (Mu (SetVariable Mock.x) <$> range)
     , testGroup "NuF" $ map (isn't . NuF) (Nu (SetVariable Mock.x) <$> range)
-    , testGroup "SetVariableF" [ isn't $ VariableF (SetVar Mock.setX) ]
+    , testGroup "SetVariableF" [ isn't $ VariableF $ Const (SetVar Mock.setX) ]
     -- Interesting cases
     , testGroup "ApplySymbolF"
         [ testGroup "functional" $ do
@@ -102,7 +102,7 @@ test_instance_Synthetic =
     range = [defined, nonDefined]
 
     check
-        :: (GHC.HasCallStack, Synthetic term Defined)
+        :: (GHC.HasCallStack, Synthetic Defined term)
         => TestName
         -> (Defined -> Bool)
         -> term Defined
@@ -114,14 +114,14 @@ test_instance_Synthetic =
 
     is
         ::  ( GHC.HasCallStack
-            , Synthetic term Defined
+            , Synthetic Defined term
             )
         => term Defined -> TestTree
     is = check "Defined term" isDefined
 
     isn't
         ::  ( GHC.HasCallStack
-            , Synthetic term Defined
+            , Synthetic Defined term
             )
         => term Defined -> TestTree
     isn't = check "Non-defined pattern" (not . isDefined)

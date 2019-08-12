@@ -49,7 +49,7 @@ test_instance_Synthetic =
     , testGroup "TopF" [ isn't $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF (ElemVar Mock.x) ]
+    , testGroup "VariableF" [ is $ VariableF $ Const (ElemVar Mock.x) ]
     , testGroup "MuF" $ map (isn't . MuF) (Mu Mock.setX <$> range)
     , testGroup "NuF" $ map (isn't . NuF) (Nu Mock.setX <$> range)
     ]

@@ -64,16 +64,16 @@ test_instance_Synthetic_TermLike =
     , RewritesF    (Rewrites sort x y)        `gives'` xy     $ "RewritesF"
     , TopF         (Top sort)                 `gives'` mempty $ "TopF"
     -- Binders and variables are the only interesting cases:
-    , ExistsF      (Exists sort Mock.x xy)    `gives'` y      $ "ExistsF - Bound"
-    , ExistsF      (Exists sort Mock.x y)     `gives'` y      $ "ExistsF - Free"
-    , ForallF      (Forall sort Mock.x xy)    `gives'` y      $ "ForallF - Bound"
-    , ForallF      (Forall sort Mock.x y)     `gives'` y      $ "ForallF - Free"
-    , VariableF    (ElemVar Mock.x)           `gives'` x      $ "Elem VariableF"
-    , MuF          (Mu Mock.setX sxy)         `gives'` sy     $ "MuF - Bound"
-    , MuF          (Mu Mock.setX sy)          `gives'` sy     $ "MuF - Free"
-    , NuF          (Nu Mock.setX sxy)         `gives'` sy     $ "NuF - Bound"
-    , NuF          (Nu Mock.setX sy)          `gives'` sy     $ "NuF - Free"
-    , VariableF    (SetVar Mock.setX)         `gives'` sx     $ "Set VariableF"
+    , ExistsF      (Exists sort Mock.x xy)    `gives'` y  $ "ExistsF - Bound"
+    , ExistsF      (Exists sort Mock.x y)     `gives'` y  $ "ExistsF - Free"
+    , ForallF      (Forall sort Mock.x xy)    `gives'` y  $ "ForallF - Bound"
+    , ForallF      (Forall sort Mock.x y)     `gives'` y  $ "ForallF - Free"
+    , (VariableF . Const) (ElemVar Mock.x)    `gives'` x  $ "Elem VariableF"
+    , MuF          (Mu Mock.setX sxy)         `gives'` sy $ "MuF - Bound"
+    , MuF          (Mu Mock.setX sy)          `gives'` sy $ "MuF - Free"
+    , NuF          (Nu Mock.setX sxy)         `gives'` sy $ "NuF - Bound"
+    , NuF          (Nu Mock.setX sy)          `gives'` sy $ "NuF - Free"
+    , (VariableF . Const) (SetVar Mock.setX)  `gives'` sx $ "Set VariableF"
     ]
   where
     gives' = gives @(TermLikeF Variable)
@@ -93,7 +93,7 @@ sy = FreeVariables.freeVariable (SetVar Mock.setY)
 sxy = sx <> sy
 
 gives
-    :: (Synthetic base (FreeVariables Variable), GHC.HasCallStack)
+    :: (Synthetic (FreeVariables Variable) base, GHC.HasCallStack)
     => base (FreeVariables Variable)
     -> FreeVariables Variable
     -> String

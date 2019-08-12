@@ -37,14 +37,7 @@ test_arguments =
         $ parseInjective $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = injectiveSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern injectiveSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =

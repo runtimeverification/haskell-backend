@@ -190,6 +190,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
+import           Generically
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import           Kore.Attribute.Pattern.FreeVariables
@@ -262,7 +263,7 @@ instance Unparse child => Unparse (Evaluated child) where
     unparse2 evaluated =
         Pretty.vsep ["/* evaluated: */", Unparser.unparse2Generic evaluated]
 
-instance Synthetic Evaluated syn where
+instance Synthetic syn Evaluated where
     synthetic = getEvaluated
     {-# INLINE synthetic #-}
 
@@ -292,14 +293,21 @@ data TermLikeF variable child
     | NuF            !(Nu variable child)
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
-    | StringLiteralF !(StringLiteral child)
-    | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
-    | VariableF      !(UnifiedVariable variable)
     | InhabitantF    !(Inhabitant child)
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+    | StringLiteralF !(Const StringLiteral child)
+    | CharLiteralF   !(Const CharLiteral child)
+    | VariableF      !(Const (UnifiedVariable variable) child)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+    deriving
+        ( Synthetic (FreeVariables variable), Synthetic Sort
+        , Synthetic Pattern.Functional, Synthetic Pattern.Function
+        , Synthetic Pattern.Defined
+        ) via (Generically1 (TermLikeF variable))
 
 instance SOP.Generic (TermLikeF variable child)
 
@@ -319,179 +327,6 @@ instance
   where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
-
-instance
-    Ord variable =>
-    Synthetic (TermLikeF variable) (FreeVariables variable)
-  where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance SortedVariable variable => Synthetic (TermLikeF variable) Sort where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance Synthetic (TermLikeF variable) Pattern.Functional where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance Synthetic (TermLikeF variable) Pattern.Function where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
-
-instance Synthetic (TermLikeF variable) Pattern.Defined where
-    -- TODO (thomas.tuegel): Use SOP.Generic here, after making the children
-    -- Functors.
-    synthetic (ForallF forallF) = synthetic forallF
-    synthetic (ExistsF existsF) = synthetic existsF
-    synthetic (VariableF variable) = synthetic (Const variable)
-
-    synthetic (AndF andF) = synthetic andF
-    synthetic (ApplySymbolF applySymbolF) = synthetic applySymbolF
-    synthetic (ApplyAliasF applyAliasF) = synthetic applyAliasF
-    synthetic (BottomF bottomF) = synthetic bottomF
-    synthetic (CeilF ceilF) = synthetic ceilF
-    synthetic (DomainValueF domainValueF) = synthetic domainValueF
-    synthetic (EqualsF equalsF) = synthetic equalsF
-    synthetic (FloorF floorF) = synthetic floorF
-    synthetic (IffF iffF) = synthetic iffF
-    synthetic (ImpliesF impliesF) = synthetic impliesF
-    synthetic (InF inF) = synthetic inF
-    synthetic (NextF nextF) = synthetic nextF
-    synthetic (NotF notF) = synthetic notF
-    synthetic (OrF orF) = synthetic orF
-    synthetic (RewritesF rewritesF) = synthetic rewritesF
-    synthetic (TopF topF) = synthetic topF
-    synthetic (BuiltinF builtinF) = synthetic builtinF
-    synthetic (EvaluatedF evaluatedF) = synthetic evaluatedF
-
-    synthetic (StringLiteralF stringLiteralF) = synthetic stringLiteralF
-    synthetic (CharLiteralF charLiteralF) = synthetic charLiteralF
-    synthetic (InhabitantF inhabitantF) = synthetic inhabitantF
-
-    synthetic (MuF muF) = synthetic muF
-    synthetic (NuF nuF) = synthetic nuF
-    {-# INLINE synthetic #-}
 
 {- | Use the provided mapping to replace all variables in a 'TermLikeF' head.
 
@@ -523,7 +358,7 @@ traverseVariablesF traversing =
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         MuF any0 -> MuF <$> traverseVariablesMu any0
         NuF any0 -> NuF <$> traverseVariablesNu any0
-        VariableF variable -> VariableF <$> traverse traversing variable
+        VariableF variable -> VariableF <$> traverseConstVariable variable
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplySymbolF applySymbolF -> pure (ApplySymbolF applySymbolF)
@@ -547,10 +382,16 @@ traverseVariablesF traversing =
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
   where
+    traverseConstVariable (Const variable) =
+        Const <$> traverse traversing variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
-        Exists existsSort <$> traverse traversing existsVariable <*> pure existsChild
+        Exists existsSort
+        <$> traverse traversing existsVariable
+        <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
-        Forall forallSort <$> traverse traversing forallVariable <*> pure forallChild
+        Forall forallSort
+        <$> traverse traversing forallVariable
+        <*> pure forallChild
     traverseVariablesMu Mu { muVariable, muChild } =
         Mu <$> traverse traversing muVariable <*> pure muChild
     traverseVariablesNu Nu { nuVariable, nuChild } =
@@ -714,7 +555,7 @@ instance
 
     traverseVariable match termLike =
         case termLikeF of
-            VariableF variable -> mkVar <$> match variable
+            VariableF (Const variable) -> mkVar <$> match variable
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
@@ -1764,7 +1605,7 @@ mkVar
     :: Ord variable
     => SortedVariable variable
     => UnifiedVariable variable -> TermLike variable
-mkVar = synthesize . VariableF
+mkVar = synthesize . VariableF . Const
 
 {- | Construct an element variable pattern.
  -}
@@ -1788,7 +1629,7 @@ mkStringLiteral
     :: (Ord variable, SortedVariable variable)
     => Text
     -> TermLike variable
-mkStringLiteral = synthesize . StringLiteralF . StringLiteral
+mkStringLiteral = synthesize . StringLiteralF . Const . StringLiteral
 
 {- | Construct a 'CharLiteral' pattern.
  -}
@@ -1796,7 +1637,7 @@ mkCharLiteral
     :: (Ord variable, SortedVariable variable)
     => Char
     -> TermLike variable
-mkCharLiteral = synthesize . CharLiteralF . CharLiteral
+mkCharLiteral = synthesize . CharLiteralF . Const . CharLiteral
 
 mkInhabitant
     :: (Ord variable, SortedVariable variable)
@@ -2233,19 +2074,17 @@ pattern Top_ topSort <-
     (Recursive.project -> _ :< TopF Top { topSort })
 
 pattern Var_ variable <-
-    (Recursive.project -> _ :< VariableF variable)
+    (Recursive.project -> _ :< VariableF (Const variable))
 
-pattern SetVar_ setVariable <-
-    (Recursive.project -> _ :< VariableF (SetVar setVariable))
+pattern SetVar_ setVariable <- Var_ (SetVar setVariable)
 
-pattern ElemVar_ elemVariable <-
-    (Recursive.project -> _ :< VariableF (ElemVar elemVariable))
+pattern ElemVar_ elemVariable <- Var_ (ElemVar elemVariable)
 
 pattern StringLiteral_ str <-
-    (Recursive.project -> _ :< StringLiteralF (StringLiteral str))
+    (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
 
 pattern CharLiteral_ char <-
-    (Recursive.project -> _ :< CharLiteralF (CharLiteral char))
+    (Recursive.project -> _ :< CharLiteralF (Const (CharLiteral char)))
 
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))

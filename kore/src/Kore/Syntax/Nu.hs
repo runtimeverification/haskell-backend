@@ -65,13 +65,13 @@ instance
 
 instance
     Ord variable =>
-    Synthetic (Nu variable) (FreeVariables variable)
+    Synthetic (FreeVariables variable) (Nu variable)
   where
     synthetic Nu { nuVariable, nuChild } =
         bindVariable (SetVar nuVariable) nuChild
     {-# INLINE synthetic #-}
 
-instance SortedVariable variable => Synthetic (Nu variable) Sort where
+instance SortedVariable variable => Synthetic Sort (Nu variable) where
     synthetic Nu { nuVariable, nuChild } =
         nuSort
         & seq (matchSort nuSort nuChild)

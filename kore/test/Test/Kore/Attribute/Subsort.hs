@@ -62,11 +62,4 @@ test_arguments =
         $ parseSubsorts $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = subsortSymbol sub super
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern (subsortSymbol sub super) [attributeString "illegal"]
