@@ -44,6 +44,8 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
+import           Kore.Step.Strategy
+                 ( ExecutionGraph (..) )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable (..) )
@@ -54,8 +56,6 @@ import           Test.Kore
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
-
-type ExecutionGraph a = Strategy.ExecutionGraph a (RewriteRule Variable)
 
 
 makeOnePathRule :: TermLike Variable -> TermLike Variable -> OnePathRule Variable
@@ -417,8 +417,12 @@ rewriteWithPredicate left right predicate =
         }
 
 runSteps
-    :: (ExecutionGraph (ProofState (OnePathRule Variable)) -> Maybe (ExecutionGraph b))
-    -> (ExecutionGraph b -> a)
+    :: ( ExecutionGraph
+            (ProofState (OnePathRule Variable))
+            (Rule (OnePathRule Variable))
+       -> Maybe (ExecutionGraph b c)
+       )
+    -> (ExecutionGraph b c -> a)
     -> OnePathRule Variable
     -- ^left-hand-side of unification
     -> [Strategy (Prim (Rule (OnePathRule Variable)))]
