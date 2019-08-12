@@ -11,12 +11,9 @@ module Kore.Step.Simplification.TermLike
 
 import qualified Control.Error as Error
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Morph as Monad.Morph
-import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Function
 import qualified Data.Functor.Foldable as Recursive
 
-import           Control.Monad.Stabilize
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -100,6 +97,16 @@ simplify patt = do
     orPatt <- simplifyToOr patt
     return (OrPattern.toPattern orPatt)
 
+{- | The internal state of the simplification loop.
+
+The loop is @Stable@ if the internal simplifier was the last step because the
+internal simplifier is idempotent. The loop is @Unstable@ if the last step was
+applying a user-defined axiom, because applying axioms creates new opportunities
+for simplification.
+
+ -}
+data Stable = Stable | Unstable
+
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
 'OrPattern'.
 -}
@@ -111,20 +118,38 @@ simplifyToOr
     =>  TermLike variable
     ->  simplifier (OrPattern variable)
 simplifyToOr =
-    gatherPatterns . stabilize worker . Pattern.fromTermLike
+    gatherPatterns . workerAxioms Unstable . Pattern.fromTermLike
   where
-    -- | A single stabilizable simplification step. The step stabilizes after
-    -- the internal simplifier when no user-defined axioms apply.
-    worker
-        :: Pattern variable
-        -> StabilizeT (BranchT simplifier) (Pattern variable)
-    worker input = do
-        let (termLike, predicate) = Pattern.splitTerm input
-        evaluated <-
-            Evaluator.evaluateOnce predicate termLike
-            & Monad.Morph.hoist Monad.Trans.lift
-            & Error.maybeT (stable input) unstable
-        Monad.Trans.lift $ simplifyPatternInternal evaluated
+    {- | Apply user-defined axioms to the 'Pattern'.
+
+    Axioms are applied repeatedly until there are no more to apply; then the
+    pattern is sent to the internal simplifier.
+
+     -}
+    workerAxioms
+        :: Stable
+        -> Pattern variable
+        -> BranchT simplifier (Pattern variable)
+    workerAxioms stable input =
+        Evaluator.evaluateOnce predicate termLike
+        & Error.maybeT (workerInternal stable input) (workerAxioms Unstable)
+      where
+        (termLike, predicate) = Pattern.splitTerm input
+
+    {- | Apply the internal simplifier to the 'Pattern'.
+
+    The internal simplifier is idempotent, so do not apply it if the state is
+    already 'Stable'. If the state was 'Unstable', try to apply axioms after
+    the internal simplifier.
+
+     -}
+    workerInternal
+        :: Stable
+        -> Pattern variable
+        -> BranchT simplifier (Pattern variable)
+    workerInternal Unstable =
+        simplifyPatternInternal Monad.>=> workerAxioms Stable
+    workerInternal Stable = return
 
 simplifyPatternInternal
     ::  forall variable simplifier
