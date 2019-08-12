@@ -74,8 +74,6 @@ import           Data.Limit
 import           Data.Text
                  ( Text )
 
-import           Control.Monad.Stabilize
-                 ( StabilizeT )
 import qualified Kore.Logger as Logger
 import           ListT
                  ( ListT, mapListT )
@@ -325,8 +323,6 @@ instance MonadSMT m => MonadSMT (ListT m) where
 instance MonadSMT m => MonadSMT (ReaderT r m)
 
 instance MonadSMT m => MonadSMT (Maybe.MaybeT m)
-
-instance MonadSMT monad => MonadSMT (StabilizeT monad)
 
 instance MonadSMT m => MonadSMT (State.Lazy.StateT s m)
 
