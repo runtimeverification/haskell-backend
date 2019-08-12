@@ -127,7 +127,7 @@ instance
             StringLiteralF _ -> AstLocationUnknown
             CharLiteralF _ -> AstLocationUnknown
             TopF Top { topSort } -> locationFromAst topSort
-            VariableF variable -> locationFromAst variable
+            VariableF (Const variable) -> locationFromAst variable
             InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort
 
     updateAstLocation = undefined

@@ -42,17 +42,17 @@ instance NFData Defined
 
 instance Hashable Defined
 
-instance Synthetic (And sort) Defined where
+instance Synthetic Defined (And sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Bottom sort) Defined where
+instance Synthetic Defined (Bottom sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
 -- | An 'Application' pattern is 'Defined' if the symbol is total and its
 -- arguments are 'Defined'.
-instance Synthetic (Application Internal.Symbol) Defined where
+instance Synthetic Defined (Application Internal.Symbol) where
     synthetic application =
         functionSymbol <> Foldable.fold children
       where
@@ -60,74 +60,74 @@ instance Synthetic (Application Internal.Symbol) Defined where
         children = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-instance Synthetic (Application Internal.Alias) Defined where
+instance Synthetic Defined (Application Internal.Alias) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Ceil sort) Defined where
+instance Synthetic Defined (Ceil sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
 -- | A 'DomainValue' patterns is 'Defined' if its argument is 'Defined'.
-instance Synthetic (DomainValue sort) Defined where
+instance Synthetic Defined (DomainValue sort) where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
 
-instance Synthetic (Equals sort) Defined where
+instance Synthetic Defined (Equals sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Exists sort variable) Defined where
+instance Synthetic Defined (Exists sort variable) where
     synthetic = const (Defined False)
 
-instance Synthetic (Floor sort) Defined where
-    synthetic = const (Defined False)
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Forall sort variable) Defined where
+instance Synthetic Defined (Floor sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Iff sort) Defined where
+instance Synthetic Defined (Forall sort variable) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Implies sort) Defined where
+instance Synthetic Defined (Iff sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (In sort) Defined where
+instance Synthetic Defined (Implies sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Mu sort) Defined where
+instance Synthetic Defined (In sort) where
+    synthetic = const (Defined False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined (Mu sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
 -- | A 'Next' pattern is 'Defined' if its argument is 'Defined'.
-instance Synthetic (Next sort) Defined where
+instance Synthetic Defined (Next sort) where
     synthetic = nextChild
     {-# INLINE synthetic #-}
 
-instance Synthetic (Not sort) Defined where
+instance Synthetic Defined (Not sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Nu sort) Defined where
+instance Synthetic Defined (Nu sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
 -- | An 'Or' pattern is 'Defined' if any of its subterms is 'Defined'.
-instance Synthetic (Or sort) Defined where
+instance Synthetic Defined (Or sort) where
     synthetic = Defined . getAny . Foldable.foldMap (Any . isDefined)
     {-# INLINE synthetic #-}
 
-instance Synthetic (Rewrites sort) Defined where
+instance Synthetic Defined (Rewrites sort) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}
 
 -- | A 'Builtin' pattern is defined if its subterms are 'Defined'.
-instance Synthetic (Builtin key) Defined where
+instance Synthetic Defined (Builtin key) where
     synthetic
         (BuiltinSet InternalAc
             {builtinAcChild = NormalizedSet builtinSetChild}
@@ -168,28 +168,28 @@ normalizedAcDefined ac@(NormalizedAc _ _ _) =
 
 
 -- | A 'Top' pattern is always 'Defined'.
-instance Synthetic (Top sort) Defined where
+instance Synthetic Defined (Top sort) where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
-instance Synthetic StringLiteral Defined where
+instance Synthetic Defined (Const StringLiteral) where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Defined'.
-instance Synthetic CharLiteral Defined where
+instance Synthetic Defined (Const CharLiteral) where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
 -- | An 'Inhabitant' pattern is always 'Defined'.
-instance Synthetic Inhabitant Defined where
+instance Synthetic Defined Inhabitant where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
 -- | An element variable pattern is always 'Defined'.
 --   A set variable is not.
-instance Synthetic (Const (UnifiedVariable variable)) Defined where
+instance Synthetic Defined (Const (UnifiedVariable variable)) where
     synthetic (Const (ElemVar _))= Defined True
     synthetic (Const (SetVar _))= Defined False
     {-# INLINE synthetic #-}

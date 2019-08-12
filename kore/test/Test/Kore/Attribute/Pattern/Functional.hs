@@ -54,10 +54,10 @@ test_instance_Synthetic =
     , testGroup "TopF" [ isn't $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF (ElemVar Mock.x) ]
+    , testGroup "VariableF" [ is $ VariableF $ Const (ElemVar Mock.x) ]
     , testGroup "MuF" $ map (isn't . MuF) (Mu Mock.setX <$> range)
     , testGroup "NuF" $ map (isn't . NuF) (Nu Mock.setX <$> range)
-    , testGroup "SetVariableF" [ isn't $ VariableF (SetVar Mock.setX) ]
+    , testGroup "SetVariableF" [ isn't $ VariableF $ Const (SetVar Mock.setX) ]
     , testGroup "BuiltinSet"
         [ is . asSetBuiltin
             $ emptyNormalizedSet
@@ -98,7 +98,7 @@ test_instance_Synthetic =
     range = [functional, nonFunctional]
 
     check
-        :: (GHC.HasCallStack, Synthetic term Functional)
+        :: (GHC.HasCallStack, Synthetic Functional term)
         => TestName
         -> (Functional -> Bool)
         -> term Functional
@@ -110,14 +110,14 @@ test_instance_Synthetic =
 
     is
         ::  ( GHC.HasCallStack
-            , Synthetic term Functional
+            , Synthetic Functional term
             )
         => term Functional -> TestTree
     is = check "Functional pattern" isFunctional
 
     isn't
         ::  ( GHC.HasCallStack
-            , Synthetic term Functional
+            , Synthetic Functional term
             )
         => term Functional -> TestTree
     isn't = check "Non-functional pattern" (not . isFunctional)
