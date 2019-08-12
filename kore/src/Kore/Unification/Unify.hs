@@ -27,6 +27,8 @@ import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import           Kore.Logger
                  ( LogMessage, WithLog (..) )
+import           Kore.Profiler.Data
+                 ( MonadProfiler )
 import           Kore.Step.Simplification.Data
                  ( BranchT, MonadSimplify (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
@@ -98,6 +100,8 @@ instance MonadTrans UnifierT where
 deriving instance WithLog LogMessage m => WithLog LogMessage (UnifierT m)
 
 deriving instance MonadSMT m => MonadSMT (UnifierT m)
+
+deriving instance MonadProfiler m => MonadProfiler (UnifierT m)
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierT m)
 
