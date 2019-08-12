@@ -100,7 +100,7 @@ import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.State
 import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (..) )
+                 ( RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )

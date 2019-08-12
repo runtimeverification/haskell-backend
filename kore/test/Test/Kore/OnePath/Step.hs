@@ -455,16 +455,12 @@ runOnePathSteps
         goal
         (Limit.takeWithin
             stepLimit
-            $ strategy
-                coinductiveRewrites
-                rewrites
-           -- ( onePathFirstStep goal rewrites
-           -- : repeat
-           --     (onePathFollowupStep
-           --         goal
-           --         coinductiveRewrites
-           --         rewrites
-           --     )
-           -- )
+            ( onePathFirstStep rewrites
+            : repeat
+                (onePathFollowupStep
+                    coinductiveRewrites
+                    rewrites
+                )
+            )
         )
     return (sort $ nub result)

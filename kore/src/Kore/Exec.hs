@@ -53,8 +53,7 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
 import           Kore.OnePath.Verification
-                 ( Claim, defaultStrategy, toRule, verify )
-import qualified Kore.OnePath.Verification as Claim
+                 ( Claim, defaultStrategy, verify )
 import           Kore.Predicate.Predicate
                  ( makeMultipleOrPredicate, unwrapPredicate )
 import qualified Kore.Repl as Repl
@@ -351,10 +350,6 @@ simplifyRuleOnSecond
 simplifyRuleOnSecond (atts, rule) = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
     return (atts, coerce . getRewriteRule $ rule')
-
-extractUntrustedClaims :: Claim claim => [claim] -> [Rewrite]
-extractUntrustedClaims =
-    map (RewriteRule . coerce) . filter (not . Goal.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute

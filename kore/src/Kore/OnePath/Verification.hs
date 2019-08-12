@@ -28,22 +28,12 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
-import qualified Data.Limit as Limit
 import           Data.Maybe
 
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
 import           Kore.Goal
-import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
-                 ( Conditional (Conditional), Pattern )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Pattern as Conditional
-                 ( Conditional (..) )
-import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (..),
-                 RulePattern (RulePattern) )
+                 ( Pattern )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -104,12 +94,6 @@ type Claim claim =
     , Unparse (Rule claim)
     , Goal claim
     )
-
-{- | Wrapper for a rewrite rule that should be used as an axiom.
--}
-newtype Axiom = Axiom
-    { unAxiom :: RewriteRule Variable
-    }
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
 
@@ -189,10 +173,9 @@ verifyClaim
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
     strategy
-    (goal, stepLimit)
+    (goal, _)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        strategy = Limit.takeWithin stepLimit strategy
         startPattern = Goal $ getConfiguration goal
         destination = getDestination goal
     executionGraph <-
@@ -209,10 +192,10 @@ verifyClaim
         -> Prim (Rule claim)
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
-    modifTransitionRule destination prim proofState = do
+    modifTransitionRule destination prim proofState' = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
-            $ transitionRule' destination prim proofState
+            $ transitionRule' destination prim proofState'
         let (configs, _) = unzip transitions
             stuckConfigs = mapMaybe extractGoalRem configs
         Foldable.traverse_ Monad.Except.throwError stuckConfigs

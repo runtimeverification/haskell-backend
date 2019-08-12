@@ -199,7 +199,7 @@ test_runStrategy =
         runIdentity
         $ Strategy.runStrategy
             transitionRule
-            (Goal.strategy [goal] axioms)
+            (Goal.allPathStrategy [goal] axioms)
             (Goal.Goal . unRule $ goal)
     disproves
         :: HasCallStack

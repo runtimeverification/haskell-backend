@@ -51,7 +51,6 @@ import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-import qualified Kore.Variables.Target as Target
 
 {- | The state of the all-path reachability proof strategy for @goal@.
  -}
@@ -194,13 +193,13 @@ transitionRule = transitionRuleWorker
 
     transitionRuleWorker _ state = return state
 
-strategy
+allPathStrategy
     :: [rule]
     -- ^ Claims
     -> [rule]
     -- ^ Axioms
     -> [Strategy (Prim rule)]
-strategy claims axioms =
+allPathStrategy claims axioms =
     firstStep : repeat nextStep
   where
     firstStep =

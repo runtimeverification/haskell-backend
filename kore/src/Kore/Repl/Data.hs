@@ -68,8 +68,6 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( CommonProofState )
-import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
