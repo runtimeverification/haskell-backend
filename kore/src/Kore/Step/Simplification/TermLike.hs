@@ -10,6 +10,7 @@ module Kore.Step.Simplification.TermLike
     ) where
 
 import qualified Control.Error as Error
+import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import           Data.Function
 import qualified Data.Functor.Foldable as Recursive
@@ -18,7 +19,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
-                 ( Pattern )
+                 ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -76,6 +77,7 @@ import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
 import           Kore.Step.Substitution
                  ( normalize )
+import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -147,9 +149,18 @@ simplifyToOr =
         :: Stable
         -> Pattern variable
         -> BranchT simplifier (Pattern variable)
-    workerInternal Unstable =
-        simplifyPatternInternal Monad.>=> workerAxioms Stable
-    workerInternal Stable = return
+    workerInternal Unstable input = do
+        simplified <- simplifyPatternInternal input
+        -- TODO (thomas.tuegel): simplifyPatternInternal should be idempotent.
+        if isNormalized simplified
+            then workerAxioms Stable simplified
+            else workerInternal Unstable simplified
+    workerInternal Stable input =
+        Exception.assert (isNormalized input)
+        $ return input
+
+    isNormalized Conditional { substitution } =
+        Substitution.isNormalized substitution
 
 simplifyPatternInternal
     ::  forall variable simplifier
