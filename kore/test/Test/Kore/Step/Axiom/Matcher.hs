@@ -131,6 +131,22 @@ test_matcherEqualHeads =
                 (mkCeil_ (Mock.plain10 Mock.a))
         assertEqualWithExplanation "" expect actual
 
+    , testCase "Equals" $ do
+        let expect = Just $ MultiOr.make
+                [ Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (UnifiedVariable.ElemVar Mock.x, mkElemVar Mock.y)
+                        ]
+                    }
+                ]
+        actual <-
+            matchDefinition
+                (mkEquals_ (Mock.plain10 (mkElemVar Mock.x)) (Mock.plain10 Mock.a))
+                (mkEquals_ (Mock.plain10 (mkElemVar Mock.y)) (Mock.plain10 Mock.a))
+        assertEqualWithExplanation "" expect actual
+
     , testCase "CharLiteral" $ do
         actual <-
             matchDefinition
