@@ -16,7 +16,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     ) where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Function
 import           Data.Maybe
@@ -341,17 +340,9 @@ evaluateWithDefinitionAxioms
         introduceDefinedness = flip andCondition
         markRemainderEvaluated = fmap mkEvaluated
 
-    simplifiedResults <-
-        Monad.Trans.lift
-        $ OrPattern.simplifyPredicatesWithSmt (Step.gatherResults result)
-    simplifiedRemainders <-
-        Monad.Trans.lift
-        $ OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
-
-    return AttemptedAxiomResults
-        { results = simplifiedResults
-        , remainders = simplifiedRemainders
-        }
+    AttemptedAxiomResults
+        <$> OrPattern.simplifyPredicatesWithSmt (Step.gatherResults result)
+        <*> OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
 
   where
     ruleIsConcrete =
