@@ -348,7 +348,7 @@ evaluateWithDefinitionAxioms
         Monad.Trans.lift
         $ OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
 
-    return $ AttemptedAxiom.Applied AttemptedAxiomResults
+    return AttemptedAxiomResults
         { results = simplifiedResults
         , remainders = simplifiedRemainders
         }
