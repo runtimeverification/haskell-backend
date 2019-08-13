@@ -28,6 +28,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
+import qualified Data.Limit as Limit
 import           Data.Maybe
 
 import           Kore.Debug
@@ -47,6 +48,7 @@ import           Kore.Unparser
 import           Numeric.Natural
                  ( Natural )
 
+import Debug.Trace
 {- NOTE: Non-deterministic semantics
 
 The current implementation of one-path verification assumes that the proof goal
@@ -173,13 +175,17 @@ verifyClaim
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
     strategy
-    (goal, _)
+    (goal, stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = Goal $ getConfiguration goal
         destination = getDestination goal
+        limitedStrategy =
+            Limit.takeWithin
+                stepLimit
+                strategy
     executionGraph <-
-        runStrategy (modifTransitionRule destination) strategy startPattern
+        runStrategy (modifTransitionRule destination) limitedStrategy startPattern
     -- Throw the first unproven configuration as an error.
     -- This might appear to be unnecessary because transitionRule' (below)
     -- throws an error if it encounters a Stuck proof state. However, the proof
@@ -196,9 +202,6 @@ verifyClaim
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
             $ transitionRule' destination prim proofState'
-        let (configs, _) = unzip transitions
-            stuckConfigs = mapMaybe extractGoalRem configs
-        Foldable.traverse_ Monad.Except.throwError stuckConfigs
         Transition.scatter transitions
 
 -- | Attempts to perform a single proof step, starting at the configuration

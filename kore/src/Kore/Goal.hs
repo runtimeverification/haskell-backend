@@ -131,6 +131,7 @@ data Prim rule
     | TriviallyValid
     | DerivePar [rule]
     | DeriveSeq [rule]
+    deriving (Show)
 
 class Goal goal where
     data Rule goal

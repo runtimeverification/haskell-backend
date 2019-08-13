@@ -18,6 +18,9 @@ import Data.Limit
 import Numeric.Natural
        ( Natural )
 
+import Debug.Trace
+import Kore.Unparser
+
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Goal
 import           Kore.Internal.Pattern
@@ -70,6 +73,7 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
+        -- traceM $ either unparseToString (\_ -> "err") actual
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -82,7 +86,8 @@ test_onePathVerification =
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
         assertEqualWithExplanation ""
-            (Left $ Pattern.fromTermLike Mock.b
+            (Left . Pattern.fromTermLike
+            $ mkOr Mock.b Mock.c
             )
             actual
     , testCase "Verifies one claim" $ do
