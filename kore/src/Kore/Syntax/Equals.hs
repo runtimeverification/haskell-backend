@@ -74,11 +74,11 @@ instance Unparse child => Unparse (Equals Sort child) where
             , unparse2 equalsSecond
             ])
 
-instance Ord variable => Synthetic (Equals sort) (FreeVariables variable) where
+instance Ord variable => Synthetic (FreeVariables variable) (Equals sort) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic (Equals Sort) Sort where
+instance Synthetic Sort (Equals Sort) where
     synthetic equals =
         equalsResultSort
         & seq (matchSort equalsOperandSort equalsFirst)

@@ -46,9 +46,9 @@ data FunctionalProof variable
     | FunctionalHead Symbol
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-    | FunctionalStringLiteral (StringLiteral ())
+    | FunctionalStringLiteral StringLiteral
     -- ^A string literal is the repeated application of functional constructors.
-    | FunctionalCharLiteral (CharLiteral ())
+    | FunctionalCharLiteral CharLiteral
     -- ^A char literal is a functional constructor without arguments.
   deriving Generic
 

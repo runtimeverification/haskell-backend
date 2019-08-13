@@ -40,6 +40,8 @@ import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog, logWarning )
+import qualified Kore.Profiler.Profile as Profile
+                 ( equalitySimplification )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -200,6 +202,9 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
         traceMaybeT
             D_Function_evaluatePattern
             [ debugArg "axiomIdentifier" identifier ]
+        . case identifier of
+            Nothing -> id
+            Just identifier' -> Profile.equalitySimplification identifier'
 
     unchangedPatt =
         Conditional

@@ -36,15 +36,7 @@ test_heat_arguments =
         $ expectFailure
         $ parseHeatCool $ Attributes [ illegalAttribute ]
   where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = heatSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+    illegalAttribute = attributePattern heatSymbol [attributeString "illegal"]
 
 test_heat_parameters :: TestTree
 test_heat_parameters =
@@ -89,15 +81,7 @@ test_cool_arguments =
         $ expectFailure
         $ parseHeatCool $ Attributes [ illegalAttribute ]
   where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = coolSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+    illegalAttribute = attributePattern coolSymbol [attributeString "illegal"]
 
 test_cool_parameters :: TestTree
 test_cool_parameters =

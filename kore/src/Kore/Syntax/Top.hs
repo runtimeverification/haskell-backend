@@ -45,10 +45,10 @@ instance Unparse (Top Sort child) where
 
     unparse2 _ = "\\top"
 
-instance Ord variable => Synthetic (Top sort) (FreeVariables variable) where
+instance Ord variable => Synthetic (FreeVariables variable) (Top sort) where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
-instance Synthetic (Top Sort) Sort where
+instance Synthetic Sort (Top Sort) where
     synthetic = topSort
     {-# INLINE synthetic #-}
