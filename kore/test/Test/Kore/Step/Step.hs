@@ -186,6 +186,38 @@ test_unifyRule =
             expect = Right []
         actual <- unifyRule initial axiom
         assertEqualWithExplanation "" expect actual
+
+    , testCase "zzz removes redundant requires" $ do
+        let initial =
+                Conditional
+                    { term = Mock.a
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.functional11 Mock.a)
+                            (Mock.functional10 Mock.a)
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.a
+                    , right = Mock.b
+                    , requires =
+                        makeEqualsPredicate
+                            (Mock.functional11 Mock.a)
+                            (Mock.functional10 Mock.a)
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            expect =
+                Right
+                    [ Conditional
+                        { term = axiom
+                        , predicate = makeTruePredicate
+                        , substitution = mempty
+                        }
+                    ]
+        actual <- unifyRule initial axiom
+        assertEqualWithExplanation "" expect actual
     ]
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.

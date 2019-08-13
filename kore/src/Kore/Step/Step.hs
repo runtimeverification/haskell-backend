@@ -41,6 +41,8 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
+import           Data.Function
+                 ( on, (&) )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -67,12 +69,15 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Logger as Log
+import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
+import           Kore.Step.SMT.Evaluator
+                 ( evaluate )
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -228,8 +233,32 @@ unifyRule
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Predicate.fromPredicate ruleRequires
-    unification' <- Substitution.normalizeExcept (unification <> requires')
+    unification' <- removeRedundancy unification requires'
     return (rule' `Conditional.withCondition` unification')
+  where
+    removeRedundancy unificationSolution requires = do
+        let predicate =
+                (makePredicate `on` Predicate.toPredicate)
+                    unificationSolution requires
+        isPreRedundant <- evaluate predicate
+        let nonRedundantPredicate =
+                case isPreRedundant of
+                    Just False -> unificationSolution
+                    _         -> unificationSolution <> requires
+        Substitution.normalizeExcept nonRedundantPredicate
+
+    -- | ¬(⌈L ∧ φ⌉ ∧ P → Pre)
+    makePredicate unificationSolution requires =
+        Syntax.makeNotPredicate
+            $ Syntax.makeImpliesPredicate
+                (Syntax.makeAndPredicate
+                     unificationSolution
+                     initialPredicate
+                )
+                requires
+
+    initialPredicate =
+        Conditional.toPredicate $ Conditional.withoutTerm initial
 
 unifyRules
     ::  forall unifier variable
