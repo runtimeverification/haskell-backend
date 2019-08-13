@@ -11,7 +11,6 @@ module Kore.Step.Simplification.TermLike
 
 import qualified Control.Error as Error
 import qualified Control.Exception as Exception
-import qualified Control.Monad as Monad
 import           Data.Function
 import           Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
@@ -20,7 +19,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+                 ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
@@ -152,16 +151,10 @@ simplifyToOr =
         -> BranchT simplifier (Pattern variable)
     workerInternal Unstable input = do
         simplified <- simplifyPatternInternal input
-        -- TODO (thomas.tuegel): simplifyPatternInternal should be idempotent.
-        if isNormalized simplified
-            then workerAxioms Stable simplified
-            else workerInternal Unstable simplified
+        workerAxioms Stable simplified
     workerInternal Stable input =
-        Exception.assert (isNormalized input)
+        Exception.assert (Pattern.isNormalized input)
         $ return input
-
-    isNormalized Conditional { substitution } =
-        Substitution.isNormalized substitution
 
 simplifyPatternInternal
     ::  forall variable simplifier
@@ -174,8 +167,13 @@ simplifyPatternInternal
     => Pattern variable
     -> BranchT simplifier (Pattern variable)
 simplifyPatternInternal (Pattern.splitTerm -> (termLike, predicate)) = do
-    predicate' <- normalize predicate
-    simplifyInternalExt predicate' termLike >>= scatter
+    Exception.assert (Predicate.isNormalized predicate) $ return ()
+    simplified <- simplifyInternalExt predicate termLike >>= scatter
+    let (termLike', predicate') = Pattern.splitTerm simplified
+    predicate'' <- normalize (predicate <> predicate')
+    let subst = Substitution.toMap $ Predicate.substitution predicate''
+        termLike'' = substitute subst termLike'
+    return $ Pattern.withCondition termLike'' predicate''
 
 simplifyInternal
     ::  forall variable simplifier
@@ -208,11 +206,9 @@ simplifyInternalExt
     => Predicate variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
-simplifyInternalExt predicate =
-    Monad.liftM (fmap andPredicate) . simplifyInternalWorker
+simplifyInternalExt _ =
+    simplifyInternalWorker
   where
-    andPredicate = flip Pattern.andCondition predicate
-
     simplifyChildren
         :: Traversable t
         => t (TermLike variable)
