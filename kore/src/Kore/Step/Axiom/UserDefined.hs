@@ -12,6 +12,11 @@ module Kore.Step.Axiom.UserDefined
     , equalityRuleEvaluator
     ) where
 
+import           Control.Error
+                 ( MaybeT )
+import qualified Control.Error as Error
+import qualified Control.Monad as Monad
+
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -34,14 +39,13 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+                 ( AttemptedAxiom (..), maybeNotApplicable )
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
                  ( simplifyPredicatesWithSmt )
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
-import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError )
+import           Kore.TopBottom
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
@@ -79,11 +83,8 @@ equalityRuleEvaluator
   | Axiom.Concrete.isConcrete (Attribute.concrete $ attributes rule)
   , not (TermLike.isConcrete patt)
   = notApplicable
-  | otherwise = do
-    result <- applyRule patt rule
-    case result of
-        Left _        -> notApplicable
-        Right results -> AttemptedAxiom.Applied <$> simplifyResults results
+  | otherwise =
+    AttemptedAxiom.maybeNotApplicable (applyRule patt rule >>= simplifyResults)
   where
     notApplicable :: simplifier (AttemptedAxiom variable)
     notApplicable = return AttemptedAxiom.NotApplicable
@@ -94,28 +95,30 @@ equalityRuleEvaluator
     applyRule
         :: TermLike variable
         -> RulePattern Variable
-        -> simplifier
-            (Either UnificationOrSubstitutionError [Step.Results variable])
+        -> MaybeT simplifier [Step.Results variable]
     applyRule patt' rule' =
-        Monad.Unify.runUnifierT
+        (=<<) (either (const Error.nothing) return)
+        $ Monad.Unify.runUnifierT
         $ Step.applyRulesParallel
             unificationProcedure
             [RulePattern.mapVariables fromVariable rule']
             (Pattern.fromTermLike patt')
 
     simplifyOrPatternsWithSmt
-        :: [OrPattern variable] -> simplifier (OrPattern variable)
+        :: [OrPattern variable]
+        -> MaybeT simplifier (OrPattern variable)
     simplifyOrPatternsWithSmt patterns = do
         simplified <- traverse OrPattern.simplifyPredicatesWithSmt patterns
         return (MultiOr.mergeAll simplified)
 
     simplifyResults
         :: [Step.Results variable]
-        -> simplifier (AttemptedAxiomResults variable)
+        -> MaybeT simplifier (AttemptedAxiomResults variable)
     simplifyResults stepResults = do
         results <-
             simplifyOrPatternsWithSmt
             $ map Step.gatherResults stepResults
+        (Monad.guard . not) (isBottom results)
         remainders <-
             simplifyOrPatternsWithSmt
             $ map Step.remainders stepResults

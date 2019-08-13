@@ -18,7 +18,7 @@ import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Axiom.Concrete
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-                 ( Conditional (..), Pattern, bottom )
+                 ( Conditional (..), Pattern )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
@@ -105,17 +105,7 @@ test_userDefinedFunction =
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "f(x) => g(x)" expect actual
     , testCase "Cannot apply step with unsat axiom pre-condition" $ do
-        let expect =
-                AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrPattern.fromPatterns []
-                    , remainders = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.functionalConstr10 (mkElemVar Mock.x)
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                             }
-                        ]
-                    }
+        let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
@@ -131,12 +121,7 @@ test_userDefinedFunction =
         assertEqualWithExplanation "f(x) => g(x) requires false" expect actual
 
     , testCase "Cannot apply step with unsat condition" $ do
-        let expect =
-                AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results =
-                        OrPattern.fromPatterns [ Pattern.bottom ]
-                    , remainders = OrPattern.fromPatterns []
-                    }
+        let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
@@ -182,19 +167,7 @@ test_userDefinedFunction =
 test_userDefinedFunctionSmt :: [TestTree]
 test_userDefinedFunctionSmt =
     [ testCase "Prunes results with the SMT" $ do
-        let
-            expect =
-                AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrPattern.bottom
-                    , remainders = OrPattern.fromPatterns
-                        [ Conditional
-                            { term = baseTerm Mock.z Mock.z
-                            , predicate =
-                                makeNotPredicate (basePredicate Mock.z Mock.z)
-                            , substitution = mempty
-                            }
-                        ]
-                    }
+        let expect = AttemptedAxiom.NotApplicable
         actual <-
             evaluateWithAxiom
                 (EqualityRule RulePattern
