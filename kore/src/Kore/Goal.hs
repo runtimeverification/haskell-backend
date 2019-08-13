@@ -182,6 +182,8 @@ transitionRule = transitionRuleWorker
     transitionRuleWorker RemoveDestination (Goal g) =
         GoalRem <$> removeDestination g
 
+    transitionRuleWorker TriviallyValid (Goal g)
+      | isTriviallyValid g = return Proven
     transitionRuleWorker TriviallyValid (GoalRem g)
       | isTriviallyValid g = return Proven
 
@@ -217,7 +219,7 @@ allPathStrategy claims axioms =
             , CheckGoalRem
             , RemoveDestination
             , TriviallyValid
-            , DerivePar claims
+            , DeriveSeq claims
             , DerivePar axioms
             , TriviallyValid
             ]
@@ -232,7 +234,7 @@ onePathFirstStep axioms =
         , RemoveDestination
         , Simplify
         , TriviallyValid
-        , DerivePar axioms
+        , DeriveSeq axioms
         , Simplify
         , TriviallyValid
         ]
@@ -247,8 +249,9 @@ onePathFollowupStep claims axioms =
         , RemoveDestination
         , Simplify
         , TriviallyValid
-        , DerivePar claims
-        , DerivePar axioms
+        , DeriveSeq claims
+        , Simplify
+        , DeriveSeq axioms
         , Simplify
         , TriviallyValid
         ]
@@ -326,8 +329,8 @@ instance
                 $ orResult
         pure $ makeRuleFromPatterns simplifiedResult destination
 
-    isTriviallyValid goal =
-        isBottom . left . coerce $ goal
+    isTriviallyValid =
+        isBottom . left . coerce
 
     derivePar rules goal = do
         let destination = getDestination goal
@@ -444,6 +447,9 @@ getDestination rule =
 makeRuleFromPatterns
     :: forall rule variable
     .  Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => Show variable
     => Coercible (RulePattern variable) rule
     => Pattern variable
     -> Pattern variable
@@ -452,7 +458,19 @@ makeRuleFromPatterns configuration destination =
     coerce RulePattern
         { left = term configuration
         , right = term destination
-        , requires = predicate configuration
-        , ensures = predicate destination
+        , requires =
+            Predicate.makeAndPredicate
+                (predicate configuration)
+                ( Predicate.fromSubstitution
+                . substitution
+                $ configuration
+                )
+        , ensures =
+            Predicate.makeAndPredicate
+                (predicate destination)
+                ( Predicate.fromSubstitution
+                . substitution
+                $ destination
+                )
         , attributes = Default.def
         }
