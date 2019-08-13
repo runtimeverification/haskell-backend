@@ -156,6 +156,12 @@ simplifyToOr =
         Exception.assert (Pattern.isNormalized input)
         $ return input
 
+{- | Simplify a 'Pattern' using the internal simplifier.
+
+The input 'Substitution' must be normalized. The output 'Substitution' is
+normalized and the substitution is applied to the 'TermLike'.
+
+ -}
 simplifyPatternInternal
     ::  forall variable simplifier
     .   ( SortedVariable variable
