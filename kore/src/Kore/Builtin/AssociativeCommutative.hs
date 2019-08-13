@@ -87,7 +87,6 @@ import           Kore.Sort
 import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom, emptyAttemptedAxiom )
-import qualified Kore.Step.Substitution as Substitution
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.Unification.Unify
@@ -954,11 +953,11 @@ unifyEqualsNormalizedAc
 
 buildResultFromUnifiers
     :: forall normalized unifier variable
-    .   ( MonadUnify unifier
-        , TermWrapper normalized
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( Monad unifier
+        , Ord variable
         , Show variable
+        , SortedVariable variable
+        , TermWrapper normalized
         , Unparse variable
         )
     => (forall result . Doc () -> unifier result)
@@ -1024,14 +1023,12 @@ buildResultFromUnifiers
             ++ concreteTerms
             ++ Map.toList opaquesConcreteTerms
             )
-    let unificationPredicates =
-            almostResultPredicates ++ opaquesPredicates ++ predicates
-        predicate
-          | null unificationPredicates = Predicate.top
-          | otherwise = List.foldr1 andCondition unificationPredicates
-    predicate' <- Substitution.normalizeExcept predicate
     let allOpaque = Data.List.sort (commonOpaque ++ opaquesOpaque)
         -- Merge all unification predicates.
+        predicate = List.foldl'
+            andCondition
+            Predicate.top
+            (almostResultPredicates ++ opaquesPredicates ++ predicates)
         result
             :: Conditional variable
                 (normalized (TermLike Concrete) (TermLike variable))
@@ -1042,7 +1039,7 @@ buildResultFromUnifiers
                 , concreteElements = concreteMap
                 , opaque = allOpaque
                 }
-            `Conditional.withCondition` predicate'
+            `Conditional.withCondition` predicate
 
     return result
 
