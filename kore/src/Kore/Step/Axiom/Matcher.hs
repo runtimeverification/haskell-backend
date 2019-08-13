@@ -184,6 +184,8 @@ matchEqualHeads (Pair (Ceil_ _ _ term1) (Ceil_ _ _ term2)) =
 matchEqualHeads (Pair (DV_ sort1 dv1) (DV_ sort2 dv2)) = do
     Monad.guard (sort1 == sort2)
     push (Pair dv1 dv2)
+matchEqualHeads (Pair (Equals_ _ _ term11 term12) (Equals_ _ _ term21 term22)) =
+    push (Pair term11 term21) >> push (Pair term12 term22)
 matchEqualHeads _ = empty
 
 matchExists
