@@ -61,7 +61,7 @@ pipeline {
         '''
       }
       post {
-        failure {
+        unsuccessful {
           slackSend color: '#cb2431'                                            \
                   , channel: '#haskell-backend'                                 \
                   , message: "KEVM Integration Tests Failure: ${env.BUILD_URL}"
