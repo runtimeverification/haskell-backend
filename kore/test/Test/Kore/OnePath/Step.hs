@@ -295,24 +295,24 @@ test_onePathStrategy =
              equalsXB = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.b
              equalsXC = makeEqualsPredicate (TermLike.mkVar Mock.x) Mock.c
          assertEqualWithExplanation ""
-             [ Goal $ makeOnePathRule
-                 ( Pattern.toTermLike Conditional
+             [ Goal $ makeRuleFromPatterns
+                 ( Conditional
                      { term = Mock.f Mock.b
                      , predicate = makeTruePredicate
                      , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                      }
                  )
-                 (Mock.functionalConstr11 Mock.a)
-             , Goal $ makeOnePathRule
-                 ( Pattern.toTermLike Conditional
+                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
+             , Goal $ makeRuleFromPatterns
+                 ( Conditional
                      { term = Mock.f Mock.c
                      , predicate = makeTruePredicate
                      , substitution = Substitution.unsafeWrap [(Mock.x, Mock.c)]
                      }
                  )
-                 (Mock.functionalConstr11 Mock.a)
-             , GoalRem $ makeOnePathRule
-                 ( Pattern.toTermLike Conditional
+                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
+             , GoalRem $ makeRuleFromPatterns
+                 ( Conditional
                      { term = Mock.functionalConstr11 (TermLike.mkVar Mock.x)
                      , predicate =
                          makeMultipleAndPredicate
@@ -323,7 +323,7 @@ test_onePathStrategy =
                      , substitution = mempty
                      }
                  )
-                 (Mock.functionalConstr11 Mock.a)
+                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
              ]
              [ _actual1
              , _actual2
@@ -350,8 +350,8 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqualWithExplanation ""
-            [ GoalRem $ makeOnePathRule
-                ( Pattern.toTermLike Conditional
+            [ GoalRem $ makeRuleFromPatterns
+                ( Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate =
                         makeNotPredicate
@@ -361,7 +361,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                Mock.a
+                (fromTermLike Mock.a)
             , Proven
             ]
             [ _actual1
