@@ -303,7 +303,7 @@ instance Goal.Goal Goal where
 
     simplify = undefined
     isTrusted = undefined
-    deriveSeq = undefined
+    deriveSeq = Goal.derivePar
 
 runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq (Goal.Rule Goal))]
 runTransitionRule prim state =
