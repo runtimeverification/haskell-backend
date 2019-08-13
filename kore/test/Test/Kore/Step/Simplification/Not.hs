@@ -27,6 +27,8 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -70,7 +72,7 @@ test_simplifyEvaluated =
             actuals = Foldable.toList actual
 
 termX :: Pattern Variable
-termX = Pattern.fromTermLike (mkVar Mock.x)
+termX = Pattern.fromTermLike (mkElemVar Mock.x)
 
 termNotX :: Pattern Variable
 termNotX = mkNot <$> termX
@@ -85,10 +87,10 @@ equalsXB :: Pattern Variable
 equalsXB = fromPredicate equalsXB_
 
 equalsXA_ :: Syntax.Predicate Variable
-equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.a
+equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 
 equalsXB_ :: Syntax.Predicate Variable
-equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkVar Mock.x) Mock.b
+equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
 notEqualsXA :: Pattern Variable
 notEqualsXA = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXA_
@@ -101,7 +103,7 @@ neitherXAB =
         (Syntax.Predicate.makeNotPredicate equalsXB_)
 
 substXA :: Pattern Variable
-substXA = fromSubstitution $ Substitution.unsafeWrap [(Mock.x, Mock.a)]
+substXA = fromSubstitution $ Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
 
 forceTermSort :: Pattern Variable -> Pattern Variable
 forceTermSort = fmap (forceSort Mock.testSort)

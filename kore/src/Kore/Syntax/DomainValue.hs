@@ -15,7 +15,6 @@ import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -60,19 +59,12 @@ instance Unparse child => Unparse (DomainValue Sort child) where
 
 instance
     Ord variable =>
-    Synthetic (DomainValue sort) (FreeVariables variable)
+    Synthetic (FreeVariables variable) (DomainValue sort)
   where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
 
-instance
-    Ord variable =>
-    Synthetic (DomainValue sort) (FreeSetVariables variable)
-  where
-    synthetic = domainValueChild
-    {-# INLINE synthetic #-}
-
-instance Synthetic (DomainValue Sort) Sort where
+instance Synthetic Sort (DomainValue Sort) where
     synthetic DomainValue { domainValueSort, domainValueChild } =
         domainValueSort
         & seq (matchSort stringMetaSort domainValueChild)

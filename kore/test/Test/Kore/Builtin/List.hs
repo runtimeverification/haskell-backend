@@ -143,7 +143,7 @@ test_simplify =
     testPropertyWithSolver "simplify elements" $ do
         let
             x =
-                mkVar Variable
+                mkElemVar $ ElementVariable Variable
                     { variableName = testId "x"
                     , variableCounter = mempty
                     , variableSort = intSort

@@ -35,7 +35,7 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike, mkBottom_, mkVar, varS )
+                 ( TermLike, elemVarS, mkBottom_, mkElemVar )
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( Axiom (..), verifyClaimStep )
@@ -514,7 +514,7 @@ add1 =
     coerce $ rulePatternWithName n plusOne "add1Axiom"
   where
     one     = Int.asInternal intSort 1
-    n       = mkVar $ varS "x" intSort
+    n       = mkElemVar $ elemVarS "x" intSort
     plusOne = n `addInt` one
 
 zeroToTen :: Claim

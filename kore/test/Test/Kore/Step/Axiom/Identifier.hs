@@ -32,16 +32,16 @@ test_matchAxiomIdentifier =
         (Ceil (Ceil (Application Mock.fId)))
     , notMatches "\\and(f(a), g(a))"
         (TermLike.mkAnd (Mock.f Mock.a) (Mock.g Mock.a))
-    , matches "x" (TermLike.mkVar Mock.x) Variable
+    , matches "x" (TermLike.mkElemVar Mock.x) Variable
     , matches "\\equals(x, f(a))"
-        (TermLike.mkEquals_ (TermLike.mkVar Mock.x) (Mock.f Mock.a))
+        (TermLike.mkEquals_ (TermLike.mkElemVar Mock.x) (Mock.f Mock.a))
         (Equals Variable (Application Mock.fId))
     , matches "\\exists(x, f(a))"
         (TermLike.mkExists Mock.x (Mock.f Mock.a))
         (Exists (Application Mock.fId))
     , matches "\\exists(x, \\equals(x, f(a)))"
         (TermLike.mkExists Mock.x
-            $ TermLike.mkEquals_ (TermLike.mkVar Mock.x) (Mock.f Mock.a))
+            $ TermLike.mkEquals_ (TermLike.mkElemVar Mock.x) (Mock.f Mock.a))
         (Exists (Equals Variable (Application Mock.fId)))
     ]
 

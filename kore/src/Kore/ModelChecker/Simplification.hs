@@ -7,6 +7,7 @@ module Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     ) where
 
+import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -17,14 +18,16 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.OrPattern as OrPattern
-                 ( filterMultiOrWithTermCeil )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+                 ( filterMultiOr )
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 checkImplicationIsTop
     :: MonadSimplify m
@@ -35,7 +38,7 @@ checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkVar <$> rename
+                subst = mkElemVar <$> Map.mapKeys ElemVar rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm =
@@ -50,7 +53,7 @@ checkImplicationIsTop lhs rhs =
                     , substitution = mempty
                     }
             orResult <- Pattern.simplifyAndRemoveTopExists result
-            orFinalResult <- OrPattern.filterMultiOrWithTermCeil orResult
+            orFinalResult <- SMT.Evaluator.filterMultiOr orResult
             return (isBottom orFinalResult)
         _ -> (error . show . Pretty.vsep)
              [ "Not implemented error:"
@@ -58,13 +61,13 @@ checkImplicationIsTop lhs rhs =
              , Pretty.indent 4 (unparse rhs)
              ]
       where
-        lhsFreeVariables =
-            FreeVariables.getFreeVariables (Pattern.freeVariables lhs)
+        lhsFreeVariables = Set.fromList $
+            FreeVariables.getFreeElementVariables (Pattern.freeVariables lhs)
         lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set Variable, TermLike Variable)
+    -> (Set.Set (ElementVariable Variable), TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

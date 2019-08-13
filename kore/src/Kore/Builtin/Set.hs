@@ -33,7 +33,10 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Foldable as Foldable
+                 ( toList )
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
                  ( Map )
@@ -42,7 +45,6 @@ import qualified Data.Sequence as Seq
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
-
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -161,6 +163,9 @@ symbolVerifiers =
       )
     , ( Set.intersectionKey
       , Builtin.verifySymbol assertSort [assertSort, assertSort]
+      )
+    , ( Set.list2setKey
+      , Builtin.verifySymbol assertSort [List.assertSort]
       )
     ]
 
@@ -371,6 +376,23 @@ evalIntersection =
             _set2 <- expectConcreteBuiltinSet ctx _set2
             returnConcreteSet resultSort (Map.intersection _set1 _set2)
 
+evalList2set :: Builtin.Function
+evalList2set =
+    Builtin.functionEvaluator evalList2set0
+  where
+    evalList2set0 :: Builtin.FunctionImplementation
+    evalList2set0 _ resultSort arguments =
+        Builtin.getAttemptedAxiom $ do
+            let _list =
+                    case arguments of
+                        [_map] -> _map
+                        _      -> Builtin.wrongArity Set.list2setKey
+            _list <- List.expectConcreteBuiltinList Set.list2setKey _list
+            let _set = Map.fromList
+                            $ fmap (\x -> (x, Domain.SetValue))
+                            $ Foldable.toList _list
+            returnConcreteSet resultSort _set
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -384,6 +406,7 @@ builtinFunctions =
         , (Set.toListKey, evalToList)
         , (Set.sizeKey, evalSize)
         , (Set.intersectionKey, evalIntersection)
+        , (Set.list2setKey, evalList2set)
         ]
 
 {- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
@@ -491,33 +514,22 @@ unifyEquals
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SimplificationType
-    -> SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 unifyEquals
-    _simplificationType  -- TODO: Use this.
-    tools
-    _substitutionSimplifier
-    _simplifier
-    _
     unifyEqualsChildren
     first
     second
-  | fromMaybe False (isSetSort tools sort1)
-  = MaybeT $ do
-    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
-    case sequence unifiers of
-        Nothing -> return Nothing
-        Just us -> Monad.Unify.scatter (map Just us)
-  | otherwise = empty
+  = do
+    tools <- Simplifier.askMetadataTools
+    (Monad.guard . fromMaybe False) (isSetSort tools sort1)
+    MaybeT $ do
+        unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
+        case sequence unifiers of
+            Nothing -> return Nothing
+            Just us -> Monad.Unify.scatter (map Just us)
   where
     sort1 = termLikeSort first
 
@@ -529,7 +541,8 @@ unifyEquals
     unifyEquals0
         (Builtin_ (Domain.BuiltinSet normalized1))
         (Builtin_ (Domain.BuiltinSet normalized2))
-      =
+      = do
+        tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
             tools
             first
@@ -548,7 +561,8 @@ unifyEquals
             -> MaybeT unifier (TermLike variable)
         asDomain patt =
             case normalizedOrBottom of
-                Ac.Normalized normalized ->
+                Ac.Normalized normalized -> do
+                    tools <- Simplifier.askMetadataTools
                     return (Ac.asInternal tools sort1 normalized)
                 Ac.Bottom ->
                     Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom

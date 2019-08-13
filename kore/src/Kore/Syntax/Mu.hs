@@ -16,7 +16,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -24,6 +23,7 @@ import Kore.Sort
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 
 {-|'Mu' corresponds to the @μ@ syntactic category from the
  Syntax of the MμL
@@ -59,26 +59,22 @@ instance
     unparse2 Mu { muVariable, muChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\mu"
-            , unparse2SortedVariable (getVariable muVariable)
+            , unparse2SortedVariable (getSetVariable muVariable)
             , unparse2 muChild
             ])
 
-instance Ord variable => Synthetic (Mu variable) (FreeVariables variable) where
-    synthetic = muChild
-    {-# INLINE synthetic #-}
-
 instance
     Ord variable =>
-    Synthetic (Mu variable) (FreeSetVariables variable)
+    Synthetic (FreeVariables variable) (Mu variable)
   where
-    synthetic Mu { muVariable = SetVariable variable, muChild } =
-        bindSetVariable variable muChild
+    synthetic Mu { muVariable, muChild } =
+        bindVariable (SetVar muVariable) muChild
     {-# INLINE synthetic #-}
 
-instance SortedVariable variable => Synthetic (Mu variable) Sort where
+instance SortedVariable variable => Synthetic Sort (Mu variable) where
     synthetic Mu { muVariable, muChild } =
         muSort
         & seq (matchSort muSort muChild)
       where
-        muSort = sortedVariableSort (getVariable muVariable)
+        muSort = sortedVariableSort (getSetVariable muVariable)
     {-# INLINE synthetic #-}

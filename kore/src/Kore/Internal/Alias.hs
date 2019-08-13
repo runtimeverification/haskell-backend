@@ -18,8 +18,6 @@ import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
-       ( FreeSetVariables )
 import Kore.Attribute.Pattern.FreeVariables
        ( FreeVariables )
 import Kore.Attribute.Synthetic
@@ -70,21 +68,13 @@ instance Unparse Alias where
 
 instance
     Ord variable =>
-    Synthetic (Application Alias) (FreeVariables variable)
+    Synthetic (FreeVariables variable) (Application Alias)
   where
     -- TODO (thomas.tuegel): Consider that there could be bound variables here.
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance
-    Ord variable =>
-    Synthetic (Application Alias) (FreeSetVariables variable)
-  where
-    -- TODO (thomas.tuegel): Consider that there could be bound variables here.
-    synthetic = Foldable.fold
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Application Alias) Sort where
+instance Synthetic Sort (Application Alias) where
     synthetic application =
         resultSort Function.& deepseq (matchSorts operandSorts children)
       where

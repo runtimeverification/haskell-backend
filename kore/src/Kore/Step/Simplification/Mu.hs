@@ -13,7 +13,7 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Unparser
 
-{-|'simplify' simplifies an 'Mu' pattern with an 'OrPattern'
+{-|'simplify' simplifies a 'Mu' pattern with an 'OrPattern'
 child.
 -}
 simplify

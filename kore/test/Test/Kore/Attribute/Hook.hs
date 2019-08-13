@@ -52,16 +52,8 @@ test_twoArguments =
         $ parseHook $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = hookSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    , (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern hookSymbol
+            [attributeString "illegal", attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
@@ -70,16 +62,10 @@ test_parameters =
         $ parseHook $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = hookId
-                        , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
-                        }
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "BUILTIN.name")
-                    ]
+        attributePattern
+            SymbolOrAlias
+                { symbolOrAliasConstructor = hookId
+                , symbolOrAliasParams =
+                    [ SortVariableSort (SortVariable "illegal") ]
                 }
+            [attributeString "BUILTIN.name"]

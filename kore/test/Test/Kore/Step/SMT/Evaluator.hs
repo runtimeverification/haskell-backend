@@ -13,7 +13,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
                  ( Pattern )
 import           Kore.Internal.TermLike
-                 ( TermLike, mkVar )
+                 ( TermLike, mkElemVar )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
                  makeTruePredicate )
@@ -34,11 +34,11 @@ contradictoryPredicate :: Syntax.Predicate Variable
 contradictoryPredicate =
     makeAndPredicate
         (makeEqualsPredicate
-            (mkVar Mock.xInt `Mock.lessInt` Mock.builtinInt 0)
+            (mkElemVar Mock.xInt `Mock.lessInt` Mock.builtinInt 0)
             (Mock.builtinBool False)
         )
         (makeEqualsPredicate
-            (mkVar Mock.xInt `Mock.lessInt` Mock.builtinInt 0)
+            (mkElemVar Mock.xInt `Mock.lessInt` Mock.builtinInt 0)
             (Mock.builtinBool True)
         )
 
