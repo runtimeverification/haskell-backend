@@ -12,6 +12,7 @@ module Test.Kore.Step.Axiom.Matcher
     , test_matching_Pair
     , test_matching_Exists
     , test_matching_Forall
+    , test_matching_Equals
     , match
     , MatchResult
     , matches, doesn'tMatch
@@ -760,6 +761,22 @@ test_matching_Exists =
         (mkExistsN [xInt, yInt] $ mkPair (mkElemVar yInt) (mkElemVar yInt))
         []
     ]
+
+test_matching_Equals :: [TestTree]
+test_matching_Equals =
+    [ matches "equals(x,y) matches equals(1,y)"
+        (mkEquals' (mkElemVar xInt) (mkElemVar yInt))
+        (mkEquals' (mkInt 1) (mkElemVar yInt))
+        [(ElemVar xInt, mkInt 1)]
+    , doesn'tMatch "equals(x,1) doesn't match equals(y,2)"
+        (mkEquals' (mkElemVar xInt) (mkInt 1))
+        (mkEquals' (mkElemVar yInt) (mkInt 2))
+    , doesn'tMatch "equals(x,x) doesn't match equals(1,2)"
+        (mkEquals' (mkElemVar xInt) (mkElemVar xInt))
+        (mkEquals' (mkInt 1) (mkInt 2))
+    ]
+  where
+    mkEquals' = mkEquals Test.intSort
 
 test_matching_Forall :: [TestTree]
 test_matching_Forall =
