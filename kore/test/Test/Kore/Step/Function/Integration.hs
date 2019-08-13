@@ -952,8 +952,38 @@ test_Pair :: [TestTree]
 test_Pair =
     [ applies "pair constructor axiom applies"
         [pairCtorAxiom]
-        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkExistsN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+    , equals "∃ x:Int y:Int. (x, y) = ⊤"
+        (mkExistsN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        mkTop_
     ]
+  where
+    -- Evaluation tests: check the result of evaluating the term
+    equals
+        :: HasCallStack
+        => TestName
+        -> TermLike Variable
+        -> TermLike Variable
+        -> TestTree
+    equals comment term expect =
+        testCase comment $ do
+            actual <- evaluate' pairSimplifiers term
+            assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+
+    evaluate'
+        :: BuiltinAndAxiomSimplifierMap
+        -> TermLike Variable
+        -> IO (Pattern Variable)
+    evaluate' functionIdToEvaluator patt =
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier env
+        $ TermLike.simplify patt
+      where
+        env =
+            Mock.env
+                { metadataTools = Builtin.testMetadataTools
+                , simplifierAxioms = functionIdToEvaluator
+                }
 
 mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 mkPair = Builtin.pair
@@ -965,16 +995,33 @@ yInt = elemVarS (testId "yInt") intSort
 pairCtorAxiom :: EqualityRule Variable
 pairCtorAxiom =
     EqualityRule $ rulePattern
-        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkExistsN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
         (mkTop $ Builtin.pairSort intSort intSort)
+
+pairCtorEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+pairCtorEvaluator =
+    ( AxiomIdentifier.Exists
+        $ AxiomIdentifier.Exists
+        $ AxiomIdentifier.Application Builtin.pairId
+    , firstFullEvaluation [equalityRuleSimplifier pairCtorAxiom]
+    )
+
+pairSimplifiers :: BuiltinAndAxiomSimplifierMap
+pairSimplifiers =
+    Map.fromList
+        [ pairCtorEvaluator
+        ]
 
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
-    BuiltinAndAxiomSimplifier
-        (equalityRuleEvaluator (axiom left right makeTruePredicate))
+    equalityRuleSimplifier (axiom left right makeTruePredicate)
+
+equalityRuleSimplifier :: EqualityRule Variable -> BuiltinAndAxiomSimplifier
+equalityRuleSimplifier equalityRule =
+    BuiltinAndAxiomSimplifier (equalityRuleEvaluator equalityRule)
 
 axiom
     :: TermLike Variable

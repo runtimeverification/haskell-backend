@@ -20,6 +20,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate, makeNotPredicate,
@@ -335,19 +336,16 @@ test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Substitution under unary functional constructor" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term =
-                            Mock.functionalConstr20
-                                Mock.a
-                                (Mock.functionalConstr10 (mkElemVar Mock.x))
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, Mock.functionalConstr10 Mock.a)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern Pattern.Conditional
+                    { term =
+                        Mock.functionalConstr20 Mock.a
+                        $ Mock.functionalConstr10 Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, Mock.functionalConstr10 Mock.a)
+                        ]
+                    }
         actual <-
             evaluate
                 (Pattern.fromTermLike
@@ -366,17 +364,14 @@ test_substitute =
 
     , testCase "Substitution" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term =
-                            Mock.functionalConstr20 Mock.a (mkElemVar Mock.y)
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, Mock.a)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern Pattern.Conditional
+                    { term = Mock.functionalConstr20 Mock.a Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, Mock.a)
+                        ]
+                    }
         actual <-
             evaluate
                 (Pattern.fromTermLike
@@ -401,16 +396,14 @@ test_substituteMap =
                 Mock.sortInjection Mock.testSort
                 $ mkDomainBuiltinMap [(Mock.a, Mock.a)]
             expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testMapX
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, testMapA)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern
+                $ Pattern.withCondition
+                    (Mock.functionalConstr20 Mock.a testMapA)
+                    (Predicate.fromSubstitution $ Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, testMapA)
+                        ]
+                    )
         actual <-
             (evaluate . Pattern.fromTermLike)
                 (mkAnd
@@ -435,16 +428,14 @@ test_substituteList =
                 Mock.sortInjection Mock.testSort
                 $ mkDomainBuiltinList [Mock.a, Mock.a]
             expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testListX
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (ElemVar Mock.x, Mock.a)
-                            , (ElemVar Mock.y, testListA)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern Pattern.Conditional
+                    { term = Mock.functionalConstr20 Mock.a testListA
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, testListA)
+                        ]
+                    }
         actual <-
             (evaluate . Pattern.fromTermLike)
                 (mkAnd
