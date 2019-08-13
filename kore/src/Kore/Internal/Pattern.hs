@@ -27,6 +27,7 @@ module Kore.Internal.Pattern
     , Conditional.andCondition
     , Conditional.withCondition
     , Conditional.withoutTerm
+    , Conditional.isNormalized
     , Predicate
     ) where
 
