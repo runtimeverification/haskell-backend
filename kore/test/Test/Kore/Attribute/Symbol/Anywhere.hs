@@ -37,14 +37,7 @@ test_arguments =
         $ parseAnywhere $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = anywhereSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern anywhereSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =

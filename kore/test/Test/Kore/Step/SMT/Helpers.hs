@@ -192,10 +192,10 @@ constructorAxiom sortName constructors =
     constructorAssertion (constructorName, argumentSorts) =
         foldr
             mkExists
-            (mkApplySymbol symbol (map mkVar argumentVariables))
+            (mkApplySymbol symbol (map mkElemVar argumentVariables))
             argumentVariables
       where
-        argumentVariables :: [Variable]
+        argumentVariables :: [ElementVariable Variable]
         argumentVariables = zipWith makeVariable [1..] argumentSorts
 
         symbol =
@@ -207,8 +207,8 @@ constructorAxiom sortName constructors =
                     applicationSorts (map makeSort argumentSorts) sort
                 }
 
-makeVariable :: Natural -> Text -> Variable
-makeVariable varIndex sortName =
+makeVariable :: Natural -> Text -> ElementVariable Variable
+makeVariable varIndex sortName = ElementVariable
     Variable
         { variableName = testId "var"
         , variableCounter = Just (Element varIndex)

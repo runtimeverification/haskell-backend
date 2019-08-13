@@ -36,15 +36,7 @@ test_arguments =
         $ expectFailure
         $ parseAssoc $ Attributes [ illegalAttribute ]
   where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = assocSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+    illegalAttribute = attributePattern assocSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =

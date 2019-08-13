@@ -42,6 +42,8 @@ import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
+import           Kore.Variables.UnifiedVariable
+                 ( foldMapVariable )
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 
@@ -97,9 +99,9 @@ existentiallyQuantifyTarget predicate =
     Syntax.Predicate.makeMultipleExists freeTargetVariables predicate
   where
     freeTargetVariables =
-        filter Target.isTarget
-        $ Foldable.toList
-        $ Syntax.Predicate.freeVariables predicate
+        filter (Target.isTarget . getElementVariable)
+        . Syntax.Predicate.freeElementVariables
+        $ predicate
 
 {- | Negate a disjunction of many terms.
 
@@ -146,7 +148,9 @@ unificationConditions
 unificationConditions Conditional { predicate, substitution } =
     pure predicate <|> substitutionConditions substitution'
   where
-    substitution' = Substitution.filter Target.isNonTarget substitution
+    substitution' =
+        Substitution.filter (foldMapVariable Target.isNonTarget)
+            substitution
 
 substitutionConditions
     ::  ( Ord     variable

@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
+import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Syntax.Definition
                  ( Definition (..), Module (..), Sentence (..),
@@ -41,4 +42,6 @@ completeSentence s = [s]
 quantifyFreeVariables :: TermLike Variable -> TermLike Variable
 quantifyFreeVariables termLike =
     foldr mkForall termLike
-    $ TermLike.freeVariables termLike
+    . getFreeElementVariables
+    . TermLike.freeVariables
+    $ termLike

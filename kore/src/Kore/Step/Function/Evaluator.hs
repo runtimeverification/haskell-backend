@@ -40,10 +40,11 @@ import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog, logWarning )
+import qualified Kore.Profiler.Profile as Profile
+                 ( equalitySimplification )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( extract )
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
@@ -195,12 +196,15 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                     attemptResults
   where
     identifier :: Maybe AxiomIdentifier
-    identifier = AxiomIdentifier.extract termLike
+    identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
     tracing =
         traceMaybeT
             D_Function_evaluatePattern
             [ debugArg "axiomIdentifier" identifier ]
+        . case identifier of
+            Nothing -> id
+            Just identifier' -> Profile.equalitySimplification identifier'
 
     unchangedPatt =
         Conditional

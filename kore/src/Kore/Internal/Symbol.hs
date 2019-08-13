@@ -39,7 +39,6 @@ import           Data.Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
@@ -91,20 +90,13 @@ instance Unparse Symbol where
         unparse2 symbolConstructor
 
 instance
-    Ord variable =>
-    Synthetic (Application Symbol) (FreeVariables variable)
+    Ord variable
+    => Synthetic (FreeVariables variable) (Application Symbol)
   where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance
-    Ord variable =>
-    Synthetic (Application Symbol) (FreeSetVariables variable)
-  where
-    synthetic = Foldable.fold
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Application Symbol) Sort where
+instance Synthetic Sort (Application Symbol) where
     synthetic application =
         resultSort Function.& deepseq (matchSorts operandSorts children)
       where

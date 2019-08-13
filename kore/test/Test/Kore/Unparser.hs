@@ -22,6 +22,7 @@ import Kore.Parser.ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 
 import           Test.Kore hiding
                  ( Gen )
@@ -59,14 +60,17 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariableF Variable
+                            asParsedPattern $ VariableF $ Const $ ElemVar
+                            $ ElementVariable Variable
                                 { variableName = testId "T"
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
                                 }
-                        , inContainingChild = asParsedPattern (StringLiteralF
-                            StringLiteral { getStringLiteral = "" })
+                        , inContainingChild =
+                            asParsedPattern
+                            $ StringLiteralF $ Const
+                                StringLiteral { getStringLiteral = "" }
                         })
                     ]
                 }
@@ -151,14 +155,10 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asParsedPattern
-                        (CharLiteralF CharLiteral
-                            { getCharLiteral = '\'' }
-                        )
-                    , asParsedPattern
-                        (CharLiteralF CharLiteral
-                            { getCharLiteral = '\'' }
-                        )
+                    [ asParsedPattern $ CharLiteralF $ Const
+                        CharLiteral { getCharLiteral = '\'' }
+                    , asParsedPattern $ CharLiteralF $ Const
+                        CharLiteral { getCharLiteral = '\'' }
                     ]
                 }::Attributes
             )

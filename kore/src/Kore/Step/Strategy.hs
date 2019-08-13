@@ -65,6 +65,10 @@ import           Data.Maybe
 import           Data.Sequence
                  ( Seq )
 import qualified Data.Sequence as Seq
+import           Kore.Profiler.Data
+                 ( MonadProfiler )
+import qualified Kore.Profiler.Profile as Profile
+                 ( executionQueueLength )
 import           Prelude hiding
                  ( all, and, any, or, replicate, seq, sequence )
 
@@ -370,7 +374,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  (Monad m, Show config, Show rule)
+    .  (MonadProfiler m, Show config, Show rule)
     => (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> GraphSearchOrder
@@ -396,7 +400,8 @@ constructExecutionGraph transit instrs0 searchOrder0 config0 = do
     unfoldWorker Seq.Empty _ = return ()
     unfoldWorker ((node, instrs) Seq.:<| rest) searchOrder
       | []              <- instrs = unfoldWorker rest searchOrder
-      | instr : instrs' <- instrs = do
+      | instr : instrs' <- instrs
+      = Profile.executionQueueLength (Seq.length rest) $ do
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         case searchOrder of
@@ -494,7 +499,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  (Monad m, Show config, Show rule)
+    .  (MonadProfiler m, Show config, Show rule)
     => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
@@ -507,7 +512,7 @@ runStrategy applyPrim instrs0 config0 =
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
-    .  (Monad m, Show config, Show rule)
+    .  (MonadProfiler m, Show config, Show rule)
     => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]

@@ -492,6 +492,15 @@ the set operand.
         [hook{}("MAP.removeAll")]
 ~~~
 
+### MAP.size
+
+Get the size of the map
+
+~~~
+    hooked-symbol size{}(Map{}) : Int{}
+        [hook{}("MAP.size")]
+~~~
+
 ### MAP.lookup
 
 If the given key is in the map, the result is the associated value; otherwise,
@@ -628,6 +637,15 @@ Is the element a member of the given set?
 ~~~
     hooked-symbol in{}(Elem{}, Set{}) : Bool{}
         [hook{}("SET.in")]
+~~~
+
+### SET.list2set
+
+Convert a list to set
+
+~~~
+    hooked-symbol list2set{}(List{}) : Set{}
+        [hook{}("SET.list2set")]
 ~~~
 
 ## KEQUAL

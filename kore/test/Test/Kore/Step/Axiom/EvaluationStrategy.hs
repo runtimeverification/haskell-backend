@@ -66,8 +66,8 @@ test_definitionEvaluation =
             evaluate
                 (definitionEvaluation
                     [ axiom
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.g (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.g (mkElemVar Mock.x))
                         makeTruePredicate
                     ]
                 )
@@ -152,13 +152,13 @@ test_definitionEvaluation =
                         , remainders = OrPattern.fromPatterns []
                         }
 
-            symbolicTerm = Mock.functionalConstr10 (mkVar Mock.y)
+            symbolicTerm = Mock.functionalConstr10 (mkElemVar Mock.y)
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator = definitionEvaluation
                 [ EqualityRule RulePattern
-                    { left = Mock.functionalConstr10 (mkVar Mock.x)
-                    , right = Mock.g (mkVar Mock.x)
+                    { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , right = Mock.g (mkElemVar Mock.x)
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
                     , attributes = def
@@ -192,8 +192,8 @@ test_firstFullEvaluation =
             evaluate
                 (firstFullEvaluation
                     [ axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.g (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.g (mkElemVar Mock.x))
                     ]
                 )
                 (Mock.functionalConstr10 Mock.c)
@@ -218,7 +218,7 @@ test_firstFullEvaluation =
                         (Mock.functionalConstr10 Mock.b)
                         (Mock.g Mock.a)
                     , axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.f Mock.a)
                     , axiomEvaluator
                         (Mock.functionalConstr10 Mock.a)
@@ -250,11 +250,11 @@ test_firstFullEvaluation =
                         (Mock.functionalConstr10 Mock.a)
                         (Mock.g Mock.a)
                     , axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.f Mock.a)
                     ]
                 )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
     , testCase "None matching" $ do
         let
@@ -270,7 +270,7 @@ test_firstFullEvaluation =
                         (Mock.g Mock.a)
                     ]
                 )
-                (Mock.functionalConstr10 (mkVar Mock.x))
+                (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
     , testCase "Error when not fully rewriting" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
@@ -339,7 +339,7 @@ test_simplifierWithFallback =
                         (Mock.g Mock.a)
                     )
                     (axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.f Mock.a)
                     )
                 )
@@ -406,7 +406,7 @@ test_simplifierWithFallback =
                         (Mock.g Mock.a)
                     )
                     (axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
                         (Mock.f Mock.a)
                     )
                 )

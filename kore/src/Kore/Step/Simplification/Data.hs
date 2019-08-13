@@ -91,6 +91,8 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( Symbol, TermLike, TermLikeF (..) )
 import           Kore.Logger
+import           Kore.Profiler.Data
+                 ( MonadProfiler (profileDuration) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
@@ -110,7 +112,9 @@ This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
 
-class (WithLog LogMessage m, MonadSMT m) => MonadSimplify m where
+class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
+    => MonadSimplify m
+  where
     -- | Retrieve the 'MetadataTools' for the Kore context.
     askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
     default askMetadataTools
@@ -210,7 +214,7 @@ lookupSimplifierAxiom
 lookupSimplifierAxiom termLike = do
     simplifierAxioms <- askSimplifierAxioms
     Error.hoistMaybe $ do
-        identifier <- Axiom.Identifier.extract termLike
+        identifier <- Axiom.Identifier.matchAxiomIdentifier termLike
         Map.lookup identifier simplifierAxioms
 
 -- * Branching
@@ -256,6 +260,8 @@ deriving instance MonadState s m => MonadState s (BranchT m)
 deriving instance WithLog msg m => WithLog msg (BranchT m)
 
 deriving instance MonadSMT m => MonadSMT (BranchT m)
+
+deriving instance MonadProfiler m => MonadProfiler (BranchT m)
 
 deriving instance MonadSimplify m => MonadSimplify (BranchT m)
 
@@ -361,7 +367,13 @@ instance (MonadUnliftIO m, WithLog LogMessage m)
         SimplifierT . localLogAction mapping . runSimplifierT
     {-# INLINE localLogAction #-}
 
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m)
+instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
+  where
+    profileDuration event duration =
+        SimplifierT (profileDuration event (runSimplifierT duration))
+    {-# INLINE profileDuration #-}
+
+instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools

@@ -15,13 +15,14 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
+import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 
 {-|'Exists' corresponds to the @\exists@ branches of the @object-pattern@ and
 @meta-pattern@ syntactic categories from the Semantics of K,
@@ -32,7 +33,7 @@ Section 9.1.4 (Patterns).
 -}
 data Exists sort variable child = Exists
     { existsSort     :: !sort
-    , existsVariable :: !variable
+    , existsVariable :: !(ElementVariable variable)
     , existsChild    :: child
     }
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
@@ -65,23 +66,19 @@ instance
     unparse2 Exists { existsVariable, existsChild } =
         Pretty.parens (Pretty.fillSep
             [ "\\exists"
-            , unparse2SortedVariable existsVariable
+            , unparse2SortedVariable (getElementVariable existsVariable)
             , unparse2 existsChild
             ])
 
 instance
     Ord variable =>
-    Synthetic (Exists sort variable) (FreeVariables variable)
+    Synthetic (FreeVariables variable) (Exists sort variable)
   where
     synthetic Exists { existsVariable, existsChild } =
-        bindVariable existsVariable existsChild
+        bindVariable (ElemVar existsVariable) existsChild
     {-# INLINE synthetic #-}
 
-instance Ord variable => Synthetic (Exists sort variable) (FreeSetVariables variable) where
-    synthetic = existsChild
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Exists Sort variable) Sort where
+instance Synthetic Sort (Exists Sort variable) where
     synthetic Exists { existsSort, existsChild } =
         existsSort `matchSort` existsChild
     {-# INLINE synthetic #-}

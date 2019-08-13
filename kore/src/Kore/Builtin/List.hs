@@ -37,13 +37,18 @@ module Kore.Builtin.List
     , elementKey
     , unitKey
     , getKey
+    , expectConcreteBuiltinList
     ) where
 
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import           Control.Monad
+                 ( join )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe
+                 ( mapMaybeT )
 import qualified Data.Function as Function
 import           Data.Functor
                  ( (<$) )
@@ -170,6 +175,16 @@ expectBuiltinList ctx =
                     Builtin.verifierBug
                     $ Text.unpack ctx ++ ": Domain value is not a list"
         _ -> empty
+
+expectConcreteBuiltinList
+    :: Monad m
+    => Text  -- ^ Context for error message
+    -> TermLike variable  -- ^ Operand pattern
+    -> MaybeT m (Seq (TermLike Concrete))
+expectConcreteBuiltinList ctx =
+    Monad.Trans.Maybe.mapMaybeT (fmap join)
+        . fmap (traverse Builtin.toKey)
+        . expectBuiltinList ctx
 
 returnList
     :: (MonadSimplify m, Ord variable, SortedVariable variable)
@@ -408,16 +423,12 @@ unifyEquals
         , MonadUnify unifier
         )
     => SimplificationType
-    -> SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
     -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 unifyEquals
     simplificationType
-    tools
-    _
     simplifyChild
     first
     second
@@ -475,7 +486,8 @@ unifyEquals
         -> unifier (Pattern variable)
     unifyEqualsConcrete builtin1 builtin2
       | Seq.length list1 /= Seq.length list2 = bottomWithExplanation
-      | otherwise =
+      | otherwise = do
+        tools <- Simplifier.askMetadataTools
         Reflection.give tools $ do
             unified <- sequence $ Seq.zipWith simplifyChild list1 list2
             let
@@ -499,6 +511,8 @@ unifyEquals
       | Seq.length prefix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
+            tools <- Simplifier.askMetadataTools
+            let listSuffix1 = asInternal tools builtinListSort suffix1
             prefixUnified <-
                 unifyEqualsConcrete
                     builtin1 { Domain.builtinListChild = prefix1 }
@@ -514,7 +528,6 @@ unifyEquals
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length prefix2
-        listSuffix1 = asInternal tools builtinListSort suffix1
 
     unifyEqualsFramedLeft
         :: Domain.InternalList (TermLike variable)
@@ -528,6 +541,8 @@ unifyEquals
       | Seq.length suffix2 > Seq.length list1 = bottomWithExplanation
       | otherwise =
         do
+            tools <- Simplifier.askMetadataTools
+            let listPrefix1 = asInternal tools builtinListSort prefix1
             prefixUnified <- simplifyChild frame2 listPrefix1
             suffixUnified <-
                 unifyEqualsConcrete
@@ -543,7 +558,6 @@ unifyEquals
         (prefix1, suffix1) = Seq.splitAt prefixLength list1
           where
             prefixLength = Seq.length list1 - Seq.length suffix2
-        listPrefix1 = asInternal tools builtinListSort prefix1
     bottomWithExplanation = do
         Monad.Unify.explainBottom
             "Cannot unify lists of different length."

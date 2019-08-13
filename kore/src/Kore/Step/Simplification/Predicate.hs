@@ -38,6 +38,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
@@ -114,12 +116,12 @@ assertDistinctVariables subst =
         [] -> return ()
         (var : _) -> error ("Duplicated variable: " ++ show var)
   where
-    moreThanOne :: [variable] -> Bool
+    moreThanOne :: [UnifiedVariable variable] -> Bool
     moreThanOne [] = False
     moreThanOne [_] = False
     moreThanOne _ = True
 
-    variables :: [variable]
+    variables :: [UnifiedVariable variable]
     variables = Substitution.variables subst
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.
