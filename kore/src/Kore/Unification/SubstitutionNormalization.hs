@@ -15,6 +15,7 @@ module Kore.Unification.SubstitutionNormalization
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad.Except
                  ( ExceptT (..), lift, throwError )
+import           Data.Functor.Const
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
@@ -28,7 +29,6 @@ import           Data.Set
 import qualified Data.Set as Set
 
 import           Data.Graph.TopologicalSort
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
@@ -188,7 +188,7 @@ normalizeSortedSubstitution
     substitution
   = case (var, Cofree.tailF (Recursive.project varPattern)) of
         (UnifiedVariable.ElemVar _, BottomF _) -> return Predicate.bottom
-        (rvar, VariableF var')
+        (rvar, VariableF (Const var'))
           | rvar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
         _ -> let
@@ -211,12 +211,12 @@ getDependencies
     -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
     -> Set (UnifiedVariable variable)
-getDependencies interesting var (Recursive.project -> valid :< patternHead) =
-    case patternHead of
-        VariableF v | v == var -> Set.empty
+getDependencies interesting var termLike =
+    case termLike of
+        Var_ v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
-    freeVars = FreeVariables.getFreeVariables $ Attribute.freeVariables valid
+    freeVars = FreeVariables.getFreeVariables $ TermLike.freeVariables termLike
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.
@@ -233,10 +233,10 @@ getNonSimplifiableDependencies
     -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
     -> Set (UnifiedVariable variable)
-getNonSimplifiableDependencies interesting var p@(Recursive.project -> _ :< h) =
-    case h of
-        VariableF v | v == var -> Set.empty
-        _ -> Recursive.fold (nonSimplifiableAbove interesting) p
+getNonSimplifiableDependencies interesting var termLike =
+    case termLike of
+        Var_ v | v == var -> Set.empty
+        _ -> Recursive.fold (nonSimplifiableAbove interesting) termLike
 
 nonSimplifiableAbove
     :: forall variable. (Ord variable, Show variable)
@@ -245,7 +245,7 @@ nonSimplifiableAbove
     -> Set (UnifiedVariable variable)
 nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
-        VariableF v
+        VariableF (Const v)
             | v `Set.member` interesting -> Set.singleton v
         ApplySymbolF Application { applicationSymbolOrAlias }
             | Symbol.isNonSimplifiable applicationSymbolOrAlias ->

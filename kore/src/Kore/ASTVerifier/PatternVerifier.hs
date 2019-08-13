@@ -369,9 +369,8 @@ verifyPatternHead (_ :< patternF) =
             transCofreeF Internal.CharLiteralF <$> verifyCharLiteral char
         Syntax.TopF top ->
             transCofreeF Internal.TopF <$> verifyTop top
-        Syntax.VariableF var ->
-            transCofreeF (Internal.VariableF . getConst)
-                <$> verifyVariable var
+        Syntax.VariableF (Const variable) ->
+            transCofreeF Internal.VariableF <$> verifyVariable variable
         Syntax.InhabitantF _ ->
             koreFail "Unexpected pattern."
   where
@@ -384,7 +383,7 @@ verifyPatternSort patternSort = do
     return ()
 
 verifyOperands
-    :: (Traversable operator, Synthetic operator (Attribute.Pattern Variable))
+    :: (Traversable operator, Synthetic (Attribute.Pattern Variable) operator)
     => (forall a. operator a -> Sort)
     -> operator (PatternVerifier Verified.Pattern)
     ->  PatternVerifier
@@ -468,7 +467,7 @@ verifyRewrites = verifyOperands rewritesSort
 
 verifyPredicate
     ::  ( Traversable predicate
-        , Synthetic predicate (Attribute.Pattern Variable)
+        , Synthetic (Attribute.Pattern Variable) predicate
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. predicate a -> Sort)  -- ^ Operand sort
@@ -581,7 +580,7 @@ verifyApplySymbol getChildAttributes application =
     Application { applicationSymbolOrAlias = symbolOrAlias } = application
 
 verifyApplicationChildren
-    ::  Synthetic (Application head) (Attribute.Pattern Variable)
+    ::  Synthetic (Attribute.Pattern Variable) (Application head)
     =>  (child -> Attribute.Pattern Variable)
     ->  Application head (PatternVerifier child)
     ->  ApplicationSorts
@@ -619,7 +618,7 @@ verifyApplication getChildAttributes application = do
         <$> verifyApplySymbol getChildAttributes application
 
 verifyBinder
-    ::  ( Traversable binder, Synthetic binder (Attribute.Pattern Variable)
+    ::  ( Traversable binder, Synthetic (Attribute.Pattern Variable) binder
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. binder a -> Sort)
@@ -748,8 +747,8 @@ verifySortHasDomainValues patternSort = do
 
 verifyStringLiteral
     :: valid ~ Attribute.Pattern Variable
-    => StringLiteral (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (CofreeF StringLiteral valid Verified.Pattern)
+    => Const StringLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF (Const StringLiteral) valid Verified.Pattern)
 verifyStringLiteral str = do
     verified <- sequence str
     let attrs = synthetic (Internal.extractAttributes <$> verified)
@@ -757,8 +756,8 @@ verifyStringLiteral str = do
 
 verifyCharLiteral
     :: valid ~ Attribute.Pattern Variable
-    => CharLiteral (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (CofreeF CharLiteral valid Verified.Pattern)
+    => Const CharLiteral (PatternVerifier Verified.Pattern)
+    -> PatternVerifier (CofreeF (Const CharLiteral) valid Verified.Pattern)
 verifyCharLiteral char = do
     verified <- sequence char
     let attrs = synthetic (Internal.extractAttributes <$> verified)
@@ -882,10 +881,10 @@ patternNameForContext (RewritesF _) = "\\rewrites"
 patternNameForContext (StringLiteralF _) = "<string>"
 patternNameForContext (CharLiteralF _) = "<char>"
 patternNameForContext (TopF _) = "\\top"
-patternNameForContext (VariableF (ElemVar variable)) =
+patternNameForContext (VariableF (Const (ElemVar variable))) =
     "element variable '" <> variableNameForContext (getElementVariable variable) <> "'"
 patternNameForContext (InhabitantF _) = "\\inh"
-patternNameForContext (VariableF (SetVar variable)) =
+patternNameForContext (VariableF (Const (SetVar variable))) =
     "set variable '" <> variableNameForContext (getSetVariable variable) <> "'"
 
 variableNameForContext :: Variable -> Text

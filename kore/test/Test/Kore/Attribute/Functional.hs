@@ -37,14 +37,7 @@ test_arguments =
         $ parseFunctional $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = functionalSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern functionalSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =

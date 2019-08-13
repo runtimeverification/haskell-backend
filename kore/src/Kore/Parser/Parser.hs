@@ -432,8 +432,8 @@ variableOrTermPatternParser childParser isSetVariable = do
         then do
             var <- variableRemainderParser identifier
             if isSetVariable
-                then return $ VariableF (SetVar (SetVariable var))
-                else return $ VariableF (ElemVar (ElementVariable var))
+                then return $ VariableF $ Const $ SetVar  $ SetVariable     var
+                else return $ VariableF $ Const $ ElemVar $ ElementVariable var
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
@@ -638,7 +638,8 @@ domainValueParser =
         <$> inCurlyBracesRemainderParser objectSortParser
         <*> inParenthesesParser childParser
   where
-    childParser = asParsedPattern . StringLiteralF <$> stringLiteralParser
+    childParser =
+        asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
 
 {-|'korePatternParser' parses an unifiedPattern
 
@@ -690,8 +691,8 @@ korePatternParser = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> koreMLConstructorParser
-        '"'  -> asParsedPattern . StringLiteralF <$> stringLiteralParser
-        '\'' -> asParsedPattern . CharLiteralF <$> charLiteralParser
+        '"'  -> asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
+        '\'' -> asParsedPattern . CharLiteralF . Const <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
@@ -987,8 +988,8 @@ leveledPatternParser patternParser domainValueParser' = do
     c <- ParserUtils.peekChar'
     case c of
         '\\' -> leveledMLConstructorParser patternParser domainValueParser'
-        '"'  -> StringLiteralF <$> stringLiteralParser
-        '\'' -> CharLiteralF <$> charLiteralParser
+        '"'  -> StringLiteralF . Const <$> stringLiteralParser
+        '\'' -> CharLiteralF . Const <$> charLiteralParser
         _ -> variableOrTermPatternParser patternParser (c == '@')
 
 purePatternParser :: Parser ParsedPattern

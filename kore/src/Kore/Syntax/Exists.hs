@@ -72,13 +72,13 @@ instance
 
 instance
     Ord variable =>
-    Synthetic (Exists sort variable) (FreeVariables variable)
+    Synthetic (FreeVariables variable) (Exists sort variable)
   where
     synthetic Exists { existsVariable, existsChild } =
         bindVariable (ElemVar existsVariable) existsChild
     {-# INLINE synthetic #-}
 
-instance Synthetic (Exists Sort variable) Sort where
+instance Synthetic Sort (Exists Sort variable) where
     synthetic Exists { existsSort, existsChild } =
         existsSort `matchSort` existsChild
     {-# INLINE synthetic #-}

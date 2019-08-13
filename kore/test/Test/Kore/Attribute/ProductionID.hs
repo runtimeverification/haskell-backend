@@ -53,16 +53,8 @@ test_twoArguments =
         $ parseProductionID $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = productionIDSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    , (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+        attributePattern productionIDSymbol
+            [attributeString "illegal", attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =
@@ -71,16 +63,10 @@ test_parameters =
         $ parseProductionID $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = productionIDId
-                        , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
-                        }
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "string")
-                    ]
+        attributePattern
+            SymbolOrAlias
+                { symbolOrAliasConstructor = productionIDId
+                , symbolOrAliasParams =
+                    [ SortVariableSort (SortVariable "illegal") ]
                 }
+            [attributeString "string"]

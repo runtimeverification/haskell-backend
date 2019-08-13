@@ -60,11 +60,11 @@ instance Unparse child => Unparse (Implies Sort child) where
             , unparse2 impliesSecond
             ])
 
-instance Ord variable => Synthetic (Implies sort) (FreeVariables variable) where
+instance Ord variable => Synthetic (FreeVariables variable) (Implies sort) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic (Implies Sort) Sort where
+instance Synthetic Sort (Implies Sort) where
     synthetic Implies { impliesSort, impliesFirst, impliesSecond } =
         impliesSort
         & seq (matchSort impliesSort impliesFirst)

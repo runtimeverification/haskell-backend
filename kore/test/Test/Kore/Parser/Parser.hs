@@ -259,9 +259,9 @@ andPatternParserTests =
             ( asParsedPattern $ AndF And
                 { andSort = sortVariableSort "s" :: Sort
                 , andFirst =
-                    asParsedPattern $ StringLiteralF (StringLiteral "a")
+                    asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                 , andSecond =
-                    asParsedPattern $ StringLiteralF (StringLiteral "b")
+                    asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                 }
             )
         , FailureWithoutMessage
@@ -277,22 +277,24 @@ applicationPatternParserTests :: [TestTree]
 applicationPatternParserTests =
     parseTree korePatternParser
         [ success "@v:Char"
-            ( asParsedPattern . VariableF . SetVar . SetVariable $ Variable
-                { variableName = testId "@v"
-                , variableSort = sortVariableSort "Char"
-                , variableCounter = mempty
-                }
+            ( asParsedPattern . VariableF . Const . SetVar $ SetVariable
+                Variable
+                    { variableName = testId "@v"
+                    , variableSort = sortVariableSort "Char"
+                    , variableCounter = mempty
+                    }
             )
         , success "v:s1{s2}"
-            ( asParsedPattern $ VariableF . ElemVar . ElementVariable $ Variable
-                { variableName = testId "v" :: Id
-                , variableSort =
-                    SortActualSort SortActual
-                        { sortActualName = testId "s1"
-                        , sortActualSorts = [ sortVariableSort "s2" ]
-                        }
-                , variableCounter = mempty
-                }
+            ( asParsedPattern $ VariableF . Const . ElemVar $ ElementVariable
+                Variable
+                    { variableName = testId "v" :: Id
+                    , variableSort =
+                        SortActualSort SortActual
+                            { sortActualName = testId "s1"
+                            , sortActualSorts = [ sortVariableSort "s2" ]
+                            }
+                    , variableCounter = mempty
+                    }
             )
         , success "c{s1,s2}(v1:s1, v2:s2)"
             ( asParsedPattern $ ApplicationF Application
@@ -304,18 +306,18 @@ applicationPatternParserTests =
                             , sortVariableSort "s2" ]
                         }
                 , applicationChildren =
-                    [ asParsedPattern $ VariableF $ ElemVar $ ElementVariable
-                        Variable
-                        { variableName = testId "v1" :: Id
-                        , variableSort = sortVariableSort "s1"
-                        , variableCounter = mempty
-                        }
-                    , asParsedPattern $ VariableF $ ElemVar $ ElementVariable
-                        Variable
-                        { variableName = testId "v2" :: Id
-                        , variableSort = sortVariableSort "s2"
-                        , variableCounter = mempty
-                        }
+                    [ asParsedPattern $ VariableF $ Const $ ElemVar $
+                        ElementVariable Variable
+                            { variableName = testId "v1" :: Id
+                            , variableSort = sortVariableSort "s1"
+                            , variableCounter = mempty
+                            }
+                    , asParsedPattern $ VariableF $ Const $ ElemVar $
+                        ElementVariable Variable
+                            { variableName = testId "v2" :: Id
+                            , variableSort = sortVariableSort "s2"
+                            , variableCounter = mempty
+                            }
                     ]
                 }
             )
@@ -354,7 +356,7 @@ ceilPatternParserTests =
                     { ceilOperandSort = sortVariableSort "s1" :: Sort
                     , ceilResultSort = sortVariableSort "s2"
                     , ceilChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -389,9 +391,9 @@ equalsPatternParserTests =
                     { equalsOperandSort = sortVariableSort "s1" :: Sort
                     , equalsResultSort = sortVariableSort "s2"
                     , equalsFirst =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     , equalsSecond =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -416,7 +418,7 @@ existsPatternParserTests =
                             , variableCounter = mempty
                             }
                     , existsChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -443,7 +445,7 @@ floorPatternParserTests =
                     { floorOperandSort = sortVariableSort "s1" :: Sort
                     , floorResultSort = sortVariableSort "s2"
                     , floorChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -467,7 +469,7 @@ forallPatternParserTests =
                             , variableCounter = mempty
                             }
                     , forallChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -492,9 +494,9 @@ iffPatternParserTests =
             ( asParsedPattern $ IffF Iff
                     { iffSort = sortVariableSort "s" :: Sort
                     , iffFirst =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     , iffSecond =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -512,9 +514,9 @@ impliesPatternParserTests =
             ( asParsedPattern $ ImpliesF Implies
                     { impliesSort = sortVariableSort "s" :: Sort
                     , impliesFirst =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     , impliesSecond =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -533,13 +535,13 @@ memPatternParserTests =
                     { inOperandSort = sortVariableSort "s1" :: Sort
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild = asParsedPattern $
-                        VariableF $ ElemVar $ ElementVariable Variable
+                        VariableF $ Const $ ElemVar $ ElementVariable Variable
                             { variableName = testId "v" :: Id
                             , variableSort = sortVariableSort "s3"
                             , variableCounter = mempty
                             }
                     , inContainingChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , success "\\in{s1,s2}(\"a\", \"b\")"
@@ -547,9 +549,9 @@ memPatternParserTests =
                     { inOperandSort = sortVariableSort "s1" :: Sort
                     , inResultSort = sortVariableSort "s2"
                     , inContainedChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     , inContainingChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -606,7 +608,7 @@ notPatternParserTests =
             ( asParsedPattern $ NotF Not
                     { notSort = sortVariableSort "s" :: Sort
                     , notChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -626,7 +628,7 @@ nextPatternParserTests =
             ( asParsedPattern $ NextF Next
                     { nextSort = sortVariableSort "s"
                     , nextChild =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     }
             )
         , FailureWithoutMessage
@@ -678,9 +680,9 @@ orPatternParserTests =
             ( asParsedPattern $ OrF Or
                     { orSort = sortVariableSort "s" :: Sort
                     , orFirst =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     , orSecond =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -698,9 +700,9 @@ rewritesPatternParserTests =
             ( asParsedPattern $ RewritesF Rewrites
                     { rewritesSort = sortVariableSort "s"
                     , rewritesFirst =
-                        asParsedPattern $ StringLiteralF (StringLiteral "a")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
                     , rewritesSecond =
-                        asParsedPattern $ StringLiteralF (StringLiteral "b")
+                        asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                     }
             )
         , FailureWithoutMessage
@@ -715,11 +717,11 @@ stringLiteralPatternParserTests :: [TestTree]
 stringLiteralPatternParserTests =
     parseTree korePatternParser
         [ success "\"hello\""
-            (asParsedPattern $ StringLiteralF (StringLiteral "hello"))
+            (asParsedPattern $ StringLiteralF $ Const (StringLiteral "hello"))
         , success "\"\""
-            (asParsedPattern $ StringLiteralF (StringLiteral ""))
+            (asParsedPattern $ StringLiteralF $ Const (StringLiteral ""))
         , success "\"\\\"\""
-            (asParsedPattern $ StringLiteralF (StringLiteral "\""))
+            (asParsedPattern $ StringLiteralF $ Const (StringLiteral "\""))
         , FailureWithoutMessage ["", "\""]
         ]
 topPatternParserTests :: [TestTree]
@@ -736,21 +738,23 @@ variablePatternParserTests :: [TestTree]
 variablePatternParserTests =
     parseTree korePatternParser
         [ success "v:s"
-            ( asParsedPattern $ VariableF $ ElemVar $ ElementVariable Variable
-                { variableName = testId "v" :: Id
-                , variableSort = sortVariableSort "s"
-                , variableCounter = mempty
-                }
+            ( asParsedPattern $ VariableF $ Const $ ElemVar $
+                ElementVariable Variable
+                    { variableName = testId "v" :: Id
+                    , variableSort = sortVariableSort "s"
+                    , variableCounter = mempty
+                    }
             )
         , success "v:s1{s2}"
-            ( asParsedPattern $ VariableF $ ElemVar $ ElementVariable Variable
-                { variableName = testId "v" :: Id
-                , variableSort = SortActualSort SortActual
-                    { sortActualName=testId "s1"
-                    , sortActualSorts = [ sortVariableSort "s2" ]
+            ( asParsedPattern $ VariableF $ Const $ ElemVar $
+                ElementVariable Variable
+                    { variableName = testId "v" :: Id
+                    , variableSort = SortActualSort SortActual
+                        { sortActualName=testId "s1"
+                        , sortActualSorts = [ sortVariableSort "s2" ]
+                        }
+                    , variableCounter = mempty
                     }
-                , variableCounter = mempty
-                }
             )
             , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
         ]
@@ -795,7 +799,7 @@ sentenceAliasParserTests =
                     , sentenceAliasAttributes =
                         Attributes
                             [asParsedPattern $
-                                StringLiteralF (StringLiteral "a")]
+                                StringLiteralF $ Const (StringLiteral "a")]
                     }
                 :: ParsedSentenceAlias)
             )
@@ -849,13 +853,13 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ asParsedPattern $ VariableF
-                                    $ElemVar $ ElementVariable Variable
+                                [ asParsedPattern $ VariableF $ Const
+                                    $ ElemVar $ ElementVariable Variable
                                     { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
-                                , asParsedPattern $ VariableF
+                                , asParsedPattern $ VariableF $ Const
                                     $ ElemVar $ ElementVariable Variable
                                     { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"
@@ -866,9 +870,9 @@ sentenceAliasParserTests =
                     , sentenceAliasAttributes =
                         Attributes
                             [ asParsedPattern $
-                                StringLiteralF (StringLiteral "a")
+                                StringLiteralF $ Const (StringLiteral "a")
                             , asParsedPattern $
-                                StringLiteralF (StringLiteral "b")
+                                StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceAlias)
@@ -1042,11 +1046,11 @@ sentenceAxiomParserTests =
                         [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
                         asParsedPattern
-                        $ StringLiteralF (StringLiteral "a")
+                        $ StringLiteralF $ Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern
-                              $ StringLiteralF (StringLiteral "b")
+                              $ StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceAxiom)
@@ -1059,11 +1063,11 @@ sentenceAxiomParserTests =
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
                         asParsedPattern
-                        $ StringLiteralF (StringLiteral "a")
+                        $ StringLiteralF $ Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern
-                              $ StringLiteralF (StringLiteral "b")
+                              $ StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceAxiom)
@@ -1077,11 +1081,11 @@ sentenceAxiomParserTests =
                         ]
                     , sentenceAxiomPattern =
                         asParsedPattern
-                        $ StringLiteralF (StringLiteral "a")
+                        $ StringLiteralF $ Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern
-                              $ StringLiteralF (StringLiteral "b")
+                              $ StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceAxiom)
@@ -1105,11 +1109,11 @@ sentenceClaimParserTests =
                     { sentenceAxiomParameters = [SortVariable (testId "sv1")]
                     , sentenceAxiomPattern =
                         asParsedPattern
-                        $ StringLiteralF (StringLiteral "a")
+                        $ StringLiteralF $ Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern
-                              $ StringLiteralF (StringLiteral "b")
+                              $ StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceAxiom)
@@ -1122,11 +1126,11 @@ sentenceClaimParserTests =
                     { sentenceAxiomParameters = []
                     , sentenceAxiomPattern =
                         asParsedPattern
-                        $ StringLiteralF (StringLiteral "a")
+                        $ StringLiteralF $ Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern
-                              $ StringLiteralF (StringLiteral "b")
+                              $ StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceAxiom)
@@ -1140,11 +1144,11 @@ sentenceClaimParserTests =
                         ]
                     , sentenceAxiomPattern =
                         asParsedPattern
-                        $ StringLiteralF (StringLiteral "a")
+                        $ StringLiteralF $ Const (StringLiteral "a")
                     , sentenceAxiomAttributes =
                         Attributes
                             [ asParsedPattern
-                              $ StringLiteralF (StringLiteral "b")
+                              $ StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceAxiom)
@@ -1169,7 +1173,7 @@ sentenceImportParserTests =
                     , sentenceImportAttributes =
                         Attributes
                             [ asParsedPattern
-                              $ StringLiteralF (StringLiteral "b")
+                              $ StringLiteralF $ Const (StringLiteral "b")
                             ]
                     }
                 :: ParsedSentenceImport)
@@ -1193,7 +1197,7 @@ sentenceSortParserTests =
                     , sentenceSortAttributes =
                         Attributes
                             [ asParsedPattern
-                                $ StringLiteralF (StringLiteral "a")
+                                $ StringLiteralF $ Const (StringLiteral "a")
                             ]
                     }
                 :: ParsedSentenceSort)
@@ -1208,7 +1212,7 @@ sentenceSortParserTests =
                     , sentenceSortAttributes =
                         Attributes
                             [ asParsedPattern
-                                $ StringLiteralF (StringLiteral "a")
+                                $ StringLiteralF $ Const (StringLiteral "a")
                             ]
                     }
                 :: ParsedSentenceSort)
@@ -1239,7 +1243,7 @@ sentenceSymbolParserTests =
                     , sentenceSymbolAttributes =
                         Attributes
                             [asParsedPattern $
-                                StringLiteralF (StringLiteral "a")]
+                                StringLiteralF $ Const (StringLiteral "a")]
                     }
                 :: ParsedSentenceSymbol)
             )
@@ -1281,7 +1285,7 @@ sentenceHookedSortParserTests =
                         , sentenceSortAttributes =
                             Attributes
                                 [ asParsedPattern
-                                    $ StringLiteralF (StringLiteral "a")
+                                    $ StringLiteralF $ Const (StringLiteral "a")
                                 ]
                         }
 
@@ -1298,7 +1302,7 @@ sentenceHookedSortParserTests =
                         , sentenceSortAttributes =
                             Attributes
                                 [ asParsedPattern
-                                    $ StringLiteralF (StringLiteral "a")
+                                    $ StringLiteralF $ Const (StringLiteral "a")
                                 ]
                         }
                     :: ParsedSentenceHook
@@ -1331,7 +1335,7 @@ sentenceHookedSymbolParserTests =
                         , sentenceSymbolAttributes =
                             Attributes
                                 [asParsedPattern $
-                                    StringLiteralF (StringLiteral "a")]
+                                    StringLiteralF $ Const (StringLiteral "a")]
                         }
                     :: ParsedSentenceHook
                 )
@@ -1369,12 +1373,12 @@ attributesParserTests =
     parseTree attributesParser
         [ success "[\"a\"]"
             (Attributes
-                [asParsedPattern $ StringLiteralF (StringLiteral "a")])
+                [asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")])
         , success "[]" (Attributes [])
         , success "[\"a\", \"b\"]"
             (Attributes
-                [ asParsedPattern $ StringLiteralF (StringLiteral "a")
-                , asParsedPattern $ StringLiteralF (StringLiteral "b")
+                [ asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")
+                , asParsedPattern $ StringLiteralF $ Const (StringLiteral "b")
                 ])
         , FailureWithoutMessage ["", "a", "\"a\"", "[\"a\" \"a\"]"]
         ]
@@ -1397,7 +1401,7 @@ moduleParserTests =
                     ]
                 , moduleAttributes =
                     Attributes
-                        [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")]
                 }
         , success "module MN sort c{}[] sort c{}[] endmodule [\"a\"]"
             Module
@@ -1418,7 +1422,7 @@ moduleParserTests =
                     ]
                 , moduleAttributes =
                     Attributes
-                        [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")]
                 }
         , success "module MN endmodule []"
             Module
@@ -1442,7 +1446,7 @@ definitionParserTests =
             Definition
                 { definitionAttributes =
                     Attributes
-                        [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")]
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M"
@@ -1458,7 +1462,7 @@ definitionParserTests =
                         , moduleAttributes =
                             Attributes
                                 [asParsedPattern $
-                                    StringLiteralF (StringLiteral "b")]
+                                    StringLiteralF $ Const (StringLiteral "b")]
                         }
                     ]
                 }
@@ -1470,7 +1474,7 @@ definitionParserTests =
             Definition
                 { definitionAttributes =
                     Attributes
-                        [asParsedPattern $ StringLiteralF (StringLiteral "a")]
+                        [asParsedPattern $ StringLiteralF $ Const (StringLiteral "a")]
                 , definitionModules =
                     [ Module
                         { moduleName = ModuleName "M"
@@ -1486,7 +1490,7 @@ definitionParserTests =
                         , moduleAttributes =
                             Attributes
                                 [asParsedPattern $
-                                    StringLiteralF (StringLiteral "b")]
+                                    StringLiteralF $ Const (StringLiteral "b")]
                         }
                     , Module
                         { moduleName = ModuleName "N"
@@ -1502,7 +1506,7 @@ definitionParserTests =
                         , moduleAttributes =
                             Attributes
                                 [asParsedPattern $
-                                    StringLiteralF (StringLiteral "e")]
+                                    StringLiteralF $ Const (StringLiteral "e")]
                         }
                     ]
                 }
