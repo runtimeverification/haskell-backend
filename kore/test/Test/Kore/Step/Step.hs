@@ -187,7 +187,7 @@ test_unifyRule =
         actual <- unifyRule initial axiom
         assertEqualWithExplanation "" expect actual
 
-    , testCase "zzz removes redundant requires" $ do
+    , testCase "does not add unnecessary conditions" $ do
         let initial =
                 Conditional
                     { term = Mock.a

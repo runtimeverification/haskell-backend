@@ -73,7 +73,7 @@ test_definitionEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.c)
         assertEqualWithExplanation "" expect actual
-    , testCase "zzzEvaluation with remainder" $ do
+    , testCase "Evaluation with remainder" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
             expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults

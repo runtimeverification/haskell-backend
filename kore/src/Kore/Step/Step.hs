@@ -42,7 +42,7 @@ import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import           Data.Function
-                 ( on, (&) )
+                 ( on )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -233,22 +233,22 @@ unifyRule
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Predicate.fromPredicate ruleRequires
-    unification' <- removeRedundancy unification requires'
+    unification' <- addRequiresUnlessRedundant unification requires'
     return (rule' `Conditional.withCondition` unification')
   where
-    removeRedundancy unificationSolution requires = do
+    addRequiresUnlessRedundant unificationSolution requires = do
         let predicate =
-                (makePredicate `on` Predicate.toPredicate)
+                (requiresRedundancyPredicate `on` Predicate.toPredicate)
                     unificationSolution requires
-        isPreRedundant <- evaluate predicate
+        isRequiresRedundant <- evaluate predicate
         let nonRedundantPredicate =
-                case isPreRedundant of
+                case isRequiresRedundant of
                     Just False -> unificationSolution
                     _         -> unificationSolution <> requires
         Substitution.normalizeExcept nonRedundantPredicate
 
     -- | ¬(⌈L ∧ φ⌉ ∧ P → Pre)
-    makePredicate unificationSolution requires =
+    requiresRedundancyPredicate unificationSolution requires =
         Syntax.makeNotPredicate
             $ Syntax.makeImpliesPredicate
                 (Syntax.makeAndPredicate
