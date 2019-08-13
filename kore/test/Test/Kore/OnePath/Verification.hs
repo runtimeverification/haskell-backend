@@ -9,17 +9,12 @@ import Test.Tasty.HUnit
 
 import Control.Monad.Trans.Except
        ( runExceptT )
-import Data.Coerce
-       ( coerce )
 import Data.Default
        ( def )
 import Data.Limit
        ( Limit (..) )
 import Numeric.Natural
        ( Natural )
-
-import Debug.Trace
-import Kore.Unparser
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Goal
@@ -30,7 +25,6 @@ import           Kore.Internal.Pattern as Conditional
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.OnePath.Verification as OnePath
-import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Rule

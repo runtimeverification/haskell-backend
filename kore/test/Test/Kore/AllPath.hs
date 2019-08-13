@@ -197,6 +197,7 @@ test_runStrategy =
         -> Strategy.ExecutionGraph ProofState (Goal.Rule Goal)
     run axioms goal =
         runIdentity
+        . unAllPathIdentity
         $ Strategy.runStrategy
             transitionRule
             (Goal.allPathStrategy [goal] axioms)
@@ -307,13 +308,16 @@ instance Goal.Goal Goal where
 
 runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq (Goal.Rule Goal))]
 runTransitionRule prim state =
-    (runIdentity . runTransitionT) (transitionRule prim state)
+    (runIdentity . unAllPathIdentity . runTransitionT) (transitionRule prim state)
 
-instance WithLog LogMessage Identity where
+newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
+    deriving (Functor, Applicative, Monad)
+
+instance WithLog LogMessage AllPathIdentity where
     askLogAction = undefined
-    localLogAction x = undefined
+    localLogAction _ = undefined
 
-instance MonadSMT Identity where
+instance MonadSMT AllPathIdentity where
     withSolver = undefined
     declare = undefined
     declareFun = undefined
@@ -325,7 +329,7 @@ instance MonadSMT Identity where
     ackCommand = undefined
     loadFile = undefined
 
-instance MonadSimplify Identity where
+instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined
     askSimplifierTermLike = undefined
     localSimplifierTermLike = undefined
@@ -338,7 +342,7 @@ instance MonadSimplify Identity where
 transitionRule
     :: Prim
     -> ProofState
-    -> Strategy.TransitionT (Goal.Rule Goal) Identity ProofState
+    -> Strategy.TransitionT (Goal.Rule Goal) AllPathIdentity ProofState
 transitionRule =
     Goal.transitionRule
 

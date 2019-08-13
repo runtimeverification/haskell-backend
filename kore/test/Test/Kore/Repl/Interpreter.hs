@@ -39,8 +39,6 @@ import           Kore.Internal.TermLike
                  ( TermLike, mkBottom_, mkVar, varS )
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
-                 ( CommonProofState )
-import           Kore.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter

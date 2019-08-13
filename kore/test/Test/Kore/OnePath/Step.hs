@@ -7,8 +7,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
        ( testCase )
 
-import Data.Coerce
-       ( coerce )
 import Data.Default
        ( def )
 import Data.List
@@ -17,9 +15,6 @@ import Data.Maybe
        ( fromMaybe )
 import Numeric.Natural
        ( Natural )
-
-import Debug.Trace
-import Kore.Unparser
 
 import           Data.Limit
                  ( Limit (..) )
@@ -30,8 +25,6 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.OnePath.Verification
-                 ( CommonProofState )
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate,
                  makeMultipleAndPredicate, makeNotPredicate,
@@ -40,7 +33,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern), rulePattern )
+                 RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -49,7 +42,6 @@ import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..) )
-import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution

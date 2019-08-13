@@ -29,7 +29,6 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import           Data.Limit
                  ( Limit )
 import qualified Data.Limit as Limit
-import           Data.Maybe
 
 import           Kore.Debug
 import           Kore.Goal
@@ -48,7 +47,6 @@ import           Kore.Unparser
 import           Numeric.Natural
                  ( Natural )
 
-import Debug.Trace
 {- NOTE: Non-deterministic semantics
 
 The current implementation of one-path verification assumes that the proof goal
