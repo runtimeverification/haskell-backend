@@ -218,6 +218,42 @@ test_unifyRule =
                     ]
         actual <- unifyRule initial axiom
         assertEqualWithExplanation "" expect actual
+
+    , testCase "does not add unnecessary non-trivial conditions" $ do
+        let initial =
+                Conditional
+                    { term = Mock.fTestInt Mock.a
+                    , predicate =
+                        makeEqualsPredicate
+                            (Mock.lessInt
+                                (Mock.fTestInt Mock.a)
+                                (Mock.builtinInt 5)
+                            )
+                            (Mock.builtinBool True)
+                    , substitution = mempty
+                    }
+            axiom =
+                RulePattern
+                    { left = Mock.fTestInt Mock.a
+                    , right = Mock.b
+                    , requires =
+                        makeNotPredicate
+                            $ makeEqualsPredicate
+                                (Mock.fTestInt Mock.a)
+                                (Mock.builtinInt 6)
+                    , ensures = makeTruePredicate
+                    , attributes = Default.def
+                    }
+            expect =
+                Right
+                    [ Conditional
+                        { term = axiom
+                        , predicate = makeCeilPredicate (Mock.fTestInt Mock.a)
+                        , substitution = mempty
+                        }
+                    ]
+        actual <- unifyRule initial axiom
+        assertEqualWithExplanation "" expect actual
     ]
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
