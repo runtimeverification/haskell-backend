@@ -25,7 +25,6 @@ import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
@@ -324,10 +323,11 @@ instance
             Monad.Trans.lift
             $ simplifyAndRemoveTopExists configuration
         let simplifiedResult =
-                OrPattern.toPattern
-                . MultiOr.filterOr
+                MultiOr.filterOr
                 $ orResult
-        pure $ makeRuleFromPatterns simplifiedResult destination
+            simplifiedRules =
+                fmap (flip makeRuleFromPatterns $ destination) simplifiedResult
+        Foldable.asum (pure <$> simplifiedRules)
 
     isTriviallyValid =
         isBottom . left . coerce

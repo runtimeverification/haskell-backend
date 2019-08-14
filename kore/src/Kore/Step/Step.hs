@@ -86,6 +86,8 @@ import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
 
+-- import Debug.Trace
+
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
 -- 'stepWithRule'.
@@ -249,6 +251,7 @@ unifyRules
 unifyRules unificationProcedure initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
+        -- traceM . unparseToString . RewriteRule $ rule
         unified <- unifyRule unificationProcedure initial rule
         checkSubstitutionCoverage initial unified
         return unified
