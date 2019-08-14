@@ -251,7 +251,6 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
-        , Simplify
         , DeriveSeq axioms
         , Simplify
         , TriviallyValid
@@ -364,7 +363,13 @@ instance
                     traverseConfigs =
                         Result.traverseConfigs
                             (pure . Goal)
-                            (\x -> GoalRem <$> removeDestination x)
+                            (\x -> do
+                                y <- removeDestination x
+                                z <- simplify y
+                                if isTriviallyValid z
+                                   then pure Proven
+                                   else pure . GoalRem $ z
+                            )
                 let onePathResults =
                         Result.mapConfigs
                             (flip makeRuleFromPatterns $ destination)
@@ -405,7 +410,13 @@ instance
                     traverseConfigs =
                         Result.traverseConfigs
                             (pure . Goal)
-                            (\x -> GoalRem <$> removeDestination x)
+                            (\x -> do
+                                y <- removeDestination x
+                                z <- simplify y
+                                if isTriviallyValid z
+                                   then pure Proven
+                                   else pure . GoalRem $ z
+                            )
                 let onePathResults =
                         Result.mapConfigs
                             (flip makeRuleFromPatterns $ destination)
