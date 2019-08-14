@@ -17,8 +17,8 @@ import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..) )
-import           Kore.Internal.TermLike
 import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeNotPredicate,
                  makeTruePredicate )
@@ -511,11 +511,11 @@ evaluate
 evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
-    $ simplifier 
-        substitutionSimplifier 
-        patternSimplifier 
-        Map.empty 
-        patt 
+    $ simplifier
+        substitutionSimplifier
+        patternSimplifier
+        Map.empty
+        patt
         Predicate.topTODO
   where
     substitutionSimplifier = Predicate.create

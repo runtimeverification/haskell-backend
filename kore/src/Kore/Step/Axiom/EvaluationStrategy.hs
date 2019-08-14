@@ -89,7 +89,7 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ term _ -> 
+        (\_ _ _ term _ ->
             evaluateWithDefinitionAxioms rules Predicate.topTODO term)
 
 {- | Creates an evaluator for a function from all the rules that define it.
@@ -220,11 +220,11 @@ applyFirstSimplifierThatWorks
     _
   = do
     applicationResult <-
-        evaluator 
-            substitutionSimplifier 
-            simplifier 
-            axiomIdToSimplifier 
-            patt 
+        evaluator
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            patt
             Predicate.topTODO
 
     case applicationResult of

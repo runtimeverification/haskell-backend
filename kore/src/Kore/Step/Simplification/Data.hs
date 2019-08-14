@@ -650,11 +650,11 @@ runBuiltinAndAxiomSimplifier
     simplifierAxioms <- askSimplifierAxioms
     simplifierPredicate <- askSimplifierPredicate
     simplifierTermLike <- askSimplifierTermLike
-    simplifier 
-        simplifierPredicate 
-        simplifierTermLike 
-        simplifierAxioms 
-        termLike 
+    simplifier
+        simplifierPredicate
+        simplifierTermLike
+        simplifierAxioms
+        termLike
         Predicate.topTODO
 
 {-|A type to abstract away the mapping from symbol identifiers to
