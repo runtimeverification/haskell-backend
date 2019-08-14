@@ -304,13 +304,14 @@ simpleEvaluator
         )
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-simpleEvaluator [] _ = return NotApplicable
-simpleEvaluator ((from, to) : ps) patt
+simpleEvaluator [] _  _ = return NotApplicable
+simpleEvaluator ((from, to) : ps) patt _
   | from == patt =
     return $ Applied AttemptedAxiomResults
         { results = OrPattern.fromTermLike to
         , remainders = OrPattern.bottom
         }
   | otherwise =
-    simpleEvaluator ps patt
+    simpleEvaluator ps patt Conditional.topTODO

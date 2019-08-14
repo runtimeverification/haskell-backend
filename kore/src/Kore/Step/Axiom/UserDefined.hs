@@ -67,6 +67,7 @@ equalityRuleEvaluator
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -- ^ The function on which to evaluate the current function.
+    -> Pattern.Predicate variable
     -> simplifier (AttemptedAxiom variable)
 equalityRuleEvaluator
     (EqualityRule rule)
@@ -74,6 +75,7 @@ equalityRuleEvaluator
     _simplifier
     _axiomIdToSimplifier
     patt
+    _
   -- TODO(traiansf): never apply smt-lemma axioms,
   -- neither as simplification rules nor as function definition rules
   | Axiom.Concrete.isConcrete (Attribute.concrete $ attributes rule)

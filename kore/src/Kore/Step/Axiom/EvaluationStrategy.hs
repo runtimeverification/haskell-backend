@@ -89,7 +89,8 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ -> evaluateWithDefinitionAxioms rules Predicate.topTODO)
+        (\_ _ _ term _ -> 
+            evaluateWithDefinitionAxioms rules Predicate.topTODO term)
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -104,7 +105,7 @@ totalDefinitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 totalDefinitionEvaluation rules =
-    BuiltinAndAxiomSimplifier $ \_ _ _ term -> do
+    BuiltinAndAxiomSimplifier $ \_ _ _ term _ -> do
         result <- evaluateWithDefinitionAxioms rules Predicate.topTODO term
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
@@ -158,6 +159,7 @@ evaluateBuiltin
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
@@ -165,6 +167,7 @@ evaluateBuiltin
     simplifier
     axiomIdToSimplifier
     patt
+    _
   = do
     result <-
         builtinEvaluator
@@ -172,6 +175,7 @@ evaluateBuiltin
             simplifier
             axiomIdToSimplifier
             patt
+            Predicate.topTODO
     case result of
         AttemptedAxiom.NotApplicable
           | App_ appHead children <- patt
@@ -202,8 +206,9 @@ applyFirstSimplifierThatWorks
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
@@ -212,9 +217,15 @@ applyFirstSimplifierThatWorks
     simplifier
     axiomIdToSimplifier
     patt
+    _
   = do
     applicationResult <-
-        evaluator substitutionSimplifier simplifier axiomIdToSimplifier patt
+        evaluator 
+            substitutionSimplifier 
+            simplifier 
+            axiomIdToSimplifier 
+            patt 
+            Predicate.topTODO
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -267,6 +278,7 @@ applyFirstSimplifierThatWorks
                 simplifier
                 axiomIdToSimplifier
                 patt
+                Predicate.topTODO
 
 evaluateWithDefinitionAxioms
     :: forall variable simplifier

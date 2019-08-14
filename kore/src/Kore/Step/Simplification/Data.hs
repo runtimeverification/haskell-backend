@@ -628,6 +628,7 @@ newtype BuiltinAndAxiomSimplifier =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
+        -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
         )
 
@@ -649,7 +650,12 @@ runBuiltinAndAxiomSimplifier
     simplifierAxioms <- askSimplifierAxioms
     simplifierPredicate <- askSimplifierPredicate
     simplifierTermLike <- askSimplifierTermLike
-    simplifier simplifierPredicate simplifierTermLike simplifierAxioms termLike
+    simplifier 
+        simplifierPredicate 
+        simplifierTermLike 
+        simplifierAxioms 
+        termLike 
+        Predicate.topTODO
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
@@ -810,8 +816,9 @@ applicationAxiomSimplifier applicationSimplifier =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
+        -> Predicate variable
         -> m (AttemptedAxiom variable)
-    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike =
+    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike _ =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) ->
                 applicationSimplifier
