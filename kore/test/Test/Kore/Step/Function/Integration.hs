@@ -2,7 +2,8 @@ module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
     , test_Nat
     , test_List
-    , test_Map
+    , test_lookupMap
+    , test_updateMap
     , test_Pair
     ) where
 
@@ -592,10 +593,8 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier env
+    $ evalSimplifier Builtin.testEnv
     $ runBuiltinAndAxiomSimplifier simplifier patt
-  where
-    env = Mock.env { metadataTools = Builtin.testMetadataTools }
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -897,8 +896,8 @@ listSimplifiers =
         AxiomIdentifier.Application
         $ symbolConstructor Builtin.removeMapSymbol
 
-test_Map :: [TestTree]
-test_Map =
+test_lookupMap :: [TestTree]
+test_lookupMap =
     [ equals "lookupMap(.Map, 1) = lookupMap(.Map, 1)"
         (lookupMap (mkMap [] []) (mkInt 1))
         (lookupMap (mkMap [] []) (mkInt 1))
@@ -908,13 +907,6 @@ test_Map =
     , equals "lookupMap(0 |-> 1  1 |-> 2, 1) = 2"
         (lookupMap (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []) (mkInt 1))
         (mkInt 2)
-    , notApplies "updateMap -- different keys"
-        [updateMapSimplifier]
-        (updateMap
-            (updateMap mMap (mkInt 0) (mkInt 1))
-            (mkInt 1)
-            (mkInt 2)
-        )
     ]
   where
     -- Evaluation tests: check the result of evaluating the term
@@ -958,6 +950,17 @@ lookupMapRules = [lookupMapRule]
 
 lookupMapEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 lookupMapEvaluator = functionEvaluator lookupMapSymbol lookupMapRules
+
+test_updateMap :: [TestTree]
+test_updateMap =
+    [ notApplies "updateMap -- different keys"
+        [updateMapSimplifier]
+        (updateMap
+            (updateMap mMap (mkInt 0) (mkInt 1))
+            (mkInt 1)
+            (mkInt 2)
+        )
+    ]
 
 updateMap
     :: TermLike Variable  -- ^ Map
