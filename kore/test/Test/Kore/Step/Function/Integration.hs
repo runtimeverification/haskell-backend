@@ -56,14 +56,13 @@ import           Kore.Variables.UnifiedVariable
 import qualified SMT
 
 import           Test.Kore
+import qualified Test.Kore.Builtin.Bool as Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.Axiom.EvaluationStrategy as Axiom
-                 ( evaluate )
 import           Test.Kore.Step.Axiom.Matcher
                  ( doesn'tMatch, matches )
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -587,6 +586,17 @@ test_Nat =
             actual <- evaluate natSimplifiers term
             assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
 
+evaluateWith
+    :: BuiltinAndAxiomSimplifier
+    -> TermLike Variable
+    -> IO CommonAttemptedAxiom
+evaluateWith simplifier patt =
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier env
+    $ runBuiltinAndAxiomSimplifier simplifier patt
+  where
+    env = Mock.env { metadataTools = Builtin.testMetadataTools }
+
 -- Applied tests: check that one or more rules applies or not
 withApplied
     :: (CommonAttemptedAxiom -> Assertion)
@@ -596,7 +606,7 @@ withApplied
     -> TestTree
 withApplied check comment rules term =
     testCase comment $ do
-        actual <- Axiom.evaluate (definitionEvaluation rules) term
+        actual <- evaluateWith (definitionEvaluation rules) term
         check actual
 
 applies, notApplies
@@ -819,8 +829,8 @@ unitList :: TermLike Variable
 unitList = mkList []
 
 varX, varY, varL, mMap :: TermLike Variable
-varX = mkElemVar (elemVarS (testId "xInt") intSort)
-varY = mkElemVar (elemVarS (testId "yInt") intSort)
+varX = mkElemVar xInt
+varY = mkElemVar yInt
 varL = mkElemVar (elemVarS (testId "lList") listSort)
 mMap = mkElemVar (elemVarS (testId "mMap") mapSort)
 
@@ -898,6 +908,13 @@ test_Map =
     , equals "lookupMap(0 |-> 1  1 |-> 2, 1) = 2"
         (lookupMap (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []) (mkInt 1))
         (mkInt 2)
+    , notApplies "updateMap -- different keys"
+        [updateMapSimplifier]
+        (updateMap
+            (updateMap mMap (mkInt 0) (mkInt 1))
+            (mkInt 1)
+            (mkInt 2)
+        )
     ]
   where
     -- Evaluation tests: check the result of evaluating the term
@@ -928,10 +945,10 @@ test_Map =
                 }
 
 lookupMapSymbol :: Symbol
-lookupMapSymbol = Mock.symbol "lookupMap" [mapSort, intSort] intSort & function
+lookupMapSymbol = Builtin.lookupMapSymbol
 
 lookupMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
-lookupMap m k = mkApplySymbol lookupMapSymbol [m, k]
+lookupMap = Builtin.lookupMap
 
 lookupMapRule :: EqualityRule Variable
 lookupMapRule = axiom_ (lookupMap (mkMap [(varX, varY)] [mMap]) varX) varY
@@ -941,6 +958,28 @@ lookupMapRules = [lookupMapRule]
 
 lookupMapEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 lookupMapEvaluator = functionEvaluator lookupMapSymbol lookupMapRules
+
+updateMap
+    :: TermLike Variable  -- ^ Map
+    -> TermLike Variable  -- ^ Key
+    -> TermLike Variable  -- ^ Value
+    -> TermLike Variable
+updateMap = Builtin.updateMap
+
+updateMapSimplifier :: EqualityRule Variable
+updateMapSimplifier =
+    axiom
+        (updateMap (updateMap mMap u v) x y)
+        (updateMap mMap u y)
+        (makeEqualsPredicate (eqInt u x) (mkBool True))
+  where
+    [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
+
+mkBool :: Bool -> TermLike Variable
+mkBool = Bool.asInternal
+
+eqInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
+eqInt = Builtin.eqInt
 
 mapSimplifiers :: BuiltinAndAxiomSimplifierMap
 mapSimplifiers =
@@ -988,7 +1027,9 @@ test_Pair =
 mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 mkPair = Builtin.pair
 
-xInt, yInt :: ElementVariable Variable
+uInt, vInt, xInt, yInt :: ElementVariable Variable
+uInt = elemVarS (testId "uInt") intSort
+vInt = elemVarS (testId "vInt") intSort
 xInt = elemVarS (testId "xInt") intSort
 yInt = elemVarS (testId "yInt") intSort
 
