@@ -215,10 +215,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
             Just identifier' ->
                 Profile.equalitySimplification identifier' termLike
 
-    axiomEvaluationTracing =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.axiomEvaluation identifier'
+    axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
     resimplificationTracing resultCount =
         case identifier of
             Nothing -> id

@@ -132,11 +132,8 @@ updateContext
     withTags (withEnabled context)
   where
     withEnabled :: Context -> Context
-    withEnabled Context { openedTagsToMultiplicity, enabled } =
-        Context
-            { openedTagsToMultiplicity
-            , enabled = isEnabled enabled : enabled
-            }
+    withEnabled c@Context { enabled } =
+        c { enabled = isEnabled enabled : enabled }
 
     withTags :: Context -> Context
     withTags context' = foldr openTag context' tags
