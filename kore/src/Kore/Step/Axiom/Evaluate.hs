@@ -43,17 +43,10 @@ evaluateAxioms
         , MonadSimplify simplifier
         )
     => [EqualityRule Variable]
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> simplifier (AttemptedAxiom variable)
 evaluateAxioms
     definitionRules
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
     patt
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete patt)

@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
+    , simplificationEvaluation
     , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
@@ -63,7 +64,15 @@ that define it.
 definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
-definitionEvaluation rules = BuiltinAndAxiomSimplifier (evaluateAxioms rules)
+definitionEvaluation rules =
+    BuiltinAndAxiomSimplifier (\_ _ _ -> evaluateAxioms rules)
+
+-- | Create an evaluator from a single simplification rule.
+simplificationEvaluation
+    :: EqualityRule Variable
+    -> BuiltinAndAxiomSimplifier
+simplificationEvaluation rule =
+    BuiltinAndAxiomSimplifier (\_ _ _ -> evaluateAxioms [rule])
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -93,23 +102,11 @@ totalDefinitionEvaluation rules =
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        term
-      = do
-        result <- evaluate term
+    totalDefinitionEvaluationWorker _ _ _ term = do
+        result <- evaluateAxioms rules term
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
-      where
-        evaluate =
-            evaluateAxioms
-                rules
-                predicateSimplifier
-                termSimplifier
-                axiomSimplifiers
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
