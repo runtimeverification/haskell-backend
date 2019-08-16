@@ -956,16 +956,35 @@ test_updateMap =
     [ notApplies "updateMap -- different keys"
         [updateMapSimplifier]
         (updateMap
-            (updateMap mMap (mkInt 0) (mkInt 1))
-            (mkInt 1)
-            (mkInt 2)
+            (updateMap mMap
+                (mkInt 0) (mkInt 1)
+            )
+            (mkInt 1) (mkInt 2)
+        )
+    , applies "updateMap -- same concrete key"
+        [updateMapSimplifier]
+        (updateMap
+            (updateMap mMap
+                (mkInt 0) (mkInt 1)
+            )
+            (mkInt 0) (mkInt 2)
         )
     , notApplies "updateMap -- different keys; evaluates requires with SMT"
-        [updateMapSMTSimplifier]
+        -- WIP: This test should not pass.
+        [updateMapSimplifier]
         (updateMap
-            (updateMap mMap (mkInt 0) (mkInt 1))
-            (mkInt 1)
-            (mkInt 2)
+            (updateMap mMap
+                (mkElemVar xInt) (mkInt 1)
+            )
+            (addInt (mkElemVar xInt) (mkInt 1)) (mkInt 2)
+        )
+    , applies "updateMap -- same abstract key"
+        [updateMapSimplifier]
+        (updateMap
+            (updateMap mMap
+                (mkElemVar xInt) (mkInt 1)
+            )
+            (mkElemVar xInt) (mkInt 2)
         )
     ]
 
@@ -985,21 +1004,11 @@ updateMapSimplifier =
   where
     [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
 
-updateMapSMTSimplifier :: EqualityRule Variable
-updateMapSMTSimplifier =
-    axiom
-        (updateMap (updateMap mMap u v) x y)
-        (updateMap mMap u y)
-        (makeEqualsPredicate (eqIntSMT u x) (mkBool True))
-  where
-    [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
-
 mkBool :: Bool -> TermLike Variable
 mkBool = Bool.asInternal
 
-eqInt, eqIntSMT :: TermLike Variable -> TermLike Variable -> TermLike Variable
+eqInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
 eqInt = Builtin.eqInt
-eqIntSMT = Builtin.eqIntSMT
 
 mapSimplifiers :: BuiltinAndAxiomSimplifierMap
 mapSimplifiers =

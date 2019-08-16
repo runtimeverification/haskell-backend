@@ -120,9 +120,6 @@ geIntSymbol = comparisonIntSymbol "geInt" & hook "INT.ge" & smthook ">="
 eqIntSymbol :: Internal.Symbol
 eqIntSymbol = comparisonIntSymbol "eqInt" & hook "INT.eq" & smthook "="
 
-eqIntSMTSymbol :: Internal.Symbol
-eqIntSMTSymbol = comparisonIntSymbol "eqIntSMT" & smthook "="
-
 leIntSymbol :: Internal.Symbol
 leIntSymbol = comparisonIntSymbol "leInt" & hook "INT.le" & smthook "<="
 
@@ -208,12 +205,11 @@ divInt i j = mkApplySymbol tdivIntSymbol [i, j]
 tdivInt i j = mkApplySymbol tdivIntSymbol [i, j]
 tmodInt i j = mkApplySymbol tmodIntSymbol [i, j]
 
-eqInt, ltInt, eqIntSMT
+eqInt, ltInt
     :: TermLike Variable
     -> TermLike Variable
     -> TermLike Variable
 eqInt i j = mkApplySymbol eqIntSymbol [i, j]
-eqIntSMT i j = mkApplySymbol eqIntSMTSymbol [i, j]
 ltInt i j = mkApplySymbol ltIntSymbol [i, j]
 
 -- ** KEQUAL
