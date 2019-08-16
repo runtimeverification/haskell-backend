@@ -324,15 +324,16 @@ concatNormalized
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 concatNormalized normalized1 normalized2 = do
     Monad.guard disjointConcreteElements
+    abstract' <-
+        updateAbstractElements $ onBoth (++) Domain.elementsWithVariables
     let concrete' = onBoth Map.union Domain.concreteElements
-        abstract' = onBoth (++) Domain.elementsWithVariables
         opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
     renormalize $ Domain.wrapAc Domain.NormalizedAc
         { elementsWithVariables = abstract'
         , concreteElements = concrete'
         , opaque = opaque'
         }
-    where
+  where
     onBoth
         ::  (a -> a -> r)
         ->  (   Domain.NormalizedAc

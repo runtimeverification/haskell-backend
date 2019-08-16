@@ -786,6 +786,40 @@ test_unifySelectTwoFromTwoElementMap =
             (selectPat `unifiesWithMulti` mapDV) [expect1, expect2]
         )
 
+test_unifySameSymbolicKey :: TestTree
+test_unifySameSymbolicKey =
+    testPropertyWithSolver
+        "unify a single element symbolic map with a symbolic selection pattern"
+        (do
+            value1 <- forAll genIntegerPattern
+
+            keyVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
+            valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
+            mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
+            let variables = [keyVar1, valueVar1, mapVar]
+            Monad.when (variables /= List.nub variables) discard
+
+            let selectPat =
+                    addSelectElement keyVar1 valueVar1
+                    $ mkElemVar mapVar
+                mapValue =
+                    asVariableInternal
+                        (Map.singleton (mkElemVar keyVar1) value1)
+                expect1 =
+                    Conditional
+                        { term = mapValue
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (ElemVar mapVar, asInternal [])
+                                , (ElemVar valueVar1, value1)
+                                ]
+                        }
+
+            -- { x -> 5 } /\ MapItem(x:Int, y:Int) Rest:Map
+            (mapValue `unifiesWithMulti` selectPat) [expect1]
+            (selectPat `unifiesWithMulti` mapValue) [expect1]
+        )
 
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
@@ -1027,6 +1061,16 @@ asVariablePattern
 asVariablePattern variableMap =
     Reflection.give testMetadataTools
     $ Ac.asPattern mapSort
+    $ Domain.wrapAc Domain.NormalizedAc
+        { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
+        , concreteElements = Map.empty
+        , opaque = []
+        }
+
+asVariableInternal
+    :: Map (TermLike Variable) (TermLike Variable) -> TermLike Variable
+asVariableInternal variableMap =
+    Ac.asInternal testMetadataTools mapSort
     $ Domain.wrapAc Domain.NormalizedAc
         { elementsWithVariables = Domain.MapElement <$> Map.toList variableMap
         , concreteElements = Map.empty
