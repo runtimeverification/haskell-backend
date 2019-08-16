@@ -15,7 +15,7 @@ module SMT.SimpleSMT
       Solver (..)
     , send
     , recv
-    , info
+    , debug
     , command
     , stop
     , Logger
@@ -185,7 +185,8 @@ import qualified Text.Megaparsec as Parser
 import           Text.Read
                  ( readMaybe )
 
-import           Kore.Debug
+import           Kore.Debug hiding
+                 ( debug )
 import qualified Kore.Logger as Logger
 import           SMT.AST
 
@@ -231,23 +232,29 @@ newSolver exe opts logger = do
         let handler X.SomeException {} = return ()
         X.handle handler $ forever $ do
             errs <- Text.hGetLine hErr
-            info solver ["stderr"] errs
+            debug solver ["stderr"] errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
+    setOption solver ":produce-assertions" "true"
 
     return solver
 
-info :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
-info Solver { logger } scope a =
+debug :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+debug Solver { logger } scope a =
     logger Colog.<& message
   where
     message = Logger.LogMessage a Logger.Debug ("SimpleSMT" : scope) callStack
 
+warn :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+warn Solver { logger } scope a =
+    logger Colog.<& message
+  where
+    message = Logger.LogMessage a Logger.Warning ("SimpleSMT" : scope) callStack
+
 send :: Solver -> SExpr -> IO ()
 send solver@Solver { hIn } command' = do
-    (info solver ["send"] . Text.Lazy.toStrict . Text.Builder.toLazyText)
-        (buildSExpr command')
+    debug solver ["send"] (buildText command')
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
@@ -256,7 +263,7 @@ recv :: Solver -> IO SExpr
 recv solver@Solver { hOut } = do
     responseLines <- readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
-    info solver ["recv"] resp
+    debug solver ["recv"] resp
     readSExpr resp
   where
     {-| Reads an SMT response.
@@ -288,7 +295,7 @@ stop solver@Solver { hIn, hOut, hErr, hProc } = do
     send solver (List [Atom "exit"])
     ec <- waitForProcess hProc
     let handler :: X.IOException -> IO ()
-        handler ex = (info solver ["stop"] . Text.pack) (show ex)
+        handler ex = (debug solver ["stop"] . Text.pack) (show ex)
     X.handle handler $ do
         hClose hIn
         hClose hOut
@@ -565,6 +572,8 @@ defineFun proc f as t e = do
     return (const f)
 
 
+buildText :: SExpr -> Text
+buildText = Text.Lazy.toStrict . Text.Builder.toLazyText . buildSExpr
 
 -- | Assume a fact.
 assert :: Solver -> SExpr -> IO ()
@@ -572,19 +581,17 @@ assert proc e = ackCommand proc $ fun "assert" [e]
 
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
-check proc = do
-    res <- command proc (List [ Atom "check-sat" ])
+check solver = do
+    res <- command solver (List [ Atom "check-sat" ])
     case res of
         Atom "unsat"   -> return Unsat
-        Atom "unknown" -> return Unknown
+        Atom "unknown" -> do
+            asserts <- command solver (List [Atom "get-assertions"])
+            warn solver ["check"] (buildText asserts)
+            return Unknown
         Atom "sat"     -> do
-            model <- command proc (List [ Atom "get-model" ])
-            info
-                proc
-                ["check"]
-                (Text.Lazy.toStrict
-                    (Text.Builder.toLazyText (buildSExpr model))
-                )
+            model <- command solver (List [Atom "get-model"])
+            debug solver ["check"] (buildText model)
             return Sat
         _ -> fail $ unlines
             [ "Unexpected result from the SMT solver:"
