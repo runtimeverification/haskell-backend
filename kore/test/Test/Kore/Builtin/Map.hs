@@ -511,6 +511,13 @@ makeElementSelect
 makeElementSelect keyVar valueVar =
     mkApplySymbol elementMapSymbol [mkElemVar keyVar, mkElemVar valueVar]
 
+makeElementLookup
+    :: TermLike Concrete -> ElementVariable Variable -> TermLike Variable
+makeElementLookup key valueVar =
+    mkApplySymbol
+        elementMapSymbol
+        [TermLike.fromConcrete key, mkElemVar valueVar]
+
 -- Given a function to scramble the arguments to concat, i.e.,
 -- @id@ or @reverse@, produces a pattern of the form
 -- `MapItem(K:Int, V:Int) Rest:Map`, or `Rest:Map MapItem(K:Int, V:Int)`,
@@ -536,6 +543,16 @@ addSelectElement keyVar valueVar mapPattern  =
   where
     element = makeElementSelect keyVar valueVar
 
+addLookupElement
+    :: TermLike Concrete                 -- ^key
+    -> ElementVariable Variable          -- ^value variable
+    -> TermLike Variable
+    -> TermLike Variable
+addLookupElement key valueVar mapPattern  =
+    mkApplySymbol concatMapSymbol [element, mapPattern]
+  where
+    element = makeElementLookup key valueVar
+
 test_unifyEmptyWithEmpty :: TestTree
 test_unifyEmptyWithEmpty =
     testPropertyWithSolver "Unify empty map pattern with empty map DV" $ do
@@ -559,12 +576,8 @@ test_unifySelectFromEmpty =
         keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
         valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
         mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
-        let varNames =
-                [ asVariableName keyVar
-                , asVariableName valueVar
-                , asVariableName mapVar
-                ]
-        Monad.when (varNames /= List.nub varNames) discard
+        let variables = [ keyVar, valueVar, mapVar ]
+        Monad.unless (distinctVariables variables) discard
         let selectPat       = selectPattern keyVar valueVar mapVar id
             selectPatRev    = selectPattern keyVar valueVar mapVar reverse
             fnSelectPat     = selectFunctionPattern keyVar valueVar mapVar id
@@ -597,9 +610,8 @@ test_unifySelectFromSingleton =
             keyVar   <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar   <- forAll (standaloneGen $ elementVariableGen mapSort)
-            Monad.when (asVariableName keyVar == asVariableName valueVar) discard
-            Monad.when (asVariableName keyVar == asVariableName mapVar) discard
-            Monad.when (asVariableName valueVar == asVariableName mapVar) discard
+            let variables = [keyVar, valueVar, mapVar]
+            Monad.unless (distinctVariables variables) discard
             let selectPat      = selectPattern keyVar valueVar mapVar id
                 selectPatRev   = selectPattern keyVar valueVar mapVar reverse
                 singleton      = asInternal [(key, value)]
@@ -631,7 +643,8 @@ test_unifySelectSingletonFromSingleton =
             value <- forAll genIntegerPattern
             keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
-            Monad.when (asVariableName keyVar == asVariableName valueVar) discard
+            let variables = [keyVar, valueVar]
+            Monad.unless (distinctVariables variables) discard
             let
                 emptyMapPat    = asTermLike Map.empty
                 selectPat      = addSelectElement keyVar valueVar emptyMapPat
@@ -660,9 +673,8 @@ test_unifySelectFromSingletonWithoutLeftovers =
             value <- forAll genIntegerPattern
             keyVar <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
-            Monad.when
-                (asVariableName keyVar == asVariableName valueVar)
-                discard
+            let variables = [keyVar, valueVar]
+            Monad.unless (distinctVariables variables) discard
             let selectPat = makeElementSelect keyVar valueVar
                 singleton = asInternal [(key, value)]
                 expect =
@@ -695,7 +707,7 @@ test_unifySelectFromTwoElementMap =
             valueVar <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar, valueVar, mapVar]
-            Monad.when (variables /= List.nub variables) discard
+            Monad.unless (distinctVariables variables) discard
 
             let selectPat       = selectPattern keyVar valueVar mapVar id
                 selectPatRev    = selectPattern keyVar valueVar mapVar reverse
@@ -747,7 +759,7 @@ test_unifySelectTwoFromTwoElementMap =
             valueVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar1, keyVar2, valueVar1, valueVar2, mapVar]
-            Monad.when (variables /= List.nub variables) discard
+            Monad.unless (distinctVariables variables) discard
 
             let selectPat =
                     addSelectElement keyVar1 valueVar1
@@ -791,13 +803,13 @@ test_unifySameSymbolicKey =
     testPropertyWithSolver
         "unify a single element symbolic map with a symbolic selection pattern"
         (do
-            value1 <- forAll genIntegerPattern
 
+            value1 <- forAll genIntegerPattern
             keyVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
             mapVar <- forAll (standaloneGen $ elementVariableGen mapSort)
             let variables = [keyVar1, valueVar1, mapVar]
-            Monad.when (variables /= List.nub variables) discard
+            Monad.unless (distinctVariables variables) discard
 
             let selectPat =
                     addSelectElement keyVar1 valueVar1
@@ -813,6 +825,61 @@ test_unifySameSymbolicKey =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
                                 , (ElemVar valueVar1, value1)
+                                ]
+                        }
+
+            -- { x -> 5 } /\ MapItem(x:Int, y:Int) Rest:Map
+            (mapValue `unifiesWithMulti` selectPat) [expect1]
+            (selectPat `unifiesWithMulti` mapValue) [expect1]
+        )
+
+test_unifySameSymbolicKeySymbolicOpaque :: TestTree
+test_unifySameSymbolicKeySymbolicOpaque =
+    testPropertyWithSolver
+        "unify two symbolic maps with identical keys and one variable opaque"
+        (do
+            key1 <- forAll genIntegerPattern
+            value1 <- forAll genIntegerPattern
+            value2 <- forAll genIntegerPattern
+
+            keyVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
+            valueVar1 <- forAll (standaloneGen $ elementVariableGen intSort)
+            valueVar2 <- forAll (standaloneGen $ elementVariableGen intSort)
+            mapVar1 <- forAll (standaloneGen $ elementVariableGen mapSort)
+            mapVar2 <- forAll (standaloneGen $ elementVariableGen mapSort)
+            let variables = [keyVar2, valueVar1, valueVar2, mapVar1, mapVar2]
+            Monad.unless (distinctVariables variables) discard
+
+            let (minMapVar, maxMapVar) =
+                    if mapVar1 < mapVar2
+                    then (mapVar1, mapVar2)
+                    else (mapVar2, mapVar1)
+                selectPat =
+                    addLookupElement (unsafeAsConcrete key1) valueVar1
+                    $ addSelectElement keyVar2 valueVar2
+                    $ mkElemVar mapVar2
+                mapValueFromVar mapVar =
+                    Ac.asInternal testMetadataTools mapSort
+                    $ Domain.wrapAc Domain.NormalizedAc
+                        { elementsWithVariables =
+                            [Domain.MapElement (mkElemVar keyVar2, value2)]
+                        , concreteElements =
+                            Map.singleton
+                                (unsafeAsConcrete key1)
+                                (Domain.MapValue value1)
+                        , opaque = [mkElemVar mapVar]
+                        }
+                mapValue = mapValueFromVar mapVar1
+                unifiedMap = mapValueFromVar maxMapVar
+                expect1 =
+                    Conditional
+                        { term = unifiedMap
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [ (ElemVar minMapVar, mkElemVar maxMapVar)
+                                , (ElemVar valueVar1, value1)
+                                , (ElemVar valueVar2, value2)
                                 ]
                         }
 
@@ -1096,6 +1163,12 @@ asInternal elements =
         asConcrete . Bifunctor.second Domain.MapValue <$> elements
         & Either.partitionEithers
 
+unsafeAsConcrete :: TermLike Variable -> TermLike Concrete
+unsafeAsConcrete term =
+    case TermLike.asConcrete term of
+        Just result -> result
+        Nothing -> error "Expected concrete term."
+
 {- | Construct a 'NormalizedMap' from a list of elements and opaque terms.
 
 It is an error if the collection cannot be normalized.
@@ -1128,3 +1201,9 @@ mockSubstitutionSimplifier = PredicateSimplifier return
 
 asVariableName :: ElementVariable Variable -> Id
 asVariableName = variableName . getElementVariable
+
+distinctVariables :: [ElementVariable Variable] -> Bool
+distinctVariables variables =
+    length variableNames == length (List.nub variableNames)
+  where
+    variableNames = map asVariableName variables
