@@ -87,66 +87,7 @@ import           SMT.SimpleSMT
                  SortDeclaration (..) )
 import qualified SMT.SimpleSMT as SimpleSMT
 
--- | Time-limit for SMT queries.
-newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
-    deriving (Eq, Ord, Read, Show)
-
--- | Solver configuration
-data Config =
-    Config
-        { executable :: FilePath
-        -- ^ solver executable file name
-        , arguments :: [String]
-        -- ^ default command-line arguments to solver
-        , preludeFile :: Maybe FilePath
-        -- ^ prelude of definitions to initialize solver
-        , logFile :: Maybe FilePath
-        -- ^ optional log file name
-        , timeOut :: TimeOut
-        -- ^ query time limit
-        }
-
--- | Default configuration using the Z3 solver.
-defaultConfig :: Config
-defaultConfig =
-    Config
-        { executable = "z3"
-        , arguments =
-            [ "-smt2"  -- use SMT-LIB2 format
-            , "-in"    -- read from standard input
-            ]
-        , preludeFile = Nothing
-        , logFile = Nothing
-        , timeOut = TimeOut (Limit 40)
-        }
-
-{- | Query an external SMT solver.
-
-The solver may be shared among multiple threads. Individual commands will
-acquire and release the solver as needed, but sequences of commands from
-different threads may be interleaved; use 'inNewScope' to acquire exclusive
-access to the solver for a sequence of commands.
-
- -}
-newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
-    deriving
-        ( Applicative
-        , Functor
-        , Monad
-        , MonadCatch
-        , MonadIO
-        , MonadThrow
-        , Morph.MFunctor
-        )
-
-instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where
-    askUnliftIO =
-        SmtT
-            $ ReaderT $ \r ->
-                withUnliftIO $ \u ->
-                    return (UnliftIO (unliftIO u . flip runReaderT r . runSmtT))
-
-type SMT = SmtT IO
+-- * Interface
 
 -- | Access 'SMT' through monad transformers.
 class Monad m => MonadSMT m where
@@ -246,6 +187,35 @@ class Monad m => MonadSMT m where
     loadFile = Trans.lift . loadFile
     {-# INLINE loadFile #-}
 
+-- * Implementation
+
+{- | Query an external SMT solver.
+
+The solver may be shared among multiple threads. Individual commands will
+acquire and release the solver as needed, but sequences of commands from
+different threads may be interleaved; use 'inNewScope' to acquire exclusive
+access to the solver for a sequence of commands.
+
+ -}
+newtype SmtT m a = SmtT { runSmtT :: ReaderT (MVar Solver) m a }
+    deriving
+        ( Applicative
+        , Functor
+        , Monad
+        , MonadCatch
+        , MonadIO
+        , MonadThrow
+        , Morph.MFunctor
+        )
+
+instance MonadUnliftIO m => MonadUnliftIO (SmtT m) where
+    askUnliftIO =
+        SmtT $ ReaderT $ \r ->
+            withUnliftIO $ \u ->
+                return (UnliftIO (unliftIO u . flip runReaderT r . runSmtT))
+
+type SMT = SmtT IO
+
 withSolver' :: (Solver -> IO a) -> SMT a
 withSolver' action = SmtT $ do
     mvar <- Reader.ask
@@ -338,6 +308,39 @@ instance MonadSMT m => MonadSMT (Counter.CounterT m)
 instance MonadSMT m => MonadSMT (State.Strict.StateT s m)
 
 instance MonadSMT m => MonadSMT (ExceptT e m)
+
+-- | Time-limit for SMT queries.
+newtype TimeOut = TimeOut { getTimeOut :: Limit Integer }
+    deriving (Eq, Ord, Read, Show)
+
+-- | Solver configuration
+data Config =
+    Config
+        { executable :: FilePath
+        -- ^ solver executable file name
+        , arguments :: [String]
+        -- ^ default command-line arguments to solver
+        , preludeFile :: Maybe FilePath
+        -- ^ prelude of definitions to initialize solver
+        , logFile :: Maybe FilePath
+        -- ^ optional log file name
+        , timeOut :: TimeOut
+        -- ^ query time limit
+        }
+
+-- | Default configuration using the Z3 solver.
+defaultConfig :: Config
+defaultConfig =
+    Config
+        { executable = "z3"
+        , arguments =
+            [ "-smt2"  -- use SMT-LIB2 format
+            , "-in"    -- read from standard input
+            ]
+        , preludeFile = Nothing
+        , logFile = Nothing
+        , timeOut = TimeOut (Limit 40)
+        }
 
 {- | Initialize a new solver with the given 'Config'.
 
