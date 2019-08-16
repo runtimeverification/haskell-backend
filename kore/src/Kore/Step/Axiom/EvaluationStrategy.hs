@@ -143,50 +143,35 @@ builtinEvaluation
     -> BuiltinAndAxiomSimplifier
 builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
-
-
-evaluateBuiltin
-    :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => BuiltinAndAxiomSimplifier
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
-    -> simplifier (AttemptedAxiom variable)
-evaluateBuiltin
-    (BuiltinAndAxiomSimplifier builtinEvaluator)
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
-    patt
-  = do
-    result <-
-        builtinEvaluator
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            patt
-    case result of
-        AttemptedAxiom.NotApplicable
-          | App_ appHead children <- patt
-          , Just hook_ <- Text.unpack <$> Attribute.getHook (symbolHook appHead)
-          , all isValue children ->
-            (error . show . Pretty.vsep)
-                [ "Expecting hook "
-                    <> Pretty.squotes (Pretty.pretty hook_)
-                    <> " to reduce concrete pattern:"
-                , Pretty.indent 4 (unparse patt)
-                ]
-        _ -> return result
   where
-    isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
+    evaluateBuiltin
+        (BuiltinAndAxiomSimplifier builtinEvaluator)
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        patt
+      = do
+        result <-
+            builtinEvaluator
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
+                patt
+        case result of
+            AttemptedAxiom.NotApplicable
+              | App_ appHead children <- patt
+              , Just hook_ <- Text.unpack <$> getSymbolHook appHead
+              , all isValue children ->
+                (error . show . Pretty.vsep)
+                    [ "Expecting hook "
+                        <> Pretty.squotes (Pretty.pretty hook_)
+                        <> " to reduce concrete pattern:"
+                    , Pretty.indent 4 (unparse patt)
+                    ]
+            _ -> return result
+      where
+        getSymbolHook = Attribute.getHook . symbolHook
+        isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
