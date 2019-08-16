@@ -120,6 +120,7 @@ rulePattern left right =
 -}
 newtype EqualityRule variable =
     EqualityRule { getEqualityRule :: RulePattern variable }
+    deriving (GHC.Generic)
 
 deriving instance Eq variable => Eq (EqualityRule variable)
 deriving instance Ord variable => Ord (EqualityRule variable)
@@ -129,6 +130,7 @@ deriving instance Show variable => Show (EqualityRule variable)
 -}
 newtype RewriteRule variable =
     RewriteRule { getRewriteRule :: RulePattern variable }
+    deriving (GHC.Generic)
 
 deriving instance Eq variable => Eq (RewriteRule variable)
 deriving instance Ord variable => Ord (RewriteRule variable)
