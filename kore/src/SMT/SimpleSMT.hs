@@ -308,12 +308,13 @@ loadFile s file = do
 
 -- | A command with no interesting result.
 ackCommand :: Solver -> SExpr -> IO ()
-ackCommand proc c =
-  do res <- command proc c
+ackCommand solver c =
+  do res <- command solver c
      case res of
        Atom "success" -> return ()
        _  -> fail $ unlines
                       [ "Unexpected result from the SMT solver:"
+                      , "  Command: " ++ showSExpr c
                       , "  Expected: success"
                       , "  Result: " ++ showSExpr res
                       ]
@@ -332,13 +333,15 @@ simpleCommand proc = ackCommand proc . List . map Atom
 -- This is useful for setting options that unsupported by some solvers, but used
 -- by others.
 simpleCommandMaybe :: Solver -> [Text] -> IO Bool
-simpleCommandMaybe proc c =
-  do res <- command proc (List (map Atom c))
+simpleCommandMaybe solver c =
+  do let cmd = List (map Atom c)
+     res <- command solver cmd
      case res of
        Atom "success"     -> return True
        Atom "unsupported" -> return False
        _                  -> fail $ unlines
                                       [ "Unexpected result from the SMT solver:"
+                                      , "  Command: " ++ showSExpr cmd
                                       , "  Expected: success or unsupported"
                                       , "  Result: " ++ showSExpr res
                                       ]
@@ -619,13 +622,15 @@ sexprToVal expr =
 -- | Get the values of some s-expressions.
 -- Only valid after a 'Sat' result.
 getExprs :: Solver -> [SExpr] -> IO [(SExpr, Value)]
-getExprs proc vals =
-  do res <- command proc $ List [ Atom "get-value", List vals ]
+getExprs solver vals =
+  do let cmd = List [ Atom "get-value", List vals ]
+     res <- command solver cmd
      case res of
        List xs -> mapM getAns xs
        _ -> fail $ unlines
                  [ "Unexpected response from the SMT solver:"
-                 , "  Exptected: a list"
+                 , "  Command: " ++ showSExpr cmd
+                 , "  Expected: a list"
                  , "  Result: " ++ showSExpr res
                  ]
   where
