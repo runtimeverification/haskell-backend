@@ -4,7 +4,7 @@ module GlobalMain
     ( MainOptions(..)
     , GlobalOptions(..)
     , KoreProveOptions(..)
-    , Main (..)
+    , Main
     , parseKoreProveOptions
     , mainGlobal
     , defaultMainGlobal
@@ -14,8 +14,8 @@ module GlobalMain
     , mainPatternVerify
     , parseDefinition
     , verifyDefinitionWithBase
-    , mainModule
     , mainParse
+    , lookupMainModule
     ) where
 
 import           Colog
@@ -26,8 +26,6 @@ import           Control.Monad
                  ( when )
 import           Control.Monad.Trans.Class
                  ( lift )
-import           Control.Monad.Trans.Reader
-                 ( ReaderT, ask )
 import           Data.Function
                  ( (&) )
 import           Data.List
@@ -83,10 +81,7 @@ import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
                  ( version )
 
-newtype Main a =
-    Main
-    { unMain :: ReaderT (LogAction IO Logger.LogMessage) IO a
-    } deriving (Functor, Applicative, Monad)
+type Main = LoggerT IO
 
 data KoreProveOptions =
     KoreProveOptions
@@ -271,12 +266,12 @@ clockSomething description something =
 
 -- | Time an IO computation and print results.
 clockSomethingIO :: String -> IO a -> Main a
-clockSomethingIO description something = Main $ do
+clockSomethingIO description something = do
     start  <- lift $ getTime Monotonic
     x      <- lift   something
     end    <- lift $ getTime Monotonic
-    logger <- ask
-    lift $ logger <& logMessage end start
+    logger <- askLogAction
+    logger <& logMessage end start
     return x
   where
     logMessage end start =
@@ -312,13 +307,14 @@ mainPatternVerify verifiedModule patt = do
             , builtinDomainValueVerifiers = domainValueVerifiers
             }
 
-mainModule
-    :: ModuleName
+lookupMainModule
+    :: Monad monad
+    => ModuleName
     -> Map.Map
         ModuleName
         (VerifiedModule Attribute.Symbol Attribute.Axiom)
-    -> IO (VerifiedModule Attribute.Symbol Attribute.Axiom)
-mainModule name modules =
+    -> monad (VerifiedModule Attribute.Symbol Attribute.Axiom)
+lookupMainModule name modules =
     case Map.lookup name modules of
         Nothing ->
             error
