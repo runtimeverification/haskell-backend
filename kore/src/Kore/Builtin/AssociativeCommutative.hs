@@ -79,16 +79,18 @@ import           Kore.Internal.Symbol
                  ( Symbol )
 import           Kore.Internal.TermLike
                  ( pattern App_, pattern BuiltinMap_, pattern BuiltinSet_,
-                 Concrete, TermLike, pattern Var_, mkApplySymbol, mkBuiltin,
-                 termLikeSort )
+                 Concrete, pattern ElemVar_, TermLike, pattern Var_,
+                 mkApplySymbol, mkBuiltin, mkElemVar, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
 import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom, emptyAttemptedAxiom )
+import           Kore.Syntax.ElementVariable
+                 ( ElementVariable (getElementVariable) )
 import           Kore.Syntax.Variable
-                 ( SortedVariable )
+                 ( SortedVariable, sortedVariableSort )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
@@ -324,15 +326,16 @@ concatNormalized
     -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 concatNormalized normalized1 normalized2 = do
     Monad.guard disjointConcreteElements
+    abstract' <-
+        updateAbstractElements $ onBoth (++) Domain.elementsWithVariables
     let concrete' = onBoth Map.union Domain.concreteElements
-        abstract' = onBoth (++) Domain.elementsWithVariables
         opaque'   = Data.List.sort $ onBoth (++) Domain.opaque
     renormalize $ Domain.wrapAc Domain.NormalizedAc
         { elementsWithVariables = abstract'
         , concreteElements = concrete'
         , opaque = opaque'
         }
-    where
+  where
     onBoth
         ::  (a -> a -> r)
         ->  (   Domain.NormalizedAc
@@ -569,16 +572,28 @@ elementListAsInternal
     -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> Maybe (TermLike variable)
 elementListAsInternal tools sort1 terms = do
+    (asInternal tools sort1 . Domain.wrapAc)
+    <$> elementListAsNormalized terms
+
+elementListAsNormalized
+    :: forall normalized variable
+    .   ( Ord variable
+        , SortedVariable variable
+        , TermWrapper normalized
+        , Unparse variable
+        )
+    => [(TermLike variable, Domain.Value normalized (TermLike variable))]
+    -> Maybe
+        (Domain.NormalizedAc normalized (TermLike Concrete) (TermLike variable))
+elementListAsNormalized terms = do
     let (withVariables, concrete) = splitVariableConcrete terms
     _checkDisjoinVariables <- disjointMap withVariables
     concreteAc <- disjointMap concrete
-    return
-        $ asInternal tools sort1
-        $ Domain.wrapAc Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> withVariables
-            , concreteElements = concreteAc
-            , opaque = []
-            }
+    return Domain.NormalizedAc
+        { elementsWithVariables = Domain.wrapElement <$> withVariables
+        , concreteElements = concreteAc
+        , opaque = []
+        }
 
 {- | Render a 'NormalizedAc' as an extended domain value pattern.
 -}
@@ -773,6 +788,12 @@ unifyEqualsNormalizedAc
                     allElements2
                     allElements1
                     (Just opaque)
+        ([ElemVar_ v1], _)
+          | null allElements1 ->
+            unifyOpaqueVariable' v1 allElements2 opaqueDifference2
+        (_, [ElemVar_ v2])
+          | null allElements2 ->
+            unifyOpaqueVariable' v2 allElements1 opaqueDifference1
         (_, _) -> empty
     let (unifiedElements, unifierPredicate) =
             Conditional.splitTerm simpleUnifier
@@ -819,6 +840,9 @@ unifyEqualsNormalizedAc
             first
             second
             unifyEqualsChildren
+
+    unifyOpaqueVariable' =
+        unifyOpaqueVariable tools bottomWithExplanation unifyEqualsChildren
 
     Domain.NormalizedAc
         { elementsWithVariables = preElementsWithVariables1
@@ -928,12 +952,15 @@ unifyEqualsNormalizedAc
         simplifiedValue <- traverse simplifyTermLike value
         let
             splitSimplifiedValue
-                :: Domain.Value normalized (TermLike variable, Predicate variable)
+                :: Domain.Value
+                    normalized
+                    (TermLike variable, Predicate variable)
             splitSimplifiedValue =
                 fmap Conditional.splitTerm simplifiedValue
             simplifiedValueTerm :: Domain.Value normalized (TermLike variable)
             simplifiedValueTerm = fmap fst splitSimplifiedValue
-            simplifiedValuePredicates :: Domain.Value normalized (Predicate variable)
+            simplifiedValuePredicates
+                :: Domain.Value normalized (Predicate variable)
             simplifiedValuePredicates = fmap snd splitSimplifiedValue
             simplifiedValuePredicate :: Predicate variable
             simplifiedValuePredicate =
@@ -982,7 +1009,10 @@ buildResultFromUnifiers
   = do -- unifier monad
     let
         almostResultTerms
-            ::  [(TermLike variable, Domain.Value normalized (TermLike variable))]
+            ::  [   ( TermLike variable
+                    , Domain.Value normalized (TermLike variable)
+                    )
+                ]
         almostResultPredicates :: [Predicate variable]
         (almostResultTerms, almostResultPredicates) =
             unzip (map Conditional.splitTerm unifiedElementsSimplified)
@@ -1104,7 +1134,8 @@ unifyWrappedValues unifier firstValue secondValue = do
     let aligned = Domain.alignValues firstValue secondValue
     unifiedValues <- traverse (uncurry unifier) aligned
     let
-        splitValues :: Domain.Value normalized (TermLike variable, Predicate variable)
+        splitValues
+            :: Domain.Value normalized (TermLike variable, Predicate variable)
         splitValues = fmap Pattern.splitTerm unifiedValues
         valueUnifierTerm :: Domain.Value normalized (TermLike variable)
         valueUnifierTerm = fmap fst splitValues
@@ -1194,7 +1225,10 @@ unifyEqualsElementLists
         -- ^ Second structure elements
         -> unifier
             (Conditional variable
-                [(TermLike variable, Domain.Value normalized (TermLike variable))]
+                [   ( TermLike variable
+                    , Domain.Value normalized (TermLike variable)
+                    )
+                ]
             , [ConcreteOrWithVariable normalized variable]
             , [ConcreteOrWithVariable normalized variable]
             )
@@ -1257,6 +1291,73 @@ unifyEqualsElementLists
         unifyEqualsElementPermutations
             (unifyEqualsConcreteOrWithVariable unifyEqualsChildren)
     remainderError = nonEmptyRemainderError first second
+
+unifyOpaqueVariable
+    ::  ( MonadUnify unifier
+        , Ord variable
+        , SortedVariable variable
+        , TermWrapper normalized
+        , Unparse variable
+        )
+    => SmtMetadataTools Attribute.Symbol
+    -> (forall a . Doc () -> unifier a)
+    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    -- ^ unifier function
+    -> TermLike.ElementVariable variable
+    -> [ConcreteOrWithVariable normalized variable]
+    -> [TermLike variable]
+    -> MaybeT unifier
+        ( Conditional
+            variable
+            [(TermLike variable, Domain.Value normalized (TermLike variable))]
+        , [TermLike variable]
+        )
+unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] = do
+    noCheckUnifyOpaqueChildren unifyChildren v1 second
+unifyOpaqueVariable
+    tools
+    bottomWithExplanation
+    unifyChildren
+    v1
+    concreteOrVariableTerms
+    opaqueTerms
+  =
+    case elementListAsNormalized pairs of
+        Nothing -> Monad.Trans.lift $ bottomWithExplanation
+            "Duplicated element in unification results"
+        Just elementTerm ->
+            let secondTerm =
+                    asInternal
+                        tools
+                        sort
+                        (Domain.wrapAc
+                            elementTerm {Domain.opaque = opaqueTerms}
+                        )
+            in if TermLike.isFunctionPattern secondTerm
+                then noCheckUnifyOpaqueChildren unifyChildren v1 secondTerm
+                else empty
+  where
+    sort = sortedVariableSort (getElementVariable v1)
+    pairs = map fromConcreteOrWithVariable concreteOrVariableTerms
+
+noCheckUnifyOpaqueChildren
+    ::  ( MonadUnify unifier
+        , Ord variable
+        , SortedVariable variable
+        )
+    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    -> TermLike.ElementVariable variable
+    -> TermLike variable
+    -> MaybeT unifier
+        ( Conditional
+            variable
+            [(TermLike variable, Domain.Value normalized (TermLike variable))]
+        , [TermLike variable]
+        )
+noCheckUnifyOpaqueChildren unifyChildren v1 second = Monad.Trans.lift $ do
+    unifier <- unifyChildren (mkElemVar v1) second
+    let (opaque, predicate) = Conditional.splitTerm unifier
+    return ([] `Conditional.withCondition` predicate, [opaque])
 
 {- |Unifies two patterns represented as @ConcreteOrWithVariable@, making sure
 that a concrete pattern (if any) is sent on the first position of the unify
