@@ -154,8 +154,7 @@ import qualified Colog
 import           Control.Concurrent
                  ( forkIO )
 import qualified Control.Exception as X
-import           Control.Monad
-                 ( forever )
+import qualified Control.Monad as Monad
 import           Data.Bits
                  ( testBit )
 import           Data.Ratio
@@ -189,6 +188,19 @@ import           Kore.Debug hiding
                  ( debug )
 import qualified Kore.Logger as Logger
 import           SMT.AST
+
+-- ---------------------------------------------------------------------
+-- * Features
+
+{- | Does Z3 support the @produce-assertions@ option?
+ -}
+featureProduceAssertions :: Bool
+featureProduceAssertions =
+    -- TODO (thomas.tuegel): Change this to 'True' when we drop support for
+    -- older versions.
+    False
+
+-- ---------------------------------------------------------------------
 
 -- | Results of checking for satisfiability.
 data Result = Sat         -- ^ The assertions are satisfiable
@@ -230,13 +242,14 @@ newSolver exe opts logger = do
 
     _ <- forkIO $ do
         let handler X.SomeException {} = return ()
-        X.handle handler $ forever $ do
+        X.handle handler $ Monad.forever $ do
             errs <- Text.hGetLine hErr
             debug solver ["stderr"] errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
-    setOption solver ":produce-assertions" "true"
+    Monad.when featureProduceAssertions
+        $ setOption solver ":produce-assertions" "true"
 
     return solver
 
@@ -586,8 +599,9 @@ check solver = do
     case res of
         Atom "unsat"   -> return Unsat
         Atom "unknown" -> do
-            asserts <- command solver (List [Atom "get-assertions"])
-            warn solver ["check"] (buildText asserts)
+            Monad.when featureProduceAssertions $ do
+                asserts <- command solver (List [Atom "get-assertions"])
+                warn solver ["check"] (buildText asserts)
             return Unknown
         Atom "sat"     -> do
             model <- command solver (List [Atom "get-model"])
