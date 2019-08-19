@@ -180,6 +180,7 @@ import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import           Kore.Attribute.Synthetic
+import           Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Internal.Alias
@@ -232,6 +233,8 @@ newtype Evaluated child = Evaluated { getEvaluated :: child }
 instance SOP.Generic (Evaluated child)
 
 instance SOP.HasDatatypeInfo (Evaluated child)
+
+instance Debug child => Debug (Evaluated child)
 
 instance Hashable child => Hashable (Evaluated child)
 
@@ -286,6 +289,8 @@ data TermLikeF variable child
 instance SOP.Generic (TermLikeF variable child)
 
 instance SOP.HasDatatypeInfo (TermLikeF variable child)
+
+instance (Debug child, Debug variable) => Debug (TermLikeF variable child)
 
 instance
     (Hashable child, Hashable variable) =>
@@ -590,6 +595,12 @@ newtype TermLike variable =
             :: Cofree (TermLikeF variable) (Attribute.Pattern variable)
         }
     deriving (GHC.Generic, Show)
+
+instance SOP.Generic (TermLike variable)
+
+instance SOP.HasDatatypeInfo (TermLike variable)
+
+instance Debug variable => Debug (TermLike variable)
 
 instance
     (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>

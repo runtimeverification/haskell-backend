@@ -32,11 +32,12 @@ import           Control.DeepSeq
 import           Data.List
                  ( foldl' )
 import qualified Data.Set as Set
+import qualified Generics.SOP as SOP
 import           GHC.Exts
                  ( IsList )
-import           GHC.Generics
-                 ( Generic )
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.TopBottom
        ( TopBottom (..) )
 
@@ -60,13 +61,19 @@ newtype MultiOr child = MultiOr { getMultiOr :: [child] }
         , Eq
         , Foldable
         , Functor
-        , Generic
+        , GHC.Generic
         , IsList
         , Monad
         , Ord
         , Show
         , Traversable
         )
+
+instance SOP.Generic (MultiOr child)
+
+instance SOP.HasDatatypeInfo (MultiOr child)
+
+instance Debug child => Debug (MultiOr child)
 
 instance (Ord child, TopBottom child) => Semigroup (MultiOr child) where
     (MultiOr []) <> b = b

@@ -16,11 +16,13 @@ import           Data.Maybe
                  ( mapMaybe )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
+import qualified Generics.SOP as SOP
+import           GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Trusted as Trusted
+import           Kore.Debug
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -289,7 +291,7 @@ removalPredicate destination config =
 
 instance
     ( SortedVariable variable
-    , Ord variable
+    , Debug variable
     , Unparse variable
     , Show variable
     , FreshVariable variable
@@ -297,7 +299,7 @@ instance
 
     newtype Rule (OnePathRule variable) =
         Rule { unRule :: RewriteRule variable }
-        deriving (Show, Unparse)
+        deriving (GHC.Generic, Show, Unparse)
 
     isTrusted =
         Trusted.isTrusted
@@ -308,12 +310,8 @@ instance
     removeDestination goal = do
         let destination = getDestination goal
             configuration = getConfiguration goal
-            removal =
-                removalPredicate destination configuration
-            result =
-                Conditional.andPredicate
-                    configuration
-                    removal
+            removal = removalPredicate destination configuration
+            result = Conditional.andPredicate configuration removal
         pure $ makeRuleFromPatterns result destination
 
     simplify goal = do
@@ -322,11 +320,9 @@ instance
         orResult <-
             Monad.Trans.lift
             $ simplifyAndRemoveTopExists configuration
-        let simplifiedResult =
-                MultiOr.filterOr
-                $ orResult
+        let simplifiedResult = MultiOr.filterOr orResult
             simplifiedRules =
-                fmap (flip makeRuleFromPatterns $ destination) simplifiedResult
+                fmap (flip makeRuleFromPatterns destination) simplifiedResult
         Foldable.asum (pure <$> simplifiedRules)
 
     isTriviallyValid =
@@ -425,6 +421,12 @@ instance
                 results' <-
                     traverseConfigs (mapRules onePathResults)
                 Result.transitionResults results'
+
+instance SOP.Generic (Rule (OnePathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+
+instance Debug variable => Debug (Rule (OnePathRule variable))
 
 getConfiguration
     :: forall rule variable

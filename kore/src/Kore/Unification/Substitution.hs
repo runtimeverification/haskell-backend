@@ -40,8 +40,8 @@ import qualified Data.Map.Strict as Map
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import           GHC.Stack
                  ( HasCallStack )
 import           Prelude hiding
@@ -49,6 +49,7 @@ import           Prelude hiding
 
 import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
+import           Kore.Debug
 import           Kore.Internal.TermLike
                  ( TermLike, pattern Var_, mkVar )
 import qualified Kore.Internal.TermLike as TermLike
@@ -81,7 +82,7 @@ data Substitution variable
     -- instance below.
     = Substitution ![(variable, TermLike variable)]
     | NormalizedSubstitution !(Map variable (TermLike variable))
-    deriving Generic
+    deriving GHC.Generic
 
 -- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
 instance Ord variable => Eq (Substitution variable) where
@@ -90,6 +91,12 @@ instance Ord variable => Eq (Substitution variable) where
 -- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
 instance Ord variable => Ord (Substitution variable) where
     compare = Function.on compare unwrap
+
+instance SOP.Generic (Substitution variable)
+
+instance SOP.HasDatatypeInfo (Substitution variable)
+
+instance Debug variable => Debug (Substitution variable)
 
 deriving instance Show variable => Show (Substitution variable)
 

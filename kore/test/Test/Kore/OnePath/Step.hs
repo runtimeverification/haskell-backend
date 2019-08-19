@@ -87,10 +87,7 @@ test_onePathStrategy =
         -- Expected: bottom, since a->bottom
         [ _actual ] <- runOnePathSteps
             (Limit 1)
-            (makeOnePathRule
-                Mock.a
-                Mock.a
-            )
+            (makeOnePathRule Mock.a Mock.a)
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation "" Proven _actual
@@ -103,10 +100,7 @@ test_onePathStrategy =
         -- step
         [ _actual ] <- runOnePathSteps
             (Limit 1)
-            (makeOnePathRule
-                Mock.a
-                Mock.d
-            )
+            (makeOnePathRule Mock.a Mock.d)
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
