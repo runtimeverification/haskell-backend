@@ -219,12 +219,14 @@ commandLineParse
 commandLineParse localCommandLineParser modifiers =
     execParser
     $ info
-      ( MainOptions
-        <$> globalCommandLineParser
-        <*> (   Just <$> localCommandLineParser
-            <|> pure Nothing )
-      <**> helper )
-    modifiers
+        ( MainOptions
+            <$> globalCommandLineParser
+            <*> (   Just <$> localCommandLineParser
+                <|> pure Nothing
+                )
+        <**> helper
+        )
+        modifiers
 
 
 ----------------------
