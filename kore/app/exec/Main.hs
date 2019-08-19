@@ -10,6 +10,7 @@ import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.Trans
                  ( lift )
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import           Data.List
                  ( intercalate )
@@ -28,6 +29,7 @@ import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
                  long, metavar, option, progDesc, readerError, str, strOption,
                  value )
+import qualified Options.Applicative as Options
 import           System.Exit
                  ( ExitCode (..), exitWith )
 import           System.IO
@@ -97,7 +99,7 @@ parseKoreSearchOptions =
     <$> strOption
         (  metavar "SEARCH_FILE"
         <> long "search"
-        <> help "Kore source file representing pattern to search for.\
+        <> help "Kore source file representing pattern to search for. \
                 \Needs --module."
         )
     <*> parseBound
@@ -117,51 +119,66 @@ parseKoreSearchOptions =
             "Search type (selects potential solutions)"
             (map (\s -> (show s, s)) [ ONE, FINAL, STAR, PLUS ])
 
-    parseSum
-        :: Eq value
-        => String -> String -> String -> [(String,value)] -> Parser value
-    parseSum metaName longName helpMsg options =
-        option readSum
-            (  metavar metaName
-            <> long longName
-            <> help helpMsg
-            )
-      where
-        readSum = do
-            opt <- str
-            case lookup opt options of
-                Just val -> pure val
-                _ ->
-                    let
-                        unknown =
-                            "Unknown " ++  longName ++ " '" ++ opt ++ "'. "
-                        known = "Known " ++ longName ++ "s are: " ++
-                            intercalate ", " (map fst options) ++ "."
-                    in
-                        readerError (unknown ++ known)
+parseSum
+    :: Eq value
+    => String -> String -> String -> [(String, value)] -> Parser value
+parseSum metaName longName helpMsg options =
+    option (readSum longName options)
+        (  metavar metaName
+        <> long longName
+        <> help (helpMsg <> ": " <> knownOptions)
+        )
+  where
+    knownOptions = intercalate ", " (map fst options)
+
+readSum :: String -> [(String, value)] -> Options.ReadM value
+readSum longName options = do
+    opt <- str
+    case lookup opt options of
+        Just val -> pure val
+        _ -> readerError (unknown opt ++ known)
+  where
+    knownOptions = intercalate ", " (map fst options)
+    unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
+    known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
 
 applyKoreSearchOptions
     :: Maybe KoreSearchOptions
     -> KoreExecOptions
     -> KoreExecOptions
-applyKoreSearchOptions koreSearchOptions koreExecOpts =
-    case koreSearchOptions of
-        Nothing -> koreExecOpts
-        Just koreSearchOpts ->
-            koreExecOpts
-                { koreSearchOptions = Just koreSearchOpts
-                , strategy =
-                    -- Search relies on exploring the entire space of states.
-                    allRewrites
-                , stepLimit = min stepLimit searchTypeStepLimit
-                }
-          where
-            KoreSearchOptions { searchType } = koreSearchOpts
-            KoreExecOptions { stepLimit } = koreExecOpts
-            searchTypeStepLimit =
-                case searchType of
-                    ONE -> Limit 1
-                    _ -> Unlimited
+applyKoreSearchOptions Nothing koreExecOpts = koreExecOpts
+applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
+    koreExecOpts
+        { koreSearchOptions
+        , strategy =
+            -- Search relies on exploring the entire space of states.
+            allRewrites
+        , stepLimit = min stepLimit searchTypeStepLimit
+        }
+  where
+    KoreSearchOptions { searchType } = koreSearchOpts
+    KoreExecOptions { stepLimit } = koreExecOpts
+    searchTypeStepLimit =
+        case searchType of
+            ONE -> Limit 1
+            _ -> Unlimited
+
+-- | Available SMT solvers
+data Solver = Z3 | None
+    deriving (Eq, Ord, Show)
+    deriving (Enum, Bounded)
+
+parseSolver :: Parser Solver
+parseSolver =
+    option (readSum longName options)
+    $  metavar "SOLVER"
+    <> long longName
+    <> help ("SMT solver for checking constraints: " <> knownOptions)
+    <> value Z3
+  where
+    longName = "smt"
+    knownOptions = intercalate ", " (map fst options)
+    options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
 
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
@@ -175,6 +192,7 @@ data KoreExecOptions = KoreExecOptions
     -- ^ The name of the main module in the definition
     , smtTimeOut          :: !SMT.TimeOut
     , smtPrelude          :: !(Maybe FilePath)
+    , smtSolver           :: !Solver
     , stepLimit           :: !(Limit Natural)
     , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
     , koreLogOptions      :: !KoreLogOptions
@@ -224,6 +242,7 @@ parseKoreExecOptions =
                 <> help "Path to the SMT prelude file"
                 )
             )
+        <*> parseSolver
         <*> parseStepLimit
         <*> parseStrategy
         <*> parseKoreLogOptions
@@ -237,7 +256,7 @@ parseKoreExecOptions =
             else return $ SMT.TimeOut $ Limit i
     parseStepLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
-        option readStrategy
+        option (readSum "strategy" strategies)
             (  metavar "STRATEGY"
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
@@ -252,18 +271,6 @@ parseKoreExecOptions =
             , ("any-heating-cooling", heatingCooling anyRewrite)
             , ("all-heating-cooling", heatingCooling allRewrites)
             ]
-        readStrategy = do
-            strat <- str
-            let found = lookup strat strategies
-            case found of
-                Just strategy -> pure strategy
-                Nothing ->
-                    let
-                        unknown = "Unknown strategy '" ++ strat ++ "'. "
-                        names = intercalate ", " (fst <$> strategies)
-                        known = "Known strategies are: " ++ names
-                    in
-                        readerError (unknown ++ known)
     depth =
         option auto
             (  metavar "DEPTH"
@@ -417,17 +424,24 @@ type MonadExecute exe =
 
 -- | Run the worker in the context of the main module.
 execute
-    :: KoreExecOptions
+    :: forall r
+    .  KoreExecOptions
     -> LoadedModule  -- ^ Main module
     -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
     -> Main r
 execute options mainModule worker = do
     logger <- LoggerT Reader.ask
-    clockSomethingIO "Executing" $ SMT.runSMT config logger $ do
-        give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
-        worker
+    clockSomethingIO "Executing"
+        $ case smtSolver of
+            Z3   -> withZ3 logger
+            None -> withoutSMT logger
   where
-    KoreExecOptions { smtTimeOut, smtPrelude } = options
+    withZ3 logger =
+        SMT.runSMT config logger $ do
+            give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
+            worker
+    withoutSMT logger = SMT.runNoSMT logger worker
+    KoreExecOptions { smtTimeOut, smtPrelude, smtSolver } = options
     config =
         SMT.defaultConfig
             { SMT.timeOut = smtTimeOut
