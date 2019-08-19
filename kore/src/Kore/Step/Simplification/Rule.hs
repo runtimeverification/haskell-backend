@@ -25,7 +25,7 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue )
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
-                 ( Simplifier )
+                 ( MonadSimplify )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -45,9 +45,10 @@ simplifyFunctionAxioms
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     =>  Map identifier [EqualityRule variable]
-    ->  Simplifier (Map identifier [EqualityRule variable])
+    ->  simplifier (Map identifier [EqualityRule variable])
 simplifyFunctionAxioms =
     (traverse . traverse) simplifyEqualityRule
 
@@ -56,9 +57,10 @@ simplifyEqualityRule
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     =>  EqualityRule variable
-    ->  Simplifier (EqualityRule variable)
+    ->  simplifier (EqualityRule variable)
 simplifyEqualityRule (EqualityRule rule) =
     EqualityRule <$> simplifyRulePattern rule
 
@@ -72,9 +74,10 @@ simplifyRewriteRule
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     =>  RewriteRule variable
-    ->  Simplifier (RewriteRule variable)
+    ->  simplifier (RewriteRule variable)
 simplifyRewriteRule (RewriteRule rule) =
     RewriteRule <$> simplifyRulePattern rule
 
@@ -89,9 +92,10 @@ simplifyRulePattern
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     =>  RulePattern variable
-    ->  Simplifier (RulePattern variable)
+    ->  simplifier (RulePattern variable)
 simplifyRulePattern rule = do
     let RulePattern { left } = rule
     simplifiedLeft <- simplifyPattern left
@@ -129,9 +133,10 @@ simplifyPattern
         , SortedVariable variable
         , Show variable
         , Unparse variable
+        , MonadSimplify simplifier
         )
     =>  TermLike variable
-    ->  Simplifier (OrPattern variable)
+    ->  simplifier (OrPattern variable)
 simplifyPattern termLike =
     Simplifier.localSimplifierTermLike (const Simplifier.create)
     $ Simplifier.localSimplifierPredicate (const Predicate.create)
