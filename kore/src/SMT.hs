@@ -27,6 +27,7 @@ module SMT
     , escapeId
     , declareFun_
     , setInfo
+    , NoSMT (..), runNoSMT
     -- * Expressions
     , SExpr (..)
     , SimpleSMT.Logger
@@ -186,6 +187,35 @@ class Monad m => MonadSMT m where
         -> m ()
     loadFile = Trans.lift . loadFile
     {-# INLINE loadFile #-}
+
+-- * Dummy implementation
+
+newtype NoSMT a = NoSMT { getNoSMT :: ReaderT Logger IO a }
+    deriving (Functor, Applicative, Monad, MonadIO)
+
+runNoSMT :: Logger -> NoSMT a -> IO a
+runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
+
+instance Logger.WithLog Logger.LogMessage NoSMT where
+    askLogAction = NoSMT (Logger.hoistLogAction liftIO <$> Reader.ask)
+    localLogAction locally = NoSMT . Reader.local locally . getNoSMT
+
+instance MonadSMT NoSMT where
+    withSolver = id
+    declare name _ = return (Atom name)
+    declareFun FunctionDeclaration { name } = return (Atom name)
+    declareSort SortDeclaration { name } = return (Atom name)
+    declareDatatype _ = return ()
+    declareDatatypes _ = return ()
+    loadFile _ = return ()
+    ackCommand _ = return ()
+    assert _ = return ()
+    check = return Unknown
+
+instance MonadProfiler NoSMT where
+    profileDuration = profileDurationEvent
+
+deriving instance MonadUnliftIO NoSMT
 
 -- * Implementation
 
