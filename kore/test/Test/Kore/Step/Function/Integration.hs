@@ -1008,9 +1008,10 @@ updateMapSimplifier =
     axiom
         (updateMap (updateMap mMapTerm u v) x y)
         (updateMap mMapTerm u y)
-        (makeEqualsPredicate (eqInt u x) (mkBool True))
+        (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
   where
     [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
+    injK = Builtin.inj Builtin.kSort
 
 dummyIntSimplifier :: EqualityRule Variable
 dummyIntSimplifier =
@@ -1018,9 +1019,6 @@ dummyIntSimplifier =
 
 mkBool :: Bool -> TermLike Variable
 mkBool = Bool.asInternal
-
-eqInt :: TermLike Variable -> TermLike Variable -> TermLike Variable
-eqInt = Builtin.eqInt
 
 mapSimplifiers :: BuiltinAndAxiomSimplifierMap
 mapSimplifiers =
