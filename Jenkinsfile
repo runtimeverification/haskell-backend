@@ -53,7 +53,19 @@ pipeline {
             }
           }
         }
-        stage('K Integration Tests') {
+        stage('Integration Test Runner') {
+          steps {
+            sh '''
+              ./scripts/kore-exec.sh
+            '''
+          }
+        }
+      }
+    }
+    stage('Integration Tests') {
+      failFast true
+      parallel {
+        stage('K') {
           options {
             timeout(time: 18, unit: 'MINUTES')
           }
@@ -63,7 +75,7 @@ pipeline {
             '''
           }
         }
-        stage('KEVM Integration Tests') {
+        stage('KEVM') {
           options {
             timeout(time: 18, unit: 'MINUTES')
           }
