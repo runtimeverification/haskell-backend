@@ -980,13 +980,20 @@ test_updateMap =
             (addInt (mkElemVar xInt) (mkInt 1))
             (mkInt 2)
         )
-    , notApplies "abstract keys; evaluates requires with function rule"
+    , notApplies "different keys; evaluates requires with function rule"
         [updateMapSimplifier]
         (updateMap
-            (updateMap mMapTerm (mkInt 0) (mkInt 1))
+            (updateMap Builtin.unitMap (mkInt 0) (mkInt 1))
             (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
             (mkInt 2)
         )
+    , equals "different keys; evaluates updateMap"
+        (updateMap
+            (updateMap Builtin.unitMap (mkInt 0) (mkInt 1))
+            (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
+            (mkInt 2)
+        )
+        [mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []]
     , applies "same abstract key"
         [updateMapSimplifier]
         (updateMap
