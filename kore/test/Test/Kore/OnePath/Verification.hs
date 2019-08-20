@@ -79,10 +79,12 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
+        let expected =
+                (Left . Pattern.fromTermLike
+                $ mkOr Mock.b Mock.c
+                ) :: Either (Pattern Variable) ()
         assertEqualWithExplanation ""
-            (Left . Pattern.fromTermLike
-            $ mkOr Mock.b Mock.c
-            )
+            expected
             actual
     , testCase "Verifies one claim" $ do
         -- Axiom: a => b

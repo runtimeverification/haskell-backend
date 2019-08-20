@@ -237,7 +237,6 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
-        , Simplify
         , TriviallyValid
         ]
 
@@ -253,7 +252,6 @@ onePathFollowupStep claims axioms =
         , TriviallyValid
         , DeriveSeq claims
         , DeriveSeq axioms
-        , Simplify
         , TriviallyValid
         ]
 
@@ -321,9 +319,12 @@ instance
             Monad.Trans.lift
             $ simplifyAndRemoveTopExists configuration
         let simplifiedResult = MultiOr.filterOr orResult
-            simplifiedRules =
-                fmap (flip makeRuleFromPatterns destination) simplifiedResult
-        Foldable.asum (pure <$> simplifiedRules)
+        if null simplifiedResult
+           then pure $ makeRuleFromPatterns Pattern.bottom destination
+           else do
+               let simplifiedRules =
+                       fmap (flip makeRuleFromPatterns destination) simplifiedResult
+               Foldable.asum (pure <$> simplifiedRules)
 
     isTriviallyValid =
         isBottom . left . coerce

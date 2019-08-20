@@ -17,7 +17,6 @@ module Kore.Step.Result
     , mapConfigs
     , traverseConfigs
     ) where
-
 import           Control.Applicative
                  ( Alternative ((<|>)) )
 import qualified Data.Foldable as Foldable

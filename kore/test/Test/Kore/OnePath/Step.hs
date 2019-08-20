@@ -62,7 +62,7 @@ makeOnePathRule term dest =
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
-    [ testCase "testRefactorOnePath1" $ do
+    [ testCase "Runs zero steps" $ do
         -- Target: a
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
@@ -79,7 +79,7 @@ test_onePathStrategy =
         assertEqualWithExplanation ""
             (Goal $ makeOnePathRule Mock.a Mock.a)
             actual
-    , testCase "testRefactorOnePath2" $ do
+    , testCase "Axiom priority, first step" $ do
         -- Target: a
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
@@ -106,7 +106,7 @@ test_onePathStrategy =
         assertEqualWithExplanation ""
             (Goal $ makeOnePathRule Mock.c Mock.d)
             _actual
-    , testCase "testRefactorOnePath3" $ do
+    , testCase "Axiom priority, second step" $ do
         -- Target: b
         -- Coinductive axiom: b => c
         -- Normal axiom: b => d
@@ -172,8 +172,7 @@ test_onePathStrategy =
                 [ _actual
                 ]
             )
-    -- FAILS WITH EXCEPTION
-     , testCase "testRefactorOnePath4" $ do
+     , testCase "Differentiated axioms" $ do
          -- Target: constr11(a)
          -- Coinductive axiom: constr11(a) => g(a)
          -- Coinductive axiom: constr11(b) => f(b)
@@ -252,7 +251,7 @@ test_onePathStrategy =
          assertEqualWithExplanation ""
             expected
             actual
-     , testCase "testRefactorOnePath5" $ do
+     , testCase "Stuck pattern" $ do
          -- Target: constr11(a)
          -- Coinductive axiom: constr11(b) => f(b)
          -- Normal axiom: constr11(c) => f(c)
@@ -315,7 +314,7 @@ test_onePathStrategy =
              , _actual2
              , _actual3
              ]
-    , testCase "testRefactorOnePath6" $ do
+    , testCase "Axiom with requires" $ do
         -- Target: a
         -- Coinductive axiom: n/a
         -- Normal axiom: constr10(b) => a | f(b) == c
@@ -353,7 +352,7 @@ test_onePathStrategy =
             [ _actual1
             , _actual2
             ]
-    , testCase "testRefactorOnePath7" $ do
+    , testCase "Stuck pattern simplification" $ do
         -- Target: 1
         -- Coinductive axioms: none
         -- Normal axiom: x => 1 if x<2
