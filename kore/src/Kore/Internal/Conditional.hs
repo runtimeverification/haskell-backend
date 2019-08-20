@@ -17,7 +17,6 @@ module Kore.Internal.Conditional
     , splitTerm
     , toPredicate
     , Kore.Internal.Conditional.mapVariables
-    , isNormalized
     ) where
 
 import           Control.DeepSeq
@@ -351,8 +350,3 @@ mapVariables
 
 splitTerm :: Conditional variable term -> (term, Conditional variable ())
 splitTerm patt@Conditional { term } = (term, withoutTerm patt)
-
-{- | Is the 'Conditional' 'Substitution' normalized?
- -}
-isNormalized :: Conditional variable term -> Bool
-isNormalized = Substitution.isNormalized . substitution
