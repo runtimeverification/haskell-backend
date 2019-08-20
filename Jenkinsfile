@@ -23,48 +23,55 @@ pipeline {
         '''
       }
     }
-    stage('Build/Unit Test') {
+    stage('Dependencies') {
       steps {
         sh '''
-          ./scripts/build.sh
-        '''
-      }
-      post {
-        always {
-          junit 'kore/test-results.xml'
-        }
-      }
-    }
-    stage('K Integration Tests') {
-      steps {
-        sh '''
-          ./scripts/ktest.sh
+          ./scripts/clean.sh
+          ./scripts/deps.sh
         '''
       }
     }
-    stage('KEVM Integration Tests') {
-      when {
-        anyOf {
-          branch 'master'
-          expression {
-            TAGGED_KEVM_INTEGRATION = sh(returnStdout: true, script: './scripts/should-run-kevm-integration.sh "\\[kevm-integration\\]"').trim()
-            return TAGGED_KEVM_INTEGRATION == 'true'
+    stage('Build') {
+      failFast true
+      parallel {
+        stage('Documentation') {
+          steps {
+            sh '''
+              ./scripts/docs.sh
+            '''
           }
         }
-      }
-      options {
-        timeout(time: 18, unit: 'MINUTES')
-      }
-      steps {
-        sh '''
-          ./scripts/kevm-integration.sh
-        '''
-      }
-      post {
-        failure {
-          slackSend color: '#cb2431'                                            \
-                  , channel: '#haskell-backend'                                 \
-                  , message: "KEVM Integration Tests Failure: ${env.BUILD_URL}"
+        stage('Unit Tests') {
+          steps {
+            sh '''
+              ./scripts/unit-test.sh
+            '''
+          }
+          post {
+            always {
+              junit 'kore/test-results.xml'
+            }
+          }
+        }
+        stage('K Integration Tests') {
+          options {
+            timeout(time: 18, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/ktest.sh
+            '''
+          }
+        }
+        stage('KEVM Integration Tests') {
+          options {
+            timeout(time: 18, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/kevm-integration.sh
+            '''
+          }
         }
       }
     }
