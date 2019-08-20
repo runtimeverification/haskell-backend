@@ -11,9 +11,11 @@ module Kore.Step.Simplification.TermLike
 
 import qualified Control.Error as Error
 import qualified Control.Exception as Exception
+import qualified Control.Monad.Morph as Monad.Morph
 import           Data.Function
 import           Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Map.Strict as Map
 
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -25,6 +27,7 @@ import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Evaluator as Evaluator
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
@@ -122,6 +125,24 @@ simplifyToOr
 simplifyToOr =
     gatherPatterns . workerAxioms Unstable . Pattern.fromTermLike
   where
+    {- | Restrict the set of axiom simplifiers used for top-down evaluation.
+
+    Application and Ceil axioms are used for bottom-up evaluation.
+
+     -}
+    withTopDownAxioms
+        :: Error.MaybeT (BranchT simplifier) a
+        -> Error.MaybeT (BranchT simplifier) a
+    withTopDownAxioms =
+        Monad.Morph.hoist
+        $ mapBranchT
+        $ localSimplifierAxioms
+        $ Map.filterWithKey (\k _ -> isTopDownAxiom k)
+
+    isTopDownAxiom (Axiom.Identifier.Equals _ _) = True
+    isTopDownAxiom (Axiom.Identifier.Exists _  ) = True
+    isTopDownAxiom _                             = False
+
     {- | Apply user-defined axioms to the 'Pattern'.
 
     Axioms are applied repeatedly until there are no more to apply; then the
@@ -133,7 +154,7 @@ simplifyToOr =
         -> Pattern variable
         -> BranchT simplifier (Pattern variable)
     workerAxioms stable input =
-        Evaluator.evaluateOnce predicate termLike
+        withTopDownAxioms (Evaluator.evaluateOnce predicate termLike)
         & Error.maybeT (workerInternal stable input) (workerAxioms Unstable)
       where
         (termLike, predicate) = Pattern.splitTerm input
