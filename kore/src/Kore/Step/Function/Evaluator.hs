@@ -47,7 +47,8 @@ import           Kore.Internal.TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog, logWarning )
 import qualified Kore.Profiler.Profile as Profile
-                 ( equalitySimplification )
+                 ( axiomEvaluation, equalitySimplification, mergeSubstitutions,
+                 resimplification )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -60,6 +61,8 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Substitution as Substitution
+import qualified Kore.Unification.Unify as Unification
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -168,7 +171,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
         axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
         substitutionSimplifier <- Simplifier.askSimplifierPredicate
         simplifier <- Simplifier.askSimplifierTermLike
-        result <-
+        result <- axiomEvaluationTracing $
             evaluator
                 substitutionSimplifier
                 simplifier
@@ -182,7 +185,8 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                 { results = orResults
                 , remainders = orRemainders
                 } -> do
-                    simplified <- mapM simplifyIfNeeded orResults
+                    simplified <- resimplificationTracing (length orResults) $
+                        mapM simplifyIfNeeded orResults
                     return
                         (AttemptedAxiom.Applied AttemptedAxiomResults
                             { results =
@@ -190,7 +194,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                             , remainders = orRemainders
                             }
                         )
-        merged <-
+        merged <- mergeTracing $
             mergeWithConditionAndSubstitution
                 childrenPredicate
                 flattened
@@ -211,7 +215,18 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
             [ debugArg "axiomIdentifier" identifier ]
         . case identifier of
             Nothing -> id
-            Just identifier' -> Profile.equalitySimplification identifier'
+            Just identifier' ->
+                Profile.equalitySimplification identifier' termLike
+
+    axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
+    resimplificationTracing resultCount =
+        case identifier of
+            Nothing -> id
+            Just identifier' -> Profile.resimplification identifier' resultCount
+    mergeTracing =
+        case identifier of
+            Nothing -> id
+            Just identifier' -> Profile.mergeSubstitutions identifier'
 
     unchangedPatt =
         Conditional
@@ -335,9 +350,12 @@ evaluateOnce predicate termLike = do
     case result of
         AttemptedAxiom.NotApplicable -> empty
         AttemptedAxiom.Applied attemptedAxiomResults ->
-            Monad.Trans.lift . scatter $ andPredicate <$> results <> remainders
+            (>>= Monad.Trans.lift . scatter) . Unification.maybeUnifierT $ do
+                pattern' <- Unification.scatter $ results <> remainders
+                let (termLike', predicate') = Pattern.splitTerm pattern'
+                    predicate'' = predicate <> predicate'
+                normalized <- Substitution.normalizeExcept predicate''
+                return $ Pattern.withCondition termLike' normalized
           where
             AttemptedAxiomResults { results, remainders } =
                 attemptedAxiomResults
-  where
-    andPredicate pattern' = Pattern.andCondition pattern' predicate
