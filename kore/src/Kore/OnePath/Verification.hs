@@ -185,10 +185,6 @@ verifyClaim
     executionGraph <-
         runStrategy (modifTransitionRule destination) limitedStrategy startPattern
     -- Throw the first unproven configuration as an error.
-    -- This might appear to be unnecessary because transitionRule' (below)
-    -- throws an error if it encounters a Stuck proof state. However, the proof
-    -- could also fail because the depth limit was reached, yet we never
-    -- encountered a Stuck state.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     modifTransitionRule

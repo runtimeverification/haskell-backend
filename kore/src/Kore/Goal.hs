@@ -372,13 +372,7 @@ instance
                     traverseConfigs =
                         Result.traverseConfigs
                             (pure . Goal)
-                            (\x -> do
-                                y <- removeDestination x
-                                z <- simplify y
-                                if isTriviallyValid z
-                                   then pure Proven
-                                   else pure . GoalRem $ z
-                            )
+                            removeDestSimplifyRemainder
                 let onePathResults =
                         Result.mapConfigs
                             (flip makeRuleFromPatterns $ destination)
@@ -419,13 +413,7 @@ instance
                     traverseConfigs =
                         Result.traverseConfigs
                             (pure . Goal)
-                            (\x -> do
-                                y <- removeDestination x
-                                z <- simplify y
-                                if isTriviallyValid z
-                                   then pure Proven
-                                   else pure . GoalRem $ z
-                            )
+                            removeDestSimplifyRemainder
                 let onePathResults =
                         Result.mapConfigs
                             (flip makeRuleFromPatterns $ destination)
@@ -440,6 +428,23 @@ instance SOP.Generic (Rule (OnePathRule variable))
 instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
 
 instance Debug variable => Debug (Rule (OnePathRule variable))
+
+removeDestSimplifyRemainder
+    :: forall variable m
+    .  MonadSimplify m
+    => SortedVariable variable
+    => Debug variable
+    => Unparse variable
+    => Show variable
+    => FreshVariable variable
+    => OnePathRule variable
+    -> Strategy.TransitionT (Rule (OnePathRule variable)) m (ProofState (OnePathRule variable))
+removeDestSimplifyRemainder remainder = do
+    result <-
+        removeDestination remainder >>= simplify
+    if isTriviallyValid result
+       then pure Proven
+       else pure . GoalRem $ result
 
 getConfiguration
     :: forall rule variable
