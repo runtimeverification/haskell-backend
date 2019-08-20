@@ -41,6 +41,7 @@ import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import           Kore.Step.Simplification.Pattern
                  ( simplifyAndRemoveTopExists )
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy )
@@ -238,6 +239,7 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
+        , Simplify
         , TriviallyValid
         ]
 
@@ -253,6 +255,7 @@ onePathFollowupStep claims axioms =
         , TriviallyValid
         , DeriveSeq claims
         , DeriveSeq axioms
+        , Simplify
         , TriviallyValid
         ]
 
@@ -323,16 +326,17 @@ instance
     simplify goal = do
         let destination = getDestination goal
             configuration = getConfiguration goal
-        orResult <-
+        configs <-
             Monad.Trans.lift
             $ simplifyAndRemoveTopExists configuration
-        let simplifiedResult = MultiOr.filterOr orResult
-        if null simplifiedResult
+        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        if null filteredConfigs
            then pure $ makeRuleFromPatterns Pattern.bottom destination
            else do
                let simplifiedRules =
-                       fmap (flip makeRuleFromPatterns destination) simplifiedResult
+                       fmap (flip makeRuleFromPatterns destination) filteredConfigs
                Foldable.asum (pure <$> simplifiedRules)
+
 
     isTriviallyValid =
         isBottom . left . coerce

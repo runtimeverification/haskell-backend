@@ -67,7 +67,6 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
-        -- traceM $ either unparseToString (\_ -> "err") actual
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -82,7 +81,7 @@ test_onePathVerification =
         let expected =
                 (Left . Pattern.fromTermLike
                 $ mkOr Mock.b Mock.c
-                ) :: Either (Pattern Variable) ()
+                )
         assertEqualWithExplanation ""
             expected
             actual

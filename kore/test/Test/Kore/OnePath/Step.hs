@@ -407,7 +407,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-            (fromTermLike Mock.a)
+                (fromTermLike Mock.a)
             )
             []
             [ rewriteWithPredicate
@@ -445,7 +445,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (fromTermLike $ Mock.a)
+                (fromTermLike Mock.a)
             , Proven
             ]
             [ _actual1

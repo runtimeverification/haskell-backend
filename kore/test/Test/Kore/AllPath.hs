@@ -20,7 +20,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Logger
                  ( LogMessage (..), WithLog (..) )
 import           Kore.Profiler.Data
-                 ( MonadProfiler (..) )
+                 ( Configuration (..), MonadProfiler (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify (..) )
 import qualified Kore.Step.Strategy as Strategy
@@ -332,8 +332,12 @@ instance MonadSMT AllPathIdentity where
     loadFile = undefined
 
 instance MonadProfiler AllPathIdentity where
-    profileDuration = undefined
-    profileConfiguration = undefined
+    profileDuration _ = id
+    profileConfiguration =
+        return Configuration
+            { identifierFilter = Nothing
+            , dumpIdentifier = Nothing
+            }
 
 instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined
