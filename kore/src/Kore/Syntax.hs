@@ -19,6 +19,7 @@ module Kore.Syntax
     , module Kore.Syntax.Iff
     , module Kore.Syntax.Implies
     , module Kore.Syntax.In
+    , module Kore.Syntax.Inhabitant
     , module Kore.Syntax.Mu
     , module Kore.Syntax.Next
     , module Kore.Syntax.Not
@@ -27,10 +28,12 @@ module Kore.Syntax
     , PatternF (..)
     , module Kore.Syntax.Pattern
     , module Kore.Syntax.Rewrites
+    , module Kore.Syntax.ElementVariable
     , module Kore.Syntax.SetVariable
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
     , module Kore.Syntax.Variable
+    , Const (..)
     ) where
 
 import Kore.Sort
@@ -41,6 +44,7 @@ import Kore.Syntax.Ceil
 import Kore.Syntax.CharLiteral
 -- TODO (thomas.tuegel): export Kore.Syntax.Definition here
 import Kore.Syntax.DomainValue
+import Kore.Syntax.ElementVariable
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
 import Kore.Syntax.Floor
@@ -48,6 +52,7 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
+import Kore.Syntax.Inhabitant
 import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not
@@ -55,7 +60,7 @@ import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Pattern
 import Kore.Syntax.PatternF
-       ( PatternF (..) )
+       ( Const (..), PatternF (..) )
 import Kore.Syntax.Rewrites
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral

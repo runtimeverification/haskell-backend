@@ -18,8 +18,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
-       ( FreeSetVariables )
 import Kore.Attribute.Pattern.FreeVariables
        ( FreeVariables )
 import Kore.Attribute.Synthetic
@@ -31,7 +29,7 @@ import Kore.Unparser
 Section 9.1.1 (Lexicon).
 -}
 newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
-    deriving (Show, Eq, Ord, GHC.Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable CharLiteral
 
@@ -47,20 +45,11 @@ instance Unparse CharLiteral where
     unparse = Pretty.squotes . fromString . escapeChar . getCharLiteral
     unparse2 = unparse
 
-instance
-    Ord variable =>
-    Synthetic (Const CharLiteral) (FreeVariables variable)
+instance Ord variable => Synthetic (FreeVariables variable) (Const CharLiteral)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
-instance
-    Ord variable =>
-    Synthetic (Const CharLiteral) (FreeSetVariables variable)
-  where
-    synthetic = const mempty
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Const CharLiteral) Sort where
+instance Synthetic Sort (Const CharLiteral) where
     synthetic = const charMetaSort
     {-# INLINE synthetic #-}

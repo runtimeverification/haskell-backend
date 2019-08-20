@@ -36,15 +36,7 @@ test_arguments =
         $ expectFailure
         $ parseComm $ Attributes [ illegalAttribute ]
   where
-    illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias = commSymbol
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "illegal")
-                    ]
-                }
+    illegalAttribute = attributePattern commSymbol [attributeString "illegal"]
 
 test_parameters :: TestTree
 test_parameters =

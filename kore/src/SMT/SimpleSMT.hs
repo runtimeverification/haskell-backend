@@ -15,7 +15,7 @@ module SMT.SimpleSMT
       Solver (..)
     , send
     , recv
-    , info
+    , debug
     , command
     , stop
     , Logger
@@ -154,8 +154,7 @@ import qualified Colog
 import           Control.Concurrent
                  ( forkIO )
 import qualified Control.Exception as X
-import           Control.Monad
-                 ( forever )
+import qualified Control.Monad as Monad
 import           Data.Bits
                  ( testBit )
 import           Data.Ratio
@@ -185,9 +184,23 @@ import qualified Text.Megaparsec as Parser
 import           Text.Read
                  ( readMaybe )
 
-import           Kore.Debug
+import           Kore.Debug hiding
+                 ( debug )
 import qualified Kore.Logger as Logger
 import           SMT.AST
+
+-- ---------------------------------------------------------------------
+-- * Features
+
+{- | Does Z3 support the @produce-assertions@ option?
+ -}
+featureProduceAssertions :: Bool
+featureProduceAssertions =
+    -- TODO (thomas.tuegel): Change this to 'True' when we drop support for
+    -- older versions.
+    False
+
+-- ---------------------------------------------------------------------
 
 -- | Results of checking for satisfiability.
 data Result = Sat         -- ^ The assertions are satisfiable
@@ -229,25 +242,32 @@ newSolver exe opts logger = do
 
     _ <- forkIO $ do
         let handler X.SomeException {} = return ()
-        X.handle handler $ forever $ do
+        X.handle handler $ Monad.forever $ do
             errs <- Text.hGetLine hErr
-            info solver ["stderr"] errs
+            debug solver ["stderr"] errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
+    Monad.when featureProduceAssertions
+        $ setOption solver ":produce-assertions" "true"
 
     return solver
 
-info :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
-info Solver { logger } scope a =
+debug :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+debug Solver { logger } scope a =
     logger Colog.<& message
   where
-    message = Logger.LogMessage a Logger.Info ("SimpleSMT" : scope) callStack
+    message = Logger.LogMessage a Logger.Debug ("SimpleSMT" : scope) callStack
+
+warn :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+warn Solver { logger } scope a =
+    logger Colog.<& message
+  where
+    message = Logger.LogMessage a Logger.Warning ("SimpleSMT" : scope) callStack
 
 send :: Solver -> SExpr -> IO ()
 send solver@Solver { hIn } command' = do
-    (info solver ["send"] . Text.Lazy.toStrict . Text.Builder.toLazyText)
-        (buildSExpr command')
+    debug solver ["send"] (buildText command')
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
@@ -256,7 +276,7 @@ recv :: Solver -> IO SExpr
 recv solver@Solver { hOut } = do
     responseLines <- readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
-    info solver ["recv"] resp
+    debug solver ["recv"] resp
     readSExpr resp
   where
     {-| Reads an SMT response.
@@ -288,7 +308,7 @@ stop solver@Solver { hIn, hOut, hErr, hProc } = do
     send solver (List [Atom "exit"])
     ec <- waitForProcess hProc
     let handler :: X.IOException -> IO ()
-        handler ex = (info solver ["stop"] . Text.pack) (show ex)
+        handler ex = (debug solver ["stop"] . Text.pack) (show ex)
     X.handle handler $ do
         hClose hIn
         hClose hOut
@@ -308,12 +328,13 @@ loadFile s file = do
 
 -- | A command with no interesting result.
 ackCommand :: Solver -> SExpr -> IO ()
-ackCommand proc c =
-  do res <- command proc c
+ackCommand solver c =
+  do res <- command solver c
      case res of
        Atom "success" -> return ()
        _  -> fail $ unlines
                       [ "Unexpected result from the SMT solver:"
+                      , "  Command: " ++ showSExpr c
                       , "  Expected: success"
                       , "  Result: " ++ showSExpr res
                       ]
@@ -332,13 +353,15 @@ simpleCommand proc = ackCommand proc . List . map Atom
 -- This is useful for setting options that unsupported by some solvers, but used
 -- by others.
 simpleCommandMaybe :: Solver -> [Text] -> IO Bool
-simpleCommandMaybe proc c =
-  do res <- command proc (List (map Atom c))
+simpleCommandMaybe solver c =
+  do let cmd = List (map Atom c)
+     res <- command solver cmd
      case res of
        Atom "success"     -> return True
        Atom "unsupported" -> return False
        _                  -> fail $ unlines
                                       [ "Unexpected result from the SMT solver:"
+                                      , "  Command: " ++ showSExpr cmd
                                       , "  Expected: success or unsupported"
                                       , "  Result: " ++ showSExpr res
                                       ]
@@ -562,6 +585,8 @@ defineFun proc f as t e = do
     return (const f)
 
 
+buildText :: SExpr -> Text
+buildText = Text.Lazy.toStrict . Text.Builder.toLazyText . buildSExpr
 
 -- | Assume a fact.
 assert :: Solver -> SExpr -> IO ()
@@ -569,19 +594,18 @@ assert proc e = ackCommand proc $ fun "assert" [e]
 
 -- | Check if the current set of assertion is consistent.
 check :: Solver -> IO Result
-check proc = do
-    res <- command proc (List [ Atom "check-sat" ])
+check solver = do
+    res <- command solver (List [ Atom "check-sat" ])
     case res of
         Atom "unsat"   -> return Unsat
-        Atom "unknown" -> return Unknown
+        Atom "unknown" -> do
+            Monad.when featureProduceAssertions $ do
+                asserts <- command solver (List [Atom "get-assertions"])
+                warn solver ["check"] (buildText asserts)
+            return Unknown
         Atom "sat"     -> do
-            model <- command proc (List [ Atom "get-model" ])
-            info
-                proc
-                ["check"]
-                (Text.Lazy.toStrict
-                    (Text.Builder.toLazyText (buildSExpr model))
-                )
+            model <- command solver (List [Atom "get-model"])
+            debug solver ["check"] (buildText model)
             return Sat
         _ -> fail $ unlines
             [ "Unexpected result from the SMT solver:"
@@ -619,13 +643,15 @@ sexprToVal expr =
 -- | Get the values of some s-expressions.
 -- Only valid after a 'Sat' result.
 getExprs :: Solver -> [SExpr] -> IO [(SExpr, Value)]
-getExprs proc vals =
-  do res <- command proc $ List [ Atom "get-value", List vals ]
+getExprs solver vals =
+  do let cmd = List [ Atom "get-value", List vals ]
+     res <- command solver cmd
      case res of
        List xs -> mapM getAns xs
        _ -> fail $ unlines
                  [ "Unexpected response from the SMT solver:"
-                 , "  Exptected: a list"
+                 , "  Command: " ++ showSExpr cmd
+                 , "  Expected: a list"
                  , "  Result: " ++ showSExpr res
                  ]
   where

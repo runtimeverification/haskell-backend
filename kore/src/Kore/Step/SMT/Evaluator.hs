@@ -6,7 +6,12 @@ License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
 
-module Kore.Step.SMT.Evaluator (decidePredicate) where
+module Kore.Step.SMT.Evaluator
+    ( decidePredicate
+    , Evaluable (..)
+    , filterMultiOr
+    )
+    where
 
 import           Control.Applicative
                  ( (<|>) )
@@ -15,12 +20,30 @@ import           Control.Error
                  ( MaybeT, runMaybeT )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( catMaybes )
 import           Data.Reflection
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Control.Monad.Counter as Counter
-import           Kore.Predicate.Predicate
+import qualified Kore.Attribute.Symbol as Attribute
+                 ( Symbol )
+import           Kore.IndexedModule.MetadataTools
+                 ( SmtMetadataTools )
+import           Kore.Internal.Conditional
+                 ( Conditional )
+import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.MultiOr
+                 ( MultiOr )
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Logger
+import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Profiler.Profile as Profile
+                 ( smtDecision )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Simplification.Data as Simplifier
@@ -28,35 +51,104 @@ import           Kore.Step.SMT.Translate
                  ( Translator, evalTranslator, translatePredicate )
 import           Kore.Syntax.Variable
                  ( SortedVariable )
+import           Kore.TopBottom
+                 ( TopBottom )
 import           Kore.Unparser
-                 ( Unparse )
 import           SMT
                  ( Result (..), SExpr (..) )
 import qualified SMT
 
+{- | Class for things that can be evaluated with an SMT solver,
+or which contain things that can be evaluated with an SMT solver.
+-}
+class Evaluable thing where
+    {- | Attempt to evaluate the argument wiith an external SMT solver.
+    -}
+    evaluate :: MonadSimplify m => thing -> m (Maybe Bool)
 
+instance
+    ( SortedVariable variable
+    , Ord variable
+    , Show variable
+    , Unparse variable
+    )
+    => Evaluable (Syntax.Predicate variable)
+  where
+    evaluate predicate = do
+        case predicate of
+            Syntax.Predicate.PredicateTrue -> return (Just True)
+            Syntax.Predicate.PredicateFalse -> return (Just False)
+            _ -> decidePredicate predicate
+
+instance
+    ( SortedVariable variable
+    , Ord variable
+    , Show variable
+    , Unparse variable
+    )
+    => Evaluable (Conditional variable term)
+  where
+    evaluate patt = evaluate (Predicate.toPredicate predicate)
+      where
+        (_term, predicate) = Conditional.splitTerm patt
+
+{- | Removes from a MultiOr all items refuted by an external SMT solver. -}
+filterMultiOr
+    :: forall simplifier term variable
+    .   ( MonadSimplify simplifier
+        , Ord term
+        , Ord variable
+        , Show variable
+        , SortedVariable variable
+        , TopBottom term
+        , Unparse variable
+        )
+    => MultiOr (Conditional variable term)
+    -> simplifier (MultiOr (Conditional variable term))
+filterMultiOr multiOr = do
+    elements <- mapM refute (MultiOr.extractPatterns multiOr)
+    return (MultiOr.make (catMaybes elements))
+  where
+    refute
+        :: Conditional variable term
+        -> simplifier (Maybe (Conditional variable term))
+    refute p = do
+        evaluated <- evaluate p
+        return $ case evaluated of
+            Nothing -> Just p
+            Just False -> Nothing
+            Just True -> Just p
 
 {- | Attempt to refute a predicate using an external SMT solver.
 
 The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
-    :: forall variable m.
+    :: forall variable simplifier.
         ( Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadSimplify m
+        , MonadSimplify simplifier
         )
-    => Predicate variable
-    -> m (Maybe Bool)
+    => Syntax.Predicate variable
+    -> simplifier (Maybe Bool)
 decidePredicate korePredicate =
-    SMT.withSolver $ runMaybeT $ do
-        smtPredicate <- goTranslatePredicate korePredicate
-        result <- SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
+    withLogScope "decidePredicate" $ SMT.withSolver $ runMaybeT $ do
+        tools <- Simplifier.askMetadataTools
+        smtPredicate <- goTranslatePredicate tools korePredicate
+        result <-
+            Profile.smtDecision smtPredicate
+            $ SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
         case result of
-            Unsat -> return False
-            _ -> Applicative.empty
+            Unsat   -> return False
+            Sat     -> Applicative.empty
+            Unknown -> do
+                (logWarning . Text.pack . show . Pretty.vsep)
+                    [ "Failed to decide predicate:"
+                    , Pretty.indent 4 (unparse korePredicate)
+                    ]
+                Applicative.empty
 
 goTranslatePredicate
     :: forall variable m.
@@ -64,17 +156,17 @@ goTranslatePredicate
         , Unparse variable
         , MonadSimplify m
         )
-    => Predicate variable
+    => SmtMetadataTools Attribute.Symbol
+    -> Syntax.Predicate variable
     -> MaybeT m SExpr
-goTranslatePredicate predicate = do
-    tools <- Simplifier.askMetadataTools
-    let translator =
-            give tools $ translatePredicate translateUninterpreted predicate
-    evalTranslator translator
+goTranslatePredicate tools predicate = evalTranslator translator
+  where
+    translator =
+        give tools $ translatePredicate translateUninterpreted predicate
 
 translateUninterpreted
     :: Ord p
-    => MonadSimplify m
+    => SMT.MonadSMT m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr

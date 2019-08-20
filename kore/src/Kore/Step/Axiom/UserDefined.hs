@@ -17,22 +17,26 @@ import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike as TermLike
+import           Kore.Internal.TermLike
+                 ( TermLike )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Step.Axiom.Matcher
-                 ( matchAsUnification )
+                 ( matchIncremental )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule), RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+                 ( AttemptedAxiom,
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifierMap, MonadSimplify,
+                 PredicateSimplifier, TermLikeSimplifier )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
-import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( simplifyPredicatesWithSmt )
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
@@ -85,7 +89,7 @@ equalityRuleEvaluator
     notApplicable = return AttemptedAxiom.NotApplicable
 
     unificationProcedure :: UnificationProcedure
-    unificationProcedure = UnificationProcedure matchAsUnification
+    unificationProcedure = UnificationProcedure matchIncremental
 
     applyRule
         :: TermLike variable
@@ -99,26 +103,20 @@ equalityRuleEvaluator
             [RulePattern.mapVariables fromVariable rule']
             (Pattern.fromTermLike patt')
 
-    simplifyOrPatterns
+    simplifyOrPatternsWithSmt
         :: [OrPattern variable] -> simplifier (OrPattern variable)
-    simplifyOrPatterns unsimplified =
-        MultiOr.mergeAll
-        <$> traverse
-            simplifyPattern
-            (MultiOr.extractPatterns (MultiOr.mergeAll unsimplified))
-
-    simplifyPattern
-        :: Pattern.Pattern variable
-        -- ^ The condition to be evaluated.
-        -> simplifier (OrPattern variable)
-    simplifyPattern config = do
-        patterns <- BranchT.gather $ Pattern.simplifyPredicate config
-        return (OrPattern.fromPatterns patterns)
+    simplifyOrPatternsWithSmt patterns = do
+        simplified <- traverse OrPattern.simplifyPredicatesWithSmt patterns
+        return (MultiOr.mergeAll simplified)
 
     simplifyResults
         :: [Step.Results variable]
         -> simplifier (AttemptedAxiomResults variable)
     simplifyResults stepResults = do
-        results <- simplifyOrPatterns $ map Step.gatherResults stepResults
-        remainders <- simplifyOrPatterns $ map Step.remainders stepResults
+        results <-
+            simplifyOrPatternsWithSmt
+            $ map Step.gatherResults stepResults
+        remainders <-
+            simplifyOrPatternsWithSmt
+            $ map Step.remainders stepResults
         return AttemptedAxiomResults { results, remainders }

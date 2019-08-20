@@ -41,6 +41,8 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
+import           Data.Function
+                 ( on )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -67,12 +69,15 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Logger as Log
+import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
+import           Kore.Step.SMT.Evaluator
+                 ( evaluate )
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -85,12 +90,13 @@ import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
-
--- import Debug.Trace
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable, foldMapVariable )
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
 -- 'stepWithRule'.
+
 newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier
@@ -162,7 +168,9 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
                 targetVariables
             )
   where
-    substitution' = Substitution.filter Target.isNonTarget substitution
+    substitution' =
+        Substitution.filter (foldMapVariable Target.isNonTarget)
+            substitution
 
     configWithNewSubst :: Pattern (Target variable)
     configWithNewSubst = config { Pattern.substitution = substitution' }
@@ -171,14 +179,14 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
     unwrappedConfig =
         Pattern.mapVariables Target.unwrapVariable configWithNewSubst
 
-    targetVariables :: [variable]
+    targetVariables :: [ElementVariable variable]
     targetVariables =
-        map Target.unwrapVariable
-        $ filter Target.isTarget
-        $ Foldable.toList
-        $ Pattern.freeVariables configWithNewSubst
+        map (fmap Target.unwrapVariable)
+        . filter (Target.isTarget . getElementVariable)
+        . Pattern.freeElementVariables
+        $ configWithNewSubst
 
-    quantify :: TermLike variable -> variable -> TermLike variable
+    quantify :: TermLike variable -> ElementVariable variable -> TermLike variable
     quantify = flip mkExists
 
 {- | Attempt to unify a rule with the initial configuration.
@@ -225,12 +233,37 @@ unifyRule
     let
         RulePattern { left = ruleLeft } = rule'
     unification <- unifyPatterns ruleLeft initialTerm
-    -- Combine the unification solution with the rule's requirement clause.
+    -- Combine the unification solution with the rule's requirement clause,
+    -- unless it's rendundant to do so.
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Predicate.fromPredicate ruleRequires
-    unification' <- Substitution.normalizeExcept (unification <> requires')
+    unification' <- addRequiresUnlessRedundant unification requires'
     return (rule' `Conditional.withCondition` unification')
+  where
+    addRequiresUnlessRedundant unificationSolution requires = do
+        let predicate =
+                (requiresRedundancyPredicate `on` Predicate.toPredicate)
+                    unificationSolution requires
+        isRequiresRedundant <- evaluate predicate
+        let nonRedundantPredicate =
+                case isRequiresRedundant of
+                    Just False -> unificationSolution
+                    _         -> unificationSolution <> requires
+        Substitution.normalizeExcept nonRedundantPredicate
+
+    -- | ¬(⌈L ∧ φ⌉ ∧ P → Pre)
+    requiresRedundancyPredicate unificationSolution requires =
+        Syntax.makeNotPredicate
+            $ Syntax.makeImpliesPredicate
+                (Syntax.makeAndPredicate
+                     unificationSolution
+                     initialPredicate
+                )
+                requires
+
+    initialPredicate =
+        Conditional.toPredicate $ Conditional.withoutTerm initial
 
 unifyRules
     ::  forall unifier variable
@@ -516,7 +549,8 @@ checkSubstitutionCoverage initial unified
         , "Failed substitution coverage check!"
         , "The substitution (above, in the unifier) \
           \did not cover the axiom variables:"
-        , (Pretty.indent 4 . Pretty.sep) (unparse <$> Set.toAscList uncovered)
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList uncovered)
         , "in the left-hand side of the axiom."
         ]
   where
@@ -527,12 +561,16 @@ checkSubstitutionCoverage initial unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
     uncovered = wouldNarrowWith unified
     isCoveringSubstitution = Set.null uncovered
-    isSymbolic = Foldable.any Target.isNonTarget substitutionVariables
+    isSymbolic =
+        Foldable.any (foldMapVariable Target.isNonTarget)
+            substitutionVariables
 
 {- | The 'Set' of variables that would be introduced by narrowing.
  -}
 -- TODO (thomas.tuegel): Unit tests
-wouldNarrowWith :: Ord variable => UnifiedRule variable -> Set variable
+wouldNarrowWith
+    :: Ord variable
+    => UnifiedRule variable -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where

@@ -52,6 +52,7 @@ import           Kore.Unparser
                  ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
 
 {- | The state of the all-path reachability proof strategy for @goal@.
  -}
@@ -277,15 +278,22 @@ removalPredicate destination config =
             FreeVariables.getFreeVariables $ Pattern.freeVariables config
         destinationVariables =
             FreeVariables.getFreeVariables $ Pattern.freeVariables destination
-        extraVariables = Set.difference destinationVariables configVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraVariables
+        extraVariables = Set.toList
+            $ Set.difference destinationVariables configVariables
+        extraElementVariables = [v | ElemVar v <- extraVariables]
+        extraNonElemVariables = filter (not . isElemVar) extraVariables
+        quantifyPredicate = Predicate.makeMultipleExists extraElementVariables
     in
-        Predicate.makeNotPredicate
-        $ quantifyPredicate
-        $ Predicate.makeCeilPredicate
-        $ mkAnd
-            (Pattern.toTermLike destination)
-            (Pattern.toTermLike config)
+        if not (null extraNonElemVariables)
+        then error
+            ("Cannot quantify non-element variables: "
+                ++ show (unparse <$> extraNonElemVariables))
+        else Predicate.makeNotPredicate
+            $ quantifyPredicate
+            $ Predicate.makeCeilPredicate
+            $ mkAnd
+                (Pattern.toTermLike destination)
+                (Pattern.toTermLike config)
 
 instance
     ( SortedVariable variable

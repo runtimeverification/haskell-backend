@@ -68,6 +68,10 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
                  ( CommonProofState )
+import           Kore.Profiler.Data
+                 ( MonadProfiler )
+import           Kore.Step.Rule
+                 ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
@@ -429,6 +433,8 @@ newtype UnifierWithExplanation m a =
   deriving (Alternative, Applicative, Functor, Monad)
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
+
+deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
 instance Logger.WithLog Logger.LogMessage m
     => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)

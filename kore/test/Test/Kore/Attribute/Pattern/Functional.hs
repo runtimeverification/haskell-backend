@@ -13,6 +13,7 @@ import           Kore.Internal.TermLike
                  ( TermLike, TermLikeF (..) )
 import           Kore.Syntax hiding
                  ( PatternF (..) )
+import           Kore.Variables.UnifiedVariable
 
 import           Test.Kore.Builtin.Builtin
                  ( emptyNormalizedSet )
@@ -53,10 +54,10 @@ test_instance_Synthetic =
     , testGroup "TopF" [ isn't $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF Mock.x ]
-    , testGroup "MuF" $ map (isn't . MuF) (Mu (SetVariable Mock.x) <$> range)
-    , testGroup "NuF" $ map (isn't . NuF) (Nu (SetVariable Mock.x) <$> range)
-    , testGroup "SetVariableF" [ isn't $ SetVariableF (SetVariable Mock.x) ]
+    , testGroup "VariableF" [ is $ VariableF $ Const (ElemVar Mock.x) ]
+    , testGroup "MuF" $ map (isn't . MuF) (Mu Mock.setX <$> range)
+    , testGroup "NuF" $ map (isn't . NuF) (Nu Mock.setX <$> range)
+    , testGroup "SetVariableF" [ isn't $ VariableF $ Const (SetVar Mock.setX) ]
     , testGroup "BuiltinSet"
         [ is . asSetBuiltin
             $ emptyNormalizedSet
@@ -97,7 +98,7 @@ test_instance_Synthetic =
     range = [functional, nonFunctional]
 
     check
-        :: (GHC.HasCallStack, Synthetic term Functional)
+        :: (GHC.HasCallStack, Synthetic Functional term)
         => TestName
         -> (Functional -> Bool)
         -> term Functional
@@ -109,14 +110,14 @@ test_instance_Synthetic =
 
     is
         ::  ( GHC.HasCallStack
-            , Synthetic term Functional
+            , Synthetic Functional term
             )
         => term Functional -> TestTree
     is = check "Functional pattern" isFunctional
 
     isn't
         ::  ( GHC.HasCallStack
-            , Synthetic term Functional
+            , Synthetic Functional term
             )
         => term Functional -> TestTree
     isn't = check "Non-functional pattern" (not . isFunctional)
@@ -131,7 +132,10 @@ test_instance_Synthetic =
       | otherwise      = isn't
 
     asSetBuiltin
-        :: Domain.NormalizedAc (TermLike Concrete) Domain.NoValue Functional
+        ::  Domain.NormalizedAc
+                Domain.NormalizedSet
+                (TermLike Concrete)
+                Functional
         -> Domain.Builtin (TermLike Concrete) Functional
     asSetBuiltin =
         Ac.asInternalBuiltin Mock.metadataTools Mock.setSort . Domain.wrapAc

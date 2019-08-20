@@ -20,7 +20,6 @@ module Kore.Syntax.Variable
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Functor.Const
 import           Data.Hashable
 import           Data.Maybe
                  ( isNothing )
@@ -31,9 +30,6 @@ import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
 import Data.Sup
-import Kore.Attribute.Pattern.FreeSetVariables
-import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
@@ -138,6 +134,7 @@ class SortedVariable variable where
     fromVariable :: Variable -> variable
     -- | Extract the parsed syntax of a Kore variable.
     toVariable :: variable -> Variable
+-- TODO(traiansf): the 'SortedVariable' class mixes different concerns.
 
 instance SortedVariable Variable where
     sortedVariableSort = variableSort
@@ -188,15 +185,3 @@ instance SortedVariable Concrete where
     sortedVariableSort = \case {}
     toVariable = \case {}
     fromVariable = error "Cannot construct a variable in a concrete term!"
-
-instance Synthetic (Const Variable) (FreeVariables Variable) where
-    synthetic (Const variable) = freeVariable variable
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Const Variable) (FreeSetVariables Variable) where
-    synthetic = const mempty
-    {-# INLINE synthetic #-}
-
-instance Synthetic (Const Variable) Sort where
-    synthetic (Const variable) = sortedVariableSort variable
-    {-# INLINE synthetic #-}

@@ -17,7 +17,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -75,15 +74,11 @@ instance Unparse child => Unparse (In Sort child) where
             , unparse2 inContainingChild
             ])
 
-instance Ord variable => Synthetic (In sort) (FreeVariables variable) where
+instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Ord variable => Synthetic (In sort) (FreeSetVariables variable) where
-    synthetic = Foldable.fold
-    {-# INLINE synthetic #-}
-
-instance Synthetic (In Sort) Sort where
+instance Synthetic Sort (In Sort) where
     synthetic in' =
         inResultSort
         & seq (matchSort inOperandSort inContainedChild)

@@ -24,7 +24,8 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate, unwrapPredicate )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
+                 ( substitute )
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
@@ -37,6 +38,8 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable )
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
@@ -65,7 +68,8 @@ simplify
     initialValue@Conditional { predicate, substitution }
   = do
     let substitution' = Substitution.toMap substitution
-        substitutedPredicate = Predicate.substitute substitution' predicate
+        substitutedPredicate =
+            Syntax.Predicate.substitute substitution' predicate
     -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
     -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
     -- This was needed because, when we need to simplify 'requires' clauses,
@@ -112,12 +116,12 @@ assertDistinctVariables subst =
         [] -> return ()
         (var : _) -> error ("Duplicated variable: " ++ show var)
   where
-    moreThanOne :: [variable] -> Bool
+    moreThanOne :: [UnifiedVariable variable] -> Bool
     moreThanOne [] = False
     moreThanOne [_] = False
     moreThanOne _ = True
 
-    variables :: [variable]
+    variables :: [UnifiedVariable variable]
     variables = Substitution.variables subst
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.

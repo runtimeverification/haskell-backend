@@ -19,6 +19,7 @@ import           Control.Comonad.Trans.Cofree
                  ( Cofree, CofreeF (..) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Data.Functor.Compose
+import           Data.Functor.Const
 import           Data.Functor.Foldable
                  ( Base, Corecursive, Recursive )
 import qualified Data.Functor.Foldable as Recursive
@@ -124,8 +125,8 @@ fromPattern (attrs :< termLikeF) =
             -- BuiltinPattern and always run the stepper with internal
             -- representations only.
             Builtin <$> sequence builtinP
-        StringLiteralF stringL -> Just (StringLiteral stringL)
-        CharLiteralF charL -> Just (CharLiteral charL)
+        StringLiteralF (Const stringL) -> pure (StringLiteral stringL)
+        CharLiteralF (Const charL) -> pure (CharLiteral charL)
         _ -> Nothing
 
 {- | View a 'ConcreteStepPattern' as a normalized value.
@@ -148,8 +149,8 @@ asPattern (Recursive.project -> attrs :< value) =
         SortInjection appP    -> attrs :< ApplySymbolF   appP
         DomainValue dvP       -> attrs :< DomainValueF   dvP
         Builtin builtinP      -> attrs :< BuiltinF       builtinP
-        StringLiteral stringP -> attrs :< StringLiteralF stringP
-        CharLiteral charP     -> attrs :< CharLiteralF   charP
+        StringLiteral stringP -> attrs :< StringLiteralF (Const stringP)
+        CharLiteral charP     -> attrs :< CharLiteralF   (Const charP)
 
 {- | View a normalized value as a 'ConcreteStepPattern'.
  -}

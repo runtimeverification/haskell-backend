@@ -149,7 +149,7 @@ test_search =
 -- | V:MySort{}
 searchVar :: TermLike Variable
 searchVar =
-    mkVar Variable
+    mkElemVar $ ElementVariable Variable
         { variableName = Id "V" AstLocationTest
         , variableCounter = mempty
         , variableSort = mySort
@@ -245,14 +245,14 @@ functionalAxiom name =
             (mkExists v
                 (mkEquals
                     (SortVariableSort r)
-                    (mkVar v)
+                    (mkElemVar v)
                     (applyToNoArgs mySort name)
                 )
             )
         )
             { sentenceAxiomAttributes = Attributes [functionalAttribute] }
   where
-    v = Variable
+    v = ElementVariable Variable
         { variableName = Id "V" AstLocationTest
         , variableCounter = mempty
         , variableSort = mySort
@@ -353,9 +353,9 @@ test_execGetExitCode =
 
     mockGetExitCodeAxiom =
         mkEqualityAxiom
-            (mkApplySymbol getExitCodeSym [mkVar v]) (mkVar v) Nothing
+            (mkApplySymbol getExitCodeSym [mkElemVar v]) (mkElemVar v) Nothing
       where
-        v = Variable
+        v = ElementVariable Variable
             { variableName = testId "V"
             , variableCounter = mempty
             , variableSort = myIntSort

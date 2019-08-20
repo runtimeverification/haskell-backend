@@ -378,12 +378,12 @@ sortVisibilityTests =
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern
-                $ mkExists existsVariable (mkVar existsVariable)
+                $ mkExists existsVariable (mkElemVar existsVariable)
             , sentenceAxiomAttributes = Attributes []
             }
       where
         existsVariable =
-            Variable
+            ElementVariable Variable
                 { variableName = testId "var"
                 , variableCounter = mempty
                 , variableSort = sort
@@ -474,7 +474,7 @@ sortVisibilityTests =
                             , symbolOrAliasParams = []
                             }
                     , applicationChildren =
-                        [ Variable
+                        [ ElementVariable Variable
                             { variableSort = sort
                             , variableCounter = mempty
                             , variableName = testId "x"
@@ -656,11 +656,12 @@ symbolVisibilityTests =
                 { sentenceAxiomParameters = []
                 , sentenceAxiomPattern =
                     Builtin.externalizePattern $ mkExists
-                        Variable
+                        (ElementVariable Variable
                             { variableName = testId "var"
                             , variableCounter = mempty
                             , variableSort = defaultSort
                             }
+                        )
                         symbolPattern
                 , sentenceAxiomAttributes = Attributes []
                 }
@@ -867,11 +868,12 @@ aliasVisibilityTests =
             { sentenceAxiomParameters = []
             , sentenceAxiomPattern =
                 Builtin.externalizePattern $ mkExists
-                    Variable
+                    (ElementVariable Variable
                         { variableName = testId "var"
                         , variableCounter = mempty
                         , variableSort = defaultSort
                         }
+                    )
                     aliasPattern
             , sentenceAxiomAttributes = Attributes []
             }
@@ -922,7 +924,7 @@ aliasVisibilityTests =
                                 ]
                             }
                     , applicationChildren =
-                        [ Variable
+                        [ ElementVariable Variable
                             { variableName = testId "x"
                             , variableCounter = mempty
                             , variableSort =

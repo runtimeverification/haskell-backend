@@ -81,13 +81,13 @@ assertError errorTest action = do
         Nothing  -> assertFailure "No error during action."
         Just err -> errorTest err
 
-assertErrorIO :: (HasCallStack, NFData a) => (String -> IO()) -> IO a -> IO()
+assertErrorIO :: HasCallStack => (String -> IO()) -> IO a -> IO()
 assertErrorIO errorTest action = do
     maybeErr <-
         catch
             (do
                 value <- action
-                _ <- evaluate $ force value
+                _ <- evaluate value
                 return Nothing
             )
             (\err -> return (Just (show (err :: SomeException))))

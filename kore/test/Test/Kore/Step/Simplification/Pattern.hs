@@ -52,7 +52,7 @@ test_Pattern_simplifyAndRemoveTopExists =
         testCase name $ do
             actual <- simplifyAndRemoveTopExists original
             assertEqualWithExplanation "" expect actual
-    unquantified = Mock.sigma (mkVar Mock.x) (mkVar Mock.y)
+    unquantified = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
     existential = termLike (mkExists Mock.x unquantified)
     multiexistential = termLike (mkExists Mock.y (mkExists Mock.x unquantified))
     universal = termLike (mkForall Mock.x unquantified)

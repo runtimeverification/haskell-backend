@@ -261,7 +261,7 @@ getSymbolOrAlias kore =
 getStringLiteral :: AttributePattern -> Parser StringLiteral
 getStringLiteral kore =
     case Recursive.project kore of
-        _ :< StringLiteralF lit -> return lit
+        _ :< StringLiteralF (Const lit) -> return lit
         _ -> Kore.Error.koreFail "expected string literal pattern"
 
 {- | Parse a 'Text' through 'ReadS'.

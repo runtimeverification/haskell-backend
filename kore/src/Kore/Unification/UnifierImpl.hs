@@ -39,6 +39,8 @@ import           Kore.Unification.Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
        ( termUnification )
@@ -87,15 +89,13 @@ simplifyAnds patterns = do
         else return result
 
 groupSubstitutionByVariable
-    :: Ord variable
-    => [(variable, TermLike variable)]
-    -> [[(variable, TermLike variable)]]
+    :: (Ord variable, SortedVariable variable)
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [[(UnifiedVariable variable, TermLike variable)]]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Recursive.project -> ann :< VariableF var')
-        | var' < var =
-          (var', Recursive.embed (ann :< VariableF var))
+    sortRenaming (var, Var_ var') | var' < var = (var', mkVar var)
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
@@ -109,7 +109,7 @@ solveGroupedSubstitution
        , MonadUnify unifier
        , WithLog LogMessage unifier
        )
-    => variable
+    => UnifiedVariable variable
     -> NonEmpty (TermLike variable)
     -> unifier (Predicate variable)
 solveGroupedSubstitution var patterns = do
@@ -168,10 +168,11 @@ normalizeSubstitutionDuplication subst
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions
-        :: [[(variable, TermLike variable)]]
+        :: [[(UnifiedVariable variable, TermLike variable)]]
     (singletonSubstitutions, nonSingletonSubstitutions) =
         partition isSingleton groupedSubstitution
-    varAndSubstList :: [(variable, NonEmpty (TermLike variable))]
+    varAndSubstList
+        :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
     varAndSubstList =
         nonSingletonSubstitutions >>= \case
             [] -> []

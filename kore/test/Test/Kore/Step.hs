@@ -16,11 +16,27 @@ import           Data.Text
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (..), SmtMetadataTools )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Symbol as Symbol
+import           Kore.Internal.Conditional as Conditional
+                 ( Conditional (Conditional) )
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
+import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.Symbol
+                 ( Symbol (Symbol, symbolConstructor), constructor,
+                 functional )
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
+                 ( TermLike, mkApplySymbol, mkElemVar, mkImplies )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+                 ( makeEqualsPredicate, makeTruePredicate )
+import qualified Kore.Predicate.Predicate as Syntax
+                 ( Predicate )
+import           Kore.Sort
+                 ( Sort (..), SortActual (SortActual) )
 import           Kore.Step
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
@@ -28,6 +44,11 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data as Simplification
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Syntax.Application
+                 ( SymbolOrAlias (symbolOrAliasConstructor) )
+import           Kore.Syntax.ElementVariable
+import           Kore.Syntax.Variable
+                 ( Variable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -133,7 +154,7 @@ applyConstructorToVariables constr arguments =
 -- | Do the busywork of converting a name into a variable pattern.
 var :: Text -> TestPattern
 var name =
-    mkVar $ Variable (testId name) mempty Mock.testSort
+    mkElemVar $ ElementVariable $ Variable (testId name) mempty Mock.testSort
 -- can the above be more abstract?
 
 sort :: Text -> Sort
@@ -162,17 +183,37 @@ rewritesTo left right =
     like `rewriteStep`.
 -}
 
-v1, a1, b1, x1 :: Sort -> Variable
-v1 = Variable (testId "#v1") mempty
-a1 = Variable (testId "#a1") mempty
-b1 = Variable (testId "#b1") mempty
-x1 = Variable (testId "#x1") mempty
+v1, a1, b1, x1 :: Sort -> ElementVariable Variable
+v1 = ElementVariable . Variable (testId "v1") mempty
+a1 = ElementVariable . Variable (testId "a1") mempty
+b1 = ElementVariable . Variable (testId "b1") mempty
+x1 = ElementVariable . Variable (testId "x1") mempty
 
 rewriteIdentity :: RewriteRule Variable
 rewriteIdentity =
     RewriteRule RulePattern
-        { left = mkVar (x1 Mock.testSort)
-        , right = mkVar (x1 Mock.testSort)
+        { left = mkElemVar (x1 Mock.testSort)
+        , right = mkElemVar (x1 Mock.testSort)
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+setRewriteIdentity :: RewriteRule Variable
+setRewriteIdentity =
+    RewriteRule RulePattern
+        { left = Mock.mkTestUnifiedVariable "@x"
+        , right = Mock.mkTestUnifiedVariable "@x"
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+setRewriteFnIdentity :: RewriteRule Variable
+setRewriteFnIdentity =
+    RewriteRule RulePattern
+        { left = Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x")
+        , right = Mock.mkTestUnifiedVariable "@x"
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -181,11 +222,11 @@ rewriteIdentity =
 rewriteImplies :: RewriteRule Variable
 rewriteImplies =
     RewriteRule $ RulePattern
-        { left = mkVar (x1 Mock.testSort)
+        { left = mkElemVar (x1 Mock.testSort)
         , right =
             mkImplies
-                (mkVar $ x1 Mock.testSort)
-                (mkVar $ x1 Mock.testSort)
+                (mkElemVar $ x1 Mock.testSort)
+                (mkElemVar $ x1 Mock.testSort)
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -193,18 +234,18 @@ rewriteImplies =
 
 expectTwoAxioms :: [Pattern Variable]
 expectTwoAxioms =
-    [ pure (mkVar $ v1 Mock.testSort)
+    [ pure (mkElemVar $ v1 Mock.testSort)
     , Pattern.fromTermLike
         $ mkImplies
-            (mkVar $ v1 Mock.testSort)
-            (mkVar $ v1 Mock.testSort)
+            (mkElemVar $ v1 Mock.testSort)
+            (mkElemVar $ v1 Mock.testSort)
     ]
 
 actualTwoAxioms :: IO [Pattern Variable]
 actualTwoAxioms =
     runStep
         Conditional
-            { term = mkVar (v1 Mock.testSort)
+            { term = mkElemVar (v1 Mock.testSort)
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -217,8 +258,8 @@ initialFailSimple =
     Conditional
         { term =
             metaSigma
-                (metaG (mkVar $ a1 Mock.testSort))
-                (metaF (mkVar $ b1 Mock.testSort))
+                (metaG (mkElemVar $ a1 Mock.testSort))
+                (metaF (mkElemVar $ b1 Mock.testSort))
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -233,10 +274,10 @@ actualFailSimple =
         [ RewriteRule $ RulePattern
             { left =
                 metaSigma
-                    (mkVar $ x1 Mock.testSort)
-                    (mkVar $ x1 Mock.testSort)
+                    (mkElemVar $ x1 Mock.testSort)
+                    (mkElemVar $ x1 Mock.testSort)
             , right =
-                mkVar (x1 Mock.testSort)
+                mkElemVar (x1 Mock.testSort)
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
             , attributes = def
@@ -248,8 +289,8 @@ initialFailCycle =
     Conditional
         { term =
             metaSigma
-                (mkVar $ a1 Mock.testSort)
-                (mkVar $ a1 Mock.testSort)
+                (mkElemVar $ a1 Mock.testSort)
+                (mkElemVar $ a1 Mock.testSort)
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -264,10 +305,10 @@ actualFailCycle =
         [ RewriteRule $ RulePattern
             { left =
                 metaSigma
-                    (metaF (mkVar $ x1 Mock.testSort))
-                    (mkVar $ x1 Mock.testSort)
+                    (metaF (mkElemVar $ x1 Mock.testSort))
+                    (mkElemVar $ x1 Mock.testSort)
             , right =
-                mkVar (x1 Mock.testSort)
+                mkElemVar (x1 Mock.testSort)
             , ensures = makeTruePredicate
             , requires = makeTruePredicate
             , attributes = def
@@ -277,7 +318,15 @@ actualFailCycle =
 initialIdentity :: Pattern Variable
 initialIdentity =
     Conditional
-        { term = mkVar (v1 Mock.testSort)
+        { term = mkElemVar (v1 Mock.testSort)
+        , predicate = makeTruePredicate
+        , substitution = mempty
+        }
+
+initialFnIdentity :: Pattern Variable
+initialFnIdentity =
+    Conditional
+        { term = Mock.functionalConstr10 (mkElemVar (v1 Mock.testSort))
         , predicate = makeTruePredicate
         , substitution = mempty
         }
@@ -290,6 +339,18 @@ actualIdentity =
     runStep
         initialIdentity
         [ rewriteIdentity ]
+
+setActualIdentity :: IO [Pattern Variable]
+setActualIdentity =
+    runStep
+        initialIdentity
+        [ setRewriteIdentity ]
+
+setActualFnIdentity :: IO [Pattern Variable]
+setActualFnIdentity =
+    runStep
+        initialFnIdentity
+        [ setRewriteFnIdentity ]
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
@@ -310,13 +371,121 @@ test_stepStrategy =
         -- Start pattern: sigma(f(A1), g(B1))
         -- Expected: empty result list
         (assertEqualWithExplanation "" expectFailSimple =<< actualFailSimple)
-    , testCase "Fails to apply a simple axiom due to cycle."  -- unification error constructor based vs
+    , testCase "Fails to apply a simple axiom due to cycle."
+        -- unification error constructor based
         -- Axiom: sigma(f(X1), X1) => X1
         -- Start pattern: sigma(A1, A1)
         -- Expected: empty result list
         (assertEqualWithExplanation "" expectFailCycle =<< actualFailCycle)
     ]
 
+data PredicateState = PredicatePositive | PredicateNegated
+
+predicateStateToBool :: PredicateState -> Bool
+predicateStateToBool PredicatePositive = True
+predicateStateToBool PredicateNegated = False
+
+smtTerm :: TermLike Variable -> TermLike Variable
+smtTerm term = Mock.functionalConstr10 term
+
+smtSyntaxPredicate
+    :: TermLike Variable -> PredicateState -> Syntax.Predicate Variable
+smtSyntaxPredicate term predicateState =
+    makeEqualsPredicate
+        (Mock.lessInt
+            (Mock.fTestInt term)
+            (Mock.builtinInt 0)
+        )
+        (Mock.builtinBool (predicateStateToBool predicateState))
+
+smtPredicate :: TermLike Variable -> PredicateState -> Predicate Variable
+smtPredicate term predicateState =
+    Predicate.fromPredicate (smtSyntaxPredicate term predicateState)
+
+smtPattern :: TermLike Variable -> PredicateState -> Pattern Variable
+smtPattern term predicateState =
+    smtTerm term `Pattern.withCondition` smtPredicate term predicateState
+
+
+test_SMT :: [TestTree]
+test_SMT =
+    [ testCase "Branching with SMT pruning" $ do
+        -- Target: a
+        -- Coinductive axiom: n/a
+        -- Normal axiom: constr10(b) => c | f(b) >= 0
+        -- Normal axiom: constr10(b) => a | f(b) < 0
+        -- Start pattern: constr10(b) | f(b) < 0
+        -- Expected: a | f(b) < 0
+        [ _actual1 ] <- runStepMockEnv
+            (smtPattern Mock.b PredicatePositive)
+            [ RewriteRule $ RulePattern
+                { left = smtTerm (TermLike.mkElemVar Mock.x)
+                , right = Mock.a
+                , ensures = makeTruePredicate
+                , requires =
+                    smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicatePositive
+                , attributes = def
+                }
+            , RewriteRule $ RulePattern
+                { left = smtTerm (TermLike.mkElemVar Mock.x)
+                , right = Mock.c
+                , ensures = makeTruePredicate
+                , requires =
+                    smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicateNegated
+                , attributes = def
+                }
+            ]
+        assertEqualWithExplanation ""
+            [ Mock.a
+                `Pattern.withCondition` smtPredicate Mock.b PredicatePositive
+            ]
+            [ _actual1 ]
+    , testCase "Remainder with SMT pruning" $ do
+        -- Target: a
+        -- Coinductive axiom: n/a
+        -- Normal axiom: constr10(b) => a | f(b) < 0
+        -- Start pattern: constr10(b) | f(b) < 0
+        -- Expected: a | f(b) < 0
+        [ _actual1 ] <- runStepMockEnv
+            Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate = makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt Mock.b)
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            [ RewriteRule RulePattern
+                { left = Mock.functionalConstr10 (TermLike.mkElemVar Mock.x)
+                , right = Mock.a
+                , ensures = makeTruePredicate
+                , requires =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt (TermLike.mkElemVar Mock.x))
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , attributes = def
+                }
+            ]
+        assertEqualWithExplanation ""
+            [ Conditional
+                { term = Mock.a
+                , predicate =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt Mock.b)
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            ]
+            [ _actual1 ]
+    ]
 
 test_unificationError :: TestTree
 test_unificationError =
@@ -332,8 +501,8 @@ actualUnificationError =
         Conditional
             { term =
                 metaSigma
-                    (mkVar $ a1 Mock.testSort)
-                    (metaI (mkVar $ b1 Mock.testSort))
+                    (mkElemVar $ a1 Mock.testSort)
+                    (metaI (mkElemVar $ b1 Mock.testSort))
             , predicate = makeTruePredicate
             , substitution = mempty
             }
@@ -389,9 +558,9 @@ axiomMetaSigmaId =
     RewriteRule RulePattern
         { left =
             metaSigma
-                (mkVar $ x1 Mock.testSort)
-                (mkVar $ x1 Mock.testSort)
-        , right = mkVar $ x1 Mock.testSort
+                (mkElemVar $ x1 Mock.testSort)
+                (mkElemVar $ x1 Mock.testSort)
+        , right = mkElemVar $ x1 Mock.testSort
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
         , attributes = def
@@ -441,6 +610,17 @@ runStep configuration axioms =
     (<$>) pickFinal
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ Simplification.evalSimplifier mockEnv
+    $ runStrategy transitionRule [allRewrites axioms] configuration
+
+runStepMockEnv
+    :: Pattern Variable
+    -- ^left-hand-side of unification
+    -> [RewriteRule Variable]
+    -> IO [Pattern Variable]
+runStepMockEnv configuration axioms =
+    (<$>) pickFinal
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
+    $ Simplification.evalSimplifier Mock.env
     $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runSteps

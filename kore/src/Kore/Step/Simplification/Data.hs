@@ -14,15 +14,18 @@ module Kore.Step.Simplification.Data
     , Env (..)
     , runSimplifier
     , evalSimplifier
+    , lookupSimplifierAxiom
     , BranchT
     , evalSimplifierBranch
     , gather
     , gatherAll
+    , gatherPatterns
     , scatter
     , foldBranchT
     , alternate
     , PredicateSimplifier (..)
     , emptyPredicateSimplifier
+    , simplifyPredicate
     , TermLikeSimplifier
     , termLikeSimplifier
     , emptyTermLikeSimplifier
@@ -31,8 +34,10 @@ module Kore.Step.Simplification.Data
     , SimplificationType (..)
     -- * Builtin and axiom simplifiers
     , BuiltinAndAxiomSimplifier (..)
+    , runBuiltinAndAxiomSimplifier
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
+    , isApplicable, isNotApplicable
     , AttemptedAxiomResults (..)
     , CommonAttemptedAxiom
     , emptyAttemptedAxiom
@@ -47,6 +52,7 @@ module Kore.Step.Simplification.Data
 import           Control.Applicative
 import           Control.Comonad.Trans.Cofree
 import           Control.DeepSeq
+import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
@@ -88,8 +94,11 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( Symbol, TermLike, TermLikeF (..) )
 import           Kore.Logger
+import           Kore.Profiler.Data
+                 ( MonadProfiler (profileDuration) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
                  ( SortedVariable )
@@ -106,7 +115,9 @@ This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
 
-class (WithLog LogMessage m, MonadSMT m) => MonadSimplify m where
+class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
+    => MonadSimplify m
+  where
     -- | Retrieve the 'MetadataTools' for the Kore context.
     askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
     default askMetadataTools
@@ -194,6 +205,21 @@ instance MonadSimplify m => MonadSimplify (MaybeT m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
+{- | Look up the 'BuiltinAndAxiomSimplifier' for the given 'TermLike'.
+
+@lookupSimplifierAxiom@ is empty if no simplifier is defined for the pattern.
+
+ -}
+lookupSimplifierAxiom
+    :: MonadSimplify simplifier
+    => TermLike variable
+    -> MaybeT simplifier BuiltinAndAxiomSimplifier
+lookupSimplifierAxiom termLike = do
+    simplifierAxioms <- askSimplifierAxioms
+    Error.hoistMaybe $ do
+        identifier <- Axiom.Identifier.matchAxiomIdentifier termLike
+        Map.lookup identifier simplifierAxioms
+
 -- * Branching
 
 {- | 'BranchT' extends any 'Monad' with disjoint branches.
@@ -238,6 +264,8 @@ deriving instance WithLog msg m => WithLog msg (BranchT m)
 
 deriving instance MonadSMT m => MonadSMT (BranchT m)
 
+deriving instance MonadProfiler m => MonadProfiler (BranchT m)
+
 deriving instance MonadSimplify m => MonadSimplify (BranchT m)
 
 {- | Collect results from many simplification branches into one result.
@@ -271,6 +299,13 @@ See also: 'scatter', 'gather'
  -}
 gatherAll :: Monad m => BranchT m [a] -> m [a]
 gatherAll simpl = Monad.join <$> gather simpl
+
+
+gatherPatterns
+    :: (Ord variable, Monad m)
+    => BranchT m (Pattern variable)
+    -> m (OrPattern variable)
+gatherPatterns = Monad.liftM OrPattern.fromPatterns . gather
 
 {- | Disperse results into many simplification branches.
 
@@ -327,7 +362,7 @@ newtype SimplifierT m a = SimplifierT
     { runSimplifierT :: ReaderT Env m a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
-    deriving (MonadIO, MonadCatch, MonadThrow)
+    deriving (MonadIO, MonadCatch, MonadThrow, MonadTrans)
     deriving (MonadReader Env)
 
 type Simplifier = SimplifierT (SmtT IO)
@@ -342,7 +377,13 @@ instance (MonadUnliftIO m, WithLog LogMessage m)
         SimplifierT . localLogAction mapping . runSimplifierT
     {-# INLINE localLogAction #-}
 
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m)
+instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
+  where
+    profileDuration event duration =
+        SimplifierT (profileDuration event (runSimplifierT duration))
+    {-# INLINE profileDuration #-}
+
+instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools
@@ -538,6 +579,18 @@ newtype PredicateSimplifier =
 emptyPredicateSimplifier :: PredicateSimplifier
 emptyPredicateSimplifier = PredicateSimplifier return
 
+simplifyPredicate
+    ::  forall variable simplifier
+    .   ( FreshVariable variable, SortedVariable variable
+        , Show variable, Unparse variable
+        , MonadSimplify simplifier
+        )
+    => Predicate variable
+    -> BranchT simplifier (Predicate variable)
+simplifyPredicate predicate = do
+    PredicateSimplifier simplify <- askSimplifierPredicate
+    simplify predicate
+
 {-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
 
@@ -577,6 +630,26 @@ newtype BuiltinAndAxiomSimplifier =
         -> TermLike variable
         -> simplifier (AttemptedAxiom variable)
         )
+
+runBuiltinAndAxiomSimplifier
+    ::  forall variable simplifier
+    .   ( FreshVariable variable
+        , SortedVariable variable
+        , Show variable
+        , Unparse variable
+        , MonadSimplify simplifier
+        )
+    => BuiltinAndAxiomSimplifier
+    -> TermLike variable
+    -> simplifier (AttemptedAxiom variable)
+runBuiltinAndAxiomSimplifier
+    (BuiltinAndAxiomSimplifier simplifier)
+    termLike
+  = do
+    simplifierAxioms <- askSimplifierAxioms
+    simplifierPredicate <- askSimplifierPredicate
+    simplifierTermLike <- askSimplifierTermLike
+    simplifier simplifierPredicate simplifierTermLike simplifierAxioms termLike
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
@@ -635,6 +708,12 @@ deriving instance Ord variable => Eq (AttemptedAxiom variable)
 deriving instance Show variable => Show (AttemptedAxiom variable)
 
 instance (NFData variable) => NFData (AttemptedAxiom variable)
+
+isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
+isApplicable (Applied _) = True
+isApplicable _           = False
+isNotApplicable NotApplicable = True
+isNotApplicable _             = False
 
 {-| 'CommonAttemptedAxiom' particularizes 'AttemptedAxiom' to 'Variable',
 following the same pattern as the other `Common*` types.

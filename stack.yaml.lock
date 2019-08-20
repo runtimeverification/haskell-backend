@@ -34,9 +34,16 @@ packages:
     size: 1248687
     url: https://github.com/ttuegel/haskell-src-exts/archive/363dbd17d91ba58ac877d205c5e82c1672367008.tar.gz
     sha256: e02e7317509cb1c766b7f591bb7304fb436928ce6d99565a214f70467781aabe
+- completed:
+    hackage: ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2,1991
+    pantry-tree:
+      size: 647
+      sha256: 94a3fbef9c432f270715865d0e1d239d1390738e90312147571dd0f3a19ed76e
+  original:
+    hackage: ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2
 snapshots:
 - completed:
-    size: 498186
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/22.yaml
-    sha256: d4f07dc3d5658260c2fe34266ad7618f6c84d34decf559c9c786ac1cfccf4e7b
-  original: lts-13.22
+    size: 500539
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/29.yaml
+    sha256: 006398c5e92d1d64737b7e98ae4d63987c36808814504d1451f56ebd98093f75
+  original: lts-13.29

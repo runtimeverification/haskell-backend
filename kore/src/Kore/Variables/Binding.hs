@@ -11,6 +11,8 @@ module Kore.Variables.Binding
     , Binder (..)
     , existsBinder
     , forallBinder
+    , muBinder
+    , nuBinder
     ) where
 
 import           Control.Comonad.Trans.Env
@@ -20,6 +22,9 @@ import           Data.Monoid
 
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall
+import Kore.Syntax.Mu
+import Kore.Syntax.Nu
+import Kore.Variables.UnifiedVariable
 
 {- | @Binding@ defines traversals for patterns with binders.
 
@@ -27,7 +32,7 @@ import Kore.Syntax.Forall
 respectively a binder or a variable at the top level.
 
  -}
-class Binding patternType where
+class Show patternType => Binding patternType where
     -- | The type of variables bound in @patternType@.
     type VariableType patternType
 
@@ -37,7 +42,10 @@ class Binding patternType where
                 (Binder (VariableType patternType) patternType)
 
     -- | Traverse the variable at the top of a pattern.
-    traverseVariable :: Lens.Traversal' patternType (VariableType patternType)
+    traverseVariable
+        :: Lens.Traversal'
+            patternType
+            (VariableType patternType)
 
 {- | Apply a traversing function while distinguishing an empty 'Lens.Traversal'.
 
@@ -55,8 +63,8 @@ matchWith (Lens.cloneTraversal -> traverse') = \afb s ->
     in if matched then Just ft else Nothing
 
 -- | @Binder@ abstracts over binders such as 'Exists' and 'Forall'.
-data Binder variable child =
-    Binder { binderVariable :: !variable, binderChild :: !child }
+data Binder variable child = Binder
+    { binderVariable :: variable, binderChild :: !child }
 
 {- | A 'Lens.Lens' to view an 'Exists' as a 'Binder'.
 
@@ -65,19 +73,22 @@ data Binder variable child =
 See also: 'forallBinder'.
 
  -}
-existsBinder :: Lens.Lens' (Exists sort variable child) (Binder variable child)
+existsBinder
+    :: Lens.Lens'
+        (Exists sort variable child)
+        (Binder (UnifiedVariable variable) child)
 existsBinder mapping exists =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable, binderChild }
+        Binder { binderVariable =  ElemVar existsVariable, binderChild }
       where
-        Exists { existsVariable = binderVariable } = exists
+        Exists { existsVariable } = exists
         Exists { existsChild    = binderChild    } = exists
     finish binder' =
         exists { existsVariable, existsChild }
       where
-        Binder { binderVariable = existsVariable } = binder'
+        Binder { binderVariable = ElemVar existsVariable } = binder'
         Binder { binderChild    = existsChild    } = binder'
 
 {- | A 'Lens.Lens' to view a 'Forall' as a 'Binder'.
@@ -87,17 +98,70 @@ existsBinder mapping exists =
 See also: 'existsBinder'.
 
  -}
-forallBinder :: Lens.Lens' (Forall sort variable child) (Binder variable child)
+forallBinder
+    :: Lens.Lens'
+        (Forall sort variable child)
+        (Binder (UnifiedVariable variable) child)
 forallBinder mapping forall =
     finish <$> mapping binder
   where
     binder =
-        Binder { binderVariable, binderChild }
+        Binder { binderVariable = ElemVar forallVariable, binderChild }
       where
-        Forall { forallVariable = binderVariable } = forall
+        Forall { forallVariable } = forall
         Forall { forallChild    = binderChild    } = forall
     finish binder' =
         forall { forallVariable, forallChild }
       where
-        Binder { binderVariable = forallVariable } = binder'
+        Binder { binderVariable = ElemVar forallVariable } = binder'
         Binder { binderChild    = forallChild    } = binder'
+
+{- | A 'Lens.Lens' to view a 'Mu' as a 'Binder'.
+
+@muBinder@ may be used to implement 'traverseBinder'.
+
+See also: 'nuBinder'.
+
+ -}
+muBinder
+    :: Lens.Lens'
+        (Mu variable child)
+        (Binder (UnifiedVariable variable) child)
+muBinder mapping mu =
+    finish <$> mapping binder
+  where
+    binder =
+        Binder { binderVariable = SetVar muVariable, binderChild }
+      where
+        Mu { muVariable } = mu
+        Mu { muChild    = binderChild    } = mu
+    finish binder' =
+        mu { muVariable, muChild }
+      where
+        Binder { binderVariable = SetVar muVariable } = binder'
+        Binder { binderChild    = muChild    } = binder'
+
+{- | A 'Lens.Lens' to view a 'Nu' as a 'Binder'.
+
+@nuBinder@ may be used to implement 'traverseBinder'.
+
+See also: 'muBinder'.
+
+ -}
+nuBinder
+    :: Lens.Lens'
+        (Nu variable child)
+        (Binder (UnifiedVariable variable) child)
+nuBinder mapping nu =
+    finish <$> mapping binder
+  where
+    binder =
+        Binder { binderVariable = SetVar nuVariable, binderChild }
+      where
+        Nu { nuVariable } = nu
+        Nu { nuChild    = binderChild    } = nu
+    finish binder' =
+        nu { nuVariable, nuChild }
+      where
+        Binder { binderVariable = SetVar nuVariable } = binder'
+        Binder { binderChild    = nuChild    } = binder'

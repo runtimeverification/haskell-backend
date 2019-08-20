@@ -14,14 +14,17 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map.Strict as Map
 
+import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeTruePredicate )
+                 ( makeCeilPredicate, makeEqualsPredicate, makeNotPredicate,
+                 makeTruePredicate )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, simplifierWithFallback )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -36,6 +39,8 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -64,7 +69,7 @@ test_simplificationIntegration =
                                                 (mkCeil_
                                                     (mkAnd
                                                         (Mock.constr10
-                                                            (mkVar Mock.x)
+                                                            (mkElemVar Mock.x)
                                                         )
                                                         (Mock.constr10 Mock.a)
                                                     )
@@ -101,7 +106,7 @@ test_simplificationIntegration =
                                                 (mkCeil_
                                                     (mkAnd
                                                         (Mock.constr10
-                                                            (mkVar Mock.x)
+                                                            (mkElemVar Mock.x)
                                                         )
                                                         (Mock.constr11 Mock.a)
                                                     )
@@ -127,10 +132,10 @@ test_simplificationIntegration =
                         , predicate = makeCeilPredicate
                             (mkAnd
                                 (Mock.plain10 Mock.cf)
-                                (Mock.plain10 (mkVar Mock.x))
+                                (Mock.plain10 (mkElemVar Mock.x))
                             )
                         , substitution = Substitution.unsafeWrap
-                            [(Mock.y, Mock.b)]
+                            [(ElemVar Mock.y, Mock.b)]
                         }
                     ]
         actual <-
@@ -143,8 +148,8 @@ test_simplificationIntegration =
                                 Mock.b
                             )
                             (Mock.constr20
-                                (Mock.plain10 (mkVar Mock.x))
-                                (mkVar Mock.y)
+                                (Mock.plain10 (mkElemVar Mock.x))
+                                (mkElemVar Mock.y)
                             )
                         )
                     , predicate = makeTruePredicate
@@ -153,15 +158,10 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, non-matching" $ do
         let
-            expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        mkEvaluated
-                        $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
+            initial =
+                Pattern.fromTermLike
+                $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
+            expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
                 (axiomPatternsToEvaluators
@@ -173,13 +173,13 @@ test_simplificationIntegration =
                                         Mock.function20MapTest
                                             (Mock.concatMap
                                                 (Mock.elementMap
-                                                    (mkVar Mock.x)
-                                                    (mkVar Mock.y)
+                                                    (mkElemVar Mock.x)
+                                                    (mkElemVar Mock.y)
                                                 )
-                                                (mkVar Mock.m)
+                                                (mkElemVar Mock.m)
                                             )
-                                            (mkVar Mock.x)
-                                    , right = mkVar Mock.y
+                                            (mkElemVar Mock.x)
+                                    , right = mkElemVar Mock.y
                                     , requires = makeTruePredicate
                                     , ensures = makeTruePredicate
                                     , attributes = def
@@ -189,52 +189,69 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                Conditional
-                    { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+                initial
         assertEqualWithExplanation "" expect actual
-    , testCase "map function, matching" $ do
-        let
-            expect = OrPattern.fromPatterns
+    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the identity function and `#ceil(x/y) => y != 0`
+    , testCase "function application introduces definedness condition" $ do
+        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
+            expect =
+                OrPattern.fromPatterns
                 [ Conditional
-                    { term = Mock.c
-                    , predicate = makeTruePredicate
+                    { term =
+                        Mock.tdivInt
+                            (mkElemVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
+                    , predicate =
+                        makeNotPredicate
+                        $ makeEqualsPredicate
+                           (mkElemVar Mock.xInt)
+                           (Mock.builtinInt 0)
                     , substitution = mempty
                     }
                 ]
         actual <-
             evaluateWithAxioms
-                (axiomPatternsToEvaluators
-                    (Map.fromList
-                        [   ( AxiomIdentifier.Application
-                                Mock.function20MapTestId
-                            ,   [ EqualityRule RulePattern
-                                    { left =
-                                        Mock.function20MapTest
-                                            (Mock.concatMap
-                                                (Mock.elementMap
-                                                    (mkVar Mock.x)
-                                                    (mkVar Mock.y)
-                                                )
-                                                (mkVar Mock.m)
-                                            )
-                                            (mkVar Mock.x)
-                                    , right = mkVar Mock.y
-                                    , requires = makeTruePredicate
-                                    , ensures = makeTruePredicate
-                                    , attributes = def
-                                    }
-                                ]
-                            )
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.fIntId
+                          , [ EqualityRule RulePattern
+                                { left = Mock.fInt (mkElemVar Mock.xInt)
+                                , right = mkElemVar Mock.xInt
+                                , requires = makeTruePredicate
+                                , ensures = makeTruePredicate
+                                , attributes = def
+                                }
+                            ]
+                          )
+                        , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
+                          , [ EqualityRule RulePattern
+                                { left =
+                                    mkCeil testSortVariable
+                                    $ Mock.tdivInt
+                                        (mkElemVar Mock.xInt)
+                                        (mkElemVar Mock.yInt)
+                                , right =
+                                    mkCeil testSortVariable
+                                    . mkNot
+                                    $ mkEquals testSortVariable
+                                        (mkElemVar Mock.yInt)
+                                        (Mock.builtinInt 0)
+                                , requires = makeTruePredicate
+                                , ensures = makeTruePredicate
+                                , attributes = def
+                                }
+                            ]
+
+                          )
                         ]
                     )
                 )
                 Conditional
                     { term =
-                        Mock.function20MapTest
-                            (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
+                        Mock.fInt
+                        $ Mock.tdivInt
+                            (mkElemVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -249,7 +266,7 @@ test_simplificationIntegration =
                     { term =
                         mkExists
                             Mock.x
-                            (mkEquals_ (mkVar Mock.x) (mkVar Mock.y))
+                            (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y))
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -264,7 +281,7 @@ test_simplificationIntegration =
                     { term =
                         mkExists
                             Mock.x
-                            (mkEquals_ (mkVar Mock.y) (mkVar Mock.x))
+                            (mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x))
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -274,20 +291,20 @@ test_simplificationIntegration =
             evaluateWithAxioms Map.empty
             $ Pattern.fromTermLike
             $ mkExists Mock.x
-            $ mkEquals_ (mkVar Mock.x) (mkVar Mock.y)
+            $ mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
         assertEqualWithExplanation "" OrPattern.top actual
     , testCase "exists variable equality reverse" $ do
         actual <-
             evaluateWithAxioms Map.empty
             $ Pattern.fromTermLike
             $ mkExists Mock.x
-            $ mkEquals_ (mkVar Mock.y) (mkVar Mock.x)
+            $ mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x)
         assertEqualWithExplanation "" OrPattern.top actual
     , testCase "new variable quantification" $ do
         let
             expect = OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkExists Mock.x (Mock.f (mkVar Mock.x))
+                    { term = mkExists Mock.x (Mock.f (mkElemVar Mock.x))
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
@@ -298,7 +315,7 @@ test_simplificationIntegration =
                     [   ( AxiomIdentifier.Application Mock.cfId
                         ,   [ EqualityRule RulePattern
                                 { left = Mock.cf
-                                , right = Mock.f (mkVar Mock.x)
+                                , right = Mock.f (mkElemVar Mock.x)
                                 , requires = makeTruePredicate
                                 , ensures = makeTruePredicate
                                 , attributes = def
@@ -319,28 +336,25 @@ test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Substitution under unary functional constructor" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term =
-                            Mock.functionalConstr20
-                                Mock.a
-                                (Mock.functionalConstr10 (mkVar Mock.x))
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, Mock.functionalConstr10 Mock.a)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern Pattern.Conditional
+                    { term =
+                        Mock.functionalConstr20 Mock.a
+                        $ Mock.functionalConstr10 Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, Mock.functionalConstr10 Mock.a)
+                        ]
+                    }
         actual <-
             evaluate
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (Mock.functionalConstr10 (mkVar Mock.x))
+                            (mkElemVar Mock.x)
+                            (Mock.functionalConstr10 (mkElemVar Mock.x))
                         )
-                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                        (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                     )
                 )
         assertEqualWithExplanation
@@ -350,25 +364,23 @@ test_substitute =
 
     , testCase "Substitution" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a (mkVar Mock.y)
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, Mock.a)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern Pattern.Conditional
+                    { term = Mock.functionalConstr20 Mock.a Mock.a
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, Mock.a)
+                        ]
+                    }
         actual <-
             evaluate
                 (Pattern.fromTermLike
                     (mkAnd
                         (Mock.functionalConstr20
-                            (mkVar Mock.x)
-                            (mkVar Mock.x)
+                            (mkElemVar Mock.x)
+                            (mkElemVar Mock.x)
                         )
-                        (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                        (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                     )
                 )
         assertEqualWithExplanation "Expected substitution" expect actual
@@ -379,26 +391,24 @@ test_substituteMap =
     [ testCase "Substitution applied to Map elements" $ do
         let testMapX =
                 Mock.sortInjection Mock.testSort
-                $ mkDomainBuiltinMap [(Mock.a, mkVar Mock.x)]
+                $ mkDomainBuiltinMap [(Mock.a, mkElemVar Mock.x)]
             testMapA =
                 Mock.sortInjection Mock.testSort
                 $ mkDomainBuiltinMap [(Mock.a, Mock.a)]
             expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testMapX
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, testMapA)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern
+                $ Pattern.withCondition
+                    (Mock.functionalConstr20 Mock.a testMapA)
+                    (Predicate.fromSubstitution $ Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, testMapA)
+                        ]
+                    )
         actual <-
             (evaluate . Pattern.fromTermLike)
                 (mkAnd
-                    (Mock.functionalConstr20 (mkVar Mock.x) testMapX)
-                    (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    (Mock.functionalConstr20 (mkElemVar Mock.x) testMapX)
+                    (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                 )
         assertEqualWithExplanation
             "Expected substitution applied to Map elements"
@@ -413,26 +423,24 @@ test_substituteList =
     [ testCase "Substitution applied to List elements" $ do
         let testListX =
                 Mock.sortInjection Mock.testSort
-                $ mkDomainBuiltinList [Mock.a, mkVar Mock.x]
+                $ mkDomainBuiltinList [Mock.a, mkElemVar Mock.x]
             testListA =
                 Mock.sortInjection Mock.testSort
                 $ mkDomainBuiltinList [Mock.a, Mock.a]
             expect =
-                OrPattern.fromPatterns
-                    [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testListX
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [ (Mock.x, Mock.a)
-                            , (Mock.y, testListA)
-                            ]
-                        }
-                    ]
+                OrPattern.fromPattern Pattern.Conditional
+                    { term = Mock.functionalConstr20 Mock.a testListA
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, testListA)
+                        ]
+                    }
         actual <-
             (evaluate . Pattern.fromTermLike)
                 (mkAnd
-                    (Mock.functionalConstr20 (mkVar Mock.x) testListX)
-                    (Mock.functionalConstr20 Mock.a (mkVar Mock.y))
+                    (Mock.functionalConstr20 (mkElemVar Mock.x) testListX)
+                    (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                 )
         assertEqualWithExplanation
             "Expected substitution applied to List elements"
@@ -461,13 +469,18 @@ evaluateWithAxioms axioms =
             simplifierWithFallback
             builtinAxioms
             axioms
-    builtinAxioms :: BuiltinAndAxiomSimplifierMap
-    builtinAxioms =
-        Map.fromList
-            [   ( AxiomIdentifier.Application Mock.concatMapId
-                , builtinEvaluation Map.evalConcat
-                )
-            ,   ( AxiomIdentifier.Application Mock.elementMapId
-                , builtinEvaluation Map.evalElement
-                )
-            ]
+
+-- | A selection of builtin axioms used in the tests above.
+builtinAxioms :: BuiltinAndAxiomSimplifierMap
+builtinAxioms =
+    Map.fromList
+        [   ( AxiomIdentifier.Application Mock.concatMapId
+            , builtinEvaluation Map.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application Mock.elementMapId
+            , builtinEvaluation Map.evalElement
+            )
+        ,   ( AxiomIdentifier.Application Mock.tdivIntId
+            , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)
+            )
+        ]

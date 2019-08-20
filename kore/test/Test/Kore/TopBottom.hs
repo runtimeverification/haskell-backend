@@ -22,9 +22,9 @@ import qualified Test.Terse as Terse
 
 test_TermLike :: [Tasty.TestTree]
 test_TermLike =
-    [ Tasty.testGroup "mkTop"    $ testIsTop     (AST.mkTop    Mock.testSort)
-    , Tasty.testGroup "mkBottom" $ testIsBottom  (AST.mkBottom Mock.testSort)
-    , Tasty.testGroup "mkVar"    $ testIsNeither (AST.mkVar    Mock.x       )
+    [ Tasty.testGroup "mkTop"    $ testIsTop     (AST.mkTop     Mock.testSort)
+    , Tasty.testGroup "mkBottom" $ testIsBottom  (AST.mkBottom  Mock.testSort)
+    , Tasty.testGroup "mkElemVar"    $ testIsNeither (AST.mkElemVar Mock.x       )
     , Tasty.testGroup "mkApp"    $ testIsNeither Mock.a
     ]
   where
@@ -90,10 +90,10 @@ test_Predicate =
     bottom  = Predicate.makeFalsePredicate
     ceil    = Predicate.makeCeilPredicate  Mock.a
     floor   = Predicate.makeFloorPredicate Mock.a
-    equalsA = Predicate.makeEqualsPredicate (AST.mkVar Mock.x) Mock.a
-    equalsB = Predicate.makeEqualsPredicate (AST.mkVar Mock.x) Mock.b
-    inA     = Predicate.makeInPredicate     (AST.mkVar Mock.x) Mock.a
-    inB     = Predicate.makeInPredicate     (AST.mkVar Mock.x) Mock.b
+    equalsA = Predicate.makeEqualsPredicate (AST.mkElemVar Mock.x) Mock.a
+    equalsB = Predicate.makeEqualsPredicate (AST.mkElemVar Mock.x) Mock.b
+    inA     = Predicate.makeInPredicate     (AST.mkElemVar Mock.x) Mock.a
+    inB     = Predicate.makeInPredicate     (AST.mkElemVar Mock.x) Mock.b
     exists  = Predicate.makeExistsPredicate Mock.x equalsA
     forall  = Predicate.makeForallPredicate Mock.x equalsA
     and     = Predicate.makeAndPredicate     equalsA equalsB

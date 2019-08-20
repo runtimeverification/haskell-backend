@@ -26,7 +26,6 @@ import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Attribute.Pattern
-import qualified Kore.Attribute.Pattern.FreeSetVariables as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
@@ -70,12 +69,13 @@ import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Sentence as Syntax
-import qualified Kore.Syntax.SetVariable as SetVariable
 import           Kore.Unification.Error
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Target
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..), foldMapVariable )
 import qualified SMT.AST as SMT
                  ( Constructor (Constructor),
                  ConstructorArgument (ConstructorArgument),
@@ -251,12 +251,6 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1)
             (printWithExplanation pattern2)
-
-    sumConstructorPair (Syntax.SetVariableF a1) (Syntax.SetVariableF a2) =
-        SumConstructorSameWithArguments (EqWrap "SetVariableF" a1 a2)
-    sumConstructorPair pattern1@(Syntax.SetVariableF _) pattern2 =
-        SumConstructorDifferent
-            (printWithExplanation pattern1) (printWithExplanation pattern2)
 
 instance
     ( EqualWithExplanation child
@@ -780,14 +774,15 @@ instance
   where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance EqualWithExplanation StringLiteral
-  where
+
+instance EqualWithExplanation StringLiteral where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
-instance EqualWithExplanation CharLiteral
-  where
+
+instance EqualWithExplanation CharLiteral where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
 instance
     (EqualWithExplanation child, Eq child, Show child)
     => EqualWithExplanation (Top Sort child)
@@ -798,18 +793,71 @@ instance
 instance
     ( EqualWithExplanation variable
     , Show variable
-    ) => WrapperEqualWithExplanation (SetVariable variable)
+    ) => SumEqualWithExplanation (ElementVariable variable)
   where
-    wrapperConstructorName _ = "SetVariable"
-    wrapperField =
-        Function.on (EqWrap "getVariable = ") SetVariable.getVariable
+    sumConstructorPair (ElementVariable a1) (ElementVariable a2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "ElementVariable" a1 a2
+
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => EqualWithExplanation (ElementVariable variable)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => SumEqualWithExplanation (SetVariable variable)
+  where
+    sumConstructorPair (SetVariable a1) (SetVariable a2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "SetVariable" a1 a2
 
 instance
     ( EqualWithExplanation variable
     , Show variable
     ) => EqualWithExplanation (SetVariable variable)
   where
-    compareWithExplanation = wrapperCompareWithExplanation
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
+instance StructEqualWithExplanation (Inhabitant child) where
+    structFieldsWithNames expected@(Inhabitant _) actual =
+        [ Function.on (EqWrap "inhSort = ") inhSort expected actual ]
+    structConstructorName _ = "Inhabitant"
+
+instance EqualWithExplanation (Inhabitant child) where
+    compareWithExplanation = structCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => SumEqualWithExplanation (UnifiedVariable variable)
+  where
+    sumConstructorPair (SetVar v1) (SetVar v2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "ElemVar" v1 v2
+    sumConstructorPair v1@(SetVar _) v2 =
+        SumConstructorDifferent
+            (printWithExplanation v1) (printWithExplanation v2)
+
+    sumConstructorPair (ElemVar v1) (ElemVar v2) =
+        SumConstructorSameWithArguments
+        $ EqWrap "SetVar" v1 v2
+    sumConstructorPair v1@(ElemVar _) v2 =
+        SumConstructorDifferent
+            (printWithExplanation v1) (printWithExplanation v2)
+
+instance
+    ( EqualWithExplanation variable
+    , Show variable
+    ) => EqualWithExplanation (UnifiedVariable variable)
+  where
+    compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance StructEqualWithExplanation Variable where
@@ -922,8 +970,8 @@ instance SumEqualWithExplanation SubstitutionError where
       =
         SumConstructorSameWithArguments
         $ EqWrap "NonCtorCircularVariableDependency"
-            (toVariable <$> a1)
-            (toVariable <$> a2)
+            (foldMapVariable toVariable <$> a1)
+            (foldMapVariable toVariable <$> a2)
 
 
 instance EqualWithExplanation SubstitutionError where
@@ -1074,13 +1122,24 @@ instance
         ]
     structConstructorName _ = "InternalAc"
 
-instance SumEqualWithExplanation (NoValue child)
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (SetElement child)
   where
-    sumConstructorPair NoValue NoValue =
+    wrapperConstructorName _ = "SetElement"
+    wrapperField = Function.on (EqWrap "getSetElement = ") getSetElement
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (SetElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance SumEqualWithExplanation (SetValue child) where
+    sumConstructorPair SetValue SetValue =
         SumConstructorSameNoArguments
 
-instance EqualWithExplanation (NoValue child)
-  where
+instance EqualWithExplanation (SetValue child) where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
@@ -1103,15 +1162,28 @@ instance
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
-instance (EqualWithExplanation child, Show child)
-    => SumEqualWithExplanation (Value child)
+instance
+    (EqualWithExplanation child, Show child) =>
+    WrapperEqualWithExplanation (MapElement child)
   where
-    sumConstructorPair (Value a1) (Value a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "Value" a1 a2)
+    wrapperConstructorName _ = "MapElement"
+    wrapperField = Function.on (EqWrap "getMapElement = ") getMapElement
 
 instance (EqualWithExplanation child, Show child)
-    => EqualWithExplanation (Value child)
+    => EqualWithExplanation (MapElement child)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance (EqualWithExplanation child, Show child)
+    => SumEqualWithExplanation (MapValue child)
+  where
+    sumConstructorPair (MapValue a1) (MapValue a2) =
+        SumConstructorSameWithArguments
+            (EqWrap "MapValue" a1 a2)
+
+instance (EqualWithExplanation child, Show child)
+    => EqualWithExplanation (MapValue child)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
@@ -1137,20 +1209,26 @@ instance
 
 instance
     ( EqualWithExplanation key, Show key
-    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
+    , EqualWithExplanation (Value collection child)
+    , Show (Value collection child)
     ) =>
-    EqualWithExplanation (NormalizedAc key valueWrapper child)
+    EqualWithExplanation (NormalizedAc collection key child)
   where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance
     ( EqualWithExplanation key, Show key
-    , EqualWithExplanation (valueWrapper child), Show (valueWrapper child)
     , EqualWithExplanation child, Show child
+    , EqualWithExplanation (Element collection child)
+    , Show (Element collection child)
+    , EqualWithExplanation (Value collection child)
+    , Show (Value collection child)
     ) =>
-    StructEqualWithExplanation (NormalizedAc key valueWrapper child)
+    StructEqualWithExplanation (NormalizedAc collection key child)
   where
     structFieldsWithNames expect actual@(NormalizedAc _ _ _) =
         [ Function.on
@@ -1367,8 +1445,8 @@ instance
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
     structFieldsWithNames
-        expected@(Attribute.Pattern _ _ _ _ _ _)
-        actual@(Attribute.Pattern _ _ _ _ _ _)
+        expected@(Attribute.Pattern _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _)
       =
         [ EqWrap
             "patternSort = "
@@ -1378,10 +1456,6 @@ instance
             "freeVariables = "
             (Attribute.freeVariables expected)
             (Attribute.freeVariables actual)
-        , EqWrap
-            "freeSetVariables = "
-            (Attribute.freeSetVariables expected)
-            (Attribute.freeSetVariables actual)
         , EqWrap
             "functional = "
             (Attribute.functional expected)
@@ -1406,26 +1480,11 @@ instance
 
 instance
     (EqualWithExplanation variable, Show variable) =>
-    EqualWithExplanation (Attribute.FreeSetVariables variable)
-  where
-    compareWithExplanation = wrapperCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    (EqualWithExplanation variable, Show variable) =>
     WrapperEqualWithExplanation (Attribute.FreeVariables variable)
   where
     wrapperConstructorName _ = "FreeVariables"
     wrapperField =
         Function.on (EqWrap "getFreeVariables = ") Attribute.getFreeVariables
-
-instance
-    (EqualWithExplanation variable, Show variable) =>
-    WrapperEqualWithExplanation (Attribute.FreeSetVariables variable)
-  where
-    wrapperConstructorName _ = "FreeSetVariables"
-    wrapperField =
-        Function.on (EqWrap "getFreeSetVariables = ") Attribute.getFreeSetVariables
 
 instance EqualWithExplanation Attribute.Pattern.Functional where
     compareWithExplanation = wrapperCompareWithExplanation
@@ -1481,6 +1540,16 @@ instance SumEqualWithExplanation AxiomIdentifier where
         (AxiomIdentifier.Ceil p1) (AxiomIdentifier.Ceil p2)
       =
         SumConstructorSameWithArguments (EqWrap "Ceil" p1 p2)
+    sumConstructorPair
+        (AxiomIdentifier.Equals p1 q1) (AxiomIdentifier.Equals p2 q2)
+      =
+        SumConstructorSameWithArguments (EqWrap "Equals" (p1, q1) (p2, q2))
+    sumConstructorPair
+        (AxiomIdentifier.Exists p1) (AxiomIdentifier.Exists p2)
+      =
+        SumConstructorSameWithArguments (EqWrap "Exists" p1 p2)
+    sumConstructorPair AxiomIdentifier.Variable AxiomIdentifier.Variable =
+        SumConstructorSameNoArguments
     sumConstructorPair p1 p2 =
         SumConstructorDifferent
             (printWithExplanation p1)
@@ -2341,12 +2410,6 @@ instance
         SumConstructorDifferent
             (printWithExplanation pattern1)
             (printWithExplanation pattern2)
-
-    sumConstructorPair (TermLike.SetVariableF a1) (TermLike.SetVariableF a2) =
-        SumConstructorSameWithArguments (EqWrap "SetVariableF" a1 a2)
-    sumConstructorPair pattern1@(TermLike.SetVariableF _) pattern2 =
-        SumConstructorDifferent
-            (printWithExplanation pattern1) (printWithExplanation pattern2)
 
     sumConstructorPair (TermLike.EvaluatedF a1) (TermLike.EvaluatedF a2) =
         SumConstructorSameWithArguments (EqWrap "EvaluatedF" a1 a2)

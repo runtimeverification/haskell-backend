@@ -58,7 +58,7 @@ attributePattern_ applicationSymbolOrAlias =
 
 attributeString :: Text -> AttributePattern
 attributeString literal =
-    (asAttributePattern . StringLiteralF) (StringLiteral literal)
+    (asAttributePattern . StringLiteralF . Const) (StringLiteral literal)
 
 attributeInteger :: Integer -> AttributePattern
 attributeInteger = attributeString . Text.pack . show

@@ -4,7 +4,6 @@ module Test.Kore.Builtin
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Map
 import qualified Data.Set
 import qualified GHC.Stack as GHC
 import           Prelude hiding
@@ -97,21 +96,21 @@ test_internalize =
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
-    l = mkVar (varS "l" listSort)
+    l = mkElemVar (elemVarS "l" listSort)
 
     mapSort = Builtin.mapSort
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
-    mkMap = Map.asInternal . Data.Map.fromList
-    m = mkVar (varS "m" mapSort)
+    mkMap = Map.asInternal
+    m = mkElemVar (elemVarS "m" mapSort)
 
     setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
     mkSet = Set.asInternal . Data.Set.fromList
-    s = mkVar (varS "s" setSort)
+    s = mkElemVar (elemVarS "s" setSort)
 
     mkInt :: Ord variable => Integer -> TermLike variable
     mkInt = Int.asInternal
@@ -119,8 +118,8 @@ test_internalize =
     zero, one :: Ord variable => TermLike variable
     zero = mkInt 0
     one = mkInt 1
-    x = mkVar (varS "x" intSort)
-    y = mkVar (varS "y" intSort)
+    x = mkElemVar (elemVarS "x" intSort)
+    y = mkElemVar (elemVarS "y" intSort)
 
 withInternalized
     :: GHC.HasCallStack

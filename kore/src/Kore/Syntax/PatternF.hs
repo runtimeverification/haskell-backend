@@ -11,10 +11,13 @@ module Kore.Syntax.PatternF
     -- * Pure pattern heads
     , groundHead
     , constant
+    -- * Re-exports
+    , Const (..)
     ) where
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import           Data.Functor.Const
 import           Data.Functor.Identity
                  ( Identity (..) )
 import           Data.Hashable
@@ -38,17 +41,18 @@ import Kore.Syntax.Forall
 import Kore.Syntax.Iff
 import Kore.Syntax.Implies
 import Kore.Syntax.In
+import Kore.Syntax.Inhabitant
 import Kore.Syntax.Mu
 import Kore.Syntax.Next
 import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Rewrites
-import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 
 {- | 'PatternF' is the 'Base' functor of Kore patterns
 
@@ -72,12 +76,11 @@ data PatternF variable child
     | NuF            !(Nu variable child)
     | OrF            !(Or Sort child)
     | RewritesF      !(Rewrites Sort child)
-    | StringLiteralF !StringLiteral
-    | CharLiteralF   !CharLiteral
     | TopF           !(Top Sort child)
-    | VariableF      !variable
-    | InhabitantF    !Sort
-    | SetVariableF   !(SetVariable variable)
+    | InhabitantF    !(Inhabitant child)
+    | StringLiteralF !(Const StringLiteral child)
+    | CharLiteralF   !(Const CharLiteral child)
+    | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (PatternF variable child)
@@ -131,9 +134,7 @@ traverseVariables traversing =
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         MuF any0 -> MuF <$> traverseVariablesMu any0
         NuF any0 -> NuF <$> traverseVariablesNu any0
-        VariableF variable -> VariableF <$> traversing variable
-        SetVariableF (SetVariable variable) ->
-            SetVariableF . SetVariable <$> traversing variable
+        VariableF variableF -> traverseVariable variableF
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplicationF appP -> pure (ApplicationF appP)
@@ -154,14 +155,20 @@ traverseVariables traversing =
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
   where
+    traverseVariable (Const variable) =
+        VariableF . Const <$> traverse traversing variable
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
-        Exists existsSort <$> traversing existsVariable <*> pure existsChild
+        Exists existsSort
+        <$> traverse traversing existsVariable
+        <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
-        Forall forallSort <$> traversing forallVariable <*> pure forallChild
-    traverseVariablesMu Mu { muVariable = SetVariable v, muChild } =
-        Mu <$> (SetVariable <$> traversing v) <*> pure muChild
-    traverseVariablesNu Nu { nuVariable = SetVariable v, nuChild } =
-        Nu <$> (SetVariable <$> traversing v) <*> pure nuChild
+        Forall forallSort
+        <$> traverse traversing forallVariable
+        <*> pure forallChild
+    traverseVariablesMu Mu { muVariable, muChild } =
+        Mu <$> traverse traversing muVariable <*> pure muChild
+    traverseVariablesNu Nu { nuVariable, nuChild } =
+        Nu <$> traverse traversing nuVariable <*> pure nuChild
 
 -- | Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
