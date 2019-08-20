@@ -89,8 +89,8 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ term pred ->
-            evaluateWithDefinitionAxioms rules pred term)
+        (\_ _ _ term predicate ->
+            evaluateWithDefinitionAxioms rules predicate term)
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -105,8 +105,8 @@ totalDefinitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 totalDefinitionEvaluation rules =
-    BuiltinAndAxiomSimplifier $ \_ _ _ term pred -> do
-        result <- evaluateWithDefinitionAxioms rules pred term
+    BuiltinAndAxiomSimplifier $ \_ _ _ term predicate -> do
+        result <- evaluateWithDefinitionAxioms rules predicate term
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
