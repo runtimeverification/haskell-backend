@@ -25,9 +25,6 @@ import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Pattern
-                 ( Pattern )
-import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike

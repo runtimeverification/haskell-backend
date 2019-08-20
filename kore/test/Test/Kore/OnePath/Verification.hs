@@ -70,20 +70,16 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
-    , testCase "Returns multiple results" $ do
+    , testCase "Returns first failing claim" $ do
         -- Axiom: a => b or c
         -- Claim: a => d
-        -- Expected: error [b, c]
+        -- Expected: error b
         actual <- runVerification
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
-        let expected =
-                (Left . Pattern.fromTermLike
-                $ mkOr Mock.b Mock.c
-                )
         assertEqualWithExplanation ""
-            expected
+            (Left . Pattern.fromTermLike $ Mock.b)
             actual
     , testCase "Verifies one claim" $ do
         -- Axiom: a => b

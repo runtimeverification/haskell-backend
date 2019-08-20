@@ -70,8 +70,6 @@ import           Kore.OnePath.Verification
                  ( CommonProofState )
 import           Kore.Profiler.Data
                  ( MonadProfiler )
-import           Kore.Step.Rule
-                 ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
