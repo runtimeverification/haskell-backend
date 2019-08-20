@@ -54,37 +54,24 @@ pipeline {
           }
         }
         stage('K Integration Tests') {
+          options {
+            timeout(time: 18, unit: 'MINUTES')
+          }
           steps {
             sh '''
               ./scripts/ktest.sh
             '''
           }
         }
-      }
-    }
-    stage('KEVM Integration Tests') {
-      when {
-        anyOf {
-          branch 'master'
-          expression {
-            TAGGED_KEVM_INTEGRATION = sh(returnStdout: true, script: './scripts/should-run-kevm-integration.sh "\\[kevm-integration\\]"').trim()
-            return TAGGED_KEVM_INTEGRATION == 'true'
+        stage('KEVM Integration Tests') {
+          options {
+            timeout(time: 18, unit: 'MINUTES')
           }
-        }
-      }
-      options {
-        timeout(time: 18, unit: 'MINUTES')
-      }
-      steps {
-        sh '''
-          ./scripts/kevm-integration.sh
-        '''
-      }
-      post {
-        failure {
-          slackSend color: '#cb2431'                                            \
-                  , channel: '#haskell-backend'                                 \
-                  , message: "KEVM Integration Tests Failure: ${env.BUILD_URL}"
+          steps {
+            sh '''
+              ./scripts/kevm-integration.sh
+            '''
+          }
         }
       }
     }
