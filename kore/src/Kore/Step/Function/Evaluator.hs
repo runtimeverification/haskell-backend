@@ -10,13 +10,17 @@ Portability : portable
 module Kore.Step.Function.Evaluator
     ( evaluateApplication
     , evaluatePattern
+    , evaluateOnce
     ) where
 
+import           Control.Applicative
+                 ( Alternative (empty) )
 import           Control.Error
                  ( MaybeT )
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
+import qualified Control.Monad.Trans as Monad.Trans
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -55,6 +59,8 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Substitution as Substitution
+import qualified Kore.Unification.Unify as Unification
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -314,3 +320,39 @@ mergeWithConditionAndSubstitution
         { results = evaluatedResults
         , remainders = evaluatedRemainders
         }
+
+{- | Attempt once to evaluate the 'TermLike' with user-defined axioms.
+
+The result is 'Nothing' if there are no applicable user-defined axioms. The
+result is not simplified or re-evaluated.
+
+ -}
+evaluateOnce
+    ::  forall variable simplifier
+    .   ( Show variable
+        , Unparse variable
+        , FreshVariable variable
+        , SortedVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
+        )
+    => Predicate variable
+    -- ^ Aggregated children predicate and substitution.
+    -> TermLike variable
+    -- ^ The pattern to be evaluated
+    -> MaybeT (BranchT simplifier) (Pattern variable)
+evaluateOnce predicate termLike = do
+    simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
+    result <- Simplifier.runBuiltinAndAxiomSimplifier simplifierAxiom termLike
+    case result of
+        AttemptedAxiom.NotApplicable -> empty
+        AttemptedAxiom.Applied attemptedAxiomResults ->
+            (>>= Monad.Trans.lift . scatter) . Unification.maybeUnifierT $ do
+                pattern' <- Unification.scatter $ results <> remainders
+                let (termLike', predicate') = Pattern.splitTerm pattern'
+                    predicate'' = predicate <> predicate'
+                normalized <- Substitution.normalizeExcept predicate''
+                return $ Pattern.withCondition termLike' normalized
+          where
+            AttemptedAxiomResults { results, remainders } =
+                attemptedAxiomResults
