@@ -16,6 +16,7 @@ module Kore.Step.Simplification.Data
     , evalSimplifier
     , lookupSimplifierAxiom
     , BranchT
+    , mapBranchT
     , evalSimplifierBranch
     , gather
     , gatherAll
@@ -266,6 +267,9 @@ deriving instance MonadSMT m => MonadSMT (BranchT m)
 deriving instance MonadProfiler m => MonadProfiler (BranchT m)
 
 deriving instance MonadSimplify m => MonadSimplify (BranchT m)
+
+mapBranchT :: Monad m => (forall x. m x -> m x) -> BranchT m a -> BranchT m a
+mapBranchT f (BranchT listT) = BranchT (ListT.mapListT f listT)
 
 {- | Collect results from many simplification branches into one result.
 
