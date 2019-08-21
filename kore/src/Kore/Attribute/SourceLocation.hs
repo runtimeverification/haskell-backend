@@ -22,8 +22,8 @@ import           Data.Generics.Product
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Location
        ( LineColumn (..), Location (..) )
@@ -31,11 +31,18 @@ import Kore.Attribute.Parser
        ( ParseAttributes (..) )
 import Kore.Attribute.Source
        ( Source (..) )
+import Kore.Debug
 
 data SourceLocation = SourceLocation
     { location :: !Location
     , source   :: !Source
-    } deriving (Eq, Ord, Show, Generic)
+    } deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic SourceLocation
+
+instance SOP.HasDatatypeInfo SourceLocation
+
+instance Debug SourceLocation
 
 instance NFData SourceLocation
 
