@@ -167,7 +167,7 @@ evaluateBuiltin
     simplifier
     axiomIdToSimplifier
     patt
-    _
+    predicate
   = do
     result <-
         builtinEvaluator
@@ -175,7 +175,7 @@ evaluateBuiltin
             simplifier
             axiomIdToSimplifier
             patt
-            Predicate.topTODO
+            predicate
     case result of
         AttemptedAxiom.NotApplicable
           | App_ appHead children <- patt
@@ -217,7 +217,7 @@ applyFirstSimplifierThatWorks
     simplifier
     axiomIdToSimplifier
     patt
-    _
+    predicate
   = do
     applicationResult <-
         evaluator
@@ -225,7 +225,7 @@ applyFirstSimplifierThatWorks
             simplifier
             axiomIdToSimplifier
             patt
-            Predicate.topTODO
+            predicate
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -278,7 +278,7 @@ applyFirstSimplifierThatWorks
                 simplifier
                 axiomIdToSimplifier
                 patt
-                Predicate.topTODO
+                predicate
 
 evaluateWithDefinitionAxioms
     :: forall variable simplifier

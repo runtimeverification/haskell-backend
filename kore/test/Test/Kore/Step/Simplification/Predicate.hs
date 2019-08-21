@@ -307,11 +307,11 @@ simpleEvaluator
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
 simpleEvaluator [] _  _ = return NotApplicable
-simpleEvaluator ((from, to) : ps) patt _
+simpleEvaluator ((from, to) : ps) patt predicate
   | from == patt =
     return $ Applied AttemptedAxiomResults
         { results = OrPattern.fromTermLike to
         , remainders = OrPattern.bottom
         }
   | otherwise =
-    simpleEvaluator ps patt Conditional.topTODO
+    simpleEvaluator ps patt predicate

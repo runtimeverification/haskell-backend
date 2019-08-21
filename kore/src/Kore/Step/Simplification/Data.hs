@@ -642,10 +642,12 @@ runBuiltinAndAxiomSimplifier
         )
     => BuiltinAndAxiomSimplifier
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
 runBuiltinAndAxiomSimplifier
     (BuiltinAndAxiomSimplifier simplifier)
     termLike
+    predicate
   = do
     simplifierAxioms <- askSimplifierAxioms
     simplifierPredicate <- askSimplifierPredicate
@@ -655,7 +657,7 @@ runBuiltinAndAxiomSimplifier
         simplifierTermLike
         simplifierAxioms
         termLike
-        Predicate.topTODO
+        predicate
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
