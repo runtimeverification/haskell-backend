@@ -33,7 +33,8 @@ module Kore.Predicate.Predicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
-    , Kore.Predicate.Predicate.freeVariables
+    , freeVariables
+    , isFreeOf
     , Kore.Predicate.Predicate.freeElementVariables
     , Kore.Predicate.Predicate.hasFreeVariable
     , Kore.Predicate.Predicate.mapVariables
@@ -56,6 +57,9 @@ import           Data.List
                  ( foldl', nub )
 import           Data.Map.Strict
                  ( Map )
+import           Data.Set
+                 ( Set )
+import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import           GHC.Stack
@@ -65,7 +69,9 @@ import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Debug
 import           Kore.Error
                  ( Error, koreFail )
-import           Kore.Internal.TermLike as TermLike
+import           Kore.Internal.TermLike hiding
+                 ( freeVariables )
+import qualified Kore.Internal.TermLike as TermLike
 import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unification.Substitution
@@ -507,6 +513,14 @@ freeVariables
     => Predicate variable
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
+
+isFreeOf
+    :: Ord variable
+    => Predicate variable
+    -> Set (UnifiedVariable variable)
+    -> Bool
+isFreeOf predicate =
+    Set.disjoint (getFreeVariables $ freeVariables predicate)
 
 freeElementVariables
     :: Ord variable
