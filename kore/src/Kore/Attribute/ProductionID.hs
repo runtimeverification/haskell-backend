@@ -15,13 +15,22 @@ import qualified Control.Monad as Monad
 import qualified Data.Maybe as Maybe
 import           Data.Text
                  ( Text )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 {- | @ProductionID@ represents the @productionID@ attribute.
  -}
 newtype ProductionID = ProductionID { getProductionID :: Maybe Text }
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic ProductionID
+
+instance SOP.HasDatatypeInfo ProductionID
+
+instance Debug ProductionID
 
 instance NFData ProductionID
 
