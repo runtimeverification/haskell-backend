@@ -17,7 +17,8 @@ import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..) )
-import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.Predicate as Predicate
+                 ( topTODO )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeNotPredicate,

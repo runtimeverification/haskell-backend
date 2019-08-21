@@ -346,8 +346,8 @@ evaluateOnce
     -> MaybeT (BranchT simplifier) (Pattern variable)
 evaluateOnce predicate termLike = do
     simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
-    result <- Simplifier.runBuiltinAndAxiomSimplifier 
-        simplifierAxiom 
+    result <- Simplifier.runBuiltinAndAxiomSimplifier
+        simplifierAxiom
         termLike
         Predicate.topTODO
     case result of

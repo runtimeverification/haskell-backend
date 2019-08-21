@@ -37,7 +37,6 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
-import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
