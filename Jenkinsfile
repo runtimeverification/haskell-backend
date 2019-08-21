@@ -31,7 +31,7 @@ pipeline {
         '''
       }
     }
-    stage('Build') {
+    stage('Stages') {
       failFast true
       parallel {
         stage('Documentation') {
@@ -53,36 +53,54 @@ pipeline {
             }
           }
         }
-        stage('Integration Test Runner') {
-          steps {
-            sh '''
-              ./scripts/kore-exec.sh
-            '''
-          }
-        }
-      }
-    }
-    stage('Integration Tests') {
-      failFast true
-      parallel {
-        stage('K') {
-          options {
-            timeout(time: 18, unit: 'MINUTES')
-          }
-          steps {
-            sh '''
-              ./scripts/ktest.sh
-            '''
-          }
-        }
-        stage('KEVM') {
-          options {
-            timeout(time: 18, unit: 'MINUTES')
-          }
-          steps {
-            sh '''
-              ./scripts/kevm-integration.sh
-            '''
+        stage('Integration Tests') {
+          stages {
+
+            stage('Build test runner') {
+              steps {
+                sh '''
+                  ./scripts/kore-exec.sh
+                '''
+              }
+            }
+
+            stage('K') {
+              options {
+                timeout(time: 18, unit: 'MINUTES')
+              }
+              steps {
+                sh '''
+                  ./scripts/ktest.sh
+                '''
+              }
+            }
+
+            stage('KEVM') {
+              when {
+                anyOf {
+                  branch 'master'
+                  expression {
+                    TAGGED_KEVM_INTEGRATION = sh(returnStdout: true, script: './scripts/should-run-kevm-integration.sh "\\[kevm-integration\\]"').trim()
+                    return TAGGED_KEVM_INTEGRATION == 'true'
+                  }
+                }
+              }
+              options {
+                timeout(time: 18, unit: 'MINUTES')
+              }
+              steps {
+                sh '''
+                  ./scripts/kevm-integration.sh
+                '''
+              }
+              post {
+                unsuccessful {
+                  slackSend color: '#cb2431'                                            \
+                          , channel: '#haskell-backend'                                 \
+                          , message: "KEVM Integration Tests Failure: ${env.BUILD_URL}"
+                }
+              }
+            }
           }
         }
       }
