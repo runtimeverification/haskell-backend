@@ -67,7 +67,7 @@ pipeline {
       parallel {
         stage('K') {
           options {
-            timeout(time: 18, unit: 'MINUTES')
+            timeout(time: 16, unit: 'MINUTES')
           }
           steps {
             sh '''
