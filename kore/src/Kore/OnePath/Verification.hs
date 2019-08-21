@@ -129,16 +129,16 @@ verify
 verify strategy =
     mapM_ (verifyClaim strategy)
 
--- {- | Default implementation for a one-path strategy. You can apply it to the
--- first two arguments and pass the resulting function to 'verify'.
---
--- Things to note when implementing your own:
---
--- 1. The first step does not use the reachability claims
---
--- 2. You can return an infinite list.
--- -}
---
+{- | Default implementation for a one-path strategy. You can apply it to the
+first two arguments and pass the resulting function to 'verify'.
+
+Things to note when implementing your own:
+
+1. The first step does not use the reachability claims
+
+2. You can return an infinite list.
+-}
+
 defaultStrategy
     :: forall claim
     .  Claim claim
@@ -183,16 +183,16 @@ verifyClaim
                 stepLimit
                 strategy
     executionGraph <-
-        runStrategy (modifTransitionRule destination) limitedStrategy startPattern
+        runStrategy (modifiedTransitionRule destination) limitedStrategy startPattern
     -- Throw the first unproven configuration as an error.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
-    modifTransitionRule
+    modifiedTransitionRule
         :: Pattern Variable
         -> Prim (Rule claim)
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
-    modifTransitionRule destination prim proofState' = do
+    modifiedTransitionRule destination prim proofState' = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
             $ transitionRule' destination prim proofState'
@@ -254,7 +254,7 @@ transitionRule'
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' destination prim state = do
-    let goal = (flip makeRuleFromPatterns) destination <$> state
+    let goal = makeRuleFromPatterns <$> state <*> pure destination
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next
 

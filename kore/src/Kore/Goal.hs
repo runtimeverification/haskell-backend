@@ -23,8 +23,6 @@ import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Trusted as Trusted
 import           Kore.Debug
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern
@@ -67,6 +65,15 @@ data ProofState goal
     deriving (Eq, Show, Ord, Functor, Generic)
 
 instance Hashable goal => Hashable (ProofState goal)
+
+instance Applicative ProofState where
+    pure = Goal
+    Proven <*> _ = Proven
+    _ <*> Proven = Proven
+    GoalRem f <*> Goal x = GoalRem (f x)
+    GoalRem f <*> GoalRem x = GoalRem (f x)
+    Goal f <*> GoalRem x = GoalRem (f x)
+    Goal f <*> Goal x = Goal (f x)
 
 {- | Extract the unproven goals of a 'ProofState'.
 
@@ -440,8 +447,7 @@ removeDestSimplifyRemainder
     => OnePathRule variable
     -> Strategy.TransitionT (Rule (OnePathRule variable)) m (ProofState (OnePathRule variable))
 removeDestSimplifyRemainder remainder = do
-    result <-
-        removeDestination remainder >>= simplify
+    result <- removeDestination remainder >>= simplify
     if isTriviallyValid result
        then pure Proven
        else pure . GoalRem $ result
@@ -452,14 +458,8 @@ getConfiguration
     => Coercible rule (RulePattern variable)
     => rule
     -> Pattern variable
-getConfiguration rule =
-    Conditional
-        { term = left rulePatt
-        , predicate = requires rulePatt
-        , substitution = mempty
-        }
-  where
-    rulePatt = coerce rule
+getConfiguration (coerce -> RulePattern { left, requires }) =
+    Pattern.withCondition left (Conditional.fromPredicate requires)
 
 getDestination
     :: forall rule variable
@@ -467,14 +467,8 @@ getDestination
     => Coercible rule (RulePattern variable)
     => rule
     -> Pattern variable
-getDestination rule =
-    Conditional
-        { term = right rulePatt
-        , predicate = ensures rulePatt
-        , substitution = mempty
-        }
-  where
-    rulePatt = coerce rule
+getDestination (coerce -> RulePattern { right, ensures }) =
+    Pattern.withCondition right (Conditional.fromPredicate ensures)
 
 makeRuleFromPatterns
     :: forall rule variable
@@ -487,22 +481,6 @@ makeRuleFromPatterns
     -> Pattern variable
     -> rule
 makeRuleFromPatterns configuration destination =
-    coerce RulePattern
-        { left = term configuration
-        , right = term destination
-        , requires =
-            Predicate.makeAndPredicate
-                (predicate configuration)
-                ( Predicate.fromSubstitution
-                . substitution
-                $ configuration
-                )
-        , ensures =
-            Predicate.makeAndPredicate
-                (predicate destination)
-                ( Predicate.fromSubstitution
-                . substitution
-                $ destination
-                )
-        , attributes = Default.def
-        }
+    let (left, Conditional.toPredicate -> requires) = Pattern.splitTerm configuration
+        (right, Conditional.toPredicate -> ensures) = Pattern.splitTerm destination
+    in coerce RulePattern { left, right, requires, ensures, attributes = Default.def }

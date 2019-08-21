@@ -284,7 +284,6 @@ unifyRules
 unifyRules unificationProcedure initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        -- traceM . unparseToString . RewriteRule $ rule
         unified <- unifyRule unificationProcedure initial rule
         checkSubstitutionCoverage initial unified
         return unified
