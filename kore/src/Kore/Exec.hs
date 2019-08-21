@@ -27,7 +27,7 @@ import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
 import           Data.Coerce
-                 ( coerce )
+                 ( Coercible, coerce )
 import qualified Data.Map.Strict as Map
 import           System.Exit
                  ( ExitCode (..) )
@@ -39,6 +39,7 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Goal as Goal
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
@@ -55,8 +56,7 @@ import           Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
 import           Kore.OnePath.Verification
-                 ( Axiom (Axiom), Claim, defaultStrategy, verify )
-import qualified Kore.OnePath.Verification as Claim
+                 ( Claim, defaultStrategy, verify )
 import           Kore.Predicate.Predicate
                  ( makeMultipleOrPredicate, unwrapPredicate )
 import           Kore.Profiler.Data
@@ -258,13 +258,13 @@ prove limit definitionModule specModule =
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = fmap Axiom rewriteRules
-            claims = fmap makeClaim specAxioms
+            axioms = Goal.Rule <$> rewriteRules
+            claims = makeClaim <$> specAxioms
         result <-
             runExceptT
             $ verify
                 (defaultStrategy claims axioms)
-                (map (\x -> (x,limit)) (extractUntrustedClaims claims))
+                (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
     metadataTools = MetadataTools.build definitionModule
@@ -275,6 +275,9 @@ prove limit definitionModule specModule =
             , simplifierPredicate = emptyPredicateSimplifier
             , simplifierAxioms = emptyAxiomSimplifiers
             }
+    extractUntrustedClaims' :: [OnePathRule Variable] -> [OnePathRule Variable]
+    extractUntrustedClaims' =
+        filter (not . Goal.isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -298,7 +301,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = fmap Axiom rewriteRules
+            axioms = Goal.Rule <$> rewriteRules
             claims = fmap makeClaim specAxioms
         Repl.runRepl axioms claims mvar replScript replMode outputFile
   where
@@ -332,7 +335,7 @@ boundedModelCheck limit definitionModule specModule searchOrder =
         assertSomeClaims specClaims
         assertSingleClaim specClaims
         let
-            axioms = fmap Axiom rewriteRules
+            axioms = fmap Bounded.Axiom rewriteRules
             claims = fmap makeClaim specClaims
 
         Bounded.checkClaim
@@ -361,7 +364,9 @@ assertSomeClaims claims =
         ++  "Possible explanation: the frontend and the backend don't agree "
         ++  "on the representation of claims."
 
-makeClaim :: Claim claim => (Attribute.Axiom, claim) -> claim
+makeClaim
+    :: Coercible (RulePattern Variable) claim
+    => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
     coerce RulePattern
         { attributes = attributes
@@ -378,10 +383,6 @@ simplifyRuleOnSecond
 simplifyRuleOnSecond (atts, rule) = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
     return (atts, coerce . getRewriteRule $ rule')
-
-extractUntrustedClaims :: Claim claim => [claim] -> [Rewrite]
-extractUntrustedClaims =
-    map (RewriteRule . coerce) . filter (not . Claim.isTrusted)
 
 -- | Construct an execution graph for the given input pattern.
 execute

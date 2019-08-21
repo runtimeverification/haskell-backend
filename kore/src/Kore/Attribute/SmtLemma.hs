@@ -12,12 +12,21 @@ module Kore.Attribute.SmtLemma
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 -- | @SmtLemma@ represents the @smt-lemma@ attribute for symbols.
 newtype SmtLemma = SmtLemma { isSmtLemma :: Bool }
-    deriving (Generic, Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic SmtLemma
+
+instance SOP.HasDatatypeInfo SmtLemma
+
+instance Debug SmtLemma
 
 instance Default SmtLemma where
     def = SmtLemma False

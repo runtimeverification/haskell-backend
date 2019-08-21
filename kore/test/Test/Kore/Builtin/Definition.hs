@@ -21,7 +21,8 @@ import           Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import           Kore.Internal.ApplicationSorts
 import           Kore.Internal.Symbol
-                 ( constructor, functional, hook, smthook, sortInjection )
+                 ( constructor, function, functional, hook, smthook,
+                 sortInjection )
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike hiding
                  ( Symbol )
@@ -112,84 +113,112 @@ binaryIntSymbol :: Text -> Internal.Symbol
 binaryIntSymbol name = binarySymbol name intSort
 
 gtIntSymbol :: Internal.Symbol
-gtIntSymbol = comparisonIntSymbol "gtInt" & hook "INT.gt" & smthook ">"
+gtIntSymbol =
+    comparisonIntSymbol "gtInt"
+    & hook "INT.gt" & smthook ">" & function & functional
 
 geIntSymbol :: Internal.Symbol
-geIntSymbol = comparisonIntSymbol "geInt" & hook "INT.ge" & smthook ">="
+geIntSymbol =
+    comparisonIntSymbol "geInt"
+    & hook "INT.ge" & smthook ">=" & function & functional
 
 eqIntSymbol :: Internal.Symbol
-eqIntSymbol = comparisonIntSymbol "eqInt" & hook "INT.eq" & smthook "="
+eqIntSymbol =
+    comparisonIntSymbol "eqInt"
+    & hook "INT.eq" & smthook "=" & function & functional
 
 leIntSymbol :: Internal.Symbol
-leIntSymbol = comparisonIntSymbol "leInt" & hook "INT.le" & smthook "<="
+leIntSymbol =
+    comparisonIntSymbol "leInt"
+    & hook "INT.le" & smthook "<=" & function & functional
 
 ltIntSymbol :: Internal.Symbol
-ltIntSymbol = comparisonIntSymbol "ltInt" & hook "INT.lt" & smthook "<"
+ltIntSymbol =
+    comparisonIntSymbol "ltInt"
+    & hook "INT.lt" & smthook "<" & function & functional
 
 neIntSymbol :: Internal.Symbol
-neIntSymbol = comparisonIntSymbol "neInt" & hook "INT.ne" & smthook "distinct"
+neIntSymbol =
+    comparisonIntSymbol "neInt"
+    & hook "INT.ne" & smthook "distinct" & function & functional
 
 minIntSymbol :: Internal.Symbol
-minIntSymbol = binaryIntSymbol "minInt" & hook "INT.min" & smthook "int_min"
+minIntSymbol =
+    binaryIntSymbol "minInt"
+    & hook "INT.min" & smthook "int_min" & function & functional
 
 maxIntSymbol :: Internal.Symbol
-maxIntSymbol = binaryIntSymbol "maxInt" & hook "INT.max" & smthook "int_max"
+maxIntSymbol =
+    binaryIntSymbol "maxInt"
+    & hook "INT.max" & smthook "int_max" & function & functional
 
 addIntSymbol :: Internal.Symbol
-addIntSymbol = binaryIntSymbol "addInt" & hook "INT.add" & smthook "+"
+addIntSymbol =
+    binaryIntSymbol "addInt"
+    & hook "INT.add" & smthook "+" & function & functional
 
 subIntSymbol :: Internal.Symbol
-subIntSymbol = binaryIntSymbol "subInt" & hook "INT.sub" & smthook "-"
+subIntSymbol =
+    binaryIntSymbol "subInt"
+    & hook "INT.sub" & smthook "-" & function & functional
 
 mulIntSymbol :: Internal.Symbol
-mulIntSymbol = binaryIntSymbol "mulInt" & hook "INT.mul" & smthook "*"
+mulIntSymbol =
+    binaryIntSymbol "mulInt"
+    & hook "INT.mul" & smthook "*" & function & functional
 
 absIntSymbol :: Internal.Symbol
 absIntSymbol =
     unaryIntSymbol "absInt"
-    & functional & hook "INT.abs" & smthook "int_abs"
+    & hook "INT.abs" & smthook "int_abs" & function & functional
 
 tdivIntSymbol :: Internal.Symbol
-tdivIntSymbol = binaryIntSymbol "tdivInt" & hook "INT.tdiv" & smthook "div"
+tdivIntSymbol =
+    binaryIntSymbol "tdivInt"
+    & hook "INT.tdiv" & smthook "div" & function
 
 tmodIntSymbol :: Internal.Symbol
-tmodIntSymbol = binaryIntSymbol "tmodInt" & hook "INT.tmod" & smthook "mod"
+tmodIntSymbol =
+    binaryIntSymbol "tmodInt"
+    & hook "INT.tmod" & smthook "mod" & function
 
 andIntSymbol :: Internal.Symbol
-andIntSymbol = binaryIntSymbol "andInt" & hook "INT.and"
+andIntSymbol = binaryIntSymbol "andInt" & hook "INT.and" & function & functional
 
 orIntSymbol :: Internal.Symbol
-orIntSymbol = binaryIntSymbol "orInt" & hook "INT.or"
+orIntSymbol = binaryIntSymbol "orInt" & hook "INT.or" & function & functional
 
 xorIntSymbol :: Internal.Symbol
-xorIntSymbol = binaryIntSymbol "xorInt" & hook "INT.xor"
+xorIntSymbol = binaryIntSymbol "xorInt" & hook "INT.xor" & function & functional
 
 notIntSymbol :: Internal.Symbol
-notIntSymbol = unaryIntSymbol "notInt" & hook "INT.not"
+notIntSymbol = unaryIntSymbol "notInt" & hook "INT.not" & function & functional
 
 shlIntSymbol :: Internal.Symbol
-shlIntSymbol = binaryIntSymbol "shlInt" & hook "INT.shl"
+shlIntSymbol = binaryIntSymbol "shlInt" & hook "INT.shl" & function & functional
 
 shrIntSymbol :: Internal.Symbol
-shrIntSymbol = binaryIntSymbol "shrInt" & hook "INT.shr"
+shrIntSymbol = binaryIntSymbol "shrInt" & hook "INT.shr" & function & functional
 
 powIntSymbol :: Internal.Symbol
-powIntSymbol = binaryIntSymbol "powInt" & hook "INT.pow"
+powIntSymbol = binaryIntSymbol "powInt" & hook "INT.pow" & function
 
 powmodIntSymbol :: Internal.Symbol
 powmodIntSymbol =
     builtinSymbol "powmodInt" intSort [intSort, intSort, intSort]
-    & hook "INT.powmod"
+    & hook "INT.powmod" & function
 
 log2IntSymbol :: Internal.Symbol
-log2IntSymbol = unaryIntSymbol "log2Int" & hook "INT.log2"
+log2IntSymbol = unaryIntSymbol "log2Int" & hook "INT.log2" & function
 
 emodIntSymbol :: Internal.Symbol
-emodIntSymbol = binaryIntSymbol "emodInt" & hook "INT.emod" & smthook "mod"
+emodIntSymbol =
+    binaryIntSymbol "emodInt"
+    & hook "INT.emod" & smthook "mod" & function
 
 -- an unhooked, uninterpreted function f : Int -> Int
 dummyIntSymbol :: Internal.Symbol
-dummyIntSymbol = unaryIntSymbol "f"
+dummyIntSymbol = unaryIntSymbol "f" & function
 
 dummyInt :: TermLike Variable -> TermLike Variable
 dummyInt x = mkApplySymbol dummyIntSymbol [x]
