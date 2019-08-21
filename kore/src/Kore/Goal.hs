@@ -72,6 +72,7 @@ instance Applicative ProofState where
     Goal f <*> x = f <$> x
     GoalRem f <*> Goal x = GoalRem (f x)
     GoalRem f <*> GoalRem x = GoalRem (f x)
+    GoalRem _ <*> Proven = Proven
 
 {- | Extract the unproven goals of a 'ProofState'.
 
