@@ -44,6 +44,7 @@ import           Data.Text
 import           Data.Text.Prettyprint.Doc
                  ( Pretty )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
@@ -51,6 +52,7 @@ import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import           Kore.Debug
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
 import           Kore.Internal.ApplicationSorts
@@ -83,6 +85,12 @@ data RulePattern variable = RulePattern
 deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
 deriving instance Show variable => Show (RulePattern variable)
+
+instance SOP.Generic (RulePattern variable)
+
+instance SOP.HasDatatypeInfo (RulePattern variable)
+
+instance Debug variable => Debug (RulePattern variable)
 
 instance
     (SortedVariable variable, Unparse variable) =>
@@ -120,19 +128,25 @@ rulePattern left right =
 -}
 newtype EqualityRule variable =
     EqualityRule { getEqualityRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (EqualityRule variable)
-deriving instance Ord variable => Ord (EqualityRule variable)
-deriving instance Show variable => Show (EqualityRule variable)
+instance SOP.Generic (EqualityRule variable)
+
+instance SOP.HasDatatypeInfo (EqualityRule variable)
+
+instance Debug variable => Debug (EqualityRule variable)
 
 {-  | Rewrite-based rule pattern.
 -}
 newtype RewriteRule variable =
     RewriteRule { getRewriteRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (RewriteRule variable)
-deriving instance Ord variable => Ord (RewriteRule variable)
-deriving instance Show variable => Show (RewriteRule variable)
+instance SOP.Generic (RewriteRule variable)
+
+instance SOP.HasDatatypeInfo (RewriteRule variable)
+
+instance Debug variable => Debug (RewriteRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -189,10 +203,13 @@ qualifiedAxiomOpToConstructor patternHead
 -}
 newtype OnePathRule variable =
     OnePathRule { getOnePathRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (OnePathRule variable)
-deriving instance Ord variable => Ord (OnePathRule variable)
-deriving instance Show variable => Show (OnePathRule variable)
+instance SOP.Generic (OnePathRule variable)
+
+instance SOP.HasDatatypeInfo (OnePathRule variable)
+
+instance Debug variable => Debug (OnePathRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
