@@ -21,11 +21,13 @@ module Kore.Logger
     , withLogScope
     , liftLogAction
     , hoistLogAction
+    , LoggerT (..)
     ) where
 
 import           Colog
                  ( LogAction (..) )
 import qualified Control.Monad.Except as Except
+import           Control.Monad.IO.Class
 import           Control.Monad.Morph
                  ( MFunctor )
 import qualified Control.Monad.Morph as Monad.Morph
@@ -219,3 +221,22 @@ withLogScope newScope = localLogAction (contramap appendScope)
   where
     appendScope (LogMessage msg sev scope callstack) =
         LogMessage msg sev (newScope : scope) callstack
+
+-- ---------------------------------------------------------------------
+-- * LoggerT
+
+newtype LoggerT m a =
+    LoggerT { getLoggerT :: ReaderT (LogAction m LogMessage) m a }
+    deriving (Functor, Applicative, Monad)
+    deriving (MonadIO)
+
+instance MonadTrans LoggerT where
+    lift = LoggerT . Monad.Trans.lift
+    {-# INLINE lift #-}
+
+instance Monad m => WithLog LogMessage (LoggerT m) where
+    askLogAction = LoggerT . fmap liftLogAction $ ask
+    {-# INLINE askLogAction #-}
+
+    localLogAction locally = LoggerT . local locally . getLoggerT
+    {-# INLINE localLogAction #-}
