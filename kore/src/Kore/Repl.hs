@@ -95,24 +95,24 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState claim axiom -> m ()
+    runReplCommand :: ReplCommand -> ReplState claim -> m ()
     runReplCommand cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> RWST (Config claim axiom m) String (ReplState claim axiom) m ()
+    evaluateScript :: ReplScript -> RWST (Config claim m) String (ReplState claim) m ()
     evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
 
-    repl0 :: ReaderT (Config claim axiom m) (StateT (ReplState claim axiom) m) ()
+    repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
     repl0 = do
         str <- prompt
         let command = fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState claim axiom
+    state :: ReplState claim
     state =
         ReplState
             { axioms     = addIndexesToAxioms axioms'
@@ -130,7 +130,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , logging    = (Logger.Debug, NoLogging)
             }
 
-    config :: Config claim axiom m
+    config :: Config claim m
     config =
         Config
             { stepper    = stepper0
@@ -220,7 +220,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO n => MonadState (ReplState claim axiom) n => n String
+    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
     prompt = do
         node <- Lens.use (field @"node")
         liftIO $ do
