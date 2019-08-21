@@ -12,13 +12,22 @@ module Kore.Attribute.Axiom.Concrete
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 {- | @Concrete@ represents the @concrete@ attribute for axioms.
  -}
 newtype Concrete = Concrete { isConcrete :: Bool }
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic Concrete
+
+instance SOP.HasDatatypeInfo Concrete
+
+instance Debug Concrete
 
 instance NFData Concrete
 
