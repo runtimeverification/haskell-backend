@@ -31,7 +31,7 @@ pipeline {
         '''
       }
     }
-    stage('Stages') {
+    stage('Build') {
       failFast true
       parallel {
         stage('Documentation') {
@@ -53,38 +53,37 @@ pipeline {
             }
           }
         }
-        stage('Integration Tests') {
-          stages {
+        stage('Executables') {
+          steps {
+            sh '''
+              ./scripts/kore-exec.sh
+            '''
+          }
+        }
+      }
+    }
+    stage('Integration') {
+      failFast true
+      parallel {
+        stage('K') {
+          options {
+            timeout(time: 18, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/ktest.sh
+            '''
+          }
+        }
 
-            stage('Build test runner') {
-              steps {
-                sh '''
-                  ./scripts/kore-exec.sh
-                '''
-              }
-            }
-
-            stage('K') {
-              options {
-                timeout(time: 18, unit: 'MINUTES')
-              }
-              steps {
-                sh '''
-                  ./scripts/ktest.sh
-                '''
-              }
-            }
-
-            stage('KEVM') {
-              options {
-                timeout(time: 18, unit: 'MINUTES')
-              }
-              steps {
-                sh '''
-                  ./scripts/kevm-integration.sh
-                '''
-              }
-            }
+        stage('KEVM') {
+          options {
+            timeout(time: 18, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/kevm-integration.sh
+            '''
           }
         }
       }
