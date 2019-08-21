@@ -17,7 +17,7 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
                  makeIffPredicate, makeTruePredicate )
 import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -27,7 +27,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 import qualified Test.Terse as Terse
@@ -202,7 +201,7 @@ simplify iff0 =
     $ evalSimplifier mockEnv
     $ Iff.simplify iff0
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
 
 makeEvaluate
     :: Pattern Variable
