@@ -279,7 +279,7 @@ type Builtin = Domain.Builtin (TermLike Concrete)
 data TermLikeF variable child
     = AndF           !(And Sort child)
     | ApplySymbolF   !(Application Symbol child)
-    | ApplyAliasF    !(Application Alias child)
+    | ApplyAliasF    !(Application (Alias (TermLike Variable)) child)
     | BottomF        !(Bottom Sort child)
     | CeilF          !(Ceil Sort child)
     | DomainValueF   !(DomainValue Sort child)
@@ -1077,7 +1077,7 @@ See also: 'applyAlias', 'applySymbol'
 mkApplyAlias
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack
-    => Alias
+    => Alias (TermLike Variable)
     -- ^ Application symbol or alias
     -> [TermLike variable]
     -- ^ Application arguments
@@ -1129,7 +1129,7 @@ See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
 applyAlias
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack
-    => SentenceAlias (TermLike variable)
+    => SentenceAlias (TermLike Variable)
     -- ^ 'Alias' declaration
     -> [Sort]
     -- ^ 'Alias' sort parameters
@@ -1149,6 +1149,12 @@ applyAlias sentence params children =
             , aliasSorts =
                 symbolOrAliasSorts params sentence
                 & assertRight
+            , aliasLeft =
+                fmap getElementVariable
+                . applicationChildren
+                . sentenceAliasLeftPattern
+                $ sentence
+            , aliasRight = sentenceAliasRightPattern sentence
             }
     substitution = sortSubstitution aliasParams params
     childSorts = substituteSortVariables substitution <$> sentenceAliasSorts
@@ -1185,7 +1191,7 @@ applyAlias_
         , Unparse variable
         , GHC.HasCallStack
         )
-    => SentenceAlias (TermLike variable)
+    => SentenceAlias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable
 applyAlias_ sentence = applyAlias sentence []
@@ -1818,7 +1824,7 @@ pattern App_
     -> TermLike variable
 
 pattern ApplyAlias_
-    :: Alias
+    :: Alias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable
 

@@ -115,7 +115,7 @@ lookupSortDeclaration sortId = do
 
 lookupAlias
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier Internal.Alias
+    ->  MaybeT PatternVerifier (Internal.Alias patternType)
 lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
@@ -550,7 +550,7 @@ verifyApplyAlias
     ->  Application SymbolOrAlias (PatternVerifier child)
     ->  MaybeT PatternVerifier
             (CofreeF
-                (Application Internal.Alias)
+                (Application (Internal.Alias patternType))
                 (Attribute.Pattern Variable)
                 child
             )
