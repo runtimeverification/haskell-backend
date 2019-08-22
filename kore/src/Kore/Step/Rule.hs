@@ -399,6 +399,9 @@ wEF sort = Alias
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
         }
+    , aliasLeft = []
+    , aliasRight =
+        mkElemVar $ elemVarS "X" sort
     }
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
