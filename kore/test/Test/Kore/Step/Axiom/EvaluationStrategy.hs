@@ -18,7 +18,7 @@ import           Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..) )
 import           Kore.Internal.Predicate as Predicate
-                 ( topTODO )
+                 ( top )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeNotPredicate,
@@ -517,7 +517,7 @@ evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
         patternSimplifier
         Map.empty
         patt
-        Predicate.topTODO
+        Predicate.top
   where
     substitutionSimplifier = Predicate.create
     patternSimplifier = Simplifier.create

@@ -20,6 +20,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
                  ( Conditional (..), Pattern, bottom )
 import qualified Kore.Internal.Predicate as Predicate
+                 ( top )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
@@ -302,7 +303,7 @@ evaluateWithAxiom axiom simplifier patt =
             simplifier
             Map.empty
             patt
-            Predicate.topTODO
+            Predicate.top
     mockEnv =
         Mock.env
             { simplifierTermLike = simplifier
