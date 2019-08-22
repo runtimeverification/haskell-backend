@@ -27,6 +27,7 @@ import           Control.Monad.Trans.Maybe
                  ( MaybeT )
 import           Data.Functor.Identity
                  ( Identity )
+import qualified Data.List as List
 import           Debug.Trace.String
                  ( traceEventIO )
 import           System.Clock
@@ -121,9 +122,9 @@ profileDurationEvent tags action = do
 profileDurationStartStop
     :: MonadIO profiler => [String] -> profiler a -> profiler a
 profileDurationStartStop event action = do
-    liftIO $ traceEventIO ("START " ++ show event)
+    liftIO $ traceEventIO ("START " ++ List.intercalate "/" event)
     a <- action
-    liftIO $ traceEventIO ("STOP " ++ show event)
+    liftIO $ traceEventIO ("STOP " ++ List.intercalate "/" event)
     return a
 
 instance (MonadProfiler m) => MonadProfiler (ReaderT thing m )
