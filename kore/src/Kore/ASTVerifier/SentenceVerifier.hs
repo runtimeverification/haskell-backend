@@ -323,7 +323,7 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
                 PatternVerifier.Context
                     { builtinDomainValueVerifiers =
                         Builtin.domainValueVerifiers builtinVerifiers
-                    , indexedModule =
+                    , indexedModule = indexedModule
                         IndexedModule.eraseAxiomAttributes
                         $ IndexedModule.erasePatterns indexedModule
                     , declaredSortVariables = variables
