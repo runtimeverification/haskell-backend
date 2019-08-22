@@ -32,12 +32,10 @@ import           Kore.IndexedModule.IndexedModule
 import           Kore.Internal.TermLike
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( definitionEvaluation, firstFullEvaluation,
-                 simplifierWithFallback )
+                 simplificationEvaluation, simplifierWithFallback )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Axiom.UserDefined
-                 ( equalityRuleEvaluator )
 import           Kore.Step.Rule
                  ( EqualityRule (EqualityRule),
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
@@ -137,13 +135,7 @@ axiomPatternsToEvaluators =
                 Simplification { isSimplification } =
                     Attribute.simplification attributes
         simplification :: [BuiltinAndAxiomSimplifier]
-        simplification = mkSimplifier <$> simplifications
-          where
-            mkSimplifier
-                :: EqualityRule Variable
-                -> BuiltinAndAxiomSimplifier
-            mkSimplifier simpl =
-                BuiltinAndAxiomSimplifier $ equalityRuleEvaluator simpl
+        simplification = simplificationEvaluation <$> simplifications
         simplificationEvaluator =
             if null simplification
                 then Nothing
