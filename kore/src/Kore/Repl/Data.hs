@@ -62,17 +62,15 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
+import           Kore.Goal
 import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Logger.Output as Logger
-import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( Axiom (..) )
+                 ( CommonProofState )
 import           Kore.Profiler.Data
                  ( MonadProfiler )
-import           Kore.Step.Rule
-                 ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
@@ -365,17 +363,17 @@ shouldStore =
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph =
+type ExecutionGraph rule =
     Strategy.ExecutionGraph
-        CommonStrategyPattern
-        (RewriteRule Variable)
+        CommonProofState
+        rule
 
-type InnerGraph =
-    Gr CommonStrategyPattern (Seq (RewriteRule Variable))
+type InnerGraph rule =
+    Gr CommonProofState (Seq rule)
 
 -- | State for the repl.
 data ReplState claim = ReplState
-    { axioms     :: [Axiom]
+    { axioms     :: [Rule claim]
     -- ^ List of available axioms
     , claims     :: [claim]
     -- ^ List of claims to be proven
@@ -383,7 +381,7 @@ data ReplState claim = ReplState
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex ExecutionGraph
+    , graphs     :: Map ClaimIndex (ExecutionGraph (Rule claim))
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -405,10 +403,10 @@ data Config claim m = Config
     { stepper
         :: claim
         -> [claim]
-        -> [Axiom]
-        -> ExecutionGraph
+        -> [Rule claim]
+        -> ExecutionGraph (Rule claim)
         -> ReplNode
-        -> m ExecutionGraph
+        -> m (ExecutionGraph (Rule claim))
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: TermLike Variable

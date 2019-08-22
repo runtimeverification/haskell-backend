@@ -22,13 +22,22 @@ module Kore.Attribute.Simplification
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 {- | @Simplification@ represents the @simplification@ attribute for axioms.
  -}
 newtype Simplification = Simplification { isSimplification :: Bool }
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic Simplification
+
+instance SOP.HasDatatypeInfo Simplification
+
+instance Debug Simplification
 
 instance NFData Simplification
 

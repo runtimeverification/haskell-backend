@@ -12,13 +12,22 @@ module Kore.Attribute.Idem
     ) where
 
 import qualified Control.Monad as Monad
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 {- | @Idem@ represents the @idem@ attribute for axioms.
  -}
 newtype Idem = Idem { isIdem :: Bool }
-    deriving (Eq, Ord, Show, Generic)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic Idem
+
+instance SOP.HasDatatypeInfo Idem
+
+instance Debug Idem
 
 instance NFData Idem
 

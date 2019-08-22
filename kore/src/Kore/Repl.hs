@@ -43,6 +43,7 @@ import           Text.Megaparsec
                  ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.Goal
 import qualified Kore.Logger as Logger
 import           Kore.OnePath.Verification
 import           Kore.Repl.Data
@@ -61,12 +62,13 @@ import           Kore.Unification.Procedure
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall claim m
+    :: forall claim axiom m
     .  MonadSimplify m
     => MonadIO m
     => MonadCatch m
     => Claim claim
-    => [Axiom]
+    => axiom ~ Rule claim
+    => [axiom]
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
@@ -144,10 +146,10 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         $ findIndex (not . isTrusted) claims'
 
     addIndexesToAxioms
-        :: [Axiom]
-        -> [Axiom]
+        :: [axiom]
+        -> [axiom]
     addIndexesToAxioms axs =
-        fmap (Axiom . addIndex) (zip (fmap unAxiom axs) [0..])
+        fmap addIndex (zip axs [0..])
 
     addIndexesToClaims
         :: Int
@@ -155,24 +157,28 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> [claim]
     addIndexesToClaims len cls =
         fmap
-            (coerce . Rule.getRewriteRule . addIndex)
-            (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
+            (coerce . addIndex)
+            (zip (fmap coerce cls) [len..])
 
     addIndex
-        :: (Rule.RewriteRule Variable, Int)
-        -> Rule.RewriteRule Variable
+        :: (axiom, Int)
+        -> axiom
     addIndex (rw, n) =
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
         :: Attribute.Axiom
-        -> Rule.RewriteRule Variable
-        -> Rule.RewriteRule Variable
-    modifyAttribute att (Rule.RewriteRule rp) =
-        Rule.RewriteRule $ rp { Rule.attributes = att }
+        -> axiom
+        -> axiom
+    modifyAttribute att rule =
+        let rp = axiomToRulePatt rule in
+            coerce $ rp { Rule.attributes = att }
 
-    getAttribute :: Rule.RewriteRule Variable -> Attribute.Axiom
-    getAttribute = Rule.attributes . Rule.getRewriteRule
+    axiomToRulePatt :: axiom -> Rule.RulePattern Variable
+    axiomToRulePatt = coerce
+
+    getAttribute :: axiom -> Attribute.Axiom
+    getAttribute = Rule.attributes . axiomToRulePatt
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
     mapAttribute n attr =
@@ -185,16 +191,16 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     firstClaim =
         claims' !! unClaimIndex firstClaimIndex
 
-    firstClaimExecutionGraph :: ExecutionGraph
+    firstClaimExecutionGraph :: ExecutionGraph axiom
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
         :: claim
         -> [claim]
-        -> [Axiom]
-        -> ExecutionGraph
+        -> [axiom]
+        -> ExecutionGraph axiom
         -> ReplNode
-        -> m ExecutionGraph
+        -> m (ExecutionGraph axiom)
     stepper0 claim claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0

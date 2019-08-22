@@ -31,6 +31,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
+import           Kore.Goal
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -38,7 +39,7 @@ import           Kore.Internal.TermLike
                  ( TermLike, elemVarS, mkBottom_, mkElemVar )
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
-                 ( Axiom (..), verifyClaimStep )
+                 ( verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
@@ -60,6 +61,7 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 
 type Claim = OnePathRule Variable
+type Axiom = Rule (OnePathRule Variable)
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
@@ -653,7 +655,9 @@ mkState axioms claims claim =
   where
     graph' = emptyExecutionGraph claim
 
-mkConfig :: MVar (Logger.LogAction IO Logger.LogMessage) -> Config Claim Simplifier
+mkConfig
+    :: MVar (Logger.LogAction IO Logger.LogMessage)
+    -> Config Claim Simplifier
 mkConfig logger =
     Config
         { stepper     = stepper0
@@ -662,6 +666,13 @@ mkConfig logger =
         , outputFile  = OutputFile Nothing
         }
   where
+    stepper0
+        :: Claim
+        -> [Claim]
+        -> [Axiom]
+        -> ExecutionGraph Axiom
+        -> ReplNode
+        -> Simplifier (ExecutionGraph Axiom)
     stepper0 claim' claims' axioms' graph (ReplNode node) =
         verifyClaimStep claim' claims' axioms' graph node
 

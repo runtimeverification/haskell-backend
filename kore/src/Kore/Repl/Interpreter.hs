@@ -84,6 +84,7 @@ import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import qualified Kore.Attribute.Label as AttrLabel
 import           Kore.Attribute.RuleIndex
+import           Kore.Goal
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Pattern
@@ -93,19 +94,13 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
-import           Kore.OnePath.StrategyPattern
-                 ( CommonStrategyPattern,
-                 StrategyPatternTransformer (StrategyPatternTransformer),
-                 strategyPattern )
-import qualified Kore.OnePath.StrategyPattern as StrategyPatternTransformer
-                 ( StrategyPatternTransformer (..) )
 import           Kore.OnePath.Verification
-                 ( Axiom (..), Claim, isTrusted )
+                 ( Claim, CommonProofState )
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.State
 import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (..) )
+                 ( RulePattern (..) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
                  ( attributes )
@@ -118,7 +113,7 @@ import qualified Kore.Syntax.Id as Id
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser
-                 ( unparse, unparseToString )
+                 ( Unparse, unparse, unparseToString )
 import           Numeric.Natural
 import           System.Directory
                  ( doesDirectoryExist, doesFileExist, findExecutable )
@@ -135,7 +130,8 @@ import           Text.Megaparsec
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
 -- rid of the WriterT part of the stack. This happens in the implementation of
 -- 'replInterpreter'.
-type ReplM claim m a = RWST (Config claim m) ReplOutput (ReplState claim) m a
+type ReplM claim m a =
+    RWST (Config claim m) ReplOutput (ReplState claim) m a
 
 data ReplStatus = Continue | SuccessStop | FailStop
     deriving (Eq, Show)
@@ -291,6 +287,10 @@ showClaim =
 -- | Prints an axiom using an index in the axioms list.
 showAxiom
     :: MonadState (ReplState claim) m
+    => axiom ~ Rule claim
+    => Coercible axiom (RulePattern Variable)
+    => Coercible (RulePattern Variable) axiom
+    => Unparse axiom
     => MonadWriter ReplOutput m
     => Either AxiomIndex RuleName
     -- ^ index in the axioms list
@@ -502,8 +502,9 @@ proofStatus = do
     putStrLn' . showProofStatus $ proofs
 
 allProofs
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => Monad m
     => ReplM claim m (Map.Map ClaimIndex GraphProofStatus)
 allProofs = do
@@ -516,7 +517,7 @@ allProofs = do
             (notStartedProofs graphs (Map.fromList $ zip cindexes claims))
   where
     inProgressProofs
-        :: ExecutionGraph
+        :: ExecutionGraph axiom
         -> GraphProofStatus
     inProgressProofs =
         findProofStatus
@@ -525,7 +526,7 @@ allProofs = do
 
     notStartedProofs
         :: Claim claim
-        => Map.Map ClaimIndex ExecutionGraph
+        => Map.Map ClaimIndex (ExecutionGraph axiom)
         -> Map.Map ClaimIndex claim
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
@@ -558,13 +559,13 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex rule
+            let ruleIndex = getRuleIndex . coerce $ rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
   where
-    getRuleIndex :: RewriteRule Variable -> Attribute.RuleIndex
-    getRuleIndex = Attribute.identifier . Rule.attributes . Rule.getRewriteRule
+    getRuleIndex :: RulePattern Variable -> Attribute.RuleIndex
+    getRuleIndex = Attribute.identifier . Rule.attributes
 
 -- | Shows the previous branching point.
 showPrecBranch
@@ -728,8 +729,9 @@ tryFAxiomClaim
 tryFAxiomClaim = tryAxiomClaimWorker IfPossible
 
 tryAxiomClaimWorker
-    :: forall claim m
+    :: forall claim axiom m
     .  Claim claim
+    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => AlsoApplyRule
@@ -754,7 +756,7 @@ tryAxiomClaimWorker mode ref = do
                    tryForceAxiomOrClaim axiomOrClaim node
   where
     showUnificationFailure
-        :: Either Axiom claim
+        :: Either axiom claim
         -> ReplNode
         -> ReplM claim m ()
     showUnificationFailure axiomOrClaim' node = do
@@ -763,16 +765,16 @@ tryAxiomClaimWorker mode ref = do
         case maybeSecond of
             Nothing -> putStrLn' "Unexpected error getting current config."
             Just (_, second) ->
-                strategyPattern
-                    StrategyPatternTransformer
-                        { bottomValue        = putStrLn' "Cannot unify bottom"
-                        , rewriteTransformer = runUnifier' first . term
-                        , stuckTransformer   = runUnifier' first . term
+                proofState
+                    ProofStateTransformer
+                        { provenValue        = putStrLn' "Cannot unify bottom"
+                        , goalTransformer    = runUnifier' first . term
+                        , goalRemTransformer = runUnifier' first . term
                         }
                     second
 
     tryForceAxiomOrClaim
-        :: Either Axiom claim
+        :: Either axiom claim
         -> ReplNode
         -> ReplM claim m ()
     tryForceAxiomOrClaim axiomOrClaim node = do
@@ -798,14 +800,15 @@ tryAxiomClaimWorker mode ref = do
         runUnifier first second
         >>= tell . formatUnificationMessage
 
-    extractLeftPattern :: Either Axiom claim -> TermLike Variable
-    extractLeftPattern = left . getRewriteRule . either unAxiom coerce
+    extractLeftPattern :: Either axiom claim -> TermLike Variable
+    extractLeftPattern = left . either coerce coerce
 
 -- | Removes specified node and all its child nodes.
 clear
-    :: forall m claim
+    :: forall m claim axiom
     .  MonadState (ReplState claim) m
     => Claim claim
+    => axiom ~ Rule claim
     => MonadWriter ReplOutput m
     => Maybe ReplNode
     -- ^ 'Nothing' for current node, or @Just n@ for a specific node identifier
@@ -828,19 +831,18 @@ clear =
         field @"node" .= ReplNode (prevNode graph' node)
         putStrLn' $ "Removed " <> show (length nodesToBeRemoved) <> " node(s)."
 
-    next :: InnerGraph -> Graph.Node -> [Graph.Node]
+    next :: InnerGraph axiom -> Graph.Node -> [Graph.Node]
     next gr n = fst <$> Graph.lsuc gr n
 
     collect :: (a -> [a]) -> a -> [a]
     collect f x = x : [ z | y <- f x, z <- collect f y]
 
-    prevNode :: InnerGraph -> Graph.Node -> Graph.Node
+    prevNode :: InnerGraph axiom -> Graph.Node -> Graph.Node
     prevNode graph = fromMaybe 0 . listToMaybe . fmap fst . Graph.lpre graph
 
 -- | Save this sessions' commands to the specified file.
 saveSession
-    :: forall m
-    .  forall claim
+    :: forall m claim
     .  MonadState (ReplState claim) m
     => MonadWriter ReplOutput m
     => MonadIO m
@@ -1009,11 +1011,12 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
+    => axiom ~ Rule claim
     => Monad m
     => Natural
-    -> ExecutionGraph
+    -> ExecutionGraph axiom
     -> ReplNode
-    -> ReplM claim m ExecutionGraph
+    -> ReplM claim m (ExecutionGraph axiom)
 recursiveForcedStep n graph node
   | n == 0    = return graph
   | otherwise = do
@@ -1027,37 +1030,38 @@ recursiveForcedStep n graph node
 
 -- | Display a rule as a String.
 showRewriteRule
-    :: Coercible (RewriteRule Variable) rule
+    :: Coercible (RulePattern Variable) rule
+    => Unparse rule
     => rule
     -> ReplOutput
 showRewriteRule rule =
-    makeKoreReplOutput (unparseToString rule')
+    makeKoreReplOutput (unparseToString rule)
     <> makeAuxReplOutput
         (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
     rule' = coerce rule
 
     extractSourceAndLocation
-        :: RewriteRule Variable
+        :: RulePattern Variable
         -> SourceLocation
     extractSourceAndLocation
-        (RewriteRule RulePattern { Axiom.attributes }) =
+        (RulePattern { Axiom.attributes }) =
             Attribute.sourceLocation attributes
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy
     :: Set String
     -- ^ omit list
-    -> CommonStrategyPattern
+    -> CommonProofState
     -- ^ pattern
     -> ReplOutput
 unparseStrategy omitList =
-    strategyPattern StrategyPatternTransformer
-        { rewriteTransformer = makeKoreReplOutput . unparseToString . fmap hide
-        , stuckTransformer = \pat ->
+    proofState ProofStateTransformer
+        { goalTransformer = makeKoreReplOutput . unparseToString . fmap hide
+        , goalRemTransformer = \pat ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseToString $ fmap hide pat)
-        , bottomValue = makeAuxReplOutput "Reached bottom"
+        , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
     hide :: TermLike Variable -> TermLike Variable
@@ -1094,12 +1098,16 @@ printNotFound = putStrLn' "Variable or index not found"
 -- | Shows the 'dot' graph. This currently only works on Linux. The 'Int'
 -- parameter is needed in order to distinguish between axioms and claims and
 -- represents the number of available axioms.
-showDotGraph :: Int -> InnerGraph -> IO ()
+showDotGraph
+    :: Coercible axiom (RulePattern Variable)
+    => Int -> InnerGraph axiom -> IO ()
 showDotGraph len =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
 
-saveDotGraph :: Int -> InnerGraph -> FilePath -> IO ()
+saveDotGraph
+    :: Coercible axiom (RulePattern Variable)
+    => Int -> InnerGraph axiom -> FilePath -> IO ()
 saveDotGraph len gr file =
     withExistingDirectory file saveGraphImg
   where
@@ -1111,13 +1119,14 @@ saveDotGraph len gr file =
         $ path <> ".jpeg"
 
 graphParams
-    :: Int
+    :: Coercible axiom (RulePattern Variable)
+    => Int
     -> Graph.GraphvizParams
          Graph.Node
-         CommonStrategyPattern
-         (Seq (RewriteRule Variable))
+         CommonProofState
+         (Seq axiom)
          ()
-         CommonStrategyPattern
+         CommonProofState
 graphParams len = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
         [Graph.textLabel (ruleIndex l len)]

@@ -4,10 +4,10 @@ set -exuo pipefail
 
 TOP=${TOP:-$(git rev-parse --show-toplevel)}
 EVM_SEMANTICS=$TOP/evm-semantics
-OPAM_SETUP_SKIP="${OPAM_SETUP_SKIP:-false}"
+OPAM_SETUP_SKIP="${OPAM_SETUP_SKIP:-true}"
 
 # Prefer to use Kore master
-PATH=$(stack path --local-install-root)/bin"${PATH:+:}$PATH"
+PATH="$TOP/.build/kore/bin${PATH:+:}$PATH"
 export PATH
 rm -f .build/k/bin/kore-*
 
