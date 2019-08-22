@@ -5,7 +5,7 @@ License     : NCSA
 module Kore.Profiler.Data
     ( MonadProfiler (..)
     , profileDurationEvent
-    , profileDurationStartEnd
+    , profileDurationStartStop
     , ProfileEvent (..)
     , Configuration (..)
     ) where
@@ -118,12 +118,12 @@ profileDurationEvent tags action = do
 
 {- Times an action in the format required by @ghc-events-analyze@.
 -}
-profileDurationStartEnd
+profileDurationStartStop
     :: MonadIO profiler => [String] -> profiler a -> profiler a
-profileDurationStartEnd event action = do
+profileDurationStartStop event action = do
     liftIO $ traceEventIO ("START " ++ show event)
     a <- action
-    liftIO $ traceEventIO ("END " ++ show event)
+    liftIO $ traceEventIO ("STOP " ++ show event)
     return a
 
 instance (MonadProfiler m) => MonadProfiler (ReaderT thing m )
