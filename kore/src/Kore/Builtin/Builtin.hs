@@ -248,7 +248,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure NotApplicable
+    notImplemented0 _ _ _ _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 

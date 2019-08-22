@@ -27,6 +27,8 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
@@ -101,9 +103,10 @@ totalDefinitionEvaluation rules =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
+        -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker _ _ _ term = do
-        result <- evaluateAxioms rules term
+    totalDefinitionEvaluationWorker _ _ _ term predicate = do
+        result <- evaluateAxioms rules term predicate
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
@@ -147,6 +150,7 @@ builtinEvaluation evaluator =
         simplifier
         axiomIdToSimplifier
         patt
+        predicate
       = do
         result <-
             builtinEvaluator
@@ -154,6 +158,7 @@ builtinEvaluation evaluator =
                 simplifier
                 axiomIdToSimplifier
                 patt
+                predicate
         case result of
             AttemptedAxiom.NotApplicable
               | App_ appHead children <- patt
@@ -185,8 +190,9 @@ applyFirstSimplifierThatWorks
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
@@ -195,9 +201,15 @@ applyFirstSimplifierThatWorks
     simplifier
     axiomIdToSimplifier
     patt
+    predicate
   = do
     applicationResult <-
-        evaluator substitutionSimplifier simplifier axiomIdToSimplifier patt
+        evaluator
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            patt
+            predicate
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -250,3 +262,4 @@ applyFirstSimplifierThatWorks
                 simplifier
                 axiomIdToSimplifier
                 patt
+                predicate
