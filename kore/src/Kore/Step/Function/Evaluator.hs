@@ -40,6 +40,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
+                 ( topTODO )
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
@@ -175,6 +177,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                 simplifier
                 axiomIdToEvaluator
                 termLike
+                Predicate.topTODO
         flattened <- case result of
             AttemptedAxiom.NotApplicable ->
                 return AttemptedAxiom.NotApplicable
@@ -340,10 +343,14 @@ evaluateOnce
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
+    -- ^ The predicate from the configuration
     -> MaybeT (BranchT simplifier) (Pattern variable)
 evaluateOnce predicate termLike = do
     simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
-    result <- Simplifier.runBuiltinAndAxiomSimplifier simplifierAxiom termLike
+    result <- Simplifier.runBuiltinAndAxiomSimplifier
+        simplifierAxiom
+        termLike
+        Predicate.topTODO
     case result of
         AttemptedAxiom.NotApplicable -> empty
         AttemptedAxiom.Applied attemptedAxiomResults ->

@@ -16,6 +16,8 @@ import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
@@ -49,10 +51,12 @@ evaluateAxioms
         )
     => [EqualityRule Variable]
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
 evaluateAxioms
     definitionRules
     patt
+    _
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete patt)
   = return AttemptedAxiom.NotApplicable
