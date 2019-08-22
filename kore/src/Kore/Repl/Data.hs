@@ -62,6 +62,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
+import           Kore.Goal
 import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -371,8 +372,8 @@ type InnerGraph rule =
     Gr CommonProofState (Seq rule)
 
 -- | State for the repl.
-data ReplState claim axiom = ReplState
-    { axioms     :: [axiom]
+data ReplState claim = ReplState
+    { axioms     :: [Rule claim]
     -- ^ List of available axioms
     , claims     :: [claim]
     -- ^ List of claims to be proven
@@ -380,7 +381,7 @@ data ReplState claim axiom = ReplState
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph axiom)
+    , graphs     :: Map ClaimIndex (ExecutionGraph (Rule claim))
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -398,14 +399,14 @@ data ReplState claim axiom = ReplState
     deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config claim axiom m = Config
+data Config claim m = Config
     { stepper
         :: claim
         -> [claim]
-        -> [axiom]
-        -> ExecutionGraph axiom
+        -> [Rule claim]
+        -> ExecutionGraph (Rule claim)
         -> ReplNode
-        -> m (ExecutionGraph axiom)
+        -> m (ExecutionGraph (Rule claim))
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: TermLike Variable

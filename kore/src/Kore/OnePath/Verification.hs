@@ -254,7 +254,7 @@ transitionRule'
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' destination prim state = do
-    let goal = makeRuleFromPatterns <$> state <*> pure destination
+    let goal = (flip makeRuleFromPatterns) destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next
 
