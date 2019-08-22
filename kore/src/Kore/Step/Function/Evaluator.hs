@@ -343,15 +343,14 @@ evaluateOnce
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -- -> Predicate variable
     -- ^ The predicate from the configuration
     -> MaybeT (BranchT simplifier) (Pattern variable)
-evaluateOnce predicate termLike {-configurationPredicate-} = do
+evaluateOnce predicate termLike = do
     simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
     result <- Simplifier.runBuiltinAndAxiomSimplifier
         simplifierAxiom
         termLike
-        Predicate.topTODO -- configurationPredicate
+        Predicate.topTODO
     case result of
         AttemptedAxiom.NotApplicable -> empty
         AttemptedAxiom.Applied attemptedAxiomResults ->

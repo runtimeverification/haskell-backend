@@ -41,6 +41,7 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -629,11 +630,12 @@ simplify =
 evaluateWith
     :: BuiltinAndAxiomSimplifier
     -> TermLike Variable
+    -> Predicate Variable
     -> IO CommonAttemptedAxiom
-evaluateWith simplifier patt =
+evaluateWith simplifier patt predicate =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier patt
+    $ runBuiltinAndAxiomSimplifier simplifier patt predicate
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -644,7 +646,7 @@ withApplied
     -> TestTree
 withApplied check comment rules term =
     testCase comment $ do
-        actual <- evaluateWith (definitionEvaluation rules) term
+        actual <- evaluateWith (definitionEvaluation rules) term Predicate.top
         check actual
 
 applies, notApplies

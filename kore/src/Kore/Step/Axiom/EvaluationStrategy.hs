@@ -27,9 +27,6 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Pattern )
-import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate
                  ( Predicate )
 import           Kore.Internal.Symbol
@@ -108,8 +105,8 @@ totalDefinitionEvaluation rules =
         -> TermLike variable
         -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker _ _ _ term pred = do
-        result <- evaluateAxioms rules term pred
+    totalDefinitionEvaluationWorker _ _ _ term predicate = do
+        result <- evaluateAxioms rules term predicate
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
@@ -153,7 +150,7 @@ builtinEvaluation evaluator =
         simplifier
         axiomIdToSimplifier
         patt
-        pred
+        predicate
       = do
         result <-
             builtinEvaluator
@@ -161,7 +158,7 @@ builtinEvaluation evaluator =
                 simplifier
                 axiomIdToSimplifier
                 patt
-                pred
+                predicate
         case result of
             AttemptedAxiom.NotApplicable
               | App_ appHead children <- patt
@@ -265,4 +262,4 @@ applyFirstSimplifierThatWorks
                 simplifier
                 axiomIdToSimplifier
                 patt
-                pred
+                predicate
