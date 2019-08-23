@@ -614,12 +614,12 @@ verifyApplication getChildAttributes application = do
 
     ensureChildIsElementVar
         :: PatternVerifier Verified.Pattern
-        -> MaybeT PatternVerifier ()
+        -> PatternVerifier ()
     ensureChildIsElementVar ver = do
-        pat <- Trans.lift ver
+        pat <- ver
         case pat of
             Internal.ElemVar_ _ -> pure ()
-            _ -> empty
+            _ -> koreFailText "Child is not an element variable."
 
     verifyApplyAlias'
         :: MaybeT
@@ -630,7 +630,7 @@ verifyApplication getChildAttributes application = do
                 Verified.Pattern
             )
     verifyApplyAlias' = do
-        Foldable.traverse_ ensureChildIsElementVar applicationChildren
+        Trans.lift $ Foldable.traverse_ ensureChildIsElementVar applicationChildren
         transCofreeF Internal.ApplyAliasF
             <$> verifyApplyAlias getChildAttributes application
     verifyApplySymbol' =
