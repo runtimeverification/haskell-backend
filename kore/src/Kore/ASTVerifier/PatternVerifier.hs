@@ -605,7 +605,16 @@ verifyApplication
     ->  Application SymbolOrAlias (PatternVerifier Verified.Pattern)
     ->  PatternVerifier (Base (TermLike Variable) Verified.Pattern)
 verifyApplication getChildAttributes application = do
-    result <- verifyApplyAlias' <|> verifyApplySymbol' & runMaybeT
+    -- TODO(Vladimir): it is unfortunate that the ordering is important here.
+    -- The reason is because we use `MaybeT` to signal whether it's a symbol
+    -- or alias, but within it is an `Either` that contains the error.
+    --
+    -- However, we want to return the actual error from applying an alias,
+    -- so we sometimes get a `Just (Left error)` instead of `Nothing`.
+    --
+    -- What we mean is: if symbol works, that's all we need. If not,
+    -- then if alias doesn't work, we want to retain that error.
+    result <-  verifyApplySymbol' <|> verifyApplyAlias' & runMaybeT
     maybe (koreFail . noHead $ applicationSymbolOrAlias) return result
   where
     Application { applicationSymbolOrAlias, applicationChildren }
@@ -633,6 +642,7 @@ verifyApplication getChildAttributes application = do
         Trans.lift $ Foldable.traverse_ ensureChildIsElementVar applicationChildren
         transCofreeF Internal.ApplyAliasF
             <$> verifyApplyAlias getChildAttributes application
+
     verifyApplySymbol' =
         transCofreeF Internal.ApplySymbolF
         <$> verifyApplySymbol getChildAttributes application
