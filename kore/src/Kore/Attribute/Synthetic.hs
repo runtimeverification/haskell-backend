@@ -24,7 +24,7 @@ import Generically
 
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 
-@Synthetic base syn@ allows synthesizing @syn@ given a @'Cofree' base@ tree;
+@Synthetic syn base@ allows synthesizing @syn@ given a @'Cofree' base@ tree;
 that is, a 'Cofree' tree with branching described by a @'Functor' base@.
 
  -}

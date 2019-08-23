@@ -606,13 +606,33 @@ verifyApplication
     ->  PatternVerifier (Base (TermLike Variable) Verified.Pattern)
 verifyApplication getChildAttributes application = do
     result <- verifyApplyAlias' <|> verifyApplySymbol' & runMaybeT
-    maybe (koreFail . noHead $ symbolOrAlias) return result
+    maybe (koreFail . noHead $ applicationSymbolOrAlias) return result
   where
-    symbolOrAlias = applicationSymbolOrAlias application
+    Application { applicationSymbolOrAlias, applicationChildren }
+        = application
     transCofreeF fg (a :< fb) = a :< fg fb
-    verifyApplyAlias' =
+
+    ensureChildIsElementVar
+        :: PatternVerifier Verified.Pattern
+        -> MaybeT PatternVerifier ()
+    ensureChildIsElementVar ver = do
+        pat <- Trans.lift ver
+        case pat of
+            Internal.ElemVar_ _ -> pure ()
+            _ -> empty
+
+    verifyApplyAlias'
+        :: MaybeT
+            PatternVerifier
+            (CofreeF
+                (Internal.TermLikeF Variable)
+                (Attribute.Pattern Variable)
+                Verified.Pattern
+            )
+    verifyApplyAlias' = do
+        Foldable.traverse_ ensureChildIsElementVar applicationChildren
         transCofreeF Internal.ApplyAliasF
-        <$> verifyApplyAlias getChildAttributes application
+            <$> verifyApplyAlias getChildAttributes application
     verifyApplySymbol' =
         transCofreeF Internal.ApplySymbolF
         <$> verifyApplySymbol getChildAttributes application
