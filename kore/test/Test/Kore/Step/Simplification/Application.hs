@@ -13,6 +13,8 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate as Predicate
+                 ( top )
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
@@ -306,6 +308,6 @@ evaluate
 evaluate axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ simplify application
+    $ simplify application Predicate.top
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToEvaluator }

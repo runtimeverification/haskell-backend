@@ -138,6 +138,7 @@ simplify
         , MonadSimplify simplifier
         )
     => Equals Sort (OrPattern variable)
+    -> Predicate variable
     -> simplifier (OrPattern variable)
 simplify Equals { equalsFirst = first, equalsSecond = second } =
     simplifyEvaluated first second
@@ -164,24 +165,26 @@ simplifyEvaluated
         )
     => OrPattern variable
     -> OrPattern variable
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated first second
+simplifyEvaluated first second predicate
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise = do
     let isFunctionConditional Conditional {term} = isFunctionPattern term
     case (firstPatterns, secondPatterns) of
-        ([firstP], [secondP]) -> makeEvaluate firstP secondP
+        ([firstP], [secondP]) -> makeEvaluate firstP secondP predicate
         ([firstP], _)
             | isFunctionConditional firstP ->
-                makeEvaluateFunctionalOr firstP secondPatterns
+                makeEvaluateFunctionalOr firstP secondPatterns predicate
         (_, [secondP])
             | isFunctionConditional secondP ->
-                makeEvaluateFunctionalOr secondP firstPatterns
+                makeEvaluateFunctionalOr secondP firstPatterns predicate
         _ ->
             makeEvaluate
                 (OrPattern.toPattern first)
                 (OrPattern.toPattern second)
+                predicate
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -196,10 +199,11 @@ makeEvaluateFunctionalOr
         )
     => Pattern variable
     -> [Pattern variable]
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-makeEvaluateFunctionalOr first seconds = do
-    firstCeil <- Ceil.makeEvaluate first
-    secondCeilsWithProofs <- mapM Ceil.makeEvaluate seconds
+makeEvaluateFunctionalOr first seconds predicate = do
+    firstCeil <- Ceil.makeEvaluate first predicate
+    secondCeilsWithProofs <- mapM (flip Ceil.makeEvaluate predicate) seconds
     firstNotCeil <- Not.simplifyEvaluated firstCeil
     let secondCeils = secondCeilsWithProofs
     secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
@@ -240,10 +244,12 @@ makeEvaluate
         )
     => Pattern variable
     -> Pattern variable
+    -> Predicate variable
     -> simplifier (OrPattern variable)
 makeEvaluate
     first@Conditional { term = Top_ _ }
     second@Conditional { term = Top_ _ }
+    _
   =
     return (Iff.makeEvaluate first second)
 makeEvaluate
@@ -257,18 +263,20 @@ makeEvaluate
         , predicate = PredicateTrue
         , substitution = (Substitution.unwrap -> [])
         }
+    predicate
   = do
-    result <- makeEvaluateTermsToPredicate firstTerm secondTerm
+    result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
     return (Pattern.fromPredicate <$> result)
 
 makeEvaluate
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
+    predicate
   = do
     let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
-    firstCeil <- Ceil.makeEvaluate first'
+    firstCeil <- Ceil.makeEvaluate first' predicate
     let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
-    secondCeil <- Ceil.makeEvaluate second'
+    secondCeil <- Ceil.makeEvaluate second' predicate
     firstCeilNegation <- Not.simplifyEvaluated firstCeil
     secondCeilNegation <- Not.simplifyEvaluated secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
@@ -341,8 +349,9 @@ makeEvaluateTermsToPredicate
         )
     => TermLike variable
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (OrPredicate variable)
-makeEvaluateTermsToPredicate first second
+makeEvaluateTermsToPredicate first second configurationPredicate
   | first == second = return OrPredicate.top
   | otherwise = do
     result <- runMaybeT $ AndTerms.termEquals first second
@@ -353,8 +362,8 @@ makeEvaluateTermsToPredicate first second
                 $ Predicate.fromPredicate
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- Ceil.makeEvaluateTerm first
-            secondCeilOr <- Ceil.makeEvaluateTerm second
+            firstCeilOr <- Ceil.makeEvaluateTerm first configurationPredicate
+            secondCeilOr <- Ceil.makeEvaluateTerm second configurationPredicate
             let
                 toPredicateSafe
                     ps@Conditional {term = (), predicate, substitution}

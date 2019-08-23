@@ -15,6 +15,8 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate as Predicate
+                 ( topTODO )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeInPredicate )
@@ -76,8 +78,8 @@ simplifyEvaluatedIn first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
-  | OrPattern.isTrue first = Ceil.simplifyEvaluated second
-  | OrPattern.isTrue second = Ceil.simplifyEvaluated first
+  | OrPattern.isTrue first = Ceil.simplifyEvaluated second Predicate.topTODO
+  | OrPattern.isTrue second = Ceil.simplifyEvaluated first Predicate.topTODO
 
   | otherwise =
     OrPattern.flatten <$> sequence (makeEvaluateIn <$> first <*> second)
@@ -93,8 +95,8 @@ makeEvaluateIn
     -> Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluateIn first second
-  | Pattern.isTop first = Ceil.makeEvaluate second
-  | Pattern.isTop second = Ceil.makeEvaluate first
+  | Pattern.isTop first = Ceil.makeEvaluate second Predicate.topTODO
+  | Pattern.isTop second = Ceil.makeEvaluate first Predicate.topTODO
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 

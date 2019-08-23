@@ -94,7 +94,7 @@ evaluateApplication
 evaluateApplication predicate application =
     Test.runSMT
     $ Kore.evalSimplifier env
-    $ Kore.evaluateApplication predicate application
+    $ Kore.evaluateApplication predicate application Predicate.top
 
 simplifierAxioms :: Kore.BuiltinAndAxiomSimplifierMap
 simplifierAxioms = Map.fromList [ (fId, fEvaluator) ]

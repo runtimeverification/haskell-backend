@@ -20,6 +20,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
@@ -52,11 +53,12 @@ simplify
         , MonadSimplify simplifier
         )
     => Application Symbol (OrPattern variable)
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-simplify application = do
+simplify application predicate = do
     evaluated <-
         traverse
-            (makeAndEvaluateApplications symbol)
+            (flip (makeAndEvaluateApplications symbol) predicate)
             -- The "Propagation Or" inference rule together with
             -- "Propagation Bottom" for the case when a child or is empty.
             (MultiOr.fullCrossProduct children)
@@ -77,6 +79,7 @@ makeAndEvaluateApplications
         )
     => Symbol
     -> [Pattern variable]
+    -> Predicate variable
     -> simplifier (OrPattern variable)
 makeAndEvaluateApplications symbol children =
     makeAndEvaluateSymbolApplications symbol children
@@ -90,11 +93,12 @@ makeAndEvaluateSymbolApplications
         )
     => Symbol
     -> [Pattern variable]
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-makeAndEvaluateSymbolApplications symbol children = do
+makeAndEvaluateSymbolApplications symbol children predicate = do
     expandedApplications <-
         BranchT.gather $ makeExpandedApplication symbol children
-    orResults <- traverse evaluateApplicationFunction expandedApplications
+    orResults <- traverse (flip evaluateApplicationFunction predicate) expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
@@ -106,6 +110,8 @@ evaluateApplicationFunction
         )
     => ExpandedApplication variable
     -- ^ The pattern to be evaluated
+    -> Predicate variable
+    -- ^ The predicate from the configuration
     -> simplifier (OrPattern variable)
 evaluateApplicationFunction Conditional { term, predicate, substitution } =
     evaluateApplication
