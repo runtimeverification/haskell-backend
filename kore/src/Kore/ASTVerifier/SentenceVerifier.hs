@@ -323,9 +323,9 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
                 PatternVerifier.Context
                     { builtinDomainValueVerifiers =
                         Builtin.domainValueVerifiers builtinVerifiers
-                    , indexedModule = indexedModule
-                        IndexedModule.eraseAxiomAttributes
-                        $ IndexedModule.erasePatterns indexedModule
+                    , indexedModule =
+                        IndexedModule.eraseAxiomAttributes indexedModule
+                        -- $ IndexedModule.erasePatterns indexedModule
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
                     }
@@ -362,7 +362,6 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
                         Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
                         indexedModule
-                        & IndexedModule.erasePatterns
                         & IndexedModule.eraseAxiomAttributes
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables

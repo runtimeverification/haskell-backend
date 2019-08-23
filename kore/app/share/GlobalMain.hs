@@ -301,7 +301,6 @@ mainPatternVerify verifiedModule patt = do
             { indexedModule =
                 verifiedModule
                 & IndexedModule.eraseAxiomAttributes
-                & IndexedModule.erasePatterns
             , declaredSortVariables = Set.empty
             , declaredVariables = emptyDeclaredVariables
             , builtinDomainValueVerifiers = domainValueVerifiers

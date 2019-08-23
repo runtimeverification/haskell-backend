@@ -83,7 +83,7 @@ data Context =
         { declaredVariables :: !DeclaredVariables
         , declaredSortVariables :: !(Set SortVariable)
         -- ^ The sort variables in scope.
-        , indexedModule :: !(IndexedModule (TermLike Variable) Attribute.Symbol Attribute.Null)
+        , indexedModule :: !(IndexedModule ParsedPattern Attribute.Symbol Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
@@ -107,7 +107,7 @@ runPatternVerifier context PatternVerifier { getPatternVerifier } =
 
 lookupSortDeclaration
     :: Id
-    -> PatternVerifier (SentenceSort (TermLike Variable))
+    -> PatternVerifier (SentenceSort ParsedPattern)
 lookupSortDeclaration sortId = do
     Context { indexedModule } <- Reader.ask
     (_, sortDecl) <- resolveSort indexedModule sortId
@@ -124,7 +124,14 @@ lookupAlias symbolOrAlias = do
         Trans.lift
         $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let aliasLeft = leftDefinition decl
-        aliasRight = rightDefinition decl
+    aliasRight <-
+        Trans.lift
+        $ verifyPattern
+            ( Just
+            . applicationSortsResult
+            $ aliasSorts
+            )
+            (rightDefinition decl)
     return Internal.Alias
         { aliasConstructor
         , aliasParams
