@@ -16,6 +16,8 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate as Predicate
+                 ( top )
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Logger.Output as Logger
                  ( emptyLogger )
@@ -536,7 +538,7 @@ evaluate
 evaluate ceil =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ Ceil.simplify ceil
+    $ Ceil.simplify Predicate.top ceil
   where
     mockEnv = Mock.env
 
@@ -553,6 +555,6 @@ makeEvaluateWithAxioms
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ Ceil.makeEvaluate child
+    $ Ceil.makeEvaluate Predicate.top child
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

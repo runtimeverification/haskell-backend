@@ -53,7 +53,7 @@ import qualified Kore.Internal.OrPredicate as OrPredicate
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
@@ -379,10 +379,10 @@ andEqualsFunctions
 andEqualsFunctions = fmap mapEqualsFunctions
     [ (AndT,    \_ _ _ -> boolAnd, "boolAnd")
     , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \_ _ _ -> bottomTermEquals, "bottomTermEquals")
-    , (EqualsT, \_ _ _ -> termBottomEquals, "termBottomEquals")
-    , (BothT,   \t _ _ -> variableFunctionAndEquals t, "variableFunctionAndEquals")
-    , (BothT,   \t _ _ -> functionVariableAndEquals t, "functionVariableAndEquals")
+    , (EqualsT, \_ _ _ -> bottomTermEquals Predicate.topTODO, "bottomTermEquals")
+    , (EqualsT, \_ _ _ -> termBottomEquals Predicate.topTODO, "termBottomEquals")
+    , (BothT,   \t _ _ -> variableFunctionAndEquals Predicate.topTODO t, "variableFunctionAndEquals")
+    , (BothT,   \t _ _ -> functionVariableAndEquals Predicate.topTODO t, "functionVariableAndEquals")
     , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
     , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
@@ -550,14 +550,16 @@ bottomTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => TermLike variable
+    => Predicate variable
+    -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
+    predicate
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
-    secondCeil <- Ceil.makeEvaluateTerm second
+    secondCeil <- Ceil.makeEvaluateTerm predicate second
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
@@ -577,7 +579,7 @@ bottomTermEquals
                     $ Predicate.toPredicate <$> secondCeil
                 , substitution = mempty
                 }
-bottomTermEquals _ _ = empty
+bottomTermEquals _ _ _ = empty
 
 {- | Unify two patterns where the second is @\\bottom@.
 
@@ -592,10 +594,11 @@ termBottomEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => TermLike variable
+    => Predicate variable
+    -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termBottomEquals first second = bottomTermEquals second first
+termBottomEquals predicate first second = bottomTermEquals predicate second first
 
 {- | Unify a variable with a function pattern.
 
@@ -611,11 +614,13 @@ variableFunctionAndEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => SimplificationType
+    => Predicate variable
+    -> SimplificationType
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 variableFunctionAndEquals
+    _
     SimplificationType.And
     first@(ElemVar_ v1)
     second@(ElemVar_ v2)
@@ -629,6 +634,7 @@ variableFunctionAndEquals
                 ]
         }
 variableFunctionAndEquals
+    configurationPredicate
     simplificationType
     first@(ElemVar_ v)
     second
@@ -641,7 +647,7 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Predicate.top
             SimplificationType.Equals -> do
-                resultOr <- Ceil.makeEvaluateTerm second
+                resultOr <- Ceil.makeEvaluateTerm configurationPredicate second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom
@@ -654,7 +660,7 @@ variableFunctionAndEquals
     let result =
             predicate <> Predicate.fromSingleSubstitution (ElemVar v, second)
     return (Pattern.withCondition second result)
-variableFunctionAndEquals _ _ _ = empty
+variableFunctionAndEquals _ _ _ _ = empty
 
 {- | Unify a function pattern with a variable.
 
@@ -669,12 +675,13 @@ functionVariableAndEquals
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => SimplificationType
+    => Predicate variable
+    -> SimplificationType
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-functionVariableAndEquals simplificationType first second =
-    variableFunctionAndEquals simplificationType second first
+functionVariableAndEquals predicate simplificationType first second =
+    variableFunctionAndEquals predicate simplificationType second first
 
 {- | Unify two application patterns with equal, injective heads.
 

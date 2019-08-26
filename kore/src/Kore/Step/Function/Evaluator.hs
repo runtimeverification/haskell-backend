@@ -40,8 +40,6 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
-                 ( topTODO )
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
@@ -77,11 +75,13 @@ evaluateApplication
         , MonadSimplify simplifier
         )
     => Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication childrenPredicate application = do
+evaluateApplication configurationPredicate childrenPredicate application = do
     hasSimplifierAxioms <- not . null <$> Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection application
@@ -106,7 +106,7 @@ evaluateApplication childrenPredicate application = do
             return unchanged
 
     Error.maybeT unevaluatedSimplifier return
-        $ maybeEvaluatePattern childrenPredicate termLike unchanged
+        $ maybeEvaluatePattern childrenPredicate termLike unchanged configurationPredicate
 
 {- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
 
@@ -135,15 +135,17 @@ evaluatePattern
         , WithLog LogMessage simplifier
         )
     => Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
     -> simplifier (OrPattern variable)
-evaluatePattern childrenPredicate patt defaultValue =
+evaluatePattern configurationPredicate childrenPredicate patt defaultValue =
     Error.maybeT (return defaultValue) return
-    $ maybeEvaluatePattern childrenPredicate patt defaultValue
+    $ maybeEvaluatePattern childrenPredicate patt defaultValue configurationPredicate
 
 {-| Evaluates axioms on patterns.
 
@@ -164,8 +166,10 @@ maybeEvaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
+    -> Predicate variable
+    -- ^ The predicate from the configuration
     -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern childrenPredicate termLike defaultValue =
+maybeEvaluatePattern childrenPredicate termLike defaultValue configurationPredicate =
     Simplifier.lookupSimplifierAxiom termLike
     >>= \(BuiltinAndAxiomSimplifier evaluator) -> tracing $ do
         axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -177,7 +181,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                 simplifier
                 axiomIdToEvaluator
                 termLike
-                Predicate.topTODO
+                configurationPredicate
         flattened <- case result of
             AttemptedAxiom.NotApplicable ->
                 return AttemptedAxiom.NotApplicable
@@ -340,17 +344,18 @@ evaluateOnce
         , WithLog LogMessage simplifier
         )
     => Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -- ^ The predicate from the configuration
     -> MaybeT (BranchT simplifier) (Pattern variable)
-evaluateOnce predicate termLike = do
+evaluateOnce configurationPredicate predicate termLike = do
     simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
     result <- Simplifier.runBuiltinAndAxiomSimplifier
         simplifierAxiom
+        configurationPredicate
         termLike
-        Predicate.topTODO
     case result of
         AttemptedAxiom.NotApplicable -> empty
         AttemptedAxiom.Applied attemptedAxiomResults ->
