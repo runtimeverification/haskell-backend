@@ -77,7 +77,7 @@ unificationProcedure  p1 p2
     if Conditional.isBottom pat
         then empty
         else do
-            orCeil <- Ceil.makeEvaluateTerm term Predicate.topTODO
+            orCeil <- Ceil.makeEvaluateTerm Predicate.topTODO term
             orResult <-
                 BranchT.alternate $ OrPattern.mergeWithPredicateAssumesEvaluated
                     createPredicatesAndSubstitutionsMerger

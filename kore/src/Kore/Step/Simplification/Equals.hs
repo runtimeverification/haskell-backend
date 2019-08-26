@@ -137,11 +137,11 @@ simplify
         , FreshVariable variable
         , MonadSimplify simplifier
         )
-    => Equals Sort (OrPattern variable)
-    -> Predicate variable
+    => Predicate variable
+    -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Equals { equalsFirst = first, equalsSecond = second } =
-    simplifyEvaluated first second
+simplify predicate Equals { equalsFirst = first, equalsSecond = second } =
+    simplifyEvaluated predicate first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -163,11 +163,11 @@ simplifyEvaluated
         , FreshVariable variable
         , MonadSimplify simplifier
         )
-    => OrPattern variable
+    => Predicate variable
     -> OrPattern variable
-    -> Predicate variable
+    -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated first second predicate
+simplifyEvaluated predicate first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise = do
@@ -176,10 +176,10 @@ simplifyEvaluated first second predicate
         ([firstP], [secondP]) -> makeEvaluate firstP secondP predicate
         ([firstP], _)
             | isFunctionConditional firstP ->
-                makeEvaluateFunctionalOr firstP secondPatterns predicate
+                makeEvaluateFunctionalOr predicate firstP secondPatterns
         (_, [secondP])
             | isFunctionConditional secondP ->
-                makeEvaluateFunctionalOr secondP firstPatterns predicate
+                makeEvaluateFunctionalOr predicate secondP firstPatterns
         _ ->
             makeEvaluate
                 (OrPattern.toPattern first)
@@ -197,13 +197,13 @@ makeEvaluateFunctionalOr
         , FreshVariable variable
         , MonadSimplify simplifier
         )
-    => Pattern variable
+    => Predicate variable
+    -> Pattern variable
     -> [Pattern variable]
-    -> Predicate variable
     -> simplifier (OrPattern variable)
-makeEvaluateFunctionalOr first seconds predicate = do
-    firstCeil <- Ceil.makeEvaluate first predicate
-    secondCeilsWithProofs <- mapM (flip Ceil.makeEvaluate predicate) seconds
+makeEvaluateFunctionalOr predicate first seconds = do
+    firstCeil <- Ceil.makeEvaluate predicate first
+    secondCeilsWithProofs <- mapM (Ceil.makeEvaluate predicate) seconds
     firstNotCeil <- Not.simplifyEvaluated firstCeil
     let secondCeils = secondCeilsWithProofs
     secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
@@ -274,9 +274,9 @@ makeEvaluate
     predicate
   = do
     let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
-    firstCeil <- Ceil.makeEvaluate first' predicate
+    firstCeil <- Ceil.makeEvaluate predicate first'
     let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
-    secondCeil <- Ceil.makeEvaluate second' predicate
+    secondCeil <- Ceil.makeEvaluate predicate second'
     firstCeilNegation <- Not.simplifyEvaluated firstCeil
     secondCeilNegation <- Not.simplifyEvaluated secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
@@ -362,8 +362,8 @@ makeEvaluateTermsToPredicate first second configurationPredicate
                 $ Predicate.fromPredicate
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- Ceil.makeEvaluateTerm first configurationPredicate
-            secondCeilOr <- Ceil.makeEvaluateTerm second configurationPredicate
+            firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
+            secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
             let
                 toPredicateSafe
                     ps@Conditional {term = (), predicate, substitution}

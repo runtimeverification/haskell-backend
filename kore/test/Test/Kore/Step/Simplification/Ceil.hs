@@ -538,7 +538,7 @@ evaluate
 evaluate ceil =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ Ceil.simplify ceil Predicate.top
+    $ Ceil.simplify Predicate.top ceil
   where
     mockEnv = Mock.env
 
@@ -555,6 +555,6 @@ makeEvaluateWithAxioms
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ Ceil.makeEvaluate child Predicate.top
+    $ Ceil.makeEvaluate Predicate.top child
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

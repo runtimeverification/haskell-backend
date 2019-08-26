@@ -379,10 +379,10 @@ andEqualsFunctions
 andEqualsFunctions = fmap mapEqualsFunctions
     [ (AndT,    \_ _ _ -> boolAnd, "boolAnd")
     , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \_ _ _ -> (\t1 t2 -> bottomTermEquals t1 t2 Predicate.topTODO), "bottomTermEquals")
-    , (EqualsT, \_ _ _ -> (\t1 t2 -> termBottomEquals t1 t2 Predicate.topTODO), "termBottomEquals")
-    , (BothT,   \t _ _ -> (\t1 t2 -> variableFunctionAndEquals t t1 t2 Predicate.topTODO), "variableFunctionAndEquals")
-    , (BothT,   \t _ _ -> (\t1 t2 -> functionVariableAndEquals t t1 t2 Predicate.topTODO), "functionVariableAndEquals")
+    , (EqualsT, \_ _ _ -> bottomTermEquals Predicate.topTODO, "bottomTermEquals")
+    , (EqualsT, \_ _ _ -> termBottomEquals Predicate.topTODO, "termBottomEquals")
+    , (BothT,   \t _ _ -> variableFunctionAndEquals Predicate.topTODO t, "variableFunctionAndEquals")
+    , (BothT,   \t _ _ -> functionVariableAndEquals Predicate.topTODO t, "functionVariableAndEquals")
     , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
     , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
@@ -550,16 +550,16 @@ bottomTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => TermLike variable
+    => Predicate variable
     -> TermLike variable
-    -> Predicate variable
+    -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
+    predicate
     first@(Bottom_ _)
     second
-    predicate
   = Monad.Trans.lift $ do -- MonadUnify
-    secondCeil <- Ceil.makeEvaluateTerm second predicate
+    secondCeil <- Ceil.makeEvaluateTerm predicate second
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
@@ -594,11 +594,11 @@ termBottomEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => TermLike variable
+    => Predicate variable
     -> TermLike variable
-    -> Predicate variable
+    -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termBottomEquals first second = bottomTermEquals second first
+termBottomEquals predicate first second = bottomTermEquals predicate second first
 
 {- | Unify a variable with a function pattern.
 
@@ -614,16 +614,16 @@ variableFunctionAndEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => SimplificationType
+    => Predicate variable
+    -> SimplificationType
     -> TermLike variable
     -> TermLike variable
-    -> Predicate variable
     -> MaybeT unifier (Pattern variable)
 variableFunctionAndEquals
+    _
     SimplificationType.And
     first@(ElemVar_ v1)
     second@(ElemVar_ v2)
-    _
   =
     return Conditional
         { term = if v2 > v1 then second else first
@@ -634,10 +634,10 @@ variableFunctionAndEquals
                 ]
         }
 variableFunctionAndEquals
+    configurationPredicate
     simplificationType
     first@(ElemVar_ v)
     second
-    predicate'
   | isFunctionPattern second = Monad.Trans.lift $ do -- MonadUnify
     predicate <-
         case simplificationType of -- Simplifier
@@ -647,7 +647,7 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Predicate.top
             SimplificationType.Equals -> do
-                resultOr <- Ceil.makeEvaluateTerm second predicate'
+                resultOr <- Ceil.makeEvaluateTerm configurationPredicate second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom
@@ -675,13 +675,13 @@ functionVariableAndEquals
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => SimplificationType
+    => Predicate variable
+    -> SimplificationType
     -> TermLike variable
     -> TermLike variable
-    -> Predicate variable
     -> MaybeT unifier (Pattern variable)
-functionVariableAndEquals simplificationType first second =
-    variableFunctionAndEquals simplificationType second first
+functionVariableAndEquals predicate simplificationType first second =
+    variableFunctionAndEquals predicate simplificationType second first
 
 {- | Unify two application patterns with equal, injective heads.
 

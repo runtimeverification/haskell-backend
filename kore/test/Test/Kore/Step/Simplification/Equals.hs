@@ -909,7 +909,7 @@ evaluateOr
 evaluateOr equals =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ simplify equals Predicate.top
+    $ simplify Predicate.top equals
   where
     mockEnv = Mock.env
 

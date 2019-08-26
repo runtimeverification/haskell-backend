@@ -308,6 +308,6 @@ evaluate
 evaluate axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ simplify application Predicate.top
+    $ simplify Predicate.top application
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToEvaluator }

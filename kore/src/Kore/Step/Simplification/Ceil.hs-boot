@@ -34,8 +34,8 @@ makeEvaluate
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Pattern variable
-    -> Predicate variable
+    => Predicate variable
+    -> Pattern variable
     -> simplifier (OrPattern variable)
 
 makeEvaluateTerm
@@ -47,6 +47,6 @@ makeEvaluateTerm
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => TermLike variable
-    -> Predicate variable
+    => Predicate variable
+    -> TermLike variable
     -> simplifier (OrPredicate variable)

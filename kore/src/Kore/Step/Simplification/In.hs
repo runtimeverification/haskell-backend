@@ -78,8 +78,8 @@ simplifyEvaluatedIn first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
-  | OrPattern.isTrue first = Ceil.simplifyEvaluated second Predicate.topTODO
-  | OrPattern.isTrue second = Ceil.simplifyEvaluated first Predicate.topTODO
+  | OrPattern.isTrue first = Ceil.simplifyEvaluated Predicate.topTODO second
+  | OrPattern.isTrue second = Ceil.simplifyEvaluated Predicate.topTODO first
 
   | otherwise =
     OrPattern.flatten <$> sequence (makeEvaluateIn <$> first <*> second)
@@ -95,8 +95,8 @@ makeEvaluateIn
     -> Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluateIn first second
-  | Pattern.isTop first = Ceil.makeEvaluate second Predicate.topTODO
-  | Pattern.isTop second = Ceil.makeEvaluate first Predicate.topTODO
+  | Pattern.isTop first = Ceil.makeEvaluate Predicate.topTODO second
+  | Pattern.isTop second = Ceil.makeEvaluate Predicate.topTODO first
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 

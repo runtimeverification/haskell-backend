@@ -75,13 +75,13 @@ evaluateApplication
         , MonadSimplify simplifier
         )
     => Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
-    -> Predicate variable
-    -- ^ The predicate from the configuration
     -> simplifier (OrPattern variable)
-evaluateApplication childrenPredicate application configurationPredicate = do
+evaluateApplication configurationPredicate childrenPredicate application = do
     hasSimplifierAxioms <- not . null <$> Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection application
@@ -135,15 +135,15 @@ evaluatePattern
         , WithLog LogMessage simplifier
         )
     => Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> Predicate variable
-    -- ^ The predicate from the configuration
     -> OrPattern variable
     -- ^ The default value
     -> simplifier (OrPattern variable)
-evaluatePattern childrenPredicate patt configurationPredicate defaultValue =
+evaluatePattern configurationPredicate childrenPredicate patt defaultValue =
     Error.maybeT (return defaultValue) return
     $ maybeEvaluatePattern childrenPredicate patt defaultValue configurationPredicate
 
@@ -344,18 +344,18 @@ evaluateOnce
         , WithLog LogMessage simplifier
         )
     => Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
-    -> Predicate variable
-    -- ^ The predicate from the configuration
     -> MaybeT (BranchT simplifier) (Pattern variable)
-evaluateOnce predicate termLike configurationPredicate = do
+evaluateOnce configurationPredicate predicate termLike = do
     simplifierAxiom <- Simplifier.lookupSimplifierAxiom termLike
     result <- Simplifier.runBuiltinAndAxiomSimplifier
         simplifierAxiom
-        termLike
         configurationPredicate
+        termLike
     case result of
         AttemptedAxiom.NotApplicable -> empty
         AttemptedAxiom.Applied attemptedAxiomResults ->

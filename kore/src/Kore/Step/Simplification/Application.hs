@@ -52,13 +52,13 @@ simplify
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Application Symbol (OrPattern variable)
-    -> Predicate variable
+    => Predicate variable
+    -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify application predicate = do
+simplify predicate application = do
     evaluated <-
         traverse
-            (flip (makeAndEvaluateApplications symbol) predicate)
+            (makeAndEvaluateApplications predicate symbol)
             -- The "Propagation Or" inference rule together with
             -- "Propagation Bottom" for the case when a child or is empty.
             (MultiOr.fullCrossProduct children)
@@ -77,12 +77,12 @@ makeAndEvaluateApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Symbol
+    =>  Predicate variable
+    ->  Symbol
     -> [Pattern variable]
-    -> Predicate variable
     -> simplifier (OrPattern variable)
-makeAndEvaluateApplications symbol children =
-    makeAndEvaluateSymbolApplications symbol children
+makeAndEvaluateApplications predicate symbol children =
+    makeAndEvaluateSymbolApplications predicate symbol children
 
 makeAndEvaluateSymbolApplications
     ::  ( Show variable
@@ -91,14 +91,14 @@ makeAndEvaluateSymbolApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Symbol
+    => Predicate variable
+    -> Symbol
     -> [Pattern variable]
-    -> Predicate variable
     -> simplifier (OrPattern variable)
-makeAndEvaluateSymbolApplications symbol children predicate = do
+makeAndEvaluateSymbolApplications predicate symbol children = do
     expandedApplications <-
         BranchT.gather $ makeExpandedApplication symbol children
-    orResults <- traverse (flip evaluateApplicationFunction predicate) expandedApplications
+    orResults <- traverse (evaluateApplicationFunction predicate) expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
@@ -108,13 +108,14 @@ evaluateApplicationFunction
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => ExpandedApplication variable
-    -- ^ The pattern to be evaluated
-    -> Predicate variable
+    => Predicate variable
     -- ^ The predicate from the configuration
+    -> ExpandedApplication variable
+    -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplicationFunction Conditional { term, predicate, substitution } =
+evaluateApplicationFunction configurationPredicate Conditional { term, predicate, substitution } =
     evaluateApplication
+        configurationPredicate
         Conditional { term = (), predicate, substitution }
         term
 

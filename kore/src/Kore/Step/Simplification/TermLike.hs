@@ -136,11 +136,11 @@ simplifyInternal = simplifyInternalWorker
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                (flip Application.simplify Predicate.topTODO) =<< simplifyChildren applySymbolF
+                Application.simplify Predicate.topTODO =<< simplifyChildren applySymbolF
             CeilF ceilF ->
-                (flip Ceil.simplify Predicate.topTODO) =<< simplifyChildren ceilF
+                Ceil.simplify Predicate.topTODO =<< simplifyChildren ceilF
             EqualsF equalsF ->
-                (flip Equals.simplify Predicate.topTODO) =<< simplifyChildren equalsF
+                Equals.simplify Predicate.topTODO =<< simplifyChildren equalsF
             ExistsF existsF ->
                 Exists.simplify =<< simplifyChildren existsF
             IffF iffF ->
