@@ -16,7 +16,7 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Predicate as Predicate
-                 ( topTODO )
+                 ( Predicate )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeInPredicate )
@@ -45,10 +45,11 @@ simplify
         , Unparse variable
         , MonadSimplify simplifier
         )
-    => In Sort (OrPattern variable)
+    => Predicate variable
+    -> In Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify In { inContainedChild = first, inContainingChild = second } =
-    simplifyEvaluatedIn first second
+simplify predicate In { inContainedChild = first, inContainingChild = second } =
+    simplifyEvaluatedIn predicate first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -71,18 +72,19 @@ simplifyEvaluatedIn
         , Unparse variable
         , MonadSimplify simplifier
         )
-    => OrPattern variable
+    => Predicate variable
+    -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluatedIn first second
+simplifyEvaluatedIn predicate first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
-  | OrPattern.isTrue first = Ceil.simplifyEvaluated Predicate.topTODO second
-  | OrPattern.isTrue second = Ceil.simplifyEvaluated Predicate.topTODO first
+  | OrPattern.isTrue first = Ceil.simplifyEvaluated predicate second
+  | OrPattern.isTrue second = Ceil.simplifyEvaluated predicate first
 
   | otherwise =
-    OrPattern.flatten <$> sequence (makeEvaluateIn <$> first <*> second)
+    OrPattern.flatten <$> sequence (makeEvaluateIn predicate <$> first <*> second)
 
 makeEvaluateIn
     ::  ( FreshVariable variable
@@ -91,12 +93,13 @@ makeEvaluateIn
         , Unparse variable
         , MonadSimplify simplifier
         )
-    => Pattern variable
+    => Predicate variable
+    -> Pattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluateIn first second
-  | Pattern.isTop first = Ceil.makeEvaluate Predicate.topTODO second
-  | Pattern.isTop second = Ceil.makeEvaluate Predicate.topTODO first
+makeEvaluateIn predicate first second
+  | Pattern.isTop first = Ceil.makeEvaluate predicate second
+  | Pattern.isTop second = Ceil.makeEvaluate predicate first
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 

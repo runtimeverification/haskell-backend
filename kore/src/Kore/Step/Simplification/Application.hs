@@ -77,12 +77,12 @@ makeAndEvaluateApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    =>  Predicate variable
-    ->  Symbol
+    => Predicate variable
+    -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateApplications predicate symbol children =
-    makeAndEvaluateSymbolApplications predicate symbol children
+makeAndEvaluateApplications =
+    makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
     ::  ( Show variable

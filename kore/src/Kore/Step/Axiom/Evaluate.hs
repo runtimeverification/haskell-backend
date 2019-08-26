@@ -56,7 +56,7 @@ evaluateAxioms
 evaluateAxioms
     definitionRules
     patt
-    _
+    predicate
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete patt)
   = return AttemptedAxiom.NotApplicable
@@ -72,7 +72,7 @@ evaluateAxioms
     Monad.guard (any Result.hasResults results)
     mapM_ rejectNarrowing results
 
-    ceilChild <- ceilChildOfApplicationOrTop patt
+    ceilChild <- ceilChildOfApplicationOrTop predicate patt
     let
         result =
             Result.mergeResults results

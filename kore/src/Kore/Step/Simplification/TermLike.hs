@@ -148,7 +148,7 @@ simplifyInternal = simplifyInternalWorker
             ImpliesF impliesF ->
                 Implies.simplify =<< simplifyChildren impliesF
             InF inF ->
-                In.simplify =<< simplifyChildren inF
+                In.simplify Predicate.topTODO =<< simplifyChildren inF
             NotF notF ->
                 Not.simplify =<< simplifyChildren notF
             --
