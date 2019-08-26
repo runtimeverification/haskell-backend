@@ -388,7 +388,7 @@ loadDefinition options = do
     let KoreExecOptions { definitionFileName } = options
     parsedDefinition <- parseDefinition definitionFileName
     definition@(indexedModules, _) <-
-        verifyDefinitionWithBase Nothing True parsedDefinition
+        verifyDefinitionWithBase Nothing True (parsedDefinition :: ())
     let KoreExecOptions { mainModuleName } = options
     mainModule <- lookupMainModule mainModuleName indexedModules
     return (mainModule, definition)
@@ -469,7 +469,7 @@ mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 
 mainParseSearchPattern
-    :: VerifiedModule StepperAttributes Attribute.Axiom
+    :: IndexedModule.KoreIndexedModule StepperAttributes Attribute.Axiom
     -> String
     -> Main (Pattern Variable)
 mainParseSearchPattern indexedModule patternFileName = do
