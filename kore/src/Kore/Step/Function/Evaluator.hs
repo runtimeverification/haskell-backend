@@ -21,12 +21,7 @@ import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Data.Text
-                 ( Text )
 import qualified Data.Text as Text
-import           Data.Text.Prettyprint.Doc
-                 ( (<+>) )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
@@ -43,7 +38,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
-                 ( LogMessage, WithLog, logWarning )
+                 ( LogMessage, WithLog )
 import qualified Kore.Profiler.Profile as Profile
                  ( axiomEvaluation, equalitySimplification, mergeSubstitutions,
                  resimplification )
@@ -85,43 +80,42 @@ evaluateApplication configurationPredicate childrenPredicate application = do
     hasSimplifierAxioms <- not . null <$> Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection application
+        Application { applicationSymbolOrAlias = appHead } = afterInj
+        Symbol { symbolConstructor = symbolId } = appHead
         termLike = synthesize (ApplySymbolF afterInj)
-        unchanged =
-            OrPattern.fromPattern
-            $ Pattern.withCondition termLike childrenPredicate
 
-        symbol = applicationSymbolOrAlias afterInj
-        symbolHook = (getHook . Attribute.hook) (symbolAttributes symbol)
-        -- Return the input when there are no evaluators for the symbol.
-        unevaluatedSimplifier
-          | hasSimplifierAxioms
-          , Just hook <- symbolHook
-          = do
-            warnMissingHook hook afterInj
-            -- Mark the result so we do not attempt to evaluate it again. This
-            -- prevents spamming the warning above, but re-evaluation will never
-            -- succeed anyway if there are no evaluators for this symbol!
-            return $ (fmap . fmap) mkEvaluated unchanged
-          | otherwise =
+        unchangedPatt =
+            Conditional
+                { term         = termLike
+                , predicate    = predicate
+                , substitution = substitution
+                }
+          where
+            Conditional { term = (), predicate, substitution } =
+                childrenPredicate
+        unchanged = OrPattern.fromPattern unchangedPatt
+
+        getSymbolHook = getHook . Attribute.hook . symbolAttributes
+        getAppHookString = Text.unpack <$> getSymbolHook appHead
+
+    evaluated <- Error.runMaybeT $
+         maybeEvaluatePattern
+            childrenPredicate
+            termLike
+            unchanged
+            configurationPredicate
+
+    case evaluated of
+        Nothing
+          | Just hook <- getAppHookString
+          , hasSimplifierAxioms ->
+            error
+                (   "Attempting to evaluate unimplemented hooked operation "
+                ++  hook ++ ".\nSymbol: " ++ getIdForError symbolId
+                )
+          | otherwise ->
             return unchanged
-
-    Error.maybeT unevaluatedSimplifier return
-        $ maybeEvaluatePattern childrenPredicate termLike unchanged configurationPredicate
-
-{- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
-
- -}
-warnMissingHook
-    :: (MonadSimplify simplifier, SortedVariable variable)
-    => Text -> Application Symbol (TermLike variable) -> simplifier ()
-warnMissingHook hook application = do
-    let message =
-            Pretty.vsep
-                [ "Missing hook" <+> Pretty.squotes (Pretty.pretty hook)
-                , "while evaluating:"
-                , Pretty.indent 4 (unparse application)
-                ]
-    logWarning (Text.pack $ show message)
+        Just evaluatedPattSimplifier -> return evaluatedPattSimplifier
 
 {-| Evaluates axioms on patterns.
 -}
@@ -143,9 +137,13 @@ evaluatePattern
     -> OrPattern variable
     -- ^ The default value
     -> simplifier (OrPattern variable)
-evaluatePattern configurationPredicate childrenPredicate patt defaultValue =
+evaluatePattern configurationPredicate childrenPredicate termLike defaultValue =
     Error.maybeT (return defaultValue) return
-    $ maybeEvaluatePattern childrenPredicate patt defaultValue configurationPredicate
+    $ maybeEvaluatePattern
+        childrenPredicate
+        termLike
+        defaultValue
+        configurationPredicate
 
 {-| Evaluates axioms on patterns.
 
@@ -223,6 +221,12 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue configurationPredic
                 Profile.equalitySimplification identifier' termLike
 
     axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
+
+    resimplificationTracing
+        :: forall a
+        .  Int
+        -> MaybeT simplifier a
+        -> MaybeT simplifier a
     resimplificationTracing resultCount =
         case identifier of
             Nothing -> id
@@ -242,7 +246,8 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue configurationPredic
         Conditional { term = (), predicate, substitution } = childrenPredicate
 
     simplifyIfNeeded
-        :: Pattern variable -> MaybeT simplifier (OrPattern variable)
+        :: Pattern variable
+        -> MaybeT simplifier (OrPattern variable)
     simplifyIfNeeded toSimplify
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)

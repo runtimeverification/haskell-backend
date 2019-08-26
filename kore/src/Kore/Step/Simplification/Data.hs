@@ -9,12 +9,12 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..)
+    , lookupSimplifierAxiom
     , Simplifier
     , SimplifierT, runSimplifierT
     , Env (..)
     , runSimplifier
     , evalSimplifier
-    , lookupSimplifierAxiom
     , BranchT
     , mapBranchT
     , evalSimplifierBranch
