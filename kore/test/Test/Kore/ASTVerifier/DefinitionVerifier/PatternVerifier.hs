@@ -786,7 +786,7 @@ test_verifyBinder =
             , declaredSortVariables = Set.empty
             , indexedModule =
                 Builtin.indexedModule
-                & IndexedModule.erasePatterns
+                -- & IndexedModule.erasePatterns
             , builtinDomainValueVerifiers = mempty
             }
     testVerifyBinder name expect =
