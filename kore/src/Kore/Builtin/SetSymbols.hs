@@ -18,10 +18,8 @@ module Kore.Builtin.SetSymbols
       isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
-    , isSymbolList2set
     , lookupSymbolIn
     , lookupSymbolDifference
-    , lookupSymbolList2set
       -- * Keys
     , concatKey
     , differenceKey
@@ -31,7 +29,6 @@ module Kore.Builtin.SetSymbols
     , sizeKey
     , toListKey
     , unitKey
-    , list2setKey
     ) where
 
 import           Data.String
@@ -72,9 +69,6 @@ sizeKey = "SET.size"
 intersectionKey :: IsString s => s
 intersectionKey = "SET.intersection"
 
-list2setKey :: IsString s => s
-list2setKey = "SET.list2set"
-
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
 lookupSymbolIn
@@ -91,14 +85,6 @@ lookupSymbolDifference
     -> Either (Kore.Error e) Symbol
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
-{- | Find the symbol hooked to @SET.list2set@ in an indexed module.
- -}
-lookupSymbolList2set
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolList2set = Builtin.lookupSymbol list2setKey
-
 {- | Check if the given symbol is hooked to @SET.concat@.
  -}
 isSymbolConcat :: Symbol -> Bool
@@ -113,8 +99,3 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit :: Symbol -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
-
-{- | Check if the given symbol is hooked to @SET.set2list@.
--}
-isSymbolList2set :: Symbol -> Bool
-isSymbolList2set = Builtin.isSymbol list2setKey
