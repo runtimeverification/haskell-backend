@@ -98,7 +98,9 @@ makeAndEvaluateSymbolApplications
 makeAndEvaluateSymbolApplications predicate symbol children = do
     expandedApplications <-
         BranchT.gather $ makeExpandedApplication symbol children
-    orResults <- traverse (evaluateApplicationFunction predicate) expandedApplications
+    orResults <- traverse
+                    (evaluateApplicationFunction predicate)
+                    expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
@@ -113,7 +115,10 @@ evaluateApplicationFunction
     -> ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplicationFunction configurationPredicate Conditional { term, predicate, substitution } =
+evaluateApplicationFunction
+    configurationPredicate
+    Conditional { term, predicate, substitution }
+  =
     evaluateApplication
         configurationPredicate
         Conditional { term = (), predicate, substitution }

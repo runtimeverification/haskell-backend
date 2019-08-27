@@ -136,7 +136,8 @@ simplifyInternal = simplifyInternalWorker
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                Application.simplify Predicate.topTODO =<< simplifyChildren applySymbolF
+                Application.simplify Predicate.topTODO
+                    =<< simplifyChildren applySymbolF
             CeilF ceilF ->
                 Ceil.simplify Predicate.topTODO =<< simplifyChildren ceilF
             EqualsF equalsF ->

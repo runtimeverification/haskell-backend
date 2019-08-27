@@ -106,7 +106,10 @@ evaluateApplication configurationPredicate childrenPredicate application = do
             return unchanged
 
     Error.maybeT unevaluatedSimplifier return
-        $ maybeEvaluatePattern childrenPredicate termLike unchanged configurationPredicate
+        $ maybeEvaluatePattern
+            childrenPredicate
+            termLike unchanged
+            configurationPredicate
 
 {- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
 
@@ -145,7 +148,11 @@ evaluatePattern
     -> simplifier (OrPattern variable)
 evaluatePattern configurationPredicate childrenPredicate patt defaultValue =
     Error.maybeT (return defaultValue) return
-    $ maybeEvaluatePattern childrenPredicate patt defaultValue configurationPredicate
+    $ maybeEvaluatePattern
+        childrenPredicate
+        patt
+        defaultValue
+        configurationPredicate
 
 {-| Evaluates axioms on patterns.
 
@@ -169,7 +176,12 @@ maybeEvaluatePattern
     -> Predicate variable
     -- ^ The predicate from the configuration
     -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern childrenPredicate termLike defaultValue configurationPredicate =
+maybeEvaluatePattern
+    childrenPredicate
+    termLike
+    defaultValue
+    configurationPredicate
+  =
     Simplifier.lookupSimplifierAxiom termLike
     >>= \(BuiltinAndAxiomSimplifier evaluator) -> tracing $ do
         axiomIdToEvaluator <- Simplifier.askSimplifierAxioms

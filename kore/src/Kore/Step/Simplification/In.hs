@@ -84,7 +84,8 @@ simplifyEvaluatedIn predicate first second
   | OrPattern.isTrue second = Ceil.simplifyEvaluated predicate first
 
   | otherwise =
-    OrPattern.flatten <$> sequence (makeEvaluateIn predicate <$> first <*> second)
+    OrPattern.flatten <$> sequence
+                            (makeEvaluateIn predicate <$> first <*> second)
 
 makeEvaluateIn
     ::  ( FreshVariable variable
