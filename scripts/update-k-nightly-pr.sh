@@ -23,9 +23,9 @@ fi
 
 git checkout -B "$BRANCH_NAME" "$UPSTREAM_REMOTE/$UPSTREAM_BRANCH"
 
-git add $TOP/deps/k_release
+git add $TOP/include.mk
 
-git commit --message 'deps/k_release: update K nightly version'
+git commit --message 'include.mk: update K nightly version'
 
 hub pull-request --push --force --head "$BRANCH_NAME" --base "$UPSTREAM_BRANCH" --reviewer vladciobanu --file - <<MSG
 Update K Nightly version used for integration testing
