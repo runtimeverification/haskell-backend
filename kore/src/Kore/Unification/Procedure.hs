@@ -64,7 +64,7 @@ unificationProcedure  p1 p2
     empty
   | otherwise = do
     Logger.withLogScope (Logger.Scope "UnificationProcedure")
-        . Logger.logDebug
+        . Logger.logInfo
         . Text.pack
         . show
         $ Pretty.vsep

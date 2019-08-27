@@ -12,10 +12,10 @@ module Kore.Logger.Output
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
-    , stderrLogger
+    , stdoutLogger
     , swappableLogger
     , makeKoreLogger
-    , Colog.logTextStderr
+    , Colog.logTextStdout
     , Colog.logTextHandle
     , module Kore.Logger
     ) where
@@ -72,7 +72,7 @@ import Kore.Logger
 data KoreLogType
     = LogNone
     -- ^ do not log when no '--log' is passed
-    | LogStdErr
+    | LogStdOut
     -- ^ log to StdOut when '--log StdOut' is passed
     | LogFileText
     -- ^ log to "./kore-(date).log" when '--log FileText' is passed
@@ -103,8 +103,8 @@ withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
         LogNone     ->
             cont mempty
-        LogStdErr   ->
-            cont (stderrLogger logLevel logScopes)
+        LogStdOut   ->
+            cont (stdoutLogger logLevel logScopes)
         LogFileText -> do
             fileName <- getKoreLogFileName
             Colog.withLogTextFile fileName
@@ -123,7 +123,7 @@ parseKoreLogOptions :: Parser KoreLogOptions
 parseKoreLogOptions =
     KoreLogOptions
     <$> (parseType <|> pure LogNone)
-    <*> (parseLevel <|> pure Warning)
+    <*> (parseLevel <|> pure Info)
     <*> (parseScope <|> pure mempty)
   where
     parseType =
@@ -134,7 +134,7 @@ parseKoreLogOptions =
     parseTypeString =
         \case
             "none"     -> pure LogNone
-            "stdout"   -> pure LogStdErr
+            "stdout"   -> pure LogStdOut
             "filetext" -> pure LogFileText
             _          -> Nothing
 
@@ -238,8 +238,8 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stderrLogger :: MonadIO m => Severity -> Set Scope -> LogAction m LogMessage
-stderrLogger logLevel logScopes = makeKoreLogger logLevel logScopes Colog.logTextStderr
+stdoutLogger :: MonadIO m => Severity -> Set Scope -> LogAction m LogMessage
+stdoutLogger logLevel logScopes = makeKoreLogger logLevel logScopes Colog.logTextStdout
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 

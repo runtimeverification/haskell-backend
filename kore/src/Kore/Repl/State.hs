@@ -374,7 +374,7 @@ liftSimplifierWithLogger mLogger simplifier = do
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)
-            LogToStdOut -> pure (Logger.logTextStderr, Nothing)
+            LogToStdOut -> pure (Logger.logTextStdout, Nothing)
             LogToFile file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
                 pure (Logger.logTextHandle handle, Just handle)
