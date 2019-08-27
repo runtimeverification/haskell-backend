@@ -9,6 +9,8 @@ import Test.Tasty.HUnit
 
 import Control.Monad.Trans.Except
        ( runExceptT )
+import Data.Coerce
+       ( coerce )
 import Data.Default
        ( def )
 import Data.Limit
@@ -17,7 +19,6 @@ import Numeric.Natural
        ( Natural )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Goal
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
@@ -25,6 +26,7 @@ import           Kore.Internal.Pattern as Conditional
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.OnePath.Verification as OnePath
+import qualified Kore.OnePath.Verification as Claim
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Rule
@@ -70,16 +72,17 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
-    , testCase "Returns first failing claim" $ do
+    , testCase "Returns multiple results" $ do
         -- Axiom: a => b or c
         -- Claim: a => d
-        -- Expected: error b
+        -- Expected: error [b, c]
         actual <- runVerification
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
         assertEqualWithExplanation ""
-            (Left . Pattern.fromTermLike $ Mock.b)
+            (Left $ Pattern.fromTermLike Mock.b
+            )
             actual
     , testCase "Verifies one claim" $ do
         -- Axiom: a => b
@@ -322,9 +325,9 @@ test_onePathVerification =
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (OnePathRule Variable)
+    -> OnePath.Axiom
 simpleAxiom left right =
-    Rule $ simpleRewrite left right
+    OnePath.Axiom $ simpleRewrite left right
 
 simpleClaim
     :: TermLike Variable
@@ -363,10 +366,8 @@ simpleRewrite left right =
 
 runVerification
     :: OnePath.Claim claim
-    => Show claim
-    => Show (Rule claim)
     => Limit Natural
-    -> [Rule claim]
+    -> [OnePath.Axiom]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
 runVerification stepLimit axioms claims =
@@ -378,5 +379,5 @@ runVerification stepLimit axioms claims =
         (map applyStepLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env
-    applyStepLimit claim = (claim, stepLimit)
-    selectUntrusted = filter (not . isTrusted)
+    applyStepLimit claim = (RewriteRule $ coerce claim, stepLimit)
+    selectUntrusted = filter (not . Claim.isTrusted)

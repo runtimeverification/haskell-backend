@@ -66,10 +66,13 @@ import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Logger.Output as Logger
+import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
-                 ( CommonProofState )
+                 ( Axiom (..) )
 import           Kore.Profiler.Data
                  ( MonadProfiler )
+import           Kore.Step.Rule
+                 ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
@@ -362,17 +365,17 @@ shouldStore =
         _                -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph rule =
+type ExecutionGraph =
     Strategy.ExecutionGraph
-        CommonProofState
-        rule
+        CommonStrategyPattern
+        (RewriteRule Variable)
 
-type InnerGraph rule =
-    Gr CommonProofState (Seq rule)
+type InnerGraph =
+    Gr CommonStrategyPattern (Seq (RewriteRule Variable))
 
 -- | State for the repl.
-data ReplState claim axiom = ReplState
-    { axioms     :: [axiom]
+data ReplState claim = ReplState
+    { axioms     :: [Axiom]
     -- ^ List of available axioms
     , claims     :: [claim]
     -- ^ List of claims to be proven
@@ -380,7 +383,7 @@ data ReplState claim axiom = ReplState
     -- ^ Currently focused claim in the repl
     , claimIndex :: ClaimIndex
     -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph axiom)
+    , graphs     :: Map ClaimIndex ExecutionGraph
     -- ^ Execution graph for the current proof; initialized with root = claim
     , node       :: ReplNode
     -- ^ Currently selected node in the graph; initialized with node = root
@@ -398,14 +401,14 @@ data ReplState claim axiom = ReplState
     deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config claim axiom m = Config
+data Config claim m = Config
     { stepper
         :: claim
         -> [claim]
-        -> [axiom]
-        -> ExecutionGraph axiom
+        -> [Axiom]
+        -> ExecutionGraph
         -> ReplNode
-        -> m (ExecutionGraph axiom)
+        -> m ExecutionGraph
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
         :: TermLike Variable

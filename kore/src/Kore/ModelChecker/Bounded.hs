@@ -5,7 +5,6 @@ License     : NCSA
 
 module Kore.ModelChecker.Bounded
     ( CheckResult (..)
-    , Axiom (..)
     , bmcStrategy
     , checkClaim
     ) where
@@ -32,6 +31,8 @@ import qualified Kore.ModelChecker.Step as ProofState
                  ( ProofState (..) )
 import qualified Kore.ModelChecker.Step as ModelChecker
                  ( Transition, transitionRule )
+import           Kore.OnePath.Verification
+                 ( Axiom (Axiom) )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
@@ -56,8 +57,6 @@ data CheckResult patt
     | Unknown
     -- ^ Result is unknown within the bound.
     deriving (Show)
-
-newtype Axiom = Axiom { unAxiom :: RewriteRule Variable }
 
 bmcStrategy
     :: [Axiom]

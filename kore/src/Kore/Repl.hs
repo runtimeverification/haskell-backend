@@ -43,7 +43,6 @@ import           Text.Megaparsec
                  ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Goal
 import qualified Kore.Logger as Logger
 import           Kore.OnePath.Verification
 import           Kore.Repl.Data
@@ -62,13 +61,12 @@ import           Kore.Unification.Procedure
 -- that would otherwise be required in the proof and allows for step-by-step
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
-    :: forall claim axiom m
+    :: forall claim m
     .  MonadSimplify m
     => MonadIO m
     => MonadCatch m
     => Claim claim
-    => axiom ~ Rule claim
-    => [axiom]
+    => [Axiom]
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
@@ -95,24 +93,24 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
 
   where
 
-    runReplCommand :: ReplCommand -> ReplState claim axiom -> m ()
+    runReplCommand :: ReplCommand -> ReplState claim -> m ()
     runReplCommand cmd st =
         void
             $ flip evalStateT st
             $ flip runReaderT config
             $ replInterpreter printIfNotEmpty cmd
 
-    evaluateScript :: ReplScript -> RWST (Config claim axiom m) String (ReplState claim axiom) m ()
+    evaluateScript :: ReplScript -> RWST (Config claim m) String (ReplState claim) m ()
     evaluateScript = maybe (pure ()) parseEvalScript . unReplScript
 
-    repl0 :: ReaderT (Config claim axiom m) (StateT (ReplState claim axiom) m) ()
+    repl0 :: ReaderT (Config claim m) (StateT (ReplState claim) m) ()
     repl0 = do
         str <- prompt
         let command = fromMaybe ShowUsage $ parseMaybe commandParser str
         when (shouldStore command) $ field @"commands" Lens.%= (Seq.|> str)
         void $ replInterpreter printIfNotEmpty command
 
-    state :: ReplState claim axiom
+    state :: ReplState claim
     state =
         ReplState
             { axioms     = addIndexesToAxioms axioms'
@@ -130,7 +128,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , logging    = (Logger.Debug, NoLogging)
             }
 
-    config :: Config claim axiom m
+    config :: Config claim m
     config =
         Config
             { stepper    = stepper0
@@ -146,10 +144,10 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         $ findIndex (not . isTrusted) claims'
 
     addIndexesToAxioms
-        :: [axiom]
-        -> [axiom]
+        :: [Axiom]
+        -> [Axiom]
     addIndexesToAxioms axs =
-        fmap addIndex (zip axs [0..])
+        fmap (Axiom . addIndex) (zip (fmap unAxiom axs) [0..])
 
     addIndexesToClaims
         :: Int
@@ -157,28 +155,24 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> [claim]
     addIndexesToClaims len cls =
         fmap
-            (coerce . addIndex)
-            (zip (fmap coerce cls) [len..])
+            (coerce . Rule.getRewriteRule . addIndex)
+            (zip (fmap (Rule.RewriteRule . coerce) cls) [len..])
 
     addIndex
-        :: (axiom, Int)
-        -> axiom
+        :: (Rule.RewriteRule Variable, Int)
+        -> Rule.RewriteRule Variable
     addIndex (rw, n) =
         modifyAttribute (mapAttribute n (getAttribute rw)) rw
 
     modifyAttribute
         :: Attribute.Axiom
-        -> axiom
-        -> axiom
-    modifyAttribute att rule =
-        let rp = axiomToRulePatt rule in
-            coerce $ rp { Rule.attributes = att }
+        -> Rule.RewriteRule Variable
+        -> Rule.RewriteRule Variable
+    modifyAttribute att (Rule.RewriteRule rp) =
+        Rule.RewriteRule $ rp { Rule.attributes = att }
 
-    axiomToRulePatt :: axiom -> Rule.RulePattern Variable
-    axiomToRulePatt = coerce
-
-    getAttribute :: axiom -> Attribute.Axiom
-    getAttribute = Rule.attributes . axiomToRulePatt
+    getAttribute :: Rule.RewriteRule Variable -> Attribute.Axiom
+    getAttribute = Rule.attributes . Rule.getRewriteRule
 
     mapAttribute :: Int -> Attribute.Axiom -> Attribute.Axiom
     mapAttribute n attr =
@@ -191,16 +185,16 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     firstClaim =
         claims' !! unClaimIndex firstClaimIndex
 
-    firstClaimExecutionGraph :: ExecutionGraph axiom
+    firstClaimExecutionGraph :: ExecutionGraph
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
 
     stepper0
         :: claim
         -> [claim]
-        -> [axiom]
-        -> ExecutionGraph axiom
+        -> [Axiom]
+        -> ExecutionGraph
         -> ReplNode
-        -> m (ExecutionGraph axiom)
+        -> m ExecutionGraph
     stepper0 claim claims axioms graph rnode = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
@@ -220,7 +214,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"
 
-    prompt :: MonadIO n => MonadState (ReplState claim axiom) n => n String
+    prompt :: MonadIO n => MonadState (ReplState claim) n => n String
     prompt = do
         node <- Lens.use (field @"node")
         liftIO $ do

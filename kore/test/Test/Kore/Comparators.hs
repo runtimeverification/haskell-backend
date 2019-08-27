@@ -21,6 +21,7 @@ import           Data.Functor.Identity
 import           Numeric.Natural
                  ( Natural )
 
+import qualified Kore.AllPath as AllPath
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
 import qualified Kore.Attribute.Null as Attribute
@@ -32,11 +33,13 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Goal
 import           Kore.Internal.MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike as TermLike
+import           Kore.OnePath.StrategyPattern
+                 ( StrategyPattern )
+import qualified Kore.OnePath.StrategyPattern as StrategyPattern
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
 import           Kore.Step.Axiom.Identifier
@@ -44,7 +47,7 @@ import           Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Rule
-                 ( OnePathRule (..), RulePattern (..) )
+                 ( RulePattern (..) )
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import           Kore.Step.Simplification.Data as AttemptedAxiomResults
@@ -1436,6 +1439,35 @@ instance EqualWithExplanation UnificationOrSubstitutionError where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
+instance
+    ( EqualWithExplanation patt
+    , Show patt
+    , Eq patt
+    )
+    => SumEqualWithExplanation (StrategyPattern patt)
+  where
+    sumConstructorPair
+        (StrategyPattern.RewritePattern p1) (StrategyPattern.RewritePattern p2)
+      =
+        SumConstructorSameWithArguments (EqWrap "RewritePattern" p1 p2)
+    sumConstructorPair (StrategyPattern.Stuck p1) (StrategyPattern.Stuck p2) =
+        SumConstructorSameWithArguments (EqWrap "Stuck" p1 p2)
+    sumConstructorPair StrategyPattern.Bottom StrategyPattern.Bottom =
+        SumConstructorSameNoArguments
+    sumConstructorPair p1 p2 =
+        SumConstructorDifferent
+            (printWithExplanation p1)
+            (printWithExplanation p2)
+
+instance
+    ( Show patt
+    , SumEqualWithExplanation (StrategyPattern patt)
+    )
+    => EqualWithExplanation (StrategyPattern patt)
+  where
+    compareWithExplanation = sumCompareWithExplanation
+    printWithExplanation = show
+
 instance EqualWithExplanation Attribute.Null where
     compareWithExplanation _ _ = Nothing
     printWithExplanation = show
@@ -1881,20 +1913,20 @@ instance
 
 instance
     (EqualWithExplanation goal, Show goal)
-    => EqualWithExplanation (ProofState goal)
+    => EqualWithExplanation (AllPath.ProofState goal)
   where
     compareWithExplanation = sumCompareWithExplanation
     printWithExplanation = show
 
 instance
     (EqualWithExplanation goal, Show goal)
-    => SumEqualWithExplanation (ProofState goal)
+    => SumEqualWithExplanation (AllPath.ProofState goal)
   where
-    sumConstructorPair Proven          Proven          =
+    sumConstructorPair AllPath.Proven          AllPath.Proven          =
         SumConstructorSameNoArguments
-    sumConstructorPair (Goal goal1)    (Goal goal2)    =
+    sumConstructorPair (AllPath.Goal goal1)    (AllPath.Goal goal2)    =
         SumConstructorSameWithArguments (EqWrap "Goal" goal1 goal2)
-    sumConstructorPair (GoalRem goal1) (GoalRem goal2) =
+    sumConstructorPair (AllPath.GoalRem goal1) (AllPath.GoalRem goal2) =
         SumConstructorSameWithArguments (EqWrap "GoalRem" goal1 goal2)
     sumConstructorPair expect           actual           =
         SumConstructorDifferent (show expect) (show actual)
@@ -2441,17 +2473,3 @@ instance
   where
     wrapperField = Function.on (EqWrap "getEvaluated = ") getEvaluated
     wrapperConstructorName _ = "Evaluated"
-
-instance
-    (EqualWithExplanation variable, Show variable, Ord variable) =>
-    EqualWithExplanation (OnePathRule variable)
-  where
-    compareWithExplanation = wrapperCompareWithExplanation
-    printWithExplanation = show
-
-instance
-    (EqualWithExplanation variable, Show variable, Ord variable) =>
-    WrapperEqualWithExplanation (OnePathRule variable)
-  where
-    wrapperField = Function.on (EqWrap "getOnePathRule = ") getOnePathRule
-    wrapperConstructorName _ = "OnePathRule"

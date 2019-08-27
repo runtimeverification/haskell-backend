@@ -12,22 +12,13 @@ module Kore.Attribute.Assoc
     ) where
 
 import qualified Control.Monad as Monad
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 {- | @Assoc@ represents the @assoc@ attribute for axioms.
  -}
 newtype Assoc = Assoc { isAssoc :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Assoc
-
-instance SOP.HasDatatypeInfo Assoc
-
-instance Debug Assoc
+    deriving (Eq, Ord, Show, Generic)
 
 instance NFData Assoc
 

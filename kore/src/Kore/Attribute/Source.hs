@@ -17,25 +17,18 @@ import           Control.DeepSeq
 import           Data.Default
 import           Data.Maybe
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
+import           GHC.Generics
+                 ( Generic )
 import           Text.Megaparsec
                  ( Parsec, noneOf, parseMaybe )
 import           Text.Megaparsec.Char
 
 import           Kore.Attribute.Parser as AttributeParser
-import           Kore.Debug
 import qualified Kore.Error
 
 newtype Source = Source
     { unSource :: Maybe String
-    } deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Source
-
-instance SOP.HasDatatypeInfo Source
-
-instance Debug Source
+    } deriving (Eq, Ord, Show, Generic)
 
 instance NFData Source
 

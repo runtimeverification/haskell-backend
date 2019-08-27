@@ -11,23 +11,14 @@ module Kore.Attribute.Label
     , labelId, labelSymbol, labelAttribute
     ) where
 
-import           Data.Text
-                 ( Text )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
+import Data.Text
+       ( Text )
 
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 -- | @Label@ represents the @overload@ attribute for symbols.
 newtype Label = Label { unLabel :: Maybe Text }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Label
-
-instance SOP.HasDatatypeInfo Label
-
-instance Debug Label
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Label where
     (<>) a@(Label (Just _)) _ = a

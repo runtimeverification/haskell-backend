@@ -16,22 +16,13 @@ module Kore.Attribute.Trusted
     ) where
 
 import qualified Control.Monad as Monad
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 {- | @Trusted@ represents the @trusted@ attribute for claim sentences.
  -}
 newtype Trusted = Trusted { isTrusted :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Trusted
-
-instance SOP.HasDatatypeInfo Trusted
-
-instance Debug Trusted
+    deriving (Eq, Ord, Show, Generic)
 
 instance NFData Trusted
 

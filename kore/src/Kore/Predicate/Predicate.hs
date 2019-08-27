@@ -56,13 +56,12 @@ import           Data.List
                  ( foldl', nub )
 import           Data.Map.Strict
                  ( Map )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
+import           GHC.Generics
+                 ( Generic )
 import           GHC.Stack
                  ( HasCallStack )
 
 import           Kore.Attribute.Pattern.FreeVariables
-import           Kore.Debug
 import           Kore.Error
                  ( Error, koreFail )
 import           Kore.Internal.TermLike as TermLike
@@ -82,17 +81,9 @@ Should not be exported, and should be treated as an opaque entity which
 can be manipulated only by functions in this module.
 -}
 newtype GenericPredicate pat = GenericPredicate pat
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
-
-instance SOP.Generic (GenericPredicate pat)
-
-instance SOP.HasDatatypeInfo (GenericPredicate pat)
-
-instance Debug pat => Debug (GenericPredicate pat)
+    deriving (Eq, Foldable, Functor, Generic, NFData, Ord, Show, Traversable)
 
 instance Hashable pat => Hashable (GenericPredicate pat)
-
-instance NFData pat => NFData (GenericPredicate pat)
 
 instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isTop (GenericPredicate patt) = isTop patt

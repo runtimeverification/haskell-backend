@@ -12,28 +12,21 @@ module Kore.Attribute.HeatCool
     , coolId, coolSymbol, coolAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Control.Monad
-                 ( (>=>) )
-import           Data.Default
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
+import Control.DeepSeq
+       ( NFData )
+import Control.Monad
+       ( (>=>) )
+import Data.Default
+import GHC.Generics
+       ( Generic )
 
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 {- | Denote the heating or cooling phase of execution.
 
  -}
 data HeatCool = Heat | Normal | Cool
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic HeatCool
-
-instance SOP.HasDatatypeInfo HeatCool
-
-instance Debug HeatCool
+    deriving (Eq, Ord, Show, Generic)
 
 instance NFData HeatCool
 

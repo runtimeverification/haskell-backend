@@ -93,10 +93,6 @@ import qualified Kore.Variables.Target as Target
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable, foldMapVariable )
 
--- | Wraps functions such as 'unificationProcedure' and
--- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
--- 'stepWithRule'.
-
 newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier

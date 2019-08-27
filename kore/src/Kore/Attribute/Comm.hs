@@ -15,22 +15,15 @@ import           Control.DeepSeq
                  ( NFData )
 import qualified Control.Monad as Monad
 import           Data.Default
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
+import           GHC.Generics
+                 ( Generic )
 
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 {- | @Comm@ represents the @comm@ attribute for axioms.
  -}
 newtype Comm = Comm { isComm :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Comm
-
-instance SOP.HasDatatypeInfo Comm
-
-instance Debug Comm
+    deriving (Eq, Ord, Show, Generic)
 
 instance NFData Comm
 

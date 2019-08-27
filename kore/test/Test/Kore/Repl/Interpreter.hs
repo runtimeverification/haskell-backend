@@ -31,7 +31,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
-import           Kore.Goal
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -39,7 +38,7 @@ import           Kore.Internal.TermLike
                  ( TermLike, elemVarS, mkBottom_, mkElemVar )
 import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.Verification
-                 ( verifyClaimStep )
+                 ( Axiom (..), verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
@@ -61,7 +60,6 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 
 type Claim = OnePathRule Variable
-type Axiom = Rule (OnePathRule Variable)
 
 test_replInterpreter :: [TestTree]
 test_replInterpreter =
@@ -558,7 +556,7 @@ runWithState
     -> [Axiom]
     -> [Claim]
     -> Claim
-    -> (ReplState Claim Axiom -> ReplState Claim Axiom)
+    -> (ReplState Claim -> ReplState Claim)
     -> IO Result
 runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
@@ -590,7 +588,7 @@ runWithState command axioms claims claim stateTransformer
 data Result = Result
     { output   :: ReplOutput
     , continue :: ReplStatus
-    , state    :: ReplState Claim Axiom
+    , state    :: ReplState Claim
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -600,7 +598,7 @@ equalsOutput :: ReplOutput -> ReplOutput -> Assertion
 equalsOutput actual expected =
     actual @?= expected
 
-hasCurrentNode :: ReplState Claim Axiom -> ReplNode -> IO ()
+hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
 hasCurrentNode st n = do
     node st `equals` n
     graphNode <- evalStateT (getTargetNode justNode) st
@@ -608,7 +606,7 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim Axiom -> AliasDefinition -> IO ()
+hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
 hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
@@ -616,14 +614,14 @@ hasAlias st alias@AliasDefinition { name } =
     in
         actual `equals` Just alias
 
-hasLogging :: ReplState Claim Axiom -> (Logger.Severity, LogType) -> IO ()
+hasLogging :: ReplState Claim -> (Logger.Severity, LogType) -> IO ()
 hasLogging st expectedLogging =
     let
         actualLogging = logging st
     in
         actualLogging `equals` expectedLogging
 
-hasCurrentClaimIndex :: ReplState Claim Axiom -> ClaimIndex -> IO ()
+hasCurrentClaimIndex :: ReplState Claim -> ClaimIndex -> IO ()
 hasCurrentClaimIndex st expectedClaimIndex =
     let
         actualClaimIndex = claimIndex st
@@ -637,7 +635,7 @@ mkState
     :: [Axiom]
     -> [Claim]
     -> Claim
-    -> ReplState Claim Axiom
+    -> ReplState Claim
 mkState axioms claims claim =
     ReplState
         { axioms      = axioms
@@ -655,9 +653,7 @@ mkState axioms claims claim =
   where
     graph' = emptyExecutionGraph claim
 
-mkConfig
-    :: MVar (Logger.LogAction IO Logger.LogMessage)
-    -> Config Claim Axiom Simplifier
+mkConfig :: MVar (Logger.LogAction IO Logger.LogMessage) -> Config Claim Simplifier
 mkConfig logger =
     Config
         { stepper     = stepper0
@@ -666,13 +662,6 @@ mkConfig logger =
         , outputFile  = OutputFile Nothing
         }
   where
-    stepper0
-        :: Claim
-        -> [Claim]
-        -> [Axiom]
-        -> ExecutionGraph Axiom
-        -> ReplNode
-        -> Simplifier (ExecutionGraph Axiom)
     stepper0 claim' claims' axioms' graph (ReplNode node) =
         verifyClaimStep claim' claims' axioms' graph node
 

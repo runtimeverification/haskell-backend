@@ -12,22 +12,13 @@ module Kore.Attribute.Axiom.Unit
     ) where
 
 import qualified Control.Monad as Monad
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 {- | @Unit@ represents the @unit@ attribute for axioms.
  -}
 newtype Unit = Unit { isUnit :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Unit
-
-instance SOP.HasDatatypeInfo Unit
-
-instance Debug Unit
+    deriving (Eq, Ord, Show, Generic)
 
 instance NFData Unit
 

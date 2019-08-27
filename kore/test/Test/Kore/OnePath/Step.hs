@@ -19,15 +19,17 @@ import Numeric.Natural
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
-
-import           Kore.Goal
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import           Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Pattern
+                 ( Pattern )
+import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
+import           Kore.OnePath.Step
+import           Kore.OnePath.StrategyPattern
 import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeEqualsPredicate,
                  makeMultipleAndPredicate, makeNotPredicate,
@@ -35,16 +37,14 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern) )
+                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Strategy
                  ( Strategy, pickFinal, runStrategy )
-import           Kore.Step.Strategy
-                 ( ExecutionGraph (..) )
+import qualified Kore.Step.Strategy as Strategy
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
@@ -57,13 +57,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
-
-makeOnePathRule :: TermLike Variable -> TermLike Variable -> OnePathRule Variable
-makeOnePathRule term dest =
-    OnePathRule
-    $ makeRuleFromPatterns
-        (fromTermLike term)
-        (fromTermLike dest)
+type ExecutionGraph a = Strategy.ExecutionGraph a (RewriteRule Variable)
 
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
@@ -75,14 +69,12 @@ test_onePathStrategy =
         -- Expected: a
         [ actual ] <- runOnePathSteps
             (Limit 0)
-            (makeOnePathRule
-                Mock.a
-                Mock.a
-            )
+            (Pattern.fromTermLike Mock.a)
+            Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (Goal $ makeOnePathRule Mock.a Mock.a)
+            (RewritePattern $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Axiom priority, first step" $ do
         -- Target: a
@@ -92,10 +84,11 @@ test_onePathStrategy =
         -- Expected: bottom, since a becomes bottom after removing the target.
         [ _actual ] <- runOnePathSteps
             (Limit 1)
-            (makeOnePathRule Mock.a Mock.a)
+            (Pattern.fromTermLike Mock.a)
+            Mock.a
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation "" Proven _actual
+        assertEqualWithExplanation "" Bottom _actual
 
         -- Target: d
         -- Coinductive axiom: a => b
@@ -105,11 +98,12 @@ test_onePathStrategy =
         -- step
         [ _actual ] <- runOnePathSteps
             (Limit 1)
-            (makeOnePathRule Mock.a Mock.d)
+            (Pattern.fromTermLike Mock.a)
+            Mock.d
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (Goal $ makeOnePathRule Mock.c Mock.d)
+            (RewritePattern $ Pattern.fromTermLike Mock.c)
             _actual
     , testCase "Axiom priority, second step" $ do
         -- Target: b
@@ -120,16 +114,14 @@ test_onePathStrategy =
         -- Expected: bottom, since a->b = target
         [ _actual ] <- runOnePathSteps
             (Limit 2)
-            (makeOnePathRule
-                Mock.a
-                Mock.b
-            )
+            (Pattern.fromTermLike Mock.a)
+            Mock.b
             [simpleRewrite Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            Proven
+            Bottom
             _actual
 
         -- Target: e
@@ -140,14 +132,15 @@ test_onePathStrategy =
         -- Expected: c, since a->b->c and b->d is ignored
         [ _actual1 ] <- runOnePathSteps
             (Limit 2)
-            (makeOnePathRule Mock.a Mock.e)
+            (Pattern.fromTermLike Mock.a)
+            Mock.e
             [simpleRewrite Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
             (sort
-                [ Goal $ makeOnePathRule Mock.c Mock.e
+                [ RewritePattern $ Pattern.fromTermLike Mock.c
                 ]
             )
             (sort
@@ -163,41 +156,42 @@ test_onePathStrategy =
         -- Expected: d, since a->b->d
         [ _actual ] <- runOnePathSteps
             (Limit 2)
-            (makeOnePathRule Mock.a Mock.e)
+            (Pattern.fromTermLike Mock.a)
+            Mock.e
             [simpleRewrite Mock.e Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
             (sort
-                [ Goal $ makeOnePathRule Mock.d Mock.e
+                [ RewritePattern $ Pattern.fromTermLike Mock.d
                 ]
             )
             (sort
                 [ _actual
                 ]
             )
-     , testCase "Differentiated axioms" $ do
-         -- Target: constr11(a)
-         -- Coinductive axiom: constr11(a) => g(a)
-         -- Coinductive axiom: constr11(b) => f(b)
-         -- Normal axiom: constr11(a) => g(a)
-         -- Normal axiom: constr11(b) => g(b)
-         -- Normal axiom: constr11(c) => f(c)
-         -- Normal axiom: constr11(x) => h(x)
-         -- Normal axiom: constr10(x) => constr11(x)
-         -- Start pattern: constr10(x)
-         -- Expected:
-         --   (f(b) and x=b)
-         --   or (f(c) and x=c)
-         --   or (h(x) and x!=a and x!=b and x!=c )
-         actual <-
-             runOnePathSteps
+    , testCase "Differentiated axioms" $ do
+        -- Target: constr11(a)
+        -- Coinductive axiom: constr11(a) => g(a)
+        -- Coinductive axiom: constr11(b) => f(b)
+        -- Normal axiom: constr11(a) => g(a)
+        -- Normal axiom: constr11(b) => g(b)
+        -- Normal axiom: constr11(c) => f(c)
+        -- Normal axiom: constr11(x) => h(x)
+        -- Normal axiom: constr10(x) => constr11(x)
+        -- Start pattern: constr10(x)
+        -- Expected:
+        --   (f(b) and x=b)
+        --   or (f(c) and x=c)
+        --   or (h(x) and x!=a and x!=b and x!=c )
+        actual <-
+            runOnePathSteps
                 (Limit 2)
-                (makeOnePathRule
+                (Pattern.fromTermLike
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
-                    (Mock.functionalConstr11 Mock.a)
                 )
+                (Mock.functionalConstr11 Mock.a)
                 [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
                 , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
@@ -211,114 +205,98 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
-         let expected =
-                 [ Goal $ makeRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.b
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                 , Goal $ makeRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.c
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                 , Goal $ makeRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.h (TermLike.mkElemVar Mock.x)
-                        , predicate =  -- TODO(virgil): Better and simplification.
-                            makeAndPredicate
-                                (makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (TermLike.mkElemVar Mock.x) Mock.a
-                                        )
-                                    )
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (TermLike.mkElemVar Mock.x) Mock.b
-                                        )
-                                    )
+        assertEqualWithExplanation ""
+            [ RewritePattern Conditional
+                { term = Mock.f Mock.b
+                , predicate = makeTruePredicate
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                }
+            , RewritePattern Conditional
+                { term = Mock.f Mock.c
+                , predicate = makeTruePredicate
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
+                }
+            , RewritePattern Conditional
+                { term = Mock.h (TermLike.mkElemVar Mock.x)
+                , predicate =  -- TODO(virgil): Better and simplification.
+                    makeAndPredicate
+                        (makeAndPredicate
+                            (makeNotPredicate
+                                (makeEqualsPredicate
+                                    (TermLike.mkElemVar Mock.x) Mock.a
                                 )
-                                (makeNotPredicate
-                                    (makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c)
+                            )
+                            (makeNotPredicate
+                                (makeEqualsPredicate
+                                    (TermLike.mkElemVar Mock.x) Mock.b
                                 )
-                        , substitution = mempty
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                 ]
-         assertEqualWithExplanation ""
-            expected
+                            )
+                        )
+                        (makeNotPredicate
+                            (makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c)
+                        )
+                , substitution = mempty
+                }
+            ]
             actual
-     , testCase "Stuck pattern" $ do
-         -- Target: constr11(a)
-         -- Coinductive axiom: constr11(b) => f(b)
-         -- Normal axiom: constr11(c) => f(c)
-         -- Normal axiom: constr10(x) => constr11(x)
-         -- Start pattern: constr10(x)
-         -- Expected:
-         --   Bottom
-         --   or (f(b) and x=b)
-         --   or (f(c) and x=c)
-         --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
-         [ _actual1, _actual2, _actual3 ] <-
-             runOnePathSteps
-                 (Limit 2)
-                 (makeOnePathRule
-                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
-                     (Mock.functionalConstr11 Mock.a)
-                 )
-                 [ simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
-                 ]
-                 [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
-                 , simpleRewrite
-                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
-                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-                 ]
-         let equalsXA = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.a
-             equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
-             equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
-         assertEqualWithExplanation ""
-             [ Goal $ makeRuleFromPatterns
-                 ( Conditional
-                     { term = Mock.f Mock.b
-                     , predicate = makeTruePredicate
-                     , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-                     }
-                 )
-                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-             , Goal $ makeRuleFromPatterns
-                 ( Conditional
-                     { term = Mock.f Mock.c
-                     , predicate = makeTruePredicate
-                     , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-                     }
-                 )
-                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-             , GoalRem $ makeRuleFromPatterns
-                 ( Conditional
-                     { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
-                     , predicate =
-                         makeMultipleAndPredicate
-                             [ makeNotPredicate equalsXA
-                             , makeNotPredicate equalsXB
-                             , makeNotPredicate equalsXC
-                             ]
-                     , substitution = mempty
-                     }
-                 )
-                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-             ]
-             [ _actual1
-             , _actual2
-             , _actual3
-             ]
+    , testCase "Stuck pattern" $ do
+        -- Target: constr11(a)
+        -- Coinductive axiom: constr11(b) => f(b)
+        -- Normal axiom: constr11(c) => f(c)
+        -- Normal axiom: constr10(x) => constr11(x)
+        -- Start pattern: constr10(x)
+        -- Expected:
+        --   Bottom
+        --   or (f(b) and x=b)
+        --   or (f(c) and x=c)
+        --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
+        [ _actual1, _actual2, _actual3 ] <-
+            runOnePathSteps
+                (Limit 2)
+                (Pattern.fromTermLike
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
+                )
+                (Mock.functionalConstr11 Mock.a)
+                [ simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                ]
+                [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
+                , simpleRewrite
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                ]
+        let equalsXA = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.a
+            equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
+            equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
+        assertEqualWithExplanation ""
+            [ RewritePattern Conditional
+                { term = Mock.f Mock.b
+                , predicate = makeTruePredicate
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                }
+            , RewritePattern Conditional
+                { term = Mock.f Mock.c
+                , predicate = makeTruePredicate
+                , substitution =
+                    Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
+                }
+            , Stuck Conditional
+                { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
+                , predicate =
+                    makeMultipleAndPredicate
+                        [ makeNotPredicate equalsXA
+                        , makeNotPredicate equalsXB
+                        , makeNotPredicate equalsXC
+                        ]
+                , substitution = mempty
+                }
+            ]
+            [ _actual1
+            , _actual2
+            , _actual3
+            ]
     , testCase "Axiom with requires" $ do
         -- Target: a
         -- Coinductive axiom: n/a
@@ -327,10 +305,10 @@ test_onePathStrategy =
         -- Expected: a | f(b) == c
         [ _actual1, _actual2 ] <- runOnePathSteps
             (Limit 2)
-            (makeOnePathRule
+            (Pattern.fromTermLike
                 (Mock.functionalConstr10 Mock.b)
-                Mock.a
             )
+            Mock.a
             []
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 Mock.b)
@@ -340,19 +318,16 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqualWithExplanation ""
-            [ GoalRem $ makeRuleFromPatterns
-                ( Conditional
-                    { term = Mock.functionalConstr10 Mock.b
-                    , predicate =
-                        makeNotPredicate
-                            $ makeEqualsPredicate
-                                Mock.c
-                                $ Mock.f Mock.b
-                    , substitution = mempty
-                    }
-                )
-                (fromTermLike Mock.a)
-            , Proven
+            [ Stuck Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate =
+                    makeNotPredicate
+                        $ makeEqualsPredicate
+                            Mock.c
+                            $ Mock.f Mock.b
+                , substitution = mempty
+                }
+            , Bottom
             ]
             [ _actual1
             , _actual2
@@ -365,10 +340,8 @@ test_onePathStrategy =
         [ _actual ] <-
             runOnePathSteps
                 (Limit 2)
-                ( makeOnePathRule
-                    (Mock.builtinInt 0)
-                    (Mock.builtinInt 1)
-                )
+                (Pattern.fromTermLike (Mock.builtinInt 0))
+                (Mock.builtinInt 1)
                 []
                 [ rewriteWithPredicate
                     (TermLike.mkElemVar Mock.xInt)
@@ -381,7 +354,7 @@ test_onePathStrategy =
                     )
                 ]
         assertEqualWithExplanation ""
-            Proven
+            Bottom
             _actual
     , testCase "Configuration with SMT pruning" $ do
         -- Target: a
@@ -392,20 +365,17 @@ test_onePathStrategy =
         -- Expected: a | f(b) < 0
         [ _actual1, _actual2 ] <- runOnePathSteps
             (Limit 1)
-            (makeRuleFromPatterns
-                (Conditional
-                    { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
-                        (Mock.lessInt
-                            (Mock.fTestInt Mock.b)
-                            (Mock.builtinInt 0)
-                        )
-                        (Mock.builtinBool True)
-                    , substitution = mempty
-                    }
-                )
-                (fromTermLike Mock.a)
-            )
+            Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate = makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt Mock.b)
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            Mock.a
             []
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
@@ -429,21 +399,18 @@ test_onePathStrategy =
                 )
             ]
         assertEqualWithExplanation ""
-            [ Goal $ makeRuleFromPatterns
-                ( Conditional
-                    { term = Mock.a
-                    , predicate =
-                        makeEqualsPredicate
-                            (Mock.lessInt
-                                (Mock.fTestInt Mock.b)
-                                (Mock.builtinInt 0)
-                            )
-                            (Mock.builtinBool True)
-                    , substitution = mempty
-                    }
-                )
-                (fromTermLike Mock.a)
-            , Proven
+            [ RewritePattern Conditional
+                { term = Mock.a
+                , predicate =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt Mock.b)
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            , Bottom
             ]
             [ _actual1
             , _actual2
@@ -456,20 +423,17 @@ test_onePathStrategy =
         -- Expected: a | f(b) < 0
         [ _actual1, _actual2 ] <- runOnePathSteps
             (Limit 1)
-            (makeRuleFromPatterns
-                (Conditional
-                    { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
-                        (Mock.lessInt
-                            (Mock.fTestInt Mock.b)
-                            (Mock.builtinInt 0)
-                        )
-                        (Mock.builtinBool True)
-                    , substitution = mempty
-                    }
-                )
-                (Pattern.fromTermLike Mock.a)
-            )
+            Conditional
+                { term = Mock.functionalConstr10 Mock.b
+                , predicate = makeEqualsPredicate
+                    (Mock.lessInt
+                        (Mock.fTestInt Mock.b)
+                        (Mock.builtinInt 0)
+                    )
+                    (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            Mock.a
             []
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
@@ -483,21 +447,18 @@ test_onePathStrategy =
                 )
             ]
         assertEqualWithExplanation ""
-            [ Goal $ makeRuleFromPatterns
-                ( Conditional
-                    { term = Mock.a
-                    , predicate =
-                        makeEqualsPredicate
-                            (Mock.lessInt
-                                (Mock.fTestInt Mock.b)
-                                (Mock.builtinInt 0)
-                            )
-                            (Mock.builtinBool True)
-                    , substitution = mempty
-                    }
-                )
-                (Pattern.fromTermLike Mock.a)
-            , Proven
+            [ RewritePattern Conditional
+                { term = Mock.a
+                , predicate =
+                    makeEqualsPredicate
+                        (Mock.lessInt
+                            (Mock.fTestInt Mock.b)
+                            (Mock.builtinInt 0)
+                        )
+                        (Mock.builtinBool True)
+                , substitution = mempty
+                }
+            , Bottom
             ]
             [ _actual1
             , _actual2
@@ -507,10 +468,9 @@ test_onePathStrategy =
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (OnePathRule Variable)
+    -> RewriteRule Variable
 simpleRewrite left right =
-    Rule
-    $ RewriteRule RulePattern
+    RewriteRule RulePattern
         { left = left
         , right = right
         , requires = makeTruePredicate
@@ -522,10 +482,9 @@ rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
     -> Syntax.Predicate Variable
-    -> Rule (OnePathRule Variable)
+    -> RewriteRule Variable
 rewriteWithPredicate left right predicate =
-    Rule
-    $ RewriteRule RulePattern
+    RewriteRule RulePattern
         { left = left
         , right = right
         , requires = predicate
@@ -534,50 +493,51 @@ rewriteWithPredicate left right predicate =
         }
 
 runSteps
-    :: ( ExecutionGraph
-            (ProofState (OnePathRule Variable))
-            (Rule (OnePathRule Variable))
-       -> Maybe (ExecutionGraph b c)
-       )
-    -> (ExecutionGraph b c -> a)
-    -> OnePathRule Variable
+    :: (ExecutionGraph CommonStrategyPattern -> Maybe (ExecutionGraph b))
+    -> (ExecutionGraph b -> a)
+    -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [Strategy (Prim (Rule (OnePathRule Variable)))]
+    -> [Strategy (Prim (Pattern Variable) (RewriteRule Variable))]
     -> IO a
 runSteps graphFilter picker configuration strategy =
     (<$>) picker
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
-    <$> runStrategy transitionRule strategy (Goal configuration)
+    <$> runStrategy transitionRule strategy (RewritePattern configuration)
   where
     mockEnv = Mock.env
 
 runOnePathSteps
     :: Limit Natural
-    -> OnePathRule Variable
+    -> Pattern Variable
     -- ^left-hand-side of unification
-    -> [Rule (OnePathRule Variable)]
-    -> [Rule (OnePathRule Variable)]
-    -> IO [ProofState (OnePathRule Variable)]
+    -> TermLike Variable
+    -> [RewriteRule Variable]
+    -> [RewriteRule Variable]
+    -> IO [CommonStrategyPattern]
 runOnePathSteps
     stepLimit
-    goal
+    configuration
+    target
     coinductiveRewrites
     rewrites
   = do
     result <- runSteps
         Just
         pickFinal
-        goal
+        configuration
         (Limit.takeWithin
             stepLimit
-            ( onePathFirstStep rewrites
+            ( onePathFirstStep expandedTarget rewrites
             : repeat
                 (onePathFollowupStep
+                    expandedTarget
                     coinductiveRewrites
                     rewrites
                 )
             )
         )
     return (sort $ nub result)
+  where
+    expandedTarget = Pattern.fromTermLike target

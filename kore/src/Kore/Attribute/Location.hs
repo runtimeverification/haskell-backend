@@ -13,8 +13,6 @@ module Kore.Attribute.Location
 
 import           Data.Maybe
 import qualified Data.Text as Text
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 import           Text.Megaparsec
                  ( Parsec, parseMaybe )
 import           Text.Megaparsec.Char
@@ -22,32 +20,19 @@ import           Text.Megaparsec.Char.Lexer
                  ( decimal )
 
 import           Kore.Attribute.Parser as AttributeParser
-import           Kore.Debug
 import qualified Kore.Error
 
 data LineColumn = LineColumn
     { line   :: !Int
     , column :: !Int
-    } deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic LineColumn
-
-instance SOP.HasDatatypeInfo LineColumn
-
-instance Debug LineColumn
+    } deriving (Eq, Ord, Show, Generic)
 
 instance NFData LineColumn
 
 data Location = Location
     { start :: Maybe LineColumn
     , end   :: Maybe LineColumn
-    } deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Location
-
-instance SOP.HasDatatypeInfo Location
-
-instance Debug Location
+    } deriving (Eq, Ord, Show, Generic)
 
 instance NFData Location
 

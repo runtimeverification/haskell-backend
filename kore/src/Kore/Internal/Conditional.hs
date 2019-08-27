@@ -26,12 +26,11 @@ import           Data.Hashable
 import           Data.Monoid
                  ( (<>) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
+import           GHC.Generics
+                 ( Generic )
 
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
-import           Kore.Debug
 import           Kore.Internal.TermLike
                  ( TermLike, termLikeSort )
 import           Kore.Predicate.Predicate
@@ -66,7 +65,7 @@ data Conditional variable child =
         , predicate :: !(Predicate variable)
         , substitution :: !(Substitution variable)
         }
-    deriving (Foldable, Functor, GHC.Generic, Traversable)
+    deriving (Foldable, Functor, Generic, Traversable)
 
 deriving instance
     (Eq child, Ord variable) =>
@@ -79,12 +78,6 @@ deriving instance
 deriving instance
     (Show child, Show variable) =>
     Show (Conditional variable child)
-
-instance SOP.Generic (Conditional variable child)
-
-instance SOP.HasDatatypeInfo (Conditional variable child)
-
-instance (Debug variable, Debug child) => Debug (Conditional variable child)
 
 instance
     (Hashable child, Hashable variable) =>

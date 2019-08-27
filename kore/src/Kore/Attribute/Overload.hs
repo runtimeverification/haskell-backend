@@ -11,23 +11,13 @@ module Kore.Attribute.Overload
     , overloadId, overloadSymbol, overloadAttribute
     ) where
 
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
-
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 -- | @Overload@ represents the @overload@ attribute for symbols.
 newtype Overload =
     Overload
         { getOverload :: Maybe (SymbolOrAlias, SymbolOrAlias) }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Overload
-
-instance SOP.HasDatatypeInfo Overload
-
-instance Debug Overload
+    deriving (Generic, Eq, Ord, Show)
 
 instance Semigroup Overload where
     (<>) a@(Overload (Just _)) _ = a

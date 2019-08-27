@@ -12,22 +12,13 @@ module Kore.Attribute.Axiom.Constructor
     ) where
 
 import qualified Control.Monad as Monad
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
-import Kore.Debug
 
 {- | @Constructor@ represents the @constructor@ attribute for axioms.
  -}
 newtype Constructor = Constructor { isConstructor :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
-
-instance SOP.Generic Constructor
-
-instance SOP.HasDatatypeInfo Constructor
-
-instance Debug Constructor
+    deriving (Eq, Ord, Show, Generic)
 
 instance NFData Constructor
 
