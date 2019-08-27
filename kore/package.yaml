@@ -41,7 +41,6 @@ dependencies:
   - filepath
   - generic-lens
   - generics-sop
-  - ghc-trace-events
   - gitrev
   - graphviz
   - groom
@@ -144,15 +143,6 @@ executables:
     main: Main.hs
     source-dirs:
       - app/repl
-      - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
-    dependencies:
-      - kore
-
-  kore-profiler:
-    main: Main.hs
-    source-dirs:
-      - app/profiler
       - app/share
     ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:

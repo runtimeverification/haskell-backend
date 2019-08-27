@@ -91,8 +91,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( Symbol, TermLike, TermLikeF (..) )
 import           Kore.Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler (profileDuration) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
@@ -112,9 +110,7 @@ This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
 
-class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
-    => MonadSimplify m
-  where
+class (WithLog LogMessage m, MonadSMT m) => MonadSimplify m where
     -- | Retrieve the 'MetadataTools' for the Kore context.
     askMetadataTools :: m (SmtMetadataTools Attribute.Symbol)
     default askMetadataTools
@@ -261,8 +257,6 @@ deriving instance WithLog msg m => WithLog msg (BranchT m)
 
 deriving instance MonadSMT m => MonadSMT (BranchT m)
 
-deriving instance MonadProfiler m => MonadProfiler (BranchT m)
-
 deriving instance MonadSimplify m => MonadSimplify (BranchT m)
 
 {- | Collect results from many simplification branches into one result.
@@ -367,13 +361,7 @@ instance (MonadUnliftIO m, WithLog LogMessage m)
         SimplifierT . localLogAction mapping . runSimplifierT
     {-# INLINE localLogAction #-}
 
-instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
-  where
-    profileDuration event duration =
-        SimplifierT (profileDuration event (runSimplifierT duration))
-    {-# INLINE profileDuration #-}
-
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
+instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m)
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools

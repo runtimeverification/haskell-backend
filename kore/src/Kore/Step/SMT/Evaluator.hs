@@ -40,8 +40,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import qualified Kore.Profiler.Profile as Profile
-                 ( smtDecision )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Simplification.Data as Simplifier
@@ -136,9 +134,7 @@ decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
         tools <- Simplifier.askMetadataTools
         smtPredicate <- goTranslatePredicate tools korePredicate
-        result <-
-            Profile.smtDecision smtPredicate
-            $ SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
+        result <- SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
         case result of
             Unsat -> return False
             _ -> Applicative.empty

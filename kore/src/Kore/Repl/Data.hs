@@ -69,8 +69,6 @@ import qualified Kore.Logger.Output as Logger
 import           Kore.OnePath.StrategyPattern
 import           Kore.OnePath.Verification
                  ( Axiom (..) )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
 import           Kore.Step.Rule
                  ( RewriteRule (..) )
 import           Kore.Step.Simplification.Data
@@ -434,8 +432,6 @@ newtype UnifierWithExplanation m a =
   deriving (Alternative, Applicative, Functor, Monad)
 
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
-
-deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
 instance Logger.WithLog Logger.LogMessage m
     => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)

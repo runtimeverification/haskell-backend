@@ -75,8 +75,6 @@ import           Data.Text
                  ( Text )
 
 import qualified Kore.Logger as Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler (..), profileDurationEvent )
 import           ListT
                  ( ListT, mapListT )
 import           SMT.SimpleSMT
@@ -315,11 +313,6 @@ instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
 instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
     {-# INLINE withSolver #-}
-
-instance MonadIO m => MonadProfiler (SmtT m)
-  where
-    profileDuration a action = SmtT (profileDurationEvent a (runSmtT action))
-    {-# INLINE profileDuration #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 
