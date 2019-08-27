@@ -558,7 +558,7 @@ runWithState
     -> [Axiom]
     -> [Claim]
     -> Claim
-    -> (ReplState Claim -> ReplState Claim)
+    -> (ReplState Claim Axiom -> ReplState Claim Axiom)
     -> IO Result
 runWithState command axioms claims claim stateTransformer
   = Logger.withLogger logOptions $ \logger -> do
@@ -590,7 +590,7 @@ runWithState command axioms claims claim stateTransformer
 data Result = Result
     { output   :: ReplOutput
     , continue :: ReplStatus
-    , state    :: ReplState Claim
+    , state    :: ReplState Claim Axiom
     }
 
 equals :: (Eq a, Show a) => a -> a -> Assertion
@@ -600,7 +600,7 @@ equalsOutput :: ReplOutput -> ReplOutput -> Assertion
 equalsOutput actual expected =
     actual @?= expected
 
-hasCurrentNode :: ReplState Claim -> ReplNode -> IO ()
+hasCurrentNode :: ReplState Claim Axiom -> ReplNode -> IO ()
 hasCurrentNode st n = do
     node st `equals` n
     graphNode <- evalStateT (getTargetNode justNode) st
@@ -608,7 +608,7 @@ hasCurrentNode st n = do
   where
     justNode = Just n
 
-hasAlias :: ReplState Claim -> AliasDefinition -> IO ()
+hasAlias :: ReplState Claim Axiom -> AliasDefinition -> IO ()
 hasAlias st alias@AliasDefinition { name } =
     let
         aliasMap = aliases st
@@ -616,14 +616,14 @@ hasAlias st alias@AliasDefinition { name } =
     in
         actual `equals` Just alias
 
-hasLogging :: ReplState Claim -> (Logger.Severity, LogType) -> IO ()
+hasLogging :: ReplState Claim Axiom -> (Logger.Severity, LogType) -> IO ()
 hasLogging st expectedLogging =
     let
         actualLogging = logging st
     in
         actualLogging `equals` expectedLogging
 
-hasCurrentClaimIndex :: ReplState Claim -> ClaimIndex -> IO ()
+hasCurrentClaimIndex :: ReplState Claim Axiom -> ClaimIndex -> IO ()
 hasCurrentClaimIndex st expectedClaimIndex =
     let
         actualClaimIndex = claimIndex st
@@ -637,7 +637,7 @@ mkState
     :: [Axiom]
     -> [Claim]
     -> Claim
-    -> ReplState Claim
+    -> ReplState Claim Axiom
 mkState axioms claims claim =
     ReplState
         { axioms      = axioms
@@ -657,7 +657,7 @@ mkState axioms claims claim =
 
 mkConfig
     :: MVar (Logger.LogAction IO Logger.LogMessage)
-    -> Config Claim Simplifier
+    -> Config Claim Axiom Simplifier
 mkConfig logger =
     Config
         { stepper     = stepper0

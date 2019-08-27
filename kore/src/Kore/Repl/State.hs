@@ -124,7 +124,7 @@ ruleReference f g ref =
 
 -- | Get nth claim from the claims list.
 getClaimByIndex
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => Int
     -- ^ index in the claims list
     -> m (Maybe claim)
@@ -132,16 +132,15 @@ getClaimByIndex index = Lens.preuse $ field @"claims" . Lens.element index
 
 -- | Get nth axiom from the axioms list.
 getAxiomByIndex
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => Int
     -- ^ index in the axioms list
-    -> m (Maybe (Rule claim))
+    -> m (Maybe axiom)
 getAxiomByIndex index = Lens.preuse $ field @"axioms" . Lens.element index
 
 -- | Get the leftmost axiom with a specific name from the axioms list.
 getAxiomByName
-    :: MonadState (ReplState claim) m
-    => axiom ~ Rule claim
+    :: MonadState (ReplState claim axiom) m
     => Coercible axiom (RulePattern Variable)
     => Coercible (RulePattern Variable) axiom
     => String
@@ -153,7 +152,8 @@ getAxiomByName name = do
 
 -- | Get the leftmost claim with a specific name from the claim list.
 getClaimByName
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
+    => axiom ~ Rule claim
     => Claim claim
     => String
     -- ^ label attribute
@@ -163,7 +163,8 @@ getClaimByName name = do
     return $ find (isNameEqual name) claims
 
 getClaimIndexByName
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
+    => axiom ~ Rule claim
     => Claim claim
     => String
     -- ^ label attribute
@@ -173,7 +174,7 @@ getClaimIndexByName name= do
     return $ ClaimIndex <$> findIndex (isNameEqual name) claims
 
 getAxiomOrClaimByName
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => Claim claim
     => axiom ~ Rule claim
     => RuleName
@@ -213,8 +214,7 @@ getNameText =
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
 getAxiomOrClaimByIndex
-    :: MonadState (ReplState claim) m
-    => axiom ~ Rule claim
+    :: MonadState (ReplState claim axiom) m
     => Either AxiomIndex ClaimIndex
     -> m (Maybe (Either axiom claim))
 getAxiomOrClaimByIndex =
@@ -233,7 +233,8 @@ getInternalIdentifier =
 
 -- | Update the currently selected claim to prove.
 switchToProof
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
+    => axiom ~ Rule claim
     => Claim claim
     => claim
     -> ClaimIndex
@@ -247,7 +248,7 @@ switchToProof claim cindex =
 
 -- | Get the internal representation of the execution graph.
 getInnerGraph
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => axiom ~ Rule claim
     => Claim claim
     => m (InnerGraph axiom)
@@ -256,7 +257,7 @@ getInnerGraph =
 
 -- | Get the current execution graph
 getExecutionGraph
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => axiom ~ Rule claim
     => Claim claim
     => m (ExecutionGraph axiom)
@@ -268,8 +269,7 @@ getExecutionGraph = do
 -- | Update the internal representation of the current execution graph.
 updateInnerGraph
     :: forall claim axiom m
-    .  MonadState (ReplState claim) m
-    => axiom ~ Rule claim
+    .  MonadState (ReplState claim axiom) m
     => InnerGraph axiom
     -> m ()
 updateInnerGraph ig = do
@@ -286,8 +286,7 @@ updateInnerGraph ig = do
 
 -- | Update the current execution graph.
 updateExecutionGraph
-    :: MonadState (ReplState claim) m
-    => axiom ~ Rule claim
+    :: MonadState (ReplState claim axiom) m
     => ExecutionGraph axiom
     -> m ()
 updateExecutionGraph gph = do
@@ -296,7 +295,7 @@ updateExecutionGraph gph = do
 
 -- | Get the node labels for the current claim.
 getLabels
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => m (Map String ReplNode)
 getLabels = do
     ReplState { claimIndex, labels } <- get
@@ -305,7 +304,7 @@ getLabels = do
 
 -- | Update the node labels for the current claim.
 setLabels
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => Map String ReplNode
     -> m ()
 setLabels lbls = do
@@ -316,7 +315,8 @@ setLabels lbls = do
 -- | Get selected node (or current node for 'Nothing') and validate that it's
 -- part of the execution graph.
 getTargetNode
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
+    => axiom ~ Rule claim
     => Claim claim
     => Maybe ReplNode
     -- ^ node index
@@ -331,7 +331,8 @@ getTargetNode maybeNode = do
 
 -- | Get the configuration at selected node (or current node for 'Nothing').
 getConfigAt
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
+    => axiom ~ Rule claim
     => Claim claim
     => Maybe ReplNode
     -> m (Maybe (ReplNode, CommonProofState))
@@ -347,7 +348,7 @@ getConfigAt maybeNode = do
 
 -- | Get the rule used to reach selected node.
 getRuleFor
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => axiom ~ Rule claim
     => Claim claim
     => Maybe ReplNode
@@ -368,8 +369,8 @@ getRuleFor maybeNode = do
 
 -- | Lifting function that takes logging into account.
 liftSimplifierWithLogger
-    :: forall a t m claim
-    .  MonadState (ReplState claim) (t m)
+    :: forall a t m claim axiom
+    .  MonadState (ReplState claim axiom) (t m)
     => MonadSimplify m
     => MonadIO m
     => Monad.Trans.MonadTrans t
@@ -399,12 +400,13 @@ liftSimplifierWithLogger mLogger simplifier = do
 -- | Run a single step for the data in state
 -- (claim, axioms, claims, current node and execution graph).
 runStepper
-    :: MonadState (ReplState claim) (t m)
-    => MonadReader (Config claim m) (t m)
+    :: MonadState (ReplState claim axiom) (t m)
+    => MonadReader (Config claim axiom m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
     => Claim claim
+    => axiom ~ Rule claim
     => t m StepResult
 runStepper = do
     ReplState { claims, axioms, node } <- get
@@ -419,8 +421,8 @@ runStepper = do
 -- | Run a single step for the current claim with the selected claims, axioms
 -- starting at the selected node.
 runStepper'
-    :: MonadState (ReplState claim) (t m)
-    => MonadReader (Config claim m) (t m)
+    :: MonadState (ReplState claim axiom) (t m)
+    => MonadReader (Config claim axiom m) (t m)
     => axiom ~ Rule claim
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
@@ -446,8 +448,8 @@ runStepper' claims axioms node = do
         nodes    -> BranchResult $ fmap ReplNode nodes
 
 runUnifier
-    :: MonadState (ReplState claim) (t m)
-    => MonadReader (Config claim m) (t m)
+    :: MonadState (ReplState claim axiom) (t m)
+    => MonadReader (Config claim axiom m) (t m)
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
@@ -489,8 +491,8 @@ nodeToPattern graph node =
 
 -- | Adds or updates the provided alias.
 addOrUpdateAlias
-    :: forall m claim
-    .  MonadState (ReplState claim) m
+    :: forall m claim axiom
+    .  MonadState (ReplState claim axiom) m
     => MonadError AliasError m
     => AliasDefinition
     -> m ()
@@ -528,7 +530,7 @@ addOrUpdateAlias alias@AliasDefinition { name, command } = do
 
 
 findAlias
-    :: MonadState (ReplState claim) m
+    :: MonadState (ReplState claim axiom) m
     => String
     -> m (Maybe AliasDefinition)
 findAlias name = Map.lookup name <$> Lens.use (field @"aliases")
@@ -586,7 +588,7 @@ conjOfOnePathClaims claims sort =
 generateInProgressOPClaims
     :: Claim claim
     => axiom ~ Rule claim
-    => MonadState (ReplState claim) m
+    => MonadState (ReplState claim axiom) m
     => m [Rule.OnePathRule Variable]
 generateInProgressOPClaims = do
     graphs <- Lens.use (field @"graphs")
@@ -646,7 +648,8 @@ findTerminalPatterns graph =
 
 currentClaimSort
     :: Claim claim
-    => MonadState (ReplState claim) m
+    => axiom ~ Rule claim
+    => MonadState (ReplState claim axiom) m
     => m Sort
 currentClaimSort = do
     claims <- Lens.use (field @"claim")
