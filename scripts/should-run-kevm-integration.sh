@@ -10,6 +10,6 @@ TRIGGER_STRING="$1" ; shift
 
 git fetch $(git remote get-url $UPSTREAM_REMOTE) $UPSTREAM_BRANCH
 
-if git --no-pager log --oneline 'FETCH_HEAD..HEAD' | grep "$TRIGGER_STRING" &>/dev/null; then
+if git --no-pager log -n 1 --oneline 'FETCH_HEAD..HEAD' | grep "$TRIGGER_STRING" &>/dev/null; then
     echo 'true'
 fi
