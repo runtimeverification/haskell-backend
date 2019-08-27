@@ -114,6 +114,7 @@ translatePredicate translateUninterpreted predicate =
             NextF _ -> empty
             RewritesF _ -> empty
             VariableF _ -> empty
+            SetVariableF _ -> empty
             StringLiteralF _ -> empty
             CharLiteralF _ -> empty
             InhabitantF _ -> empty

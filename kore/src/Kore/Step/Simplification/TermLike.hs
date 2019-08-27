@@ -59,6 +59,8 @@ import qualified Kore.Step.Simplification.Or as Or
                  ( simplify )
 import qualified Kore.Step.Simplification.Rewrites as Rewrites
                  ( simplify )
+import qualified Kore.Step.Simplification.SetVariable as SetVariable
+                 ( simplify )
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
                  ( simplify )
 import qualified Kore.Step.Simplification.Top as Top
@@ -170,3 +172,5 @@ simplifyInternal = simplifyInternalWorker
             TopF topF -> Top.simplify <$> simplifyChildren topF
             --
             VariableF variableF -> return $ Variable.simplify variableF
+            SetVariableF setVariableF ->
+                return $ SetVariable.simplify setVariableF

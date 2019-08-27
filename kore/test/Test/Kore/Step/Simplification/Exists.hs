@@ -19,8 +19,6 @@ import           Kore.Step.Simplification.Data
                  ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -47,16 +45,16 @@ test_simplify =
         $ "substitution"
     ]
   where
-    plain10 = pure $ Mock.plain10 (mkElemVar Mock.x)
-    plain11 = pure $ Mock.plain11 (mkElemVar Mock.x)
+    plain10 = pure $ Mock.plain10 (mkVar Mock.x)
+    plain11 = pure $ Mock.plain11 (mkVar Mock.x)
     plain10' = mkExists Mock.x <$> plain10
     plain11' = mkExists Mock.x <$> plain11
     equals =
         (Pattern.topOf Mock.testSort)
             { predicate =
                 Predicate.makeEqualsPredicate
-                    (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
-                    (Mock.functional20 (mkElemVar Mock.y) (mkElemVar Mock.z))
+                    (Mock.sigma (mkVar Mock.x) (mkVar Mock.z))
+                    (Mock.functional20 (mkVar Mock.y) (mkVar Mock.z))
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
@@ -71,21 +69,18 @@ test_simplify =
             }
     substForX =
         (Pattern.topOf Mock.testSort)
-            { substitution = Substitution.unsafeWrap
-                [ ( ElemVar Mock.x
-                  , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))]
+            { substitution =
+                Substitution.unsafeWrap
+                    [(Mock.x, Mock.sigma (mkVar Mock.y) (mkVar Mock.z))]
             }
     substToX =
         (Pattern.topOf Mock.testSort)
-            { substitution =
-                Substitution.unsafeWrap [(ElemVar Mock.y, mkElemVar Mock.x)] }
+            { substitution = Substitution.unsafeWrap [(Mock.y, mkVar Mock.x)] }
     substOfX =
         (Pattern.topOf Mock.testSort)
-            { substitution = Substitution.unsafeWrap
-                [ ( ElemVar Mock.y
-                  , Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z)
-                  )
-                ]
+            { substitution =
+                Substitution.unsafeWrap
+                    [(Mock.y, Mock.sigma (mkVar Mock.x) (mkVar Mock.z))]
             }
     simplifiesTo
         :: HasCallStack
@@ -123,18 +118,17 @@ test_makeEvaluate =
                         , predicate =
                             makeCeilPredicate (Mock.h gOfA)
                         , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.y, fOfA)]
+                            [(Mock.y, fOfA)]
                         }
                     ]
         actual <-
             makeEvaluate
                 Mock.x
                 Conditional
-                    { term = Mock.f (mkElemVar Mock.x)
-                    , predicate = makeCeilPredicate (Mock.h (mkElemVar Mock.x))
+                    { term = Mock.f (mkVar Mock.x)
+                    , predicate = makeCeilPredicate (Mock.h (mkVar Mock.x))
                     , substitution =
-                        Substitution.wrap
-                            [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
+                        Substitution.wrap [(Mock.x, gOfA), (Mock.y, fOfA)]
                     }
         assertEqualWithExplanation "exists with substitution" expect actual
 
@@ -213,7 +207,7 @@ test_makeEvaluate =
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX gOfA
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, hOfA)]
+                    , substitution = Substitution.wrap [(Mock.y, hOfA)]
                     }
 
     , testCase "exists reevaluates" $ do
@@ -226,7 +220,7 @@ test_makeEvaluate =
                 Conditional
                     { term = mkTop_
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
-                    , substitution = Substitution.wrap [(ElemVar Mock.x, gOfA)]
+                    , substitution = Substitution.wrap [(Mock.x, gOfA)]
                     }
         assertEqualWithExplanation "exists reevaluates" expect actual
     , testCase "exists matches equality if result is top" $ do
@@ -236,7 +230,7 @@ test_makeEvaluate =
                 [ Conditional
                     { term = fOfA
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
                     }
                 ]
         actual <-
@@ -245,7 +239,7 @@ test_makeEvaluate =
                 Conditional
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
                     }
         assertEqualWithExplanation "exists matching" expect actual
     , testCase "exists does not match equality if free var in subst" $ do
@@ -259,9 +253,9 @@ test_makeEvaluate =
                             Mock.x
                             (makeAndPredicate
                                 (makeEqualsPredicate fOfX (Mock.f Mock.a))
-                                (makeEqualsPredicate (mkElemVar Mock.y) fOfX)
+                                (makeEqualsPredicate (mkVar Mock.y) fOfX)
                             )
-                    , substitution = Substitution.wrap [(ElemVar Mock.z, fOfA)]
+                    , substitution = Substitution.wrap [(Mock.z, fOfA)]
                     }
                 ]
         actual <-
@@ -271,8 +265,7 @@ test_makeEvaluate =
                     { term = fOfA
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution =
-                        Substitution.wrap
-                            [(ElemVar Mock.y, fOfX), (ElemVar Mock.z, fOfA)]
+                        Substitution.wrap [(Mock.y, fOfX), (Mock.z, fOfA)]
                     }
         assertEqualWithExplanation "exists matching" expect actual
     , testCase "exists does not match equality if free var in term" $
@@ -283,18 +276,18 @@ test_makeEvaluate =
                 Conditional
                     { term = fOfX
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                    , substitution = Substitution.wrap [(Mock.y, fOfA)]
                     }
     ]
   where
     fOfA = Mock.f Mock.a
-    fOfX = Mock.f (mkElemVar Mock.x)
+    fOfX = Mock.f (mkVar Mock.x)
     gOfA = Mock.g Mock.a
     hOfA = Mock.h Mock.a
 
 makeExists
     :: Ord variable
-    => ElementVariable variable
+    => variable
     -> [Pattern variable]
     -> Exists Sort variable (OrPattern variable)
 makeExists variable patterns =
@@ -316,7 +309,7 @@ simplify exists =
     $ Exists.simplify exists
 
 makeEvaluate
-    :: ElementVariable Variable
+    :: Variable
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate variable child =

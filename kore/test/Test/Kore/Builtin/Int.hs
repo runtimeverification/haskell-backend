@@ -25,7 +25,7 @@ import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
 
 import           Test.Kore
-                 ( elementVariableGen, standaloneGen )
+                 ( standaloneGen, variableGen )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import           Test.Kore.Builtin.Builtin
 import           Test.Kore.Builtin.Definition
@@ -370,9 +370,9 @@ test_unifyAndEqual_Equal =
 test_unifyAnd_Fn :: TestTree
 test_unifyAnd_Fn =
     testPropertyWithSolver "unifyAnd BuiltinInteger: Equal" $ do
-        var <- forAll (standaloneGen $ elementVariableGen intSort)
+        var <- forAll (standaloneGen $ variableGen intSort)
         let dv = asInternal 2
-            fnPat = mkApplySymbol absIntSymbol  [mkElemVar var]
+            fnPat = mkApplySymbol absIntSymbol  [mkVar var]
             expect =
                 Conditional
                     { term = dv

@@ -7,7 +7,6 @@ module Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     ) where
 
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -26,8 +25,6 @@ import           Kore.TopBottom
                  ( TopBottom (..) )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 checkImplicationIsTop
     :: MonadSimplify m
@@ -38,7 +35,7 @@ checkImplicationIsTop lhs rhs =
     case stripForallQuantifiers rhs of
         ( forallQuantifiers, Implies_ _ implicationLHS implicationRHS ) -> do
             let rename = refreshVariables lhsFreeVariables forallQuantifiers
-                subst = mkElemVar <$> Map.mapKeys ElemVar rename
+                subst = mkVar <$> rename
                 implicationLHS' = TermLike.substitute subst implicationLHS
                 implicationRHS' = TermLike.substitute subst implicationRHS
                 resultTerm =
@@ -61,13 +58,13 @@ checkImplicationIsTop lhs rhs =
              , Pretty.indent 4 (unparse rhs)
              ]
       where
-        lhsFreeVariables = Set.fromList $
-            FreeVariables.getFreeElementVariables (Pattern.freeVariables lhs)
+        lhsFreeVariables =
+            FreeVariables.getFreeVariables (Pattern.freeVariables lhs)
         lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers
     :: TermLike Variable
-    -> (Set.Set (ElementVariable Variable), TermLike Variable)
+    -> (Set.Set Variable, TermLike Variable)
 stripForallQuantifiers patt
   = case patt of
         Forall_ _ forallVar child ->

@@ -28,8 +28,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -132,8 +130,8 @@ test_applicationSimplification =
                                     (makeEqualsPredicate fOfA fOfB)
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
-                                [ (ElemVar Mock.x, fOfA)
-                                , (ElemVar Mock.y, gOfA)
+                                [ (Mock.x, fOfA)
+                                , (Mock.y, gOfA)
                                 ]
                             }
                         ]
@@ -147,14 +145,14 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
+                                    Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
+                                    Substitution.wrap [ (Mock.y, gOfA) ]
                                 }
                             ]
                         ]
@@ -168,8 +166,7 @@ test_applicationSimplification =
             --        (f(a)=f(b) and g(a)=g(b) and f(a)=g(a)) and
             --        [x=f(a), y=g(a), z=f(b)]
             -- if sigma(a, b) => f(a) and f(a)=g(a) and [z=f(b)]
-            let ElementVariable z = Mock.z
-                z' = ElementVariable z { variableCounter = Just (Element 1) }
+            let z' = Mock.z { variableCounter = Just (Element 1) }
                 expect =
                     OrPattern.fromPatterns
                         [ Conditional
@@ -183,9 +180,9 @@ test_applicationSimplification =
                                     (makeEqualsPredicate gOfA gOfB)
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
-                                    [ (ElemVar z', gOfB)
-                                    , (ElemVar Mock.x, fOfA)
-                                    , (ElemVar Mock.y, gOfA)
+                                    [ (z', gOfB)
+                                    , (Mock.x, fOfA)
+                                    , (Mock.y, gOfA)
                                     ]
                             }
                         ]
@@ -197,8 +194,8 @@ test_applicationSimplification =
                             , Ord variable
                             , SortedVariable variable
                             )
-                        => ElementVariable variable
-                    zvar = fromVariable <$> z'
+                        => variable
+                    zvar = fromVariable z'
                     result
                         :: forall variable
                         .   ( FreshVariable variable
@@ -214,7 +211,7 @@ test_applicationSimplification =
                                 { term = fOfA
                                 , predicate = makeEqualsPredicate fOfA gOfA
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar zvar, gOfB) ]
+                                    Substitution.wrap [ (zvar, gOfB) ]
                                 }
                             ]
                         , remainders = OrPattern.fromPatterns []
@@ -236,14 +233,14 @@ test_applicationSimplification =
                                 { term = Mock.a
                                 , predicate = makeEqualsPredicate fOfA fOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
+                                    Substitution.wrap [ (Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
                                 , predicate = makeEqualsPredicate gOfA gOfB
                                 , substitution =
-                                    Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
+                                    Substitution.wrap [ (Mock.y, gOfA) ]
                                 }
                             ]
                         ]

@@ -11,8 +11,6 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate as Predicate
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
@@ -276,18 +274,18 @@ test_predicate =
                     (makeTruePredicate :: Predicate Variable)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
-                    [ ElemVar $ a Mock.testSort
-                    , ElemVar $ b Mock.testSort
+                    [ a Mock.testSort
+                    , b Mock.testSort
                     ]
                 )
                 (FreeVariables.getFreeVariables $ Predicate.freeVariables pr1)
             assertBool "quantified variables are not included"
-                $ not . FreeVariables.isFreeVariable (ElemVar $ a Mock.testSort)
+                $ not . FreeVariables.isFreeVariable (a Mock.testSort)
                 $ Predicate.freeVariables
                 $ makeExistsPredicate (a Mock.testSort)
                 $ makeEqualsPredicate
-                    (mkElemVar $ a Mock.testSort)
-                    (mkElemVar $ b Mock.testSort)
+                    (mkVar $ a Mock.testSort)
+                    (mkVar $ b Mock.testSort)
         )
     , testCase "substitutionToPredicate"
         ( do
@@ -297,7 +295,7 @@ test_predicate =
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
                 (substitutionToPredicate $ Substitution.wrap
-                    [(ElemVar $ a Mock.testSort, mkElemVar $ b Mock.testSort)]
+                    [(a Mock.testSort, mkVar $ b Mock.testSort)]
                 )
         )
     , let
@@ -357,40 +355,40 @@ makePredicateYieldsWrapPredicate msg p =
 pr1 :: Predicate Variable
 pr1 =
     makeEqualsPredicate
-        (mkElemVar $ a Mock.testSort)
-        (mkElemVar $ b Mock.testSort)
+        (mkVar $ a Mock.testSort)
+        (mkVar $ b Mock.testSort)
 
 pr2 :: Predicate Variable
 pr2 =
     makeEqualsPredicate
-        (mkElemVar $ c Mock.testSort)
-        (mkElemVar $ d Mock.testSort)
+        (mkVar $ c Mock.testSort)
+        (mkVar $ d Mock.testSort)
 
 pa1 :: TermLike Variable
 pa1 =
     mkEquals_
-        (mkElemVar $ a Mock.testSort)
-        (mkElemVar $ b Mock.testSort)
+        (mkVar $ a Mock.testSort)
+        (mkVar $ b Mock.testSort)
 
 pa2 :: TermLike Variable
 pa2 =
     mkEquals_
-        (mkElemVar $ c Mock.testSort)
-        (mkElemVar $ d Mock.testSort)
+        (mkVar $ c Mock.testSort)
+        (mkVar $ d Mock.testSort)
 
 ceilA :: TermLike Variable
 ceilA =
     mkCeil_
-        (mkElemVar $ a Mock.testSort)
+        (mkVar $ a Mock.testSort)
 
 inA :: TermLike Variable
 inA =
     mkIn_
-        (mkElemVar $ a Mock.testSort)
-        (mkElemVar $ b Mock.testSort)
+        (mkVar $ a Mock.testSort)
+        (mkVar $ b Mock.testSort)
 
 floorA :: TermLike Variable
-floorA = mkFloor_ (mkElemVar $ a Mock.testSort)
+floorA = mkFloor_ (mkVar $ a Mock.testSort)
 
 makeAnd
     :: Predicate Variable
@@ -398,8 +396,8 @@ makeAnd
     -> Predicate Variable
 makeAnd p1 p2 = makeAndPredicate p1 p2
 
-a, b, c, d :: Sort -> ElementVariable Variable
-a = ElementVariable . Variable (testId "a") mempty
-b = ElementVariable . Variable (testId "b") mempty
-c = ElementVariable . Variable (testId "c") mempty
-d = ElementVariable . Variable (testId "d") mempty
+a, b, c, d :: Sort -> Variable
+a = Variable (testId "#a") mempty
+b = Variable (testId "#b") mempty
+c = Variable (testId "#c") mempty
+d = Variable (testId "#d") mempty

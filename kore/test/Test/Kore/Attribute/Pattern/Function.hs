@@ -11,7 +11,6 @@ import Kore.Internal.TermLike
        ( TermLikeF (..) )
 import Kore.Syntax hiding
        ( PatternF (..) )
-import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -49,9 +48,10 @@ test_instance_Synthetic =
     , testGroup "TopF" [ isn't $ TopF (Top sort) ]
     , testGroup "ExistsF" $ map (isn't . ExistsF) (Exists sort Mock.x <$> range)
     , testGroup "ForallF" $ map (isn't . ForallF) (Forall sort Mock.x <$> range)
-    , testGroup "VariableF" [ is $ VariableF (ElemVar Mock.x) ]
-    , testGroup "MuF" $ map (isn't . MuF) (Mu Mock.setX <$> range)
-    , testGroup "NuF" $ map (isn't . NuF) (Nu Mock.setX <$> range)
+    , testGroup "VariableF" [ is $ VariableF Mock.x ]
+    , testGroup "MuF" $ map (isn't . MuF) (Mu (SetVariable Mock.x) <$> range)
+    , testGroup "NuF" $ map (isn't . NuF) (Nu (SetVariable Mock.x) <$> range)
+    , testGroup "SetVariableF" [ isn't $ SetVariableF (SetVariable Mock.x) ]
     ]
   where
     sort = Mock.testSort

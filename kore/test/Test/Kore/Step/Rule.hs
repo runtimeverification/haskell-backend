@@ -33,8 +33,6 @@ import           Kore.Step.Rule hiding
                  ( freeVariables )
 import qualified Kore.Step.Rule as Rule
 import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified Kore.Verified as Verified
 
 import           Test.Kore
@@ -299,28 +297,28 @@ applyLeqAInt child1 child2 = applySymbol_ symbolLeqAInt [child1, child2]
 varI1, varI2, varKRemainder, varStateCell :: TermLike Variable
 
 varI1 =
-    mkElemVar $ ElementVariable Variable
+    mkVar Variable
         { variableName = testId "VarI1"
         , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varI2 =
-    mkElemVar $ ElementVariable Variable
+    mkVar Variable
         { variableName = testId "VarI2"
         , variableCounter = mempty
         , variableSort = sortAInt
         }
 
 varKRemainder =
-    mkElemVar $ ElementVariable Variable
+    mkVar Variable
         { variableName = testId "VarDotVar1"
         , variableCounter = mempty
         , variableSort = sortK
         }
 
 varStateCell =
-    mkElemVar $ ElementVariable Variable
+    mkVar Variable
         { variableName = testId "VarDotVar0"
         , variableCounter = mempty
         , variableSort = sortStateCell
@@ -342,7 +340,7 @@ extractIndexedModule name eModules =
 test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
-        let expect = FreeVariables . Set.fromList $ ElemVar <$> [Mock.x, Mock.z]
+        let expect = FreeVariables $ Set.fromList [Mock.x, Mock.z]
             actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
@@ -364,18 +362,18 @@ test_refreshRulePattern =
             (all notAvoided renamed)
         assertBool
             "Expected no free variables in common with original RulePattern"
-            (all notAvoided (FreeVariables.getFreeVariables free'))
+            (all notAvoided free')
 
 testRulePattern :: RulePattern Variable
 testRulePattern =
     RulePattern
         { left =
             -- Include an implicitly-quantified variable.
-            mkElemVar Mock.x
+            mkVar Mock.x
         , right =
             -- Include a binder to ensure that we respect them.
-            mkExists Mock.y (mkElemVar Mock.y)
-        , requires = Predicate.makeCeilPredicate (mkElemVar Mock.z)
+            mkExists Mock.y (mkVar Mock.y)
+        , requires = Predicate.makeCeilPredicate (mkVar Mock.z)
         , ensures = Predicate.makeTruePredicate
         , attributes = def
         }

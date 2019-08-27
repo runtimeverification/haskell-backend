@@ -45,9 +45,9 @@ simplify
     => Forall Sort variable (OrPattern variable)
     -> OrPattern variable
 simplify
-    Forall { forallVariable, forallChild }
+    Forall { forallVariable = variable, forallChild = child }
   =
-    simplifyEvaluated forallVariable forallChild
+    simplifyEvaluated variable child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -68,7 +68,7 @@ simplifyEvaluated
         , Show variable
         , Unparse variable
         )
-    => ElementVariable variable
+    => variable
     -> OrPattern variable
     -> OrPattern variable
 simplifyEvaluated variable simplified
@@ -86,7 +86,7 @@ makeEvaluate
         , Show variable
         , Unparse variable
         )
-    => ElementVariable variable
+    => variable
     -> Pattern variable
     -> Pattern variable
 makeEvaluate variable patt

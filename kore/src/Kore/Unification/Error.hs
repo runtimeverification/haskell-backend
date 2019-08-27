@@ -26,8 +26,6 @@ import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError
@@ -73,7 +71,7 @@ substitutions.
 data SubstitutionError =
     forall variable.
     (Ord variable, Show variable, SortedVariable variable, Unparse variable) =>
-    NonCtorCircularVariableDependency [UnifiedVariable variable]
+    NonCtorCircularVariableDependency [variable]
     -- ^ the circularity path may pass through non-constructors: maybe solvable.
 
 instance Show SubstitutionError where

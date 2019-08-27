@@ -72,7 +72,7 @@ instance TopBottom child => TopBottom (MultiAnd child)
     isBottom _ = False
 
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
-inside a 'MultiAnd'.
+inside an 'MultiAnd'.
 -}
 -- TODO(virgil): Refactor, this is the same as OrBool. Make it a
 -- Top | Bottom | Other or a Maybe Bool.

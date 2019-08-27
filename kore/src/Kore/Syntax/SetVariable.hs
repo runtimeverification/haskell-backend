@@ -10,17 +10,20 @@ module Kore.Syntax.SetVariable
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import           Data.Functor.Const
 import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Unparser
 
 -- | Applicative-Kore set variables
-newtype SetVariable variable
-    = SetVariable { getSetVariable :: variable }
-    deriving (Eq, GHC.Generic, Ord, Show, Functor, Foldable, Traversable)
+newtype SetVariable variable = SetVariable { getVariable :: variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable variable => Hashable (SetVariable variable)
 
@@ -33,6 +36,13 @@ instance SOP.HasDatatypeInfo (SetVariable variable)
 instance Debug variable => Debug (SetVariable variable)
 
 instance Unparse variable => Unparse (SetVariable variable) where
-    unparse = unparse . getSetVariable
-    unparse2 = unparse2 . getSetVariable
+    unparse = unparse . getVariable
+    unparse2 = unparse2 . getVariable  -- TOFIX: print with a leading "#"
 
+instance Ord variable => Synthetic (Const (SetVariable variable)) (FreeSetVariables variable) where
+    synthetic (Const (SetVariable variable)) = freeSetVariable variable
+    {-# INLINE synthetic #-}
+
+instance Ord variable => Synthetic (Const (SetVariable variable)) (FreeVariables variable) where
+    synthetic = const mempty
+    {-# INLINE synthetic #-}

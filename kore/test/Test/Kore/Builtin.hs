@@ -96,21 +96,21 @@ test_internalize =
     elementList = Builtin.elementList
     concatList = Builtin.concatList
     mkList = List.asInternal
-    l = mkElemVar (elemVarS "l" listSort)
+    l = mkVar (varS "l" listSort)
 
     mapSort = Builtin.mapSort
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
     mkMap = Map.asInternal
-    m = mkElemVar (elemVarS "m" mapSort)
+    m = mkVar (varS "m" mapSort)
 
     setSort = Builtin.setSort
     unitSet = Builtin.unitSet
     elementSet = Builtin.elementSet
     concatSet = Builtin.concatSet
     mkSet = Set.asInternal . Data.Set.fromList
-    s = mkElemVar (elemVarS "s" setSort)
+    s = mkVar (varS "s" setSort)
 
     mkInt :: Ord variable => Integer -> TermLike variable
     mkInt = Int.asInternal
@@ -118,8 +118,8 @@ test_internalize =
     zero, one :: Ord variable => TermLike variable
     zero = mkInt 0
     one = mkInt 1
-    x = mkElemVar (elemVarS "x" intSort)
-    y = mkElemVar (elemVarS "y" intSort)
+    x = mkVar (varS "x" intSort)
+    y = mkVar (varS "y" intSort)
 
 withInternalized
     :: GHC.HasCallStack

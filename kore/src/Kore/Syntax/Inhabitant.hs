@@ -14,6 +14,8 @@ import           Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.FreeSetVariables
+       ( FreeSetVariables )
 import Kore.Attribute.Pattern.FreeVariables
        ( FreeVariables )
 import Kore.Attribute.Synthetic
@@ -42,6 +44,13 @@ instance Unparse (Inhabitant child) where
 instance
     Ord variable =>
     Synthetic Inhabitant (FreeVariables variable)
+  where
+    synthetic = const mempty
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic Inhabitant (FreeSetVariables variable)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}

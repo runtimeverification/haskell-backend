@@ -31,6 +31,7 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , Kore.Step.Rule.freeVariables
+    , Kore.Step.Rule.freeSetVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
     ) where
@@ -48,6 +49,8 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import           Kore.Attribute.Pattern.FreeSetVariables
+                 ( FreeSetVariables )
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -62,8 +65,6 @@ import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Unparser
                  ( Unparse, unparse, unparse2 )
 import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
 import qualified Kore.Verified as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
@@ -529,11 +530,10 @@ refreshRulePattern
     :: forall variable
     .   ( FreshVariable variable
         , SortedVariable variable
-        , Show variable
         )
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
-    -> (Renaming variable, RulePattern variable)
+    -> (Map variable variable, RulePattern variable)
 refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
@@ -564,6 +564,17 @@ freeVariables RulePattern { left, right, requires } =
     <> TermLike.freeVariables right
     <> Predicate.freeVariables requires
 
+{- | Extract the free set variables of a 'RulePattern'.
+ -}
+freeSetVariables
+    :: Ord variable
+    => RulePattern variable
+    -> FreeSetVariables variable
+freeSetVariables RulePattern { left, right, requires } =
+    TermLike.freeSetVariables left
+    <> TermLike.freeSetVariables right
+    <> Predicate.freeSetVariables requires
+
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}
 mapVariables
@@ -591,9 +602,8 @@ contain none of the targeted variables.
 substitute
     ::  ( FreshVariable variable
         , SortedVariable variable
-        , Show variable
         )
-    => Map (UnifiedVariable variable) (TermLike variable)
+    => Map variable (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
 substitute subst rulePattern' =

@@ -27,8 +27,6 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unparser as Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -162,16 +160,16 @@ tT :: TestTerm
 tT = mkTop Mock.testSort
 
 tm :: TestTerm
-tm = mkElemVar Mock.x
+tm = mkVar Mock.x
 
 tM :: TestTerm
-tM = mkElemVar Mock.y
+tM = mkVar Mock.y
 
 t_ :: TestTerm
 t_ = mkBottom Mock.testSort
 
-testVar :: Text -> ElementVariable Variable
-testVar ident = ElementVariable $ Variable (testId ident) mempty Mock.testSort
+testVar :: Text -> Variable
+testVar ident = Variable (testId ident) mempty Mock.testSort
 
 type TestPredicate = Syntax.Predicate Variable
 
@@ -181,14 +179,14 @@ pT = makeTruePredicate
 pm :: TestPredicate
 pm =
     makeEqualsPredicate
-        (mkElemVar $ testVar "left")
-        (mkElemVar $ testVar "right")
+        (mkVar $ testVar "left")
+        (mkVar $ testVar "right")
 
 pM :: TestPredicate
 pM =
     makeEqualsPredicate
-        (mkElemVar $ testVar "LEFT")
-        (mkElemVar $ testVar "RIGHT")
+        (mkVar $ testVar "LEFT")
+        (mkVar $ testVar "RIGHT")
 
 p_ :: TestPredicate
 p_ = makeFalsePredicate
@@ -199,10 +197,10 @@ sT :: TestSubstitution
 sT = mempty
 
 sm :: TestSubstitution
-sm = Substitution.wrap [(ElemVar Mock.x, Mock.a)] -- I'd rather these were meaningful
+sm = Substitution.wrap [(Mock.x, Mock.a)] -- I'd rather these were meaningful
 
 sM :: TestSubstitution
-sM = Substitution.wrap [(ElemVar Mock.y, Mock.b)] -- I'd rather these were meaningful
+sM = Substitution.wrap [(Mock.y, Mock.b)] -- I'd rather these were meaningful
 
 test_valueProperties :: TestTree
 test_valueProperties =

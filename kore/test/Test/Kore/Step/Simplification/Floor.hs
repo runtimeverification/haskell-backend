@@ -24,8 +24,6 @@ import           Kore.Predicate.Predicate
 import           Kore.Step.Simplification.Floor
                  ( makeEvaluateFloor, simplify )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 import Test.Kore
        ( testId )
@@ -106,7 +104,7 @@ test_floorSimplification =
                         makeAndPredicate
                             (makeFloorPredicate a)
                             (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.wrap [(ElemVar x, fOfB)]
+                    , substitution = Substitution.wrap [(x, fOfB)]
                     }
                 ]
             )
@@ -114,7 +112,7 @@ test_floorSimplification =
                 Conditional
                     { term = a
                     , predicate = makeEqualsPredicate fOfA gOfA
-                    , substitution = Substitution.wrap [(ElemVar x, fOfB)]
+                    , substitution = Substitution.wrap [(x, fOfB)]
                     }
             )
         )
@@ -132,7 +130,7 @@ test_floorSimplification =
     bSymbol = symbol "b" [] testSort
     fSymbol = symbol "f" [testSort] testSort
     gSymbol = symbol "g" [testSort] testSort
-    x = ElementVariable $ Variable (testId "x") mempty testSort
+    x = Variable (testId "x") mempty testSort
     a :: TermLike Variable
     a = mkApplySymbol aSymbol []
     b :: TermLike Variable

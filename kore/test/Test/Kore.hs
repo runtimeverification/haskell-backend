@@ -19,9 +19,7 @@ module Test.Kore
     , sortVariableSort
     , predicateGen
     , predicateChildGen
-    , elementVariableGen
-    , setVariableGen
-    , unifiedVariableGen
+    , variableGen
     , genBuiltin
     , couple
     , symbolOrAliasGen
@@ -59,14 +57,12 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
                  ( PatternF (..) )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
 data Context =
     Context
-        { objectVariables :: ![UnifiedVariable Variable]
+        { objectVariables :: ![Variable]
         , objectSortVariables :: ![SortVariable]
         }
 
@@ -81,11 +77,11 @@ standaloneGen :: Gen a -> Hedgehog.Gen a
 standaloneGen generator =
     Reader.runReaderT generator emptyContext
 
-addVariable :: UnifiedVariable Variable -> Context -> Context
+addVariable :: Variable -> Context -> Context
 addVariable var ctx@Context { objectVariables } =
     ctx { objectVariables = var : objectVariables }
 
-addVariables :: [UnifiedVariable Variable] -> Context -> Context
+addVariables :: [Variable] -> Context -> Context
 addVariables vars = \ctx -> foldr addVariable ctx vars
 
 addSortVariable :: SortVariable -> Context -> Context
@@ -119,9 +115,6 @@ objectIdGen =
     genericIdGen
         (Gen.element idFirstChars)
         (Gen.element $ idFirstChars ++ idOtherChars)
-
-setVarIdGen :: MonadGen m => m Id
-setVarIdGen = testId <$> fmap ("@" <>) objectIdGen
 
 stringLiteralGen :: MonadGen m => m (StringLiteral child)
 stringLiteralGen =
@@ -189,43 +182,24 @@ sortGen = do
 moduleNameGen :: MonadGen m => m ModuleName
 moduleNameGen = ModuleName <$> objectIdGen
 
-elementVariableGen :: Sort -> Gen (ElementVariable Variable)
-elementVariableGen patternSort = do
+variableGen :: Sort -> Gen Variable
+variableGen patternSort = do
     Context { objectVariables } <- Reader.ask
-    ElementVariable <$>
-        variableGen'
-            patternSort
-            [getElementVariable v | ElemVar v <- objectVariables]
-            idGen
-
-variableGen' :: Sort -> [Variable] -> Gen Id -> Gen Variable
-variableGen' patternSort variables genId =
-    case filter bySort variables of
-        [] -> freshVariable
-        variables' ->
-            Gen.choice
-                [ Gen.element variables'
-                , freshVariable
-                ]
+    variableGenWorker objectVariables
   where
     bySort Variable { variableSort } = variableSort == patternSort
-    freshVariable =
-        Variable <$> genId <*> pure mempty <*> pure patternSort
-
-setVariableGen :: Sort -> Gen (SetVariable Variable)
-setVariableGen sort = do
-    Context { objectVariables } <- Reader.ask
-    SetVariable <$>
-        variableGen'
-            sort
-            [getSetVariable v | SetVar v <- objectVariables]
-            setVarIdGen
-
-unifiedVariableGen :: Sort -> Gen (UnifiedVariable Variable)
-unifiedVariableGen sort = Gen.choice
-    [ ElemVar <$> elementVariableGen sort
-    , SetVar <$> setVariableGen sort
-    ]
+    variableGenWorker :: [Variable] -> Gen Variable
+    variableGenWorker variables =
+        case filter bySort variables of
+            [] -> freshVariable
+            variables' ->
+                Gen.choice
+                    [ Gen.element variables'
+                    , freshVariable
+                    ]
+      where
+        freshVariable =
+            Variable <$> idGen <*> pure mempty <*> pure patternSort
 
 unaryOperatorGen
     :: MonadGen m
@@ -267,17 +241,15 @@ equalsInGen constructor childGen resultSort = do
         <*> Gen.small (childGen operandSort)
 
 existsForallGen
-    :: (Sort -> ElementVariable Variable -> child -> q child)
+    :: (Sort -> Variable -> child -> q child)
     -> (Sort -> Gen child)
     -> Sort
     -> Gen (q child)
 existsForallGen constructor childGen patternSort = do
     varSort <- Gen.small sortGen
-    var <- Gen.small (elementVariableGen varSort)
-    child <-
-        Gen.small
-            (Reader.local (addVariable (ElemVar var)) $ childGen patternSort)
-    return (constructor patternSort var child)
+    var <- Gen.small (variableGen varSort)
+    constructor patternSort var
+        <$> Gen.small (Reader.local (addVariable var) $ childGen patternSort)
 
 topBottomGen :: (Sort -> t child) -> Sort -> Gen (t child)
 topBottomGen constructor = pure . constructor
@@ -382,7 +354,7 @@ patternGen childGen patternSort =
         , (1, Syntax.NotF <$> notGen childGen patternSort)
         , (1, Syntax.OrF <$> orGen childGen patternSort)
         , (1, Syntax.TopF <$> topGen patternSort)
-        , (5, Syntax.VariableF <$> unifiedVariableGen patternSort)
+        , (5, Syntax.VariableF <$> variableGen patternSort)
         ]
 
 korePatternGen :: Hedgehog.Gen ParsedPattern
@@ -441,7 +413,7 @@ korePatternChildGen patternSort' =
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Syntax.VariableF <$> unifiedVariableGen patternSort'
+        asParsedPattern . Syntax.VariableF <$> variableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen
@@ -503,18 +475,18 @@ predicateChildGen childGen patternSort' =
             <$> predicateChildGen childGen patternSort'
     predicateChildGenExists = do
         varSort <- sortGen
-        var <- elementVariableGen varSort
+        var <- variableGen varSort
         child <-
             Reader.local
-                (addVariable (ElemVar var))
+                (addVariable var)
                 (predicateChildGen childGen patternSort')
         return (Syntax.Predicate.makeExistsPredicate var child)
     predicateChildGenForall = do
         varSort <- sortGen
-        var <- elementVariableGen varSort
+        var <- variableGen varSort
         child <-
             Reader.local
-                (addVariable (ElemVar var))
+                (addVariable var)
                 (predicateChildGen childGen patternSort')
         return (Syntax.Predicate.makeForallPredicate var child)
 
@@ -530,7 +502,7 @@ sentenceAliasGen patGen =
         Reader.local (addSortVariables aliasParams) $ do
             sentenceAliasSorts <- couple sortGen
             sentenceAliasResultSort <- sortGen
-            variables <- traverse elementVariableGen sentenceAliasSorts
+            variables <- traverse variableGen sentenceAliasSorts
             let Alias { aliasConstructor } = sentenceAliasAlias
                 sentenceAliasLeftPattern =
                     Application
@@ -543,7 +515,7 @@ sentenceAliasGen patGen =
                         , applicationChildren = variables
                         }
             sentenceAliasRightPattern <-
-                Reader.local (addVariables (ElemVar <$> variables))
+                Reader.local (addVariables variables)
                     (patGen sentenceAliasResultSort)
             sentenceAliasAttributes <- attributesGen
             return SentenceAlias

@@ -67,12 +67,11 @@ import           Kore.Syntax as Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
 import qualified Kore.Variables.Free as Variables
-import           Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
 newtype DeclaredVariables =
     DeclaredVariables
-        { getDeclaredVariables :: Map.Map Id (UnifiedVariable Variable) }
+        { getDeclaredVariables :: Map.Map Id Variable }
     deriving (Monoid, Semigroup)
 
 emptyDeclaredVariables :: DeclaredVariables
@@ -154,25 +153,22 @@ lookupSymbol symbolOrAlias = do
     symbolConstructor = symbolOrAliasConstructor symbolOrAlias
     symbolParams = symbolOrAliasParams symbolOrAlias
 
-lookupDeclaredVariable :: Id -> PatternVerifier (UnifiedVariable Variable)
+lookupDeclaredVariable :: Id -> PatternVerifier Variable
 lookupDeclaredVariable varId = do
     variables <- Reader.asks (getDeclaredVariables . declaredVariables)
     maybe errorUnquantified return $ Map.lookup varId variables
   where
-    errorUnquantified :: PatternVerifier (UnifiedVariable Variable)
+    errorUnquantified :: PatternVerifier Variable
     errorUnquantified =
         koreFailWithLocations [varId]
             ("Unquantified variable: '" <> getId varId <> "'.")
 
 addDeclaredVariable
-    :: UnifiedVariable Variable
+    :: Variable
     -> DeclaredVariables
     -> DeclaredVariables
 addDeclaredVariable variable (getDeclaredVariables -> variables) =
-    DeclaredVariables $ Map.insert
-        (foldMapVariable variableName variable)
-        variable
-        variables
+    DeclaredVariables $ Map.insert (variableName variable) variable variables
 
 {- | Add a new variable to the set of 'DeclaredVariables'.
 
@@ -181,21 +177,19 @@ The new variable must not already be declared.
  -}
 newDeclaredVariable
     :: DeclaredVariables
-    -> UnifiedVariable Variable
+    -> Variable
     -> PatternVerifier DeclaredVariables
-newDeclaredVariable declared variable = do
+newDeclaredVariable declared variable@Variable { variableName } = do
     let declaredVariables = getDeclaredVariables declared
-    case Map.lookup name declaredVariables of
+    case Map.lookup variableName declaredVariables of
         Just variable' -> alreadyDeclared variable'
         Nothing -> return (addDeclaredVariable variable declared)
   where
-    name = foldMapVariable variableName variable
-    alreadyDeclared
-        :: UnifiedVariable Variable -> PatternVerifier DeclaredVariables
+    alreadyDeclared :: Variable -> PatternVerifier DeclaredVariables
     alreadyDeclared variable' =
         koreFailWithLocations [variable', variable]
             (  "Variable '"
-            <> getId name
+            <> getId variableName
             <> "' was already declared."
             )
 
@@ -208,7 +202,7 @@ See also: 'newDeclaredVariable'
  -}
 uniqueDeclaredVariables
     :: Foldable f
-    => f (UnifiedVariable Variable)
+    => f Variable
     -> PatternVerifier DeclaredVariables
 uniqueDeclaredVariables =
     Foldable.foldlM newDeclaredVariable emptyDeclaredVariables
@@ -238,29 +232,23 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 
  -}
 verifyAliasLeftPattern
-    :: Application SymbolOrAlias (ElementVariable Variable)
-    -> PatternVerifier
-        ( DeclaredVariables
-        , Application SymbolOrAlias (ElementVariable Variable)
-        )
+    :: Application SymbolOrAlias Variable
+    -> PatternVerifier (DeclaredVariables, Application SymbolOrAlias Variable)
 verifyAliasLeftPattern leftPattern = do
     _ :< verified <-
-        verifyApplyAlias snd (expectVariable . ElemVar  <$> leftPattern)
+        verifyApplyAlias snd (expectVariable <$> leftPattern)
         & runMaybeT
         & (>>= maybe (error . noHead $ symbolOrAlias) return)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
-    let verifiedLeftPattern = traverse extractElementVariable
+    let verifiedLeftPattern =
             leftPattern
                 { applicationChildren = fst <$> applicationChildren verified }
-    case verifiedLeftPattern of
-        Just result -> return (declaredVariables, result)
-        Nothing -> error "Impossible change from element var to set var"
+    return (declaredVariables, verifiedLeftPattern)
   where
     symbolOrAlias = applicationSymbolOrAlias leftPattern
     expectVariable
-        :: UnifiedVariable Variable
-        -> PatternVerifier
-            (UnifiedVariable Variable, Attribute.Pattern Variable)
+        :: Variable
+        -> PatternVerifier (Variable, Attribute.Pattern Variable)
     expectVariable var = do
         verifyVariableDeclaration var
         let attrs = synthetic (Const var)
@@ -374,6 +362,9 @@ verifyPatternHead (_ :< patternF) =
                 <$> verifyVariable var
         Syntax.InhabitantF _ ->
             koreFail "Unexpected pattern."
+        Syntax.SetVariableF (SetVariable var) ->
+            transCofreeF (Internal.SetVariableF . SetVariable . getConst)
+                <$> verifyVariable var
   where
     transCofreeF fg (a :< fb) = a :< fg fb
 
@@ -623,7 +614,7 @@ verifyBinder
         , valid ~ Attribute.Pattern Variable
         )
     => (forall a. binder a -> Sort)
-    -> (forall a. binder a -> (UnifiedVariable Variable))
+    -> (forall a. binder a -> Variable)
     -> binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
 verifyBinder binderSort binderVariable = \binder -> do
@@ -652,7 +643,7 @@ verifyExists
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyExists = verifyBinder existsSort (ElemVar . existsVariable)
+verifyExists = verifyBinder existsSort existsVariable
 
 verifyForall
     ::  ( binder ~ Forall Sort Variable
@@ -660,7 +651,7 @@ verifyForall
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyForall = verifyBinder forallSort (ElemVar . forallVariable)
+verifyForall = verifyBinder forallSort forallVariable
 
 verifyMu
     ::  ( binder ~ Mu Variable
@@ -668,9 +659,10 @@ verifyMu
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyMu = verifyBinder muSort (SetVar . muVariable)
+verifyMu = verifyBinder muSort muVar
   where
-    muSort = variableSort . getSetVariable . muVariable
+    muVar = getVariable . muVariable
+    muSort = variableSort . muVar
 
 verifyNu
     ::  ( binder ~ Nu Variable
@@ -678,29 +670,27 @@ verifyNu
         )
     => binder (PatternVerifier Verified.Pattern)
     -> PatternVerifier (CofreeF binder valid Verified.Pattern)
-verifyNu = verifyBinder nuSort (SetVar . nuVariable)
+verifyNu = verifyBinder nuSort nuVar
   where
-    nuSort = variableSort . getSetVariable . nuVariable
+    nuVar = getVariable . nuVariable
+    nuSort = variableSort . nuVar
 
 verifyVariable
-    ::  ( base ~ Const (UnifiedVariable Variable)
+    ::  ( base ~ Const Variable
         , valid ~ Attribute.Pattern Variable
         )
-    => UnifiedVariable Variable
+    => Variable
     -> PatternVerifier (CofreeF base valid Verified.Pattern)
-verifyVariable var = do
-    declaredVariable <- lookupDeclaredVariable varName
-    let declaredSort = foldMapVariable variableSort declaredVariable
+verifyVariable variable@Variable { variableName, variableSort } = do
+    declaredVariable <- lookupDeclaredVariable variableName
+    let Variable { variableSort = declaredSort } = declaredVariable
     koreFailWithLocationsWhen
-        (varSort /= declaredSort)
-        [ var, declaredVariable ]
+        (variableSort /= declaredSort)
+        [ variable, declaredVariable ]
         "The declared sort is different."
-    let verified = Const var
+    let verified = Const variable
         attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
-  where
-    varName = foldMapVariable variableName var
-    varSort = foldMapVariable variableSort var
 
 verifyDomainValue
     :: DomainValue Sort (PatternVerifier Verified.Pattern)
@@ -764,16 +754,13 @@ verifyCharLiteral char = do
     let attrs = synthetic (Internal.extractAttributes <$> verified)
     return (attrs :< verified)
 
-verifyVariableDeclaration
-    :: UnifiedVariable Variable -> PatternVerifier VerifySuccess
-verifyVariableDeclaration variable = do
+verifyVariableDeclaration :: Variable -> PatternVerifier VerifySuccess
+verifyVariableDeclaration Variable { variableSort } = do
     Context { declaredSortVariables } <- Reader.ask
     verifySort
         lookupSortDeclaration
         declaredSortVariables
-        varSort
-  where
-    varSort = foldMapVariable variableSort variable
+        variableSort
 
 applicationSortsFromSymbolOrAliasSentence
     :: SentenceSymbolOrAlias sentence
@@ -823,23 +810,23 @@ verifyFreeVariables unifiedPattern =
         emptyDeclaredVariables
         $
         Set.toList (Variables.freePureVariables unifiedPattern)
+        ++
+        Set.toList (Variables.freeSetVariables unifiedPattern)
 
 addFreeVariable
     :: DeclaredVariables
-    -> UnifiedVariable Variable
+    -> Variable
     -> PatternVerifier DeclaredVariables
 addFreeVariable (getDeclaredVariables -> vars) var = do
     checkVariable var vars
-    return . DeclaredVariables $
-        Map.insert (foldMapVariable variableName var) var vars
+    return $ DeclaredVariables $ Map.insert (variableName var) var vars
 
 checkVariable
-    :: UnifiedVariable Variable
-    -> Map.Map Id (UnifiedVariable Variable)
+    :: Variable
+    -> Map.Map Id Variable
     -> PatternVerifier VerifySuccess
 checkVariable var vars =
-    maybe verifySuccess inconsistent
-    $ Map.lookup (foldMapVariable variableName var) vars
+    maybe verifySuccess inconsistent $ Map.lookup (variableName var) vars
   where
     inconsistent v =
         koreFailWithLocations [v, var]
@@ -863,12 +850,12 @@ patternNameForContext (DomainValueF _) = "\\dv"
 patternNameForContext (EqualsF _) = "\\equals"
 patternNameForContext (ExistsF exists) =
     "\\exists '"
-    <> variableNameForContext (getElementVariable $ existsVariable exists)
+    <> variableNameForContext (existsVariable exists)
     <> "'"
 patternNameForContext (FloorF _) = "\\floor"
 patternNameForContext (ForallF forall) =
     "\\forall '"
-    <> variableNameForContext (getElementVariable $ forallVariable forall)
+    <> variableNameForContext (forallVariable forall)
     <> "'"
 patternNameForContext (IffF _) = "\\iff"
 patternNameForContext (ImpliesF _) = "\\implies"
@@ -882,11 +869,11 @@ patternNameForContext (RewritesF _) = "\\rewrites"
 patternNameForContext (StringLiteralF _) = "<string>"
 patternNameForContext (CharLiteralF _) = "<char>"
 patternNameForContext (TopF _) = "\\top"
-patternNameForContext (VariableF (ElemVar variable)) =
-    "element variable '" <> variableNameForContext (getElementVariable variable) <> "'"
+patternNameForContext (VariableF variable) =
+    "variable '" <> variableNameForContext variable <> "'"
 patternNameForContext (InhabitantF _) = "\\inh"
-patternNameForContext (VariableF (SetVar variable)) =
-    "set variable '" <> variableNameForContext (getSetVariable variable) <> "'"
+patternNameForContext (SetVariableF (SetVariable variable)) =
+    "set variable '" <> variableNameForContext variable <> "'"
 
 variableNameForContext :: Variable -> Text
 variableNameForContext variable = getId (variableName variable)

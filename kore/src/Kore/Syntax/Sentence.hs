@@ -61,7 +61,6 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Debug
 import           Kore.Sort
 import           Kore.Syntax.Application
-import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.Module
 import           Kore.Syntax.Pattern
                  ( Pattern )
@@ -146,8 +145,7 @@ data SentenceAlias (patternType :: *) =
         { sentenceAliasAlias        :: !Alias
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
-        , sentenceAliasLeftPattern
-            :: !(Application SymbolOrAlias (ElementVariable Variable))
+        , sentenceAliasLeftPattern  :: !(Application SymbolOrAlias Variable)
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }

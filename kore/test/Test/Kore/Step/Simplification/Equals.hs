@@ -33,8 +33,6 @@ import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -218,7 +216,7 @@ test_equalsSimplification_Or_Pattern =
                                     (makeEqualsPredicate Mock.cf Mock.ch)
                                 ]
                         , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.x, Mock.a)]
+                            [(Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = mkTop_
@@ -252,7 +250,7 @@ test_equalsSimplification_Or_Pattern =
                 definedGWithSubstitution =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cg)
-                        (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+                        (makeEqualsPredicate (mkVar Mock.x) Mock.a)
                 definedGSubstituted =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cg)
@@ -271,8 +269,7 @@ test_equalsSimplification_Or_Pattern =
                     [ Conditional
                         { term = Mock.cg
                         , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.wrap [(ElemVar Mock.x, Mock.a)]
+                        , substitution = Substitution.wrap [(Mock.x, Mock.a)]
                         }
                     , Conditional
                         { term = Mock.ch
@@ -548,9 +545,9 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution =
-                    Substitution.unsafeWrap [(ElemVar Mock.x, functionalOfA)]
+                    Substitution.unsafeWrap [(Mock.x, functionalOfA)]
                 }
-                (mkElemVar Mock.x)
+                (mkVar Mock.x)
                 functionalOfA
         )
     , testCase "equals(functional, x) becomes a substitution"
@@ -559,20 +556,19 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate = makeTruePredicate
                 , substitution =
-                    Substitution.unsafeWrap [(ElemVar Mock.x, functionalOfA)]
+                    Substitution.unsafeWrap [(Mock.x, functionalOfA)]
                 }
                 functionalOfA
-                (mkElemVar Mock.x)
+                (mkVar Mock.x)
         )
     , testCase "equals(x, function) becomes a substitution + ceil"
         (assertTermEquals
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution =
-                    Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
+                , substitution = Substitution.unsafeWrap [(Mock.x, fOfA)]
                 }
-            (mkElemVar Mock.x)
+            (mkVar Mock.x)
             fOfA
         )
     , testCase "equals(function, x) becomes a substitution + ceil"
@@ -580,53 +576,50 @@ test_equalsSimplification_TermLike =
             Conditional
                 { term = ()
                 , predicate = makeCeilPredicate fOfA
-                , substitution =
-                    Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
+                , substitution = Substitution.unsafeWrap [(Mock.x, fOfA)]
                 }
             fOfA
-            (mkElemVar Mock.x)
+            (mkVar Mock.x)
         )
     , testCase "equals(x, constructor) becomes a predicate"
         (assertTermEquals
             Conditional
                 { term = ()
-                , predicate =
-                    makeEqualsPredicate (mkElemVar Mock.x) constructor1OfA
+                , predicate = makeEqualsPredicate (mkVar Mock.x) constructor1OfA
                 , substitution = mempty
                 }
-            (mkElemVar Mock.x)
+            (mkVar Mock.x)
             constructor1OfA
         )
     , testCase "equals(constructor, x) becomes a predicate"
         (assertTermEquals
             Conditional
                 { term = ()
-                , predicate =
-                    makeEqualsPredicate constructor1OfA (mkElemVar Mock.x)
+                , predicate = makeEqualsPredicate constructor1OfA (mkVar Mock.x)
                 , substitution = mempty
                 }
             constructor1OfA
-            (mkElemVar Mock.x)
+            (mkVar Mock.x)
         )
     , testCase "equals(x, something) becomes a predicate"
         (assertTermEquals
             Conditional
                 { term = ()
-                , predicate = makeEqualsPredicate (mkElemVar Mock.x) plain1OfA
+                , predicate = makeEqualsPredicate (mkVar Mock.x) plain1OfA
                 , substitution = mempty
                 }
-            (mkElemVar Mock.x)
+            (mkVar Mock.x)
             plain1OfA
         )
     , testCase "equals(something, x) becomes a predicate"
         (assertTermEquals
             Conditional
                 { term = ()
-                , predicate = makeEqualsPredicate plain1OfA (mkElemVar Mock.x)
+                , predicate = makeEqualsPredicate plain1OfA (mkVar Mock.x)
                 , substitution = mempty
                 }
             plain1OfA
-            (mkElemVar Mock.x)
+            (mkVar Mock.x)
         )
     , testCase "equals(function, constructor) is not simplifiable"
         (assertTermEquals
@@ -644,17 +637,16 @@ test_equalsSimplification_TermLike =
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate
-                    , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                    , substitution = Substitution.unsafeWrap [(Mock.x, Mock.b)]
                     }
                 (Mock.builtinMap [(Mock.a, Mock.b)])
-                (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
             )
         , testCase "concrete Map, different keys"
             (assertTermEquals
                 Predicate.bottomPredicate
                 (Mock.builtinMap [(Mock.a, Mock.b)])
-                (Mock.builtinMap [(Mock.b, mkElemVar Mock.x)])
+                (Mock.builtinMap [(Mock.b, mkVar Mock.x)])
             )
         , testCase "concrete Map with framed Map"
             (assertTermEquals
@@ -665,14 +657,14 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (ElemVar Mock.x, fOfA)
-                        , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
-                    (mkElemVar Mock.m)
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
+                    (mkVar Mock.m)
                 )
             )
         , testCase "concrete Map with framed Map"
@@ -684,14 +676,14 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (ElemVar Mock.x, fOfA)
-                        , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
                 (Mock.concatMap
-                    (mkElemVar Mock.m)
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                    (mkVar Mock.m)
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                 )
             )
         , testCase "framed Map with concrete Map"
@@ -703,13 +695,13 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (ElemVar Mock.x, fOfA)
-                        , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 (Mock.concatMap
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
-                    (mkElemVar Mock.m)
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
+                    (mkVar Mock.m)
                 )
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
@@ -722,13 +714,13 @@ test_equalsSimplification_TermLike =
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
                     , substitution = Substitution.wrap
-                        [ (ElemVar Mock.x, fOfA)
-                        , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
+                        [ (Mock.x, fOfA)
+                        , (Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
                     }
                 (Mock.concatMap
-                    (mkElemVar Mock.m)
-                    (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
+                    (mkVar Mock.m)
+                    (Mock.builtinMap [(Mock.a, mkVar Mock.x)])
                 )
                 (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
             )
@@ -764,15 +756,14 @@ test_equalsSimplification_TermLike =
                         term4
                     )
         ,
-            let x = elemVarS "x" Mock.listSort
-                term5 =
-                    Mock.concatList (Mock.builtinList [Mock.a]) (mkElemVar x)
+            let x = varS "x" Mock.listSort
+                term5 = Mock.concatList (Mock.builtinList [Mock.a]) (mkVar x)
                 term6 = Mock.builtinList [Mock.a, Mock.b]
             in
                 testCase "[a] `concat` x /\\ [a, b] "
                     (assertTermEquals
                         (Predicate.fromSingleSubstitution
-                            (ElemVar x, Mock.builtinList [Mock.b])
+                            (x, Mock.builtinList [Mock.b])
                         )
                         term5
                         term6

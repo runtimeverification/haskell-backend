@@ -60,7 +60,7 @@ test_patternAttributes =
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
                     Mock.metadataTools
-                    (mkElemVar Mock.x)
+                    (mkVar Mock.x)
                 )
             let
                 constructor :: TermLike Variable
@@ -148,7 +148,7 @@ test_patternAttributes =
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
                     Mock.metadataTools
-                    (mkElemVar Mock.x)
+                    (mkVar Mock.x)
                 )
             let
                 constructor :: TermLike Variable

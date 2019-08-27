@@ -39,6 +39,7 @@ import           Data.Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import           Kore.Attribute.Pattern.FreeSetVariables
 import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
@@ -92,6 +93,13 @@ instance Unparse Symbol where
 instance
     Ord variable =>
     Synthetic (Application Symbol) (FreeVariables variable)
+  where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance
+    Ord variable =>
+    Synthetic (Application Symbol) (FreeSetVariables variable)
   where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}

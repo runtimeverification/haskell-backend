@@ -78,8 +78,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify as Unify
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
@@ -617,20 +615,19 @@ variableFunctionAndEquals
     -> MaybeT unifier (Pattern variable)
 variableFunctionAndEquals
     SimplificationType.And
-    first@(ElemVar_ v1)
-    second@(ElemVar_ v2)
+    first@(Var_ v1)
+    second@(Var_ v2)
   =
     return Conditional
         { term = if v2 > v1 then second else first
         , predicate = makeTruePredicate
         , substitution =
             Substitution.wrap
-                [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first)
-                ]
+                [ if v2 > v1 then (v1, second) else (v2, first) ]
         }
 variableFunctionAndEquals
     simplificationType
-    first@(ElemVar_ v)
+    first@(Var_ v)
     second
   | isFunctionPattern second = Monad.Trans.lift $ do -- MonadUnify
     predicate <-
@@ -651,8 +648,7 @@ variableFunctionAndEquals
                            second
                         empty
                     resultPredicates -> Unify.scatter resultPredicates
-    let result =
-            predicate <> Predicate.fromSingleSubstitution (ElemVar v, second)
+    let result = predicate <> Predicate.fromSingleSubstitution (v, second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ = empty
 

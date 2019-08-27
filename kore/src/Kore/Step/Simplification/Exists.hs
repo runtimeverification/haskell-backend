@@ -45,8 +45,6 @@ import           Kore.Unification.Unify
                  ( runUnifierT )
 import           Kore.Unparser
 import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
 
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
@@ -90,8 +88,8 @@ simplify
         )
     => Exists Sort variable (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Exists { existsVariable, existsChild } =
-    simplifyEvaluated existsVariable existsChild
+simplify Exists { existsVariable = variable, existsChild = child } =
+    simplifyEvaluated variable child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -113,7 +111,7 @@ simplifyEvaluated
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => ElementVariable variable
+    => variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated variable simplified
@@ -134,7 +132,7 @@ makeEvaluate
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => ElementVariable variable
+    => variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluate variable original
@@ -168,7 +166,7 @@ matchesToVariableSubstitution
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => ElementVariable variable
+    => variable
     -> Pattern variable
     -> simplifier Bool
 matchesToVariableSubstitution
@@ -177,7 +175,7 @@ matchesToVariableSubstitution
   | Equals_ _sort1 _sort2 first second <-
         Syntax.Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
-  , not (hasFreeVariable (ElemVar variable) term)
+  , not (hasFreeVariable variable term)
   = do
     matchResult <- runUnifierT $ matchIncremental first second
     case matchResult of
@@ -192,7 +190,7 @@ singleVariableSubstitution
         , SortedVariable variable
         , Unparse variable
         )
-    => ElementVariable variable -> Predicate variable -> Bool
+    => variable -> Predicate variable -> Bool
 singleVariableSubstitution
     variable
     Conditional
@@ -207,8 +205,8 @@ singleVariableSubstitution
         , "substitutions, then the equality should have already been resolved."
         ]
     [(substVariable, substTerm)]
-        | substVariable == ElemVar variable ->
-            Pattern.withoutFreeVariable substVariable substTerm
+        | substVariable == variable ->
+            Pattern.withoutFreeVariable variable substTerm
                 True
     _ -> False
 singleVariableSubstitution _ _ = False
@@ -232,7 +230,7 @@ makeEvaluateBoundLeft
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => ElementVariable variable  -- ^ quantified variable
+    => variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
@@ -240,9 +238,9 @@ makeEvaluateBoundLeft
     variable
     boundTerm
     normalized
-  = withoutFreeVariable (ElemVar variable) boundTerm $ do
+  = withoutFreeVariable variable boundTerm $ do
         let
-            boundSubstitution = Map.singleton (ElemVar variable) boundTerm
+            boundSubstitution = Map.singleton variable boundTerm
             substituted =
                 normalized
                     { term =
@@ -272,7 +270,7 @@ makeEvaluateBoundRight
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => ElementVariable variable  -- ^ variable to be quantified
+    => variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
@@ -310,7 +308,7 @@ splitSubstitution
         , SortedVariable variable
         , Unparse variable
         )
-    => ElementVariable variable
+    => variable
     -> Substitution variable
     ->  ( Either (TermLike variable) (Substitution variable)
         , Substitution variable
@@ -318,16 +316,14 @@ splitSubstitution
 splitSubstitution variable substitution =
     (bound, independent)
   where
-    reversedSubstitution =
-        Substitution.reverseIfRhsIsVar (ElemVar variable) substitution
+    reversedSubstitution = Substitution.reverseIfRhsIsVar variable substitution
     (dependent, independent) =
         Substitution.partition hasVariable reversedSubstitution
     hasVariable variable' term =
-        ElemVar variable == variable'
-        || Pattern.hasFreeVariable (ElemVar variable) term
+        variable == variable' || Pattern.hasFreeVariable variable term
     bound =
         maybe (Right dependent) Left
-        $ Map.lookup (ElemVar variable) (Substitution.toMap dependent)
+        $ Map.lookup variable (Substitution.toMap dependent)
 
 {- | Existentially quantify the variable an 'Pattern'.
 
@@ -341,7 +337,7 @@ quantifyPattern
         , Unparse variable
         , SortedVariable variable
         )
-    => ElementVariable variable
+    => variable
     -> Pattern variable
     -> Pattern variable
 quantifyPattern variable original@Conditional { term, predicate, substitution }
@@ -359,9 +355,8 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     $ Syntax.Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
-    quantifyTerm = Pattern.hasFreeVariable (ElemVar variable) term
+    quantifyTerm = Pattern.hasFreeVariable variable term
     predicate' =
         Syntax.Predicate.makeAndPredicate predicate
         $ Syntax.Predicate.fromSubstitution substitution
-    quantifyPredicate =
-        Syntax.Predicate.hasFreeVariable (ElemVar variable) predicate'
+    quantifyPredicate = Syntax.Predicate.hasFreeVariable variable predicate'

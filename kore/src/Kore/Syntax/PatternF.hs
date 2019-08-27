@@ -45,11 +45,11 @@ import Kore.Syntax.Not
 import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Rewrites
+import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
 import Kore.Syntax.Top
 import Kore.Syntax.Variable
 import Kore.Unparser
-import Kore.Variables.UnifiedVariable
 
 {- | 'PatternF' is the 'Base' functor of Kore patterns
 
@@ -76,8 +76,9 @@ data PatternF variable child
     | StringLiteralF !(StringLiteral child)
     | CharLiteralF   !(CharLiteral child)
     | TopF           !(Top Sort child)
-    | VariableF      !(UnifiedVariable variable)
+    | VariableF      !variable
     | InhabitantF    !(Inhabitant child)
+    | SetVariableF   !(SetVariable variable)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance SOP.Generic (PatternF variable child)
@@ -131,7 +132,9 @@ traverseVariables traversing =
         ForallF all0 -> ForallF <$> traverseVariablesForall all0
         MuF any0 -> MuF <$> traverseVariablesMu any0
         NuF any0 -> NuF <$> traverseVariablesNu any0
-        VariableF variable -> VariableF <$> traverse traversing variable
+        VariableF variable -> VariableF <$> traversing variable
+        SetVariableF (SetVariable variable) ->
+            SetVariableF . SetVariable <$> traversing variable
         -- Trivial cases
         AndF andP -> pure (AndF andP)
         ApplicationF appP -> pure (ApplicationF appP)
@@ -153,13 +156,13 @@ traverseVariables traversing =
         InhabitantF s -> pure (InhabitantF s)
   where
     traverseVariablesExists Exists { existsSort, existsVariable, existsChild } =
-        Exists existsSort <$> traverse traversing existsVariable <*> pure existsChild
+        Exists existsSort <$> traversing existsVariable <*> pure existsChild
     traverseVariablesForall Forall { forallSort, forallVariable, forallChild } =
-        Forall forallSort <$> traverse traversing forallVariable <*> pure forallChild
-    traverseVariablesMu Mu { muVariable, muChild } =
-        Mu <$> traverse traversing muVariable <*> pure muChild
-    traverseVariablesNu Nu { nuVariable, nuChild } =
-        Nu <$> traverse traversing nuVariable <*> pure nuChild
+        Forall forallSort <$> traversing forallVariable <*> pure forallChild
+    traverseVariablesMu Mu { muVariable = SetVariable v, muChild } =
+        Mu <$> (SetVariable <$> traversing v) <*> pure muChild
+    traverseVariablesNu Nu { nuVariable = SetVariable v, nuChild } =
+        Nu <$> (SetVariable <$> traversing v) <*> pure nuChild
 
 -- | Given an 'Id', 'groundHead' produces the head of an 'Application'
 -- corresponding to that argument.
