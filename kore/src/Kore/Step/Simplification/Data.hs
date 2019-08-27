@@ -19,13 +19,11 @@ module Kore.Step.Simplification.Data
     , evalSimplifierBranch
     , gather
     , gatherAll
-    , gatherPatterns
     , scatter
     , foldBranchT
     , alternate
     , PredicateSimplifier (..)
     , emptyPredicateSimplifier
-    , simplifyPredicate
     , TermLikeSimplifier
     , termLikeSimplifier
     , emptyTermLikeSimplifier
@@ -34,7 +32,6 @@ module Kore.Step.Simplification.Data
     , SimplificationType (..)
     -- * Builtin and axiom simplifiers
     , BuiltinAndAxiomSimplifier (..)
-    , runBuiltinAndAxiomSimplifier
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
     , isApplicable, isNotApplicable
@@ -299,13 +296,6 @@ See also: 'scatter', 'gather'
  -}
 gatherAll :: Monad m => BranchT m [a] -> m [a]
 gatherAll simpl = Monad.join <$> gather simpl
-
-
-gatherPatterns
-    :: (Ord variable, Monad m)
-    => BranchT m (Pattern variable)
-    -> m (OrPattern variable)
-gatherPatterns = Monad.liftM OrPattern.fromPatterns . gather
 
 {- | Disperse results into many simplification branches.
 
@@ -579,18 +569,6 @@ newtype PredicateSimplifier =
 emptyPredicateSimplifier :: PredicateSimplifier
 emptyPredicateSimplifier = PredicateSimplifier return
 
-simplifyPredicate
-    ::  forall variable simplifier
-    .   ( FreshVariable variable, SortedVariable variable
-        , Show variable, Unparse variable
-        , MonadSimplify simplifier
-        )
-    => Predicate variable
-    -> BranchT simplifier (Predicate variable)
-simplifyPredicate predicate = do
-    PredicateSimplifier simplify <- askSimplifierPredicate
-    simplify predicate
-
 {-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
 
@@ -630,26 +608,6 @@ newtype BuiltinAndAxiomSimplifier =
         -> TermLike variable
         -> simplifier (AttemptedAxiom variable)
         )
-
-runBuiltinAndAxiomSimplifier
-    ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => BuiltinAndAxiomSimplifier
-    -> TermLike variable
-    -> simplifier (AttemptedAxiom variable)
-runBuiltinAndAxiomSimplifier
-    (BuiltinAndAxiomSimplifier simplifier)
-    termLike
-  = do
-    simplifierAxioms <- askSimplifierAxioms
-    simplifierPredicate <- askSimplifierPredicate
-    simplifierTermLike <- askSimplifierTermLike
-    simplifier simplifierPredicate simplifierTermLike simplifierAxioms termLike
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.

@@ -421,13 +421,10 @@ sizeMap map' = mkApplySymbol sizeMapSymbol [map']
 
 -- ** Pair
 
-pairId :: Id
-pairId = testId "pair"
-
 pairSymbol :: Sort -> Sort -> Internal.Symbol
 pairSymbol lSort rSort =
     Internal.Symbol
-        { symbolConstructor = pairId
+        { symbolConstructor = testId "pair"
         , symbolParams = [lSort, rSort]
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
