@@ -210,7 +210,7 @@ lookupSimplifierAxiom
 lookupSimplifierAxiom termLike = do
     simplifierAxioms <- askSimplifierAxioms
     Error.hoistMaybe $ do
-        identifier <- Axiom.Identifier.matchAxiomIdentifier termLike
+        identifier <- Axiom.Identifier.extract termLike
         Map.lookup identifier simplifierAxioms
 
 -- * Branching
