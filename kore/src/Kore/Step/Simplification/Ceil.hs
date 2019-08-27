@@ -187,7 +187,13 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
       | BuiltinF child <- projected = makeEvaluateBuiltin child
 
       | otherwise = do
+            substitutionSimplifier <- Simplifier.askSimplifierPredicate
+            simplifier <- Simplifier.askSimplifierTermLike
+            axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
             evaluation <- Axiom.evaluatePattern
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate

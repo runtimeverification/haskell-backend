@@ -12,17 +12,12 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
-import           Control.Error
-                 ( MaybeT )
-import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
-import           Data.Text
-                 ( Text )
+import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
 import qualified Data.Text as Text
-import           Data.Text.Prettyprint.Doc
-                 ( (<+>) )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
@@ -39,7 +34,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
-                 ( LogMessage, WithLog, logWarning )
+                 ( LogMessage, WithLog )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -72,46 +67,48 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplication childrenPredicate application = do
-    hasSimplifierAxioms <- not . null <$> Simplifier.askSimplifierAxioms
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
         afterInj = evaluateSortInjection application
+        Application { applicationSymbolOrAlias = appHead } = afterInj
+        Symbol { symbolConstructor = symbolId } = appHead
         termLike = synthesize (ApplySymbolF afterInj)
-        unchanged =
-            OrPattern.fromPattern
-            $ Pattern.withCondition termLike childrenPredicate
 
-        symbol = applicationSymbolOrAlias afterInj
-        symbolHook = (getHook . Attribute.hook) (symbolAttributes symbol)
-        -- Return the input when there are no evaluators for the symbol.
-        unevaluatedSimplifier
-          | hasSimplifierAxioms
-          , Just hook <- symbolHook
-          = do
-            warnMissingHook hook afterInj
-            -- Mark the result so we do not attempt to evaluate it again. This
-            -- prevents spamming the warning above, but re-evaluation will never
-            -- succeed anyway if there are no evaluators for this symbol!
-            return $ (fmap . fmap) mkEvaluated unchanged
-          | otherwise =
+        maybeEvaluatedPattSimplifier =
+            maybeEvaluatePattern
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
+                childrenPredicate
+                termLike
+                unchanged
+        unchangedPatt =
+            Conditional
+                { term         = termLike
+                , predicate    = predicate
+                , substitution = substitution
+                }
+          where
+            Conditional { term = (), predicate, substitution } =
+                childrenPredicate
+        unchanged = OrPattern.fromPattern unchangedPatt
+
+        getSymbolHook = getHook . Attribute.hook . symbolAttributes
+        getAppHookString = Text.unpack <$> getSymbolHook appHead
+
+    case maybeEvaluatedPattSimplifier of
+        Nothing
+          | Just hook <- getAppHookString
+          , not(null axiomIdToEvaluator) ->
+            error
+                (   "Attempting to evaluate unimplemented hooked operation "
+                ++  hook ++ ".\nSymbol: " ++ getIdForError symbolId
+                )
+          | otherwise ->
             return unchanged
-
-    Error.maybeT unevaluatedSimplifier return
-        $ maybeEvaluatePattern childrenPredicate termLike unchanged
-
-{- | If the 'Symbol' has a 'Hook', issue a warning that the hook is missing.
-
- -}
-warnMissingHook
-    :: (MonadSimplify simplifier, SortedVariable variable)
-    => Text -> Application Symbol (TermLike variable) -> simplifier ()
-warnMissingHook hook application = do
-    let message =
-            Pretty.vsep
-                [ "Missing hook" <+> Pretty.squotes (Pretty.pretty hook)
-                , "while evaluating:"
-                , Pretty.indent 4 (unparse application)
-                ]
-    logWarning (Text.pack $ show message)
+        Just evaluatedPattSimplifier -> evaluatedPattSimplifier
 
 {-| Evaluates axioms on patterns.
 -}
@@ -124,16 +121,36 @@ evaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
     -> simplifier (OrPattern variable)
-evaluatePattern childrenPredicate patt defaultValue =
-    Error.maybeT (return defaultValue) return
-    $ maybeEvaluatePattern childrenPredicate patt defaultValue
+evaluatePattern
+    substitutionSimplifier
+    simplifier
+    axiomIdToEvaluator
+    childrenPredicate
+    patt
+    defaultValue
+  =
+    fromMaybe
+        (return defaultValue)
+        (maybeEvaluatePattern
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            childrenPredicate
+            patt
+            defaultValue
+        )
 
 {-| Evaluates axioms on patterns.
 
@@ -148,71 +165,85 @@ maybeEvaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from axiom IDs to axiom evaluators
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> MaybeT simplifier (OrPattern variable)
-maybeEvaluatePattern childrenPredicate termLike defaultValue =
-    Simplifier.lookupSimplifierAxiom termLike
-    >>= \(BuiltinAndAxiomSimplifier evaluator) -> tracing $ do
-        axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
-        simplifier <- Simplifier.askSimplifierTermLike
-        result <-
-            evaluator
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                termLike
-        flattened <- case result of
-            AttemptedAxiom.NotApplicable ->
-                return AttemptedAxiom.NotApplicable
-            AttemptedAxiom.Applied AttemptedAxiomResults
-                { results = orResults
-                , remainders = orRemainders
-                } -> do
-                    simplified <- mapM simplifyIfNeeded orResults
-                    return
-                        (AttemptedAxiom.Applied AttemptedAxiomResults
-                            { results =
-                                MultiOr.flatten simplified
-                            , remainders = orRemainders
-                            }
-                        )
-        merged <-
-            mergeWithConditionAndSubstitution
-                childrenPredicate
-                flattened
-        case merged of
-            AttemptedAxiom.NotApplicable -> return defaultValue
-            AttemptedAxiom.Applied attemptResults ->
-                return $ MultiOr.merge results remainders
-              where
-                AttemptedAxiomResults { results, remainders } =
-                    attemptResults
+    -> Maybe (simplifier (OrPattern variable))
+maybeEvaluatePattern
+    substitutionSimplifier
+    simplifier
+    axiomIdToEvaluator
+    childrenPredicate
+    patt
+    defaultValue
+  =
+    case maybeEvaluator of
+        Nothing -> Nothing
+        Just (BuiltinAndAxiomSimplifier evaluator) ->
+            Just
+            $ traceNonErrorMonad
+                D_Function_evaluatePattern
+                [ debugArg "axiomIdentifier" identifier ]
+            $ do
+                result <-
+                    evaluator
+                        substitutionSimplifier
+                        simplifier
+                        axiomIdToEvaluator
+                        patt
+                flattened <- case result of
+                    AttemptedAxiom.NotApplicable ->
+                        return AttemptedAxiom.NotApplicable
+                    AttemptedAxiom.Applied AttemptedAxiomResults
+                        { results = orResults
+                        , remainders = orRemainders
+                        } -> do
+                            simplified <- mapM simplifyIfNeeded orResults
+                            return
+                                (AttemptedAxiom.Applied AttemptedAxiomResults
+                                    { results =
+                                        MultiOr.flatten simplified
+                                    , remainders = orRemainders
+                                    }
+                                )
+                merged <-
+                    mergeWithConditionAndSubstitution
+                        childrenPredicate
+                        flattened
+                case merged of
+                    AttemptedAxiom.NotApplicable -> return defaultValue
+                    AttemptedAxiom.Applied attemptResults ->
+                        return $ MultiOr.merge results remainders
+                      where
+                        AttemptedAxiomResults { results, remainders } =
+                            attemptResults
   where
     identifier :: Maybe AxiomIdentifier
-    identifier = AxiomIdentifier.extract termLike
+    identifier = AxiomIdentifier.extract patt
 
-    tracing =
-        traceMaybeT
-            D_Function_evaluatePattern
-            [ debugArg "axiomIdentifier" identifier ]
+    maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
+    maybeEvaluator = do
+        identifier' <- identifier
+        Map.lookup identifier' axiomIdToEvaluator
 
     unchangedPatt =
         Conditional
-            { term         = termLike
+            { term         = patt
             , predicate    = predicate
             , substitution = substitution
             }
       where
         Conditional { term = (), predicate, substitution } = childrenPredicate
 
-    simplifyIfNeeded
-        :: Pattern variable -> MaybeT simplifier (OrPattern variable)
+    simplifyIfNeeded :: Pattern variable -> simplifier (OrPattern variable)
     simplifyIfNeeded toSimplify
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
