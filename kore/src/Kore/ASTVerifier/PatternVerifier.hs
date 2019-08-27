@@ -113,9 +113,11 @@ lookupSortDeclaration sortId = do
     (_, sortDecl) <- resolveSort indexedModule sortId
     return sortDecl
 
+-- TODO: uncomment after refactor
 lookupAlias
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier (Internal.Alias (TermLike Variable))
+    -- ->  MaybeT PatternVerifier (Internal.Alias (TermLike Variable))
+    ->  MaybeT PatternVerifier (Internal.Alias ())
 lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
@@ -124,14 +126,15 @@ lookupAlias symbolOrAlias = do
         Trans.lift
         $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
     let aliasLeft = leftDefinition decl
-    aliasRight <-
-        Trans.lift
-        $ verifyPattern
-            ( Just
-            . applicationSortsResult
-            $ aliasSorts
-            )
-            (rightDefinition decl)
+        aliasRight = ()
+    -- aliasRight <-
+    --     Trans.lift
+    --     $ verifyPattern
+    --         ( Just
+    --         . applicationSortsResult
+    --         $ aliasSorts
+    --         )
+    --         (rightDefinition decl)
     return Internal.Alias
         { aliasConstructor
         , aliasParams
@@ -562,12 +565,14 @@ verifyPatternsWithSorts getChildAttributes sorts operands = do
     declaredOperandCount = length sorts
     actualOperandCount = length operands
 
+-- TODO: uncomment after refactor
 verifyApplyAlias
     ::  (child -> Attribute.Pattern Variable)
     ->  Application SymbolOrAlias (PatternVerifier child)
     ->  MaybeT PatternVerifier
             (CofreeF
-                (Application (Internal.Alias (TermLike Variable)))
+                -- (Application (Internal.Alias (TermLike Variable)))
+                (Application (Internal.Alias ()))
                 (Attribute.Pattern Variable)
                 child
             )
@@ -627,9 +632,11 @@ verifyApplication getChildAttributes application = do
   where
     symbolOrAlias = applicationSymbolOrAlias application
     transCofreeF fg (a :< fb) = a :< fg fb
+    -- TODO: uncomment after refactor
     verifyApplyAlias' =
-        transCofreeF Internal.ApplyAliasF
-        <$> verifyApplyAlias getChildAttributes application
+        undefined
+    --    transCofreeF Internal.ApplyAliasF
+    --    <$> verifyApplyAlias getChildAttributes application
     verifyApplySymbol' =
         transCofreeF Internal.ApplySymbolF
         <$> verifyApplySymbol getChildAttributes application
