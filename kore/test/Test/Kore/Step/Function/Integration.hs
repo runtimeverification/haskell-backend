@@ -4,6 +4,7 @@ module Test.Kore.Step.Function.Integration
     , test_List
     , test_lookupMap
     , test_updateMap
+    , test_Pair
     ) where
 
 import Test.Tasty
@@ -1034,11 +1035,44 @@ mapSimplifiers =
         , functionEvaluator Builtin.dummyIntSymbol [dummyIntSimplifier]
         ]
 
+test_Pair :: [TestTree]
+test_Pair =
+    [ applies "pair constructor axiom applies"
+        [pairCtorAxiom]
+        (mkExistsN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+    , equals "∃ x:Int y:Int. (x, y) = ⊤"
+        (mkExistsN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        [mkTop_]
+    ]
+
+mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
+mkPair = Builtin.pair
+
 uInt, vInt, xInt, yInt :: ElementVariable Variable
 uInt = elemVarS (testId "uInt") intSort
 vInt = elemVarS (testId "vInt") intSort
 xInt = elemVarS (testId "xInt") intSort
 yInt = elemVarS (testId "yInt") intSort
+
+pairCtorAxiom :: EqualityRule Variable
+pairCtorAxiom =
+    EqualityRule $ rulePattern
+        (mkExistsN [xInt, yInt] $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkTop $ Builtin.pairSort intSort intSort)
+
+pairCtorEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
+pairCtorEvaluator =
+    ( AxiomIdentifier.Exists
+        $ AxiomIdentifier.Exists
+        $ AxiomIdentifier.Application Builtin.pairId
+    , firstFullEvaluation [simplificationEvaluation pairCtorAxiom]
+    )
+
+pairSimplifiers :: BuiltinAndAxiomSimplifierMap
+pairSimplifiers =
+    Map.fromList
+        [ pairCtorEvaluator
+        ]
 
 axiomEvaluator
     :: TermLike Variable
@@ -1186,5 +1220,6 @@ testEnv =
                 , natSimplifiers
                 , listSimplifiers
                 , mapSimplifiers
+                , pairSimplifiers
                 ]
         }
