@@ -1,7 +1,7 @@
 module Test.Kore.Builtin.Set where
 
 import           Hedgehog hiding
-                 ( Concrete, property )
+                 ( Concrete, opaque, property )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import           Test.Tasty
@@ -13,6 +13,7 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
 import           Data.Set
@@ -1522,8 +1523,7 @@ return a partial result for unifying the second element of the pair.
 test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
     testCaseWithSMT "unify Set with symbolic keys in axiom" $ do
-        let pair = mkPair intSort setSort symbolicKey concreteSet
-        config <- evaluate pair
+        config <- evaluate $ pair symbolicKey concreteSet
         actual <- runStep config axiom
         assertEqualWithExplanation "" expected actual
   where
@@ -1658,6 +1658,25 @@ asInternalNormalized
     :: NormalizedAc NormalizedSet (TermLike Concrete) (TermLike Variable)
     -> TermLike Variable
 asInternalNormalized = Ac.asInternal testMetadataTools setSort . Domain.wrapAc
+
+{- | Construct a 'NormalizedSet' from a list of elements and opaque terms.
+
+It is an error if the collection cannot be normalized.
+
+ -}
+normalizedSet
+    :: GHC.HasCallStack
+    => [TermLike Variable]
+    -- ^ (abstract or concrete) elements
+    -> [TermLike Variable]
+    -- ^ opaque terms
+    -> NormalizedSet (TermLike Concrete) (TermLike Variable)
+normalizedSet elements opaque =
+    Maybe.fromJust . Ac.renormalize . Domain.wrapAc $ Domain.NormalizedAc
+        { elementsWithVariables = Domain.SetElement <$> elements
+        , concreteElements = Map.empty
+        , opaque
+        }
 
 -- * Constructors
 

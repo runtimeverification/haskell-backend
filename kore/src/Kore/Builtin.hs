@@ -28,10 +28,14 @@ module Kore.Builtin
     , evaluators
     , externalizePattern
     , internalize
+    , renormalize
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import qualified Control.Lens as Lens
+import           Data.Function
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Generics.Product
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map
                  ( Map )
@@ -49,6 +53,7 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
@@ -73,6 +78,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import qualified Kore.Syntax.Pattern as Syntax
 import           Kore.Unparser
+import           Kore.Variables.Fresh
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -287,3 +293,24 @@ internalize tools =
             List.internalize tools
         .   Map.internalize tools
         .   Set.internalize tools
+
+{- | Renormalize builtin types after substitution.
+ -}
+renormalize
+    ::  ( FreshVariable variable
+        , SortedVariable variable
+        , Show variable
+        , Unparse variable
+        )
+    => TermLike variable -> TermLike variable
+renormalize termLike =
+    case termLike of
+        BuiltinMap_ internalMap ->
+            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalMap
+            & maybe bottom' mkBuiltinMap
+        BuiltinSet_ internalSet ->
+            Lens.traverseOf (field @"builtinAcChild") Ac.renormalize internalSet
+            & maybe bottom' mkBuiltinSet
+        _ -> termLike
+  where
+    bottom' = mkBottom (termLikeSort termLike)

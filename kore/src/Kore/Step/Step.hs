@@ -86,9 +86,6 @@ import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
 
--- | Wraps functions such as 'unificationProcedure' and
--- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in
--- 'stepWithRule'.
 newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier
