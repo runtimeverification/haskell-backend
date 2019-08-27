@@ -24,8 +24,6 @@ import           Data.Maybe
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Internal.Conditional
                  ( andCondition )
@@ -37,7 +35,6 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Matcher
                  ( matchAsUnification )
@@ -45,7 +42,7 @@ import           Kore.Step.Remainder
                  ( ceilChildOfApplicationOrTop )
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule, getEqualityRule) )
+                 ( EqualityRule (EqualityRule) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom,
@@ -313,11 +310,8 @@ evaluateWithDefinitionAxioms
     _termSimplifier
     _axiomSimplifiers
     patt
-  | any ruleIsConcrete definitionRules
-  , not (TermLike.isConcrete patt)
-  = return AttemptedAxiom.NotApplicable
-  | otherwise
-  = AttemptedAxiom.maybeNotApplicable $ do
+  =
+    AttemptedAxiom.maybeNotApplicable $ do
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
@@ -354,12 +348,6 @@ evaluateWithDefinitionAxioms
         }
 
   where
-    ruleIsConcrete =
-        Axiom.Concrete.isConcrete
-        . Attribute.Axiom.concrete
-        . RulePattern.attributes
-        . getEqualityRule
-
     unwrapEqualityRule (EqualityRule rule) =
         RulePattern.mapVariables fromVariable rule
 
