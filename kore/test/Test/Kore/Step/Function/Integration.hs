@@ -3,7 +3,6 @@ module Test.Kore.Step.Function.Integration
     , test_Nat
     , test_List
     , test_Map
-    , test_Pair
     ) where
 
 import Test.Tasty
@@ -14,6 +13,7 @@ import           Data.Function
 import           Data.Generics.Product
 import qualified Data.Map as Map
 import           Data.Maybe
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Prelude hiding
                  ( succ )
 
@@ -24,6 +24,8 @@ import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
                  ( builtinFunctions )
 import qualified Kore.Internal.OrPattern as OrPattern
+import           Kore.Internal.OrPredicate
+                 ( OrPredicate )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
@@ -38,10 +40,11 @@ import           Kore.Step.Axiom.EvaluationStrategy
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+                 ( AxiomIdentifier (..) )
 import           Kore.Step.Axiom.UserDefined
                  ( equalityRuleEvaluator )
 import           Kore.Step.Rule
-                 ( EqualityRule (..) )
+                 ( EqualityRule (EqualityRule) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
@@ -50,6 +53,7 @@ import           Kore.Step.Simplification.Data as AttemptedAxiom
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplify )
 import qualified Kore.Unification.Substitution as Substitution
+import           Kore.Unparser
 import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
@@ -65,7 +69,7 @@ import           Test.Kore.Comparators ()
 import qualified Test.Kore.Step.Axiom.EvaluationStrategy as Axiom
                  ( evaluate )
 import           Test.Kore.Step.Axiom.Matcher
-                 ( doesn'tMatch, matches )
+                 ( match )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -538,17 +542,9 @@ test_functionIntegration =
 
 test_Nat :: [TestTree]
 test_Nat =
-    [ matches "plus(0, N) matches plus(0, 1)"
-        (plus zero varN)
-        (plus zero one)
-        [(ElemVar natN, one)]
-    , doesn'tMatch "plus(succ(M), N) doesn't match plus(0, 1)"
-        (plus (succ varM) varN)
-        (plus zero one)
-    , matches "plus(succ(M), N) matches plus(1, 1)"
-        (plus (succ varM) varN)
-        (plus one one)
-        [(ElemVar natM, zero), (ElemVar natN, one)]
+    [ plus zero varN `matches` plus zero one  $ "plus(0, N) ~ plus(0, 1)"
+    , plus (succ varM) varN `doesn'tMatch` plus zero one  $ "plus(Succ(M), N) !~ plus(0, 1) "
+    , plus (succ varM) varN `matches` plus one one  $ "plus(Succ(M), N) ~ plus(1, 1) "
     , applies            "plus(0, N) => ... ~ plus (0, 1)"
         [plusZeroRule]
         (plus zero one)
@@ -586,6 +582,35 @@ test_Nat =
         testCase comment $ do
             actual <- evaluate natSimplifiers term
             assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+
+-- Matching tests: check that the terms match or not
+withMatch
+    :: HasCallStack
+    => (Maybe (OrPredicate Variable) -> Bool)
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+withMatch check term1 term2 comment =
+    testCase comment $ do
+        actual <- match term1 term2
+        let message =
+                Pretty.vsep
+                    [ "matching:"
+                    , Pretty.indent 4 (unparse term1)
+                    , Pretty.indent 2 "with:"
+                    , Pretty.indent 4 (unparse term2)
+                    ]
+        assertBool (show message) (check actual)
+
+matches, doesn'tMatch
+    :: HasCallStack
+    => TermLike Variable
+    -> TermLike Variable
+    -> TestName
+    -> TestTree
+matches = withMatch (maybe False (not . isBottom))
+doesn'tMatch = withMatch isNothing
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -947,26 +972,6 @@ mapSimplifiers =
     Map.fromList
         [ lookupMapEvaluator
         ]
-
-test_Pair :: [TestTree]
-test_Pair =
-    [ applies "pair constructor axiom applies"
-        [pairCtorAxiom]
-        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
-    ]
-
-mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
-mkPair = Builtin.pair
-
-xInt, yInt :: ElementVariable Variable
-xInt = elemVarS (testId "xInt") intSort
-yInt = elemVarS (testId "yInt") intSort
-
-pairCtorAxiom :: EqualityRule Variable
-pairCtorAxiom =
-    EqualityRule $ rulePattern
-        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
-        (mkTop $ Builtin.pairSort intSort intSort)
 
 axiomEvaluator
     :: TermLike Variable
