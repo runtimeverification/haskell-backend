@@ -110,7 +110,18 @@ termEquals
     -> TermLike variable
     -> MaybeT simplifier (OrPredicate variable)
 termEquals first second = MaybeT $ do
-    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
+    tools <- Simplifier.askMetadataTools
+    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    simplifier <- Simplifier.askSimplifierTermLike
+    axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
+    maybeResults <-
+        BranchT.gather $ runMaybeT $ termEqualsAnd
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            first
+            second
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results -> return $ Just $
@@ -125,10 +136,18 @@ termEqualsAnd
         , MonadSimplify simplifier
         )
     => GHC.HasCallStack
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> TermLike variable
     -> TermLike variable
     -> MaybeT (BranchT simplifier) (Pattern variable)
 termEqualsAnd
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     p1
     p2
   = MaybeT
@@ -147,6 +166,10 @@ termEqualsAnd
         -> MaybeT unifier (Pattern variable)
     maybeTermEqualsWorker =
         maybeTermEquals
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
             createPredicatesAndSubstitutionsMergerExcept
             termEqualsAndWorker
 
@@ -185,7 +208,11 @@ maybeTermEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => PredicateMerger variable unifier
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -229,10 +256,18 @@ termUnification =
         -> TermLike variable
         -> unifier (Pattern variable)
     termUnificationWorker pat1 pat2 = do
+        tools <- Simplifier.askMetadataTools
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
                     createPredicatesAndSubstitutionsMergerExcept
                     termUnificationWorker
                     pat1
@@ -282,8 +317,16 @@ termAnd p1 p2 =
         -> TermLike variable
         -> unifier (Pattern variable)
     termAndWorker first second = do
+        tools <- Simplifier.askMetadataTools
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         let maybeTermAnd' =
                 maybeTermAnd
+                    tools
+                    substitutionSimplifier
+                    simplifier
+                    axiomIdToSimplifier
                     createLiftedPredicatesAndSubstitutionsMerger
                     termAndWorker
                     first
@@ -303,7 +346,11 @@ maybeTermAnd
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => PredicateMerger variable unifier
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
@@ -375,24 +422,24 @@ andEqualsFunctions
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \_ _ _ -> bottomTermEquals, "bottomTermEquals")
-    , (EqualsT, \_ _ _ -> termBottomEquals, "termBottomEquals")
-    , (BothT,   \t _ _ -> variableFunctionAndEquals t, "variableFunctionAndEquals")
-    , (BothT,   \t _ _ -> functionVariableAndEquals t, "functionVariableAndEquals")
-    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
-    , (BothT,   \t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
-    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
-    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
+    [ (AndT,    liftE0 boolAnd, "boolAnd")
+    , (BothT,   liftET equalAndEquals, "equalAndEquals")
+    , (EqualsT, lift0  bottomTermEquals, "bottomTermEquals")
+    , (EqualsT, lift0  termBottomEquals, "termBottomEquals")
+    , (BothT,   liftTS variableFunctionAndEquals, "variableFunctionAndEquals")
+    , (BothT,   liftTS functionVariableAndEquals, "functionVariableAndEquals")
+    , (BothT,   addT   equalInjectiveHeadsAndEquals, "equalInjectiveHeadsAndEquals")
+    , (BothT,   addS   sortInjectionAndEqualsAssumesDifferentHeads, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   liftE1 constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   liftE1 constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   liftB1 Builtin.Map.unifyEquals, "Builtin.Map.unifyEquals")
+    , (BothT,   liftB1 Builtin.Set.unifyEquals, "Builtin.Set.unifyEquals")
+    , (BothT,   liftB  Builtin.List.unifyEquals, "Builtin.List.unifyEquals")
+    , (BothT,   liftE  domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (BothT,   liftE0 domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (BothT,   liftE0 stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
+    , (BothT,   liftE0 charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
+    , (AndT,    lift   functionAnd, "functionAnd")
     ]
   where
     mapEqualsFunctions (target, termTransform, name) =
@@ -402,7 +449,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
         :: String
         -> TermTransformation variable unifier
         -> TermTransformation variable unifier
-    logTT fnName termTransformation sType pm ts t1 t2 =
+    logTT fnName termTransformation sType tools ps tls bs pm ts t1 t2 =
         mapMaybeT (\getResult -> do
             mresult <- getResult
             case mresult of
@@ -434,7 +481,121 @@ andEqualsFunctions = fmap mapEqualsFunctions
                             ]
                     return mresult
             )
-            $ termTransformation sType pm ts t1 t2
+            $ termTransformation sType tools ps tls bs pm ts t1 t2
+
+    liftB
+        f
+        simplificationType
+        tools
+        substitutionSimplifier
+        _simplifier
+        _axiomIdToSimplifier
+        _substitutionMerger
+      =
+        f
+            simplificationType
+            tools
+            substitutionSimplifier
+    liftB1
+        f
+        simplificationType
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        _substitutionMerger
+      =
+        f
+            simplificationType
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+
+    lift = pure . transformerLiftOld
+    liftE = lift . toExpanded
+    liftE0
+        f
+        _simplificationType
+        _tools
+        _substitutionSimplifier
+        _simplifier
+        _axiomIdToSimplifier
+        _substitutionMerger
+        _termSimplifier
+        first
+        second
+      = Pattern.fromTermLike <$> f first second
+    liftE1
+        f
+        _simplificationType
+        tools
+        _substitutionSimplifier
+        _simplifier
+        _axiomIdToSimplifier
+        _substitutionMerger
+        _termSimplifier
+        first
+        second
+      = Pattern.fromTermLike <$> f tools first second
+    liftET = liftE . addToolsArg
+    addS
+        f
+        _simplificationType
+        tools
+        _substitutionSimplifier
+        _simplifier
+        _axiomIdToSimplifier
+        _substitutionMerger
+      = f tools
+    addT
+        ::  (  SmtMetadataTools Attribute.Symbol
+            -> PredicateMerger variable unifier
+            -> TermSimplifier variable unifier
+            -> TermLike variable
+            -> TermLike variable
+            -> MaybeT unifier (Pattern variable)
+            )
+        -> TermTransformation variable unifier
+    addT
+        f
+        _simplificationType
+        tools
+        _substitutionSimplifier
+        _simplifier
+        _axiomIdToSimplifier
+      =
+        f tools
+    lift0
+        f
+        _simplificationType
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        _substitutionMerger
+        _termSimplifier
+        p1
+        p2
+      = f tools substitutionSimplifier simplifier axiomIdToSimplifier p1 p2
+    liftTS
+        f
+        simplificationType
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        substitutionMerger
+        _termSimplifier
+      =
+        f
+            simplificationType
+            tools
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            substitutionMerger
+
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -451,6 +612,10 @@ call 'empty' unless given patterns matching their unification case.
  -}
 type TermTransformation variable unifier =
        SimplificationType
+    -> SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -> TermLike variable
@@ -458,7 +623,11 @@ type TermTransformation variable unifier =
     -> MaybeT unifier (Pattern variable)
 
 type TermTransformationOld variable unifier =
-       PredicateMerger variable unifier
+       SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
+    -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
@@ -475,6 +644,10 @@ maybeTransformTerm
         )
     => GHC.HasCallStack
     => [TermTransformationOld variable unifier]
+    -> SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -> BuiltinAndAxiomSimplifierMap
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm pairs.
@@ -483,15 +656,23 @@ maybeTransformTerm
     -> MaybeT unifier (Pattern variable)
 maybeTransformTerm
     topTransformers
-    predicateMerger
+    mergeException
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
     childTransformers
     first
     second
-  = do
+  =
     Foldable.asum
         (map
             (\f -> f
-                predicateMerger
+                mergeException
+                tools
+                substitutionSimplifier
+                simplifier
+                axiomIdToSimplifier
                 childTransformers
                 first
                 second
@@ -499,22 +680,83 @@ maybeTransformTerm
             topTransformers
         )
 
+addToolsArg
+    ::  (  TermLike variable
+        -> TermLike variable
+        -> Maybe (TermLike variable)
+        )
+    ->  (  SmtMetadataTools Attribute.Symbol
+        -> TermLike variable
+        -> TermLike variable
+        -> Maybe (TermLike variable)
+        )
+addToolsArg = pure
+
+toExpanded
+    ::  ( SortedVariable variable
+        , Show variable
+        , Ord variable
+        )
+    =>  (  SmtMetadataTools Attribute.Symbol
+        -> TermLike variable
+        -> TermLike variable
+        -> Maybe (TermLike variable)
+        )
+    ->  (  SmtMetadataTools Attribute.Symbol
+        -> TermLike variable
+        -> TermLike variable
+        -> Maybe (Pattern variable)
+        )
+toExpanded transformer tools first second =
+    toExpanded0 <$> transformer tools first second
+  where
+    toExpanded0 term
+      | isBottom term = Pattern.bottom
+      | otherwise     = Pattern.fromTermLike term
+
+transformerLiftOld
+    :: Monad unifier
+    =>  (  SmtMetadataTools Attribute.Symbol
+        -> TermLike variable
+        -> TermLike variable
+        -> Maybe (Pattern variable)
+        )
+    -> TermTransformationOld variable unifier
+transformerLiftOld
+    transformation
+    tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
+    _substitutionMerger
+    _childSimplifier
+    first
+    second
+  = liftPattern (transformation tools first second)
+
+liftPattern
+    :: Monad m
+    => Maybe (Pattern variable)
+    -> MaybeT m (Pattern variable)
+liftPattern = MaybeT . return
+
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
     :: MonadUnify unifier
-    => (Ord variable, SortedVariable variable, Unparse variable)
+    => SortedVariable variable
+    => Unparse variable
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> MaybeT unifier (TermLike variable)
 boolAnd first second
   | isBottom first  = do
       explainBoolAndBottom first second
-      return (Pattern.fromTermLike first)
-  | isTop first     = return (Pattern.fromTermLike second)
+      return first
+  | isTop first     = return second
   | isBottom second = do
       explainBoolAndBottom first second
-      return (Pattern.fromTermLike second)
-  | isTop second    = return (Pattern.fromTermLike first)
+      return second
+  | isTop second    = return first
   | otherwise       = empty
 
 explainBoolAndBottom
@@ -529,14 +771,13 @@ explainBoolAndBottom term1 term2 =
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    :: (Ord variable, SortedVariable variable)
-    => Monad unifier
+    :: Eq variable
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
+    -> Maybe (TermLike variable)
 equalAndEquals first second
   | first == second =
-    return (Pattern.fromTermLike first)
+    return first
 equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
@@ -548,10 +789,20 @@ bottomTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from symbol IDs to defined functions
+    -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
@@ -575,7 +826,7 @@ bottomTermEquals
                     $ Predicate.toPredicate <$> secondCeil
                 , substitution = mempty
                 }
-bottomTermEquals _ _ = empty
+bottomTermEquals _ _ _ _ _ _ = empty
 
 {- | Unify two patterns where the second is @\\bottom@.
 
@@ -590,10 +841,20 @@ termBottomEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from symbol IDs to defined functions
+    -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termBottomEquals first second = bottomTermEquals second first
+termBottomEquals
+    tools substitutionSimplifier simplifier axiomIdToSimplifier first second
+  =
+    bottomTermEquals
+        tools substitutionSimplifier simplifier axiomIdToSimplifier second first
 
 {- | Unify a variable with a function pattern.
 
@@ -610,11 +871,23 @@ variableFunctionAndEquals
         )
     => GHC.HasCallStack
     => SimplificationType
+    -> SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from symbol IDs to defined functions
+    -> PredicateMerger variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 variableFunctionAndEquals
     SimplificationType.And
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
+    _substitutionMerger
     first@(Var_ v1)
     second@(Var_ v2)
   =
@@ -627,6 +900,11 @@ variableFunctionAndEquals
         }
 variableFunctionAndEquals
     simplificationType
+    _tools
+    _substitutionSimplifier
+    _simplifier
+    _axiomIdToSimplifier
+    _
     first@(Var_ v)
     second
   | isFunctionPattern second = Monad.Trans.lift $ do -- MonadUnify
@@ -650,7 +928,7 @@ variableFunctionAndEquals
                     resultPredicates -> Unify.scatter resultPredicates
     let result = predicate <> Predicate.fromSingleSubstitution (v, second)
     return (Pattern.withCondition second result)
-variableFunctionAndEquals _ _ _ = empty
+variableFunctionAndEquals _ _ _ _ _ _ _ _ = empty
 
 {- | Unify a function pattern with a variable.
 
@@ -666,11 +944,35 @@ functionVariableAndEquals
         )
     => GHC.HasCallStack
     => SimplificationType
+    -> SmtMetadataTools Attribute.Symbol
+    -> PredicateSimplifier
+    -> TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
+    -- ^ Map from symbol IDs to defined functions
+    -> PredicateMerger variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-functionVariableAndEquals simplificationType first second =
-    variableFunctionAndEquals simplificationType second first
+functionVariableAndEquals
+    simplificationType
+    tools
+    substitutionSimplifier
+    simplifier
+    axiomIdToSimplifier
+    substitutionMerger
+    first
+    second
+  =
+    variableFunctionAndEquals
+        simplificationType
+        tools
+        substitutionSimplifier
+        simplifier
+        axiomIdToSimplifier
+        substitutionMerger
+        second
+        first
 
 {- | Unify two application patterns with equal, injective heads.
 
@@ -688,12 +990,16 @@ equalInjectiveHeadsAndEquals
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => TermSimplifier variable unifier
+    => SmtMetadataTools Attribute.Symbol
+    -> PredicateMerger variable unifier
+    -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 equalInjectiveHeadsAndEquals
+    _tools
+    _
     termMerger
     (App_ firstHead firstChildren)
     (App_ secondHead secondChildren)
@@ -707,7 +1013,7 @@ equalInjectiveHeadsAndEquals
     isFirstInjective = Symbol.isInjective firstHead
     isSecondInjective = Symbol.isInjective secondHead
 
-equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
+equalInjectiveHeadsAndEquals _ _ _ _ _ = Error.nothing
 
 {- | Simplify the conjunction of two sort injections.
 
@@ -734,45 +1040,48 @@ sortInjectionAndEqualsAssumesDifferentHeads
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => TermSimplifier variable unifier
+    => SmtMetadataTools Attribute.Symbol
+    -> TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-sortInjectionAndEqualsAssumesDifferentHeads termMerger first second = do
-    tools <- Simplifier.askMetadataTools
-    case simplifySortInjections tools first second of
-        Nothing ->
-            Monad.Trans.lift
-                $ throwUnificationError
-                $ unsupportedPatterns
-                    "Unimplemented sort injection unification"
-                    first
-                    second
-        Just NotInjection -> empty
-        Just NotMatching -> Monad.Trans.lift $ do
-            explainBottom
-                "Unification of sort injections failed due to mismatch. \
-                \This can happen either because one of them is a constructor \
-                \or because their sort intersection is empty."
+sortInjectionAndEqualsAssumesDifferentHeads
+    tools
+    termMerger
+    first
+    second
+  = case simplifySortInjections tools first second of
+    Nothing ->
+        Monad.Trans.lift
+            $ throwUnificationError
+            $ unsupportedPatterns
+                "Unimplemented sort injection unification"
                 first
                 second
-            empty
-        Just (Matching sortInjectionMatch) -> Monad.Trans.lift $ do
+    Just NotInjection -> empty
+    Just NotMatching -> Monad.Trans.lift $ do
+        explainBottom
+           "Unification of sort injections failed due to mismatch. \
+            \This can happen either because one of them is a constructor \
+            \or because their sort intersection is empty."
+           first
+           second
+        empty
+    Just
+        (Matching SortInjectionMatch
+            { injectionHead, firstChild, secondChild }
+        ) -> Monad.Trans.lift $ do
             merged <- termMerger firstChild secondChild
             if Pattern.isBottom merged
                 then do
                     explainBottom
                         "Unification of sort injections failed when \
-                        \merging application children: \
-                        \the result is bottom."
+                        \merging application children: the result is bottom."
                         first
                         second
                     empty
-                else do
+                else
                     return $ applyInjection injectionHead <$> merged
-          where
-            SortInjectionMatch { firstChild, secondChild } = sortInjectionMatch
-            SortInjectionMatch { injectionHead } = sortInjectionMatch
   where
     applyInjection injectionHead term = mkApplySymbol injectionHead [term]
 
@@ -896,6 +1205,8 @@ Sort injections clash with constructors, so @constructorSortInjectionAndEquals@
 returns @\\bottom@.
 
  -}
+-- TODO (virgil): This implementation is provisional, we're not sure yet if sort
+-- injection should always clash with constructors. We should clarify this.
 constructorSortInjectionAndEquals
     ::  ( Eq variable
         , SortedVariable variable
@@ -903,10 +1214,12 @@ constructorSortInjectionAndEquals
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
-    -> MaybeT unifier a
+    -> TermLike variable
+    -> MaybeT unifier (TermLike variable)
 constructorSortInjectionAndEquals
+    _tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
   | isConstructorSortInjection =
@@ -922,7 +1235,7 @@ constructorSortInjectionAndEquals
         (||)
             (Symbol.isConstructor   firstHead && Symbol.isSortInjection secondHead)
             (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
-constructorSortInjectionAndEquals _ _ = empty
+constructorSortInjectionAndEquals _ _ _ = empty
 
 {-| Unify two constructor application patterns.
 
@@ -937,10 +1250,12 @@ constructorAndEqualsAssumesDifferentHeads
         , MonadUnify unifier
         )
     => GHC.HasCallStack
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
-    -> MaybeT unifier a
+    -> TermLike variable
+    -> MaybeT unifier (TermLike variable)
 constructorAndEqualsAssumesDifferentHeads
+    _tools
     first@(App_ firstHead _)
     second@(App_ secondHead _)
   | Symbol.isConstructor firstHead
@@ -952,7 +1267,7 @@ constructorAndEqualsAssumesDifferentHeads
             first
             second
         empty
-constructorAndEqualsAssumesDifferentHeads _ _ = empty
+constructorAndEqualsAssumesDifferentHeads _ _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
@@ -962,13 +1277,16 @@ sort with constructors.
 
 -}
 domainValueAndConstructorErrors
-    :: (Eq variable, Unparse variable, SortedVariable variable)
-    => Monad unifier
+    :: Eq variable
+    => Unparse variable
+    => SortedVariable variable
     => GHC.HasCallStack
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
-    -> MaybeT unifier a
+    -> TermLike variable
+    -> Maybe (TermLike variable)
 domainValueAndConstructorErrors
+    _tools
     term1@(DV_ _ _)
     term2@(App_ secondHead _)
     | Symbol.isConstructor secondHead =
@@ -978,6 +1296,7 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
+    _tools
     term1@(Builtin_ _)
     term2@(App_ secondHead _)
     | Symbol.isConstructor secondHead =
@@ -987,6 +1306,7 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
+    _tools
     term1@(App_ firstHead _)
     term2@(DV_ _ _)
     | Symbol.isConstructor firstHead =
@@ -996,6 +1316,7 @@ domainValueAndConstructorErrors
                      ]
             )
 domainValueAndConstructorErrors
+    _tools
     term1@(App_ firstHead _)
     term2@(Builtin_ _)
     | Symbol.isConstructor firstHead =
@@ -1004,7 +1325,7 @@ domainValueAndConstructorErrors
                      , unparseToString term2
                      ]
             )
-domainValueAndConstructorErrors _ _ = empty
+domainValueAndConstructorErrors _ _ _ = empty
 
 {- | Unify two domain values.
 
@@ -1024,7 +1345,7 @@ domainValueAndEqualsAssumesDifferent
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier a
+    -> MaybeT unifier (TermLike variable)
 domainValueAndEqualsAssumesDifferent
     first@(DV_ _ _)
     second@(DV_ _ _)
@@ -1054,7 +1375,7 @@ cannotUnifyDomainValues
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> unifier a
+    -> unifier (TermLike variable)
 cannotUnifyDomainValues first second =
     assert (first /= second) $ do
         explainBottom
@@ -1079,7 +1400,7 @@ stringLiteralAndEqualsAssumesDifferent
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier a
+    -> MaybeT unifier (TermLike variable)
 stringLiteralAndEqualsAssumesDifferent
     first@(StringLiteral_ _)
     second@(StringLiteral_ _)
@@ -1102,7 +1423,7 @@ charLiteralAndEqualsAssumesDifferent
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> MaybeT unifier a
+    -> MaybeT unifier (TermLike variable)
 charLiteralAndEqualsAssumesDifferent
     first@(CharLiteral_ _)
     second@(CharLiteral_ _)
@@ -1121,10 +1442,12 @@ functionAnd
         , Unparse variable
         )
     => GHC.HasCallStack
-    => TermLike variable
+    => SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
     -> TermLike variable
     -> Maybe (Pattern variable)
 functionAnd
+    _tools
     first
     second
   | isFunctionPattern first, isFunctionPattern second =
