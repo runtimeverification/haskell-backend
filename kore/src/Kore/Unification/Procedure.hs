@@ -19,8 +19,8 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Conditional
-import           Kore.Internal.Predicate as Predicate
-                 ( Predicate, topTODO )
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import qualified Kore.Step.Merging.OrPattern as OrPattern
@@ -77,7 +77,7 @@ unificationProcedure  p1 p2
     if Conditional.isBottom pat
         then empty
         else do
-            orCeil <- Ceil.makeEvaluateTerm Predicate.topTODO term
+            orCeil <- Ceil.makeEvaluateTerm term
             orResult <-
                 BranchT.alternate $ OrPattern.mergeWithPredicateAssumesEvaluated
                     createPredicatesAndSubstitutionsMerger

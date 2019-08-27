@@ -909,7 +909,7 @@ evaluateOr
 evaluateOr equals =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ simplify Predicate.top equals
+    $ simplify equals
   where
     mockEnv = Mock.env
 
@@ -920,7 +920,7 @@ evaluate
 evaluate first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ makeEvaluate first second Predicate.top
+    $ makeEvaluate first second
   where
     mockEnv = Mock.env
 
@@ -931,6 +931,6 @@ evaluateTermsGeneric
 evaluateTermsGeneric first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ makeEvaluateTermsToPredicate first second Predicate.top
+    $ makeEvaluateTermsToPredicate first second
   where
     mockEnv = Mock.env

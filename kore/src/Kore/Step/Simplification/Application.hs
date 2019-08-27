@@ -20,7 +20,6 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
@@ -52,13 +51,12 @@ simplify
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
-    -> Application Symbol (OrPattern variable)
+    => Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify predicate application = do
+simplify application = do
     evaluated <-
         traverse
-            (makeAndEvaluateApplications predicate symbol)
+            (makeAndEvaluateApplications symbol)
             -- The "Propagation Or" inference rule together with
             -- "Propagation Bottom" for the case when a child or is empty.
             (MultiOr.fullCrossProduct children)
@@ -77,12 +75,11 @@ makeAndEvaluateApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    =>  Predicate variable
-    ->  Symbol
+    => Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateApplications predicate symbol children =
-    makeAndEvaluateSymbolApplications predicate symbol children
+makeAndEvaluateApplications symbol children =
+    makeAndEvaluateSymbolApplications symbol children
 
 makeAndEvaluateSymbolApplications
     ::  ( Show variable
@@ -91,14 +88,13 @@ makeAndEvaluateSymbolApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
-    -> Symbol
+    => Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateSymbolApplications predicate symbol children = do
+makeAndEvaluateSymbolApplications symbol children = do
     expandedApplications <-
         BranchT.gather $ makeExpandedApplication symbol children
-    orResults <- traverse (evaluateApplicationFunction predicate) expandedApplications
+    orResults <- traverse evaluateApplicationFunction expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
@@ -108,14 +104,11 @@ evaluateApplicationFunction
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
-    -- ^ The predicate from the configuration
-    -> ExpandedApplication variable
+    => ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplicationFunction configurationPredicate Conditional { term, predicate, substitution } =
+evaluateApplicationFunction Conditional { term, predicate, substitution } =
     evaluateApplication
-        configurationPredicate
         Conditional { term = (), predicate, substitution }
         term
 

@@ -635,7 +635,7 @@ evaluateWith
 evaluateWith simplifier patt predicate =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier predicate patt
+    $ runBuiltinAndAxiomSimplifier simplifier patt predicate
 
 -- Applied tests: check that one or more rules applies or not
 withApplied

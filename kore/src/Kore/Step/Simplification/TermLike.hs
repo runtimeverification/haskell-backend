@@ -16,8 +16,6 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( topTODO )
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
@@ -136,11 +134,11 @@ simplifyInternal = simplifyInternalWorker
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                Application.simplify Predicate.topTODO =<< simplifyChildren applySymbolF
+                Application.simplify =<< simplifyChildren applySymbolF
             CeilF ceilF ->
-                Ceil.simplify Predicate.topTODO =<< simplifyChildren ceilF
+                Ceil.simplify =<< simplifyChildren ceilF
             EqualsF equalsF ->
-                Equals.simplify Predicate.topTODO =<< simplifyChildren equalsF
+                Equals.simplify =<< simplifyChildren equalsF
             ExistsF existsF ->
                 Exists.simplify =<< simplifyChildren existsF
             IffF iffF ->

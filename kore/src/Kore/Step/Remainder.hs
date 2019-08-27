@@ -180,7 +180,7 @@ ceilChildOfApplicationOrTop patt =
     case patt of
         App_ _ children -> do
             ceil <-
-                traverse (Ceil.makeEvaluateTerm Predicate.topTODO) children
+                traverse Ceil.makeEvaluateTerm children
                 >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
                     . MultiAnd.make
                     )
