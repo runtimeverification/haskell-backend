@@ -45,8 +45,7 @@ import           Kore.Internal.TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog, logWarning )
 import qualified Kore.Profiler.Profile as Profile
-                 ( axiomEvaluation, equalitySimplification, mergeSubstitutions,
-                 resimplification )
+                 ( equalitySimplification )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -169,7 +168,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
         axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
         substitutionSimplifier <- Simplifier.askSimplifierPredicate
         simplifier <- Simplifier.askSimplifierTermLike
-        result <- axiomEvaluationTracing $
+        result <-
             evaluator
                 substitutionSimplifier
                 simplifier
@@ -182,8 +181,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                 { results = orResults
                 , remainders = orRemainders
                 } -> do
-                    simplified <- resimplificationTracing (length orResults) $
-                        mapM simplifyIfNeeded orResults
+                    simplified <- mapM simplifyIfNeeded orResults
                     return
                         (AttemptedAxiom.Applied AttemptedAxiomResults
                             { results =
@@ -191,7 +189,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
                             , remainders = orRemainders
                             }
                         )
-        merged <- mergeTracing $
+        merged <-
             mergeWithConditionAndSubstitution
                 childrenPredicate
                 flattened
@@ -212,18 +210,7 @@ maybeEvaluatePattern childrenPredicate termLike defaultValue =
             [ debugArg "axiomIdentifier" identifier ]
         . case identifier of
             Nothing -> id
-            Just identifier' ->
-                Profile.equalitySimplification identifier' termLike
-
-    axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
-    resimplificationTracing resultCount =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.resimplification identifier' resultCount
-    mergeTracing =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.mergeSubstitutions identifier'
+            Just identifier' -> Profile.equalitySimplification identifier'
 
     unchangedPatt =
         Conditional

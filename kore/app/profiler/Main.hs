@@ -10,11 +10,6 @@ stack build --ghc-options "-eventlog -debug"
 kore-exec +RTS -vu -RTS other-arguments 2>&1 | cat > log.out
 
 cat log.out | kore-profiler > profiler.out
-
-# To show only an event's children, use
-
-cat log.out | kore-profiler --filter <event-substring> > profiler.out
-
 -}
 
 module Main (main) where
@@ -22,7 +17,7 @@ module Main (main) where
 import           Control.Monad
                  ( when )
 import qualified Data.List as List
-                 ( foldl', intersperse, isInfixOf, isPrefixOf, sort )
+                 ( foldl', intersperse, isPrefixOf, sort )
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -35,9 +30,6 @@ import qualified Data.Text as Text
                  unpack )
 import qualified Data.Text.IO as Text
                  ( getLine, putStr )
-import           Options.Applicative
-                 ( InfoMod, Parser, execParser, fullDesc, header, help, helper,
-                 info, long, progDesc, strOption, value, (<**>) )
 import           System.IO
                  ( hFlush, isEOF, stdout )
 import           Text.Read
@@ -50,45 +42,15 @@ import qualified Kore.Profiler.Data as ProfileEvent
 
 main :: IO ()
 main = do
-    options <- commandLineParse parseProfileOptions parserInfoModifiers
-    report <- buildReport options
+    report <- buildReport
     Text.putStr (reportToText report)
     Text.putStr "\n"
 
-newtype ProfileOptions = ProfileOptions { profileFilter :: String }
-
-parseProfileOptions :: Parser ProfileOptions
-parseProfileOptions =
-    ProfileOptions
-    <$> strOption
-        (  long "filter"
-        <> help "Process only events containing this string together with \
-                \their subevents."
-        <> value ""
-        )
--- | modifiers for the Command line parser description
-parserInfoModifiers :: InfoMod options
-parserInfoModifiers =
-    fullDesc
-    <> progDesc "Computes profiling information using STDIN as the input."
-    <> header "kore-profiler - a profiler for kore-exec"
-
-commandLineParse
-    :: Parser a   -- ^ options parser
-    -> InfoMod a  -- ^ parser info modifiers
-    -> IO a
-commandLineParse commandLineParser modifiers =
-    execParser
-    $ info (commandLineParser <**> helper) modifiers
-
-buildReport :: ProfileOptions -> IO (Map String EventSummary)
-buildReport profileOptions = buildReportHelper 0 initialContext Map.empty
+buildReport :: IO (Map String EventSummary)
+buildReport = buildReportHelper 0 initialContext Map.empty
   where
     initialContext :: Context
-    initialContext = Context
-        { openedTagsToMultiplicity = Map.empty
-        , enabled = []
-        }
+    initialContext = Context { openedTagsToMultiplicity = Map.empty }
 
     buildReportHelper
         :: Integer
@@ -110,108 +72,52 @@ buildReport profileOptions = buildReportHelper 0 initialContext Map.empty
                 case parseLine line of
                     Just parsed ->
                         let fixedParsed = fixTags parsed
-                            newContext =
-                                updateContext profileOptions context fixedParsed
+                            newContext = updateContext context fixedParsed
                         in buildReportHelper
                             (lineIndex + 1)
                             newContext
-                            $! addProfileEventFiltered
-                                context newContext fixedParsed report
+                            $! addProfileEvent newContext fixedParsed report
                     Nothing ->
                         buildReportHelper (lineIndex + 1) context report
 
 reportToText :: Map String EventSummary -> Text
 reportToText = writeReport . removeMatchingStarts
 
-updateContext :: ProfileOptions -> Context -> ProfileEvent -> Context
+updateContext :: Context -> ProfileEvent -> Context
 updateContext
-    profileOptions
     context
     ProfileEvent { tags, endPico = Nothing }
   =
-    withTags (withEnabled context)
+    foldr openTag context tags
   where
-    withEnabled :: Context -> Context
-    withEnabled c@Context { enabled } =
-        c { enabled = isEnabled enabled : enabled }
-
-    withTags :: Context -> Context
-    withTags context' = foldr openTag context' tags
-
     openTag :: String -> Context -> Context
     openTag
         tag
-        Context
-            { openedTagsToMultiplicity
-            , enabled = enabled@(enabledNow : _)
-            }
+        Context { openedTagsToMultiplicity }
       = Context
         { openedTagsToMultiplicity =
-            if enabledNow
-            then Map.insertWith (+) tag 1 openedTagsToMultiplicity
-            else openedTagsToMultiplicity
-        , enabled
+            Map.insertWith (+) tag 1 openedTagsToMultiplicity
         }
-    openTag
-        _
-        Context { enabled = [] }
-      = error "Not known if the tag is enabled."
-
-    isEnabled :: [Bool] -> Bool
-    isEnabled (True : _) = True
-    isEnabled _
-      | null (profileFilter profileOptions) = True
-    isEnabled _ = any (profileFilter profileOptions `List.isInfixOf`) tags
 updateContext
-    _
     context
     ProfileEvent { tags, endPico = Just _ }
-  =
-    withoutEnabled (withoutTags context)
+  = foldr closeTag context tags
   where
-    withoutEnabled :: Context -> Context
-    withoutEnabled Context { enabled = []} =
-        error "No tag opened."
-    withoutEnabled
-        c@Context { enabled = _ : enabledRemainder }
-      =
-        c { enabled = enabledRemainder }
-
-    withoutTags :: Context -> Context
-    withoutTags context' = foldr closeTag context' tags
-
     closeTag :: String -> Context -> Context
     closeTag
-        _
-        Context { enabled = [] }
-      = error "No tag opened."
-    closeTag
         tag
-        Context
-            { openedTagsToMultiplicity
-            , enabled = enabled@(True : _) }
+        Context { openedTagsToMultiplicity }
       | Map.member tag openedTagsToMultiplicity
       = Context
             { openedTagsToMultiplicity =
                 Map.update closeTagCount tag openedTagsToMultiplicity
-            , enabled
             }
       | otherwise = error ("Closing non-opened tag: '" ++ tag ++ "'.")
-    closeTag
-        _
-        c@Context { enabled = False : _ }
-      = c
 
     closeTagCount 1 = Nothing
     closeTagCount count = Just (count-1)
 
-data Context
-    = Context
-        { openedTagsToMultiplicity :: !(Map.Map String Integer)
-        -- ^ Contains one entry per distinct tag currently opened.
-        , enabled :: ![Bool]
-        -- ^ Contains one entry per event currently opened.
-        }
+newtype Context = Context { openedTagsToMultiplicity :: Map.Map String Integer }
     deriving Show
 
 data EventSummary
@@ -219,7 +125,6 @@ data EventSummary
         { durationPico :: !Integer
         , count :: !Integer
         }
-    deriving Show
 
 instance Semigroup EventSummary where
     (<>)
@@ -268,24 +173,6 @@ concatTags (first, result) second =
     (concatenated, concatenated : result)
   where
     concatenated = first ++ "-" ++ second
-
-addProfileEventFiltered
-    :: Context
-    -> Context
-    -> ProfileEvent
-    -> Map String EventSummary
-    -> Map String EventSummary
-addProfileEventFiltered
-    contextBefore
-    contextAfter
-    event
-    report
-  = if isEnabled contextBefore || isEnabled contextAfter
-    then addProfileEvent contextAfter event report
-    else report
-  where
-    isEnabled Context { enabled = [] } = False
-    isEnabled Context { enabled = (e : _) } = e
 
 addProfileEvent
     :: Context
@@ -345,10 +232,10 @@ addEvent
     -> EventSummary
     -> Map String EventSummary
     -> Map String EventSummary
-addEvent key event report =
+addEvent key value report =
     case Map.lookup key report of
-        Nothing -> Map.insert key event report
-        Just _ -> Map.adjust (<> event) key report
+        Nothing -> Map.insert key value report
+        Just _ -> Map.adjust (<> value) key report
     -- Map.insertWith (<>)
 
 removeMatchingStarts :: Map String EventSummary -> Map String EventSummary
