@@ -647,11 +647,11 @@ builtinSort builtin =
         BuiltinList InternalList { builtinListSort } -> builtinListSort
         BuiltinSet InternalAc { builtinAcSort } -> builtinAcSort
 
-instance Synthetic Sort (Builtin key) where
+instance Synthetic (Builtin key) Sort where
     synthetic = builtinSort
     {-# INLINE synthetic #-}
 
-instance Ord variable => Synthetic (FreeVariables variable) (Builtin key) where
+instance Ord variable => Synthetic (Builtin key) (FreeVariables variable) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 

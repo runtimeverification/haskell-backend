@@ -54,7 +54,7 @@ substitute
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
         , VariableType patternType ~ UnifiedVariable variable
-        , Synthetic attribute patternBase
+        , Synthetic patternBase attribute
         )
     => (patternType -> FreeVariables variable)
     -- ^ View into free variables of the pattern

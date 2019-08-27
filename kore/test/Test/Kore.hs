@@ -41,7 +41,6 @@ import qualified Hedgehog.Range as Range
 import           Control.Monad.Reader
                  ( ReaderT )
 import qualified Control.Monad.Reader as Reader
-import           Data.Functor.Const
 import           Data.Text
                  ( Text )
 import qualified Data.Text as Text
@@ -59,6 +58,7 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
+                 ( PatternF (..) )
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
@@ -123,10 +123,11 @@ objectIdGen =
 setVarIdGen :: MonadGen m => m Id
 setVarIdGen = testId <$> fmap ("@" <>) objectIdGen
 
-stringLiteralGen :: MonadGen m => m StringLiteral
-stringLiteralGen = StringLiteral <$> Gen.text (Range.linear 0 256) charGen
+stringLiteralGen :: MonadGen m => m (StringLiteral child)
+stringLiteralGen =
+    StringLiteral <$> Gen.text (Range.linear 0 256) charGen
 
-charLiteralGen :: MonadGen m => m CharLiteral
+charLiteralGen :: MonadGen m => m (CharLiteral child)
 charLiteralGen = CharLiteral <$> charGen
 
 charGen :: MonadGen m => m Char
@@ -381,7 +382,7 @@ patternGen childGen patternSort =
         , (1, Syntax.NotF <$> notGen childGen patternSort)
         , (1, Syntax.OrF <$> orGen childGen patternSort)
         , (1, Syntax.TopF <$> topGen patternSort)
-        , (5, Syntax.VariableF . Const <$> unifiedVariableGen patternSort)
+        , (5, Syntax.VariableF <$> unifiedVariableGen patternSort)
         ]
 
 korePatternGen :: Hedgehog.Gen ParsedPattern
@@ -417,12 +418,11 @@ korePatternChildGen patternSort' =
 
     korePatternGenStringLiteral :: Gen ParsedPattern
     korePatternGenStringLiteral =
-        asParsedPattern . Syntax.StringLiteralF . Const
-        <$> stringLiteralGen
+        asParsedPattern . Syntax.StringLiteralF <$> stringLiteralGen
 
     korePatternGenCharLiteral :: Gen ParsedPattern
     korePatternGenCharLiteral =
-        asParsedPattern . Syntax.CharLiteralF . Const <$> charLiteralGen
+        asParsedPattern . Syntax.CharLiteralF <$> charLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =
@@ -441,8 +441,7 @@ korePatternChildGen patternSort' =
 
     korePatternGenVariable :: Gen ParsedPattern
     korePatternGenVariable =
-        asParsedPattern . Syntax.VariableF . Const
-        <$> unifiedVariableGen patternSort'
+        asParsedPattern . Syntax.VariableF <$> unifiedVariableGen patternSort'
 
 korePatternUnifiedGen :: Gen ParsedPattern
 korePatternUnifiedGen = korePatternChildGen =<< sortGen

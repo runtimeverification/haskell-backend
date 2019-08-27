@@ -57,11 +57,11 @@ instance Unparse child => Unparse (Floor Sort child) where
     unparse2 Floor { floorChild } =
         Pretty.parens (Pretty.fillSep ["\\floor", unparse2 floorChild])
 
-instance Ord variable => Synthetic (FreeVariables variable) (Floor sort) where
+instance Ord variable => Synthetic (Floor sort) (FreeVariables variable) where
     synthetic = floorChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Floor Sort) where
+instance Synthetic (Floor Sort) Sort where
     synthetic Floor { floorOperandSort, floorResultSort, floorChild } =
         floorResultSort
         & seq (matchSort floorOperandSort floorChild)

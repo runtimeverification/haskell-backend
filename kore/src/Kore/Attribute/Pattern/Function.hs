@@ -41,20 +41,20 @@ instance NFData Function
 
 instance Hashable Function
 
-instance Synthetic Function (And sort) where
+instance Synthetic (And sort) Function where
     -- TODO (thomas.tuegel):
     -- synthetic = getAny . Foldable.foldMap (Any . isFunction)
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 -- | A 'Bottom' pattern is always 'Function'.
-instance Synthetic Function (Bottom sort) where
+instance Synthetic (Bottom sort) Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
 -- | An 'Application' pattern is 'Function' if its symbol is a function and its
 -- arguments are 'Function'.
-instance Synthetic Function (Application Internal.Symbol) where
+instance Synthetic (Application Internal.Symbol) Function where
     synthetic application =
         functionSymbol <> Foldable.fold children
       where
@@ -62,96 +62,96 @@ instance Synthetic Function (Application Internal.Symbol) where
         children = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-instance Synthetic Function (Application Internal.Alias) where
+instance Synthetic (Application Internal.Alias) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Ceil sort) where
+instance Synthetic (Ceil sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 -- | A 'DomainValue' pattern is 'Function' if its argument is 'Function'.
-instance Synthetic Function (DomainValue sort) where
+instance Synthetic (DomainValue sort) Function where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Equals sort) where
+instance Synthetic (Equals sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Exists sort variable) where
+instance Synthetic (Exists sort variable) Function where
     synthetic = const (Function False)
 
-instance Synthetic Function (Floor sort) where
-    synthetic = const (Function False)
-    {-# INLINE synthetic #-}
-
-instance Synthetic Function (Forall sort variable) where
+instance Synthetic (Floor sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Iff sort) where
+instance Synthetic (Forall sort variable) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Implies sort) where
+instance Synthetic (Iff sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (In sort) where
+instance Synthetic (Implies sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Mu sort) where
+instance Synthetic (In sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Next sort) where
+instance Synthetic (Mu sort) Function where
+    synthetic = const (Function False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Next sort) Function where
     synthetic = nextChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Not sort) where
+instance Synthetic (Not sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Nu sort) where
+instance Synthetic (Nu sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Or sort) where
+instance Synthetic (Or sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Rewrites sort) where
+instance Synthetic (Rewrites sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 -- | A 'Builtin' pattern is 'Function' if its subterms are 'Function'.
-instance Synthetic Function (Builtin key) where
+instance Synthetic (Builtin key) Function where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Function (Top sort) where
+instance Synthetic (Top sort) Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Function'.
-instance Synthetic Function (Const StringLiteral) where
+instance Synthetic StringLiteral Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Function'.
-instance Synthetic Function (Const CharLiteral) where
+instance Synthetic CharLiteral Function where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 
 -- | An 'Inhabitant' pattern is never 'Function'.
-instance Synthetic Function Inhabitant where
+instance Synthetic Inhabitant Function where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
 -- | A 'Variable' pattern is always 'Function'.
-instance Synthetic Function (Const (UnifiedVariable variable)) where
+instance Synthetic (Const (UnifiedVariable variable)) Function where
     synthetic (Const (ElemVar _)) = Function True
     synthetic (Const (SetVar _)) = Function False
     {-# INLINE synthetic #-}

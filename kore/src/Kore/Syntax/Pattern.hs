@@ -16,7 +16,6 @@ module Kore.Syntax.Pattern
     -- * Re-exports
     , Base, CofreeF (..)
     , PatternF (..)
-    , Const (..)
     , module Control.Comonad
     ) where
 
@@ -43,7 +42,7 @@ import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Debug
 import           Kore.Syntax.PatternF
-                 ( Const (..), PatternF (..) )
+                 ( PatternF (..) )
 import qualified Kore.Syntax.PatternF as PatternF
 import           Kore.Syntax.Variable
 import           Kore.TopBottom

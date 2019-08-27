@@ -67,7 +67,7 @@ test_arguments =
             Application
                 { applicationSymbolOrAlias = hasDomainValuesSymbol
                 , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF . Const)
+                    [ (asAttributePattern . StringLiteralF)
                         (StringLiteral "illegal")
                     ]
                 }

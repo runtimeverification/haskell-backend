@@ -60,17 +60,15 @@ test_unparse =
                             , sortActualSorts = []
                             }
                         , inContainedChild =
-                            asParsedPattern $ VariableF $ Const $ ElemVar
-                            $ ElementVariable Variable
+                            asParsedPattern $ VariableF
+                                $ ElemVar $ ElementVariable Variable
                                 { variableName = testId "T"
                                 , variableSort = SortVariableSort SortVariable
                                     { getSortVariable = testId "C" }
                                 , variableCounter = mempty
                                 }
-                        , inContainingChild =
-                            asParsedPattern
-                            $ StringLiteralF $ Const
-                                StringLiteral { getStringLiteral = "" }
+                        , inContainingChild = asParsedPattern (StringLiteralF
+                            StringLiteral { getStringLiteral = "" })
                         })
                     ]
                 }
@@ -155,10 +153,14 @@ test_unparse =
         , unparseTest
             (Attributes
                 { getAttributes =
-                    [ asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
-                    , asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
+                    [ asParsedPattern
+                        (CharLiteralF CharLiteral
+                            { getCharLiteral = '\'' }
+                        )
+                    , asParsedPattern
+                        (CharLiteralF CharLiteral
+                            { getCharLiteral = '\'' }
+                        )
                     ]
                 }::Attributes
             )

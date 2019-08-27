@@ -33,11 +33,18 @@ test_duplicate =
 test_arguments :: TestTree
 test_arguments =
     testCase "[constructor{}(\"illegal\")]"
-    $ expectFailure
-    $ parseConstructor $ Attributes [ illegalAttribute ]
+        $ expectFailure
+        $ parseConstructor $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        attributePattern constructorSymbol [attributeString "illegal"]
+        (asAttributePattern . ApplicationF)
+            Application
+                { applicationSymbolOrAlias = constructorSymbol
+                , applicationChildren =
+                    [ (asAttributePattern . StringLiteralF)
+                        (StringLiteral "illegal")
+                    ]
+                }
 
 test_parameters :: TestTree
 test_parameters =

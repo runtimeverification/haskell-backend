@@ -52,7 +52,7 @@ instance Hashable variable => Hashable (FreeVariables variable) where
 
 instance
     Ord variable =>
-    Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
+    Synthetic (Const (UnifiedVariable variable)) (FreeVariables variable)
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}

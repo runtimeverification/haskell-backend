@@ -68,13 +68,13 @@ instance Unparse Alias where
 
 instance
     Ord variable =>
-    Synthetic (FreeVariables variable) (Application Alias)
+    Synthetic (Application Alias) (FreeVariables variable)
   where
     -- TODO (thomas.tuegel): Consider that there could be bound variables here.
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Application Alias) where
+instance Synthetic (Application Alias) Sort where
     synthetic application =
         resultSort Function.& deepseq (matchSorts operandSorts children)
       where

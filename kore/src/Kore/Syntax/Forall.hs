@@ -72,13 +72,13 @@ instance
 
 instance
     Ord variable =>
-    Synthetic (FreeVariables variable) (Forall sort variable)
+    Synthetic (Forall sort variable) (FreeVariables variable)
   where
     synthetic Forall { forallVariable, forallChild } =
         bindVariable (ElemVar forallVariable) forallChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Forall Sort variable) where
+instance Synthetic (Forall Sort variable) Sort where
     synthetic Forall { forallSort, forallChild } =
         forallSort `matchSort` forallChild
     {-# INLINE synthetic #-}

@@ -89,13 +89,15 @@ simplifyAnds patterns = do
         else return result
 
 groupSubstitutionByVariable
-    :: (Ord variable, SortedVariable variable)
+    :: Ord variable
     => [(UnifiedVariable variable, TermLike variable)]
     -> [[(UnifiedVariable variable, TermLike variable)]]
 groupSubstitutionByVariable =
     groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
   where
-    sortRenaming (var, Var_ var') | var' < var = (var', mkVar var)
+    sortRenaming (var, Recursive.project -> ann :< VariableF var')
+        | var' < var =
+            (var', Recursive.embed (ann :< VariableF var))
     sortRenaming eq = eq
 
 -- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into

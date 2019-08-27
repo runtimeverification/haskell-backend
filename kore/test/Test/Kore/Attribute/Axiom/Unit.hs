@@ -36,7 +36,15 @@ test_arguments =
         $ expectFailure
         $ parseUnit $ Attributes [ illegalAttribute ]
   where
-    illegalAttribute = attributePattern unitSymbol [attributeString "illegal"]
+    illegalAttribute =
+        (asAttributePattern . ApplicationF)
+            Application
+                { applicationSymbolOrAlias = unitSymbol
+                , applicationChildren =
+                    [ (asAttributePattern . StringLiteralF)
+                        (StringLiteral "illegal")
+                    ]
+                }
 
 test_parameters :: TestTree
 test_parameters =

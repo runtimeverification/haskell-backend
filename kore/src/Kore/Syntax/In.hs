@@ -74,11 +74,11 @@ instance Unparse child => Unparse (In Sort child) where
             , unparse2 inContainingChild
             ])
 
-instance Ord variable => Synthetic (FreeVariables variable) (In sort) where
+instance Ord variable => Synthetic (In sort) (FreeVariables variable) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (In Sort) where
+instance Synthetic (In Sort) Sort where
     synthetic in' =
         inResultSort
         & seq (matchSort inOperandSort inContainedChild)

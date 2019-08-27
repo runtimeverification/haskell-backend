@@ -10,7 +10,6 @@ module Kore.Syntax.StringLiteral
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Functor.Const
 import           Data.Hashable
 import           Data.Text
                  ( Text )
@@ -28,30 +27,30 @@ import Kore.Unparser
 {-|'StringLiteral' corresponds to the @string@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
-newtype StringLiteral = StringLiteral { getStringLiteral :: Text }
-    deriving (Eq, GHC.Generic, Ord, Show)
+newtype StringLiteral child = StringLiteral { getStringLiteral :: Text }
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
-instance Hashable StringLiteral
+instance Hashable (StringLiteral child)
 
-instance NFData StringLiteral
+instance NFData (StringLiteral child)
 
-instance SOP.Generic StringLiteral
+instance SOP.Generic (StringLiteral child)
 
-instance SOP.HasDatatypeInfo StringLiteral
+instance SOP.HasDatatypeInfo (StringLiteral child)
 
-instance Debug StringLiteral
+instance Debug (StringLiteral child)
 
-instance Unparse StringLiteral where
+instance Unparse (StringLiteral child) where
     unparse = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
     unparse2 = unparse
 
 instance
     Ord variable =>
-    Synthetic (FreeVariables variable) (Const StringLiteral)
+    Synthetic StringLiteral (FreeVariables variable)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Const StringLiteral) where
+instance Synthetic StringLiteral Sort where
     synthetic = const stringMetaSort
     {-# INLINE synthetic #-}

@@ -60,7 +60,7 @@ isSetVar _ = False
 
 instance
     SortedVariable variable =>
-    Synthetic Sort (Const (UnifiedVariable variable))
+    Synthetic (Const (UnifiedVariable variable)) Sort
   where
     synthetic (Const var) = foldMapVariable sortedVariableSort var
     {-# INLINE synthetic #-}

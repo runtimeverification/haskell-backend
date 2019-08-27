@@ -37,7 +37,14 @@ test_arguments =
         $ parseTrusted $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        attributePattern trustedSymbol [attributeString "illegal"]
+        (asAttributePattern . ApplicationF)
+            Application
+                { applicationSymbolOrAlias = trustedSymbol
+                , applicationChildren =
+                    [ (asAttributePattern . StringLiteralF)
+                        (StringLiteral "illegal")
+                    ]
+                }
 
 test_parameters :: TestTree
 test_parameters =

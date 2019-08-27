@@ -9,7 +9,6 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
-import           Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
 import           Kore.Internal.OrPattern
@@ -164,11 +163,10 @@ simplifyInternal = simplifyInternalWorker
             OrF orF -> Or.simplify <$> simplifyChildren orF
             RewritesF rewritesF ->
                 Rewrites.simplify <$> simplifyChildren rewritesF
+            StringLiteralF stringLiteralF ->
+                StringLiteral.simplify <$> simplifyChildren stringLiteralF
+            CharLiteralF charLiteralF ->
+                CharLiteral.simplify <$> simplifyChildren charLiteralF
             TopF topF -> Top.simplify <$> simplifyChildren topF
             --
-            StringLiteralF stringLiteralF ->
-                return $ StringLiteral.simplify (getConst stringLiteralF)
-            CharLiteralF charLiteralF ->
-                return $ CharLiteral.simplify (getConst charLiteralF)
-            VariableF variableF ->
-                return $ Variable.simplify (getConst variableF)
+            VariableF variableF -> return $ Variable.simplify variableF

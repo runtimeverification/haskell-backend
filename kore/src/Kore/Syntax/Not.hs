@@ -58,11 +58,11 @@ instance TopBottom child => TopBottom (Not sort child) where
     isTop = isBottom . notChild
     isBottom = isTop . notChild
 
-instance Ord variable => Synthetic (FreeVariables variable) (Not child) where
+instance Ord variable => Synthetic (Not child) (FreeVariables variable) where
     synthetic = notChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Not Sort) where
+instance Synthetic (Not Sort) Sort where
     synthetic Not { notSort, notChild } =
         notSort `matchSort` notChild
     {-# INLINE synthetic #-}

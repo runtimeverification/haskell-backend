@@ -38,7 +38,14 @@ test_arguments =
         $ parseSimplification $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        attributePattern simplificationSymbol [attributeString "illegal"]
+        (asAttributePattern . ApplicationF)
+            Application
+                { applicationSymbolOrAlias = simplificationSymbol
+                , applicationChildren =
+                    [ (asAttributePattern . StringLiteralF)
+                        (StringLiteral "illegal")
+                    ]
+                }
 
 test_parameters :: TestTree
 test_parameters =

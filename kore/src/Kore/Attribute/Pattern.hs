@@ -56,13 +56,13 @@ instance SOP.HasDatatypeInfo (Pattern variable)
 instance Debug variable => Debug (Pattern variable)
 
 instance
-    ( Synthetic Sort base
-    , Synthetic (FreeVariables variable) base
-    , Synthetic Functional base
-    , Synthetic Function base
-    , Synthetic Defined base
+    ( Synthetic base Sort
+    , Synthetic base (FreeVariables variable)
+    , Synthetic base Functional
+    , Synthetic base Function
+    , Synthetic base Defined
     ) =>
-    Synthetic (Pattern variable) base
+    Synthetic base (Pattern variable)
   where
     synthetic base =
         Pattern

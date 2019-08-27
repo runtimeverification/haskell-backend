@@ -442,7 +442,7 @@ test_patternVerifier =
         ]
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Object pattern - unquantified variable"
-        (VariableF $ Const $ ElemVar objectVariable')
+        (VariableF (ElemVar objectVariable'))
         (NamePrefix "dummy")
         (TestedPatternSort objectSort)
         (SortVariablesThatMustBeDeclared [])
@@ -450,7 +450,7 @@ test_patternVerifier =
         [ objectSortSentence, anotherSortSentence ]
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Meta pattern - unquantified variable"
-        (VariableF $ Const $ ElemVar metaVariable')
+        (VariableF (ElemVar metaVariable'))
         (NamePrefix "#dummy")
         (TestedPatternSort metaSort1)
         (SortVariablesThatMustBeDeclared [])
@@ -460,7 +460,7 @@ test_patternVerifier =
         []
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple string pattern"
-        (StringLiteralF (Const $ StringLiteral "MetaString"))
+        (StringLiteralF (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort stringMetaSort)
         (SortVariablesThatMustBeDeclared [])
@@ -472,7 +472,7 @@ test_patternVerifier =
         -- at least in some cases.
         NeedsInternalDefinitions
     , successTestsForMetaPattern "Simple char pattern"
-        (CharLiteralF $ Const $ CharLiteral 'c')
+        (CharLiteralF (CharLiteral 'c'))
         (NamePrefix "#dummy")
         (TestedPatternSort charMetaSort)
         (SortVariablesThatMustBeDeclared [])
@@ -489,7 +489,7 @@ test_patternVerifier =
         (ErrorStack
             [ "(<test data>, <implicitly defined entity>)" ]
         )
-        (StringLiteralF (Const $ StringLiteral "MetaString"))
+        (StringLiteralF (StringLiteral "MetaString"))
         (NamePrefix "#dummy")
         (TestedPatternSort (updateAstLocation charMetaSort AstLocationTest))
         (SortVariablesThatMustBeDeclared [])

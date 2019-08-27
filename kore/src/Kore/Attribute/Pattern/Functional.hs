@@ -42,17 +42,17 @@ instance NFData Functional
 
 instance Hashable Functional
 
-instance Synthetic Functional (And sort) where
+instance Synthetic (And sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Bottom sort) where
+instance Synthetic (Bottom sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 -- | An 'Application' pattern is 'Functional' if its symbol is functional and
 -- its arguments are 'Functional'.
-instance Synthetic Functional (Application Internal.Symbol) where
+instance Synthetic (Application Internal.Symbol) Functional where
     synthetic application =
         functionalSymbol <> Foldable.fold children
       where
@@ -60,72 +60,72 @@ instance Synthetic Functional (Application Internal.Symbol) where
         children = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-instance Synthetic Functional (Application Internal.Alias) where
+instance Synthetic (Application Internal.Alias) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Ceil sort) where
+instance Synthetic (Ceil sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 -- | A 'DomainValue' pattern is 'Functional' if its argument is 'Functional'.
-instance Synthetic Functional (DomainValue sort) where
+instance Synthetic (DomainValue sort) Functional where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Equals sort) where
+instance Synthetic (Equals sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Exists sort variable) where
+instance Synthetic (Exists sort variable) Functional where
     synthetic = const (Functional False)
 
-instance Synthetic Functional (Floor sort) where
-    synthetic = const (Functional False)
-    {-# INLINE synthetic #-}
-
-instance Synthetic Functional (Forall sort variable) where
+instance Synthetic (Floor sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Iff sort) where
+instance Synthetic (Forall sort variable) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Implies sort) where
+instance Synthetic (Iff sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (In sort) where
+instance Synthetic (Implies sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Mu sort) where
+instance Synthetic (In sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Next sort) where
+instance Synthetic (Mu sort) Functional where
+    synthetic = const (Functional False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic (Next sort) Functional where
     synthetic = nextChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Not sort) where
+instance Synthetic (Not sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Nu sort) where
+instance Synthetic (Nu sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Or sort) where
+instance Synthetic (Or sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Rewrites sort) where
+instance Synthetic (Rewrites sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 -- | A 'Builtin' pattern is 'Functional' if its subterms are 'Functional'.
-instance Synthetic Functional (Builtin key) where
+instance Synthetic (Builtin key) Functional where
     synthetic
         (BuiltinSet InternalAc
             {builtinAcChild = NormalizedSet builtinSetChild}
@@ -164,31 +164,31 @@ normalizedAcFunctional ac@(NormalizedAc _ _ _) =
   where
     sameAsChildren = Foldable.fold ac
 
-instance Synthetic Functional (Top sort) where
+instance Synthetic (Top sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
 -- | A 'Variable' pattern is always 'Functional'.
-instance Synthetic Functional (Const (UnifiedVariable variable)) where
+instance Synthetic (Const (UnifiedVariable variable)) Functional where
     synthetic (Const (ElemVar _)) = Functional True
     synthetic (Const (SetVar _)) = Functional False
     {-# INLINE synthetic #-}
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
-instance Synthetic Functional (Const StringLiteral) where
+instance Synthetic StringLiteral Functional where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 
 -- | A 'CharLiteral' pattern is always 'Functional'.
-instance Synthetic Functional (Const CharLiteral) where
+instance Synthetic CharLiteral Functional where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 
 -- | An 'Inhabitant' pattern is never 'Functional'.
-instance Synthetic Functional Inhabitant where
+instance Synthetic Inhabitant Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}
 
-instance Synthetic Functional (Const Sort) where
+instance Synthetic (Const Sort) Functional where
     synthetic = const (Functional False)
     {-# INLINE synthetic #-}

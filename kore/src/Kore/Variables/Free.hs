@@ -45,8 +45,8 @@ freePureVariables root =
 
     freePureVariables1 recursive =
         case Cofree.tailF (Recursive.project recursive) of
-            VariableF (Const variable) ->
-                Monad.unlessM (isBound variable) (recordFree variable)
+            VariableF v ->
+                Monad.unlessM (isBound v) (recordFree v)
             ExistsF Exists { existsVariable, existsChild } ->
                 Monad.RWS.local
                     -- record the bound variable
@@ -81,7 +81,7 @@ pureMergeVariables
     -> Set.Set (UnifiedVariable variable)
 pureMergeVariables base =
     case Cofree.tailF base of
-        VariableF (Const variable) -> Set.singleton variable
+        VariableF v -> Set.singleton v
         ExistsF Exists { existsVariable, existsChild } ->
             Set.insert (ElemVar existsVariable) existsChild
         ForallF Forall { forallVariable, forallChild } ->
@@ -100,3 +100,4 @@ pureAllVariables
     => Pattern variable annotation
     -> Set.Set (UnifiedVariable variable)
 pureAllVariables = Recursive.fold pureMergeVariables
+

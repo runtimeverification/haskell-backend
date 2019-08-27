@@ -37,7 +37,14 @@ test_arguments =
         $ parseSortInjection $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        attributePattern sortInjectionSymbol [attributeString "illegal"]
+        (asAttributePattern . ApplicationF)
+            Application
+                { applicationSymbolOrAlias = sortInjectionSymbol
+                , applicationChildren =
+                    [ (asAttributePattern . StringLiteralF)
+                        (StringLiteral "illegal")
+                    ]
+                }
 
 test_parameters :: TestTree
 test_parameters =

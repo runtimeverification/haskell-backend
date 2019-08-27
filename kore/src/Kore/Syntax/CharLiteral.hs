@@ -10,7 +10,6 @@ module Kore.Syntax.CharLiteral
 
 import           Control.DeepSeq
                  ( NFData (..) )
-import           Data.Functor.Const
 import           Data.Hashable
 import           Data.String
                  ( fromString )
@@ -28,28 +27,30 @@ import Kore.Unparser
 {-|'CharLiteral' corresponds to the @char@ literal from the Semantics of K,
 Section 9.1.1 (Lexicon).
 -}
-newtype CharLiteral = CharLiteral { getCharLiteral :: Char }
-    deriving (Eq, GHC.Generic, Ord, Show)
+newtype CharLiteral child = CharLiteral { getCharLiteral :: Char }
+    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
-instance Hashable CharLiteral
+instance Hashable (CharLiteral child)
 
-instance NFData CharLiteral
+instance NFData (CharLiteral child)
 
-instance SOP.Generic CharLiteral
+instance SOP.Generic (CharLiteral child)
 
-instance SOP.HasDatatypeInfo CharLiteral
+instance SOP.HasDatatypeInfo (CharLiteral child)
 
-instance Debug CharLiteral
+instance Debug (CharLiteral child)
 
-instance Unparse CharLiteral where
+instance Unparse (CharLiteral child) where
     unparse = Pretty.squotes . fromString . escapeChar . getCharLiteral
     unparse2 = unparse
 
-instance Ord variable => Synthetic (FreeVariables variable) (Const CharLiteral)
+instance
+    Ord variable =>
+    Synthetic CharLiteral (FreeVariables variable)
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Const CharLiteral) where
+instance Synthetic CharLiteral Sort where
     synthetic = const charMetaSort
     {-# INLINE synthetic #-}

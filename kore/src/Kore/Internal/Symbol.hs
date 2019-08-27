@@ -90,13 +90,13 @@ instance Unparse Symbol where
         unparse2 symbolConstructor
 
 instance
-    Ord variable
-    => Synthetic (FreeVariables variable) (Application Symbol)
+    Ord variable =>
+    Synthetic (Application Symbol) (FreeVariables variable)
   where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Application Symbol) where
+instance Synthetic (Application Symbol) Sort where
     synthetic application =
         resultSort Function.& deepseq (matchSorts operandSorts children)
       where

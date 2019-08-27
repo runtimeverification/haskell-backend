@@ -59,12 +59,12 @@ instance Unparse child => Unparse (DomainValue Sort child) where
 
 instance
     Ord variable =>
-    Synthetic (FreeVariables variable) (DomainValue sort)
+    Synthetic (DomainValue sort) (FreeVariables variable)
   where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (DomainValue Sort) where
+instance Synthetic (DomainValue Sort) Sort where
     synthetic DomainValue { domainValueSort, domainValueChild } =
         domainValueSort
         & seq (matchSort stringMetaSort domainValueChild)

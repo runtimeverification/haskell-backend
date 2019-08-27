@@ -36,7 +36,15 @@ test_arguments =
         $ expectFailure
         $ parseIdem $ Attributes [ illegalAttribute ]
   where
-    illegalAttribute = attributePattern idemSymbol [attributeString "illegal"]
+    illegalAttribute =
+        (asAttributePattern . ApplicationF)
+            Application
+                { applicationSymbolOrAlias = idemSymbol
+                , applicationChildren =
+                    [ (asAttributePattern . StringLiteralF)
+                        (StringLiteral "illegal")
+                    ]
+                }
 
 test_parameters :: TestTree
 test_parameters =
