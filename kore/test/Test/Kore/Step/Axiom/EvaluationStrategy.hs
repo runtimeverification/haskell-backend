@@ -17,8 +17,6 @@ import           Kore.Internal.Pattern as Pattern
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Pattern as Pattern
                  ( Conditional (..) )
-import           Kore.Internal.Predicate as Predicate
-                 ( top )
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( Predicate, makeEqualsPredicate, makeNotPredicate,
@@ -471,7 +469,7 @@ test_builtinEvaluation =
 
 failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+    BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluator
@@ -509,12 +507,7 @@ evaluate
 evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier Mock.env
-    $ simplifier
-        substitutionSimplifier
-        patternSimplifier
-        Map.empty
-        patt
-        Predicate.top
+    $ simplifier substitutionSimplifier patternSimplifier Map.empty patt
   where
     substitutionSimplifier = Predicate.create
     patternSimplifier = Simplifier.create

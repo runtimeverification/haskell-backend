@@ -503,9 +503,8 @@ mockEvaluator
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ =
+mockEvaluator evaluation _ _ _ _ =
     return evaluation
 
 mapVariables

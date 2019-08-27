@@ -7,7 +7,6 @@ module Kore.Internal.Predicate
     ( Predicate
     , eraseConditionalTerm
     , top
-    , topTODO
     , bottom
     , topPredicate
     , bottomPredicate
@@ -51,10 +50,6 @@ top =
         , predicate = Syntax.Predicate.makeTruePredicate
         , substitution = mempty
         }
-
--- | A 'top' 'Predicate' for refactoring which should eventually be removed.
-topTODO :: (Ord variable, SortedVariable variable) => Predicate variable
-topTODO = top
 
 bottom :: (Ord variable, SortedVariable variable) => Predicate variable
 bottom =

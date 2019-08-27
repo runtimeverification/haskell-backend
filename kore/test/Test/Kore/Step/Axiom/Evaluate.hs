@@ -204,4 +204,4 @@ evaluateAxioms
 evaluateAxioms axioms termLike = do
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier testEnv
-    $ Kore.evaluateAxioms axioms termLike Predicate.top
+    $ Kore.evaluateAxioms axioms termLike

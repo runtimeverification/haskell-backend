@@ -41,7 +41,6 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -167,7 +166,7 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkElemVar Mock.x))
@@ -630,12 +629,11 @@ simplify =
 evaluateWith
     :: BuiltinAndAxiomSimplifier
     -> TermLike Variable
-    -> Predicate Variable
     -> IO CommonAttemptedAxiom
-evaluateWith simplifier patt predicate =
+evaluateWith simplifier patt =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier patt predicate
+    $ runBuiltinAndAxiomSimplifier simplifier patt
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -646,7 +644,7 @@ withApplied
     -> TestTree
 withApplied check comment rules term =
     testCase comment $ do
-        actual <- evaluateWith (definitionEvaluation rules) term Predicate.top
+        actual <- evaluateWith (definitionEvaluation rules) term
         check actual
 
 applies, notApplies
@@ -1091,9 +1089,8 @@ mockEvaluator
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ _ _ = return evaluation
 
 -- ---------------------------------------------------------------------
 -- * Definition
