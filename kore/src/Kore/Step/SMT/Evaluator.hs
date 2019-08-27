@@ -24,7 +24,6 @@ import           Data.Maybe
                  ( catMaybes )
 import           Data.Reflection
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Control.Monad.Counter as Counter
 import qualified Kore.Attribute.Symbol as Attribute
@@ -38,7 +37,6 @@ import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
@@ -54,6 +52,7 @@ import           Kore.Syntax.Variable
 import           Kore.TopBottom
                  ( TopBottom )
 import           Kore.Unparser
+                 ( Unparse )
 import           SMT
                  ( Result (..), SExpr (..) )
 import qualified SMT
@@ -124,31 +123,25 @@ filterMultiOr multiOr = do
 The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
-    :: forall variable simplifier.
+    :: forall variable m.
         ( Ord variable
         , Show variable
         , Unparse variable
         , SortedVariable variable
-        , MonadSimplify simplifier
+        , MonadSimplify m
         )
     => Syntax.Predicate variable
-    -> simplifier (Maybe Bool)
+    -> m (Maybe Bool)
 decidePredicate korePredicate =
-    withLogScope "decidePredicate" $ SMT.withSolver $ runMaybeT $ do
+    SMT.withSolver $ runMaybeT $ do
         tools <- Simplifier.askMetadataTools
         smtPredicate <- goTranslatePredicate tools korePredicate
         result <-
             Profile.smtDecision smtPredicate
             $ SMT.withSolver (SMT.assert smtPredicate >> SMT.check)
         case result of
-            Unsat   -> return False
-            Sat     -> Applicative.empty
-            Unknown -> do
-                (logWarning . Text.pack . show . Pretty.vsep)
-                    [ "Failed to decide predicate:"
-                    , Pretty.indent 4 (unparse korePredicate)
-                    ]
-                Applicative.empty
+            Unsat -> return False
+            _ -> Applicative.empty
 
 goTranslatePredicate
     :: forall variable m.
