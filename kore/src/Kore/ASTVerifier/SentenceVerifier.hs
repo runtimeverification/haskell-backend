@@ -362,6 +362,7 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
                         Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
                         indexedModule
+                        & IndexedModule.erasePatterns
                         & IndexedModule.eraseAxiomAttributes
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
