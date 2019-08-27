@@ -30,7 +30,7 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Sort
                  ( predicateSort )
 import           Kore.Step.Axiom.Matcher
-                 ( matchIncremental )
+                 ( matchAsUnification )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
@@ -175,9 +175,9 @@ matchesToVariableSubstitution
   | Equals_ _sort1 _sort2 first second <-
         Syntax.Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
-  , not (hasFreeVariable variable term)
+    && not (hasFreeVariable variable term)
   = do
-    matchResult <- runUnifierT $ matchIncremental first second
+    matchResult <- runUnifierT $ matchAsUnification first second
     case matchResult of
         Left _ -> return False
         Right results ->

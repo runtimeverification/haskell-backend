@@ -422,13 +422,6 @@ pairSymbol lSort rSort =
         }
     & constructor
 
-pair :: TermLike Variable -> TermLike Variable -> TermLike Variable
-pair l r =
-    mkApplySymbol (pairSymbol lSort rSort) [l, r]
-  where
-    lSort = termLikeSort l
-    rSort = termLikeSort r
-
 -- ** Set
 
 unitSetSymbol :: Internal.Symbol

@@ -875,8 +875,11 @@ test_concretizeKeysAxiom =
     testCaseWithSMT
         "unify a concrete Map with a symbolic Map in an axiom"
         $ do
-            let concreteMap = asTermLike $ Map.fromList [(key, val)]
-            config <- evaluate $ pair symbolicKey concreteMap
+            let pair =
+                    mkPair intSort mapSort
+                        symbolicKey
+                        (asTermLike $ Map.fromList [(key, val)])
+            config <- evaluate pair
             actual <- runStep config axiom
             assertEqualWithExplanation "expected MAP.lookup" expected actual
   where
