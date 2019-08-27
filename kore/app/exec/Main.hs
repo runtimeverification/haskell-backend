@@ -462,14 +462,14 @@ renderResult KoreExecOptions { outputFileName } doc =
 -- | IO action that parses a kore pattern from a filename, verifies it,
 -- converts it to a pure patterm, and prints timing information.
 mainPatternParseAndVerify
-    :: IndexedModule.KoreIndexedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
     -> Main (TermLike Variable)
 mainPatternParseAndVerify indexedModule patternFileName =
     mainPatternParse patternFileName >>= mainPatternVerify indexedModule
 
 mainParseSearchPattern
-    :: IndexedModule.KoreIndexedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
     -> Main (Pattern Variable)
 mainParseSearchPattern indexedModule patternFileName = do

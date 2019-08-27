@@ -285,7 +285,7 @@ clockSomethingIO description something = do
 
 -- | Verify that a Kore pattern is well-formed and print timing information.
 mainPatternVerify
-    :: IndexedModule.KoreIndexedModule Attribute.Symbol axiomAttrs
+    :: VerifiedModule Attribute.Symbol axiomAttrs
     -- ^ Module containing definitions visible in the pattern
     -> ParsedPattern -- ^ Parsed pattern to check well-formedness
     -> Main Verified.Pattern
@@ -301,6 +301,7 @@ mainPatternVerify verifiedModule patt = do
             { indexedModule =
                 verifiedModule
                 & IndexedModule.eraseAxiomAttributes
+                & IndexedModule.erasePatterns
             , declaredSortVariables = Set.empty
             , declaredVariables = emptyDeclaredVariables
             , builtinDomainValueVerifiers = domainValueVerifiers

@@ -83,7 +83,7 @@ data Context =
         { declaredVariables :: !DeclaredVariables
         , declaredSortVariables :: !(Set SortVariable)
         -- ^ The sort variables in scope.
-        , indexedModule :: !(IndexedModule ParsedPattern Attribute.Symbol Attribute.Null)
+        , indexedModule :: !(IndexedModule () Attribute.Symbol Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
@@ -107,7 +107,7 @@ runPatternVerifier context PatternVerifier { getPatternVerifier } =
 
 lookupSortDeclaration
     :: Id
-    -> PatternVerifier (SentenceSort ParsedPattern)
+    -> PatternVerifier (SentenceSort ())
 lookupSortDeclaration sortId = do
     Context { indexedModule } <- Reader.ask
     (_, sortDecl) <- resolveSort indexedModule sortId

@@ -324,8 +324,8 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
                     { builtinDomainValueVerifiers =
                         Builtin.domainValueVerifiers builtinVerifiers
                     , indexedModule =
-                        IndexedModule.eraseAxiomAttributes indexedModule
-                        -- $ IndexedModule.erasePatterns indexedModule
+                        IndexedModule.eraseAxiomAttributes
+                        $ IndexedModule.erasePatterns indexedModule
                     , declaredSortVariables = variables
                     , declaredVariables = emptyDeclaredVariables
                     }
