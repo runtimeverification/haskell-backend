@@ -46,6 +46,7 @@ import qualified SMT
 import           Test.Kore.Builtin.Builtin
                  ( emptyNormalizedSet )
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -537,7 +538,7 @@ evaluate ceil =
     $ evalSimplifier mockEnv
     $ Ceil.simplify ceil
   where
-    mockEnv = Mock.env
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
 
 makeEvaluate
     :: Pattern Variable
@@ -554,4 +555,8 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     $ evalSimplifier mockEnv
     $ Ceil.makeEvaluate child
   where
-    mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }
+    mockEnv =
+        Mock.env
+            { simplifierAxioms = axiomIdToSimplifier
+            , simplifierPredicate = Mock.substitutionSimplifier
+            }

@@ -23,43 +23,23 @@ pipeline {
         '''
       }
     }
-    stage('Dependencies') {
+    stage('Build/Unit Test') {
       steps {
         sh '''
-          ./scripts/clean.sh
-          ./scripts/deps.sh
+          ./scripts/build.sh
         '''
       }
+      post {
+        always {
+          junit 'kore/test-results.xml'
+        }
+      }
     }
-    stage('Build') {
-      failFast true
-      parallel {
-        stage('Documentation') {
-          steps {
-            sh '''
-              ./scripts/docs.sh
-            '''
-          }
-        }
-        stage('Unit Tests') {
-          steps {
-            sh '''
-              ./scripts/unit-test.sh
-            '''
-          }
-          post {
-            always {
-              junit 'kore/test-results.xml'
-            }
-          }
-        }
-        stage('K Integration Tests') {
-          steps {
-            sh '''
-              ./scripts/ktest.sh
-            '''
-          }
-        }
+    stage('K Integration Tests') {
+      steps {
+        sh '''
+          ./scripts/ktest.sh
+        '''
       }
     }
     stage('KEVM Integration Tests') {

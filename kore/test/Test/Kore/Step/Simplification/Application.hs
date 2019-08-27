@@ -34,7 +34,10 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
+import           Test.Kore.Step.Simplifier
+                 ( mockSimplifier )
 import           Test.Tasty.HUnit.Extensions
 
 test_applicationSimplification :: [TestTree]
@@ -67,6 +70,7 @@ test_applicationSimplification =
                     ]
         actual <-
             evaluate
+                (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
                     Mock.sigmaSymbol
@@ -81,6 +85,7 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ Pattern.bottom ]
         actual <-
             evaluate
+                (mockSimplifier noSimplification)
                 Map.empty
                 (makeApplication
                     Mock.sigmaSymbol
@@ -95,6 +100,7 @@ test_applicationSimplification =
         let expect = OrPattern.fromPatterns [ gOfAExpanded ]
         actual <-
             evaluate
+                (mockSimplifier noSimplification)
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
                     (simplificationEvaluator
@@ -133,6 +139,7 @@ test_applicationSimplification =
                         ]
             actual <-
                 evaluate
+                    (mockSimplifier noSimplification)
                     Map.empty
                     (makeApplication
                         Mock.sigmaSymbol
@@ -214,6 +221,7 @@ test_applicationSimplification =
                         }
                 in
                     evaluate
+                        (simplifierTermLike Mock.env)
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator
@@ -282,6 +290,9 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
+    noSimplification :: [(TermLike Variable, [Pattern Variable])]
+    noSimplification = []
+
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]
     -> BuiltinAndAxiomSimplifier
@@ -299,13 +310,20 @@ makeApplication symbol patterns =
         }
 
 evaluate
-    :: BuiltinAndAxiomSimplifierMap
+    :: TermLikeSimplifier
+    -- ^ Evaluates functions.
+    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Application Symbol (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluate axiomIdToEvaluator application =
+evaluate simplifier axiomIdToEvaluator application =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
     $ simplify application
   where
-    mockEnv = Mock.env { simplifierAxioms = axiomIdToEvaluator }
+    mockEnv =
+        Mock.env
+            { simplifierPredicate = Mock.substitutionSimplifier
+            , simplifierAxioms = axiomIdToEvaluator
+            , simplifierTermLike = simplifier
+            }
