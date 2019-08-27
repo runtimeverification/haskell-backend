@@ -21,13 +21,11 @@ module Kore.Builtin.MapSymbols
     , lookupSymbolKeys
     , lookupSymbolRemove
     , lookupSymbolRemoveAll
-    , lookupSymbolSize
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
     , isSymbolRemove
     , isSymbolRemoveAll
-    , isSymbolSize
       -- * keys
     , concatKey
     , elementKey
@@ -38,7 +36,6 @@ module Kore.Builtin.MapSymbols
     , removeKey
     , unitKey
     , updateKey
-    , sizeKey
     ) where
 
 import           Data.String
@@ -81,9 +78,6 @@ removeKey = "MAP.remove"
 
 removeAllKey :: IsString s => s
 removeAllKey = "MAP.removeAll"
-
-sizeKey :: IsString s => s
-sizeKey = "MAP.size"
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
@@ -133,14 +127,6 @@ lookupSymbolRemoveAll
     -> Either (Kore.Error e) Symbol
 lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
 
-{- | Find the symbol hooked to @MAP.size@ in an indexed module.
- -}
-lookupSymbolSize
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
-lookupSymbolSize = Builtin.lookupSymbol sizeKey
-
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat :: Symbol -> Bool
@@ -165,8 +151,3 @@ isSymbolRemove = Builtin.isSymbol removeKey
 -}
 isSymbolRemoveAll :: Symbol -> Bool
 isSymbolRemoveAll = Builtin.isSymbol removeAllKey
-
-{- | Check if the given symbol is hooked to @MAP.size@.
--}
-isSymbolSize :: Symbol -> Bool
-isSymbolSize = Builtin.isSymbol sizeKey
