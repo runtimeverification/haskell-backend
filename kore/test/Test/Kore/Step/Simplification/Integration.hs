@@ -155,15 +155,10 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     , testCase "map function, non-matching" $ do
         let
-            expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        mkEvaluated
-                        $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
+            initial =
+                Pattern.fromTermLike
+                $ Mock.function20MapTest (Mock.builtinMap []) Mock.a
+            expect = OrPattern.fromPattern initial
         actual <-
             evaluateWithAxioms
                 (axiomPatternsToEvaluators
@@ -191,55 +186,7 @@ test_simplificationIntegration =
                         ]
                     )
                 )
-                Conditional
-                    { term = Mock.function20MapTest (Mock.builtinMap []) Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-        assertEqualWithExplanation "" expect actual
-    , testCase "map function, matching" $ do
-        let
-            expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term = Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-        actual <-
-            evaluateWithAxioms
-                (axiomPatternsToEvaluators
-                    (Map.fromList
-                        [   ( AxiomIdentifier.Application
-                                Mock.function20MapTestId
-                            ,   [ EqualityRule RulePattern
-                                    { left =
-                                        Mock.function20MapTest
-                                            (Mock.concatMap
-                                                (Mock.elementMap
-                                                    (mkVar Mock.x)
-                                                    (mkVar Mock.y)
-                                                )
-                                                (mkVar Mock.m)
-                                            )
-                                            (mkVar Mock.x)
-                                    , right = mkVar Mock.y
-                                    , requires = makeTruePredicate
-                                    , ensures = makeTruePredicate
-                                    , attributes = def
-                                    }
-                                ]
-                            )
-                        ]
-                    )
-                )
-                Conditional
-                    { term =
-                        Mock.function20MapTest
-                            (Mock.builtinMap [(Mock.a, Mock.c)]) Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
+                initial
         assertEqualWithExplanation "" expect actual
     -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the identity function and `#ceil(x/y) => y != 0`
     , testCase "function application introduces definedness condition" $ do
@@ -528,16 +475,18 @@ evaluateWithAxioms axioms =
             simplifierWithFallback
             builtinAxioms
             axioms
-    builtinAxioms :: BuiltinAndAxiomSimplifierMap
-    builtinAxioms =
-        Map.fromList
-            [   ( AxiomIdentifier.Application Mock.concatMapId
-                , builtinEvaluation Map.evalConcat
-                )
-            ,   ( AxiomIdentifier.Application Mock.elementMapId
-                , builtinEvaluation Map.evalElement
-                )
-            ,   ( AxiomIdentifier.Application Mock.tdivIntId
-                , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)
-                )
-            ]
+
+-- | A selection of builtin axioms used in the tests above.
+builtinAxioms :: BuiltinAndAxiomSimplifierMap
+builtinAxioms =
+    Map.fromList
+        [   ( AxiomIdentifier.Application Mock.concatMapId
+            , builtinEvaluation Map.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application Mock.elementMapId
+            , builtinEvaluation Map.evalElement
+            )
+        ,   ( AxiomIdentifier.Application Mock.tdivIntId
+            , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)
+            )
+        ]
