@@ -28,7 +28,7 @@ import           Kore.Exec
                  ( proveWithRepl )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Logger.Output
-                 ( emptyLogger, getLoggerT, swappableLogger )
+                 ( emptyLogger, swappableLogger )
 import           Kore.Repl.Data
 import           Kore.Syntax.Module
                  ( ModuleName (..) )
@@ -169,7 +169,7 @@ mainWithOptions
   = do
     mLogger <- newMVar emptyLogger
     let emptySwappableLogger = swappableLogger mLogger
-    flip runReaderT emptySwappableLogger . getLoggerT $ do
+    flip runReaderT emptySwappableLogger . unMain $ do
         parsedDefinition <- parseDefinition definitionFileName
         indexedDefinition@(indexedModules, _) <-
             verifyDefinitionWithBase
@@ -177,7 +177,7 @@ mainWithOptions
               True
               parsedDefinition
         indexedModule <-
-            lift $ lookupMainModule mainModuleName indexedModules
+            Main . lift $ mainModule mainModuleName indexedModules
         specDef <- parseDefinition specFile
         let unverifiedDefinition =
                 Bifunctor.first
@@ -192,7 +192,8 @@ mainWithOptions
               specDef
 
         specDefIndexedModule <-
-            lift $ lookupMainModule specModule specDefIndexedModules
+            Main . lift
+            $ mainModule specModule specDefIndexedModules
 
         let
             smtConfig =
@@ -201,13 +202,13 @@ mainWithOptions
                     , SMT.preludeFile = smtPrelude
                     }
         if replMode == RunScript && isNothing (unReplScript replScript)
-            then lift $ do
-                putStrLn
-                    "You must supply the path to the repl script\
-                    \ in order to run the repl in run-script mode."
-                exitFailure
+            then do
+                Main . lift . putStrLn
+                    $ "You must supply the path to the repl script\
+                      \ in order to run the repl in run-script mode."
+                Main . lift $ exitFailure
             else
-                lift
+                Main . lift
                 $ SMT.runSMT smtConfig (swappableLogger mLogger)
                    $ proveWithRepl
                         indexedModule

@@ -21,8 +21,6 @@ module Kore.Exec
 
 import           Control.Concurrent.MVar
 import qualified Control.Monad as Monad
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO )
 import           Control.Monad.Trans.Except
                  ( runExceptT )
 import qualified Data.Bifunctor as Bifunctor
@@ -59,8 +57,6 @@ import           Kore.OnePath.Verification
                  ( Claim, defaultStrategy, verify )
 import           Kore.Predicate.Predicate
                  ( makeMultipleOrPredicate, unwrapPredicate )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import           Kore.Step
@@ -79,8 +75,8 @@ import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, MonadSimplify,
-                 PredicateSimplifier (..), TermLikeSimplifier, evalSimplifier )
+                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier (..),
+                 Simplifier, TermLikeSimplifier, evalSimplifier )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -89,7 +85,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
 import           SMT
-                 ( MonadSMT, SMT )
+                 ( SMT )
 
 -- | Configuration used in symbolic execution.
 type Config = Pattern Variable
@@ -122,18 +118,13 @@ data Execution =
 
 -- | Symbolic execution
 exec
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
-        , MonadSMT smt
-        , MonadUnliftIO smt
-        )
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
-    -> smt (TermLike Variable)
+    -> SMT (TermLike Variable)
 exec indexedModule strategy initialTerm =
     evalSimplifier env $ do
         execution <- execute indexedModule' strategy initialTerm
@@ -173,18 +164,13 @@ emptyPredicateSimplifier = Predicate.create
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
-        , MonadSMT smt
-        , MonadUnliftIO smt
-        )
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The final pattern (top cell) to extract the exit code
-    -> smt ExitCode
+    -> SMT ExitCode
 execGetExitCode indexedModule strategy' finalTerm =
     case resolveSymbol indexedModule $ noLocationId "LblgetExitCode" of
         Left _ -> return ExitSuccess
@@ -201,8 +187,7 @@ execGetExitCode indexedModule strategy' finalTerm =
 
 -- | Symbolic search
 search
-    :: (Log.WithLog Log.LogMessage smt, MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -212,7 +197,7 @@ search
     -- ^ The pattern to match during execution
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
-    -> smt (TermLike Variable)
+    -> SMT (TermLike Variable)
 search verifiedModule strategy termLike searchPattern searchConfig =
     evalSimplifier env $ do
         execution <- execute verifiedModule strategy termLike
@@ -240,17 +225,12 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
-        , MonadUnliftIO smt
-        , MonadSMT smt
-        )
-    => Limit Natural
+    :: Limit Natural
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> smt (Either (TermLike Variable) ())
+    -> SMT (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
@@ -316,18 +296,13 @@ proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
-    ::  ( Log.WithLog Log.LogMessage smt
-        , MonadProfiler smt
-        , MonadSMT smt
-        , MonadUnliftIO smt
-        )
-    => Limit Natural
+    :: Limit Natural
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
-    -> smt (Bounded.CheckResult (TermLike Variable))
+    -> SMT (Bounded.CheckResult (TermLike Variable))
 boundedModelCheck limit definitionModule specModule searchOrder =
     evalSimplifier env $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
@@ -377,23 +352,22 @@ makeClaim (attributes, rule) =
         }
 
 simplifyRuleOnSecond
-    :: (MonadSimplify simplifier, Claim claim)
+    :: Claim claim
     => (Attribute.Axiom, claim)
-    -> simplifier (Attribute.Axiom, claim)
+    -> Simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond (atts, rule) = do
     rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
     return (atts, coerce . getRewriteRule $ rule')
 
 -- | Construct an execution graph for the given input pattern.
 execute
-    :: MonadSimplify simplifier
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
-    -> simplifier Execution
+    -> Simplifier Execution
 execute verifiedModule strategy inputPattern =
     Log.withLogScope "setUpConcreteExecution"
     $ initialize verifiedModule $ \initialized -> do
@@ -422,10 +396,9 @@ execute verifiedModule strategy inputPattern =
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
-    :: MonadSimplify simplifier
-    => VerifiedModule StepperAttributes Attribute.Axiom
-    -> (Initialized -> simplifier a)
-    -> simplifier a
+    :: VerifiedModule StepperAttributes Attribute.Axiom
+    -> (Initialized -> Simplifier a)
+    -> Simplifier a
 initialize verifiedModule within = do
     functionAxioms <-
         Rule.simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)

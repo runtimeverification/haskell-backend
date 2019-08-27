@@ -18,7 +18,6 @@ module Kore.Logger.Output
     , Colog.logTextStderr
     , Colog.logTextHandle
     , module Kore.Logger
-    , runLoggerT
     ) where
 
 import           Colog
@@ -31,8 +30,6 @@ import           Control.Monad.Catch
                  ( MonadMask, bracket )
 import           Control.Monad.IO.Class
                  ( MonadIO, liftIO )
-import           Control.Monad.Reader
-                 ( runReaderT )
 import qualified Control.Monad.Trans as Trans
 import           Data.Foldable
                  ( fold )
@@ -120,10 +117,6 @@ withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
             $ "kore-"
             <> formatLocalTime "%Y-%m-%d-%H-%M-%S" currentTimeDate
             <> ".log"
-
--- | Run a 'LoggerT' with the given options.
-runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
-runLoggerT options = withLogger options . runReaderT . getLoggerT
 
 -- Parser for command line log options.
 parseKoreLogOptions :: Parser KoreLogOptions

@@ -450,8 +450,8 @@ that may branch.
 evalSimplifier
     :: GHC.HasCallStack
     => Env
-    -> SimplifierT smt a
-    -> smt a
+    -> Simplifier a
+    -> SMT a
 evalSimplifier env = flip runReaderT env . runSimplifierT
 
 -- * Implementation

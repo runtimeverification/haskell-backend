@@ -32,8 +32,6 @@ import           Kore.Error
                  ( printError )
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule, toVerifiedDefinition )
-import           Kore.Logger.Output
-                 ( getLoggerT )
 import qualified Kore.Logger.Output as Logger
 import           Kore.Parser
                  ( ParsedPattern, parseKoreDefinition, parseKorePattern )
@@ -130,12 +128,12 @@ main = do
         , willChkAttr
         , appKore
         }
-        -> flip runReaderT Logger.emptyLogger . getLoggerT $ do
+      -> flip runReaderT Logger.emptyLogger . unMain $ do
             parsedDefinition <- mainDefinitionParse fileName
             indexedModules <- if willVerify
-                then lift $ mainVerify willChkAttr parsedDefinition
+                then Main . lift $ mainVerify willChkAttr parsedDefinition
                 else return Map.empty
-            lift $ when willPrintDefinition
+            Main . lift $ when willPrintDefinition
                 $ if appKore
                     then putStrLn
                         $ unparseToString2
@@ -147,13 +145,12 @@ main = do
                 parsedPattern <- mainPatternParse patternFileName
                 when willVerify $ do
                     indexedModule <-
-                         lift $ lookupMainModule
-                            (ModuleName mainModuleName)
-                            indexedModules
+                         Main . lift
+                         $ mainModule (ModuleName mainModuleName) indexedModules
                     _ <- mainPatternVerify indexedModule parsedPattern
                     return ()
                 when willPrintPattern $
-                    lift $ putDoc (debug parsedPattern)
+                    Main . lift $ putDoc (debug parsedPattern)
 
 -- | IO action that parses a kore definition from a filename and prints timing
 -- information.
@@ -185,7 +182,7 @@ mainVerify willChkAttr definition =
     in do
       verifyResult <-
           flip runReaderT Logger.emptyLogger
-          . getLoggerT
+          . unMain
           $ clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
                 attributesVerification

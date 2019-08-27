@@ -1,35 +1,26 @@
 module Main (main) where
 
 import           Control.Applicative
-                 ( Alternative (..), optional )
-import           Control.Monad.IO.Class
-                 ( MonadIO )
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO )
-import qualified Control.Monad.Reader.Class as Reader
+                 ( Alternative (..), optional, (<$) )
 import           Control.Monad.Trans
                  ( lift )
+import           Control.Monad.Trans.Reader
+                 ( runReaderT )
 import qualified Data.Bifunctor as Bifunctor
-import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import           Data.List
                  ( intercalate )
-import           Data.Map
-                 ( Map )
+import           Data.Maybe
+                 ( fromMaybe )
 import           Data.Reflection
 import           Data.Semigroup
                  ( (<>) )
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
 import           Data.Text.Prettyprint.Doc.Render.Text
                  ( hPutDoc, putDoc )
 import           Options.Applicative
                  ( InfoMod, Parser, argument, auto, fullDesc, header, help,
                  long, metavar, option, progDesc, readerError, str, strOption,
                  value )
-import qualified Options.Applicative as Options
 import           System.Exit
                  ( ExitCode (..), exitWith )
 import           System.IO
@@ -39,7 +30,7 @@ import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol as Attribute
+import           Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
@@ -53,16 +44,13 @@ import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import           Kore.Internal.TermLike
 import           Kore.Logger.Output
-                 ( KoreLogOptions (..), LogMessage, LoggerT (..), WithLog,
-                 parseKoreLogOptions, runLoggerT )
+                 ( KoreLogOptions (..), parseKoreLogOptions, withLogger )
 import qualified Kore.ModelChecker.Bounded as Bounded
                  ( CheckResult (..) )
 import           Kore.Parser
                  ( ParsedPattern, parseKorePattern )
 import           Kore.Predicate.Predicate
                  ( makePredicate )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
 import           Kore.Step
 import           Kore.Step.Search
                  ( SearchType (..) )
@@ -72,8 +60,6 @@ import           Kore.Syntax.Definition
                  ( ModuleName (..) )
 import           Kore.Unparser
                  ( unparse )
-import           SMT
-                 ( MonadSMT )
 import qualified SMT
 
 import GlobalMain
@@ -82,6 +68,7 @@ import GlobalMain
 Main module to run kore-exec
 TODO: add command line argument tab-completion
 -}
+
 
 data KoreSearchOptions =
     KoreSearchOptions
@@ -99,7 +86,7 @@ parseKoreSearchOptions =
     <$> strOption
         (  metavar "SEARCH_FILE"
         <> long "search"
-        <> help "Kore source file representing pattern to search for. \
+        <> help "Kore source file representing pattern to search for.\
                 \Needs --module."
         )
     <*> parseBound
@@ -119,66 +106,51 @@ parseKoreSearchOptions =
             "Search type (selects potential solutions)"
             (map (\s -> (show s, s)) [ ONE, FINAL, STAR, PLUS ])
 
-parseSum
-    :: Eq value
-    => String -> String -> String -> [(String, value)] -> Parser value
-parseSum metaName longName helpMsg options =
-    option (readSum longName options)
-        (  metavar metaName
-        <> long longName
-        <> help (helpMsg <> ": " <> knownOptions)
-        )
-  where
-    knownOptions = intercalate ", " (map fst options)
-
-readSum :: String -> [(String, value)] -> Options.ReadM value
-readSum longName options = do
-    opt <- str
-    case lookup opt options of
-        Just val -> pure val
-        _ -> readerError (unknown opt ++ known)
-  where
-    knownOptions = intercalate ", " (map fst options)
-    unknown opt = "Unknown " ++ longName ++ " '" ++ opt ++ "'. "
-    known = "Known " ++ longName ++ "s are: " ++ knownOptions ++ "."
+    parseSum
+        :: Eq value
+        => String -> String -> String -> [(String,value)] -> Parser value
+    parseSum metaName longName helpMsg options =
+        option readSum
+            (  metavar metaName
+            <> long longName
+            <> help helpMsg
+            )
+      where
+        readSum = do
+            opt <- str
+            case lookup opt options of
+                Just val -> pure val
+                _ ->
+                    let
+                        unknown =
+                            "Unknown " ++  longName ++ " '" ++ opt ++ "'. "
+                        known = "Known " ++ longName ++ "s are: " ++
+                            intercalate ", " (map fst options) ++ "."
+                    in
+                        readerError (unknown ++ known)
 
 applyKoreSearchOptions
     :: Maybe KoreSearchOptions
     -> KoreExecOptions
     -> KoreExecOptions
-applyKoreSearchOptions Nothing koreExecOpts = koreExecOpts
-applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
-    koreExecOpts
-        { koreSearchOptions
-        , strategy =
-            -- Search relies on exploring the entire space of states.
-            allRewrites
-        , stepLimit = min stepLimit searchTypeStepLimit
-        }
-  where
-    KoreSearchOptions { searchType } = koreSearchOpts
-    KoreExecOptions { stepLimit } = koreExecOpts
-    searchTypeStepLimit =
-        case searchType of
-            ONE -> Limit 1
-            _ -> Unlimited
-
--- | Available SMT solvers
-data Solver = Z3 | None
-    deriving (Eq, Ord, Show)
-    deriving (Enum, Bounded)
-
-parseSolver :: Parser Solver
-parseSolver =
-    option (readSum longName options)
-    $  metavar "SOLVER"
-    <> long longName
-    <> help ("SMT solver for checking constraints: " <> knownOptions)
-    <> value Z3
-  where
-    longName = "smt"
-    knownOptions = intercalate ", " (map fst options)
-    options = [ (map Char.toLower $ show s, s) | s <- [minBound .. maxBound] ]
+applyKoreSearchOptions koreSearchOptions koreExecOpts =
+    case koreSearchOptions of
+        Nothing -> koreExecOpts
+        Just koreSearchOpts ->
+            koreExecOpts
+                { koreSearchOptions = Just koreSearchOpts
+                , strategy =
+                    -- Search relies on exploring the entire space of states.
+                    allRewrites
+                , stepLimit = min stepLimit searchTypeStepLimit
+                }
+          where
+            KoreSearchOptions { searchType } = koreSearchOpts
+            KoreExecOptions { stepLimit } = koreExecOpts
+            searchTypeStepLimit =
+                case searchType of
+                    ONE -> Limit 1
+                    _ -> Unlimited
 
 -- | Main options record
 data KoreExecOptions = KoreExecOptions
@@ -192,7 +164,6 @@ data KoreExecOptions = KoreExecOptions
     -- ^ The name of the main module in the definition
     , smtTimeOut          :: !SMT.TimeOut
     , smtPrelude          :: !(Maybe FilePath)
-    , smtSolver           :: !Solver
     , stepLimit           :: !(Limit Natural)
     , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
     , koreLogOptions      :: !KoreLogOptions
@@ -242,7 +213,6 @@ parseKoreExecOptions =
                 <> help "Path to the SMT prelude file"
                 )
             )
-        <*> parseSolver
         <*> parseStepLimit
         <*> parseStrategy
         <*> parseKoreLogOptions
@@ -256,7 +226,7 @@ parseKoreExecOptions =
             else return $ SMT.TimeOut $ Limit i
     parseStepLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
-        option (readSum "strategy" strategies)
+        option readStrategy
             (  metavar "STRATEGY"
             <> long "strategy"
             -- TODO (thomas.tuegel): Make defaultStrategy the default when it
@@ -271,6 +241,18 @@ parseKoreExecOptions =
             , ("any-heating-cooling", heatingCooling anyRewrite)
             , ("all-heating-cooling", heatingCooling allRewrites)
             ]
+        readStrategy = do
+            strat <- str
+            let found = lookup strat strategies
+            case found of
+                Just strategy -> pure strategy
+                Nothing ->
+                    let
+                        unknown = "Unknown strategy '" ++ strat ++ "'. "
+                        names = intercalate ", " (fst <$> strategies)
+                        known = "Known strategies are: " ++ names
+                    in
+                        readerError (unknown ++ known)
     depth =
         option auto
             (  metavar "DEPTH"
@@ -303,161 +285,150 @@ main = do
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
-mainWithOptions execOptions@KoreExecOptions { koreLogOptions } =
-    (=<<) exitWith $ runLoggerT koreLogOptions $ case () of
-    ()
-      | Just proveOptions <- koreProveOptions execOptions ->
-        koreProve execOptions proveOptions
-
-      | Just searchOptions <- koreSearchOptions execOptions ->
-        koreSearch execOptions searchOptions
-
-      | otherwise ->
-        koreRun execOptions
-
-koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
-koreSearch execOptions searchOptions = do
-    (mainModule, _) <- loadDefinition execOptions
-    let KoreSearchOptions { searchFileName } = searchOptions
-    target <- mainParseSearchPattern mainModule searchFileName
-    let KoreExecOptions { patternFileName } = execOptions
-    initial <- loadPattern mainModule patternFileName
-    final <- execute execOptions mainModule $ do
-        search mainModule strategy' initial target config
-    lift $ renderResult execOptions (unparse final)
-    return ExitSuccess
-  where
-    KoreSearchOptions { bound, searchType } = searchOptions
-    config = Search.Config { bound, searchType }
-    KoreExecOptions { stepLimit, strategy } = execOptions
-    strategy' = Limit.replicate stepLimit . strategy
-
-koreRun :: KoreExecOptions -> Main ExitCode
-koreRun execOptions = do
-    (mainModule, _) <- loadDefinition execOptions
-    let KoreExecOptions { patternFileName } = execOptions
-    initial <- loadPattern mainModule patternFileName
-    (exitCode, final) <- execute execOptions mainModule $ do
-        final <- exec mainModule strategy' initial
-        exitCode <- execGetExitCode mainModule strategy' final
-        return (exitCode, final)
-    lift $ renderResult execOptions (unparse final)
-    return exitCode
-  where
-    KoreExecOptions { stepLimit, strategy } = execOptions
-    strategy' = Limit.replicate stepLimit . strategy
-
-koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
-koreProve execOptions proveOptions = do
-    (mainModule, definition) <- loadDefinition execOptions
-    (specModule, _) <- loadSpecification proveOptions definition
-    (exitCode, final) <- execute execOptions mainModule $ do
-        let KoreExecOptions { stepLimit } = execOptions
-            KoreProveOptions { graphSearch, bmc } = proveOptions
-        if bmc
-            then do
-                checkResult <-
-                    boundedModelCheck
-                        stepLimit
-                        mainModule
-                        specModule
-                        graphSearch
-                case checkResult of
-                    Bounded.Proved -> return success
-                    Bounded.Unknown -> return unknown
-                    Bounded.Failed final -> return (failure final)
-            else
-                either failure (const success)
-                <$> prove stepLimit mainModule specModule
-    lift $ renderResult execOptions (unparse final)
-    return exitCode
-  where
-    failure pat = (ExitFailure 1, pat)
-    success = (ExitSuccess, mkTop $ mkSortVariable "R")
-    unknown =
-        ( ExitSuccess
-        , mkElemVar $ elemVarS "Unknown" (mkSort $ noLocationId "SortUnknown")
-        )
-
-type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
-
-type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
-
-loadDefinition :: KoreExecOptions -> Main (LoadedModule, LoadedDefinition)
-loadDefinition options = do
-    let KoreExecOptions { definitionFileName } = options
-    parsedDefinition <- parseDefinition definitionFileName
-    definition@(indexedModules, _) <-
-        verifyDefinitionWithBase Nothing True parsedDefinition
-    let KoreExecOptions { mainModuleName } = options
-    mainModule <- lookupMainModule mainModuleName indexedModules
-    return (mainModule, definition)
-
-loadSpecification
-    :: KoreProveOptions
-    -> LoadedDefinition
-    -> Main (LoadedModule, LoadedDefinition)
-loadSpecification proveOptions definition = do
-    let base =
-            (Bifunctor.first . fmap . IndexedModule.mapPatterns)
-                Builtin.externalizePattern
-                definition
-    let KoreProveOptions { specFileName } = proveOptions
-    spec <- parseDefinition specFileName
-    specDef@(modules, _) <- verifyDefinitionWithBase (Just base) True spec
-    let KoreProveOptions { specMainModule } = proveOptions
-    specModule <- lookupMainModule specMainModule modules
-    return (specModule, specDef)
-
-loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike Variable)
-loadPattern mainModule (Just fileName) =
-    mainPatternParseAndVerify mainModule fileName
-loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
-
-type MonadExecute exe =
-    ( MonadIO exe
-    , MonadProfiler exe
-    , MonadSMT exe
-    , MonadUnliftIO exe
-    , WithLog LogMessage exe
-    )
-
--- | Run the worker in the context of the main module.
-execute
-    :: forall r
-    .  KoreExecOptions
-    -> LoadedModule  -- ^ Main module
-    -> (forall exe. MonadExecute exe => exe r)  -- ^ Worker
-    -> Main r
-execute options mainModule worker = do
-    logger <- LoggerT Reader.ask
-    clockSomethingIO "Executing"
-        $ case smtSolver of
-            Z3   -> withZ3 logger
-            None -> withoutSMT logger
-  where
-    withZ3 logger =
-        SMT.runSMT config logger $ do
-            give (MetadataTools.build mainModule) (declareSMTLemmas mainModule)
-            worker
-    withoutSMT logger = SMT.runNoSMT logger worker
-    KoreExecOptions { smtTimeOut, smtPrelude, smtSolver } = options
-    config =
-        SMT.defaultConfig
-            { SMT.timeOut = smtTimeOut
-            , SMT.preludeFile = smtPrelude
-            }
+mainWithOptions
+    KoreExecOptions
+        { definitionFileName
+        , patternFileName
+        , outputFileName
+        , mainModuleName
+        , smtTimeOut
+        , smtPrelude
+        , stepLimit
+        , strategy
+        , koreLogOptions
+        , koreSearchOptions
+        , koreProveOptions
+        }
+  = do
+        let
+            strategy' = Limit.replicate stepLimit . strategy
+            smtConfig =
+                SMT.defaultConfig
+                    { SMT.timeOut = smtTimeOut
+                    , SMT.preludeFile = smtPrelude
+                    }
+        withLogger koreLogOptions (\logger ->
+            flip runReaderT logger . unMain $ do
+                parsedDefinition <- parseDefinition definitionFileName
+                indexedDefinition@(indexedModules, _) <-
+                    verifyDefinitionWithBase
+                        Nothing
+                        True
+                        parsedDefinition
+                indexedModule <-
+                    Main . lift
+                    $ mainModule mainModuleName indexedModules
+                searchParameters <-
+                    case koreSearchOptions of
+                        Nothing -> return Nothing
+                        Just KoreSearchOptions { searchFileName, bound, searchType } ->
+                            do
+                                searchPattern <-
+                                    mainParseSearchPattern
+                                      indexedModule
+                                      searchFileName
+                                let searchConfig = Search.Config { bound, searchType }
+                                (return . Just) (searchPattern, searchConfig)
+                proveParameters <-
+                    case koreProveOptions of
+                        Nothing -> return Nothing
+                        Just proveOptions -> do
+                            let KoreProveOptions { specFileName } = proveOptions
+                                KoreProveOptions { specMainModule } = proveOptions
+                                KoreProveOptions { graphSearch } = proveOptions
+                                KoreProveOptions { bmc } = proveOptions
+                                unverifiedDefinition =
+                                    (Bifunctor.first . fmap . IndexedModule.mapPatterns)
+                                        Builtin.externalizePattern
+                                        indexedDefinition
+                            specDef <- parseDefinition specFileName
+                            (specDefIndexedModules, _) <-
+                                verifyDefinitionWithBase
+                                   (Just unverifiedDefinition)
+                                   True
+                                   specDef
+                            specDefIndexedModule <-
+                                Main . lift
+                                $ mainModule specMainModule specDefIndexedModules
+                            return (Just (specDefIndexedModule, graphSearch, bmc))
+                maybePattern <- case patternFileName of
+                    Nothing -> return Nothing
+                    Just fileName ->
+                        Just
+                        <$> mainPatternParseAndVerify
+                            indexedModule
+                            fileName
+                (exitCode, finalPattern) <-
+                    clockSomethingIO "Executing"
+                    $ SMT.runSMT smtConfig logger $ do
+                        give
+                            (MetadataTools.build indexedModule)
+                            (declareSMTLemmas indexedModule)
+                        case proveParameters of
+                            Nothing -> do
+                                let
+                                    purePattern = fromMaybe
+                                        (error "Missing: --pattern PATTERN_FILE")
+                                        maybePattern
+                                case searchParameters of
+                                    Nothing -> do
+                                        pat <-
+                                            exec indexedModule strategy' purePattern
+                                        exitCode <-
+                                            execGetExitCode
+                                                indexedModule strategy' pat
+                                        return (exitCode, pat)
+                                    Just (searchPattern, searchConfig) -> do
+                                        pat <-
+                                            search
+                                                indexedModule
+                                                strategy'
+                                                purePattern
+                                                searchPattern
+                                                searchConfig
+                                        return (ExitSuccess, pat)
+                            Just (specIndexedModule, graphSearch, bmc)
+                              | bmc -> do
+                                checkResult <- boundedModelCheck
+                                                stepLimit
+                                                indexedModule
+                                                specIndexedModule
+                                                graphSearch
+                                case checkResult of
+                                    Bounded.Proved -> return success
+                                    Bounded.Unknown -> return unknown
+                                    Bounded.Failed pat -> return (failure pat)
+                              | otherwise ->
+                                either failure (const success)
+                                <$> prove
+                                        stepLimit
+                                        indexedModule
+                                        specIndexedModule
+                              where
+                                failure pat = (ExitFailure 1, pat)
+                                success = (ExitSuccess, mkTop $ mkSortVariable "R")
+                                unknown =
+                                    ( ExitSuccess
+                                    , mkElemVar $ elemVarS
+                                            "Unknown"
+                                            (mkSort $ noLocationId "SortUnknown")
+                                    )
+                let unparsed = unparse finalPattern
+                case outputFileName of
+                    Nothing ->
+                        Main . lift
+                        $ putDoc unparsed
+                    Just outputFile ->
+                        Main . lift
+                        $ withFile outputFile WriteMode (`hPutDoc` unparsed)
+                Main . lift $ () <$ exitWith exitCode
+                                    )
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.
 mainPatternParse :: String -> Main ParsedPattern
 mainPatternParse = mainParse parseKorePattern
 
-renderResult :: KoreExecOptions -> Doc ann -> IO ()
-renderResult KoreExecOptions { outputFileName } doc =
-    case outputFileName of
-        Nothing -> putDoc doc
-        Just outputFile -> withFile outputFile WriteMode (`hPutDoc` doc)
 
 -- | IO action that parses a kore pattern from a filename, verifies it,
 -- converts it to a pure patterm, and prints timing information.
