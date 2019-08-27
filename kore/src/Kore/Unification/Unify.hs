@@ -6,7 +6,6 @@ License     : NCSA
 module Kore.Unification.Unify
     ( MonadUnify (..)
     , UnifierT (..)
-    , throwUnificationOrSubstitutionError
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT

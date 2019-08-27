@@ -4,6 +4,7 @@ module Test.Kore.Builtin
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Map
 import qualified Data.Set
 import qualified GHC.Stack as GHC
 import           Prelude hiding
@@ -102,7 +103,7 @@ test_internalize =
     unitMap = Builtin.unitMap
     elementMap = Builtin.elementMap
     concatMap = Builtin.concatMap
-    mkMap = Map.asInternal
+    mkMap = Map.asInternal . Data.Map.fromList
     m = mkVar (varS "m" mapSort)
 
     setSort = Builtin.setSort

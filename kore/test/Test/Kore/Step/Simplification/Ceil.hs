@@ -378,7 +378,9 @@ test_ceilSimplification =
                 ]
         actual <- makeEvaluate
             Conditional
-                { term = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
+                { term =
+                    Mock.builtinMap
+                        [(asConcrete' fOfA, fOfB), (asConcrete' gOfA, gOfB)]
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }

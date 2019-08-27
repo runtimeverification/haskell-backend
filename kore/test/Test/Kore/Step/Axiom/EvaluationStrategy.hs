@@ -102,7 +102,14 @@ test_definitionEvaluation =
                 (Mock.functionalConstr10 Mock.a)
         assertEqualWithExplanation "" expect actual
     , testCase "Failed evaluation" $ do
-        let expect = AttemptedAxiom.NotApplicable
+        let expect =
+                AttemptedAxiom.Applied
+                    AttemptedAxiomResults
+                        { results = OrPattern.fromPatterns []
+                        , remainders =
+                            OrPattern.fromTermLike
+                            $ mkEvaluated $ Mock.functionalConstr10 Mock.b
+                        }
         actual <-
             evaluate
                 (definitionEvaluation

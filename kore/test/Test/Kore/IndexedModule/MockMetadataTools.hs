@@ -36,8 +36,7 @@ import           Kore.Syntax.Application
                  ( SymbolOrAlias (..) )
 
 makeMetadataTools
-    :: HasCallStack
-    => [(SymbolOrAlias, StepperAttributes)]
+    :: [(SymbolOrAlias, StepperAttributes)]
     -> [(Sort, Attribute.Sort)]
     -> [(Sort, Sort)]
     -> [(SymbolOrAlias, ApplicationSorts)]

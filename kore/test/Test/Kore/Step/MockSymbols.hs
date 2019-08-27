@@ -24,7 +24,6 @@ import           Control.Applicative
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import qualified Data.Either as Either
 import           Data.Function
 import           Data.Generics.Product
 import qualified Data.Map.Strict as Map
@@ -1417,34 +1416,21 @@ subsorts =
 
 builtinMap
     :: (Ord variable, SortedVariable variable, Unparse variable)
-    => [(TermLike variable, TermLike variable)]
+    => [(TermLike Concrete, TermLike variable)]
     -> TermLike variable
-builtinMap elements = framedMap elements []
-
-framedMap
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => [(TermLike variable, TermLike variable)]
-    -> [variable]
-    -> TermLike variable
-framedMap elements (map Internal.mkVar -> opaque) =
+builtinMap child =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol
         , builtinAcElement = elementMapSymbol
         , builtinAcConcat = concatMapSymbol
         , builtinAcChild = Domain.NormalizedMap Domain.NormalizedAc
-            { elementsWithVariables = Domain.wrapElement <$> abstractElements
-            , concreteElements
-            , opaque
+            { elementsWithVariables = []
+            , concreteElements =
+                Map.fromList (Bifunctor.second Domain.MapValue <$> child)
+            , opaque = []
             }
         }
-  where
-    asConcrete element@(key, value) =
-        (,) <$> Internal.asConcrete key <*> pure value
-        & maybe (Left element) Right
-    (abstractElements, Map.fromList -> concreteElements) =
-        asConcrete . Bifunctor.second Domain.MapValue <$> elements
-        & Either.partitionEithers
 
 builtinList
     :: (Ord variable, SortedVariable variable, Unparse variable)
@@ -1498,7 +1484,7 @@ emptyMetadataTools =
         [] -- subsorts
         emptySmtDeclarations
 
-metadataTools :: GHC.HasCallStack => SmtMetadataTools Attribute.Symbol
+metadataTools :: SmtMetadataTools Attribute.Symbol
 metadataTools =
     Mock.makeMetadataTools
         attributesMapping

@@ -1748,16 +1748,12 @@ mkSort name = SortActualSort $ SortActual name []
 mkSortVariable :: Id -> Sort
 mkSortVariable name = SortVariableSort $ SortVariable name
 
-{- | Construct a variable with a given name and sort.
-
-@
-"name" `varS` sort
-@
- -}
-varS :: Id -> Sort -> Variable
-varS variableName variableSort =
+-- | Construct a variable with a given name and sort
+-- "x" `varS` s
+varS :: Text -> Sort -> Variable
+varS x variableSort =
     Variable
-        { variableName
+        { variableName = noLocationId x
         , variableSort
         , variableCounter = mempty
         }
