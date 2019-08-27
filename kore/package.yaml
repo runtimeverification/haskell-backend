@@ -109,8 +109,6 @@ default-extensions:
   - UndecidableInstances
   - ViewPatterns
 
-ghc-options: -fno-ignore-asserts
-
 library:
   source-dirs: src
 

@@ -58,8 +58,6 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Substitution as Substitution
-import qualified Kore.Unification.Unify as Unification
 import           Kore.Unparser
 import           Kore.Variables.Fresh
 
@@ -334,12 +332,9 @@ evaluateOnce predicate termLike = do
     case result of
         AttemptedAxiom.NotApplicable -> empty
         AttemptedAxiom.Applied attemptedAxiomResults ->
-            (>>= Monad.Trans.lift . scatter) . Unification.maybeUnifierT $ do
-                pattern' <- Unification.scatter $ results <> remainders
-                let (termLike', predicate') = Pattern.splitTerm pattern'
-                    predicate'' = predicate <> predicate'
-                normalized <- Substitution.normalizeExcept predicate''
-                return $ Pattern.withCondition termLike' normalized
+            Monad.Trans.lift . scatter $ andPredicate <$> results <> remainders
           where
             AttemptedAxiomResults { results, remainders } =
                 attemptedAxiomResults
+  where
+    andPredicate pattern' = Pattern.andCondition pattern' predicate
