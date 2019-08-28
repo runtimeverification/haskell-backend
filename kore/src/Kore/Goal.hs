@@ -66,14 +66,6 @@ data ProofState goal
 
 instance Hashable goal => Hashable (ProofState goal)
 
-instance Applicative ProofState where
-    pure = Goal
-    Proven <*> _ = Proven
-    Goal f <*> x = f <$> x
-    GoalRem f <*> Goal x = GoalRem (f x)
-    GoalRem f <*> GoalRem x = GoalRem (f x)
-    GoalRem _ <*> Proven = Proven
-
 {- | Extract the unproven goals of a 'ProofState'.
 
 Returns 'Nothing' if there is no remaining unproven goal.
