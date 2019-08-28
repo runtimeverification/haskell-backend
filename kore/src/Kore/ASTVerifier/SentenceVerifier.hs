@@ -13,9 +13,13 @@ module Kore.ASTVerifier.SentenceVerifier
     , noConstructorWithDomainValuesMessage
     ) where
 
+import           Control.Error.Util
+                 ( hush, note )
 import           Control.Monad
                  ( foldM )
 import           Data.Function
+import           Data.Map
+                 ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( isJust )
@@ -38,6 +42,8 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
+import           Kore.IndexedModule.Error
+                 ( noSortText )
 import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Sort
@@ -99,6 +105,125 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
 definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
     definedNamesForSentence (SentenceSymbolSentence sentence)
 
+newtype SortIndex =
+    SortIndex { sorts :: Map Id Verified.SentenceSort }
+
+data SymbolIndex =
+    SymbolIndex
+        { symbolSorts :: Map Id Verified.SentenceSort
+        , symbols :: Map Id Verified.SentenceSymbol
+        }
+
+data AliasIndex =
+    AliasIndex
+        { aliasSorts :: Map Id Verified.SentenceSort
+        , aliasSymbols :: Map Id Verified.SentenceSymbol
+        , aliases :: Map Id Verified.SentenceAlias
+        }
+
+data RuleIndex =
+    RuleIndex
+        { ruleSorts :: Map Id Verified.SentenceSort
+        , ruleSymbols :: Map Id Verified.SentenceSymbol
+        , ruleAliases :: Map Id Verified.SentenceAlias
+        , rules :: [SentenceRule Verified.Pattern]
+        }
+
+data SentenceRule patternType =
+    SentenceRuleClaim (SentenceClaim patternType)
+    | SentenceRuleAxiom (SentenceAxiom patternType)
+
+verifySorts
+    :: Map Id ParsedSentenceSort
+    -> Either (Error VerifyError) SortIndex
+verifySorts rawSorts =
+    SortIndex <$> traverse verifySortSentence rawSorts
+
+verifySymbols
+    :: KoreIndexedModule declAtts axiomAtts
+    -> SortIndex
+    -> Map Id ParsedSentenceSymbol
+    -> Either (Error VerifyError) SymbolIndex
+verifySymbols indexedModule sortIndex rawSymbols = do
+    verifiedSymbols <-
+        traverse (verifySymbolSentenceNEW indexedModule sortIndex) rawSymbols
+    pure SymbolIndex
+        { symbolSorts = sorts sortIndex
+        , symbols = verifiedSymbols
+        }
+
+verifySymbolSentenceNEW
+    :: KoreIndexedModule declAtts axiomAtts
+    -> SortIndex
+    -> ParsedSentenceSymbol
+    -> Either (Error VerifyError) Verified.SentenceSymbol
+verifySymbolSentenceNEW indexedModule sortIndex sentence =
+    do
+        variables <- buildDeclaredSortVariables sortParams
+        mapM_
+            (verifySort findSort variables)
+            (sentenceSymbolSorts sentence)
+        verifyConstructorNotInHookedOrDvSort
+        verifySort
+            findSort
+            variables
+            (sentenceSymbolResultSort sentence)
+        traverse verifyNoPatterns sentence
+  where
+    findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
+    findSort id =
+        maybe
+            (koreFailWithLocations [id] $ noSortText id)
+            pure
+            $ Map.lookup id (sorts sortIndex)
+
+    sortParams = (symbolParams . sentenceSymbolSymbol) sentence
+
+    verifyConstructorNotInHookedOrDvSort :: Either (Error VerifyError) ()
+    verifyConstructorNotInHookedOrDvSort =
+        let
+            symbol = symbolConstructor $ sentenceSymbolSymbol sentence
+            attributes = sentenceSymbolAttributes sentence
+            resultSort = sentenceSymbolResultSort sentence
+            resultSortId = getSortId resultSort
+
+            -- TODO(vladimir.ciobanu): Lookup this attribute in the symbol
+            -- attribute record when it becomes available.
+            isCtor =
+                Attribute.constructorAttribute `elem` getAttributes attributes
+            sortData = do
+                (sortDescription, _) <-
+                    Map.lookup resultSortId
+                        $ indexedModuleSortDescriptions indexedModule
+                return
+                    (maybeHook sortDescription, hasDomainValues sortDescription)
+        in case sortData of
+            Nothing -> return ()
+            Just (resultSortHook, resultHasDomainValues) -> do
+                koreFailWhen
+                    (isCtor && isJust resultSortHook)
+                    ( "Cannot define constructor '"
+                    ++ getIdForError symbol
+                    ++ "' for hooked sort '"
+                    ++ getIdForError resultSortId
+                    ++ "'."
+                    )
+                koreFailWhen
+                    (isCtor && resultHasDomainValues)
+                    (noConstructorWithDomainValuesMessage symbol resultSort)
+
+verifyAliases
+    :: SymbolIndex
+    -> Map Id ParsedSentenceAlias
+    -> AliasIndex
+verifyAliases _ _ = undefined
+
+verifyRules
+    :: AliasIndex
+    -> [SentenceRule ParsedPattern]
+    -> RuleIndex
+verifyRules _ _ = undefined
+-- TODO: remove
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
