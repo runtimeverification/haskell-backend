@@ -171,11 +171,11 @@ verifySymbolSentenceNEW indexedModule sortIndex sentence =
         traverse verifyNoPatterns sentence
   where
     findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
-    findSort id =
+    findSort sortId =
         maybe
-            (koreFailWithLocations [id] $ noSortText id)
+            (koreFailWithLocations [sortId] $ noSortText sortId)
             pure
-            $ Map.lookup id (sorts sortIndex)
+            $ Map.lookup sortId (sorts sortIndex)
 
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
@@ -214,15 +214,74 @@ verifySymbolSentenceNEW indexedModule sortIndex sentence =
 
 verifyAliases
     :: SymbolIndex
+    -> Builtin.Verifiers
+    -> KoreIndexedModule Attribute.Symbol axiomAtts
     -> Map Id ParsedSentenceAlias
-    -> AliasIndex
-verifyAliases _ _ = undefined
+    -> Either (Error VerifyError) AliasIndex
+verifyAliases symbolIndex builtinVerifiers indexedModule rawAliases = do
+    verifiedAliases <-
+        traverse
+            (verifyAliasSentenceNEW builtinVerifiers symbolIndex indexedModule)
+            rawAliases
+    pure AliasIndex
+        { aliasSorts = symbolSorts symbolIndex
+        , aliasSymbols = symbols symbolIndex
+        , aliases = verifiedAliases
+        }
+
+verifyAliasSentenceNEW
+    :: Builtin.Verifiers
+    -> SymbolIndex
+    -> KoreIndexedModule Attribute.Symbol axiomAtts
+    -> ParsedSentenceAlias
+    -> Either (Error VerifyError) Verified.SentenceAlias
+verifyAliasSentenceNEW builtinVerifiers symbolIndex indexedModule sentence =
+    do
+        variables <- buildDeclaredSortVariables sortParams
+        mapM_ (verifySort findSort variables) sentenceAliasSorts
+        verifySort findSort variables sentenceAliasResultSort
+        let context =
+                PatternVerifier.Context
+                    { builtinDomainValueVerifiers =
+                        Builtin.domainValueVerifiers builtinVerifiers
+                    , indexedModule =
+                        IndexedModule.eraseAxiomAttributes
+                        $ IndexedModule.erasePatterns indexedModule
+                    , declaredSortVariables = variables
+                    , declaredVariables = emptyDeclaredVariables
+                    }
+        runPatternVerifier context $ do
+            (declaredVariables, verifiedLeftPattern) <-
+                verifyAliasLeftPattern leftPattern
+            verifiedRightPattern <-
+                withDeclaredVariables declaredVariables
+                $ verifyPattern (Just expectedSort) rightPattern
+            return sentence
+                { sentenceAliasLeftPattern = verifiedLeftPattern
+                , sentenceAliasRightPattern = verifiedRightPattern
+                }
+  where
+    SentenceAlias { sentenceAliasLeftPattern = leftPattern } = sentence
+    SentenceAlias { sentenceAliasRightPattern = rightPattern } = sentence
+    SentenceAlias { sentenceAliasSorts } = sentence
+    SentenceAlias { sentenceAliasResultSort } = sentence
+
+    findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
+    findSort sortId =
+        maybe
+            (koreFailWithLocations [sortId] $ noSortText sortId)
+            pure
+            $ Map.lookup sortId (symbolSorts symbolIndex)
+
+    sortParams   = (aliasParams . sentenceAliasAlias) sentence
+    expectedSort = sentenceAliasResultSort
 
 verifyRules
     :: AliasIndex
     -> [SentenceRule ParsedPattern]
     -> RuleIndex
 verifyRules _ _ = undefined
+
 -- TODO: remove
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
