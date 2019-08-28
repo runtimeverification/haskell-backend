@@ -104,7 +104,7 @@ test_applicationSimplification =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.fId)
                     (simplificationEvaluator
-                        [ BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
+                        [ BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
                             return $ AttemptedAxiom.Applied
                                 AttemptedAxiomResults
                                     { results =
@@ -225,7 +225,7 @@ test_applicationSimplification =
                         (Map.singleton
                             (AxiomIdentifier.Application Mock.sigmaId)
                             (simplificationEvaluator
-                                [ BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
+                                [ BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
                                     return result
                                 ]
                             )

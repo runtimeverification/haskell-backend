@@ -35,6 +35,8 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import           Kore.Internal.Predicate
+                 ( Predicate )
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -115,14 +117,16 @@ totalDefinitionEvaluation rules =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
+        -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker
         predicateSimplifier
         termSimplifier
         axiomSimplifiers
         term
+        predicate
       = do
-        result <- evaluate term
+        result <- evaluate term predicate
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
@@ -182,6 +186,7 @@ evaluateBuiltin
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
@@ -189,6 +194,7 @@ evaluateBuiltin
     simplifier
     axiomIdToSimplifier
     patt
+    predicate
   = do
     result <-
         builtinEvaluator
@@ -196,6 +202,7 @@ evaluateBuiltin
             simplifier
             axiomIdToSimplifier
             patt
+            predicate
     case result of
         AttemptedAxiom.NotApplicable
           | App_ appHead children <- patt
@@ -226,8 +233,9 @@ applyFirstSimplifierThatWorks
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
@@ -236,9 +244,15 @@ applyFirstSimplifierThatWorks
     simplifier
     axiomIdToSimplifier
     patt
+    predicate
   = do
     applicationResult <-
-        evaluator substitutionSimplifier simplifier axiomIdToSimplifier patt
+        evaluator
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            patt
+            predicate
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -291,6 +305,7 @@ applyFirstSimplifierThatWorks
                 simplifier
                 axiomIdToSimplifier
                 patt
+                predicate
 
 evaluateWithDefinitionAxioms
     :: forall variable simplifier
@@ -306,6 +321,7 @@ evaluateWithDefinitionAxioms
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
 evaluateWithDefinitionAxioms
     definitionRules
@@ -313,6 +329,7 @@ evaluateWithDefinitionAxioms
     _termSimplifier
     _axiomSimplifiers
     patt
+    _predicate
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete patt)
   = return AttemptedAxiom.NotApplicable

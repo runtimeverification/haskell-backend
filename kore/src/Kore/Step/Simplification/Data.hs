@@ -31,6 +31,7 @@ module Kore.Step.Simplification.Data
     , SimplificationType (..)
     -- * Builtin and axiom simplifiers
     , BuiltinAndAxiomSimplifier (..)
+    , runBuiltinAndAxiomSimplifier
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
     , isApplicable, isNotApplicable
@@ -588,8 +589,36 @@ newtype BuiltinAndAxiomSimplifier =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
+        -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
         )
+
+runBuiltinAndAxiomSimplifier
+    ::  forall variable simplifier
+    .   ( FreshVariable variable
+        , SortedVariable variable
+        , Show variable
+        , Unparse variable
+        , MonadSimplify simplifier
+        )
+    => BuiltinAndAxiomSimplifier
+    -> TermLike variable
+    -> Predicate variable
+    -> simplifier (AttemptedAxiom variable)
+runBuiltinAndAxiomSimplifier
+    (BuiltinAndAxiomSimplifier simplifier)
+    termLike
+    predicate
+  = do
+    simplifierAxioms <- askSimplifierAxioms
+    simplifierPredicate <- askSimplifierPredicate
+    simplifierTermLike <- askSimplifierTermLike
+    simplifier
+        simplifierPredicate
+        simplifierTermLike
+        simplifierAxioms
+        termLike
+        predicate
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
@@ -750,8 +779,9 @@ applicationAxiomSimplifier applicationSimplifier =
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
+        -> Predicate variable
         -> m (AttemptedAxiom variable)
-    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike =
+    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike _ =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) ->
                 applicationSimplifier

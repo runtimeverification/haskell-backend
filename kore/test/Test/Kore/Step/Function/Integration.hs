@@ -25,6 +25,7 @@ import qualified Kore.Builtin.Map as Map
                  ( builtinFunctions )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -149,7 +150,7 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkElemVar Mock.x))
@@ -1018,8 +1019,9 @@ mockEvaluator
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
+    -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ _ _ _ = return evaluation
 
 evaluate
     :: BuiltinAndAxiomSimplifierMap
