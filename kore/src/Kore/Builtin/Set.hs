@@ -33,6 +33,7 @@ import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
 import           Data.Map.Strict
@@ -491,33 +492,22 @@ unifyEquals
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => SimplificationType
-    -> SmtMetadataTools Attribute.Symbol
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> (TermLike variable -> TermLike variable -> unifier (Pattern variable))
+    => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 unifyEquals
-    _simplificationType  -- TODO: Use this.
-    tools
-    _substitutionSimplifier
-    _simplifier
-    _
     unifyEqualsChildren
     first
     second
-  | fromMaybe False (isSetSort tools sort1)
-  = MaybeT $ do
-    unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
-    case sequence unifiers of
-        Nothing -> return Nothing
-        Just us -> Monad.Unify.scatter (map Just us)
-  | otherwise = empty
+  = do
+    tools <- Simplifier.askMetadataTools
+    (Monad.guard . fromMaybe False) (isSetSort tools sort1)
+    MaybeT $ do
+        unifiers <- Monad.Unify.gather (runMaybeT (unifyEquals0 first second))
+        case sequence unifiers of
+            Nothing -> return Nothing
+            Just us -> Monad.Unify.scatter (map Just us)
   where
     sort1 = termLikeSort first
 
@@ -529,7 +519,8 @@ unifyEquals
     unifyEquals0
         (Builtin_ (Domain.BuiltinSet normalized1))
         (Builtin_ (Domain.BuiltinSet normalized2))
-      =
+      = do
+        tools <- Simplifier.askMetadataTools
         Ac.unifyEqualsNormalized
             tools
             first
@@ -548,7 +539,8 @@ unifyEquals
             -> MaybeT unifier (TermLike variable)
         asDomain patt =
             case normalizedOrBottom of
-                Ac.Normalized normalized ->
+                Ac.Normalized normalized -> do
+                    tools <- Simplifier.askMetadataTools
                     return (Ac.asInternal tools sort1 normalized)
                 Ac.Bottom ->
                     Monad.Trans.lift $ Monad.Unify.explainAndReturnBottom
