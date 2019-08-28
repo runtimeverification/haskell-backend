@@ -21,7 +21,7 @@ an or containing a term made of that literal.
 -}
 simplify
     :: (Ord variable, SortedVariable variable)
-    => StringLiteral (OrPattern variable)
+    => StringLiteral
     -> OrPattern variable
 simplify (StringLiteral str) =
     OrPattern.fromTermLike $ mkStringLiteral str

@@ -53,16 +53,10 @@ test_parameters =
     $ parseLabel $ Attributes [ illegalAttribute ]
   where
     illegalAttribute =
-        (asAttributePattern . ApplicationF)
-            Application
-                { applicationSymbolOrAlias =
-                    SymbolOrAlias
-                        { symbolOrAliasConstructor = labelId
-                        , symbolOrAliasParams =
-                            [ SortVariableSort (SortVariable "illegal") ]
-                        }
-                , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF)
-                        (StringLiteral "text")
-                    ]
+        attributePattern
+            SymbolOrAlias
+                { symbolOrAliasConstructor = labelId
+                , symbolOrAliasParams =
+                    [ SortVariableSort (SortVariable "illegal") ]
                 }
+            [attributeString "text"]
