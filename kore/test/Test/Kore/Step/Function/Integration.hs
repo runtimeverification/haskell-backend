@@ -25,7 +25,6 @@ import qualified Kore.Builtin.Map as Map
                  ( builtinFunctions )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate

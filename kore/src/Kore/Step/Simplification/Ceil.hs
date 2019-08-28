@@ -73,9 +73,10 @@ simplify
         , Unparse variable
         , MonadSimplify simplifier
         )
-    => Ceil Sort (OrPattern variable)
+    => Predicate.Predicate variable
+    -> Ceil Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Ceil { ceilChild = child } = simplifyEvaluated child
+simplify predicate Ceil { ceilChild = child } = simplifyEvaluated predicate child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
@@ -101,10 +102,11 @@ simplifyEvaluated
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => OrPattern variable
+    => Predicate.Predicate variable
+    -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated child =
-    MultiOr.flatten <$> traverse makeEvaluate child
+simplifyEvaluated predicate child =
+    MultiOr.flatten <$> traverse (makeEvaluate predicate) child
 
 {-| Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
@@ -119,12 +121,13 @@ makeEvaluate
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Pattern variable
+    => Predicate.Predicate variable
+    -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluate child
+makeEvaluate predicate child
   | Pattern.isTop    child = return OrPattern.top
   | Pattern.isBottom child = return OrPattern.bottom
-  | otherwise              = makeEvaluateNonBoolCeil child
+  | otherwise              = makeEvaluateNonBoolCeil predicate child
 
 makeEvaluateNonBoolCeil
     ::  ( FreshVariable variable
@@ -135,12 +138,13 @@ makeEvaluateNonBoolCeil
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Pattern variable
+    => Predicate.Predicate variable
+    -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluateNonBoolCeil patt@Conditional {term}
+makeEvaluateNonBoolCeil predicate patt@Conditional {term}
   | isTop term = return $ OrPattern.fromPattern patt
   | otherwise = do
-    termCeil <- makeEvaluateTerm term
+    termCeil <- makeEvaluateTerm predicate term
     result <-
         And.simplifyEvaluatedMultiPredicate
             (MultiAnd.make
@@ -165,9 +169,10 @@ makeEvaluateTerm
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => TermLike variable
+    => Predicate.Predicate variable
+    -> TermLike variable
     -> simplifier (OrPredicate variable)
-makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
+makeEvaluateTerm configurationPredicate term@(Recursive.project -> _ :< projected) =
     makeEvaluateTermWorker
   where
     makeEvaluateTermWorker
@@ -180,11 +185,11 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
       , let headAttributes = symbolAttributes patternHead
       , Attribute.Symbol.isTotal headAttributes = do
             let Application { applicationChildren = children } = app
-            simplifiedChildren <- mapM makeEvaluateTerm children
+            simplifiedChildren <- mapM (makeEvaluateTerm configurationPredicate) children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 
-      | BuiltinF child <- projected = makeEvaluateBuiltin child
+      | BuiltinF child <- projected = makeEvaluateBuiltin configurationPredicate child
 
       | otherwise = do
             substitutionSimplifier <- Simplifier.askSimplifierPredicate
@@ -194,6 +199,7 @@ makeEvaluateTerm term@(Recursive.project -> _ :< projected) =
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
+                configurationPredicate
                 Conditional
                     { term = ()
                     , predicate = makeTruePredicate
@@ -230,45 +236,48 @@ makeEvaluateBuiltin
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Builtin (TermLike variable)
+    => Predicate.Predicate variable
+    -> Builtin (TermLike variable)
     -> simplifier (OrPredicate variable)
 makeEvaluateBuiltin
+    predicate
     patt@(Domain.BuiltinMap Domain.InternalAc
         {builtinAcChild}
     )
   =
     fromMaybe
         (return unsimplified)
-        (makeEvaluateNormalizedAc (Domain.unwrapAc builtinAcChild))
+        (makeEvaluateNormalizedAc predicate (Domain.unwrapAc builtinAcChild))
   where
     unsimplified =
         OrPredicate.fromPredicate
             (Predicate.fromPredicate
                 (makeCeilPredicate (mkBuiltin patt))
             )
-makeEvaluateBuiltin (Domain.BuiltinList l) = do
-    children <- mapM makeEvaluateTerm (Foldable.toList l)
+makeEvaluateBuiltin predicate (Domain.BuiltinList l) = do
+    children <- mapM (makeEvaluateTerm predicate) (Foldable.toList l)
     let
         ceils :: [OrPredicate variable]
         ceils = children
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 makeEvaluateBuiltin
+    predicate
     patt@(Domain.BuiltinSet Domain.InternalAc
         {builtinAcChild}
     )
   =
     fromMaybe
         (return unsimplified)
-        (makeEvaluateNormalizedAc (Domain.unwrapAc builtinAcChild))
+        (makeEvaluateNormalizedAc predicate (Domain.unwrapAc builtinAcChild))
   where
     unsimplified =
         OrPredicate.fromPredicate
             (Predicate.fromPredicate
                 (makeCeilPredicate (mkBuiltin patt))
             )
-makeEvaluateBuiltin (Domain.BuiltinBool _) = return OrPredicate.top
-makeEvaluateBuiltin (Domain.BuiltinInt _) = return OrPredicate.top
-makeEvaluateBuiltin (Domain.BuiltinString _) = return OrPredicate.top
+makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrPredicate.top
+makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrPredicate.top
+makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrPredicate.top
 
 makeEvaluateNormalizedAc
     :: forall normalized variable simplifier
@@ -281,19 +290,21 @@ makeEvaluateNormalizedAc
         , Unparse variable
         , Domain.AcWrapper normalized
         )
-    =>  Domain.NormalizedAc
+    =>  Predicate.Predicate variable
+    ->  Domain.NormalizedAc
             normalized
             (TermLike Concrete)
             (TermLike variable)
     -> Maybe (simplifier (OrPredicate variable))
 makeEvaluateNormalizedAc
+    configurationPredicate
     Domain.NormalizedAc
         { elementsWithVariables
         , concreteElements
         , opaque = []
         }
   = Just $ do
-    variableKeyConditions <- mapM makeEvaluateTerm variableKeys
+    variableKeyConditions <- mapM (makeEvaluateTerm configurationPredicate) variableKeys
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
 
@@ -328,7 +339,7 @@ makeEvaluateNormalizedAc
     evaluateDistinct (variableTerm : variableTerms) concreteTerms = do
         equalities <-
             mapM
-                (Equals.makeEvaluateTermsToPredicate variableTerm)
+                (flip (Equals.makeEvaluateTermsToPredicate variableTerm) configurationPredicate)
                 -- TODO(virgil): consider eliminating these repeated
                 -- concatenations.
                 (variableTerms ++ concreteTerms)
@@ -358,7 +369,7 @@ makeEvaluateNormalizedAc
         evaluateWrapper
             :: Domain.Value normalized (TermLike variable)
             -> simplifier (Domain.Value normalized (OrPredicate variable))
-        evaluateWrapper = traverse makeEvaluateTerm
+        evaluateWrapper = traverse (makeEvaluateTerm configurationPredicate)
 
         evaluateWrappers
             :: [Domain.Value normalized (TermLike variable)]
@@ -370,10 +381,11 @@ makeEvaluateNormalizedAc
     mergeAnd (predicate : predicates) =
         List.foldl' Conditional.andCondition predicate predicates
 makeEvaluateNormalizedAc
+    configurationPredicate
     Domain.NormalizedAc
         { elementsWithVariables = []
         , concreteElements
         , opaque = [opaqueAc]
         }
-  | Map.null concreteElements = Just $ makeEvaluateTerm opaqueAc
-makeEvaluateNormalizedAc _ = Nothing
+  | Map.null concreteElements = Just $ makeEvaluateTerm configurationPredicate opaqueAc
+makeEvaluateNormalizedAc _  _ = Nothing

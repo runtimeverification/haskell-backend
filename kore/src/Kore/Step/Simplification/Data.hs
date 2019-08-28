@@ -602,13 +602,13 @@ runBuiltinAndAxiomSimplifier
         , MonadSimplify simplifier
         )
     => BuiltinAndAxiomSimplifier
-    -> TermLike variable
     -> Predicate variable
+    -> TermLike variable
     -> simplifier (AttemptedAxiom variable)
 runBuiltinAndAxiomSimplifier
     (BuiltinAndAxiomSimplifier simplifier)
-    termLike
     predicate
+    termLike
   = do
     simplifierAxioms <- askSimplifierAxioms
     simplifierPredicate <- askSimplifierPredicate

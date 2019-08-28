@@ -9,6 +9,8 @@ import Kore.Internal.OrPredicate
        ( OrPredicate )
 import Kore.Internal.Pattern
        ( Pattern )
+import Kore.Internal.Predicate
+       ( Predicate )
 import Kore.Internal.TermLike
        ( TermLike )
 import Kore.Logger
@@ -32,7 +34,8 @@ makeEvaluate
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Pattern variable
+    => Predicate variable
+    -> Pattern variable
     -> simplifier (OrPattern variable)
 
 makeEvaluateTerm
@@ -44,5 +47,6 @@ makeEvaluateTerm
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => TermLike variable
+    => Predicate variable
+    -> TermLike variable
     -> simplifier (OrPredicate variable)

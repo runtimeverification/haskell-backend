@@ -31,8 +31,6 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
-                 ( topTODO )
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
 import           Kore.Logger
@@ -66,11 +64,13 @@ evaluateApplication
         , MonadSimplify simplifier
         )
     => Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication childrenPredicate application = do
+evaluateApplication configurationPredicate childrenPredicate application = do
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -88,6 +88,7 @@ evaluateApplication childrenPredicate application = do
                 childrenPredicate
                 termLike
                 unchanged
+                configurationPredicate
         unchangedPatt =
             Conditional
                 { term         = termLike
@@ -131,6 +132,8 @@ evaluatePattern
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Predicate variable
+    -- ^ The predicate from the configuration
+    -> Predicate variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
@@ -141,6 +144,7 @@ evaluatePattern
     substitutionSimplifier
     simplifier
     axiomIdToEvaluator
+    configurationPredicate
     childrenPredicate
     patt
     defaultValue
@@ -154,6 +158,7 @@ evaluatePattern
             childrenPredicate
             patt
             defaultValue
+            configurationPredicate
         )
 
 {-| Evaluates axioms on patterns.
@@ -180,6 +185,7 @@ maybeEvaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
+    -> Predicate variable
     -> Maybe (simplifier (OrPattern variable))
 maybeEvaluatePattern
     substitutionSimplifier
@@ -188,6 +194,7 @@ maybeEvaluatePattern
     childrenPredicate
     patt
     defaultValue
+    configurationPredicate
   =
     case maybeEvaluator of
         Nothing -> Nothing
@@ -199,7 +206,7 @@ maybeEvaluatePattern
                         simplifier
                         axiomIdToEvaluator
                         patt
-                        Predicate.topTODO
+                        configurationPredicate
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
                         return AttemptedAxiom.NotApplicable
