@@ -21,7 +21,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Not as Not
 import           Kore.Unification.Substitution
                  ( Substitution )
@@ -33,6 +33,7 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_simplifyEvaluated :: [TestTree]
@@ -129,4 +130,4 @@ simplifyEvaluated =
     . evalSimplifier mockEnv
     . Not.simplifyEvaluated
   where
-    mockEnv = Mock.env
+    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }

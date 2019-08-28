@@ -25,6 +25,7 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.MockSimplifiers as Mock
 import           Test.Kore.Step.MockSymbols
                  ( testSort )
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -425,4 +426,4 @@ evaluatePatterns first second =
     $ gather $ makeEvaluate first second
 
 mockEnv :: Env
-mockEnv = Mock.env
+mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
