@@ -32,6 +32,7 @@ import qualified Control.Monad as Monad
 import           Data.Default
                  ( Default (..) )
 import           Data.Generics.Product
+import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Assoc
@@ -51,6 +52,7 @@ import Kore.Attribute.Simplification
 import Kore.Attribute.SmtLemma
 import Kore.Attribute.SourceLocation
 import Kore.Attribute.Trusted
+import Kore.Debug
 
 {- | Attributes specific to Kore axiom sentences.
  -}
@@ -89,6 +91,12 @@ data Axiom =
     -- ^ Used to identify an axiom in the repl.
     }
     deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic Axiom
+
+instance SOP.HasDatatypeInfo Axiom
+
+instance Debug Axiom
 
 instance NFData Axiom
 
