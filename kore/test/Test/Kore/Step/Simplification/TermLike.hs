@@ -11,6 +11,8 @@ import Control.Monad
 import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.TermLike
+import           Kore.Internal.Predicate as Predicate
+                 ( top )
 import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Step.Simplification.Data
@@ -29,7 +31,7 @@ simplifyInternalEvaluated :: TermLike Variable -> IO (OrPattern Variable)
 simplifyInternalEvaluated original =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier env
-    $ TermLike.simplifyInternal
+    $ (`TermLike.simplifyInternal` Predicate.top)
         original
   where
     env = Mock.env

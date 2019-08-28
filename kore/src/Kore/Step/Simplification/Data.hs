@@ -534,6 +534,7 @@ termLikeSimplifier
             , MonadSimplify m
             )
         => TermLike variable
+        -> Predicate variable
         -> m (OrPattern variable)
         )
     -> TermLikeSimplifier
@@ -556,9 +557,8 @@ termLikeSimplifier simplifier =
         termLike
         initialCondition
       = do
-        results <- Monad.Trans.lift $ simplifier termLike
-        result <- scatter results
-        return (result `Conditional.andCondition` initialCondition)
+        results <- Monad.Trans.lift $ simplifier termLike initialCondition
+        scatter results
 
 {-| 'PredicateSimplifier' wraps a function that simplifies
 'Predicate's. The minimal requirement from this function is

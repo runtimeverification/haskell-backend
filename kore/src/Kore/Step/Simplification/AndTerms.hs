@@ -112,7 +112,7 @@ termEquals
     -> TermLike variable
     -> MaybeT simplifier (OrPredicate variable)
 termEquals first second = MaybeT $ do
-    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd Predicate.top first second
+    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results -> return $ Just $
@@ -127,12 +127,10 @@ termEqualsAnd
         , MonadSimplify simplifier
         )
     => GHC.HasCallStack
-    => Predicate variable
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> MaybeT (BranchT simplifier) (Pattern variable)
 termEqualsAnd
-    predicate
     p1
     p2
   = MaybeT
@@ -151,7 +149,6 @@ termEqualsAnd
         -> MaybeT unifier (Pattern variable)
     maybeTermEqualsWorker =
         maybeTermEquals
-            predicate
             createPredicatesAndSubstitutionsMergerExcept
             termEqualsAndWorker
 
@@ -190,14 +187,13 @@ maybeTermEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => Predicate variable
-    -> PredicateMerger variable unifier
+    => PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermEquals predicate = maybeTransformTerm (equalsFunctions predicate)
+maybeTermEquals = maybeTransformTerm equalsFunctions
 
 {- | Unify two terms without discarding the terms.
 
@@ -239,7 +235,6 @@ termUnification =
             maybeTermUnification :: MaybeT unifier (Pattern variable)
             maybeTermUnification =
                 maybeTermAnd
-                    Predicate.top
                     createPredicatesAndSubstitutionsMergerExcept
                     termUnificationWorker
                     pat1
@@ -291,7 +286,6 @@ termAnd p1 p2 =
     termAndWorker first second = do
         let maybeTermAnd' =
                 maybeTermAnd
-                    Predicate.top
                     createLiftedPredicatesAndSubstitutionsMerger
                     termAndWorker
                     first
@@ -311,14 +305,13 @@ maybeTermAnd
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => Predicate variable
-    -> PredicateMerger variable unifier
+    => PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTermAnd predicate = maybeTransformTerm (andFunctions predicate)
+maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
     ::  forall variable unifier
@@ -331,10 +324,9 @@ andFunctions
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
         )
-    => Predicate variable
-    -> [TermTransformationOld variable unifier]
-andFunctions predicate =
-    map (forAnd . snd) (filter appliesToAnd (andEqualsFunctions predicate))
+    => [TermTransformationOld variable unifier]
+andFunctions =
+    map (forAnd . snd) (filter appliesToAnd andEqualsFunctions)
   where
     appliesToAnd :: (SimplificationTarget, a) -> Bool
     appliesToAnd (AndT, _) = True
@@ -344,7 +336,7 @@ andFunctions predicate =
     forAnd
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forAnd f = f SimplificationType.And
+    forAnd f = f Predicate.topTODO SimplificationType.And
 
 equalsFunctions
     ::  forall variable unifier
@@ -357,10 +349,9 @@ equalsFunctions
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
         )
-    => Predicate variable
-    -> [TermTransformationOld variable unifier]
-equalsFunctions predicate =
-    map (forEquals . snd) (filter appliesToEquals (andEqualsFunctions predicate))
+    => [TermTransformationOld variable unifier]
+equalsFunctions =
+    map (forEquals . snd) (filter appliesToEquals andEqualsFunctions)
   where
     appliesToEquals :: (SimplificationTarget, a) -> Bool
     appliesToEquals (AndT, _) = False
@@ -370,7 +361,7 @@ equalsFunctions predicate =
     forEquals
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forEquals f = f SimplificationType.Equals
+    forEquals f = f Predicate.topTODO SimplificationType.Equals
 
 andEqualsFunctions
     ::  forall variable unifier
@@ -384,27 +375,26 @@ andEqualsFunctions
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
         )
-    => Predicate variable
-    -> [(SimplificationTarget, TermTransformation variable unifier)]
-andEqualsFunctions predicate = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \_ _ _ -> bottomTermEquals predicate, "bottomTermEquals")
-    , (EqualsT, \_ _ _ -> termBottomEquals predicate, "termBottomEquals")
-    , (BothT,   \t _ _ -> variableFunctionAndEquals predicate t, "variableFunctionAndEquals")
-    , (BothT,   \t _ _ -> functionVariableAndEquals predicate t, "functionVariableAndEquals")
-    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
-    , (BothT,   \t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
-    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
-    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
+    => [(SimplificationTarget, TermTransformation variable unifier)]
+andEqualsFunctions = fmap mapEqualsFunctions
+    [ (AndT,    \_ _ _ _ -> boolAnd, "boolAnd")
+    , (BothT,   \_ _ _ _ -> equalAndEquals, "equalAndEquals")
+    , (EqualsT, \p _ _ _ -> bottomTermEquals p, "bottomTermEquals")
+    , (EqualsT, \p _ _ _ -> termBottomEquals p, "termBottomEquals")
+    , (BothT,   \p t _ _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
+    , (BothT,   \p t _ _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
+    , (BothT,   \_ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
+    , (BothT,   \_ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
+    , (BothT,   \_ _ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
+    , (BothT,   \_ t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
+    , (BothT,   \_ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (BothT,   \_ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
+    , (AndT,    \_ _ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
     mapEqualsFunctions (target, termTransform, name) =
@@ -414,7 +404,7 @@ andEqualsFunctions predicate = fmap mapEqualsFunctions
         :: String
         -> TermTransformation variable unifier
         -> TermTransformation variable unifier
-    logTT fnName termTransformation sType pm ts t1 t2 =
+    logTT fnName termTransformation predicate sType pm ts t1 t2 =
         mapMaybeT (\getResult -> do
             mresult <- getResult
             case mresult of
@@ -446,7 +436,7 @@ andEqualsFunctions predicate = fmap mapEqualsFunctions
                             ]
                     return mresult
             )
-            $ termTransformation sType pm ts t1 t2
+            $ termTransformation predicate sType pm ts t1 t2
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -462,7 +452,8 @@ call 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation variable unifier =
-       SimplificationType
+       Predicate variable
+    -> SimplificationType
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -> TermLike variable

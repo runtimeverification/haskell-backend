@@ -84,9 +84,10 @@ simplify
         , FreshVariable variable
         )
     => TermLike variable
+    -> Predicate variable
     -> Simplifier (Pattern variable)
-simplify patt = do
-    orPatt <- simplifyToOr patt
+simplify patt pred = do
+    orPatt <- simplifyToOr patt pred
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
@@ -100,9 +101,12 @@ simplifyToOr
         , MonadSimplify simplifier
         )
     => TermLike variable
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-simplifyToOr =
-    localSimplifierTermLike (const simplifier) . simplifyInternal
+simplifyToOr term predicate =
+    localSimplifierTermLike (const simplifier)
+        . (`simplifyInternal` predicate)
+        $ term
   where
     simplifier = termLikeSimplifier simplifyToOr
 
@@ -115,8 +119,9 @@ simplifyInternal
         , MonadSimplify simplifier
         )
     => TermLike variable
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-simplifyInternal = simplifyInternalWorker
+simplifyInternal term pred = simplifyInternalWorker term
   where
     simplifyChildren
         :: Traversable t
@@ -136,12 +141,12 @@ simplifyInternal = simplifyInternalWorker
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                Application.simplify Predicate.topTODO
+                Application.simplify pred
                     =<< simplifyChildren applySymbolF
             CeilF ceilF ->
-                Ceil.simplify Predicate.topTODO =<< simplifyChildren ceilF
+                Ceil.simplify pred =<< simplifyChildren ceilF
             EqualsF equalsF ->
-                Equals.simplify Predicate.topTODO =<< simplifyChildren equalsF
+                Equals.simplify pred =<< simplifyChildren equalsF
             ExistsF existsF ->
                 Exists.simplify =<< simplifyChildren existsF
             IffF iffF ->
@@ -149,7 +154,7 @@ simplifyInternal = simplifyInternalWorker
             ImpliesF impliesF ->
                 Implies.simplify =<< simplifyChildren impliesF
             InF inF ->
-                In.simplify Predicate.topTODO =<< simplifyChildren inF
+                In.simplify pred =<< simplifyChildren inF
             NotF notF ->
                 Not.simplify =<< simplifyChildren notF
             --
