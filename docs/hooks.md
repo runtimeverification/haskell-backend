@@ -639,6 +639,15 @@ Is the element a member of the given set?
         [hook{}("SET.in")]
 ~~~
 
+### SET.list2set
+
+Convert a list to set
+
+~~~
+    hooked-symbol list2set{}(List{}) : Set{}
+        [hook{}("SET.list2set")]
+~~~
+
 ## KEQUAL
 
 Depends on `BOOL`.

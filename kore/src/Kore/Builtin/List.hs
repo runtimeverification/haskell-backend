@@ -37,13 +37,18 @@ module Kore.Builtin.List
     , elementKey
     , unitKey
     , getKey
+    , expectConcreteBuiltinList
     ) where
 
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import           Control.Monad
+                 ( join )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe
+                 ( mapMaybeT )
 import qualified Data.Function as Function
 import           Data.Functor
                  ( (<$) )
@@ -170,6 +175,16 @@ expectBuiltinList ctx =
                     Builtin.verifierBug
                     $ Text.unpack ctx ++ ": Domain value is not a list"
         _ -> empty
+
+expectConcreteBuiltinList
+    :: Monad m
+    => Text  -- ^ Context for error message
+    -> TermLike variable  -- ^ Operand pattern
+    -> MaybeT m (Seq (TermLike Concrete))
+expectConcreteBuiltinList ctx =
+    Monad.Trans.Maybe.mapMaybeT (fmap join)
+        . fmap (traverse Builtin.toKey)
+        . expectBuiltinList ctx
 
 returnList
     :: (MonadSimplify m, Ord variable, SortedVariable variable)

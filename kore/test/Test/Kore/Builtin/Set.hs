@@ -345,6 +345,20 @@ test_intersection_idem =
         (===) expect      =<< evaluateT original
         (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
 
+test_list2set :: TestTree
+test_list2set =
+    testPropertyWithSolver "List to Set" $ do
+        someSeq <- forAll Test.List.genSeqInteger
+        let
+            set = Set.map Test.Int.asInternal $ Set.fromList
+                $ Foldable.toList someSeq
+            termLike = asTermLike set
+            input = Test.List.asTermLike $ Test.Int.asInternal <$> someSeq
+            original = list2setSet input
+            expect = Pattern.fromTermLike (asInternal set)
+        (===) expect      =<< evaluateT original
+        (===) Pattern.top =<< evaluateT (mkEquals_ original termLike)
+
 setVariableGen :: Sort -> Gen (Set (ElementVariable Variable))
 setVariableGen sort =
     Gen.set (Range.linear 0 32) (standaloneGen $ elementVariableGen sort)
