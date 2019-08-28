@@ -12,6 +12,8 @@ import qualified Data.Set as Set
 import Data.Sup
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 import           Kore.Internal.ApplicationSorts
 import           Test.Kore hiding
@@ -39,7 +41,7 @@ termLikeChildGen patternSort =
                 mkCharLiteral . getCharLiteral <$> charLiteralGen
               | otherwise ->
                 Gen.choice
-                    [ mkVar <$> variableGen patternSort
+                    [ mkElemVar <$> elementVariableGen patternSort
                     , mkBuiltin <$> genBuiltin patternSort
                     ]
       | otherwise =
@@ -80,18 +82,18 @@ termLikeChildGen patternSort =
             <*> termLikeChildGen operandSort
     termLikeExistsGen = do
         varSort <- sortGen
-        var <- variableGen varSort
+        var <- elementVariableGen varSort
         child <-
             Reader.local
-                (addVariable var)
+                (addVariable (ElemVar var))
                 (termLikeChildGen patternSort)
         pure (mkExists var child)
     termLikeForallGen = do
         varSort <- sortGen
-        var <- variableGen varSort
+        var <- elementVariableGen varSort
         child <-
             Reader.local
-                (addVariable var)
+                (addVariable (ElemVar var))
                 (termLikeChildGen patternSort)
         pure (mkForall var child)
     termLikeFloorGen = do
@@ -116,27 +118,53 @@ termLikeChildGen patternSort =
             <$> termLikeChildGen patternSort
             <*> termLikeChildGen patternSort
     termLikeTopGen = pure (mkTop patternSort)
-    termLikeVariableGen = mkVar <$> variableGen patternSort
+    termLikeVariableGen = mkElemVar <$> elementVariableGen patternSort
 
 test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Replaces target variable"
         (assertEqualWithExplanation
             "Expected substituted variable"
-            (mkVar Mock.z)
+            (mkElemVar Mock.z)
             (substitute
-                (Map.singleton Mock.x (mkVar Mock.z))
-                (mkVar Mock.x)
+                (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
+                (mkElemVar Mock.x)
+            )
+        )
+
+    , testCase "Replaces target variable (SetVariable)"
+        (assertEqualWithExplanation
+            "Expected substituted variable"
+            (mkElemVar Mock.z)
+            (substitute
+                (Map.singleton
+                    (Mock.makeTestUnifiedVariable "@x")
+                    (mkElemVar Mock.z)
+                )
+                (Mock.mkTestUnifiedVariable "@x")
+            )
+        )
+
+    , testCase "Replaces target variable in subterm (SetVariable)"
+        (assertEqualWithExplanation
+            "Expected substituted variable"
+            (Mock.functionalConstr10 (mkElemVar Mock.z))
+            (substitute
+                (Map.singleton
+                    (Mock.makeTestUnifiedVariable "@x")
+                    (mkElemVar Mock.z)
+                )
+                (Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x"))
             )
         )
 
     , testCase "Ignores non-target variable"
         (assertEqualWithExplanation
             "Expected original non-target variable"
-            (mkVar Mock.y)
+            (mkElemVar Mock.y)
             (substitute
-                (Map.singleton Mock.x (mkVar Mock.z))
-                (mkVar Mock.y)
+                (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
+                (mkElemVar Mock.y)
             )
         )
 
@@ -149,7 +177,7 @@ test_substitute =
                 expect = mkPredicate Mock.testSort
                 actual =
                     substitute
-                        (Map.singleton Mock.x (mkVar Mock.z))
+                        (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
                         (mkPredicate Mock.testSort)
         in
             [ testCase "Bottom" (ignoring mkBottom)
@@ -162,11 +190,11 @@ test_substitute =
                     "Expected shadowed variable to be ignored"
                     expect actual
               where
-                expect = mkQuantifier Mock.x (mkVar Mock.x)
+                expect = mkQuantifier Mock.x (mkElemVar Mock.x)
                 actual =
                     substitute
-                        (Map.singleton Mock.x (mkVar Mock.z))
-                        (mkQuantifier Mock.x (mkVar Mock.x))
+                        (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
+                        (mkQuantifier Mock.x (mkElemVar Mock.x))
         in
             [ testCase "Exists" (ignoring mkExists)
             , testCase "Forall" (ignoring mkForall)
@@ -179,13 +207,17 @@ test_substitute =
                     expect actual
               where
                 expect =
-                    mkQuantifier z' $ mkAnd (mkVar z') (mkVar Mock.z)
+                    mkQuantifier z'
+                        $ mkAnd (mkElemVar z') (mkElemVar Mock.z)
                   where
-                    Just z' = refreshVariable (Set.singleton Mock.z) Mock.z
+                    Just (ElemVar z') =
+                        refreshVariable
+                            (Set.singleton (ElemVar Mock.z))
+                            (ElemVar Mock.z)
                 actual =
-                    substitute (Map.singleton Mock.x (mkVar Mock.z))
+                    substitute (Map.singleton (ElemVar Mock.x) (mkElemVar Mock.z))
                     $ mkQuantifier Mock.z
-                    $ mkAnd (mkVar Mock.z) (mkVar Mock.x)
+                    $ mkAnd (mkElemVar Mock.z) (mkElemVar Mock.x)
         in
             [ testCase "Exists" (renaming mkExists)
             , testCase "Forall" (renaming mkForall)
@@ -194,17 +226,17 @@ test_substitute =
 
 test_externalizeFreshVariables :: [TestTree]
 test_externalizeFreshVariables =
-    [ becomes (mkVar x_0) (mkVar x0) "Append counter"
+    [ becomes (mkElemVar x_0) (mkElemVar x0) "Append counter"
     , testGroup "No aliasing"
-        [ becomes (mk (mkVar x0) (mkVar x_0)) (mk (mkVar x0) (mkVar x1)) comment
+        [ becomes (mk (mkElemVar x0) (mkElemVar x_0)) (mk (mkElemVar x0) (mkElemVar x1)) comment
         | (mk, comment) <- binaryPatterns
         ]
     , testGroup "No capturing - Original free"
-        [ becomes (mk x_0 $ mkVar x0) (mk x1 $ mkVar x0) comment
+        [ becomes (mk x_0 $ mkElemVar x0) (mk x1 $ mkElemVar x0) comment
         | (mk, comment) <- quantifiers
         ]
     , testGroup "No capturing - Generated free"
-        [ becomes (mk x0 $ mkVar x_0) (mk x00 $ mkVar x0) comment
+        [ becomes (mk x0 $ mkElemVar x_0) (mk x00 $ mkElemVar x0) comment
         | (mk, comment) <- quantifiers
         ]
     ]
@@ -225,17 +257,20 @@ test_externalizeFreshVariables =
     becomes original expected =
         equals (externalizeFreshVariables original) expected
 
-x :: Variable
+x :: ElementVariable Variable
 x = Mock.x
 
-x_0 :: Variable
-x_0 = x { variableCounter = Just (Element 0) }
+ex :: Variable
+ex = getElementVariable x
 
-x0 :: Variable
-x0 = x { variableName = "x0" }
+x_0 :: ElementVariable Variable
+x_0 = ElementVariable ex { variableCounter = Just (Element 0) }
 
-x00 :: Variable
-x00 = x { variableName = "x00" }
+x0 :: ElementVariable Variable
+x0 = ElementVariable ex { variableName = "x0" }
 
-x1 :: Variable
-x1 = x { variableName = "x1" }
+x00 :: ElementVariable Variable
+x00 = ElementVariable ex { variableName = "x00" }
+
+x1 :: ElementVariable Variable
+x1 = ElementVariable ex { variableName = "x1" }

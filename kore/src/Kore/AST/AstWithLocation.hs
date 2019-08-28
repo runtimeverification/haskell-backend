@@ -19,6 +19,8 @@ import Kore.Syntax
 import Kore.Syntax.Definition
 import Kore.Syntax.PatternF
        ( PatternF (..) )
+import Kore.Variables.UnifiedVariable
+       ( UnifiedVariable (..) )
 
 {-| 'AstWithLocation' should be implemented by all AST terms that have
 an 'AstLocation'.
@@ -64,6 +66,13 @@ instance AstWithLocation Variable where
     locationFromAst = locationFromAst . variableName
     updateAstLocation var loc =
         var {variableName = updateAstLocation (variableName var) loc}
+instance
+    AstWithLocation variable =>
+    AstWithLocation (UnifiedVariable variable)
+  where
+    locationFromAst (ElemVar v) = locationFromAst . getElementVariable $ v
+    locationFromAst (SetVar v) = locationFromAst . getSetVariable $ v
+    updateAstLocation var loc = fmap (`updateAstLocation` loc) var
 
 instance AstWithLocation Alias where
     locationFromAst = locationFromAst . aliasConstructor
@@ -120,7 +129,5 @@ instance
             TopF Top { topSort } -> locationFromAst topSort
             VariableF variable -> locationFromAst variable
             InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort
-            SetVariableF (SetVariable variable) ->
-                locationFromAst variable
 
     updateAstLocation = undefined

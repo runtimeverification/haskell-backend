@@ -15,7 +15,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Attribute.Pattern.FreeSetVariables
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -54,10 +53,6 @@ instance Unparse child => Unparse (Next Sort child) where
         Pretty.parens (Pretty.fillSep ["\\next", unparse2 nextChild])
 
 instance Ord variable => Synthetic (Next sort) (FreeVariables variable) where
-    synthetic = nextChild
-    {-# INLINE synthetic #-}
-
-instance Ord variable => Synthetic (Next sort) (FreeSetVariables variable) where
     synthetic = nextChild
     {-# INLINE synthetic #-}
 

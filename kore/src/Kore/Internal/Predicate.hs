@@ -16,15 +16,12 @@ module Kore.Internal.Predicate
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
-    , freeSetVariables
     , Kore.Internal.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
     ) where
 
 
-import           Kore.Attribute.Pattern.FreeSetVariables
-                 ( FreeSetVariables )
 import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import           Kore.Internal.Conditional
@@ -88,16 +85,6 @@ freeVariables = Conditional.freeVariables (const mempty)
 
     See also: 'Predicate.freeSetVariables'.
 -}
-
-freeSetVariables
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
-    => Predicate variable
-    -> FreeSetVariables variable
-freeSetVariables = Conditional.freeSetVariables (const mempty)
 
 {- | Transform a predicate and substitution into a predicate only.
 

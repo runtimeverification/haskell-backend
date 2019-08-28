@@ -31,6 +31,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import           Data.Text
                  ( Text )
+import qualified Data.Text as Text
 import qualified GHC.Stack as GHC
 
 import           Data.Sup
@@ -61,9 +62,11 @@ import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )
 import           Kore.Syntax.Application
+import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.SetVariable
 import           Kore.Syntax.Variable
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
@@ -504,62 +507,88 @@ anywhereSymbol =
         (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
-var_x_1 :: Variable
-var_x_1 = Variable (testId "x") (Just (Element 1)) testSort
-var_y_1 :: Variable
-var_y_1 = Variable (testId "y") (Just (Element 1)) testSort
-var_z_1 :: Variable
-var_z_1 = Variable (testId "z") (Just (Element 1)) testSort
-x :: Variable
-x = Variable (testId "x") mempty testSort
+var_x_1 :: ElementVariable Variable
+var_x_1 = ElementVariable $ Variable (testId "x") (Just (Element 1)) testSort
+var_y_1 :: ElementVariable Variable
+var_y_1 = ElementVariable $ Variable (testId "y") (Just (Element 1)) testSort
+var_z_1 :: ElementVariable Variable
+var_z_1 = ElementVariable $ Variable (testId "z") (Just (Element 1)) testSort
+x :: ElementVariable Variable
+x = ElementVariable $ Variable (testId "x") mempty testSort
 setX :: SetVariable Variable
-setX = SetVariable x
-x0 :: Variable
-x0 = Variable (testId "x") mempty testSort0
-y :: Variable
-y = Variable (testId "y") mempty testSort
+setX = SetVariable $ Variable (testId "@x") mempty testSort
+x0 :: ElementVariable Variable
+x0 = ElementVariable $ Variable (testId "x") mempty testSort0
+y :: ElementVariable Variable
+y = ElementVariable $ Variable (testId "y") mempty testSort
 setY :: SetVariable Variable
-setY = SetVariable y
-z :: Variable
-z = Variable (testId "z") mempty testSort
-m :: Variable
-m = Variable (testId "m") mempty mapSort
-xSet :: Variable
-xSet = Variable (testId "xSet") mempty setSort
-ySet :: Variable
-ySet = Variable (testId "ySet") mempty setSort
-xInt :: Variable
-xInt = Variable (testId "xInt") mempty intSort
-yInt :: Variable
-yInt = Variable (testId "yInt") mempty intSort
-xBool :: Variable
-xBool = Variable (testId "xBool") mempty boolSort
-xString :: Variable
-xString = Variable (testId "xString") mempty stringSort
-xList :: Variable
-xList = Variable (testId "xList") mempty listSort
-xMap :: Variable
-xMap = Variable (testId "xMap") mempty mapSort
-xSubSort :: Variable
-xSubSort = Variable (testId "xSubSort") mempty subSort
-xSubSubSort :: Variable
-xSubSubSort = Variable (testId "xSubSubSort") mempty subSubsort
-xTopSort :: Variable
-xTopSort = Variable (testId "xTopSort") mempty topSort
+setY = SetVariable $ Variable (testId "@y") mempty testSort
+z :: ElementVariable Variable
+z = ElementVariable $ Variable (testId "z") mempty testSort
+m :: ElementVariable Variable
+m = ElementVariable $ Variable (testId "m") mempty mapSort
+xSet :: ElementVariable Variable
+xSet = ElementVariable $ Variable (testId "xSet") mempty setSort
+ySet :: ElementVariable Variable
+ySet = ElementVariable $ Variable (testId "ySet") mempty setSort
+xInt :: ElementVariable Variable
+xInt = ElementVariable $ Variable (testId "xInt") mempty intSort
+yInt :: ElementVariable Variable
+yInt = ElementVariable $ Variable (testId "yInt") mempty intSort
+xBool :: ElementVariable Variable
+xBool = ElementVariable $ Variable (testId "xBool") mempty boolSort
+xString :: ElementVariable Variable
+xString = ElementVariable $ Variable (testId "xString") mempty stringSort
+xList :: ElementVariable Variable
+xList = ElementVariable $ Variable (testId "xList") mempty listSort
+xMap :: ElementVariable Variable
+xMap = ElementVariable $ Variable (testId "xMap") mempty mapSort
+xSubSort :: ElementVariable Variable
+xSubSort = ElementVariable $ Variable (testId "xSubSort") mempty subSort
+xSubSubSort :: ElementVariable Variable
+xSubSubSort =
+    ElementVariable $ Variable (testId "xSubSubSort") mempty subSubsort
+xTopSort :: ElementVariable Variable
+xTopSort = ElementVariable $ Variable (testId "xTopSort") mempty topSort
 
-a :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+makeUnifiedVariable :: Text -> Sort -> UnifiedVariable Variable
+makeUnifiedVariable v sort
+  | Text.head v == '@' = SetVar (SetVariable v')
+  | otherwise = ElemVar (ElementVariable v')
+  where
+    v' = Variable
+        { variableSort = sort
+        , variableName = testId v
+        , variableCounter = mempty
+        }
+
+makeTestUnifiedVariable :: Text -> UnifiedVariable Variable
+makeTestUnifiedVariable = (`makeUnifiedVariable` testSort)
+
+mkTestUnifiedVariable :: Text -> TermLike Variable
+mkTestUnifiedVariable = Internal.mkVar . makeTestUnifiedVariable
+
+a
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 a = Internal.mkApplySymbol aSymbol []
 
 aConcrete :: TermLike Concrete
 Just aConcrete = Internal.asConcrete (a :: TermLike Variable)
 
-aSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSort0
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 aSort0 = Internal.mkApplySymbol aSort0Symbol []
 
-aSort1 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSort1
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 aSort1 = Internal.mkApplySymbol aSort1Symbol []
 
-aSubsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aSubsort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 aSubsort = Internal.mkApplySymbol aSubsortSymbol []
 
 aSubOthersort
@@ -572,28 +601,42 @@ aSubSubsort
     => TermLike variable
 aSubSubsort = Internal.mkApplySymbol aSubSubsortSymbol []
 
-aTopSort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aTopSort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 aTopSort = Internal.mkApplySymbol aTopSortSymbol []
 
-aOtherSort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+aOtherSort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 aOtherSort = Internal.mkApplySymbol aOtherSortSymbol []
 
-b :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+b
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 b = Internal.mkApplySymbol bSymbol []
 
 bConcrete :: TermLike Concrete
 Just bConcrete = Internal.asConcrete (b :: TermLike Variable)
 
-bSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+bSort0
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 bSort0 = Internal.mkApplySymbol bSort0Symbol []
 
-c :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+c
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 c = Internal.mkApplySymbol cSymbol []
 
-d :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+d
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 d = Internal.mkApplySymbol dSymbol []
 
-e :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+e
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 e = Internal.mkApplySymbol eSymbol []
 
 f, g, h
@@ -605,22 +648,34 @@ f arg = Internal.mkApplySymbol fSymbol [arg]
 g arg = Internal.mkApplySymbol gSymbol [arg]
 h arg = Internal.mkApplySymbol hSymbol [arg]
 
-cf :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cf
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 cf = Internal.mkApplySymbol cfSymbol []
 
-cfSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cfSort0
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 cfSort0 = Internal.mkApplySymbol cfSort0Symbol []
 
-cfSort1 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cfSort1
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 cfSort1 = Internal.mkApplySymbol cfSort1Symbol []
 
-cg :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cg
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 cg = Internal.mkApplySymbol cgSymbol []
 
-cgSort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+cgSort0
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 cgSort0 = Internal.mkApplySymbol cgSort0Symbol []
 
-ch :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+ch
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 ch = Internal.mkApplySymbol chSymbol []
 
 fSet
@@ -644,16 +699,24 @@ fInt
     -> TermLike variable
 fInt arg = Internal.mkApplySymbol fIntSymbol [arg]
 
-plain00 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 plain00 = Internal.mkApplySymbol plain00Symbol []
 
-plain00Sort0 :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00Sort0
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 plain00Sort0 = Internal.mkApplySymbol plain00Sort0Symbol []
 
-plain00Subsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00Subsort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 plain00Subsort = Internal.mkApplySymbol plain00SubsortSymbol []
 
-plain00SubSubsort :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+plain00SubSubsort
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 plain00SubSubsort = Internal.mkApplySymbol plain00SubSubsortSymbol []
 
 plain10, plain11
@@ -906,7 +969,9 @@ sortInjectionOtherToTop
 sortInjectionOtherToTop arg =
     Internal.mkApplySymbol sortInjectionOtherToTopSymbol [arg]
 
-unitMap :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+unitMap
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 unitMap = Internal.mkApplySymbol unitMapSymbol []
 
 elementMap
@@ -992,7 +1057,9 @@ sigma
     -> TermLike variable
 sigma child1 child2 = Internal.mkApplySymbol sigmaSymbol [child1, child2]
 
-anywhere :: (Ord variable, SortedVariable variable, Unparse variable) => TermLike variable
+anywhere
+    :: (Ord variable, SortedVariable variable, Unparse variable)
+    => TermLike variable
 anywhere = Internal.mkApplySymbol anywhereSymbol []
 
 attributesMapping :: [(SymbolOrAlias, Attribute.Symbol)]
@@ -1424,9 +1491,9 @@ builtinMap elements = framedMap elements []
 framedMap
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => [(TermLike variable, TermLike variable)]
-    -> [variable]
+    -> [ElementVariable variable]
     -> TermLike variable
-framedMap elements (map Internal.mkVar -> opaque) =
+framedMap elements (map Internal.mkElemVar -> opaque) =
     Internal.mkBuiltin $ Domain.BuiltinMap Domain.InternalAc
         { builtinAcSort = mapSort
         , builtinAcUnit = unitMapSymbol

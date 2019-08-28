@@ -36,7 +36,7 @@ test_andNegation =
         property
   where
     property = do
-        let boolVariableGen = mkVar <$> variableGen Builtin.boolSort
+        let boolVariableGen = mkElemVar <$> elementVariableGen Builtin.boolSort
             boolPredicateGen =
                 predicateChildGen boolVariableGen Builtin.boolSort
         predicate <- forAll (standaloneGen boolPredicateGen)
@@ -61,7 +61,7 @@ noSimplification = []
 -- Refute Int predicates
 
 vInt :: Id -> TermLike Variable
-vInt s = mkVar (varS s Builtin.intSort)
+vInt s = mkElemVar (elemVarS s Builtin.intSort)
 
 a, b, c :: TermLike Variable
 a = vInt (testId "a")
@@ -69,7 +69,7 @@ b = vInt (testId "b")
 c = vInt (testId "c")
 
 vBool :: Id -> TermLike Variable
-vBool s = mkVar (varS s Builtin.boolSort)
+vBool s = mkElemVar (elemVarS s Builtin.boolSort)
 
 p, q :: TermLike Variable
 p = vBool (testId "p")

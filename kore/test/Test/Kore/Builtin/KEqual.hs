@@ -58,8 +58,14 @@ test_KEqual =
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
             original =
                 keqBool
-                    (kseq (mkVar (varS "x" kItemSort)) dotk)
-                    (kseq (mkVar (varS "x" kItemSort)) dotk)
+                    (kseq
+                        (mkElemVar (elemVarS "x" kItemSort))
+                        dotk
+                    )
+                    (kseq
+                        (mkElemVar (elemVarS "x" kItemSort))
+                        dotk
+                    )
         actual <- evaluate original
         assertEqual' "" expect actual
 
@@ -67,8 +73,8 @@ test_KEqual =
         let expect = Pattern.fromTermLike $ Test.Bool.asInternal True
             original =
                 keqBool
-                    (kseq (inj kItemSort (mkVar (varS "x" idSort))) dotk)
-                    (kseq (inj kItemSort (mkVar (varS "x" idSort))) dotk)
+                    (kseq (inj kItemSort (mkElemVar (elemVarS "x" idSort))) dotk)
+                    (kseq (inj kItemSort (mkElemVar (elemVarS "x" idSort))) dotk)
         actual <- evaluate original
         assertEqual' "" expect actual
 

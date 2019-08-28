@@ -55,6 +55,8 @@ import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
 import qualified SMT
 
 import           Test.Kore
@@ -85,8 +87,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.g (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.g (mkElemVar Mock.x))
                     )
                 )
                 (Mock.functionalConstr10 Mock.c)
@@ -104,8 +106,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (builtinEvaluation $ axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.g (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.g (mkElemVar Mock.x))
                     )
                 )
                 (Mock.functionalConstr10 Mock.c)
@@ -125,12 +127,12 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ axiomEvaluator
-                            (Mock.functionalConstr10 (mkVar Mock.x))
-                            (Mock.g (mkVar Mock.x))
+                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.g (mkElemVar Mock.x))
                         )
                         ( axiomEvaluator
-                            (Mock.functionalConstr10 (mkVar Mock.x))
-                            (mkVar Mock.x)
+                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (mkElemVar Mock.x)
                         )
                     )
                 )
@@ -154,8 +156,8 @@ test_functionIntegration =
                             (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
-                            (Mock.functionalConstr10 (mkVar Mock.x))
-                            (Mock.g (mkVar Mock.x))
+                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.g (mkElemVar Mock.x))
                         )
                     )
                 )
@@ -174,8 +176,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.functional10 (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.x))
                     )
                 )
                 (Mock.functionalConstr10 (Mock.functionalConstr10 Mock.c))
@@ -196,8 +198,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.functional10 (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.x))
                     )
                 )
                 (Mock.functionalConstr10
@@ -225,8 +227,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     ( axiomEvaluator
-                        (Mock.functionalConstr10 (mkVar Mock.x))
-                        (Mock.functional10 (mkVar Mock.x))
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.functional10 (mkElemVar Mock.x))
                     )
                 )
                 (Mock.functionalConstr10
@@ -287,8 +289,8 @@ test_functionIntegration =
                         )
                     ,   ( AxiomIdentifier.Application Mock.functionalConstr10Id
                         , axiomEvaluator
-                            (Mock.functionalConstr10 (mkVar Mock.x))
-                            (Mock.functional11 (mkVar Mock.x))
+                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.functional11 (mkElemVar Mock.x))
                         )
                     ]
                 )
@@ -327,10 +329,10 @@ test_functionIntegration =
                     { term = Mock.f Mock.e
                     , predicate = makeTruePredicate
                     , substitution = Substitution.unsafeWrap
-                        [   ( Mock.var_x_1
+                        [   ( ElemVar Mock.var_x_1
                             , Mock.a
                             )
-                        ,   ( Mock.var_z_1
+                        ,   ( ElemVar Mock.var_z_1
                             , Mock.a
                             )
                         ]
@@ -343,8 +345,8 @@ test_functionIntegration =
                             { term = Mock.d
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
-                                [   ( Mock.x
-                                    , mkVar Mock.z
+                                [   ( ElemVar Mock.x
+                                    , mkElemVar Mock.z
                                     )
                                 ]
                             }
@@ -354,7 +356,7 @@ test_functionIntegration =
                             { term = Mock.e
                             , predicate = makeTruePredicate
                             , substitution = Substitution.unsafeWrap
-                                [   ( Mock.x
+                                [   ( ElemVar Mock.x
                                     , Mock.a
                                     )
                                 ]
@@ -377,7 +379,9 @@ test_functionIntegration =
                         makeCeilPredicate
                             (Mock.plain10 Mock.cf)
                     , substitution = Substitution.unsafeWrap
-                        [ (Mock.var_x_1, Mock.cf), (Mock.var_y_1, Mock.b) ]
+                        [ (ElemVar Mock.var_x_1, Mock.cf)
+                        , (ElemVar Mock.var_y_1, Mock.b)
+                        ]
                     }
         actual <-
             evaluate
@@ -393,17 +397,17 @@ test_functionIntegration =
                                             Mock.b
                                         )
                                         (Mock.constr20
-                                            (Mock.plain10 (mkVar Mock.x))
-                                            (mkVar Mock.y)
+                                            (Mock.plain10 (mkElemVar Mock.x))
+                                            (mkElemVar Mock.y)
                                         )
                                     )
                             , substitution =
-                                Substitution.wrap [(Mock.x, Mock.cf)]
+                                Substitution.wrap [(ElemVar Mock.x, Mock.cf)]
                             }
                         )
                     ]
                 )
-                (Mock.f (mkVar Mock.x))
+                (Mock.f (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Evaluates only simplifications." $ do
@@ -426,7 +430,7 @@ test_functionIntegration =
                             )
                             (definitionEvaluation
                                 [ axiom
-                                    (Mock.f (mkVar Mock.y))
+                                    (Mock.f (mkElemVar Mock.y))
                                     Mock.a
                                     makeTruePredicate
                                 ]
@@ -434,7 +438,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkVar Mock.x))
+                (Mock.f (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Picks first matching simplification." $ do
@@ -451,7 +455,7 @@ test_functionIntegration =
                         , simplifierWithFallback
                             (firstFullEvaluation
                                 [ axiomEvaluator
-                                    (Mock.f (Mock.g (mkVar Mock.x)))
+                                    (Mock.f (Mock.g (mkElemVar Mock.x)))
                                     Mock.c
                                 ,  appliedMockEvaluator Conditional
                                     { term = Mock.b
@@ -467,7 +471,7 @@ test_functionIntegration =
                             )
                             (definitionEvaluation
                                 [ axiom
-                                    (Mock.f (mkVar Mock.y))
+                                    (Mock.f (mkElemVar Mock.y))
                                     Mock.a
                                     makeTruePredicate
                                 ]
@@ -475,7 +479,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkVar Mock.x))
+                (Mock.f (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Falls back to evaluating the definition." $ do
@@ -491,12 +495,12 @@ test_functionIntegration =
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (axiomEvaluator
-                                (Mock.f (Mock.g (mkVar Mock.x)))
+                                (Mock.f (Mock.g (mkElemVar Mock.x)))
                                 Mock.b
                             )
                             (definitionEvaluation
                                 [ axiom
-                                    (Mock.f (mkVar Mock.y))
+                                    (Mock.f (mkElemVar Mock.y))
                                     Mock.a
                                     makeTruePredicate
                                 ]
@@ -504,7 +508,7 @@ test_functionIntegration =
                         )
                     ]
                 )
-                (Mock.f (mkVar Mock.x))
+                (Mock.f (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
 
     , testCase "Multiple definition branches." $ do
@@ -518,21 +522,21 @@ test_functionIntegration =
                     [   ( AxiomIdentifier.Application Mock.fId
                         , simplifierWithFallback
                             (axiomEvaluator
-                                (Mock.f (Mock.g (mkVar Mock.x)))
+                                (Mock.f (Mock.g (mkElemVar Mock.x)))
                                 Mock.c
                             )
                             (definitionEvaluation
                                 [ axiom
-                                    (Mock.f (mkVar Mock.y))
+                                    (Mock.f (mkElemVar Mock.y))
                                     Mock.a
                                     (makeCeilPredicate Mock.cf)
-                                , axiom_ (Mock.f (mkVar Mock.y)) Mock.b
+                                , axiom_ (Mock.f (mkElemVar Mock.y)) Mock.b
                                 ]
                             )
                         )
                     ]
                 )
-                (Mock.f (mkVar Mock.x))
+                (Mock.f (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
     ]
 
@@ -645,13 +649,13 @@ natSort =
         , sortActualSorts = []
         }
 
-natM, natN :: Variable
-natM = varS "M" natSort
-natN = varS "N" natSort
+natM, natN :: ElementVariable Variable
+natM = elemVarS "M" natSort
+natN = elemVarS "N" natSort
 
 varM, varN :: TermLike Variable
-varM = mkVar natM
-varN = mkVar natN
+varM = mkElemVar natM
+varN = mkElemVar natN
 
 zeroSymbol, succSymbol :: Symbol
 zeroSymbol = Mock.symbol "Zero" [] natSort & constructor & functional
@@ -840,10 +844,10 @@ unitList :: TermLike Variable
 unitList = mkList []
 
 varX, varY, varL, mMap :: TermLike Variable
-varX = mkVar (varS (testId "xInt") intSort)
-varY = mkVar (varS (testId "yInt") intSort)
-varL = mkVar (varS (testId "lList") listSort)
-mMap = mkVar (varS (testId "mMap") mapSort)
+varX = mkElemVar (elemVarS (testId "xInt") intSort)
+varY = mkElemVar (elemVarS (testId "yInt") intSort)
+varL = mkElemVar (elemVarS (testId "lList") listSort)
+mMap = mkElemVar (elemVarS (testId "mMap") mapSort)
 
 lengthListSymbol :: Symbol
 lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function

@@ -27,11 +27,14 @@ test_existentiallyQuantifyTarget =
 target :: Predicate (Target Variable)
 target =
     Predicate.makeEqualsPredicate
-        (mkVar $ NonTarget Mock.x)
+        (mkElemVar $ NonTarget <$> Mock.x)
         (Mock.sigma
-            (mkVar $ Target Mock.y)
-            (mkVar $ Target Mock.z)
+            (mkElemVar $ Target <$> Mock.y)
+            (mkElemVar $ Target <$> Mock.z)
         )
 
 quantified :: Predicate (Target Variable)
-quantified = Predicate.makeMultipleExists [Target Mock.y, Target Mock.z] target
+quantified =
+    Predicate.makeMultipleExists
+        [Target <$> Mock.y, Target <$> Mock.z]
+        target

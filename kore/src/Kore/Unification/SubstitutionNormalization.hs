@@ -14,13 +14,15 @@ module Kore.Unification.SubstitutionNormalization
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Monad.Except
-                 ( ExceptT (..) )
+                 ( ExceptT (..), lift, throwError )
 import           Data.Functor.Foldable
                  ( Base )
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( mapMaybe )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -42,6 +44,15 @@ import           Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
+import           Kore.Variables.UnifiedVariable
+                 ( UnifiedVariable (..) )
+import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
+
+data TopologicalSortResult variable
+  = MixedCtorCycle ![variable]
+  | SetCtorCycle ![variable]
+  | Sorted ![variable]
+  deriving (Show)
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
@@ -62,68 +73,93 @@ normalizeSubstitution
         , Show variable
         , Unparse variable
         )
-    => Map variable (TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution substitution = do
     let
-        nonSimplifiableDependencies :: Map variable (Set variable)
-        nonSimplifiableDependencies =
-            Map.mapWithKey
-                (getNonSimplifiableDependencies interestingVariables)
-                substitution
-
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
         -- Topological cycles with non-ctors are returned as Left errors.
         -- Non-simplifiable cycles are returned as Right Nothing.
-        topologicalSortConverted :: Either SubstitutionError (Maybe [variable])
+        topologicalSortConverted
+            :: Either
+                SubstitutionError
+                (TopologicalSortResult (UnifiedVariable variable))
         topologicalSortConverted =
             case topologicalSort (Set.toList <$> allDependencies) of
                 Left (ToplogicalSortCycles vars) ->
                     case nonSimplifiableSortResult of
-                        Left (ToplogicalSortCycles _vars) ->
-                            Right Nothing
+                        Left (ToplogicalSortCycles nonSimplifiableCycle)
+                          | all isVariable
+                              (mapMaybe
+                                  (`Map.lookup` substitution)
+                                  nonSimplifiableCycle
+                              ) ->
+                              error "Impossible: order on variables should prevent only-variable-cycles"
+                          | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
+                              Right (SetCtorCycle nonSimplifiableCycle)
+                          | otherwise ->
+                              Right (MixedCtorCycle nonSimplifiableCycle)
                         Right _ ->
                             Left (NonCtorCircularVariableDependency vars)
-                Right result -> Right $ Just result
+                Right result -> Right (Sorted result)
           where
             nonSimplifiableSortResult =
                 topologicalSort (Set.toList <$> nonSimplifiableDependencies)
-
-    ExceptT . traverse maybeToBottom $ topologicalSortConverted
-
+    case topologicalSortConverted of
+        Left err -> throwError err
+        Right (MixedCtorCycle _) -> return Predicate.bottom
+        Right (Sorted vars) -> lift $ normalizeSortedSubstitution' vars
+        Right (SetCtorCycle vars) -> normalizeSubstitution
+            $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
   where
-    interestingVariables :: Set variable
+    isVariable :: TermLike variable -> Bool
+    isVariable term =
+        case Cofree.tailF (Recursive.project term) of
+            VariableF _ -> True
+            _ -> False
+
+    interestingVariables :: Set (UnifiedVariable variable)
     interestingVariables = Map.keysSet substitution
 
-    allDependencies :: Map variable (Set variable)
+    allDependencies
+        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
     allDependencies =
         Map.mapWithKey
             (getDependencies interestingVariables)
             substitution
 
+    nonSimplifiableDependencies
+        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
+    nonSimplifiableDependencies =
+        Map.mapWithKey
+            (getNonSimplifiableDependencies interestingVariables)
+            substitution
+
     sortedSubstitution
-        :: [variable]
-        -> [(variable, TermLike variable)]
+        :: [UnifiedVariable variable]
+        -> [(UnifiedVariable variable, TermLike variable)]
     sortedSubstitution = fmap (variableToSubstitution substitution)
 
     normalizeSortedSubstitution'
-        :: [variable]
+        :: [UnifiedVariable variable]
         -> m (Predicate variable)
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
-    maybeToBottom
-        :: Maybe [variable]
-        -> m (Predicate variable)
-    maybeToBottom = maybe
-        (return Predicate.bottom)
-        normalizeSortedSubstitution'
+    makeRhsBottom
+        :: (UnifiedVariable variable -> Bool)
+        -> UnifiedVariable variable
+        -> TermLike variable
+        -> TermLike variable
+    makeRhsBottom test var rhs
+      | test var  = TermLike.mkBottom (termLikeSort rhs)
+      | otherwise = rhs
 
 variableToSubstitution
     :: (Ord variable, Show variable)
-    => Map variable (TermLike variable)
-    -> variable
-    -> (variable, TermLike variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
+    -> UnifiedVariable variable
+    -> (UnifiedVariable variable, TermLike variable)
 variableToSubstitution varToPattern var =
     case Map.lookup var varToPattern of
         Just patt -> (var, patt)
@@ -134,10 +170,11 @@ normalizeSortedSubstitution
         , Monad m
         , FreshVariable variable
         , SortedVariable variable
+        , Show variable
         )
-    => [(variable, TermLike variable)]
-    -> [(variable, TermLike variable)]
-    -> [(variable, TermLike variable)]
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
     -> m (Predicate variable)
 normalizeSortedSubstitution [] result _ =
     return Conditional
@@ -149,19 +186,18 @@ normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result
     substitution
-  =
-    case Cofree.tailF (Recursive.project varPattern) of
-        BottomF _ -> return Predicate.bottom
-        VariableF var'
-          | var == var' ->
+  = case (var, Cofree.tailF (Recursive.project varPattern)) of
+        (UnifiedVariable.ElemVar _, BottomF _) -> return Predicate.bottom
+        (rvar, VariableF var')
+          | rvar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
-        _ -> do
-            let substitutedVarPattern =
-                    TermLike.substitute (Map.fromList substitution) varPattern
-            normalizeSortedSubstitution
-                unprocessed
-                ((var, substitutedVarPattern) : result)
-                ((var, substitutedVarPattern) : substitution)
+        _ -> let
+              substitutedVarPattern =
+                  TermLike.substitute (Map.fromList substitution) varPattern
+              in normalizeSortedSubstitution
+                  unprocessed
+                  ((var, substitutedVarPattern) : result)
+                  ((var, substitutedVarPattern) : substitution)
 
 {- | Calculate the dependencies of a substitution.
 
@@ -170,11 +206,11 @@ normalizeSortedSubstitution
     pattern.
  -}
 getDependencies
-    :: Ord variable
-    => Set variable  -- ^ interesting variables
-    -> variable  -- ^ substitution variable
+    :: (Ord variable, Show variable)
+    => Set (UnifiedVariable variable)  -- ^ interesting variables
+    -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set variable
+    -> Set (UnifiedVariable variable)
 getDependencies interesting var (Recursive.project -> valid :< patternHead) =
     case patternHead of
         VariableF v | v == var -> Set.empty
@@ -193,10 +229,10 @@ getNonSimplifiableDependencies
     ::  ( Ord variable
         , Show variable
         )
-    => Set variable  -- ^ interesting variables
-    -> variable  -- ^ substitution variable
+    => Set (UnifiedVariable variable)  -- ^ interesting variables
+    -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
-    -> Set variable
+    -> Set (UnifiedVariable variable)
 getNonSimplifiableDependencies interesting var p@(Recursive.project -> _ :< h) =
     case h of
         VariableF v | v == var -> Set.empty
@@ -204,20 +240,17 @@ getNonSimplifiableDependencies interesting var p@(Recursive.project -> _ :< h) =
 
 nonSimplifiableAbove
     :: forall variable. (Ord variable, Show variable)
-    => Set variable
-    -> Base (TermLike variable) (Set variable)
-    -> Set variable
+    => Set (UnifiedVariable variable)
+    -> Base (TermLike variable) (Set (UnifiedVariable variable))
+    -> Set (UnifiedVariable variable)
 nonSimplifiableAbove interesting p =
     case Cofree.tailF p of
-        VariableF v ->
-            if v `Set.member` interesting then Set.singleton v else Set.empty
-        ExistsF Exists {existsVariable = v} -> Set.delete v dependencies
-        ForallF Forall {forallVariable = v} -> Set.delete v dependencies
-        ApplySymbolF Application { applicationSymbolOrAlias } ->
-            if Symbol.isNonSimplifiable applicationSymbolOrAlias
-                then dependencies
-                else Set.empty
-        _ -> dependencies
+        VariableF v
+            | v `Set.member` interesting -> Set.singleton v
+        ApplySymbolF Application { applicationSymbolOrAlias }
+            | Symbol.isNonSimplifiable applicationSymbolOrAlias ->
+                dependencies
+        _ -> Set.empty
   where
-    dependencies :: Set variable
+    dependencies :: Set (UnifiedVariable variable)
     dependencies = foldl Set.union Set.empty p
