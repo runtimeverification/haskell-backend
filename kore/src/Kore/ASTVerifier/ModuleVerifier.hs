@@ -63,7 +63,7 @@ verifyModule attributesVerification builtinVerifiers indexedModule =
                 attributesVerification
             moduleSentences <-
                 SentenceVerifier.verifySentences
-                    (indexedModule :: ())
+                    indexedModule
                     attributesVerification
                     builtinVerifiers
                     (indexedModuleRawSentences indexedModule)

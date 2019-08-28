@@ -13,12 +13,18 @@ module Kore.ASTVerifier.SentenceVerifier
     , noConstructorWithDomainValuesMessage
     ) where
 
+import           Control.Error.Util
+                 ( note )
 import           Control.Monad
                  ( foldM )
 import           Data.Function
+import           Data.Map
+                 ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( isJust )
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -98,6 +104,64 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
     definedNamesForSentence (SentenceSortSentence sentence)
 definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
     definedNamesForSentence (SentenceSymbolSentence sentence)
+
+newtype SortIndex =
+    SortIndex { sorts :: Map Id Verified.SentenceSort }
+
+data SymbolIndex =
+    SymbolIndex
+        { symbolSorts :: Map Id Verified.SentenceSort
+        , symbols :: Map Id Verified.SentenceSymbol
+        }
+
+data AliasIndex =
+    AliasIndex
+        { aliasSorts :: Map Id Verified.SentenceSort
+        , aliasSymbols :: Map Id Verified.SentenceSymbol
+        , aliases :: Map Id Verified.SentenceAlias
+        }
+
+data RuleIndex =
+    RuleIndex
+        { ruleSorts :: Map Id Verified.SentenceSort
+        , ruleSymbols :: Map Id Verified.SentenceSymbol
+        , ruleAliases :: Map Id Verified.SentenceAlias
+        , rules :: [SentenceRule Verified.Pattern]
+        }
+
+data SentenceRule patternType =
+    SentenceRuleClaim (SentenceClaim patternType)
+    | SentenceRuleAxiom (SentenceAxiom patternType)
+
+verifySorts
+    :: Map Id ParsedSentenceSort
+    -> Either (Error VerifyError) SortIndex
+verifySorts rawSorts =
+    SortIndex <$> traverse verifySortSentence rawSorts
+
+verifySymbols
+    :: SortIndex
+    -> Map Id ParsedSentenceSymbol
+    -> Either (Error VerifyError) SymbolIndex
+verifySymbols sortIndex rawSymbols = do
+    verifiedSymbols <-
+        traverse (verifySymbolSentence' sortIndex) rawSymbols
+    pure SymbolIndex
+        { symbolSorts = sorts sortIndex
+        , symbols = verifiedSymbols
+        }
+
+verifyAliases
+    :: SymbolIndex
+    -> Map Id ParsedSentenceAlias
+    -> AliasIndex
+verifyAliases _ _ = undefined
+
+verifyRules
+    :: AliasIndex
+    -> [SentenceRule ParsedPattern]
+    -> RuleIndex
+verifyRules _ _ = undefined
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
@@ -301,6 +365,61 @@ verifySymbolSentence indexedModule sentence =
                     (isCtor && resultHasDomainValues)
                     (noConstructorWithDomainValuesMessage symbol resultSort)
 
+verifySymbolSentence'
+    :: SortIndex
+    -> ParsedSentenceSymbol
+    -> Either (Error VerifyError) Verified.SentenceSymbol
+verifySymbolSentence' sortIndex sentence =
+    do
+        variables <- buildDeclaredSortVariables sortParams
+        mapM_
+            (verifySort findSort variables)
+            (sentenceSymbolSorts sentence)
+        verifyConstructorNotInHookedOrDvSort
+        verifySort
+            findSort
+            variables
+            (sentenceSymbolResultSort sentence)
+        traverse verifyNoPatterns sentence
+  where
+    findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
+    findSort id = note undefined $ (flip Map.lookup) (sorts sortIndex) id
+
+    sortParams = (symbolParams . sentenceSymbolSymbol) sentence
+
+    verifyConstructorNotInHookedOrDvSort :: Either (Error VerifyError) ()
+    verifyConstructorNotInHookedOrDvSort =
+        let
+            symbol = symbolConstructor $ sentenceSymbolSymbol sentence
+            attributes = sentenceSymbolAttributes sentence
+            resultSort = sentenceSymbolResultSort sentence
+            resultSortId = getSortId resultSort
+
+            -- TODO(vladimir.ciobanu): Lookup this attribute in the symbol
+            -- attribute record when it becomes available.
+            isCtor =
+                Attribute.constructorAttribute  `elem` getAttributes attributes
+            sortData = do
+                (sortDescription, _) <-
+                    Map.lookup resultSortId
+                        $ indexedModuleSortDescriptions indexedModule
+                return
+                    (maybeHook sortDescription, hasDomainValues sortDescription)
+        in case sortData of
+            Nothing -> return ()
+            Just (resultSortHook, resultHasDomainValues) -> do
+                koreFailWhen
+                    (isCtor && isJust resultSortHook)
+                    ( "Cannot define constructor '"
+                    ++ getIdForError symbol
+                    ++ "' for hooked sort '"
+                    ++ getIdForError resultSortId
+                    ++ "'."
+                    )
+                koreFailWhen
+                    (isCtor && resultHasDomainValues)
+                    (noConstructorWithDomainValuesMessage symbol resultSort)
+
 maybeHook :: Attribute.Sort -> Maybe Text
 maybeHook = Attribute.getHook . Attribute.Sort.hook
 
@@ -345,6 +464,50 @@ verifyAliasSentence builtinVerifiers indexedModule sentence =
     SentenceAlias { sentenceAliasSorts } = sentence
     SentenceAlias { sentenceAliasResultSort } = sentence
     findSort     = findIndexedSort indexedModule
+    sortParams   = (aliasParams . sentenceAliasAlias) sentence
+    expectedSort = sentenceAliasResultSort
+
+verifyAliasSentence'
+    :: Builtin.Verifiers
+    -> SymbolIndex
+    -> ParsedSentenceAlias
+    -> Either (Error VerifyError) Verified.SentenceAlias
+verifyAliasSentence' builtinVerifiers symbolIndex sentence =
+    do
+        variables <- buildDeclaredSortVariables sortParams
+        mapM_ (verifySort findSort variables) sentenceAliasSorts
+        verifySort findSort variables sentenceAliasResultSort
+        let context =
+                PatternVerifier.Context
+                    { builtinDomainValueVerifiers =
+                        Builtin.domainValueVerifiers builtinVerifiers
+                    , indexedModule =
+                        IndexedModule.eraseAxiomAttributes
+                        $ IndexedModule.erasePatterns indexedModule
+                    , declaredSortVariables = variables
+                    , declaredVariables = emptyDeclaredVariables
+                    }
+        runPatternVerifier context $ do
+            (declaredVariables, verifiedLeftPattern) <-
+                verifyAliasLeftPattern leftPattern
+            verifiedRightPattern <-
+                withDeclaredVariables declaredVariables
+                $ verifyPattern (Just expectedSort) rightPattern
+            return sentence
+                { sentenceAliasLeftPattern = verifiedLeftPattern
+                , sentenceAliasRightPattern = verifiedRightPattern
+                }
+  where
+    SentenceAlias { sentenceAliasLeftPattern = leftPattern } = sentence
+    SentenceAlias { sentenceAliasRightPattern = rightPattern } = sentence
+    SentenceAlias { sentenceAliasSorts } = sentence
+    SentenceAlias { sentenceAliasResultSort } = sentence
+    findSort     = findIndexedSort indexedModule
+
+    findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
+    findSort id =
+        note undefined $ (flip Map.lookup) (symbolSorts symbolIndex) id
+
     sortParams   = (aliasParams . sentenceAliasAlias) sentence
     expectedSort = sentenceAliasResultSort
 

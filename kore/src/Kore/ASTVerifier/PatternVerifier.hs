@@ -265,7 +265,7 @@ verifyAliasLeftPattern
         )
 verifyAliasLeftPattern leftPattern = do
     _ :< verified <-
-        verifyApplyAlias snd (expectVariable . ElemVar  <$> leftPattern)
+        verifyLeftApplicationOfAlias snd (expectVariable . ElemVar  <$> leftPattern)
         & runMaybeT
         & (>>= maybe (error . noHead $ symbolOrAlias) return)
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
@@ -564,6 +564,23 @@ verifyPatternsWithSorts getChildAttributes sorts operands = do
   where
     declaredOperandCount = length sorts
     actualOperandCount = length operands
+
+verifyLeftApplicationOfAlias
+    ::  (child -> Attribute.Pattern Variable)
+    ->  Application SymbolOrAlias (PatternVerifier child)
+    ->  MaybeT PatternVerifier
+            (CofreeF
+                (Application (Internal.Alias ()))
+                (Attribute.Pattern Variable)
+                child
+            )
+verifyLeftApplicationOfAlias getChildAttributes application =
+    lookupAlias symbolOrAlias >>= \alias -> Trans.lift $ do
+    let verified = application { applicationSymbolOrAlias = alias }
+        sorts = Internal.aliasSorts alias
+    verifyApplicationChildren getChildAttributes verified sorts
+  where
+    Application { applicationSymbolOrAlias = symbolOrAlias } = application
 
 -- TODO: uncomment after refactor
 verifyApplyAlias
