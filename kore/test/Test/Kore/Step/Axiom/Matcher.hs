@@ -66,35 +66,14 @@ import           Test.Tasty.HUnit.Extensions
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
     [ testGroup "Application"
-        [ testCase "same symbol" $ do
-            let expect = Just $ MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [(UnifiedVariable.ElemVar Mock.x, Mock.a)]
-                        }
-                    ]
-            actual <-
-                matchDefinition
-                    (Mock.plain10 (mkElemVar Mock.x))
-                    (Mock.plain10 Mock.a)
-            assertEqualWithExplanation "" expect actual
-        , testCase "same symbol, set variables" $ do
-            let expect = Just $ MultiOr.make
-                    [ Conditional
-                        { term = ()
-                        , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
-                            [(UnifiedVariable.SetVar Mock.setX, mkTop Mock.testSort)]
-                        }
-                    ]
-            actual <-
-                matchDefinition
-                    (Mock.plain10 (mkSetVar Mock.setX))
-                    (Mock.plain10 (mkTop Mock.testSort))
-            assertEqualWithExplanation "" expect actual
-
+        [ matches "same symbol"
+            (Mock.plain10 (mkElemVar Mock.x))
+            (Mock.plain10 Mock.a)
+            [(ElemVar Mock.x, Mock.a)]
+        , matches "same symbol, set variables"
+            (Mock.plain10 (mkSetVar Mock.setX ))
+            (Mock.plain10 (mkTop Mock.testSort))
+            [(SetVar Mock.setX, mkTop Mock.testSort)]
         , doesn'tMatch "different constructors"
             (Mock.constr10 (mkElemVar Mock.x))
             (Mock.constr11 Mock.a)
@@ -110,6 +89,9 @@ test_matcherEqualHeads =
         , doesn'tMatch "different symbols with variable"
             (Mock.plain10 (mkElemVar Mock.x))
             (Mock.plain11 Mock.a)
+        , doesn'tMatch "inj{src, tgt1}(x:src) does not match inj{src, tgt2}(x:src)"
+            (Mock.sortInjection10     (mkElemVar Mock.x0))
+            (Mock.sortInjection0ToTop (mkElemVar Mock.x0))
         ]
 
     , testCase "Bottom" $ do
