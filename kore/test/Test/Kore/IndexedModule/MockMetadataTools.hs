@@ -61,6 +61,7 @@ makeMetadataTools attr sortTypes isSubsortOf sorts declarations =
                     )
                     attr
                 )
+        , isOverloading = const (const False)
         , smtData = declarations
         }
 

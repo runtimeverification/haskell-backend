@@ -18,10 +18,13 @@ import           Data.Graph
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( mapMaybe )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Subsort
 import           Kore.IndexedModule.IndexedModule
@@ -47,6 +50,8 @@ data MetadataTools smt attributes = MetadataTools
     -- ^ Sorts for a specific symbol application.
     , symbolAttributes :: Id -> attributes
     -- ^ get the attributes of a symbol
+    , isOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
+    -- ^ whether the first argument is overloading the second
     , smtData :: smt
     -- ^ The SMT data for the given module.
     }
@@ -61,9 +66,9 @@ type SmtMetadataTools attributes =
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall declAtts axiomAtts smt.
-        VerifiedModule declAtts axiomAtts
-    ->  (  VerifiedModule declAtts axiomAtts
+    ::  forall declAtts smt.
+        VerifiedModule declAtts Attribute.Axiom
+    ->  (  VerifiedModule declAtts Attribute.Axiom
         -> smt
         )
     -> MetadataTools smt declAtts
@@ -74,6 +79,7 @@ extractMetadataTools m smtExtractor =
         , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
+        , isOverloading = checkOverloading
         , smtData = smtExtractor m
         }
   where
@@ -105,3 +111,16 @@ extractMetadataTools m smtExtractor =
                 path sortGraph supId subId
             realCheckSubsort _ _ = False
         in realCheckSubsort
+
+    overloads =
+        Set.fromList
+        $ mapMaybe
+            (Attribute.getOverload . Attribute.overload . fst)
+            (recursiveIndexedModuleAxioms m)
+
+    checkOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
+    checkOverloading =
+        let
+            realCheckOverloading head1 head2 =
+                (head1, head2) `Set.member` overloads
+        in realCheckOverloading
