@@ -5,11 +5,16 @@ License     : NCSA
 This should be imported @qualified@.
 -}
 module Kore.Profiler.Profile
-    ( equalitySimplification
+    ( axiomEvaluation
+    , equalitySimplification
     , executionQueueLength
+    , mergeSubstitutions
+    , resimplification
     , smtDecision
     ) where
 
+import           Control.Monad
+                 ( when )
 import           Data.Text.Prettyprint.Doc
                  ( Pretty (..) )
 import qualified Data.Text.Prettyprint.Doc as Doc
@@ -18,11 +23,17 @@ import qualified Data.Text.Prettyprint.Doc as Doc
 import qualified Data.Text.Prettyprint.Doc.Render.String as Doc
                  ( renderString )
 
-import Kore.Profiler.Data
-       ( MonadProfiler (profileDuration) )
-import Kore.Step.Axiom.Identifier
-       ( AxiomIdentifier )
-import SMT
+import           Kore.Profiler.Data
+                 ( Configuration (Configuration),
+                 MonadProfiler (profileConfiguration, profileDuration) )
+import qualified Kore.Profiler.Data as Profiler.DoNotUse
+import           Kore.Step.Axiom.Identifier
+                 ( AxiomIdentifier )
+import           Kore.Unparser
+                 ( Unparse, unparseToString )
+import           SMT
+
+import Debug.Trace
 
 oneLiner :: Pretty a => a -> String
 oneLiner =
@@ -32,10 +43,60 @@ oneLiner =
     . pretty
 
 equalitySimplification
+    :: (MonadProfiler profiler, Unparse thing)
+    => AxiomIdentifier -> thing -> profiler result -> profiler result
+equalitySimplification identifier thing action = do
+    Configuration {dumpIdentifier} <- profileConfiguration
+    let strIdentifier = oneLiner identifier
+    -- TODO(virgil): Move this in the logger.
+    case dumpIdentifier of
+        Just toDump ->
+            when (toDump == strIdentifier)
+                (traceM (unparseToString thing))
+        Nothing -> return ()
+    filteredLogging
+        identifier ["equalitySimplification", strIdentifier] action
+
+-- TODO(virgil): Enable this on-demand.
+axiomEvaluation
     :: MonadProfiler profiler
     => AxiomIdentifier -> profiler result -> profiler result
-equalitySimplification identifier =
-    profileDuration ["equalitySimplification", oneLiner identifier]
+axiomEvaluation identifier =
+    filteredLogging identifier ["axiomEvaluation", oneLiner identifier]
+
+-- TODO(virgil): Enable this on-demand.
+resimplification
+    :: MonadProfiler profiler
+    => AxiomIdentifier -> Int -> profiler result -> profiler result
+resimplification identifier size =
+    filteredLogging
+        identifier
+        ["resimplification", oneLiner identifier, show size]
+
+-- TODO(virgil): Enable this on-demand.
+mergeSubstitutions
+    :: MonadProfiler profiler
+    => AxiomIdentifier -> profiler result -> profiler result
+mergeSubstitutions identifier =
+    filteredLogging identifier ["mergeSubstitutions", oneLiner identifier]
+
+filteredLogging
+    :: MonadProfiler profiler
+    => AxiomIdentifier
+    -> [String]
+    -> profiler result
+    -> profiler result
+filteredLogging identifier tags action = do
+    Configuration {identifierFilter} <- profileConfiguration
+    case identifierFilter of
+        Nothing -> profileDuration tags action
+        Just idFilter
+          | isSelected idFilter identifier ->
+            profileDuration tags action
+          | otherwise -> action
+
+isSelected :: String -> AxiomIdentifier -> Bool
+isSelected identifierFilter = (== identifierFilter) . oneLiner
 
 smtDecision
     :: MonadProfiler profiler

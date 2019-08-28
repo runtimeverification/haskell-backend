@@ -334,7 +334,7 @@ newtype SimplifierT m a = SimplifierT
     { runSimplifierT :: ReaderT Env m a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
-    deriving (MonadIO, MonadCatch, MonadThrow)
+    deriving (MonadIO, MonadCatch, MonadThrow, MonadTrans)
     deriving (MonadReader Env)
 
 type Simplifier = SimplifierT (SmtT IO)
