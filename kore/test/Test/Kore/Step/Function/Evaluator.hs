@@ -4,13 +4,9 @@ module Test.Kore.Step.Function.Evaluator
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Control.Lens as Lens
-import           Data.Function
-import           Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified GHC.Stack as GHC
 
-import           Kore.Attribute.Hook
 import           Kore.Attribute.Synthetic
                  ( synthesize )
 import           Kore.Internal.OrPattern
@@ -37,7 +33,6 @@ test_evaluateApplication :: [TestTree]
 test_evaluateApplication =
     [ evaluates "f(a) -- f(x) => x" (f a) a
     , notEvaluates "g(a) -- no axioms" (g a) id
-    , notEvaluates "h(a) -- hooked, no axioms" (h a) TermLike.mkEvaluated
     ]
   where
     a = Mock.a
@@ -60,19 +55,13 @@ test_evaluateApplication =
     notEvaluates name origin mkExpect =
         evaluates name origin (mkExpect $ mkApplySymbol origin)
 
-fSymbol, gSymbol, hSymbol :: Symbol
+fSymbol, gSymbol :: Symbol
 fSymbol = Mock.fSymbol
 gSymbol = Mock.gSymbol
-hSymbol =
-    Mock.hSymbol
-    & Lens.set
-        (field @"symbolAttributes" . field @"hook")
-        (Hook $ Just "HOOK.missing")
 
-f, g, h :: child -> Application Symbol child
+f, g :: child -> Application Symbol child
 f x = Application fSymbol [x]
 g x = Application gSymbol [x]
-h x = Application hSymbol [x]
 
 mkApplySymbol :: Application Symbol (TermLike Variable) -> TermLike Variable
 mkApplySymbol = synthesize . TermLike.ApplySymbolF
