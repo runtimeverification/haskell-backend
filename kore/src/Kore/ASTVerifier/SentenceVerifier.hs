@@ -11,6 +11,11 @@ module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
     , verifySentences
     , noConstructorWithDomainValuesMessage
+    , getVerifiedSentences
+    , verifySorts
+    , verifySymbols
+    , verifyAliases
+    , verifyRules
     ) where
 
 import           Control.Error.Util
@@ -126,12 +131,23 @@ data RuleIndex =
         { ruleSorts :: Map Id Verified.SentenceSort
         , ruleSymbols :: Map Id Verified.SentenceSymbol
         , ruleAliases :: Map Id Verified.SentenceAlias
-        , rules :: [SentenceRule Verified.Pattern]
+        , claims :: [Verified.SentenceClaim]
+        , axioms :: [Verified.SentenceAxiom]
         }
 
-data SentenceRule patternType =
-    SentenceRuleClaim (SentenceClaim patternType)
-    | SentenceRuleAxiom (SentenceAxiom patternType)
+getVerifiedSentences :: RuleIndex -> [Verified.Sentence]
+getVerifiedSentences ruleIndex =
+    (SentenceSortSentence <$> Map.elems verifiedSorts)
+    <> (SentenceSymbolSentence <$> Map.elems verifiedSymbols)
+    <> (SentenceAliasSentence <$> Map.elems verifiedAliases)
+    <> (SentenceClaimSentence <$> verifiedClaims)
+    <> (SentenceAxiomSentence <$> verifiedAxioms)
+  where
+    verifiedSorts = ruleSorts ruleIndex
+    verifiedSymbols = ruleSymbols ruleIndex
+    verifiedAliases = ruleAliases ruleIndex
+    verifiedClaims = claims ruleIndex
+    verifiedAxioms = axioms ruleIndex
 
 verifySorts
     :: Map Id ParsedSentenceSort
@@ -280,31 +296,28 @@ verifyRules
     :: AliasIndex
     -> Builtin.Verifiers
     -> KoreIndexedModule Attribute.Symbol axiomAtts
-    -> [SentenceRule ParsedPattern]
+    -> [SentenceClaim ParsedPattern]
+    -> [SentenceAxiom ParsedPattern]
     -> Either (Error VerifyError) RuleIndex
-verifyRules aliasIndex builtinVerifiers indexedModule rawRules = do
-    verifiedRules <- traverse verifyRule rawRules
+verifyRules aliasIndex builtinVerifiers indexedModule rawClaims rawAxioms = do
+    verifiedClaims <- traverse verifyClaim rawClaims
+    verifiedAxioms <- traverse verifyAxiom rawAxioms
     pure RuleIndex
         { ruleSorts = aliasSorts aliasIndex
         , ruleSymbols = aliasSymbols aliasIndex
         , ruleAliases = aliases aliasIndex
-        , rules = verifiedRules
+        , claims = verifiedClaims
+        , axioms = verifiedAxioms
         }
   where
-    verifyRule
-        :: SentenceRule ParsedPattern
-        -> Either (Error VerifyError) (SentenceRule Verified.Pattern)
-    verifyRule rawRule =
-        case rawRule of
-            SentenceRuleClaim (SentenceClaim axiom) ->
-                SentenceRuleClaim
-                . SentenceClaim
-                <$> verifyAxiomSentenceNEW
-                    axiom aliasIndex builtinVerifiers indexedModule
-            SentenceRuleAxiom axiom ->
-                SentenceRuleAxiom
-                <$> verifyAxiomSentenceNEW
-                    axiom aliasIndex builtinVerifiers indexedModule
+    verifyClaim (SentenceClaim axiom) =
+        SentenceClaim
+        <$> verifyAxiomSentenceNEW
+            axiom aliasIndex builtinVerifiers indexedModule
+
+    verifyAxiom axiom =
+        verifyAxiomSentenceNEW
+            axiom aliasIndex builtinVerifiers indexedModule
 
 verifyAxiomSentenceNEW
     :: ParsedSentenceAxiom

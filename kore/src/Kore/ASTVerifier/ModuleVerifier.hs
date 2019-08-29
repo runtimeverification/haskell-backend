@@ -61,12 +61,41 @@ verifyModule attributesVerification builtinVerifiers indexedModule =
             verifyAttributes
                 (snd (indexedModuleAttributes indexedModule))
                 attributesVerification
-            moduleSentences <-
-                SentenceVerifier.verifySentences
+            let rawSorts =
+                    snd
+                    <$> indexedModuleSortDescriptions indexedModule
+                rawSymbols =
+                    snd
+                    <$> indexedModuleSymbolSentences indexedModule
+                rawAliases =
+                    snd
+                    <$> indexedModuleAliasSentences indexedModule
+                rawClaims =
+                    snd
+                    <$> indexedModuleClaims indexedModule
+                rawAxioms =
+                    snd
+                    <$> indexedModuleAxioms indexedModule
+            sortIndex <- SentenceVerifier.verifySorts rawSorts
+            symbolIndex <-
+                SentenceVerifier.verifySymbols
                     indexedModule
-                    attributesVerification
+                    sortIndex
+                    rawSymbols
+            aliasIndex <-
+                SentenceVerifier.verifyAliases
+                    symbolIndex
                     builtinVerifiers
-                    (indexedModuleRawSentences indexedModule)
+                    indexedModule
+                    rawAliases
+            ruleIndex <-
+                SentenceVerifier.verifyRules
+                    aliasIndex
+                    builtinVerifiers
+                    indexedModule
+                    rawClaims
+                    rawAxioms
+            let moduleSentences = SentenceVerifier.getVerifiedSentences ruleIndex
             return Module { moduleName, moduleSentences, moduleAttributes }
         )
   where
