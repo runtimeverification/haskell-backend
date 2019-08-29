@@ -534,6 +534,7 @@ mockMetadataTools = MetadataTools
     , applicationSorts = undefined
     , symbolAttributes = undefined
     , isOverloading = undefined
+    , isOverloaded = undefined
     , smtData = undefined
     }
 

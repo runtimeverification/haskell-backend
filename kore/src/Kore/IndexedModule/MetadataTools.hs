@@ -57,6 +57,8 @@ data MetadataTools smt attributes = MetadataTools
     -- ^ get the attributes of a symbol
     , isOverloading :: Symbol -> Symbol -> Bool
     -- ^ whether the first argument is overloading the second
+    , isOverloaded :: Symbol -> Bool
+    -- ^ Whether the symbol is overloaded
     , smtData :: smt
     -- ^ The SMT data for the given module.
     }
@@ -85,6 +87,7 @@ extractMetadataTools m smtExtractor =
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
         , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
+        , isOverloaded = checkOverloaded . Symbol.toSymbolOrAlias
         , smtData = smtExtractor m
         }
   where
@@ -117,11 +120,19 @@ extractMetadataTools m smtExtractor =
             realCheckSubsort _ _ = False
         in realCheckSubsort
 
-    overloads =
-        Set.fromList
-        $ mapMaybe
+    overloadPairsSet = Set.fromList overloadPairsList
+
+    overloadPairsList =
+        mapMaybe
             (Attribute.getOverload . Attribute.overload . fst)
             (recursiveIndexedModuleAxioms m)
 
+    allOverloadsList = concatMap (\(o1, o2) -> [o1,o2]) overloadPairsList
+
+    allOverloadsSet = Set.fromList allOverloadsList
+
+    checkOverloaded :: SymbolOrAlias -> Bool
+    checkOverloaded = (`Set.member` allOverloadsSet)
+
     checkOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
-    checkOverloading head1 head2 = (head1, head2) `Set.member` overloads
+    checkOverloading head1 head2 = (head1, head2) `Set.member` overloadPairsSet
