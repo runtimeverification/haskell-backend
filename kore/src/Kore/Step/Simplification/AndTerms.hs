@@ -45,7 +45,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
@@ -387,6 +386,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
     , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
     , (BothT,   \t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
@@ -935,6 +935,109 @@ constructorSortInjectionAndEquals
             (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
 constructorSortInjectionAndEquals _ _ = empty
 
+{- | Unify an overloaded constructor application pattern with a sort injection
+pattern over an (overloaded) constructor.
+
+See https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md
+
+If the two constructors form an overload pair, then use the sorting information
+for the two overloaded constructors to directly derive the new goals
+(apply the overload axiom right-to-left on the right and retry)
+otherwise, return bottom, as the constructors are incompatible
+
+ -}
+overloadedConstructorSortInjectionAndEquals
+    ::  ( Eq variable
+        , FreshVariable variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        , MonadUnify unifier
+        )
+    => GHC.HasCallStack
+    => TermSimplifier variable unifier
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+overloadedConstructorSortInjectionAndEquals
+    termMerger
+    first@(App_ firstHead _)
+    second@(App_ secondHead _)
+   = do
+    tools <- Simplifier.askMetadataTools
+    helper tools
+  where
+    helper tools
+      | MetadataTools.isOverloaded tools firstHead
+      , Symbol.isSortInjection secondHead
+      = overloadedAndEqualsOverloading termMerger tools first second
+      | MetadataTools.isOverloaded tools secondHead
+      , Symbol.isSortInjection firstHead
+      = overloadedAndEqualsOverloading termMerger tools second first 
+      | otherwise = empty
+overloadedConstructorSortInjectionAndEquals _ _ _ = empty
+ 
+overloadedAndEqualsOverloading
+    ::  ( Eq variable
+        , FreshVariable variable
+        , Show variable
+        , SortedVariable variable
+        , Unparse variable
+        , MonadUnify unifier
+        )
+    => GHC.HasCallStack
+    => TermSimplifier variable unifier
+    -> SmtMetadataTools Attribute.Symbol
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+overloadedAndEqualsOverloading
+    termMerger
+    tools
+    first@(App_ firstHead _)
+    second@(App_ sortInjection [App_ secondHead secondChildren])
+  | MetadataTools.isOverloading tools firstHead secondHead
+  = equalInjectiveHeadsAndEquals
+        termMerger
+        first
+        (revertOverloading sortInjection firstHead secondHead secondChildren)
+  | isConstructorOrOverloaded tools secondHead
+  = Monad.Trans.lift $ do
+        explainBottom
+            "Cannot unify overloaded constructor with different injected ctor."
+            first
+            second
+        empty
+overloadedAndEqualsOverloading _ _ _ _ = empty
+
+revertOverloading
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => GHC.HasCallStack
+    => Symbol
+    -> Symbol
+    -> Symbol
+    -> [TermLike variable]
+    -> TermLike variable
+revertOverloading
+    sortInjection
+    overloadedHead
+    overloadingHead
+    overloadingChildren
+  = mkApplySymbol overloadedHead
+    $ zipWith mkApplySymbol
+        (zipWith (Symbol.coerceSortInjection sortInjection)
+            overloadingChildrenSorts
+            overloadedChildrenSorts
+        )
+        (map pure overloadingChildren)
+  where
+    overloadedChildrenSorts =
+        Symbol.applicationSortsOperands (symbolSorts overloadedHead)
+    overloadingChildrenSorts =
+        Symbol.applicationSortsOperands (symbolSorts overloadingHead)
+
 {-| Unify two constructor application patterns.
 
 Assumes that the two patterns were already tested for equality and were found
@@ -954,17 +1057,30 @@ constructorAndEqualsAssumesDifferentHeads
 constructorAndEqualsAssumesDifferentHeads
     first@(App_ firstHead _)
     second@(App_ secondHead _)
-  | Symbol.isConstructor firstHead
-  , Symbol.isConstructor secondHead =
-    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-        explainBottom
-            "Cannot unify different constructors or incompatible \
-            \sort injections."
-            first
-            second
-        empty
+  = do
+    tools <- Simplifier.askMetadataTools
+    helper tools
+  where
+    helper tools
+      | isConstructorOrOverloaded tools firstHead
+      , isConstructorOrOverloaded tools secondHead =
+        assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
+            explainBottom
+                "Cannot unify different constructors or incompatible \
+                \sort injections."
+                first
+                second
+            empty
+      | otherwise = empty
 constructorAndEqualsAssumesDifferentHeads _ _ = empty
 
+isConstructorOrOverloaded
+    :: SmtMetadataTools Attribute.Symbol
+    -> Symbol
+    -> Bool 
+isConstructorOrOverloaded tools s =
+    Symbol.isConstructor s || MetadataTools.isOverloaded tools s
+        
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
 
