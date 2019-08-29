@@ -42,7 +42,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 var :: Text -> Sort -> ElementVariable Variable
@@ -116,10 +115,7 @@ dv2 =
         }
 
 testEnv :: Env
-testEnv =
-    Mock.env
-        { simplifierPredicate = Mock.substitutionSimplifier
-        }
+testEnv = Mock.env
 
 unificationProblem
     :: UnificationTerm

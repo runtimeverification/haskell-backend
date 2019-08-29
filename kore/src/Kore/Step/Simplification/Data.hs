@@ -16,6 +16,7 @@ module Kore.Step.Simplification.Data
     , runSimplifier
     , evalSimplifier
     , BranchT
+    , mapBranchT
     , evalSimplifierBranch
     , gather
     , gatherAll
@@ -24,6 +25,7 @@ module Kore.Step.Simplification.Data
     , alternate
     , PredicateSimplifier (..)
     , emptyPredicateSimplifier
+    , simplifyPredicate
     , TermLikeSimplifier
     , termLikeSimplifier
     , emptyTermLikeSimplifier
@@ -257,6 +259,9 @@ deriving instance MonadSMT m => MonadSMT (BranchT m)
 deriving instance MonadProfiler m => MonadProfiler (BranchT m)
 
 deriving instance MonadSimplify m => MonadSimplify (BranchT m)
+
+mapBranchT :: Monad m => (forall x. m x -> m x) -> BranchT m a -> BranchT m a
+mapBranchT f (BranchT listT) = BranchT (ListT.mapListT f listT)
 
 {- | Collect results from many simplification branches into one result.
 
@@ -561,6 +566,24 @@ newtype PredicateSimplifier =
 
 emptyPredicateSimplifier :: PredicateSimplifier
 emptyPredicateSimplifier = PredicateSimplifier return
+
+{- | Use a 'PredicateSimplifier' to simplify a 'Predicate'.
+
+ -}
+simplifyPredicate
+    :: forall variable simplifier
+    .   ( FreshVariable variable
+        , Ord variable
+        , Show variable
+        , Unparse variable
+        , SortedVariable variable
+        , MonadSimplify simplifier
+        )
+    => Predicate variable
+    -> BranchT simplifier (Predicate variable)
+simplifyPredicate predicate = do
+    PredicateSimplifier simplify <- askSimplifierPredicate
+    simplify predicate
 
 {-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
