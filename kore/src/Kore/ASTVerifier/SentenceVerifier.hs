@@ -10,13 +10,11 @@ Portability : POSIX
 module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
     , verifySentences
+    , verifySentencesNEW
     , noConstructorWithDomainValuesMessage
-    , getVerifiedSentences
-    , verifySorts
-    , verifySymbols
-    , verifyAliases
-    , verifyRules
     ) where
+
+import Debug.Trace
 
 import           Control.Error.Util
                  ( hush, note )
@@ -135,6 +133,47 @@ data RuleIndex =
         , axioms :: [Verified.SentenceAxiom]
         }
 
+verifySentencesNEW
+    :: KoreIndexedModule Attribute.Symbol axiomAtts
+    -> Builtin.Verifiers
+    -> Either (Error VerifyError) [Verified.Sentence]
+verifySentencesNEW indexedModule builtinVerifiers = do
+    let rawSorts =
+            snd
+            <$> indexedModuleSortDescriptions indexedModule
+        rawSymbols =
+            snd
+            <$> indexedModuleSymbolSentences indexedModule
+        rawAliases =
+            snd
+            <$> indexedModuleAliasSentences indexedModule
+        rawClaims =
+            snd
+            <$> indexedModuleClaims indexedModule
+        rawAxioms =
+            snd
+            <$> indexedModuleAxioms indexedModule
+    sortIndex <- verifySorts rawSorts
+    symbolIndex <-
+        verifySymbols
+            indexedModule
+            sortIndex
+            rawSymbols
+    aliasIndex <-
+        verifyAliases
+            symbolIndex
+            builtinVerifiers
+            indexedModule
+            rawAliases
+    ruleIndex <-
+        verifyRules
+            aliasIndex
+            builtinVerifiers
+            indexedModule
+            rawClaims
+            rawAxioms
+    pure . getVerifiedSentences $ ruleIndex
+
 getVerifiedSentences :: RuleIndex -> [Verified.Sentence]
 getVerifiedSentences ruleIndex =
     (SentenceSortSentence <$> Map.elems verifiedSorts)
@@ -152,8 +191,11 @@ getVerifiedSentences ruleIndex =
 verifySorts
     :: Map Id ParsedSentenceSort
     -> Either (Error VerifyError) SortIndex
-verifySorts rawSorts =
-    SortIndex <$> traverse verifySortSentence rawSorts
+verifySorts rawSorts = do
+    SortIndex <$> traverse verifySortWithContext rawSorts
+  where
+    verifySortWithContext sort =
+        withSentenceSortContext sort (verifySortSentence sort)
 
 verifySymbols
     :: KoreIndexedModule declAtts axiomAtts
@@ -162,11 +204,16 @@ verifySymbols
     -> Either (Error VerifyError) SymbolIndex
 verifySymbols indexedModule sortIndex rawSymbols = do
     verifiedSymbols <-
-        traverse (verifySymbolSentenceNEW indexedModule sortIndex) rawSymbols
+        traverse verifySymbolWithContext rawSymbols
     pure SymbolIndex
         { symbolSorts = sorts sortIndex
         , symbols = verifiedSymbols
         }
+  where
+    verifySymbolWithContext symbol =
+        withSentenceSymbolContext
+            symbol
+            (verifySymbolSentenceNEW indexedModule sortIndex symbol)
 
 verifySymbolSentenceNEW
     :: KoreIndexedModule declAtts axiomAtts
@@ -186,13 +233,14 @@ verifySymbolSentenceNEW indexedModule sortIndex sentence =
             (sentenceSymbolResultSort sentence)
         traverse verifyNoPatterns sentence
   where
-    findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
-    findSort sortId =
-        maybe
-            (koreFailWithLocations [sortId] $ noSortText sortId)
-            pure
-            $ Map.lookup sortId (sorts sortIndex)
+    -- findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
+    -- findSort sortId =
+    --     maybe
+    --         (koreFailWithLocations [sortId] $ noSortText sortId)
+    --         pure
+    --         $ Map.lookup sortId (sorts sortIndex)
 
+    findSort = findIndexedSort indexedModule
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
     verifyConstructorNotInHookedOrDvSort :: Either (Error VerifyError) ()
@@ -237,13 +285,18 @@ verifyAliases
 verifyAliases symbolIndex builtinVerifiers indexedModule rawAliases = do
     verifiedAliases <-
         traverse
-            (verifyAliasSentenceNEW builtinVerifiers symbolIndex indexedModule)
+            verifyAliasWithContext
             rawAliases
     pure AliasIndex
         { aliasSorts = symbolSorts symbolIndex
         , aliasSymbols = symbols symbolIndex
         , aliases = verifiedAliases
         }
+  where
+    verifyAliasWithContext alias =
+        withSentenceAliasContext
+            alias
+            (verifyAliasSentenceNEW builtinVerifiers symbolIndex indexedModule alias)
 
 verifyAliasSentenceNEW
     :: Builtin.Verifiers
@@ -282,12 +335,14 @@ verifyAliasSentenceNEW builtinVerifiers symbolIndex indexedModule sentence =
     SentenceAlias { sentenceAliasSorts } = sentence
     SentenceAlias { sentenceAliasResultSort } = sentence
 
-    findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
-    findSort sortId =
-        maybe
-            (koreFailWithLocations [sortId] $ noSortText sortId)
-            pure
-            $ Map.lookup sortId (symbolSorts symbolIndex)
+    findSort = findIndexedSort indexedModule
+
+    -- findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
+    -- findSort sortId =
+    --     maybe
+    --         (koreFailWithLocations [sortId] $ noSortText sortId)
+    --         pure
+    --         $ Map.lookup sortId (symbolSorts symbolIndex)
 
     sortParams   = (aliasParams . sentenceAliasAlias) sentence
     expectedSort = sentenceAliasResultSort
@@ -300,8 +355,8 @@ verifyRules
     -> [SentenceAxiom ParsedPattern]
     -> Either (Error VerifyError) RuleIndex
 verifyRules aliasIndex builtinVerifiers indexedModule rawClaims rawAxioms = do
-    verifiedClaims <- traverse verifyClaim rawClaims
-    verifiedAxioms <- traverse verifyAxiom rawAxioms
+    verifiedClaims <- traverse verifyClaimWithContext rawClaims
+    verifiedAxioms <- traverse verifyAxiomWithContext rawAxioms
     pure RuleIndex
         { ruleSorts = aliasSorts aliasIndex
         , ruleSymbols = aliasSymbols aliasIndex
@@ -315,9 +370,16 @@ verifyRules aliasIndex builtinVerifiers indexedModule rawClaims rawAxioms = do
         <$> verifyAxiomSentenceNEW
             axiom aliasIndex builtinVerifiers indexedModule
 
-    verifyAxiom axiom =
-        verifyAxiomSentenceNEW
-            axiom aliasIndex builtinVerifiers indexedModule
+    verifyClaimWithContext claim =
+        withSentenceClaimContext
+            claim
+            (verifyClaim claim)
+
+    verifyAxiomWithContext axiom =
+        withSentenceAxiomContext
+            axiom
+            (verifyAxiomSentenceNEW
+                axiom aliasIndex builtinVerifiers indexedModule)
 
 verifyAxiomSentenceNEW
     :: ParsedSentenceAxiom

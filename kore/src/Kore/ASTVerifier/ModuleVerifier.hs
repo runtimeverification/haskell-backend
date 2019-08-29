@@ -12,6 +12,8 @@ module Kore.ASTVerifier.ModuleVerifier
     , verifyUniqueNames
     ) where
 
+import Debug.Trace
+
 import qualified Data.Map as Map
 import           Data.Text
                  ( Text )
@@ -61,41 +63,16 @@ verifyModule attributesVerification builtinVerifiers indexedModule =
             verifyAttributes
                 (snd (indexedModuleAttributes indexedModule))
                 attributesVerification
-            let rawSorts =
-                    snd
-                    <$> indexedModuleSortDescriptions indexedModule
-                rawSymbols =
-                    snd
-                    <$> indexedModuleSymbolSentences indexedModule
-                rawAliases =
-                    snd
-                    <$> indexedModuleAliasSentences indexedModule
-                rawClaims =
-                    snd
-                    <$> indexedModuleClaims indexedModule
-                rawAxioms =
-                    snd
-                    <$> indexedModuleAxioms indexedModule
-            sortIndex <- SentenceVerifier.verifySorts rawSorts
-            symbolIndex <-
-                SentenceVerifier.verifySymbols
+            moduleSentencesNEW <-
+                SentenceVerifier.verifySentencesNEW
                     indexedModule
-                    sortIndex
-                    rawSymbols
-            aliasIndex <-
-                SentenceVerifier.verifyAliases
-                    symbolIndex
                     builtinVerifiers
+            moduleSentences <-
+                SentenceVerifier.verifySentences
                     indexedModule
-                    rawAliases
-            ruleIndex <-
-                SentenceVerifier.verifyRules
-                    aliasIndex
+                    attributesVerification
                     builtinVerifiers
-                    indexedModule
-                    rawClaims
-                    rawAxioms
-            let moduleSentences = SentenceVerifier.getVerifiedSentences ruleIndex
+                    (indexedModuleRawSentences indexedModule)
             return Module { moduleName, moduleSentences, moduleAttributes }
         )
   where
