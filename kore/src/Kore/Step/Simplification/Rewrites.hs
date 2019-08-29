@@ -8,15 +8,17 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Rewrites
-    ( simplify
-    ) where
+  ( simplify
+    )
+where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Unparser
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Unparser
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
@@ -25,19 +27,18 @@ Right now this does not do any actual simplification.
 TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Rewrites Sort (OrPattern variable)
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Rewrites Sort (OrPattern variable)
+  -> OrPattern variable
 simplify
-    Rewrites
-        { rewritesFirst = first
-        , rewritesSecond = second
-        }
-  =
+  Rewrites
+    { rewritesFirst = first,
+      rewritesSecond = second
+      } =
     simplifyEvaluatedRewrites first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
@@ -54,30 +55,30 @@ will make it even more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => OrPattern variable
-    -> OrPattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => OrPattern variable
+  -> OrPattern variable
+  -> OrPattern variable
 simplifyEvaluatedRewrites first second =
-    makeEvaluateRewrites
-        (OrPattern.toPattern first)
-        (OrPattern.toPattern second)
+  makeEvaluateRewrites
+    (OrPattern.toPattern first)
+    (OrPattern.toPattern second)
 
 makeEvaluateRewrites
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> OrPattern variable
 makeEvaluateRewrites first second =
-    OrPattern.fromTermLike
+  OrPattern.fromTermLike
     $ mkRewrites
         (Pattern.toTermLike first)
         (Pattern.toTermLike second)

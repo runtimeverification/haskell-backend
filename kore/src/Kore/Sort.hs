@@ -4,64 +4,69 @@ Copyright   : (c) Runtime Verification, 2018
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-
 module Kore.Sort
-    ( SortVariable (..)
-    , SortActual (..)
-    , Sort (..)
-    , getSortId
-    , sortSubstitution
-    , substituteSortVariables
-    , rigidSort
-    , sameSort
-    , matchSort
-    , matchSorts
-    , alignSorts
+  ( SortVariable (..),
+    SortActual (..),
+    Sort (..),
+    getSortId,
+    sortSubstitution,
+    substituteSortVariables,
+    rigidSort,
+    sameSort,
+    matchSort,
+    matchSorts,
+    alignSorts,
     -- * Meta-sorts
-    , MetaSortType (..)
-    , MetaBasicSortType (..)
-    , metaSortsList
-    , metaSort
-    , metaSortTypeString
-    , metaSortsListWithString
-    , charMetaSortId
-    , charMetaSortActual
-    , charMetaSort
-    , stringMetaSortId
-    , stringMetaSortActual
-    , stringMetaSort
-    , predicateSortId
-    , predicateSortActual
-    , predicateSort
+    MetaSortType (..),
+    MetaBasicSortType (..),
+    metaSortsList,
+    metaSort,
+    metaSortTypeString,
+    metaSortsListWithString,
+    charMetaSortId,
+    charMetaSortActual,
+    charMetaSort,
+    stringMetaSortId,
+    stringMetaSortActual,
+    stringMetaSort,
+    predicateSortId,
+    predicateSortActual,
+    predicateSort,
     -- * Exceptions
-    , SortMismatch (..)
-    , sortMismatch
-    , MissingArgument (..)
-    , missingArgument
-    , UnexpectedArgument (..)
-    , unexpectedArgument
+    SortMismatch (..),
+    sortMismatch,
+    MissingArgument (..),
+    missingArgument,
+    UnexpectedArgument (..),
+    unexpectedArgument,
     -- * Re-exports
-    , module Kore.Syntax.Id
-    ) where
+    module Kore.Syntax.Id
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Control.Exception
-                 ( Exception (..), throw )
-import           Data.Align
+import Control.DeepSeq
+  ( NFData
+    )
+import Control.Exception
+  ( Exception (..),
+    throw
+    )
+import Data.Align
 import qualified Data.Foldable as Foldable
-import           Data.Hashable
-                 ( Hashable )
+import Data.Hashable
+  ( Hashable
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+  ( fromMaybe
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.These
-import           Data.Typeable
-                 ( Typeable )
-import qualified Generics.SOP as SOP
+import Data.These
+import Data.Typeable
+  ( Typeable
+    )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
 import Kore.Syntax.Id
 import Kore.Unparser
@@ -72,17 +77,20 @@ import Kore.Unparser
 Semantics of K, Section 9.1.2 (Sorts).
 
  -}
-newtype SortVariable = SortVariable
-    { getSortVariable  :: Id }
-    deriving (Show, Eq, Ord, GHC.Generic)
+newtype SortVariable
+  = SortVariable
+      {getSortVariable :: Id}
+  deriving (Show, Eq, Ord, GHC.Generic)
 
 instance Hashable SortVariable
 
 instance NFData SortVariable
 
 instance Unparse SortVariable where
-    unparse = unparse . getSortVariable
-    unparse2 SortVariable { getSortVariable } = unparse2 getSortVariable
+
+  unparse = unparse . getSortVariable
+
+  unparse2 SortVariable {getSortVariable} = unparse2 getSortVariable
 
 instance SOP.Generic SortVariable
 
@@ -95,11 +103,12 @@ instance Debug SortVariable
 Section 9.1.2 (Sorts).
 
 -}
-data SortActual = SortActual
-    { sortActualName  :: !Id
-    , sortActualSorts :: ![Sort]
-    }
-    deriving (Show, Eq, Ord, GHC.Generic)
+data SortActual
+  = SortActual
+      { sortActualName :: !Id,
+        sortActualSorts :: ![Sort]
+        }
+  deriving (Show, Eq, Ord, GHC.Generic)
 
 instance Hashable SortActual
 
@@ -112,16 +121,19 @@ instance SOP.HasDatatypeInfo SortActual
 instance Debug SortActual
 
 instance Unparse SortActual where
-    unparse SortActual { sortActualName, sortActualSorts } =
-        unparse sortActualName <> parameters sortActualSorts
-    unparse2 SortActual { sortActualName, sortActualSorts } =
-        case sortActualSorts of
-            [] -> unparse2 sortActualName
-            _ -> "("
-                  <> unparse2 sortActualName
-                  <> " "
-                  <> parameters2 sortActualSorts
-                  <> ")"
+
+  unparse SortActual {sortActualName, sortActualSorts} =
+    unparse sortActualName <> parameters sortActualSorts
+
+  unparse2 SortActual {sortActualName, sortActualSorts} =
+    case sortActualSorts of
+      [] -> unparse2 sortActualName
+      _ ->
+        "("
+          <> unparse2 sortActualName
+          <> " "
+          <> parameters2 sortActualSorts
+          <> ")"
 
 {-|'Sort' corresponds to the @object-sort@ and
 @meta-sort@ syntactic categories from the Semantics of K,
@@ -129,9 +141,9 @@ Section 9.1.2 (Sorts).
 
 -}
 data Sort
-    = SortVariableSort !SortVariable
-    | SortActualSort !SortActual
-    deriving (Show, Eq, Ord, GHC.Generic)
+  = SortVariableSort !SortVariable
+  | SortActualSort !SortActual
+  deriving (Show, Eq, Ord, GHC.Generic)
 
 instance Hashable Sort
 
@@ -144,44 +156,46 @@ instance SOP.HasDatatypeInfo Sort
 instance Debug Sort
 
 instance Unparse Sort where
-    unparse =
-        \case
-            SortVariableSort sortVariable -> unparse sortVariable
-            SortActualSort sortActual -> unparse sortActual
-    unparse2 =
-        \case
-            SortVariableSort sortVariable -> unparse2 sortVariable
-            SortActualSort sortActual -> unparse2 sortActual
+
+  unparse =
+    \case
+      SortVariableSort sortVariable -> unparse sortVariable
+      SortActualSort sortActual -> unparse sortActual
+
+  unparse2 =
+    \case
+      SortVariableSort sortVariable -> unparse2 sortVariable
+      SortActualSort sortActual -> unparse2 sortActual
 
 getSortId :: Sort -> Id
 getSortId =
-    \case
-        SortVariableSort SortVariable { getSortVariable } ->
-            getSortVariable
-        SortActualSort SortActual { sortActualName } ->
-            sortActualName
+  \case
+    SortVariableSort SortVariable {getSortVariable} ->
+      getSortVariable
+    SortActualSort SortActual {sortActualName} ->
+      sortActualName
 
 {- | The 'Sort' substitution from applying the given sort parameters.
  -}
 sortSubstitution
-    :: [SortVariable]
-    -> [Sort]
-    -> Map.Map SortVariable Sort
+  :: [SortVariable]
+  -> [Sort]
+  -> Map.Map SortVariable Sort
 sortSubstitution variables sorts =
-    Foldable.foldl' insertSortVariable Map.empty (align variables sorts)
+  Foldable.foldl' insertSortVariable Map.empty (align variables sorts)
   where
     insertSortVariable map' =
-        \case
-            These var sort -> Map.insert var sort map'
-            This _ ->
-                (error . show . Pretty.vsep) ("Too few parameters:" : expected)
-            That _ ->
-                (error . show . Pretty.vsep) ("Too many parameters:" : expected)
+      \case
+        These var sort -> Map.insert var sort map'
+        This _ ->
+          (error . show . Pretty.vsep) ("Too few parameters:" : expected)
+        That _ ->
+          (error . show . Pretty.vsep) ("Too many parameters:" : expected)
     expected =
-        [ "Expected:"
-        , Pretty.indent 4 (parameters variables)
-        , "but found:"
-        , Pretty.indent 4 (parameters sorts)
+      [ "Expected:",
+        Pretty.indent 4 (parameters variables),
+        "but found:",
+        Pretty.indent 4 (parameters sorts)
         ]
 
 {- | Substitute sort variables in a 'Sort'.
@@ -190,19 +204,20 @@ Sort variables that are not in the substitution are not changed.
 
  -}
 substituteSortVariables
-    :: Map.Map SortVariable Sort
-    -- ^ Sort substitution
-    -> Sort
-    -> Sort
+  :: Map.Map SortVariable Sort
+  -- ^ Sort substitution
+  -> Sort
+  -> Sort
 substituteSortVariables substitution sort =
-    case sort of
-        SortVariableSort var ->
-            fromMaybe sort $ Map.lookup var substitution
-        SortActualSort sortActual@SortActual { sortActualSorts } ->
-            SortActualSort sortActual
-                { sortActualSorts =
-                    substituteSortVariables substitution <$> sortActualSorts
-                }
+  case sort of
+    SortVariableSort var ->
+      fromMaybe sort $ Map.lookup var substitution
+    SortActualSort sortActual@SortActual {sortActualSorts} ->
+      SortActualSort
+        sortActual
+          { sortActualSorts =
+              substituteSortVariables substitution <$> sortActualSorts
+            }
 
 {-|'MetaSortType' corresponds to the @meta-sort-constructor@ syntactic category
 from the Semantics of K, Section 9.1.2 (Sorts).
@@ -211,20 +226,20 @@ Ths is not represented directly in the AST, we're using the string
 representation instead.
 -}
 data MetaBasicSortType
-    = CharSort
-    deriving (GHC.Generic)
+  = CharSort
+  deriving (GHC.Generic)
 
 instance Hashable MetaBasicSortType
 
 data MetaSortType
-    = MetaBasicSortType MetaBasicSortType
-    | StringSort
-    deriving (GHC.Generic)
+  = MetaBasicSortType MetaBasicSortType
+  | StringSort
+  deriving (GHC.Generic)
 
 instance Hashable MetaSortType
 
 metaBasicSortsList :: [MetaBasicSortType]
-metaBasicSortsList = [ CharSort ]
+metaBasicSortsList = [CharSort]
 
 metaSortsList :: [MetaSortType]
 metaSortsList = map MetaBasicSortType metaBasicSortsList
@@ -233,19 +248,19 @@ metaSortsListWithString :: [MetaSortType]
 metaSortsListWithString = StringSort : metaSortsList
 
 metaBasicSortTypeString :: MetaBasicSortType -> String
-metaBasicSortTypeString CharSort        = "Char"
+metaBasicSortTypeString CharSort = "Char"
 
 metaSortTypeString :: MetaSortType -> String
 metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
-metaSortTypeString StringSort            = "String"
+metaSortTypeString StringSort = "String"
 
 instance Show MetaSortType where
-    show sortType = '#' : metaSortTypeString sortType
+  show sortType = '#' : metaSortTypeString sortType
 
 metaSort :: MetaSortType -> Sort
 metaSort = \case
-    MetaBasicSortType CharSort -> charMetaSort
-    StringSort -> stringMetaSort
+  MetaBasicSortType CharSort -> charMetaSort
+  StringSort -> stringMetaSort
 
 charMetaSortId :: Id
 charMetaSortId = implicitId "#Char"
@@ -297,20 +312,20 @@ predicateSort = SortActualSort predicateSortActual
 rigidSort :: Sort -> Maybe Sort
 rigidSort sort
   | sort == predicateSort = Nothing
-  | otherwise             = Just sort
+  | otherwise = Just sort
 
 data SortMismatch = SortMismatch !Sort !Sort
-    deriving (Eq, Show, Typeable)
+  deriving (Eq, Show, Typeable)
 
 instance Exception SortMismatch where
-    displayException (SortMismatch sort1 sort2) =
-        (show . Pretty.vsep)
-            [ "Could not make sort"
-            , Pretty.indent 4 (unparse sort2)
-            , "match sort"
-            , Pretty.indent 4 (unparse sort1)
-            , "This is a program bug!"
-            ]
+  displayException (SortMismatch sort1 sort2) =
+    (show . Pretty.vsep)
+      [ "Could not make sort",
+        Pretty.indent 4 (unparse sort2),
+        "match sort",
+        Pretty.indent 4 (unparse sort1),
+        "This is a program bug!"
+        ]
 
 {- | Throw a 'SortMismatch' exception.
  -}
@@ -318,24 +333,24 @@ sortMismatch :: Sort -> Sort -> a
 sortMismatch sort1 sort2 = throw (SortMismatch sort1 sort2)
 
 newtype MissingArgument = MissingArgument Sort
-    deriving (Eq, Show, Typeable)
+  deriving (Eq, Show, Typeable)
 
-instance Exception MissingArgument  where
-    displayException (MissingArgument sort1) =
-        (show . Pretty.sep)
-            [ "Expected another argument of sort"
-            , unparse sort1
-            ]
+instance Exception MissingArgument where
+  displayException (MissingArgument sort1) =
+    (show . Pretty.sep)
+      [ "Expected another argument of sort",
+        unparse sort1
+        ]
 
 newtype UnexpectedArgument = UnexpectedArgument Sort
-    deriving (Eq, Show, Typeable)
+  deriving (Eq, Show, Typeable)
 
 instance Exception UnexpectedArgument where
-    displayException (UnexpectedArgument sort2) =
-        (show . Pretty.sep)
-            [ "Unexpected argument of sort"
-            , unparse sort2
-            ]
+  displayException (UnexpectedArgument sort2) =
+    (show . Pretty.sep)
+      [ "Unexpected argument of sort",
+        unparse sort2
+        ]
 
 missingArgument :: Sort -> a
 missingArgument sort1 = throw (MissingArgument sort1)
@@ -358,7 +373,7 @@ rigid, it must be equal to the first sort.
  -}
 matchSort :: Sort -> Sort -> Sort
 matchSort sort1 sort2 =
-    maybe sort1 (sameSort sort1) (rigidSort sort2)
+  maybe sort1 (sameSort sort1) (rigidSort sort2)
 
 matchSorts :: [Sort] -> [Sort] -> [Sort]
 matchSorts = alignWith matchTheseSorts
@@ -370,9 +385,9 @@ matchSorts = alignWith matchTheseSorts
 alignSorts :: Foldable f => f Sort -> Sort
 alignSorts = fromMaybe predicateSort . Foldable.foldl' worker Nothing
   where
-    worker Nothing      sort2 = rigidSort sort2
+    worker Nothing sort2 = rigidSort sort2
     worker (Just sort1) sort2 =
-        Just $ maybe sort1 (alignSort sort1) (rigidSort sort2)
+      Just $ maybe sort1 (alignSort sort1) (rigidSort sort2)
     alignSort sort1 sort2
       | sort1 == sort2 = sort1
       | otherwise = sortMismatch sort1 sort2

@@ -5,112 +5,129 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
-
 module Kore.Logger
-    ( LogMessage (..)
-    , Severity (..)
-    , Scope (..)
-    , WithLog (..)
-    , LogAction (..)
-    , log
-    , logDebug
-    , logInfo
-    , logWarning
-    , logError
-    , logCritical
-    , withLogScope
-    , liftLogAction
-    , hoistLogAction
-    , LoggerT (..)
-    ) where
+  ( LogMessage (..),
+    Severity (..),
+    Scope (..),
+    WithLog (..),
+    LogAction (..),
+    log,
+    logDebug,
+    logInfo,
+    logWarning,
+    logError,
+    logCritical,
+    withLogScope,
+    liftLogAction,
+    hoistLogAction,
+    LoggerT (..)
+    )
+where
 
-import           Colog
-                 ( LogAction (..) )
+import Colog
+  ( LogAction (..)
+    )
 import qualified Control.Monad.Except as Except
-import           Control.Monad.IO.Class
-import           Control.Monad.Morph
-                 ( MFunctor )
+import Control.Monad.IO.Class
+import Control.Monad.Morph
+  ( MFunctor
+    )
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.State.Strict as Strict
-import           Control.Monad.Trans
-                 ( MonadTrans )
+import Control.Monad.Trans
+  ( MonadTrans
+    )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Accum
-import           Control.Monad.Trans.Identity
-import           Control.Monad.Trans.Maybe
-import           Control.Monad.Trans.Reader
-import           Data.Functor.Contravariant
-                 ( contramap )
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
-import           GHC.Stack
-                 ( CallStack, HasCallStack, callStack )
-import           Prelude hiding
-                 ( log )
-
+import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Identity
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Reader
+import Data.Functor.Contravariant
+  ( contramap
+    )
+import Data.String
+  ( IsString
+    )
+import Data.Text
+  ( Text
+    )
+import GHC.Stack
+  ( CallStack,
+    HasCallStack,
+    callStack
+    )
 import ListT
-       ( ListT, mapListT )
+  ( ListT,
+    mapListT
+    )
+import Prelude hiding
+  ( log
+    )
 
 -- | Log level used to describe each log message. It is also used to set the
 -- minimum level to be outputted.
 data Severity
-    = Debug
+  = Debug
     -- ^ Lowest level used for low-level debugging.
-    | Info
+  | Info
     -- ^ Used for various informative messages.
-    | Warning
+  | Warning
     -- ^ Used for odd/unusual cases which are recoverable.
-    | Error
+  | Error
     -- ^ Used for application errors, unexpected behaviors, etc.
-    | Critical
+  | Critical
     -- ^ Used before shutting down the application.
-    deriving (Show, Read, Eq, Ord)
+  deriving (Show, Read, Eq, Ord)
 
 -- | Logging scope, used by 'LogMessage'.
-newtype Scope = Scope
-    { unScope :: Text
-    } deriving (Eq, Ord, Read, Show, Semigroup, Monoid, IsString)
+newtype Scope
+  = Scope
+      { unScope :: Text
+        }
+  deriving (Eq, Ord, Read, Show, Semigroup, Monoid, IsString)
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
-data LogMessage = LogMessage
-    { message   :: !Text
-    -- ^ message being logged
-    , severity  :: !Severity
-    -- ^ log level / severity of message
-    , scope     :: ![Scope]
-    -- ^ scope of the message, usually of the form "a.b.c"
-    , callstack :: !CallStack
-    -- ^ call stack of the message, when available
-    }
+data LogMessage
+  = LogMessage
+      { message :: !Text,
+        -- ^ message being logged
+        severity :: !Severity,
+        -- ^ log level / severity of message
+        scope :: ![Scope],
+        -- ^ scope of the message, usually of the form "a.b.c"
+        callstack :: !CallStack
+        -- ^ call stack of the message, when available
+        }
 
 -- TODO (thomas.tuegel): Use TypeFamilies instead of MultiParamTypeClasses here.
 class Monad m => WithLog msg m where
-    -- | Retrieve the 'LogAction' in scope.
-    askLogAction :: m (LogAction m msg)
-    default askLogAction
-        :: (MonadTrans t, WithLog msg n, m ~ t n) => m (LogAction m msg)
-    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
-    {-# INLINE askLogAction #-}
 
-    -- | Modify the 'LogAction' over the scope of an action.
-    localLogAction
-        :: (forall n. LogAction n msg -> LogAction n msg)
-        -> m a
-        -> m a
-    default localLogAction
-        :: (WithLog msg m', MFunctor t, m ~ t m')
-        => (forall n. LogAction n msg -> LogAction n msg)
-        -> m a
-        -> m a
-    localLogAction mapping = Monad.Morph.hoist (localLogAction mapping)
-    {-# INLINE localLogAction #-}
+  -- | Retrieve the 'LogAction' in scope.
+  askLogAction :: m (LogAction m msg)
+
+  default askLogAction
+    :: (MonadTrans t, WithLog msg n, m ~ t n) => m (LogAction m msg)
+  askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
+  {-# INLINE askLogAction #-}
+
+  -- | Modify the 'LogAction' over the scope of an action.
+  localLogAction
+    :: (forall n. LogAction n msg -> LogAction n msg)
+    -> m a
+    -> m a
+
+  default localLogAction
+    :: (WithLog msg m', MFunctor t, m ~ t m')
+    => (forall n. LogAction n msg -> LogAction n msg)
+    -> m a
+    -> m a
+  localLogAction mapping = Monad.Morph.hoist (localLogAction mapping)
+  {-# INLINE localLogAction #-}
 
 instance (WithLog msg m, Monad m, Monoid w) => WithLog msg (AccumT w m) where
-    localLogAction mapping = mapAccumT (localLogAction mapping)
-    {-# INLINE localLogAction #-}
+  localLogAction mapping = mapAccumT (localLogAction mapping)
+  {-# INLINE localLogAction #-}
 
 instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
 
@@ -122,121 +139,116 @@ instance (WithLog msg m, Monad m) => WithLog msg (Strict.StateT s m)
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction
-    :: (Monad m, MonadTrans t)
-    => LogAction m msg
-    -> LogAction (t m) msg
+  :: (Monad m, MonadTrans t)
+  => LogAction m msg
+  -> LogAction (t m) msg
 liftLogAction logAction =
-    Colog.LogAction (Monad.Trans.lift . Colog.unLogAction logAction)
+  Colog.LogAction (Monad.Trans.lift . Colog.unLogAction logAction)
 
 -- | Use a natural transform on a 'LogAction'.
 hoistLogAction
-    :: (forall a. m a -> n a)
-    -> LogAction m msg
-    -> LogAction n msg
+  :: (forall a. m a -> n a)
+  -> LogAction m msg
+  -> LogAction n msg
 hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
 
 instance WithLog msg m => WithLog msg (Except.ExceptT e m) where
-    askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
-    {-# INLINE askLogAction #-}
 
-    localLogAction f = Monad.Morph.hoist (localLogAction f)
-    {-# INLINE localLogAction #-}
+  askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+  {-# INLINE askLogAction #-}
+
+  localLogAction f = Monad.Morph.hoist (localLogAction f)
+  {-# INLINE localLogAction #-}
 
 instance WithLog msg m => WithLog msg (ListT m) where
-    askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
-    {-# INLINE askLogAction #-}
 
-    localLogAction f = mapListT (localLogAction f)
-    {-# INLINE localLogAction #-}
+  askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
+  {-# INLINE askLogAction #-}
+
+  localLogAction f = mapListT (localLogAction f)
+  {-# INLINE localLogAction #-}
 
 -- | Log any message.
 logMsg :: WithLog msg m => msg -> m ()
 logMsg msg = do
-    logAction <- askLogAction
-    Colog.unLogAction logAction msg
+  logAction <- askLogAction
+  Colog.unLogAction logAction msg
 
 -- | Logs a message using given 'Severity'.
 log
-    :: forall m
-    . (HasCallStack, WithLog LogMessage m)
-    => Severity
-    -- ^ If lower than the minimum severity, the message will not be logged
-    -> Text
-    -- ^ Message to be logged
-    -> m ()
+  :: forall m. (HasCallStack, WithLog LogMessage m)
+  => Severity
+  -- ^ If lower than the minimum severity, the message will not be logged
+  -> Text
+  -- ^ Message to be logged
+  -> m ()
 log s t = logMsg $ LogMessage t s mempty callStack
 
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug
-    :: forall m
-    . (WithLog LogMessage m)
-    => Text
-    -> m ()
+  :: forall m. (WithLog LogMessage m)
+  => Text
+  -> m ()
 logDebug = log Debug
 
 -- | Logs using 'Info' log level. See 'log'.
 logInfo
-    :: forall m
-    . (WithLog LogMessage m)
-    => Text
-    -> m ()
+  :: forall m. (WithLog LogMessage m)
+  => Text
+  -> m ()
 logInfo = log Info
 
 -- | Logs using 'Warning' log level. See 'log'.
 logWarning
-    :: forall m
-    . (WithLog LogMessage m)
-    => Text
-    -> m ()
+  :: forall m. (WithLog LogMessage m)
+  => Text
+  -> m ()
 logWarning = log Warning
 
 -- | Logs using 'Error' log level. See 'log'.
 logError
-    :: forall m
-    . (WithLog LogMessage m)
-    => Text
-    -> m ()
+  :: forall m. (WithLog LogMessage m)
+  => Text
+  -> m ()
 logError = log Error
 
 -- | Logs using 'Critical' log level. See 'log'.
 logCritical
-    :: forall m
-    . (WithLog LogMessage m)
-    => Text
-    -> m ()
+  :: forall m. (WithLog LogMessage m)
+  => Text
+  -> m ()
 logCritical = log Critical
 
 -- | Creates a new logging scope, appending the text to the current scope. For
 -- example, if the current scope is "a.b" and 'withLogScope' is called with
 -- "c", then the new scope will be "a.b.c".
 withLogScope
-    :: forall m a
-    .  WithLog LogMessage m
-    => Scope
-    -- ^ new scope
-    -> m a
-    -- ^ continuation / enclosure for the new scope
-    -> m a
+  :: forall m a. WithLog LogMessage m
+  => Scope
+  -- ^ new scope
+  -> m a
+  -- ^ continuation / enclosure for the new scope
+  -> m a
 withLogScope newScope = localLogAction (contramap appendScope)
   where
     appendScope (LogMessage msg sev scope callstack) =
-        LogMessage msg sev (newScope : scope) callstack
+      LogMessage msg sev (newScope : scope) callstack
 
 -- ---------------------------------------------------------------------
 -- * LoggerT
-
-newtype LoggerT m a =
-    LoggerT { getLoggerT :: ReaderT (LogAction m LogMessage) m a }
-    deriving (Functor, Applicative, Monad)
-    deriving (MonadIO)
+newtype LoggerT m a
+  = LoggerT {getLoggerT :: ReaderT (LogAction m LogMessage) m a}
+  deriving (Functor, Applicative, Monad)
+  deriving (MonadIO)
 
 instance MonadTrans LoggerT where
-    lift = LoggerT . Monad.Trans.lift
-    {-# INLINE lift #-}
+  lift = LoggerT . Monad.Trans.lift
+  {-# INLINE lift #-}
 
 instance Monad m => WithLog LogMessage (LoggerT m) where
-    askLogAction = LoggerT . fmap liftLogAction $ ask
-    {-# INLINE askLogAction #-}
 
-    localLogAction locally = LoggerT . local locally . getLoggerT
-    {-# INLINE localLogAction #-}
+  askLogAction = LoggerT . fmap liftLogAction $ ask
+  {-# INLINE askLogAction #-}
+
+  localLogAction locally = LoggerT . local locally . getLoggerT
+  {-# INLINE localLogAction #-}

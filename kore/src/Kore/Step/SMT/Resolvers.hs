@@ -7,22 +7,29 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-
 module Kore.Step.SMT.Resolvers
-    (translateSymbol) where
+  ( translateSymbol
+    )
+where
 
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( Given, given )
-
+import Data.Reflection
+  ( Given,
+    given
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SmtMetadataTools )
+import Kore.IndexedModule.MetadataTools
+  ( MetadataTools (MetadataTools),
+    SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (smtData) )
-import           Kore.Internal.Symbol
+  ( MetadataTools (smtData)
+    )
+import Kore.Internal.Symbol
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations), Symbol (Symbol) )
+  ( Declarations (Declarations),
+    Symbol (Symbol)
+    )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified SMT
 
@@ -30,14 +37,13 @@ import qualified SMT
 the given SmtMetadataTools.
 -}
 translateSymbol
-    :: Given (SmtMetadataTools Attribute.Symbol)
-    => Symbol
-    -> Maybe SMT.SExpr
-translateSymbol Symbol { symbolConstructor, symbolParams } = do
-    AST.Symbol { smtFromSortArgs } <- Map.lookup symbolConstructor symbols
-    smtFromSortArgs sorts symbolParams
+  :: Given (SmtMetadataTools Attribute.Symbol)
+  => Symbol
+  -> Maybe SMT.SExpr
+translateSymbol Symbol {symbolConstructor, symbolParams} = do
+  AST.Symbol {smtFromSortArgs} <- Map.lookup symbolConstructor symbols
+  smtFromSortArgs sorts symbolParams
   where
     MetadataTools {smtData = AST.Declarations {sorts, symbols}} = tools
-
     tools :: SmtMetadataTools Attribute.Symbol
     tools = given

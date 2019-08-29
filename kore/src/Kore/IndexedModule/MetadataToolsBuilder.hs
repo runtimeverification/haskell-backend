@@ -8,20 +8,26 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.IndexedModule.MetadataToolsBuilder
-    ( build
-    ) where
+  ( build
+    )
+where
 
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools, extractMetadataTools )
+  ( Axiom
+    )
+import Kore.Attribute.Symbol
+  ( StepperAttributes
+    )
+import Kore.IndexedModule.IndexedModule
+  ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+  ( SmtMetadataTools,
+    extractMetadataTools
+    )
 import qualified Kore.Step.SMT.Representation.All as SMT.Representation
-                 ( build )
-
+  ( build
+    )
 
 -- |Creates a set of 'MetadataTools' from a 'KoreIndexedModule'.
 --
@@ -30,6 +36,6 @@ import qualified Kore.Step.SMT.Representation.All as SMT.Representation
 -- its argument and result sorts.
 --
 build
-    :: VerifiedModule StepperAttributes Attribute.Axiom
-    -> SmtMetadataTools StepperAttributes
+  :: VerifiedModule StepperAttributes Attribute.Axiom
+  -> SmtMetadataTools StepperAttributes
 build m = extractMetadataTools m SMT.Representation.build

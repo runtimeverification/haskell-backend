@@ -5,22 +5,23 @@ License     : NCSA
 
 -}
 module Kore.Attribute.RuleIndex
-    ( RuleIndex (..)
-    ) where
+  ( RuleIndex (..)
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Default
-import qualified Generics.SOP as SOP
+import Control.DeepSeq
+  ( NFData
+    )
+import Data.Default
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
 
 {- | This attribute is used in the REPL for tagging
     and uniquely identifiying axioms and claims.
  -}
-newtype RuleIndex = RuleIndex { getRuleIndex :: Maybe Int }
-    deriving (Eq, GHC.Generic, Ord, Show)
+newtype RuleIndex = RuleIndex {getRuleIndex :: Maybe Int}
+  deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic RuleIndex
 
@@ -31,4 +32,4 @@ instance Debug RuleIndex
 instance NFData RuleIndex
 
 instance Default RuleIndex where
-    def = RuleIndex Nothing
+  def = RuleIndex Nothing

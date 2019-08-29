@@ -10,13 +10,15 @@ pattern verifier has admitted an invalid builtin domain expression.
 
  -}
 module Kore.Builtin.Error
-    ( verifierBug
-    , wrongArity
-    , notImplementedInternal
-    ) where
+  ( verifierBug,
+    wrongArity,
+    notImplementedInternal
+    )
+where
 
 import GHC.Stack
-       ( HasCallStack )
+  ( HasCallStack
+    )
 
 {- | Abort due to an internal error that should be prevented by the verifier.
 
@@ -25,11 +27,11 @@ import GHC.Stack
  -}
 verifierBug :: HasCallStack => String -> a
 verifierBug msg =
-    (error . unlines)
-        [ "Internal error: " ++ msg
-        , "This error should be prevented by the verifier."
-        , "Please report this as a bug."
-        ]
+  (error . unlines)
+    [ "Internal error: " ++ msg,
+      "This error should be prevented by the verifier.",
+      "Please report this as a bug."
+      ]
 
 {- | Evaluation failure due to a builtin call with the wrong arity.
 

@@ -5,42 +5,56 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
-
 module Kore.Step.SMT.Representation.Symbols
-    ( buildRepresentations
-    ) where
+  ( buildRepresentations
+    )
+where
 
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( mapMaybe )
-
+import Data.Maybe
+  ( mapMaybe
+    )
 import qualified Kore.Attribute.Constructor as Attribute
-                 ( Constructor (Constructor, isConstructor) )
+  ( Constructor (Constructor, isConstructor)
+    )
 import qualified Kore.Attribute.Functional as Attribute
-                 ( Functional (Functional, isDeclaredFunctional) )
+  ( Functional (Functional, isDeclaredFunctional)
+    )
 import qualified Kore.Attribute.Smtlib.Smthook as Attribute
-                 ( Smthook (Smthook, getSmthook) )
+  ( Smthook (Smthook, getSmthook)
+    )
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
-                 ( Smtlib (Smtlib, getSmtlib) )
+  ( Smtlib (Smtlib, getSmtlib)
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+  ( Symbol
+    )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
-                 ( Symbol (..) )
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule, recursiveIndexedModuleSymbolSentences )
-import           Kore.Sort
-                 ( Sort )
+  ( Symbol (..)
+    )
+import Kore.IndexedModule.IndexedModule
+  ( IndexedModule,
+    recursiveIndexedModuleSymbolSentences
+    )
+import Kore.Sort
+  ( Sort
+    )
 import qualified Kore.Step.SMT.AST as AST
-import           Kore.Syntax.Id
-                 ( Id )
-import           Kore.Syntax.Sentence
-                 ( SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol) )
+import Kore.Syntax.Id
+  ( Id
+    )
+import Kore.Syntax.Sentence
+  ( SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol)
+    )
 import qualified Kore.Syntax.Sentence as Sentence
-                 ( Symbol (Symbol) )
+  ( Symbol (Symbol)
+    )
 import qualified Kore.Syntax.Sentence as Sentence.Symbol
-                 ( Symbol (..) )
-import           Kore.Unparser
-                 ( unparseToString )
+  ( Symbol (..)
+    )
+import Kore.Unparser
+  ( unparseToString
+    )
 import qualified Kore.Verified as Verified
 import qualified SMT
 
@@ -52,145 +66,144 @@ related attributes).
 All references to other sorts and symbols are left unresolved.
 -}
 buildRepresentations
-    :: forall axiom
-    .  IndexedModule Verified.Pattern Attribute.Symbol axiom
-    -> AST.UnresolvedDeclarations
+  :: forall axiom. IndexedModule Verified.Pattern Attribute.Symbol axiom
+  -> AST.UnresolvedDeclarations
 buildRepresentations indexedModule =
-    listToDeclarations builtinDeclarations
+  listToDeclarations builtinDeclarations
     `AST.mergePreferFirst` listToDeclarations smtlibDeclarations
     `AST.mergePreferFirst` listToDeclarations constructorDeclarations
   where
     listToDeclarations
-        :: [(Id, AST.UnresolvedSymbol)]
-        -> AST.UnresolvedDeclarations
+      :: [(Id, AST.UnresolvedSymbol)]
+      -> AST.UnresolvedDeclarations
     listToDeclarations list =
-        AST.Declarations
-            { sorts = Map.empty
-            , symbols = Map.fromList list
-            }
-
+      AST.Declarations
+        { sorts = Map.empty,
+          symbols = Map.fromList list
+          }
     extractDefinitionsFromSentences
-        ::  (   (Attribute.Symbol, Verified.SentenceSymbol)
-            ->  Maybe (Id, AST.UnresolvedSymbol)
-            )
-        -> [(Id, AST.UnresolvedSymbol)]
+      :: ( (Attribute.Symbol, Verified.SentenceSymbol)
+           -> Maybe (Id, AST.UnresolvedSymbol)
+           )
+      -> [(Id, AST.UnresolvedSymbol)]
     extractDefinitionsFromSentences definitionExtractor =
-        mapMaybe
-            definitionExtractor
-            (Map.elems $ recursiveIndexedModuleSymbolSentences indexedModule)
-
+      mapMaybe
+        definitionExtractor
+        (Map.elems $ recursiveIndexedModuleSymbolSentences indexedModule)
     builtinDeclarations :: [(Id, AST.UnresolvedSymbol)]
     builtinDeclarations =
-        extractDefinitionsFromSentences builtinDeclaration
-
+      extractDefinitionsFromSentences builtinDeclaration
     smtlibDeclarations :: [(Id, AST.UnresolvedSymbol)]
     smtlibDeclarations =
-        extractDefinitionsFromSentences smtlibDeclaration
-
+      extractDefinitionsFromSentences smtlibDeclaration
     constructorDeclarations :: [(Id, AST.UnresolvedSymbol)]
     constructorDeclarations =
-        extractDefinitionsFromSentences constructorDeclaration
+      extractDefinitionsFromSentences constructorDeclaration
 
 builtinDeclaration
-    :: (Attribute.Symbol, Verified.SentenceSymbol)
-    -> Maybe (Id, AST.UnresolvedSymbol)
+  :: (Attribute.Symbol, Verified.SentenceSymbol)
+  -> Maybe (Id, AST.UnresolvedSymbol)
 builtinDeclaration
-    ( attributes
-    , SentenceSymbol
-        { sentenceSymbolSymbol = Sentence.Symbol { symbolConstructor }
-        , sentenceSymbolSorts
-        , sentenceSymbolResultSort
+  ( attributes,
+    SentenceSymbol
+      { sentenceSymbolSymbol = Sentence.Symbol {symbolConstructor},
+        sentenceSymbolSorts,
+        sentenceSymbolResultSort
         }
-    )
-  = do
-    smtName <- SMT.nameFromSExpr <$> getSmthook
-    return
-        ( symbolConstructor
-        , AST.Symbol
-            { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName)
-            , declaration =
+    ) =
+    do
+      smtName <- SMT.nameFromSExpr <$> getSmthook
+      return
+        ( symbolConstructor,
+          AST.Symbol
+            { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName),
+              declaration =
                 AST.SymbolDeclaredIndirectly AST.IndirectSymbolDeclaration
-                    { name = AST.AlreadyEncoded smtName
-                    , sorts = map
+                  { name = AST.AlreadyEncoded smtName,
+                    sorts =
+                      map
                         AST.SortReference
                         (sentenceSymbolResultSort : sentenceSymbolSorts)
                     }
-            }
-        )
-  where
-    Attribute.Smthook {getSmthook} = Attribute.Symbol.smthook attributes
+              }
+          )
+    where
+      Attribute.Smthook {getSmthook} = Attribute.Symbol.smthook attributes
 
 smtlibDeclaration
-    :: (Attribute.Symbol, Verified.SentenceSymbol)
-    -> Maybe (Id, AST.UnresolvedSymbol)
+  :: (Attribute.Symbol, Verified.SentenceSymbol)
+  -> Maybe (Id, AST.UnresolvedSymbol)
 smtlibDeclaration
-    ( attributes
-    , SentenceSymbol
-        { sentenceSymbolSymbol =
-            Sentence.Symbol { symbolConstructor }
-        , sentenceSymbolSorts
-        , sentenceSymbolResultSort
+  ( attributes,
+    SentenceSymbol
+      { sentenceSymbolSymbol =
+          Sentence.Symbol {symbolConstructor},
+        sentenceSymbolSorts,
+        sentenceSymbolResultSort
         }
-    )
-  = do
-    smtName <- SMT.nameFromSExpr <$> getSmtlib
-    return
-        ( symbolConstructor
-        , AST.Symbol
-            { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName)
-            , declaration = AST.SymbolDeclaredDirectly
-                SMT.FunctionDeclaration
-                    { name = AST.AlreadyEncoded smtName
-                    , inputSorts = map AST.SortReference sentenceSymbolSorts
-                    , resultSort = AST.SortReference sentenceSymbolResultSort
+    ) =
+    do
+      smtName <- SMT.nameFromSExpr <$> getSmtlib
+      return
+        ( symbolConstructor,
+          AST.Symbol
+            { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName),
+              declaration =
+                AST.SymbolDeclaredDirectly SMT.FunctionDeclaration
+                  { name = AST.AlreadyEncoded smtName,
+                    inputSorts = map AST.SortReference sentenceSymbolSorts,
+                    resultSort = AST.SortReference sentenceSymbolResultSort
                     }
-            }
-        )
-  where
-    Attribute.Smtlib { getSmtlib } = Attribute.Symbol.smtlib attributes
+              }
+          )
+    where
+      Attribute.Smtlib {getSmtlib} = Attribute.Symbol.smtlib attributes
 
 constructorDeclaration
-    :: (Attribute.Symbol, Verified.SentenceSymbol)
-    -> Maybe (Id, AST.UnresolvedSymbol)
+  :: (Attribute.Symbol, Verified.SentenceSymbol)
+  -> Maybe (Id, AST.UnresolvedSymbol)
 constructorDeclaration
-    ( attributes
-    , SentenceSymbol
-        { sentenceSymbolSymbol = Sentence.Symbol { symbolConstructor }
-        , sentenceSymbolSorts
-        , sentenceSymbolResultSort
+  ( attributes,
+    SentenceSymbol
+      { sentenceSymbolSymbol = Sentence.Symbol {symbolConstructor},
+        sentenceSymbolSorts,
+        sentenceSymbolResultSort
         }
-    )
-  = if isConstructor && isDeclaredFunctional
-    then return
-        ( symbolConstructor
-        , AST.Symbol
-            { smtFromSortArgs =
-                emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
-            , declaration =
-                AST.SymbolDeclaredIndirectly AST.IndirectSymbolDeclaration
-                    { name = encodedName
-                    , sorts = map
-                        AST.SortReference
-                        (sentenceSymbolResultSort : sentenceSymbolSorts)
-                    }
-            }
-        )
-    else Nothing
-  where
-    Attribute.Constructor { isConstructor } =
+    ) =
+    if isConstructor && isDeclaredFunctional
+      then
+        return
+          ( symbolConstructor,
+            AST.Symbol
+              { smtFromSortArgs =
+                  emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName),
+                declaration =
+                  AST.SymbolDeclaredIndirectly AST.IndirectSymbolDeclaration
+                    { name = encodedName,
+                      sorts =
+                        map
+                          AST.SortReference
+                          (sentenceSymbolResultSort : sentenceSymbolSorts)
+                      }
+                }
+            )
+      else Nothing
+    where
+      Attribute.Constructor {isConstructor} =
         Attribute.Symbol.constructor attributes
-    Attribute.Functional { isDeclaredFunctional } =
+      Attribute.Functional {isDeclaredFunctional} =
         Attribute.Symbol.functional attributes
-    encodedName = AST.encodable symbolConstructor
+      encodedName = AST.encodable symbolConstructor
 
 emptySortArgsToSmt
-    :: SMT.SExpr
-    -> Map.Map Id AST.SmtSort
-    -> [Sort]
-    -> Maybe SMT.SExpr
+  :: SMT.SExpr
+  -> Map.Map Id AST.SmtSort
+  -> [Sort]
+  -> Maybe SMT.SExpr
 emptySortArgsToSmt representation _ [] = Just representation
-emptySortArgsToSmt representation _ args = (error . unlines)
-    [ "Symbols with arguments not supported yet."
-    , "representation=" ++ SMT.showSExpr representation
-    , "args = " ++ show (fmap unparseToString args)
-    ]
+emptySortArgsToSmt representation _ args =
+  (error . unlines)
+    [ "Symbols with arguments not supported yet.",
+      "representation=" ++ SMT.showSExpr representation,
+      "args = " ++ show (fmap unparseToString args)
+      ]

@@ -11,29 +11,35 @@ Portability : portable
 TODO(virgil): Get rid of this module and implement everything with normal
               attributes.
 -}
-
 module Kore.Builtin.Attributes
-    ( isConstructorModulo_
-    , isConstructorModuloLike_
-    ) where
+  ( isConstructorModulo_,
+    isConstructorModuloLike_
+    )
+where
 
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.SetSymbols as Set
-import           Kore.Internal.Symbol
+import Kore.Internal.Symbol
 
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?
 isConstructorModulo_ :: Symbol -> Bool
 isConstructorModulo_ symbol =
-    any (apply symbol)
-        [ List.isSymbolConcat, List.isSymbolElement, List.isSymbolUnit
-        ,  Map.isSymbolConcat,  Map.isSymbolElement,  Map.isSymbolUnit
-        ,  Set.isSymbolConcat,  Set.isSymbolElement,  Set.isSymbolUnit
-        ]
+  any (apply symbol)
+    [ List.isSymbolConcat,
+      List.isSymbolElement,
+      List.isSymbolUnit,
+      Map.isSymbolConcat,
+      Map.isSymbolElement,
+      Map.isSymbolUnit,
+      Set.isSymbolConcat,
+      Set.isSymbolElement,
+      Set.isSymbolUnit
+      ]
   where
     apply pattHead f = f pattHead
 
 isConstructorModuloLike_ :: Symbol -> Bool
 isConstructorModuloLike_ =
-    or <$> sequence [isConstructorModulo_, isConstructor, isSortInjection]
+  or <$> sequence [isConstructorModulo_, isConstructor, isSortInjection]

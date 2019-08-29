@@ -8,52 +8,60 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.AndPredicates
-    ( simplifyEvaluatedMultiPredicate
-    ) where
+  ( simplifyEvaluatedMultiPredicate
+    )
+where
 
 import qualified Data.Foldable as Foldable
-
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.MultiAnd
+  ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-                 ( extractPatterns )
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+  ( extractPatterns
+    )
+import Kore.Internal.MultiOr
+  ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( fullCrossProduct, mergeAll )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern
-                 ( Predicate )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify )
+  ( fullCrossProduct,
+    mergeAll
+    )
+import Kore.Internal.OrPredicate
+  ( OrPredicate
+    )
+import Kore.Internal.Pattern
+  ( Predicate
+    )
+import Kore.Step.Simplification.Data
+  ( BranchT,
+    MonadSimplify
+    )
 import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+  ( gather
+    )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+import Kore.Unparser
+import Kore.Variables.Fresh
 
 simplifyEvaluatedMultiPredicate
-    :: forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => MultiAnd (OrPredicate variable)
-    -> simplifier (OrPredicate variable)
+  :: forall variable simplifier. ( SortedVariable variable,
+                                   Show variable,
+                                   Unparse variable,
+                                   FreshVariable variable,
+                                   MonadSimplify simplifier
+                                   )
+  => MultiAnd (OrPredicate variable)
+  -> simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate predicates = do
-    let
-        crossProduct :: MultiOr [Predicate variable]
-        crossProduct =
-            MultiOr.fullCrossProduct
-                (MultiAnd.extractPatterns predicates)
-    orResults <- BranchT.gather (traverse andPredicates crossProduct)
-    return (MultiOr.mergeAll orResults)
+  let crossProduct :: MultiOr [Predicate variable]
+      crossProduct =
+        MultiOr.fullCrossProduct
+          (MultiAnd.extractPatterns predicates)
+  orResults <- BranchT.gather (traverse andPredicates crossProduct)
+  return (MultiOr.mergeAll orResults)
   where
     andPredicates
-        :: [Predicate variable]
-        -> BranchT simplifier (Predicate variable)
+      :: [Predicate variable]
+      -> BranchT simplifier (Predicate variable)
     andPredicates predicates' =
-        Substitution.normalize (Foldable.fold predicates')
+      Substitution.normalize (Foldable.fold predicates')

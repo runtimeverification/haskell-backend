@@ -16,19 +16,20 @@ import qualified Kore.Attribute.Null as Attribute
 
 -}
 module Kore.Attribute.Null
-    ( Null (..)
-    ) where
+  ( Null (..)
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Default
-import qualified Generics.SOP as SOP
+import Control.DeepSeq
+  ( NFData
+    )
+import Data.Default
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
 
 data Null = Null
-    deriving (Eq, GHC.Generic, Ord, Show)
+  deriving (Eq, GHC.Generic, Ord, Show)
 
 instance NFData Null
 
@@ -39,10 +40,10 @@ instance SOP.HasDatatypeInfo Null
 instance Debug Null
 
 instance Default Null where
-    def = Null
+  def = Null
 
 instance Semigroup Null where
-    (<>) _ _ = Null
+  (<>) _ _ = Null
 
 instance Monoid Null where
-    mempty = Null
+  mempty = Null

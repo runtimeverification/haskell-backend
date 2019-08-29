@@ -8,21 +8,23 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.CharLiteral
-    ( simplify
-    ) where
+  ( simplify
+    )
+where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'CharLiteral' pattern, which means returning
 an or containing a term made of that literal.
 -}
 simplify
-    :: (Ord variable, SortedVariable variable)
-    => CharLiteral
-    -> OrPattern variable
+  :: (Ord variable, SortedVariable variable)
+  => CharLiteral
+  -> OrPattern variable
 simplify (CharLiteral char) =
-    OrPattern.fromPattern $ Pattern.fromTermLike $ mkCharLiteral char
+  OrPattern.fromPattern $ Pattern.fromTermLike $ mkCharLiteral char

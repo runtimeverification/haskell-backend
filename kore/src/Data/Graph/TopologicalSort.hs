@@ -8,16 +8,19 @@ Stability   : experimental
 Portability : portable
 -}
 module Data.Graph.TopologicalSort
-    ( topologicalSort
-    , ToplogicalSortCycles(..)
-    ) where
+  ( topologicalSort,
+    ToplogicalSortCycles (..)
+    )
+where
 
-import           Data.Graph
-                 ( SCC (..), stronglyConnComp )
+import Data.Graph
+  ( SCC (..),
+    stronglyConnComp
+    )
 import qualified Data.Map as Map
 
 newtype ToplogicalSortCycles node = ToplogicalSortCycles [node]
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
 {-| 'topologicalSort' sorts a graph topologically, starting with nodes which
 have no 'next' nodes.
@@ -27,19 +30,19 @@ nodes.
 Returns an error for graphs that have cycles.
 -}
 topologicalSort
-    :: (Ord node, Show node)
-    => Map.Map node [node]
-    -> Either (ToplogicalSortCycles node) [node]
+  :: (Ord node, Show node)
+  => Map.Map node [node]
+  -> Either (ToplogicalSortCycles node) [node]
 topologicalSort edges =
-    mapM
-        extractSortedNode
-        (stronglyConnComp
-            (map
-                (\ (node, edges') -> (node, node, edges'))
-                (Map.toList edges)
-            )
-        )
+  mapM
+    extractSortedNode
+    ( stronglyConnComp
+        ( map
+            (\(node, edges') -> (node, node, edges'))
+            (Map.toList edges)
+          )
+      )
   where
     extractSortedNode :: SCC node -> Either (ToplogicalSortCycles node) node
-    extractSortedNode (AcyclicSCC n)    = Right n
+    extractSortedNode (AcyclicSCC n) = Right n
     extractSortedNode (CyclicSCC nodes) = Left (ToplogicalSortCycles nodes)

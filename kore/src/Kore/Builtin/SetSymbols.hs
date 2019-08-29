@@ -12,41 +12,47 @@ builtin modules.
     import qualified Kore.Builtin.SetSymbols as Set
 @
 -}
-
 module Kore.Builtin.SetSymbols
-    ( -- * Symbols
-      isSymbolConcat
-    , isSymbolElement
-    , isSymbolUnit
-    , isSymbolList2set
-    , lookupSymbolIn
-    , lookupSymbolDifference
-    , lookupSymbolList2set
-      -- * Keys
-    , concatKey
-    , differenceKey
-    , elementKey
-    , inKey
-    , intersectionKey
-    , sizeKey
-    , toListKey
-    , unitKey
-    , list2setKey
-    ) where
+  ( -- * Symbols
+    isSymbolConcat,
+    isSymbolElement,
+    isSymbolUnit,
+    isSymbolList2set,
+    lookupSymbolIn,
+    lookupSymbolDifference,
+    lookupSymbolList2set,
+    -- * Keys
+    concatKey,
+    differenceKey,
+    elementKey,
+    inKey,
+    intersectionKey,
+    sizeKey,
+    toListKey,
+    unitKey,
+    list2setKey
+    )
+where
 
-import           Data.String
-                 ( IsString )
+import Data.String
+  ( IsString
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+  ( Symbol
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error as Kore
-                 ( Error )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.Internal.Symbol
-                 ( Symbol )
-import           Kore.Sort
-                 ( Sort )
+  ( Error
+    )
+import Kore.IndexedModule.IndexedModule
+  ( VerifiedModule
+    )
+import Kore.Internal.Symbol
+  ( Symbol
+    )
+import Kore.Sort
+  ( Sort
+    )
 
 concatKey :: IsString s => s
 concatKey = "SET.concat"
@@ -78,25 +84,25 @@ list2setKey = "SET.list2set"
 {- | Find the symbol hooked to @SET.get@ in an indexed module.
  -}
 lookupSymbolIn
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolIn = Builtin.lookupSymbol inKey
 
 {- | Find the symbol hooked to @SET.difference@ in an indexed module.
  -}
 lookupSymbolDifference
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolDifference = Builtin.lookupSymbol differenceKey
 
 {- | Find the symbol hooked to @SET.list2set@ in an indexed module.
  -}
 lookupSymbolList2set
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolList2set = Builtin.lookupSymbol list2setKey
 
 {- | Check if the given symbol is hooked to @SET.concat@.

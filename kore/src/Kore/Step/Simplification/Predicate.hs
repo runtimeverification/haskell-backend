@@ -8,38 +8,49 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Predicate
-    ( create
-    , simplify
-    , simplifyPartial
-    ) where
+  ( create,
+    simplify,
+    simplifyPartial
+    )
+where
 
 import qualified Control.Monad.Trans as Monad.Trans
-import           Data.List
-                 ( group )
+import Data.List
+  ( group
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Predicate )
+import Kore.Internal.Pattern
+  ( Conditional (..),
+    Predicate
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate, unwrapPredicate )
+  ( Predicate,
+    unwrapPredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-                 ( substitute )
-import           Kore.Step.Simplification.Data
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
+  ( substitute
+    )
+import Kore.Step.Simplification.Data
+import Kore.Step.Substitution
+  ( mergePredicatesAndSubstitutions
+    )
+import Kore.Syntax.Variable
+  ( SortedVariable
+    )
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Unification.Substitution
+  ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
+import Kore.Unparser
+import Kore.Variables.Fresh
+  ( FreshVariable
+    )
+import Kore.Variables.UnifiedVariable
+  ( UnifiedVariable
+    )
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
@@ -53,74 +64,70 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => Int
-    -> Predicate variable
-    -> BranchT simplifier (Predicate variable)
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => Int
+  -> Predicate variable
+  -> BranchT simplifier (Predicate variable)
 simplify
-    times
-    initialValue@Conditional { predicate, substitution }
-  = do
-    let substitution' = Substitution.toMap substitution
-        substitutedPredicate =
+  times
+  initialValue@Conditional {predicate, substitution} =
+    do
+      let substitution' = Substitution.toMap substitution
+          substitutedPredicate =
             Syntax.Predicate.substitute substitution' predicate
-    -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
-    -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
-    -- This was needed because, when we need to simplify 'requires' clauses,
-    -- this needs to run more than once.
-    if substitutedPredicate == predicate && times > 1
+      -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
+      -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
+      -- This was needed because, when we need to simplify 'requires' clauses,
+      -- this needs to run more than once.
+      if substitutedPredicate == predicate && times > 1
         then return initialValue
         else localPredicateSimplifier $ do
-            simplified <- simplifyPartial substitutedPredicate
-
-            let Conditional { predicate = simplifiedPredicate } = simplified
-                Conditional { substitution = simplifiedSubstitution } =
-                    simplified
-
-            if Substitution.null simplifiedSubstitution
-                then return simplified { substitution }
-                else do
-                    -- TODO(virgil): Optimize. Since both substitution and
-                    -- simplifiedSubstitution have distinct variables, it is
-                    -- enough to check that, say, simplifiedSubstitution's
-                    -- variables are not among substitution's variables.
-                    assertDistinctVariables
-                        (substitution <> simplifiedSubstitution)
-                    mergedPredicate <-
-                        mergePredicatesAndSubstitutions
-                            [simplifiedPredicate]
-                            [substitution, simplifiedSubstitution]
-                    TopBottom.guardAgainstBottom mergedPredicate
-                    return mergedPredicate
-  where
-    substitutionSimplifier = PredicateSimplifier (simplify (times + 1))
-    localPredicateSimplifier =
+          simplified <- simplifyPartial substitutedPredicate
+          let Conditional {predicate = simplifiedPredicate} = simplified
+              Conditional {substitution = simplifiedSubstitution} =
+                simplified
+          if Substitution.null simplifiedSubstitution
+            then return simplified {substitution}
+            else do
+              -- TODO(virgil): Optimize. Since both substitution and
+              -- simplifiedSubstitution have distinct variables, it is
+              -- enough to check that, say, simplifiedSubstitution's
+              -- variables are not among substitution's variables.
+              assertDistinctVariables
+                (substitution <> simplifiedSubstitution)
+              mergedPredicate <-
+                mergePredicatesAndSubstitutions
+                  [simplifiedPredicate]
+                  [substitution, simplifiedSubstitution]
+              TopBottom.guardAgainstBottom mergedPredicate
+              return mergedPredicate
+    where
+      substitutionSimplifier = PredicateSimplifier (simplify (times + 1))
+      localPredicateSimplifier =
         localSimplifierPredicate (const substitutionSimplifier)
 
 assertDistinctVariables
-    :: forall variable m
-    .   ( Show variable
-        , Ord variable
-        , Monad m
-        )
-    => Substitution variable
-    -> m ()
+  :: forall variable m. ( Show variable,
+                          Ord variable,
+                          Monad m
+                          )
+  => Substitution variable
+  -> m ()
 assertDistinctVariables subst =
-    case filter moreThanOne (group variables) of
-        [] -> return ()
-        (var : _) -> error ("Duplicated variable: " ++ show var)
+  case filter moreThanOne (group variables) of
+    [] -> return ()
+    (var : _) -> error ("Duplicated variable: " ++ show var)
   where
     moreThanOne :: [UnifiedVariable variable] -> Bool
     moreThanOne [] = False
     moreThanOne [_] = False
     moreThanOne _ = True
-
     variables :: [UnifiedVariable variable]
     variables = Substitution.variables subst
 
@@ -133,29 +140,28 @@ See also: 'simplify'
 
 -}
 simplifyPartial
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    => Syntax.Predicate variable
-    -> BranchT simplifier (Predicate variable)
-simplifyPartial
-    predicate
-  = do
+  :: ( FreshVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable,
+       SortedVariable variable,
+       MonadSimplify simplifier
+       )
+  => Syntax.Predicate variable
+  -> BranchT simplifier (Predicate variable)
+simplifyPartial predicate =
+  do
     patternOr <-
-        Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
+      Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
     -- for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)
   where
     eraseTerm conditional
-      | TopBottom.isTop (Pattern.term conditional)
-      = Conditional.withoutTerm conditional
+      | TopBottom.isTop (Pattern.term conditional) =
+        Conditional.withoutTerm conditional
       | otherwise =
         (error . show . Pretty.vsep)
-            [ "Expecting a \\top term, but found:"
-            , unparse conditional
+          [ "Expecting a \\top term, but found:",
+            unparse conditional
             ]

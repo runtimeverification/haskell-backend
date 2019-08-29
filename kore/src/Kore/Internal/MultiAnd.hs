@@ -9,29 +9,38 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Internal.MultiAnd
-    ( MultiAnd
-    , extractPatterns
-    , make
-    , toPredicate
-    ) where
+  ( MultiAnd,
+    extractPatterns,
+    make,
+    toPredicate
+    )
+where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.DeepSeq
-                 ( NFData )
+import Control.Applicative
+  ( Alternative (..)
+    )
+import Control.DeepSeq
+  ( NFData
+    )
 import qualified Data.Set as Set
-import           GHC.Exts
-                 ( IsList )
-import           GHC.Generics
-                 ( Generic )
-
+import GHC.Exts
+  ( IsList
+    )
+import GHC.Generics
+  ( Generic
+    )
 import Kore.Predicate.Predicate
-       ( Predicate, makeAndPredicate, makeTruePredicate )
+  ( Predicate,
+    makeAndPredicate,
+    makeTruePredicate
+    )
 import Kore.Syntax.Variable
 import Kore.TopBottom
-       ( TopBottom (..) )
+  ( TopBottom (..)
+    )
 import Kore.Unparser
-       ( Unparse )
+  ( Unparse
+    )
 
 {-| 'MultiAnd' is a Matching logic and of its children
 
@@ -45,31 +54,32 @@ which should preserve pattern sorts.
 A non-empty 'MultiAnd' would also have a nice symmetry between 'Top' and
 'Bottom' patterns.
 -}
-newtype MultiAnd child = MultiAnd { getMultiAnd :: [child] }
-    deriving
-        ( Alternative
-        , Applicative
-        , Eq
-        , Foldable
-        , Functor
-        , Generic
-        , IsList
-        , Monad
-        , Monoid
-        , Ord
-        , Semigroup
-        , Show
-        , Traversable
-        )
+newtype MultiAnd child = MultiAnd {getMultiAnd :: [child]}
+  deriving
+    ( Alternative,
+      Applicative,
+      Eq,
+      Foldable,
+      Functor,
+      Generic,
+      IsList,
+      Monad,
+      Monoid,
+      Ord,
+      Semigroup,
+      Show,
+      Traversable
+      )
 
 instance NFData child => NFData (MultiAnd child)
 
-instance TopBottom child => TopBottom (MultiAnd child)
-  where
-    isTop (MultiAnd []) = True
-    isTop _ = False
-    isBottom (MultiAnd [child]) = isBottom child
-    isBottom _ = False
+instance TopBottom child => TopBottom (MultiAnd child) where
+
+  isTop (MultiAnd []) = True
+  isTop _ = False
+
+  isBottom (MultiAnd [child]) = isBottom child
+  isBottom _ = False
 
 {-| 'AndBool' is an some sort of Bool data type used when evaluating things
 inside a 'MultiAnd'.
@@ -83,8 +93,9 @@ is top or bottom.
 -}
 -- TODO(virgil): Refactor, this is the same as patternToOrBool
 patternToAndBool
-    :: TopBottom term
-    => term -> AndBool
+  :: TopBottom term
+  => term
+  -> AndBool
 patternToAndBool patt
   | isTop patt = AndTrue
   | isBottom patt = AndFalse
@@ -93,19 +104,18 @@ patternToAndBool patt
 {-| 'make' constructs a normalized 'MultiAnd'.
 -}
 make
-    :: (Ord term, TopBottom term)
-    => [term]
-    -> MultiAnd term
+  :: (Ord term, TopBottom term)
+  => [term]
+  -> MultiAnd term
 make patts = filterAnd (MultiAnd patts)
 
 {-| Returns the patterns inside an @\and@.
 -}
 extractPatterns
-    :: TopBottom term
-    => MultiAnd term
-    -> [term]
+  :: TopBottom term
+  => MultiAnd term
+  -> [term]
 extractPatterns = getMultiAnd
-
 
 {- | Simplify the conjunction.
 
@@ -116,12 +126,11 @@ duplicated items from the result.
 See also: 'filterUnique'
 -}
 filterAnd
-    :: (Ord term, TopBottom term)
-    => MultiAnd term
-    -> MultiAnd term
+  :: (Ord term, TopBottom term)
+  => MultiAnd term
+  -> MultiAnd term
 filterAnd =
-    filterGeneric patternToAndBool . filterUnique
-
+  filterGeneric patternToAndBool . filterUnique
 
 {- | Simplify the conjunction by eliminating duplicate elements.
 
@@ -142,28 +151,29 @@ filterUnique = MultiAnd . Set.toList . Set.fromList . getMultiAnd
 evaluates its children to true/false/unknown.
 -}
 filterGeneric
-    :: (child -> AndBool)
-    -> MultiAnd child
-    -> MultiAnd child
+  :: (child -> AndBool)
+  -> MultiAnd child
+  -> MultiAnd child
 filterGeneric andFilter (MultiAnd patts) =
-    go andFilter [] patts
+  go andFilter [] patts
   where
-    go  :: (child -> AndBool)
-        -> [child]
-        -> [child]
-        -> MultiAnd child
+    go
+      :: (child -> AndBool)
+      -> [child]
+      -> [child]
+      -> MultiAnd child
     go _ filtered [] = MultiAnd (reverse filtered)
-    go filterAnd' filtered (element:unfiltered) =
-        case filterAnd' element of
-            AndFalse -> MultiAnd [element]
-            AndTrue -> go filterAnd' filtered unfiltered
-            AndUnknown -> go filterAnd' (element:filtered) unfiltered
+    go filterAnd' filtered (element : unfiltered) =
+      case filterAnd' element of
+        AndFalse -> MultiAnd [element]
+        AndTrue -> go filterAnd' filtered unfiltered
+        AndUnknown -> go filterAnd' (element : filtered) unfiltered
 
 toPredicate
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => MultiAnd (Predicate variable)
-    -> Predicate variable
+  :: (Ord variable, SortedVariable variable, Unparse variable)
+  => MultiAnd (Predicate variable)
+  -> Predicate variable
 toPredicate (MultiAnd predicates) =
-    case predicates of
-        [] -> makeTruePredicate
-        _  -> foldr1 makeAndPredicate predicates
+  case predicates of
+    [] -> makeTruePredicate
+    _ -> foldr1 makeAndPredicate predicates

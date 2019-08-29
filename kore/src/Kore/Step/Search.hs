@@ -6,55 +6,76 @@ License     : NCSA
 Maintainer  : traian.serbanuta@runtimeverification.com
 -}
 module Kore.Step.Search
-    ( Config (..)
-    , SearchType (..)
-    , searchGraph
-    , matchWith
-    ) where
+  ( Config (..),
+    SearchType (..),
+    searchGraph,
+    matchWith
+    )
+where
 
-import           Control.Error
-                 ( MaybeT (..), nothing )
-import           Control.Error.Util
-                 ( hush )
+import Control.Error
+  ( MaybeT (..),
+    nothing
+    )
+import Control.Error.Util
+  ( hush
+    )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Class
-                 ( lift )
-import           Data.Maybe
-                 ( catMaybes )
-import           Numeric.Natural
-                 ( Natural )
-
-import           Data.Limit
-                 ( Limit (..) )
+import Control.Monad.Trans.Class
+  ( lift
+    )
+import Data.Limit
+  ( Limit (..)
+    )
 import qualified Data.Limit as Limit
+import Data.Maybe
+  ( catMaybes
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( make, mergeAll )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern
-                 ( Pattern, Predicate )
+  ( make,
+    mergeAll
+    )
+import Kore.Internal.OrPredicate
+  ( OrPredicate
+    )
+import Kore.Internal.Pattern
+  ( Pattern,
+    Predicate
+    )
 import qualified Kore.Internal.Pattern as Conditional
 import qualified Kore.Internal.Predicate as Predicate
-                 ( bottom, fromSubstitution )
+  ( bottom,
+    fromSubstitution
+    )
 import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( simplify )
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+  ( simplify
+    )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
+  ( evaluate
+    )
+import Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Data as BranchT
+  ( gather
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.TopBottom
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
+import Kore.Step.Substitution
+  ( mergePredicatesAndSubstitutions
+    )
+import Kore.Syntax.Variable
+  ( SortedVariable
+    )
+import Kore.TopBottom
+import Kore.Unification.Procedure
+  ( unificationProcedure
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.Unparser
+import Kore.Variables.Fresh
+  ( FreshVariable
+    )
+import Numeric.Natural
+  ( Natural
+    )
 
 {-| Which configurations are considered for matching?
 
@@ -62,23 +83,23 @@ See also: 'searchGraph'
 
  -}
 data SearchType
-    = ONE
+  = ONE
     -- ^ Reachable in exactly one execution step
-    | FINAL
+  | FINAL
     -- ^ Reachable configurations which cannot be rewritten anymore
-    | STAR
+  | STAR
     -- ^ All reachable configurations
-    | PLUS
+  | PLUS
     -- ^ All configurations reachable in at least one step
- deriving (Eq, Show)
+  deriving (Eq, Show)
 
 -- | Search options
-data Config =
-    Config
-    { bound :: !(Limit Natural)
-    -- ^ maximum number of solutions
-    , searchType :: !SearchType
-    }
+data Config
+  = Config
+      { bound :: !(Limit Natural),
+        -- ^ maximum number of solutions
+        searchType :: !SearchType
+        }
 
 {- | Construct a list of solutions to the execution search problem.
 
@@ -97,87 +118,86 @@ See also: 'Kore.Step.Strategy.runStrategy', 'matchWith'
 
 -}
 searchGraph
-    :: MonadSimplify m
-    => Config  -- ^ Search options
-    -> (config -> MaybeT m substitution)
-        -- ^ Matching criterion
-    -> Strategy.ExecutionGraph config rule
-        -- ^ Execution tree
-    -> m [substitution]
-searchGraph Config { searchType, bound } match executionGraph = do
-    let selectedConfigs = pick executionGraph
-    matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
-    return (Limit.takeWithin bound matches)
+  :: MonadSimplify m
+  => Config -- ^ Search options
+  -> (config -> MaybeT m substitution)
+  -- ^ Matching criterion
+  -> Strategy.ExecutionGraph config rule
+  -- ^ Execution tree
+  -> m [substitution]
+searchGraph Config {searchType, bound} match executionGraph = do
+  let selectedConfigs = pick executionGraph
+  matches <- catMaybes <$> traverse (runMaybeT . match) selectedConfigs
+  return (Limit.takeWithin bound matches)
   where
     pick =
-        case searchType of
-            ONE -> Strategy.pickOne
-            PLUS -> Strategy.pickPlus
-            STAR -> Strategy.pickStar
-            FINAL -> Strategy.pickFinal
+      case searchType of
+        ONE -> Strategy.pickOne
+        PLUS -> Strategy.pickPlus
+        STAR -> Strategy.pickStar
+        FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable m .
-        ( SortedVariable variable
-        , FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify m
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> MaybeT m (OrPredicate variable)
+  :: forall variable m. ( SortedVariable variable,
+                          FreshVariable variable,
+                          Ord variable,
+                          Show variable,
+                          Unparse variable,
+                          MonadSimplify m
+                          )
+  => Pattern variable
+  -> Pattern variable
+  -> MaybeT m (OrPredicate variable)
 matchWith e1 e2 = do
-    eitherUnifiers <-
-        Monad.Trans.lift $ Monad.Unify.runUnifierT
-        $ unificationProcedure t1 t2
-    let
-        maybeUnifiers :: Maybe [Predicate variable]
-        maybeUnifiers = hush eitherUnifiers
-        mergeAndEvaluate
-            :: Predicate variable
-            -> m (OrPredicate variable)
-        mergeAndEvaluate predSubst = do
-            results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
-            return (MultiOr.make results)
-        mergeAndEvaluateBranches
-            :: Predicate variable
-            -> BranchT m (Predicate variable)
-        mergeAndEvaluateBranches predSubst = do
-            merged <-
-                mergePredicatesAndSubstitutions
-                    [ Conditional.predicate predSubst
-                    , Conditional.predicate e1
-                    , Conditional.predicate e2
-                    ]
-                    [ Conditional.substitution predSubst ]
-            simplified <-
-                Monad.Trans.lift
-                $ Predicate.simplify $ Conditional.predicate merged
-            smtEvaluation <-
-                Monad.Trans.lift $ SMT.Evaluator.evaluate simplified
-            case smtEvaluation of
-                    Nothing ->
-                        mergePredicatesAndSubstitutions
-                            [ Conditional.predicate simplified ]
-                            [ Conditional.substitution merged
-                            , Conditional.substitution simplified
-                            ]
-                    Just False -> return Predicate.bottom
-                    Just True -> return
-                        (Predicate.fromSubstitution
-                            (Conditional.substitution merged)
-                        )
-    case maybeUnifiers of
-        Nothing -> nothing
-        Just unifiers -> do
-            results <- lift $ traverse mergeAndEvaluate unifiers
-            let
-                orResults :: OrPredicate variable
-                orResults = MultiOr.mergeAll results
-            guardAgainstBottom orResults
-            return orResults
+  eitherUnifiers <-
+    Monad.Trans.lift $ Monad.Unify.runUnifierT
+      $ unificationProcedure t1 t2
+  let maybeUnifiers :: Maybe [Predicate variable]
+      maybeUnifiers = hush eitherUnifiers
+      mergeAndEvaluate
+        :: Predicate variable
+        -> m (OrPredicate variable)
+      mergeAndEvaluate predSubst = do
+        results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
+        return (MultiOr.make results)
+      mergeAndEvaluateBranches
+        :: Predicate variable
+        -> BranchT m (Predicate variable)
+      mergeAndEvaluateBranches predSubst = do
+        merged <-
+          mergePredicatesAndSubstitutions
+            [ Conditional.predicate predSubst,
+              Conditional.predicate e1,
+              Conditional.predicate e2
+              ]
+            [Conditional.substitution predSubst]
+        simplified <-
+          Monad.Trans.lift
+            $ Predicate.simplify
+            $ Conditional.predicate merged
+        smtEvaluation <-
+          Monad.Trans.lift $ SMT.Evaluator.evaluate simplified
+        case smtEvaluation of
+          Nothing ->
+            mergePredicatesAndSubstitutions
+              [Conditional.predicate simplified]
+              [ Conditional.substitution merged,
+                Conditional.substitution simplified
+                ]
+          Just False -> return Predicate.bottom
+          Just True ->
+            return
+              ( Predicate.fromSubstitution
+                  (Conditional.substitution merged)
+                )
+  case maybeUnifiers of
+    Nothing -> nothing
+    Just unifiers -> do
+      results <- lift $ traverse mergeAndEvaluate unifiers
+      let orResults :: OrPredicate variable
+          orResults = MultiOr.mergeAll results
+      guardAgainstBottom orResults
+      return orResults
   where
     t1 = Conditional.term e1
     t2 = Conditional.term e2

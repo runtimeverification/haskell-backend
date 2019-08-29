@@ -8,24 +8,25 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Kore.AST.Error
-    ( koreFailWithLocations
-    , koreFailWithLocationsWhen
-    , withLocationAndContext
-    , withLocationsContext
-    , withSentenceAliasContext
-    , withSentenceAxiomContext
-    , withSentenceClaimContext
-    , withSentenceHookContext
-    , withSentenceImportContext
-    , withSentenceSortContext
-    , withSentenceSymbolContext
-    , withSentenceContext
-    ) where
+  ( koreFailWithLocations,
+    koreFailWithLocationsWhen,
+    withLocationAndContext,
+    withLocationsContext,
+    withSentenceAliasContext,
+    withSentenceAxiomContext,
+    withSentenceClaimContext,
+    withSentenceHookContext,
+    withSentenceImportContext,
+    withSentenceSortContext,
+    withSentenceSymbolContext,
+    withSentenceContext
+    )
+where
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+  ( Text
+    )
 import qualified Data.Text as Text
-
 import Kore.AST.AstWithLocation
 import Kore.Error
 import Kore.Syntax
@@ -34,149 +35,144 @@ import Kore.Syntax.Definition
 {-|'koreFailWithLocations' produces an error result with a context containing
 the provided locations. -}
 koreFailWithLocations
-    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
-    => [astWithLocation]
-    -> Text
-    -> m a
+  :: (AstWithLocation astWithLocation, MonadError (Error e) m)
+  => [astWithLocation]
+  -> Text
+  -> m a
 koreFailWithLocations locations errorMessage =
-    withLocationsContext locations (koreFailText errorMessage)
+  withLocationsContext locations (koreFailText errorMessage)
 
 {-|'koreFailWithLocationsWhen' produces an error result with a context
 containing the provided locations whenever the provided flag is true.
 -}
 koreFailWithLocationsWhen
-    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
-    => Bool
-    -> [astWithLocation]
-    -> Text
-    -> m ()
+  :: (AstWithLocation astWithLocation, MonadError (Error e) m)
+  => Bool
+  -> [astWithLocation]
+  -> Text
+  -> m ()
 koreFailWithLocationsWhen condition locations errorMessage =
-    withLocationsContext locations (koreFailWhenText condition errorMessage)
+  withLocationsContext locations (koreFailWhenText condition errorMessage)
 
 {-|'withLocationsContext' prepends the given location to the error context
 whenever the given action fails.
 -}
 withLocationsContext
-    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
-    => [astWithLocation]
-    -> m result
-    -> m result
+  :: (AstWithLocation astWithLocation, MonadError (Error e) m)
+  => [astWithLocation]
+  -> m result
+  -> m result
 withLocationsContext locations =
-    withTextContext
-        (  "("
+  withTextContext
+    ( "("
         <> Text.intercalate ", " (map prettyPrintLocationFromAst locations)
         <> ")"
-        )
+      )
 
 {-|'withLocationsContext' prepends the given message, associated with the
 location, to the error context whenever the given action fails.
 -}
 withLocationAndContext
-    :: (AstWithLocation astWithLocation, MonadError (Error e) m)
-    => astWithLocation
-    -> Text
-    -> m result
-    -> m result
+  :: (AstWithLocation astWithLocation, MonadError (Error e) m)
+  => astWithLocation
+  -> Text
+  -> m result
+  -> m result
 withLocationAndContext location message =
-    withTextContext
-        (message <> " (" <> prettyPrintLocationFromAst location <> ")")
+  withTextContext
+    (message <> " (" <> prettyPrintLocationFromAst location <> ")")
 
 {- | Identify and locate the given symbol declaration in the error context.
  -}
 withSentenceSymbolContext
-    :: MonadError (Error e) m
-    => SentenceSymbol patternType
-    -> m a
-    -> m a
-withSentenceSymbolContext
-    SentenceSymbol { sentenceSymbolSymbol = Symbol { symbolConstructor } }
-  =
-    withLocationAndContext symbolConstructor
-        ("symbol '" <> getId symbolConstructor <> "' declaration")
+  :: MonadError (Error e) m
+  => SentenceSymbol patternType
+  -> m a
+  -> m a
+withSentenceSymbolContext SentenceSymbol {sentenceSymbolSymbol = Symbol {symbolConstructor}} =
+  withLocationAndContext symbolConstructor
+    ("symbol '" <> getId symbolConstructor <> "' declaration")
 
 {- | Identify and locate the given alias declaration in the error context.
  -}
 withSentenceAliasContext
-    :: SentenceAlias patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
-withSentenceAliasContext
-    SentenceAlias { sentenceAliasAlias = Alias { aliasConstructor } }
-  =
-    withLocationAndContext aliasConstructor
-        ("alias '" <> getId aliasConstructor <> "' declaration")
+  :: SentenceAlias patternType
+  -> Either (Error e) a
+  -> Either (Error e) a
+withSentenceAliasContext SentenceAlias {sentenceAliasAlias = Alias {aliasConstructor}} =
+  withLocationAndContext aliasConstructor
+    ("alias '" <> getId aliasConstructor <> "' declaration")
 
 {- | Identify and locate the given axiom declaration in the error context.
  -}
 withSentenceAxiomContext
-    :: SentenceAxiom patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+  :: SentenceAxiom patternType
+  -> Either (Error e) a
+  -> Either (Error e) a
 withSentenceAxiomContext _ = withContext "axiom declaration"
 
 {- | Identify and locate the given claim declaration in the error context.
  -}
 withSentenceClaimContext
-    :: SentenceClaim patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+  :: SentenceClaim patternType
+  -> Either (Error e) a
+  -> Either (Error e) a
 withSentenceClaimContext _ = withContext "claim declaration"
 
 {- | Identify and locate the given sort declaration in the error context.
  -}
 withSentenceSortContext
-    :: SentenceSort patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
-withSentenceSortContext
-    SentenceSort { sentenceSortName }
-  =
-    withLocationAndContext sentenceSortName
-        ("sort '" <> getId sentenceSortName <> "' declaration")
+  :: SentenceSort patternType
+  -> Either (Error e) a
+  -> Either (Error e) a
+withSentenceSortContext SentenceSort {sentenceSortName} =
+  withLocationAndContext sentenceSortName
+    ("sort '" <> getId sentenceSortName <> "' declaration")
 
 {- | Identify and locate the given hooked declaration in the error context.
  -}
 withSentenceHookContext
-    :: SentenceHook patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+  :: SentenceHook patternType
+  -> Either (Error e) a
+  -> Either (Error e) a
 withSentenceHookContext =
-    \case
-        SentenceHookedSort SentenceSort { sentenceSortName } ->
-            withLocationAndContext sentenceSortName
-                (  "hooked-sort '"
-                <> getId sentenceSortName
-                <> "' declaration"
-                )
-
-        SentenceHookedSymbol SentenceSymbol
-            { sentenceSymbolSymbol = Symbol { symbolConstructor } } ->
-            withLocationAndContext symbolConstructor
-                (  "hooked-symbol '"
-                <> getId symbolConstructor
-                <> "' declaration"
-                )
+  \case
+    SentenceHookedSort SentenceSort {sentenceSortName} ->
+      withLocationAndContext sentenceSortName
+        ( "hooked-sort '"
+            <> getId sentenceSortName
+            <> "' declaration"
+          )
+    SentenceHookedSymbol
+      SentenceSymbol
+        { sentenceSymbolSymbol = Symbol {symbolConstructor}
+          } ->
+        withLocationAndContext symbolConstructor
+          ( "hooked-symbol '"
+              <> getId symbolConstructor
+              <> "' declaration"
+            )
 
 {- | Locate the given import declaration in the error context.
  -}
 withSentenceImportContext
-    :: SentenceImport patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+  :: SentenceImport patternType
+  -> Either (Error e) a
+  -> Either (Error e) a
 withSentenceImportContext _ = id
 
 {- | Identify and  locate the given sentence in the error context.
  -}
 withSentenceContext
-    :: Sentence patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+  :: Sentence patternType
+  -> Either (Error e) a
+  -> Either (Error e) a
 withSentenceContext =
-    \case
-        SentenceAliasSentence s -> withSentenceAliasContext s
-        SentenceAxiomSentence s -> withSentenceAxiomContext s
-        SentenceClaimSentence s -> withSentenceClaimContext s
-        SentenceHookSentence s -> withSentenceHookContext s
-        SentenceImportSentence s -> withSentenceImportContext s
-        SentenceSortSentence s -> withSentenceSortContext s
-        SentenceSymbolSentence s -> withSentenceSymbolContext s
+  \case
+    SentenceAliasSentence s -> withSentenceAliasContext s
+    SentenceAxiomSentence s -> withSentenceAxiomContext s
+    SentenceClaimSentence s -> withSentenceClaimContext s
+    SentenceHookSentence s -> withSentenceHookContext s
+    SentenceImportSentence s -> withSentenceImportContext s
+    SentenceSortSentence s -> withSentenceSortContext s
+    SentenceSymbolSentence s -> withSentenceSymbolContext s

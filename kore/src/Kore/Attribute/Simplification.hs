@@ -17,21 +17,23 @@ Informal example of an axiom that would use the simplification attribute:
     if concrete(x) and concrete(z) and not concrete(y)
 -}
 module Kore.Attribute.Simplification
-    ( Simplification (..)
-    , simplificationId, simplificationSymbol, simplificationAttribute
-    ) where
+  ( Simplification (..),
+    simplificationId,
+    simplificationSymbol,
+    simplificationAttribute
+    )
+where
 
 import qualified Control.Monad as Monad
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 {- | @Simplification@ represents the @simplification@ attribute for axioms.
  -}
-newtype Simplification = Simplification { isSimplification :: Bool }
-    deriving (Eq, GHC.Generic, Ord, Show)
+newtype Simplification = Simplification {isSimplification :: Bool}
+  deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Simplification
 
@@ -42,7 +44,7 @@ instance Debug Simplification
 instance NFData Simplification
 
 instance Default Simplification where
-    def = Simplification False
+  def = Simplification False
 
 -- | Kore identifier representing the @simplification@ attribute symbol.
 simplificationId :: Id
@@ -51,25 +53,26 @@ simplificationId = "simplification"
 -- | Kore symbol representing the @simplification@ attribute.
 simplificationSymbol :: SymbolOrAlias
 simplificationSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = simplificationId
-        , symbolOrAliasParams = []
-        }
+  SymbolOrAlias
+    { symbolOrAliasConstructor = simplificationId,
+      symbolOrAliasParams = []
+      }
 
 -- | Kore pattern representing the @simplification@ attribute.
 simplificationAttribute :: AttributePattern
 simplificationAttribute = attributePattern_ simplificationSymbol
 
 instance ParseAttributes Simplification where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Simplification { isSimplification } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isSimplification failDuplicate'
-            return Simplification { isSimplification = True }
-        withApplication' = Parser.withApplication simplificationId
-        failDuplicate' = Parser.failDuplicate simplificationId
 
-    toAttributes Simplification { isSimplification } =
-        Attributes [simplificationAttribute | isSimplification]
+  parseAttribute = withApplication' parseApplication
+    where
+      parseApplication params args Simplification {isSimplification} = do
+        Parser.getZeroParams params
+        Parser.getZeroArguments args
+        Monad.when isSimplification failDuplicate'
+        return Simplification {isSimplification = True}
+      withApplication' = Parser.withApplication simplificationId
+      failDuplicate' = Parser.failDuplicate simplificationId
+
+  toAttributes Simplification {isSimplification} =
+    Attributes [simplificationAttribute | isSimplification]

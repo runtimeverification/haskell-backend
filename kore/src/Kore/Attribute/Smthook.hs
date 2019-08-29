@@ -7,7 +7,8 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 module Kore.Attribute.Smthook
-    ( module Kore.Attribute.Smtlib.Smthook
-    ) where
+  ( module Kore.Attribute.Smtlib.Smthook
+    )
+where
 
 import Kore.Attribute.Smtlib.Smthook

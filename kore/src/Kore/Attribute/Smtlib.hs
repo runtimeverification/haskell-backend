@@ -7,20 +7,23 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 module Kore.Attribute.Smtlib
-    ( Smtlib (..)
-    , smtlibId, smtlibSymbol, smtlibAttribute
-    , applySExpr
-    , shortenSExpr
-    ) where
+  ( Smtlib (..),
+    smtlibId,
+    smtlibSymbol,
+    smtlibAttribute,
+    applySExpr,
+    shortenSExpr
+    )
+where
 
 import qualified Control.Error as Error
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+  ( fromMaybe
+    )
 import qualified Data.Text as Text
-import           SMT.SimpleSMT
-
-import           Kore.Attribute.Smtlib.Smtlib
+import Kore.Attribute.Smtlib.Smtlib
 import qualified Kore.Builtin.Error as Builtin.Error
+import SMT.SimpleSMT
 
 shortenSExpr :: SExpr -> SExpr
 shortenSExpr (List [e]) = e
@@ -35,32 +38,28 @@ If the 'SExpr' is an 'Atom' at the top level, it is taken to be the head of an
 
  -}
 applySExpr
-    :: SExpr  -- ^ 'SExpr' containing placeholder symbols
-    -> [SExpr]  -- ^ list of arguments
-    -> SExpr
+  :: SExpr -- ^ 'SExpr' containing placeholder symbols
+  -> [SExpr] -- ^ list of arguments
+  -> SExpr
 applySExpr =
-    \case
-        Atom symb -> \args -> List (fillAtom symb args : args)
-        list@(List _) -> fillPlacesWorker list
+  \case
+    Atom symb -> \args -> List (fillAtom symb args : args)
+    list@(List _) -> fillPlacesWorker list
   where
     fillPlacesWorker =
-        \case
-            List sExprs -> List <$> traverse fillPlacesWorker sExprs
-            Atom symb -> fillAtom symb
-
+      \case
+        List sExprs -> List <$> traverse fillPlacesWorker sExprs
+        Atom symb -> fillAtom symb
     fillAtom symb = fromMaybe (\_ -> Atom symb) (fillPlace symb)
-
     -- Fill one placeholder
     fillPlace (Text.unpack -> ('#' : num)) = do
-        (n :: Int, remainder) <- Error.headMay (reads num)
-        -- A placeholder is a symbol: # followed by a decimal numeral.
-        -- Abort if any characters remain after parsing the numeral.
-        Error.assertMay (null remainder)
-        return (fillN n)
+      (n :: Int, remainder) <- Error.headMay (reads num)
+      -- A placeholder is a symbol: # followed by a decimal numeral.
+      -- Abort if any characters remain after parsing the numeral.
+      Error.assertMay (null remainder)
+      return (fillN n)
     fillPlace _ = Nothing
-
     -- Look up the n-th argument.
     fillN :: Int -> [SExpr] -> SExpr
     fillN n = fromMaybe wrongArity . (`Error.atZ` n)
-
     wrongArity = Builtin.Error.wrongArity "smtlib"

@@ -6,30 +6,34 @@ License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
 module Kore.Attribute.Hook
-    ( Hook (..)
-    , emptyHook
-    , hookId, hookSymbol, hookAttribute
-    , getHookAttribute
-    ) where
+  ( Hook (..),
+    emptyHook,
+    hookId,
+    hookSymbol,
+    hookAttribute,
+    getHookAttribute
+    )
+where
 
 import qualified Control.Monad as Monad
-import           Data.Hashable
-                 ( Hashable )
+import Data.Hashable
+  ( Hashable
+    )
 import qualified Data.Maybe as Maybe
-import           Data.Text
-                 ( Text )
-import qualified Generics.SOP as SOP
+import Data.Text
+  ( Text
+    )
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 import Kore.Error
 
-newtype Hook = Hook { getHook :: Maybe Text }
+newtype Hook = Hook {getHook :: Maybe Text}
   deriving (Eq, GHC.Generic, Ord, Read, Show)
 
 instance Default Hook where
-    def = emptyHook
+  def = emptyHook
 
 instance Hashable Hook
 
@@ -50,19 +54,20 @@ instance Debug Hook
 
  -}
 instance ParseAttributes Hook where
-    parseAttribute =
-        withApplication' $ \params args (Hook hook) -> do
-            getZeroParams params
-            arg <- getOneArgument args
-            StringLiteral name <- getStringLiteral arg
-            Monad.unless (Maybe.isNothing hook) failDuplicate'
-            return Hook { getHook = Just name }
-      where
-        withApplication' = withApplication hookId
-        failDuplicate' = failDuplicate hookId
 
-    toAttributes Hook { getHook } =
-        Attributes $ maybe [] ((: []) . hookAttribute) getHook
+  parseAttribute =
+    withApplication' $ \params args (Hook hook) -> do
+      getZeroParams params
+      arg <- getOneArgument args
+      StringLiteral name <- getStringLiteral arg
+      Monad.unless (Maybe.isNothing hook) failDuplicate'
+      return Hook {getHook = Just name}
+    where
+      withApplication' = withApplication hookId
+      failDuplicate' = failDuplicate hookId
+
+  toAttributes Hook {getHook} =
+    Attributes $ maybe [] ((: []) . hookAttribute) getHook
 
 {- | The missing @hook@ attribute.
 
@@ -82,10 +87,10 @@ Kore syntax: @hook{}@
  -}
 hookSymbol :: SymbolOrAlias
 hookSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = hookId
-        , symbolOrAliasParams = []
-        }
+  SymbolOrAlias
+    { symbolOrAliasConstructor = hookId,
+      symbolOrAliasParams = []
+      }
 
 {- | Kore pattern representing a @hook@ attribute
 
@@ -94,8 +99,9 @@ Kore syntax: @hook{}("HOOKED.function")@
 function.
 
  -}
-hookAttribute :: Text  -- ^ hooked function name
-              -> AttributePattern
+hookAttribute
+  :: Text -- ^ hooked function name
+  -> AttributePattern
 hookAttribute builtin = attributePattern hookSymbol [attributeString builtin]
 
 {- | Look up a required @hook{}()@ attribute from the given attributes.
@@ -104,10 +110,10 @@ hookAttribute builtin = attributePattern hookSymbol [attributeString builtin]
 
  -}
 getHookAttribute
-    :: MonadError (Error e) m
-    => Attributes
-    -> m Text
+  :: MonadError (Error e) m
+  => Attributes
+  -> m Text
 getHookAttribute attributes = do
-    let parser = Parser.parseAttributes attributes
-    hook <- Parser.liftParser parser
-    maybe (koreFail "missing hook attribute") return (getHook hook)
+  let parser = Parser.parseAttributes attributes
+  hook <- Parser.liftParser parser
+  maybe (koreFail "missing hook attribute") return (getHook hook)

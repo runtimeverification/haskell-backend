@@ -3,27 +3,28 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
-
 module Kore.Syntax.Inhabitant
-    ( Inhabitant (..)
-    ) where
+  ( Inhabitant (..)
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Hashable
-import qualified Generics.SOP as SOP
+import Control.DeepSeq
+  ( NFData (..)
+    )
+import Data.Hashable
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables
-       ( FreeVariables )
+  ( FreeVariables
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Unparser
 
 -- | 'Inhabitant' symbolizes the inhabitants of a sort.
-data Inhabitant child = Inhabitant { inhSort :: !Sort }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+data Inhabitant child = Inhabitant {inhSort :: !Sort}
+  deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable (Inhabitant child)
 
@@ -36,16 +37,18 @@ instance SOP.HasDatatypeInfo (Inhabitant child)
 instance Debug (Inhabitant child)
 
 instance Unparse (Inhabitant child) where
-    unparse = unparse . inhSort
-    unparse2 = unparse2 . inhSort
+
+  unparse = unparse . inhSort
+
+  unparse2 = unparse2 . inhSort
 
 instance
-    Ord variable =>
-    Synthetic (FreeVariables variable) Inhabitant
+  Ord variable
+  => Synthetic (FreeVariables variable) Inhabitant
   where
-    synthetic = const mempty
-    {-# INLINE synthetic #-}
+  synthetic = const mempty
+  {-# INLINE synthetic #-}
 
 instance Synthetic Sort Inhabitant where
-    synthetic = inhSort
-    {-# INLINE synthetic #-}
+  synthetic = inhSort
+  {-# INLINE synthetic #-}

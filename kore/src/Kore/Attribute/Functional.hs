@@ -7,30 +7,32 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 module Kore.Attribute.Functional
-    ( Functional (..)
-    , functionalId, functionalSymbol, functionalAttribute
-    ) where
+  ( Functional (..),
+    functionalId,
+    functionalSymbol,
+    functionalAttribute
+    )
+where
 
 import qualified Control.Monad as Monad
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 {- | @Functional@ represents the @functional@ attribute for symbols.
  -}
-newtype Functional = Functional { isDeclaredFunctional :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
+newtype Functional = Functional {isDeclaredFunctional :: Bool}
+  deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup Functional where
-    (<>) (Functional a) (Functional b) = Functional (a || b)
+  (<>) (Functional a) (Functional b) = Functional (a || b)
 
 instance Monoid Functional where
-    mempty = Functional False
+  mempty = Functional False
 
 instance Default Functional where
-    def = mempty
+  def = mempty
 
 instance NFData Functional
 
@@ -47,25 +49,26 @@ functionalId = "functional"
 -- | Kore symbol representing the @functional@ attribute.
 functionalSymbol :: SymbolOrAlias
 functionalSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = functionalId
-        , symbolOrAliasParams = []
-        }
+  SymbolOrAlias
+    { symbolOrAliasConstructor = functionalId,
+      symbolOrAliasParams = []
+      }
 
 -- | Kore pattern representing the @functional@ attribute.
 functionalAttribute :: AttributePattern
 functionalAttribute = attributePattern_ functionalSymbol
 
 instance ParseAttributes Functional where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Functional { isDeclaredFunctional } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isDeclaredFunctional failDuplicate'
-            return Functional { isDeclaredFunctional = True }
-        withApplication' = Parser.withApplication functionalId
-        failDuplicate' = Parser.failDuplicate functionalId
 
-    toAttributes Functional { isDeclaredFunctional } =
-        Attributes [functionalAttribute | isDeclaredFunctional]
+  parseAttribute = withApplication' parseApplication
+    where
+      parseApplication params args Functional {isDeclaredFunctional} = do
+        Parser.getZeroParams params
+        Parser.getZeroArguments args
+        Monad.when isDeclaredFunctional failDuplicate'
+        return Functional {isDeclaredFunctional = True}
+      withApplication' = Parser.withApplication functionalId
+      failDuplicate' = Parser.failDuplicate functionalId
+
+  toAttributes Functional {isDeclaredFunctional} =
+    Attributes [functionalAttribute | isDeclaredFunctional]

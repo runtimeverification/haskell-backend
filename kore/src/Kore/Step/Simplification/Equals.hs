@@ -8,52 +8,70 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Equals
-    ( makeEvaluate
-    , makeEvaluateTermsToPredicate
-    , simplify
-    ) where
+  ( makeEvaluate,
+    makeEvaluateTermsToPredicate,
+    simplify
+    )
+where
 
 import Control.Error
-       ( MaybeT (..) )
+  ( MaybeT (..)
+    )
 import Control.Monad
-       ( foldM )
+  ( foldM
+    )
 import Data.List
-       ( foldl' )
+  ( foldl'
+    )
 import Data.Maybe
-       ( fromMaybe )
-
+  ( fromMaybe
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
+import Kore.Internal.OrPredicate
+  ( OrPredicate
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeAndPredicate,
-                 makeEqualsPredicate, makeNotPredicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+  ( makeAndPredicate,
+    makeEqualsPredicate,
+    makeNotPredicate,
+    pattern PredicateTrue
+    )
 import qualified Kore.Step.Simplification.And as And
-                 ( simplifyEvaluated )
+  ( simplifyEvaluated
+    )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
-                 ( termEquals )
+  ( termEquals
+    )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluate, makeEvaluateTerm )
-import           Kore.Step.Simplification.Data as Simplifier hiding
-                 ( Equals )
+  ( makeEvaluate,
+    makeEvaluateTerm
+    )
+import Kore.Step.Simplification.Data as Simplifier hiding
+  ( Equals
+    )
 import qualified Kore.Step.Simplification.Iff as Iff
-                 ( makeEvaluate )
+  ( makeEvaluate
+    )
 import qualified Kore.Step.Simplification.Implies as Implies
-                 ( simplifyEvaluated )
+  ( simplifyEvaluated
+    )
 import qualified Kore.Step.Simplification.Not as Not
-                 ( simplifyEvaluated )
+  ( simplifyEvaluated
+    )
 import qualified Kore.Step.Simplification.Or as Or
-                 ( simplifyEvaluated )
+  ( simplifyEvaluated
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+import Kore.Unparser
+import Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 
@@ -131,17 +149,17 @@ Normalization of the compared terms is not implemented yet, so
 Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => Predicate variable
-    -> Equals Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify predicate Equals { equalsFirst = first, equalsSecond = second } =
-    simplifyEvaluated predicate first second
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => Predicate variable
+  -> Equals Sort (OrPattern variable)
+  -> simplifier (OrPattern variable)
+simplify predicate Equals {equalsFirst = first, equalsSecond = second} =
+  simplifyEvaluated predicate first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -157,178 +175,174 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => Predicate variable
-    -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => Predicate variable
+  -> OrPattern variable
+  -> OrPattern variable
+  -> simplifier (OrPattern variable)
 simplifyEvaluated predicate first second
   | first == second = return OrPattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
-  | otherwise = do
-    let isFunctionConditional Conditional {term} = isFunctionPattern term
-    case (firstPatterns, secondPatterns) of
+  | otherwise =
+    do
+      let isFunctionConditional Conditional {term} = isFunctionPattern term
+      case (firstPatterns, secondPatterns) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP predicate
         ([firstP], _)
-            | isFunctionConditional firstP ->
-                makeEvaluateFunctionalOr predicate firstP secondPatterns
+          | isFunctionConditional firstP ->
+            makeEvaluateFunctionalOr predicate firstP secondPatterns
         (_, [secondP])
-            | isFunctionConditional secondP ->
-                makeEvaluateFunctionalOr predicate secondP firstPatterns
+          | isFunctionConditional secondP ->
+            makeEvaluateFunctionalOr predicate secondP firstPatterns
         _ ->
-            makeEvaluate
-                (OrPattern.toPattern first)
-                (OrPattern.toPattern second)
-                predicate
+          makeEvaluate
+            (OrPattern.toPattern first)
+            (OrPattern.toPattern second)
+            predicate
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
 
 makeEvaluateFunctionalOr
-    :: forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => Predicate variable
-    -> Pattern variable
-    -> [Pattern variable]
-    -> simplifier (OrPattern variable)
+  :: forall variable simplifier. ( SortedVariable variable,
+                                   Show variable,
+                                   Unparse variable,
+                                   FreshVariable variable,
+                                   MonadSimplify simplifier
+                                   )
+  => Predicate variable
+  -> Pattern variable
+  -> [Pattern variable]
+  -> simplifier (OrPattern variable)
 makeEvaluateFunctionalOr predicate first seconds = do
-    firstCeil <- Ceil.makeEvaluate predicate first
-    secondCeilsWithProofs <- mapM (Ceil.makeEvaluate predicate) seconds
-    firstNotCeil <- Not.simplifyEvaluated firstCeil
-    let secondCeils = secondCeilsWithProofs
-    secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
-    let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
-    allAreBottom <-
-        foldM
-            And.simplifyEvaluated
-            (OrPattern.fromPatterns [Pattern.top])
-            (firstNotCeil : secondNotCeils)
-    firstEqualsSeconds <-
-        mapM
-            (makeEvaluateEqualsIfSecondNotBottom first)
-            (zip seconds secondCeils)
-    oneIsNotBottomEquals <-
-        foldM
-            And.simplifyEvaluated
-            firstCeil
-            (oneNotBottom : firstEqualsSeconds)
-    return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
+  firstCeil <- Ceil.makeEvaluate predicate first
+  secondCeilsWithProofs <- mapM (Ceil.makeEvaluate predicate) seconds
+  firstNotCeil <- Not.simplifyEvaluated firstCeil
+  let secondCeils = secondCeilsWithProofs
+  secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
+  let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
+  allAreBottom <-
+    foldM
+      And.simplifyEvaluated
+      (OrPattern.fromPatterns [Pattern.top])
+      (firstNotCeil : secondNotCeils)
+  firstEqualsSeconds <-
+    mapM
+      (makeEvaluateEqualsIfSecondNotBottom first)
+      (zip seconds secondCeils)
+  oneIsNotBottomEquals <-
+    foldM
+      And.simplifyEvaluated
+      firstCeil
+      (oneNotBottom : firstEqualsSeconds)
+  return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
   where
     makeEvaluateEqualsIfSecondNotBottom
-        Conditional {term = firstTerm}
-        (Conditional {term = secondTerm}, secondCeil)
-      = do
-        equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-        Implies.simplifyEvaluated secondCeil equality
+      Conditional {term = firstTerm}
+      (Conditional {term = secondTerm}, secondCeil) =
+        do
+          equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+          Implies.simplifyEvaluated secondCeil equality
 
 {-| evaluates an 'Equals' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> Predicate variable
-    -> simplifier (OrPattern variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> Predicate variable
+  -> simplifier (OrPattern variable)
 makeEvaluate
-    first@Conditional { term = Top_ _ }
-    second@Conditional { term = Top_ _ }
-    _
-  =
+  first@Conditional {term = Top_ _}
+  second@Conditional {term = Top_ _}
+  _ =
     return (Iff.makeEvaluate first second)
 makeEvaluate
-    Conditional
-        { term = firstTerm
-        , predicate = PredicateTrue
-        , substitution = (Substitution.unwrap -> [])
-        }
-    Conditional
-        { term = secondTerm
-        , predicate = PredicateTrue
-        , substitution = (Substitution.unwrap -> [])
-        }
-    predicate
-  = do
-    result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
-    return (Pattern.fromPredicate <$> result)
-
+  Conditional
+    { term = firstTerm,
+      predicate = PredicateTrue,
+      substitution = (Substitution.unwrap -> [])
+      }
+  Conditional
+    { term = secondTerm,
+      predicate = PredicateTrue,
+      substitution = (Substitution.unwrap -> [])
+      }
+  predicate =
+    do
+      result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
+      return (Pattern.fromPredicate <$> result)
 makeEvaluate
-    first@Conditional { term = firstTerm }
-    second@Conditional { term = secondTerm }
-    predicate
-  = do
-    let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
-    firstCeil <- Ceil.makeEvaluate predicate first'
-    let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
-    secondCeil <- Ceil.makeEvaluate predicate second'
-    firstCeilNegation <- Not.simplifyEvaluated firstCeil
-    secondCeilNegation <- Not.simplifyEvaluated secondCeil
-    termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-    negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
-    ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
-    equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
-    return $ Or.simplifyEvaluated equalityAnd negationAnd
-  where
-    termsAreEqual = firstTerm == secondTerm
+  first@Conditional {term = firstTerm}
+  second@Conditional {term = secondTerm}
+  predicate =
+    do
+      let first' = first {term = if termsAreEqual then mkTop_ else firstTerm}
+      firstCeil <- Ceil.makeEvaluate predicate first'
+      let second' = second {term = if termsAreEqual then mkTop_ else secondTerm}
+      secondCeil <- Ceil.makeEvaluate predicate second'
+      firstCeilNegation <- Not.simplifyEvaluated firstCeil
+      secondCeilNegation <- Not.simplifyEvaluated secondCeil
+      termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+      negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
+      ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
+      equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
+      return $ Or.simplifyEvaluated equalityAnd negationAnd
+    where
+      termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => TermLike variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => TermLike variable
+  -> TermLike variable
+  -> simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
-    result <-
-        runMaybeT
-        $ makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
-    (return . fromMaybe def) result
+  result <-
+    runMaybeT
+      $ makeEvaluateTermsAssumesNoBottomMaybe firstTerm secondTerm
+  (return . fromMaybe def) result
   where
     def =
-        OrPattern.fromPattern
-            Conditional
-                { term = mkTop_
-                , predicate = makeEqualsPredicate firstTerm secondTerm
-                , substitution = mempty
-                }
+      OrPattern.fromPattern Conditional
+        { term = mkTop_,
+          predicate = makeEqualsPredicate firstTerm secondTerm,
+          substitution = mempty
+          }
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
-    :: forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT simplifier (OrPattern variable)
+  :: forall variable simplifier. ( SortedVariable variable,
+                                   Show variable,
+                                   Unparse variable,
+                                   FreshVariable variable,
+                                   MonadSimplify simplifier
+                                   )
+  => TermLike variable
+  -> TermLike variable
+  -> MaybeT simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
-    result <- AndTerms.termEquals first second
-    return (Pattern.fromPredicate <$> result)
+  result <- AndTerms.termEquals first second
+  return (Pattern.fromPredicate <$> result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -341,52 +355,55 @@ because it returns an 'or').
 See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => TermLike variable
-    -> TermLike variable
-    -> Predicate variable
-    -> simplifier (OrPredicate variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => TermLike variable
+  -> TermLike variable
+  -> Predicate variable
+  -> simplifier (OrPredicate variable)
 makeEvaluateTermsToPredicate first second configurationPredicate
   | first == second = return OrPredicate.top
-  | otherwise = do
-    result <- runMaybeT $ AndTerms.termEquals first second
-    case result of
+  | otherwise =
+    do
+      result <- runMaybeT $ AndTerms.termEquals first second
+      case result of
         Nothing ->
-            return
-                $ OrPredicate.fromPredicate
-                $ Predicate.fromPredicate
-                $ makeEqualsPredicate first second
+          return
+            $ OrPredicate.fromPredicate
+            $ Predicate.fromPredicate
+            $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
-            secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
-            let
-                toPredicateSafe
-                    ps@Conditional {term = (), predicate, substitution}
-                  | Substitution.null substitution =
-                    predicate
-                  | otherwise =
-                    error
-                        (  "Unimplemented: we should split the configuration"
+          firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
+          secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
+          let toPredicateSafe ps@Conditional {term = (), predicate, substitution}
+                | Substitution.null substitution =
+                  predicate
+                | otherwise =
+                  error
+                    ( "Unimplemented: we should split the configuration"
                         ++ " for or with nonempty substitution."
-                        ++ " input=" ++ show ps
-                        ++ ", first=" ++ show first
-                        ++ ", second=" ++ show second
-                        )
-                firstCeil =
-                    OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
-                secondCeil =
-                    OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
-                firstCeilNegation = makeNotPredicate firstCeil
-                secondCeilNegation = makeNotPredicate secondCeil
-                ceilNegationAnd =
-                    makeAndPredicate firstCeilNegation secondCeilNegation
-            return $ MultiOr.merge
+                        ++ " input="
+                        ++ show ps
+                        ++ ", first="
+                        ++ show first
+                        ++ ", second="
+                        ++ show second
+                      )
+              firstCeil =
+                OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
+              secondCeil =
+                OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
+              firstCeilNegation = makeNotPredicate firstCeil
+              secondCeilNegation = makeNotPredicate secondCeil
+              ceilNegationAnd =
+                makeAndPredicate firstCeilNegation secondCeilNegation
+          return
+            $ MultiOr.merge
                 predicatedOr
-                (OrPredicate.fromPredicate
+                ( OrPredicate.fromPredicate
                     $ Predicate.fromPredicate ceilNegationAnd
-                )
+                  )

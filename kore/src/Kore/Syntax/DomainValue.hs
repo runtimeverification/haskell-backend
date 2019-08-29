@@ -3,18 +3,18 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
-
 module Kore.Syntax.DomainValue
-    ( DomainValue (..)
-    ) where
+  ( DomainValue (..)
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Function
-import           Data.Hashable
-import qualified Generics.SOP as SOP
+import Control.DeepSeq
+  ( NFData (..)
+    )
+import Data.Function
+import Data.Hashable
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -31,11 +31,12 @@ This represents the encoding of an object constant, e.g. we may use
 \dv{Int{}}{"123"} instead of a representation based on constructors,
 e.g. succesor(succesor(...succesor(0)...))
 -}
-data DomainValue sort child = DomainValue
-    { domainValueSort  :: !sort
-    , domainValueChild :: !child
-    }
-    deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
+data DomainValue sort child
+  = DomainValue
+      { domainValueSort :: !sort,
+        domainValueChild :: !child
+        }
+  deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance (Hashable sort, Hashable child) => Hashable (DomainValue sort child)
 
@@ -48,24 +49,26 @@ instance SOP.HasDatatypeInfo (DomainValue sort child)
 instance (Debug sort, Debug child) => Debug (DomainValue sort child)
 
 instance Unparse child => Unparse (DomainValue Sort child) where
-    unparse DomainValue { domainValueSort, domainValueChild } =
-        "\\dv"
-        <> parameters [domainValueSort]
-        <> arguments [domainValueChild]
-    unparse2 DomainValue { domainValueSort, domainValueChild } =
-        "\\dv"
-        <> parameters2 [domainValueSort]
-        <> arguments2 [domainValueChild]
+
+  unparse DomainValue {domainValueSort, domainValueChild} =
+    "\\dv"
+      <> parameters [domainValueSort]
+      <> arguments [domainValueChild]
+
+  unparse2 DomainValue {domainValueSort, domainValueChild} =
+    "\\dv"
+      <> parameters2 [domainValueSort]
+      <> arguments2 [domainValueChild]
 
 instance
-    Ord variable =>
-    Synthetic (FreeVariables variable) (DomainValue sort)
+  Ord variable
+  => Synthetic (FreeVariables variable) (DomainValue sort)
   where
-    synthetic = domainValueChild
-    {-# INLINE synthetic #-}
+  synthetic = domainValueChild
+  {-# INLINE synthetic #-}
 
 instance Synthetic Sort (DomainValue Sort) where
-    synthetic DomainValue { domainValueSort, domainValueChild } =
-        domainValueSort
-        & seq (matchSort stringMetaSort domainValueChild)
-    {-# INLINE synthetic #-}
+  synthetic DomainValue {domainValueSort, domainValueChild} =
+    domainValueSort
+      & seq (matchSort stringMetaSort domainValueChild)
+  {-# INLINE synthetic #-}

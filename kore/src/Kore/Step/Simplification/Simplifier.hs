@@ -7,14 +7,15 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-
 module Kore.Step.Simplification.Simplifier
-    ( create
-    ) where
+  ( create
+    )
+where
 
-import           Kore.Step.Simplification.Data
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.TermLike as TermLike
-                 ( simplifyToOr )
+  ( simplifyToOr
+    )
 
 create :: TermLikeSimplifier
 create = termLikeSimplifier TermLike.simplifyToOr

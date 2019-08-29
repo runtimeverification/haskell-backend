@@ -6,31 +6,34 @@ Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
 module Kore.Syntax.Id
-    (
-    -- * Identifiers
-      Id (..)
-    , getIdForError
-    , noLocationId
-    , implicitId
+  ( -- * Identifiers
+    Id (..),
+    getIdForError,
+    noLocationId,
+    implicitId,
     -- * Locations
-    , AstLocation (..)
-    , FileLocation (..)
-    , prettyPrintAstLocation
-    ) where
+    AstLocation (..),
+    FileLocation (..),
+    prettyPrintAstLocation
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Hashable
-                 ( Hashable )
-import           Data.String
-                 ( IsString (..) )
-import           Data.Text
-                 ( Text )
+import Control.DeepSeq
+  ( NFData
+    )
+import Data.Hashable
+  ( Hashable
+    )
+import Data.String
+  ( IsString (..)
+    )
+import Data.Text
+  ( Text
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Debug
 import Kore.Unparser
 
@@ -40,20 +43,21 @@ import Kore.Unparser
 Section 9.1.1 (Lexicon).
 
  -}
-data Id = Id
-    { getId      :: !Text
-    , idLocation :: !AstLocation
-    }
-    deriving (Show, GHC.Generic)
+data Id
+  = Id
+      { getId :: !Text,
+        idLocation :: !AstLocation
+        }
+  deriving (Show, GHC.Generic)
 
 -- | 'Ord' ignores the 'AstLocation'
 instance Ord Id where
-    compare first@(Id _ _) second@(Id _ _) =
-        compare (getId first) (getId second)
+  compare first@(Id _ _) second@(Id _ _) =
+    compare (getId first) (getId second)
 
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
-    first == second = compare first second == EQ
+  first == second = compare first second == EQ
 
 instance Hashable Id
 
@@ -66,11 +70,13 @@ instance SOP.HasDatatypeInfo Id
 instance Debug Id
 
 instance IsString Id where
-    fromString = noLocationId . fromString
+  fromString = noLocationId . fromString
 
 instance Unparse Id where
-    unparse = Pretty.pretty . getId
-    unparse2 = Pretty.pretty . getId
+
+  unparse = Pretty.pretty . getId
+
+  unparse2 = Pretty.pretty . getId
 
 {- | Create an 'Id' without location.
 
@@ -99,14 +105,14 @@ the kore parsing code and pretty printing code below would access
 the AstLocationFile branch.
 -}
 data AstLocation
-    = AstLocationNone
-    | AstLocationImplicit
-    | AstLocationGeneratedVariable
-    | AstLocationTest
-    | AstLocationFile FileLocation
-    | AstLocationUnknown
+  = AstLocationNone
+  | AstLocationImplicit
+  | AstLocationGeneratedVariable
+  | AstLocationTest
+  | AstLocationFile FileLocation
+  | AstLocationUnknown
     -- ^ This should not be used and should be eliminated in further releases
-    deriving (Eq, Show, GHC.Generic)
+  deriving (Eq, Show, GHC.Generic)
 
 instance Hashable AstLocation
 
@@ -125,28 +131,31 @@ prettyPrintAstLocation :: AstLocation -> Text
 prettyPrintAstLocation AstLocationNone = "<unknown location>"
 prettyPrintAstLocation AstLocationImplicit = "<implicitly defined entity>"
 prettyPrintAstLocation AstLocationGeneratedVariable =
-    "<variable generated internally>"
+  "<variable generated internally>"
 prettyPrintAstLocation AstLocationTest = "<test data>"
 prettyPrintAstLocation
-    (AstLocationFile FileLocation
-        { fileName = name
-        , line = line'
-        , column = column'
-        }
-    )
-  = Text.pack name <> " "
-    <> Text.pack (show line') <> ":"
-    <> Text.pack (show column')
+  ( AstLocationFile
+      FileLocation
+        { fileName = name,
+          line = line',
+          column = column'
+          }
+    ) =
+    Text.pack name <> " "
+      <> Text.pack (show line')
+      <> ":"
+      <> Text.pack (show column')
 prettyPrintAstLocation AstLocationUnknown = "<unknown location>"
 
 {-| 'FileLocation' represents a position in a source file.
 -}
-data FileLocation = FileLocation
-    { fileName :: FilePath
-    , line     :: Int
-    , column   :: Int
-    }
-    deriving (Eq, Show, GHC.Generic)
+data FileLocation
+  = FileLocation
+      { fileName :: FilePath,
+        line :: Int,
+        column :: Int
+        }
+  deriving (Eq, Show, GHC.Generic)
 
 instance Hashable FileLocation
 

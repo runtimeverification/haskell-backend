@@ -8,15 +8,17 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Next
-    ( simplify
-    ) where
+  ( simplify
+    )
+where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Unparser
+import Kore.Internal.TermLike
+import Kore.Unparser
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -27,25 +29,25 @@ child.
 Right now this does not do any actual simplification.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Next Sort (OrPattern variable)
-    -> OrPattern variable
-simplify Next { nextChild = child } = simplifyEvaluated child
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Next Sort (OrPattern variable)
+  -> OrPattern variable
+simplify Next {nextChild = child} = simplifyEvaluated child
 
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => OrPattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => OrPattern variable
+  -> OrPattern variable
 simplifyEvaluated simplified =
-    OrPattern.fromTermLike
+  OrPattern.fromTermLike
     $ mkNext
     $ Pattern.toTermLike
     $ OrPattern.toPattern simplified

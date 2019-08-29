@@ -8,20 +8,25 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Floor
-    ( simplify
-    , makeEvaluateFloor
-    ) where
+  ( simplify,
+    makeEvaluateFloor
+    )
+where
 
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+  ( extractPatterns
+    )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeFloorPredicate )
-import           Kore.Unparser
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+  ( makeAndPredicate,
+    makeFloorPredicate
+    )
+import Kore.Unparser
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
 
@@ -35,15 +40,15 @@ However, we don't take into account things like
 floor(a and b) = floor(a) and floor(b).
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Unparse variable
-        , Show variable
-        , Ord variable
-        )
-    => Floor Sort (OrPattern variable)
-    -> OrPattern variable
-simplify Floor { floorChild = child } =
-    simplifyEvaluatedFloor child
+  :: ( SortedVariable variable,
+       Unparse variable,
+       Show variable,
+       Ord variable
+       )
+  => Floor Sort (OrPattern variable)
+  -> OrPattern variable
+simplify Floor {floorChild = child} =
+  simplifyEvaluatedFloor child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -59,54 +64,52 @@ to carry around.
 
 -}
 simplifyEvaluatedFloor
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        )
-    => OrPattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Show variable,
+       Ord variable,
+       Unparse variable
+       )
+  => OrPattern variable
+  -> OrPattern variable
 simplifyEvaluatedFloor child =
-    case MultiOr.extractPatterns child of
-        [childP] -> makeEvaluateFloor childP
-        _ ->
-            makeEvaluateFloor
-                (OrPattern.toPattern child)
+  case MultiOr.extractPatterns child of
+    [childP] -> makeEvaluateFloor childP
+    _ ->
+      makeEvaluateFloor
+        (OrPattern.toPattern child)
 
 {-| 'makeEvaluateFloor' simplifies a 'Floor' of 'Pattern'.
 
 See 'simplify' for details.
 -}
 makeEvaluateFloor
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Show variable,
+       Ord variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> OrPattern variable
 makeEvaluateFloor child
-  | Pattern.isTop child    = OrPattern.top
+  | Pattern.isTop child = OrPattern.top
   | Pattern.isBottom child = OrPattern.bottom
-  | otherwise              = makeEvaluateNonBoolFloor child
+  | otherwise = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> OrPattern variable
-makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
-    OrPattern.fromPattern patt
+  :: ( SortedVariable variable,
+       Show variable,
+       Ord variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> OrPattern variable
+makeEvaluateNonBoolFloor patt@Conditional {term = Top_ _} =
+  OrPattern.fromPattern patt
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
-makeEvaluateNonBoolFloor
-    Conditional {term, predicate, substitution}
-  =
-    OrPattern.fromPattern Conditional
-        { term = mkTop_
-        , predicate = makeAndPredicate (makeFloorPredicate term) predicate
-        , substitution = substitution
-        }
+makeEvaluateNonBoolFloor Conditional {term, predicate, substitution} =
+  OrPattern.fromPattern Conditional
+    { term = mkTop_,
+      predicate = makeAndPredicate (makeFloorPredicate term) predicate,
+      substitution = substitution
+      }

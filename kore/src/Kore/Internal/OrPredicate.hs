@@ -4,32 +4,35 @@ License     : NCSA
 
 -}
 module Kore.Internal.OrPredicate
-    ( OrPredicate
-    , fromPredicates
-    , fromPredicate
-    , bottom
-    , top
-    , isFalse
-    , isTrue
-    , toPredicate
-    ) where
+  ( OrPredicate,
+    fromPredicates,
+    fromPredicate,
+    bottom,
+    top,
+    isFalse,
+    isTrue,
+    toPredicate
+    )
+where
 
 import qualified Data.Foldable as Foldable
-
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+  ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+  ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+  ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unparser
-
+import Kore.TopBottom
+  ( TopBottom (..)
+    )
+import Kore.Unparser
 
 {-| The disjunction of 'Predicate'.
 -}
@@ -38,17 +41,17 @@ type OrPredicate variable = MultiOr (Predicate variable)
 {- | A "disjunction" of one 'Predicate'.
  -}
 fromPredicate
-    :: Ord variable
-    => Predicate variable
-    -> OrPredicate variable
+  :: Ord variable
+  => Predicate variable
+  -> OrPredicate variable
 fromPredicate = MultiOr.singleton
 
 {- | Disjoin a collection of predicates.
  -}
 fromPredicates
-    :: (Foldable f, Ord variable)
-    => f (Predicate variable)
-    -> OrPredicate variable
+  :: (Foldable f, Ord variable)
+  => f (Predicate variable)
+  -> OrPredicate variable
 fromPredicates = MultiOr.make . Foldable.toList
 
 {- | @\\bottom@
@@ -83,11 +86,12 @@ isTrue = isTop
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => MultiOr (Syntax.Predicate variable) -> Syntax.Predicate variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => MultiOr (Syntax.Predicate variable)
+  -> Syntax.Predicate variable
 toPredicate multiOr =
-    Syntax.Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
+  Syntax.Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)

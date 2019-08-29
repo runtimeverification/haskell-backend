@@ -12,51 +12,55 @@ import qualified Data.Limit as Limit
 @
 -}
 module Data.Limit
-    ( Limit (..)
-    , enumFromLimit
-    , replicate
-    , takeWithin
-    , withinLimit
-    ) where
+  ( Limit (..),
+    enumFromLimit,
+    replicate,
+    takeWithin,
+    withinLimit
+    )
+where
 
 import Prelude hiding
-       ( replicate )
+  ( replicate
+    )
 
 {- | An optionally-limited quantity.
  -}
 data Limit a
-    = Unlimited
+  = Unlimited
     -- ^ No limit
-    | Limit !a
+  | Limit !a
     -- ^ Limit @a@ by the given (inclusive) upper bound
-    deriving (Eq, Read, Show)
+  deriving (Eq, Read, Show)
 
 instance Ord a => Ord (Limit a) where
-    compare =
+  compare =
+    \case
+      Unlimited ->
         \case
-            Unlimited ->
-                \case
-                    Unlimited -> EQ
-                    Limit _ -> GT
-            Limit a ->
-                \case
-                    Unlimited -> LT
-                    Limit b -> compare a b
+          Unlimited -> EQ
+          Limit _ -> GT
+      Limit a ->
+        \case
+          Unlimited -> LT
+          Limit b -> compare a b
 
 instance Ord a => Semigroup (Limit a) where
-    (<>) = min
+  (<>) = min
 
 instance Ord a => Monoid (Limit a) where
-    mempty = Unlimited
-    mappend = (<>)
+
+  mempty = Unlimited
+
+  mappend = (<>)
 
 {- | Is the given value within the (inclusive) upper bound?
  -}
 withinLimit :: Ord a => Limit a -> a -> Bool
 withinLimit =
-    \case
-        Unlimited -> const True
-        Limit u -> (<= u)
+  \case
+    Unlimited -> const True
+    Limit u -> (<= u)
 
 {- | Enumerate values beginning at @a@ and within the limit.
  -}

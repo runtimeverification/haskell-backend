@@ -8,16 +8,18 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Forall
-    ( simplify
-    , makeEvaluate
-    ) where
+  ( simplify,
+    makeEvaluate
+    )
+where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Unparser
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -37,17 +39,15 @@ For this reason, we don't even try to see if the variable actually occurs in
 the pattern except for the top/bottom cases.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Forall Sort variable (OrPattern variable)
-    -> OrPattern variable
-simplify
-    Forall { forallVariable, forallChild }
-  =
-    simplifyEvaluated forallVariable forallChild
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Forall Sort variable (OrPattern variable)
+  -> OrPattern variable
+simplify Forall {forallVariable, forallChild} =
+  simplifyEvaluated forallVariable forallChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -63,34 +63,34 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => ElementVariable variable
-    -> OrPattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => ElementVariable variable
+  -> OrPattern variable
+  -> OrPattern variable
 simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified  = simplified
+  | OrPattern.isTrue simplified = simplified
   | OrPattern.isFalse simplified = simplified
-  | otherwise                    = makeEvaluate variable <$> simplified
+  | otherwise = makeEvaluate variable <$> simplified
 
 {-| evaluates an 'Forall' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => ElementVariable variable
-    -> Pattern variable
-    -> Pattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => ElementVariable variable
+  -> Pattern variable
+  -> Pattern variable
 makeEvaluate variable patt
-  | Pattern.isTop patt    = Pattern.top
+  | Pattern.isTop patt = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom
   | otherwise =
     Pattern.fromTermLike $ mkForall variable $ Pattern.toTermLike patt

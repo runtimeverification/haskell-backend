@@ -8,24 +8,29 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Iff
-    ( makeEvaluate
-    , simplify
-    , simplifyEvaluated
-    ) where
+  ( makeEvaluate,
+    simplify,
+    simplifyEvaluated
+    )
+where
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Data
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Not as Not
-                 ( makeEvaluate, simplifyEvaluated )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+  ( makeEvaluate,
+    simplifyEvaluated
+    )
+import Kore.Unparser
+import Kore.Variables.Fresh
+  ( FreshVariable
+    )
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
@@ -34,16 +39,16 @@ Right now this has special cases only for top and bottom children
 and for children with top terms.
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => Iff Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify Iff { iffFirst = first, iffSecond = second } =
-    simplifyEvaluated first second
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => Iff Sort (OrPattern variable)
+  -> simplifier (OrPattern variable)
+simplify Iff {iffFirst = first, iffSecond = second} =
+  simplifyEvaluated first second
 
 {-| evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -63,46 +68,46 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => OrPattern variable
+  -> OrPattern variable
+  -> simplifier (OrPattern variable)
 simplifyEvaluated
-    first
-    second
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isFalse first  = Not.simplifyEvaluated second
-  | OrPattern.isTrue second  = return first
-  | OrPattern.isFalse second = Not.simplifyEvaluated first
-  | otherwise =
-    return $ case ( firstPatterns, secondPatterns ) of
+  first
+  second
+    | OrPattern.isTrue first = return second
+    | OrPattern.isFalse first = Not.simplifyEvaluated second
+    | OrPattern.isTrue second = return first
+    | OrPattern.isFalse second = Not.simplifyEvaluated first
+    | otherwise =
+      return $ case (firstPatterns, secondPatterns) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
         _ ->
-            makeEvaluate
-                (OrPattern.toPattern first)
-                (OrPattern.toPattern second)
-  where
-    firstPatterns = MultiOr.extractPatterns first
-    secondPatterns = MultiOr.extractPatterns second
+          makeEvaluate
+            (OrPattern.toPattern first)
+            (OrPattern.toPattern second)
+    where
+      firstPatterns = MultiOr.extractPatterns first
+      secondPatterns = MultiOr.extractPatterns second
 
 {-| evaluates an 'Iff' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> OrPattern variable
 makeEvaluate first second
   | Pattern.isTop first = OrPattern.fromPatterns [second]
   | Pattern.isBottom first = Not.makeEvaluate second
@@ -111,44 +116,45 @@ makeEvaluate first second
   | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> OrPattern variable
 makeEvaluateNonBoolIff
-    patt1@Conditional
-        { term = firstTerm
-        , predicate = firstPredicate
-        , substitution = firstSubstitution
-        }
-    patt2@Conditional
-        { term = secondTerm
-        , predicate = secondPredicate
-        , substitution = secondSubstitution
-        }
-  | isTop firstTerm, isTop secondTerm
-  =
-    OrPattern.fromPatterns
+  patt1@Conditional
+    { term = firstTerm,
+      predicate = firstPredicate,
+      substitution = firstSubstitution
+      }
+  patt2@Conditional
+    { term = secondTerm,
+      predicate = secondPredicate,
+      substitution = secondSubstitution
+      }
+    | isTop firstTerm,
+      isTop secondTerm =
+      OrPattern.fromPatterns
         [ Conditional
-            { term = firstTerm
-            , predicate =
+            { term = firstTerm,
+              predicate =
                 Syntax.Predicate.makeIffPredicate
-                    (Syntax.Predicate.makeAndPredicate
-                        firstPredicate
-                        (Syntax.Predicate.fromSubstitution firstSubstitution)
+                  ( Syntax.Predicate.makeAndPredicate
+                      firstPredicate
+                      (Syntax.Predicate.fromSubstitution firstSubstitution)
                     )
-                    (Syntax.Predicate.makeAndPredicate
-                        secondPredicate
-                        (Syntax.Predicate.fromSubstitution secondSubstitution)
-                    )
-            , substitution = mempty
-            }
-        ]
-  | otherwise =
-    OrPattern.fromTermLike $ mkIff
-        (Pattern.toTermLike patt1)
-        (Pattern.toTermLike patt2)
+                  ( Syntax.Predicate.makeAndPredicate
+                      secondPredicate
+                      (Syntax.Predicate.fromSubstitution secondSubstitution)
+                    ),
+              substitution = mempty
+              }
+          ]
+    | otherwise =
+      OrPattern.fromTermLike
+        $ mkIff
+            (Pattern.toTermLike patt1)
+            (Pattern.toTermLike patt2)

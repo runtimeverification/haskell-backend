@@ -23,20 +23,22 @@ main = do
 
 -}
 module Kore.Parser
-    ( parseKoreDefinition
-    , parseKorePattern
-    , koreParser
-    , korePatternParser
-    , ParsedPattern
-    , Parser.asParsedPattern
-    , ParsedDefinition
-    ) where
+  ( parseKoreDefinition,
+    parseKorePattern,
+    koreParser,
+    korePatternParser,
+    ParsedPattern,
+    Parser.asParsedPattern,
+    ParsedDefinition
+    )
+where
 
-import           Kore.Parser.Lexeme
-                 ( skipWhitespace )
+import Kore.Parser.Lexeme
+  ( skipWhitespace
+    )
 import qualified Kore.Parser.Parser as Parser
-import           Kore.Parser.ParserUtils
-import           Kore.Syntax.Definition
+import Kore.Parser.ParserUtils
+import Kore.Syntax.Definition
 
 {-|'koreParser' is a parser for Kore.
 The input must contain a full valid Kore defininition and nothing else.
@@ -59,9 +61,9 @@ else.
 
  -}
 parseKoreDefinition
-    :: FilePath  -- ^ Filename used for error messages
-    -> String  -- ^ The concrete syntax of a valid Kore definition
-    -> Either String ParsedDefinition
+  :: FilePath -- ^ Filename used for error messages
+  -> String -- ^ The concrete syntax of a valid Kore definition
+  -> Either String ParsedDefinition
 parseKoreDefinition = parseOnly (skipWhitespace *> koreParser)
 
 {- | Parse a string representing a Kore pattern.
@@ -71,7 +73,7 @@ message otherwise. The input must contain a valid Kore pattern and nothing else.
 
  -}
 parseKorePattern
-    :: FilePath  -- ^ Filename used for error messages
-    -> String  -- ^ The concrete syntax of a valid Kore pattern
-    -> Either String ParsedPattern
+  :: FilePath -- ^ Filename used for error messages
+  -> String -- ^ The concrete syntax of a valid Kore pattern
+  -> Either String ParsedPattern
 parseKorePattern = parseOnly (skipWhitespace *> korePatternParser)

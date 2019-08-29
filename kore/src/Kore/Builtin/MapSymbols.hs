@@ -12,48 +12,54 @@ builtin modules.
     import qualified Kore.Builtin.MapSymbols as Map
 @
 -}
-
 module Kore.Builtin.MapSymbols
-    ( -- * Symbols
-      lookupSymbolUpdate
-    , lookupSymbolLookup
-    , lookupSymbolInKeys
-    , lookupSymbolKeys
-    , lookupSymbolRemove
-    , lookupSymbolRemoveAll
-    , lookupSymbolSize
-    , isSymbolConcat
-    , isSymbolElement
-    , isSymbolUnit
-    , isSymbolRemove
-    , isSymbolRemoveAll
-    , isSymbolSize
-      -- * keys
-    , concatKey
-    , elementKey
-    , in_keysKey
-    , keysKey
-    , lookupKey
-    , removeAllKey
-    , removeKey
-    , unitKey
-    , updateKey
-    , sizeKey
-    ) where
+  ( -- * Symbols
+    lookupSymbolUpdate,
+    lookupSymbolLookup,
+    lookupSymbolInKeys,
+    lookupSymbolKeys,
+    lookupSymbolRemove,
+    lookupSymbolRemoveAll,
+    lookupSymbolSize,
+    isSymbolConcat,
+    isSymbolElement,
+    isSymbolUnit,
+    isSymbolRemove,
+    isSymbolRemoveAll,
+    isSymbolSize,
+    -- * keys
+    concatKey,
+    elementKey,
+    in_keysKey,
+    keysKey,
+    lookupKey,
+    removeAllKey,
+    removeKey,
+    unitKey,
+    updateKey,
+    sizeKey
+    )
+where
 
-import           Data.String
-                 ( IsString )
+import Data.String
+  ( IsString
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+  ( Symbol
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error as Kore
-                 ( Error )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.Internal.Symbol
-                 ( Symbol )
-import           Kore.Sort
-                 ( Sort )
+  ( Error
+    )
+import Kore.IndexedModule.IndexedModule
+  ( VerifiedModule
+    )
+import Kore.Internal.Symbol
+  ( Symbol
+    )
+import Kore.Sort
+  ( Sort
+    )
 
 concatKey :: IsString s => s
 concatKey = "MAP.concat"
@@ -88,57 +94,57 @@ sizeKey = "MAP.size"
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
 lookupSymbolUpdate
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolUpdate = Builtin.lookupSymbol updateKey
 
 {- | Find the symbol hooked to @MAP.lookup@ in an indexed module.
  -}
 lookupSymbolLookup
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolLookup = Builtin.lookupSymbol lookupKey
 
 {- | Find the symbol hooked to @MAP.in_keys@ in an indexed module.
  -}
 lookupSymbolInKeys
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolInKeys = Builtin.lookupSymbol in_keysKey
 
 {- | Find the symbol hooked to @MAP.keys@ in an indexed module.
  -}
 lookupSymbolKeys
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolKeys = Builtin.lookupSymbol keysKey
 
 {- | Find the symbol hooked to @MAP.remove@ in an indexed module.
  -}
 lookupSymbolRemove
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolRemove = Builtin.lookupSymbol removeKey
 
 {- | Find the symbol hooked to @MAP.removeAll@ in an indexed module.
  -}
 lookupSymbolRemoveAll
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolRemoveAll = Builtin.lookupSymbol removeAllKey
 
 {- | Find the symbol hooked to @MAP.size@ in an indexed module.
  -}
 lookupSymbolSize
-    :: Sort
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> Either (Kore.Error e) Symbol
+  :: Sort
+  -> VerifiedModule Attribute.Symbol axiomAttrs
+  -> Either (Kore.Error e) Symbol
 lookupSymbolSize = Builtin.lookupSymbol sizeKey
 
 {- | Check if the given symbol is hooked to @MAP.concat@.

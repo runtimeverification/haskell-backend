@@ -5,22 +5,25 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 -}
-
 module Kore.Step.SMT.Declaration.All
-    ( declare
-    ) where
+  ( declare
+    )
+where
 
 import qualified Kore.Step.SMT.AST as AST
-                 ( SmtDeclarations )
+  ( SmtDeclarations
+    )
 import qualified Kore.Step.SMT.Declaration.Sorts as Sorts
-                 ( declare )
+  ( declare
+    )
 import qualified Kore.Step.SMT.Declaration.Symbols as Symbols
-                 ( declare )
+  ( declare
+    )
 import qualified SMT
 
 {-| Sends all given declarations to the SMT.
 -}
 declare :: SMT.MonadSMT m => AST.SmtDeclarations -> m ()
 declare declarations = do
-    Sorts.declare declarations
-    Symbols.declare declarations
+  Sorts.declare declarations
+  Symbols.declare declarations

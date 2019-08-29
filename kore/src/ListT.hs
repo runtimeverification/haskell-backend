@@ -8,16 +8,17 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 This module implements the list monad transformer.
 
 -}
-
 module ListT
-    ( ListT (..)
-    , cons
-    , gather
-    , scatter
-    , mapListT
+  ( ListT (..),
+    cons,
+    gather,
+    scatter,
+    mapListT,
     -- * Re-exports
-    , Alternative (..), MonadPlus (..)
-    ) where
+    Alternative (..),
+    MonadPlus (..)
+    )
+where
 
 import Control.Applicative
 import Control.Monad
@@ -66,78 +67,82 @@ return [f a, f b, g a, g b]
 @
 
  -}
-newtype ListT m a =
-    ListT
-        { foldListT
-            :: forall r
-            .  (a -> m r -> m r)
-            -> m r
-            -> m r
+newtype ListT m a
+  = ListT
+      { foldListT
+          :: forall r. (a -> m r -> m r)
+          -> m r
+          -> m r
         }
-    deriving (Typeable)
+  deriving (Typeable)
 
 instance Functor (ListT m) where
-    fmap f as = ListT $ \yield -> foldListT as (yield . f)
-    {-# INLINE fmap #-}
+  fmap f as = ListT $ \yield -> foldListT as (yield . f)
+  {-# INLINE fmap #-}
 
 instance Applicative (ListT m) where
-    pure a = ListT $ \yield -> yield a
-    {-# INLINE pure #-}
 
-    (<*>) fs as =
-        ListT $ \yield -> foldListT fs $ \f -> foldListT as $ \a -> yield (f a)
-    {-# INLINE (<*>) #-}
+  pure a = ListT $ \yield -> yield a
+  {-# INLINE pure #-}
+
+  (<*>) fs as =
+    ListT $ \yield -> foldListT fs $ \f -> foldListT as $ \a -> yield (f a)
+  {-# INLINE (<*>) #-}
 
 instance Alternative (ListT f) where
-    empty = ListT $ \_ next -> next
-    {-# INLINE empty #-}
 
-    (<|>) as bs =
-        ListT $ \yield -> foldListT as yield . foldListT bs yield
-    {-# INLINE (<|>) #-}
+  empty = ListT $ \_ next -> next
+  {-# INLINE empty #-}
+
+  (<|>) as bs =
+    ListT $ \yield -> foldListT as yield . foldListT bs yield
+  {-# INLINE (<|>) #-}
 
 instance Monad (ListT m) where
-    return = pure
-    {-# INLINE return #-}
 
-    (>>=) as k =
-        ListT $ \yield -> foldListT as $ \a -> foldListT (k a) yield
-    {-# INLINE (>>=) #-}
+  return = pure
+  {-# INLINE return #-}
+
+  (>>=) as k =
+    ListT $ \yield -> foldListT as $ \a -> foldListT (k a) yield
+  {-# INLINE (>>=) #-}
 
 instance Monad m => MonadPlus (ListT m)
 
 instance MonadTrans ListT where
-    lift m = ListT $ \yield next -> m >>= \a -> yield a next
-    {-# INLINE lift #-}
+  lift m = ListT $ \yield next -> m >>= \a -> yield a next
+  {-# INLINE lift #-}
 
 instance MonadReader r m => MonadReader r (ListT m) where
-    ask = lift ask
-    {-# INLINE ask #-}
 
-    reader f = lift (reader f)
-    {-# INLINE reader #-}
+  ask = lift ask
+  {-# INLINE ask #-}
 
-    local f = mapListT (local f)
-    {-# INLINE local #-}
+  reader f = lift (reader f)
+  {-# INLINE reader #-}
+
+  local f = mapListT (local f)
+  {-# INLINE local #-}
 
 instance MonadState s m => MonadState s (ListT m) where
-    get = lift get
-    {-# INLINE get #-}
 
-    put s = lift (put s)
-    {-# INLINE put #-}
+  get = lift get
+  {-# INLINE get #-}
 
-    state f = lift (state f)
-    {-# INLINE state #-}
+  put s = lift (put s)
+  {-# INLINE put #-}
+
+  state f = lift (state f)
+  {-# INLINE state #-}
 
 instance MonadIO m => MonadIO (ListT m) where
-    liftIO = lift . liftIO
-    {-# INLINE liftIO #-}
+  liftIO = lift . liftIO
+  {-# INLINE liftIO #-}
 
 instance (Monad f, Foldable f) => Foldable (ListT f) where
-    foldMap f as =
-        fold $ foldListT as (\a r -> mappend (f a) <$> r) (pure mempty)
-    {-# INLINE foldMap #-}
+  foldMap f as =
+    fold $ foldListT as (\a r -> mappend (f a) <$> r) (pure mempty)
+  {-# INLINE foldMap #-}
 
 cons :: a -> ListT m a -> ListT m a
 cons a as = ListT $ \yield -> yield a . foldListT as yield

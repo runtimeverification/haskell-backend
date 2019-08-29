@@ -3,19 +3,22 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
  -}
 module Kore.Verified
-    ( Pattern
-    , Sentence
-    , SentenceAlias
-    , SentenceAxiom
-    , SentenceClaim
-    , SentenceHook
-    , SentenceImport
-    , SentenceSort
-    , SentenceSymbol
-    ) where
+  ( Pattern,
+    Sentence,
+    SentenceAlias,
+    SentenceAxiom,
+    SentenceClaim,
+    SentenceHook,
+    SentenceImport,
+    SentenceSort,
+    SentenceSymbol
+    )
+where
 
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
+import Kore.Internal.TermLike
+  ( TermLike,
+    Variable
+    )
 import qualified Kore.Syntax.Sentence as Syntax
 
 type Pattern = TermLike Variable

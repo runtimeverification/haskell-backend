@@ -3,19 +3,19 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
-
 module Kore.Syntax.Ceil
-    ( Ceil (..)
-    ) where
+  ( Ceil (..)
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Function
-import           Data.Hashable
+import Control.DeepSeq
+  ( NFData (..)
+    )
+import Data.Function
+import Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -32,12 +32,13 @@ Section 9.1.4 (Patterns).
 
 This represents the ⌈ceilPattern⌉ Matching Logic construct.
 -}
-data Ceil sort child = Ceil
-    { ceilOperandSort :: !sort
-    , ceilResultSort  :: !sort
-    , ceilChild       :: child
-    }
-    deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Traversable, Show)
+data Ceil sort child
+  = Ceil
+      { ceilOperandSort :: !sort,
+        ceilResultSort :: !sort,
+        ceilChild :: child
+        }
+  deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Traversable, Show)
 
 instance (Hashable sort, Hashable child) => Hashable (Ceil sort child)
 
@@ -50,20 +51,21 @@ instance SOP.HasDatatypeInfo (Ceil sort child)
 instance (Debug sort, Debug child) => Debug (Ceil sort child)
 
 instance Unparse child => Unparse (Ceil Sort child) where
-    unparse Ceil { ceilOperandSort, ceilResultSort, ceilChild } =
-        "\\ceil"
-        <> parameters [ceilOperandSort, ceilResultSort]
-        <> arguments [ceilChild]
 
-    unparse2 Ceil { ceilChild } =
-        Pretty.parens (Pretty.fillSep ["\\ceil", unparse2 ceilChild])
+  unparse Ceil {ceilOperandSort, ceilResultSort, ceilChild} =
+    "\\ceil"
+      <> parameters [ceilOperandSort, ceilResultSort]
+      <> arguments [ceilChild]
+
+  unparse2 Ceil {ceilChild} =
+    Pretty.parens (Pretty.fillSep ["\\ceil", unparse2 ceilChild])
 
 instance Ord variable => Synthetic (FreeVariables variable) (Ceil sort) where
-    synthetic = ceilChild
-    {-# INLINE synthetic #-}
+  synthetic = ceilChild
+  {-# INLINE synthetic #-}
 
 instance Synthetic Sort (Ceil Sort) where
-    synthetic Ceil { ceilOperandSort, ceilResultSort, ceilChild } =
-        ceilResultSort
-        & seq (matchSort ceilOperandSort ceilChild)
-    {-# INLINE synthetic #-}
+  synthetic Ceil {ceilOperandSort, ceilResultSort, ceilChild} =
+    ceilResultSort
+      & seq (matchSort ceilOperandSort ceilChild)
+  {-# INLINE synthetic #-}

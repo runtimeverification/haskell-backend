@@ -6,7 +6,10 @@ License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
 
 -}
-module Template.Tools (newDefinitionGroup) where
+module Template.Tools
+  ( newDefinitionGroup
+    )
+where
 
 import Language.Haskell.TH
 

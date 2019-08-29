@@ -8,34 +8,41 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Not
-    ( makeEvaluate
-    , makeEvaluatePredicate
-    , simplify
-    , simplifyEvaluated
-    ) where
+  ( makeEvaluate,
+    makeEvaluatePredicate,
+    simplify,
+    simplifyEvaluated
+    )
+where
 
 import qualified Data.Foldable as Foldable
-
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.MultiAnd
+  ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.MultiOr
+  ( MultiOr
+    )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike hiding
-                 ( mkAnd )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeNotPredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike hiding
+  ( mkAnd
+    )
+import Kore.Predicate.Predicate
+  ( makeAndPredicate,
+    makeNotPredicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
-import           Kore.Step.Simplification.Data
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.Step.Simplification.Data
+import Kore.Unparser
+import Kore.Variables.Fresh
+  ( FreshVariable
+    )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
@@ -47,15 +54,15 @@ Right now this uses the following:
 
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => Not Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify Not { notChild } = simplifyEvaluated notChild
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => Not Sort (OrPattern variable)
+  -> simplifier (OrPattern variable)
+simplify Not {notChild} = simplifyEvaluated notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -76,19 +83,19 @@ to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => OrPattern variable
-    -> simplifier (OrPattern variable)
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => OrPattern variable
+  -> simplifier (OrPattern variable)
 simplifyEvaluated simplified =
-    fmap OrPattern.fromPatterns $ gather $ do
-        let not' = Not { notChild = simplified, notSort = () }
-        andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
-        mkMultiAndPattern andPattern
+  fmap OrPattern.fromPatterns $ gather $ do
+    let not' = Not {notChild = simplified, notSort = ()}
+    andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
+    mkMultiAndPattern andPattern
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
@@ -96,26 +103,26 @@ child.
 See 'simplify' for details.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> OrPattern variable
 makeEvaluate = makeEvaluateNot . Not ()
 
 makeEvaluateNot
-    :: (Ord variable, Show variable, SortedVariable variable, Unparse variable)
-    => Not sort (Pattern variable)
-    -> OrPattern variable
-makeEvaluateNot Not { notChild } =
-    OrPattern.fromPatterns
-        [ Pattern.fromTermLike $ makeTermNot term
-        , Pattern.fromPredicateSorted
-            (termLikeSort term)
-            (makeEvaluatePredicate predicate)
-        ]
+  :: (Ord variable, Show variable, SortedVariable variable, Unparse variable)
+  => Not sort (Pattern variable)
+  -> OrPattern variable
+makeEvaluateNot Not {notChild} =
+  OrPattern.fromPatterns
+    [ Pattern.fromTermLike $ makeTermNot term,
+      Pattern.fromPredicateSorted
+        (termLikeSort term)
+        (makeEvaluatePredicate predicate)
+      ]
   where
     (term, predicate) = Conditional.splitTerm notChild
 
@@ -130,80 +137,80 @@ I.e. if we want to simplify @not (predicate and substitution)@, we may pass
 a @not@ on top of that.
 -}
 makeEvaluatePredicate
-    ::  ( Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
-    => Predicate variable
-    -> Predicate variable
+  :: ( Ord variable,
+       Show variable,
+       SortedVariable variable,
+       Unparse variable
+       )
+  => Predicate variable
+  -> Predicate variable
 makeEvaluatePredicate
+  Conditional
+    { term = (),
+      predicate,
+      substitution
+      } =
     Conditional
-        { term = ()
-        , predicate
-        , substitution
-        }
-  = Conditional
-        { term = ()
-        , predicate =
-            makeNotPredicate
+      { term = (),
+        predicate =
+          makeNotPredicate
             $ makeAndPredicate predicate
-            $ Predicate.fromSubstitution substitution
-        , substitution = mempty
+            $ Predicate.fromSubstitution substitution,
+        substitution = mempty
         }
 
 makeTermNot
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => TermLike variable
-    -> TermLike variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => TermLike variable
+  -> TermLike variable
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
 makeTermNot term
-  | isBottom term = mkTop    (termLikeSort term)
-  | isTop term    = mkBottom (termLikeSort term)
-  | otherwise     = mkNot term
+  | isBottom term = mkTop (termLikeSort term)
+  | isTop term = mkBottom (termLikeSort term)
+  | otherwise = mkNot term
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
 distributeNot
-    :: (Ord sort, Ord variable)
-    => Not sort (OrPattern variable)
-    -> MultiAnd (Not sort (Pattern variable))
-distributeNot notOr@Not { notChild } =
-    MultiAnd.make $ worker <$> Foldable.toList notChild
+  :: (Ord sort, Ord variable)
+  => Not sort (OrPattern variable)
+  -> MultiAnd (Not sort (Pattern variable))
+distributeNot notOr@Not {notChild} =
+  MultiAnd.make $ worker <$> Foldable.toList notChild
   where
-    worker child = notOr { notChild = child }
+    worker child = notOr {notChild = child}
 
 {- | Distribute 'MultiAnd' over 'MultiOr'.
  -}
 distributeAnd
-    :: MultiAnd (OrPattern variable)
-    -> MultiOr (MultiAnd (Pattern variable))
+  :: MultiAnd (OrPattern variable)
+  -> MultiOr (MultiAnd (Pattern variable))
 distributeAnd = sequenceA
 
 {- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'BranchT'.
  -}
 scatterAnd
-    :: Monad m
-    => MultiAnd (OrPattern variable)
-    -> BranchT m (MultiAnd (Pattern variable))
+  :: Monad m
+  => MultiAnd (OrPattern variable)
+  -> BranchT m (MultiAnd (Pattern variable))
 scatterAnd = scatter . distributeAnd
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}
 mkMultiAndPattern
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => MultiAnd (Pattern variable)
-    -> BranchT simplifier (Pattern variable)
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => MultiAnd (Pattern variable)
+  -> BranchT simplifier (Pattern variable)
 mkMultiAndPattern patterns =
-    Foldable.foldrM And.makeEvaluate Pattern.top patterns
+  Foldable.foldrM And.makeEvaluate Pattern.top patterns

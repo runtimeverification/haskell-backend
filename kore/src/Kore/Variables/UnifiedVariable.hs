@@ -4,37 +4,40 @@ License     : NCSA
 
 -}
 module Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    , isElemVar
-    , isSetVar
-    , extractElementVariable
-    , foldMapVariable
-    ) where
+  ( UnifiedVariable (..),
+    isElemVar,
+    isSetVar,
+    extractElementVariable,
+    foldMapVariable
+    )
+where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Functor.Const
-import           Data.Hashable
+import Control.DeepSeq
+  ( NFData
+    )
+import Data.Functor.Const
+import Data.Hashable
+import GHC.Generics
+  ( Generic
+    )
 import qualified Generics.SOP as SOP
-import           GHC.Generics
-                 ( Generic )
-
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
-       ( SortedVariable (..) )
+  ( SortedVariable (..)
+    )
 import Kore.Unparser
 
 {- | @UnifiedVariable@ helps distinguish set variables (introduced by 'SetVar')
 from element variables (introduced by 'ElemVar').
  -}
 data UnifiedVariable variable
-    = ElemVar !(ElementVariable variable)
-    | SetVar  !(SetVariable variable)
-    deriving (Generic, Eq, Ord, Show, Functor, Foldable, Traversable)
+  = ElemVar !(ElementVariable variable)
+  | SetVar !(SetVariable variable)
+  deriving (Generic, Eq, Ord, Show, Functor, Foldable, Traversable)
 
 instance NFData variable => NFData (UnifiedVariable variable)
 
@@ -47,8 +50,10 @@ instance Debug variable => Debug (UnifiedVariable variable)
 instance Hashable variable => Hashable (UnifiedVariable variable)
 
 instance Unparse variable => Unparse (UnifiedVariable variable) where
-    unparse = foldMapVariable unparse
-    unparse2 = foldMapVariable unparse2
+
+  unparse = foldMapVariable unparse
+
+  unparse2 = foldMapVariable unparse2
 
 isElemVar :: UnifiedVariable variable -> Bool
 isElemVar (ElemVar _) = True
@@ -59,14 +64,14 @@ isSetVar (SetVar _) = True
 isSetVar _ = False
 
 instance
-    SortedVariable variable =>
-    Synthetic Sort (Const (UnifiedVariable variable))
+  SortedVariable variable
+  => Synthetic Sort (Const (UnifiedVariable variable))
   where
-    synthetic (Const var) = foldMapVariable sortedVariableSort var
-    {-# INLINE synthetic #-}
+  synthetic (Const var) = foldMapVariable sortedVariableSort var
+  {-# INLINE synthetic #-}
 
 extractElementVariable
-    :: UnifiedVariable variable -> Maybe (ElementVariable variable)
+  :: UnifiedVariable variable -> Maybe (ElementVariable variable)
 extractElementVariable (ElemVar var) = Just var
 extractElementVariable _ = Nothing
 

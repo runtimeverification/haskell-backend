@@ -8,46 +8,56 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Exists
-    ( simplify
-    , makeEvaluate
-    ) where
+  ( simplify,
+    makeEvaluate
+    )
+where
 
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map.Strict as Map
-import           GHC.Stack
-                 ( HasCallStack )
-
+import GHC.Stack
+  ( HasCallStack
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+  ( extractPatterns
+    )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike as Pattern
+import Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Sort
-                 ( predicateSort )
-import           Kore.Step.Axiom.Matcher
-                 ( matchIncremental )
-import           Kore.Step.Simplification.Data
+import Kore.Sort
+  ( predicateSort
+    )
+import Kore.Step.Axiom.Matcher
+  ( matchIncremental
+    )
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather, scatter )
+  ( gather,
+    scatter
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+  ( simplify
+    )
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Unification.Substitution
+  ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( runUnifierT )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-
+import Kore.Unification.Unify
+  ( runUnifierT
+    )
+import Kore.Unparser
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+  ( UnifiedVariable (..)
+    )
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -82,16 +92,16 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
     (pat' and (pred' and (exists x . predX and substX)) and subst')
 -}
 simplify
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    => Exists Sort variable (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify Exists { existsVariable, existsChild } =
-    simplifyEvaluated existsVariable existsChild
+  :: ( Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       SortedVariable variable,
+       MonadSimplify simplifier
+       )
+  => Exists Sort variable (OrPattern variable)
+  -> simplifier (OrPattern variable)
+simplify Exists {existsVariable, existsChild} =
+  simplifyEvaluated existsVariable existsChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -107,110 +117,118 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    => ElementVariable variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+  :: ( Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       SortedVariable variable,
+       MonadSimplify simplifier
+       )
+  => ElementVariable variable
+  -> OrPattern variable
+  -> simplifier (OrPattern variable)
 simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified  = return simplified
+  | OrPattern.isTrue simplified = return simplified
   | OrPattern.isFalse simplified = return simplified
-  | otherwise = do
-    evaluated <- traverse (makeEvaluate variable) simplified
-    return (OrPattern.flatten evaluated)
+  | otherwise =
+    do
+      evaluated <- traverse (makeEvaluate variable) simplified
+      return (OrPattern.flatten evaluated)
 
 {-| evaluates an 'Exists' given its two 'Pattern' children.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    => ElementVariable variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
-makeEvaluate variable original
-  = fmap OrPattern.fromPatterns $ BranchT.gather $ do
+  :: ( Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       SortedVariable variable,
+       MonadSimplify simplifier
+       )
+  => ElementVariable variable
+  -> Pattern variable
+  -> simplifier (OrPattern variable)
+makeEvaluate variable original =
+  fmap OrPattern.fromPatterns $ BranchT.gather $ do
     normalized <- Substitution.normalize original
-    let Conditional { substitution = normalizedSubstitution } = normalized
+    let Conditional {substitution = normalizedSubstitution} = normalized
     case splitSubstitution variable normalizedSubstitution of
-        (Left boundTerm, freeSubstitution) ->
-            makeEvaluateBoundLeft
+      (Left boundTerm, freeSubstitution) ->
+        makeEvaluateBoundLeft
+          variable
+          boundTerm
+          normalized {substitution = freeSubstitution}
+      (Right boundSubstitution, freeSubstitution) -> do
+        matched <-
+          Monad.Trans.lift
+            $ matchesToVariableSubstitution
                 variable
-                boundTerm
-                normalized { substitution = freeSubstitution }
-        (Right boundSubstitution, freeSubstitution) -> do
-            matched <- Monad.Trans.lift $ matchesToVariableSubstitution
-                variable
-                normalized { substitution = boundSubstitution }
-            if matched
-                then return normalized
-                    { predicate = Syntax.Predicate.makeTruePredicate
-                    , substitution = freeSubstitution
-                    }
-                else makeEvaluateBoundRight
-                    variable
-                    freeSubstitution
-                    normalized { substitution = boundSubstitution }
+                normalized {substitution = boundSubstitution}
+        if matched
+          then
+            return
+              normalized
+                { predicate = Syntax.Predicate.makeTruePredicate,
+                  substitution = freeSubstitution
+                  }
+          else
+            makeEvaluateBoundRight
+              variable
+              freeSubstitution
+              normalized {substitution = boundSubstitution}
 
 matchesToVariableSubstitution
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    => ElementVariable variable
-    -> Pattern variable
-    -> simplifier Bool
+  :: ( FreshVariable variable,
+       Show variable,
+       Unparse variable,
+       SortedVariable variable,
+       MonadSimplify simplifier
+       )
+  => ElementVariable variable
+  -> Pattern variable
+  -> simplifier Bool
 matchesToVariableSubstitution
-    variable
-    Conditional {term, predicate, substitution = boundSubstitution}
-  | Equals_ _sort1 _sort2 first second <-
-        Syntax.Predicate.fromPredicate predicateSort predicate
-  , Substitution.null boundSubstitution
-  , not (hasFreeVariable (ElemVar variable) term)
-  = do
-    matchResult <- runUnifierT $ matchIncremental first second
-    case matchResult of
-        Left _ -> return False
-        Right results ->
+  variable
+  Conditional {term, predicate, substitution = boundSubstitution}
+    | Equals_ _sort1 _sort2 first second <-
+        Syntax.Predicate.fromPredicate predicateSort predicate,
+      Substitution.null boundSubstitution,
+      not (hasFreeVariable (ElemVar variable) term) =
+      do
+        matchResult <- runUnifierT $ matchIncremental first second
+        case matchResult of
+          Left _ -> return False
+          Right results ->
             return (all (singleVariableSubstitution variable) results)
-
 matchesToVariableSubstitution _ _ = return False
 
 singleVariableSubstitution
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        )
-    => ElementVariable variable -> Predicate variable -> Bool
+  :: ( Ord variable,
+       SortedVariable variable,
+       Unparse variable
+       )
+  => ElementVariable variable
+  -> Predicate variable
+  -> Bool
 singleVariableSubstitution
-    variable
-    Conditional
-        { term = ()
-        , predicate = Syntax.Predicate.PredicateTrue
-        , substitution
-        }
-  = case Substitution.unwrap substitution of
-    [] -> (error . unlines)
-        [ "This should not happen. This is called with matching results, and,"
-        , "if matching can be resolved without generating predicates or "
-        , "substitutions, then the equality should have already been resolved."
-        ]
-    [(substVariable, substTerm)]
+  variable
+  Conditional
+    { term = (),
+      predicate = Syntax.Predicate.PredicateTrue,
+      substitution
+      } =
+    case Substitution.unwrap substitution of
+      [] ->
+        (error . unlines)
+          [ "This should not happen. This is called with matching results, and,",
+            "if matching can be resolved without generating predicates or ",
+            "substitutions, then the equality should have already been resolved."
+            ]
+      [(substVariable, substTerm)]
         | substVariable == ElemVar variable ->
-            Pattern.withoutFreeVariable substVariable substTerm
-                True
-    _ -> False
+          Pattern.withoutFreeVariable substVariable substTerm
+            True
+      _ -> False
 singleVariableSubstitution _ _ = False
 
 {- | Existentially quantify a variable in the given 'Pattern'.
@@ -226,34 +244,33 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundLeft
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    => ElementVariable variable  -- ^ quantified variable
-    -> TermLike variable  -- ^ substituted term
-    -> Pattern variable
-    -> BranchT simplifier (Pattern variable)
+  :: ( Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       SortedVariable variable,
+       MonadSimplify simplifier
+       )
+  => ElementVariable variable -- ^ quantified variable
+  -> TermLike variable -- ^ substituted term
+  -> Pattern variable
+  -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundLeft
-    variable
-    boundTerm
-    normalized
-  = withoutFreeVariable (ElemVar variable) boundTerm $ do
-        let
-            boundSubstitution = Map.singleton (ElemVar variable) boundTerm
-            substituted =
-                normalized
-                    { term =
-                        Pattern.substitute boundSubstitution
-                        $ Conditional.term normalized
-                    , predicate =
-                        Syntax.Predicate.substitute boundSubstitution
-                        $ Conditional.predicate normalized
-                    }
-        orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
-        BranchT.scatter (MultiOr.extractPatterns orPattern)
+  variable
+  boundTerm
+  normalized =
+    withoutFreeVariable (ElemVar variable) boundTerm $ do
+      let boundSubstitution = Map.singleton (ElemVar variable) boundTerm
+          substituted =
+            normalized
+              { term =
+                  Pattern.substitute boundSubstitution
+                    $ Conditional.term normalized,
+                predicate =
+                  Syntax.Predicate.substitute boundSubstitution
+                    $ Conditional.predicate normalized
+                }
+      orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
+      BranchT.scatter (MultiOr.extractPatterns orPattern)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -266,28 +283,28 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundRight
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    => ElementVariable variable  -- ^ variable to be quantified
-    -> Substitution variable  -- ^ free substitution
-    -> Pattern variable  -- ^ pattern to quantify
-    -> BranchT simplifier (Pattern variable)
+  :: ( Ord variable,
+       Show variable,
+       Unparse variable,
+       SortedVariable variable,
+       MonadSimplify simplifier
+       )
+  => ElementVariable variable -- ^ variable to be quantified
+  -> Substitution variable -- ^ free substitution
+  -> Pattern variable -- ^ pattern to quantify
+  -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundRight
-    variable
-    freeSubstitution
-    normalized
-  = do
-    TopBottom.guardAgainstBottom simplifiedPattern
-    return simplifiedPattern
-  where
-    simplifiedPattern =
+  variable
+  freeSubstitution
+  normalized =
+    do
+      TopBottom.guardAgainstBottom simplifiedPattern
+      return simplifiedPattern
+    where
+      simplifiedPattern =
         Conditional.andCondition
-            (quantifyPattern variable normalized)
-            (Predicate.fromSubstitution freeSubstitution)
+          (quantifyPattern variable normalized)
+          (Predicate.fromSubstitution freeSubstitution)
 
 {- | Split the substitution on the given variable.
 
@@ -303,30 +320,30 @@ The result is a pair of:
 
  -}
 splitSubstitution
-    ::  ( FreshVariable variable
-        , HasCallStack
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
-    => ElementVariable variable
-    -> Substitution variable
-    ->  ( Either (TermLike variable) (Substitution variable)
-        , Substitution variable
-        )
+  :: ( FreshVariable variable,
+       HasCallStack,
+       Ord variable,
+       Show variable,
+       SortedVariable variable,
+       Unparse variable
+       )
+  => ElementVariable variable
+  -> Substitution variable
+  -> ( Either (TermLike variable) (Substitution variable),
+       Substitution variable
+       )
 splitSubstitution variable substitution =
-    (bound, independent)
+  (bound, independent)
   where
     reversedSubstitution =
-        Substitution.reverseIfRhsIsVar (ElemVar variable) substitution
+      Substitution.reverseIfRhsIsVar (ElemVar variable) substitution
     (dependent, independent) =
-        Substitution.partition hasVariable reversedSubstitution
+      Substitution.partition hasVariable reversedSubstitution
     hasVariable variable' term =
-        ElemVar variable == variable'
+      ElemVar variable == variable'
         || Pattern.hasFreeVariable (ElemVar variable) term
     bound =
-        maybe (Right dependent) Left
+      maybe (Right dependent) Left
         $ Map.lookup (ElemVar variable) (Substitution.toMap dependent)
 
 {- | Existentially quantify the variable an 'Pattern'.
@@ -336,32 +353,33 @@ is lowered onto the 'term' or 'predicate' alone, or omitted, if possible.
 
  -}
 quantifyPattern
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
-    => ElementVariable variable
-    -> Pattern variable
-    -> Pattern variable
-quantifyPattern variable original@Conditional { term, predicate, substitution }
-  | quantifyTerm, quantifyPredicate
-  = (error . unlines)
-    [ "Quantifying both the term and the predicate probably means that there's"
-    , "an error somewhere else."
-    , "variable=" ++ unparseToString variable
-    , "patt=" ++ unparseToString original
-    ]
+  :: ( Ord variable,
+       Show variable,
+       Unparse variable,
+       SortedVariable variable
+       )
+  => ElementVariable variable
+  -> Pattern variable
+  -> Pattern variable
+quantifyPattern variable original@Conditional {term, predicate, substitution}
+  | quantifyTerm,
+    quantifyPredicate =
+    (error . unlines)
+      [ "Quantifying both the term and the predicate probably means that there's",
+        "an error somewhere else.",
+        "variable=" ++ unparseToString variable,
+        "patt=" ++ unparseToString original
+        ]
   | quantifyTerm = mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
-    $ Predicate.fromPredicate
-    $ Syntax.Predicate.makeExistsPredicate variable predicate'
+      $ Predicate.fromPredicate
+      $ Syntax.Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
     quantifyTerm = Pattern.hasFreeVariable (ElemVar variable) term
     predicate' =
-        Syntax.Predicate.makeAndPredicate predicate
+      Syntax.Predicate.makeAndPredicate predicate
         $ Syntax.Predicate.fromSubstitution substitution
     quantifyPredicate =
-        Syntax.Predicate.hasFreeVariable (ElemVar variable) predicate'
+      Syntax.Predicate.hasFreeVariable (ElemVar variable) predicate'

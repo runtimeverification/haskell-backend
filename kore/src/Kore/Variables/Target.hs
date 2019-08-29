@@ -5,26 +5,30 @@ License     : NCSA
 Target specific variables for unification.
 
  -}
-
 module Kore.Variables.Target
-    ( Target (..)
-    , unwrapVariable
-    , isTarget
-    , isNonTarget
-    ) where
+  ( Target (..),
+    unwrapVariable,
+    isTarget,
+    isNonTarget
+    )
+where
 
-import           Data.Hashable
-                 ( Hashable )
+import Data.Hashable
+  ( Hashable
+    )
 import qualified Data.Set as Set
-import           GHC.Generics
-                 ( Generic )
-
+import GHC.Generics
+  ( Generic
+    )
 import Kore.Syntax.Variable
-       ( SortedVariable (..) )
+  ( SortedVariable (..)
+    )
 import Kore.Unparser
-       ( Unparse (..) )
+  ( Unparse (..)
+    )
 import Kore.Variables.Fresh
-       ( FreshVariable (..) )
+  ( FreshVariable (..)
+    )
 
 {- | Distinguish variables by their source.
 
@@ -34,15 +38,15 @@ instead of 'NonTarget' variables.
 
  -}
 data Target variable
-    = Target !variable
-    | NonTarget !variable
-    deriving (Eq, Generic, Show)
+  = Target !variable
+  | NonTarget !variable
+  deriving (Eq, Generic, Show)
 
 instance Ord variable => Ord (Target variable) where
-    compare (Target var1) (Target var2) = compare var1 var2
-    compare (Target _) (NonTarget _) = LT
-    compare (NonTarget var1) (NonTarget var2) = compare var1 var2
-    compare (NonTarget _) (Target _) = GT
+  compare (Target var1) (Target var2) = compare var1 var2
+  compare (Target _) (NonTarget _) = LT
+  compare (NonTarget var1) (NonTarget var2) = compare var1 var2
+  compare (NonTarget _) (Target _) = GT
 
 instance Hashable variable => Hashable (Target variable)
 
@@ -58,30 +62,35 @@ isNonTarget :: Target variable -> Bool
 isNonTarget = not . isTarget
 
 instance
-    SortedVariable variable
-    => SortedVariable (Target variable)
+  SortedVariable variable
+  => SortedVariable (Target variable)
   where
-    sortedVariableSort (Target variable) = sortedVariableSort variable
-    sortedVariableSort (NonTarget variable) = sortedVariableSort variable
-    fromVariable = Target . fromVariable
-    toVariable (Target var) = toVariable var
-    toVariable (NonTarget var) = toVariable var
+
+  sortedVariableSort (Target variable) = sortedVariableSort variable
+  sortedVariableSort (NonTarget variable) = sortedVariableSort variable
+
+  fromVariable = Target . fromVariable
+
+  toVariable (Target var) = toVariable var
+  toVariable (NonTarget var) = toVariable var
 
 {- | Ensures that fresh variables are unique under 'unwrapStepperVariable'.
  -}
 instance FreshVariable variable => FreshVariable (Target variable) where
-    refreshVariable (Set.map unwrapVariable -> avoiding) =
-        \case
-            Target variable ->
-                Target <$> refreshVariable avoiding variable
-            NonTarget variable ->
-                NonTarget <$> refreshVariable avoiding variable
+  refreshVariable (Set.map unwrapVariable -> avoiding) =
+    \case
+      Target variable ->
+        Target <$> refreshVariable avoiding variable
+      NonTarget variable ->
+        NonTarget <$> refreshVariable avoiding variable
 
 instance
-    Unparse variable =>
-    Unparse (Target variable)
+  Unparse variable
+  => Unparse (Target variable)
   where
-    unparse (Target var) = unparse var
-    unparse (NonTarget var) = unparse var
-    unparse2 (Target var) = unparse2 var
-    unparse2 (NonTarget var) = unparse2 var
+
+  unparse (Target var) = unparse var
+  unparse (NonTarget var) = unparse var
+
+  unparse2 (Target var) = unparse2 var
+  unparse2 (NonTarget var) = unparse2 var

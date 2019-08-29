@@ -5,260 +5,304 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 Maintainer  : vladimir.ciobanu@runtimeverification.com
 -}
-
 module Kore.Repl.Data
-    ( ReplCommand (..)
-    , helpText
-    , ExecutionGraph
-    , AxiomIndex (..), ClaimIndex (..)
-    , RuleName (..), RuleReference(..)
-    , ReplNode (..)
-    , ReplState (..)
-    , ReplOutput (..)
-    , ReplOut (..)
-    , PrintAuxOutput (..)
-    , PrintKoreOutput (..)
-    , Config (..)
-    , NodeState (..)
-    , GraphProofStatus (..)
-    , AliasDefinition (..), ReplAlias (..), AliasArgument(..), AliasError (..)
-    , InnerGraph
-    , shouldStore
-    , commandSet
-    , UnifierWithExplanation (..)
-    , runUnifierWithExplanation
-    , StepResult(..)
-    , LogType (..)
-    , ReplScript (..)
-    , ReplMode (..)
-    , OutputFile (..)
-    , makeAuxReplOutput, makeKoreReplOutput
-    ) where
+  ( ReplCommand (..),
+    helpText,
+    ExecutionGraph,
+    AxiomIndex (..),
+    ClaimIndex (..),
+    RuleName (..),
+    RuleReference (..),
+    ReplNode (..),
+    ReplState (..),
+    ReplOutput (..),
+    ReplOut (..),
+    PrintAuxOutput (..),
+    PrintKoreOutput (..),
+    Config (..),
+    NodeState (..),
+    GraphProofStatus (..),
+    AliasDefinition (..),
+    ReplAlias (..),
+    AliasArgument (..),
+    AliasError (..),
+    InnerGraph,
+    shouldStore,
+    commandSet,
+    UnifierWithExplanation (..),
+    runUnifierWithExplanation,
+    StepResult (..),
+    LogType (..),
+    ReplScript (..),
+    ReplMode (..),
+    OutputFile (..),
+    makeAuxReplOutput,
+    makeKoreReplOutput
+    )
+where
 
-import           Control.Applicative
-                 ( Alternative )
-import           Control.Concurrent.MVar
-import           Control.Monad.Trans.Accum
-                 ( AccumT, runAccumT )
+import Control.Applicative
+  ( Alternative
+    )
+import Control.Concurrent.MVar
+import Control.Monad.Trans.Accum
+  ( AccumT,
+    runAccumT
+    )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.Graph.Inductive.PatriciaTree
-                 ( Gr )
-import           Data.List.NonEmpty
-                 ( NonEmpty (..) )
-import           Data.Map.Strict
-                 ( Map )
-import           Data.Maybe
-                 ( fromMaybe )
-import           Data.Monoid
-                 ( First (..) )
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
+import Data.Graph.Inductive.PatriciaTree
+  ( Gr
+    )
+import Data.List.NonEmpty
+  ( NonEmpty (..)
+    )
+import Data.Map.Strict
+  ( Map
+    )
+import Data.Maybe
+  ( fromMaybe
+    )
+import Data.Monoid
+  ( First (..)
+    )
+import Data.Sequence
+  ( Seq
+    )
+import Data.Set
+  ( Set
+    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
-import           Numeric.Natural
-
-import           Kore.Goal
+import Kore.Goal
 import qualified Kore.Internal.Predicate as IPredicate
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.TermLike
+  ( TermLike
+    )
 import qualified Kore.Logger.Output as Logger
-import           Kore.OnePath.Verification
-                 ( CommonProofState )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+import Kore.OnePath.Verification
+  ( CommonProofState
+    )
+import Kore.Profiler.Data
+  ( MonadProfiler
+    )
+import Kore.Step.Simplification.Data
+  ( MonadSimplify
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Syntax.Variable
-                 ( Variable )
-import           Kore.Unification.Error
-import           Kore.Unification.Unify
-                 ( MonadUnify, UnifierT (..) )
+import Kore.Syntax.Variable
+  ( Variable
+    )
+import Kore.Unification.Error
+import Kore.Unification.Unify
+  ( MonadUnify,
+    UnifierT (..)
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-                 ( unparse )
-import           SMT
-                 ( MonadSMT )
+import Kore.Unparser
+  ( unparse
+    )
+import Numeric.Natural
+import SMT
+  ( MonadSMT
+    )
 
 -- | Represents an optional file name which contains a sequence of
 -- repl commands.
-newtype ReplScript = ReplScript
-    { unReplScript :: Maybe FilePath
-    } deriving (Eq, Show)
+newtype ReplScript
+  = ReplScript
+      { unReplScript :: Maybe FilePath
+        }
+  deriving (Eq, Show)
 
 data ReplMode = Interactive | RunScript
-    deriving (Eq, Show)
+  deriving (Eq, Show)
 
-newtype OutputFile = OutputFile
-    { unOutputFile :: Maybe FilePath
-    } deriving (Eq, Show)
+newtype OutputFile
+  = OutputFile
+      { unOutputFile :: Maybe FilePath
+        }
+  deriving (Eq, Show)
 
-newtype AxiomIndex = AxiomIndex
-    { unAxiomIndex :: Int
-    } deriving (Eq, Show)
+newtype AxiomIndex
+  = AxiomIndex
+      { unAxiomIndex :: Int
+        }
+  deriving (Eq, Show)
 
-newtype ClaimIndex = ClaimIndex
-    { unClaimIndex :: Int
-    } deriving (Eq, Ord, Show)
+newtype ClaimIndex
+  = ClaimIndex
+      { unClaimIndex :: Int
+        }
+  deriving (Eq, Ord, Show)
 
-newtype ReplNode = ReplNode
-    { unReplNode :: Graph.Node
-    } deriving (Eq, Show)
+newtype ReplNode
+  = ReplNode
+      { unReplNode :: Graph.Node
+        }
+  deriving (Eq, Show)
 
-newtype RuleName = RuleName
-    { unRuleName :: String
-    } deriving (Eq, Show)
+newtype RuleName
+  = RuleName
+      { unRuleName :: String
+        }
+  deriving (Eq, Show)
 
 -- | The repl keeps Kore output separated from any other kinds of auxiliary output.
 -- This makes it possible to treat the output differently by using different
 -- printing functions. For example, the pipe command will only send KoreOut to the
 -- process' input handle.
-newtype ReplOutput =
-    ReplOutput
-    { unReplOutput :: [ReplOut]
-    } deriving (Eq, Show, Semigroup, Monoid)
+newtype ReplOutput
+  = ReplOutput
+      { unReplOutput :: [ReplOut]
+        }
+  deriving (Eq, Show, Semigroup, Monoid)
 
 -- | Newtypes for printing functions called by Kore.Repl.Interpreter.replInterpreter0
-newtype PrintAuxOutput = PrintAuxOutput
-    { unPrintAuxOutput :: String -> IO () }
+newtype PrintAuxOutput
+  = PrintAuxOutput
+      {unPrintAuxOutput :: String -> IO ()}
 
-newtype PrintKoreOutput = PrintKoreOutput
-    { unPrintKoreOutput :: String -> IO () }
+newtype PrintKoreOutput
+  = PrintKoreOutput
+      {unPrintKoreOutput :: String -> IO ()}
 
 data ReplOut = AuxOut String | KoreOut String
-    deriving (Eq, Show)
+  deriving (Eq, Show)
 
-data AliasDefinition = AliasDefinition
-    { name      :: String
-    , arguments :: [String]
-    , command   :: String
-    } deriving (Eq, Show)
+data AliasDefinition
+  = AliasDefinition
+      { name :: String,
+        arguments :: [String],
+        command :: String
+        }
+  deriving (Eq, Show)
 
 data AliasArgument
   = SimpleArgument String
   | QuotedArgument String
   deriving (Eq, Show)
 
-data ReplAlias = ReplAlias
-    { name      :: String
-    , arguments :: [AliasArgument]
-    } deriving (Eq, Show)
+data ReplAlias
+  = ReplAlias
+      { name :: String,
+        arguments :: [AliasArgument]
+        }
+  deriving (Eq, Show)
 
 data LogType
-    = NoLogging
-    | LogToStdOut
-    | LogToFile !FilePath
-    deriving (Eq, Show)
+  = NoLogging
+  | LogToStdOut
+  | LogToFile !FilePath
+  deriving (Eq, Show)
 
 data RuleReference
-    = ByIndex (Either AxiomIndex ClaimIndex)
-    | ByName RuleName
-    deriving (Eq, Show)
+  = ByIndex (Either AxiomIndex ClaimIndex)
+  | ByName RuleName
+  deriving (Eq, Show)
 
 -- | List of available commands for the Repl. Note that we are always in a proof
 -- state. We pick the first available Claim when we initialize the state.
 data ReplCommand
-    = ShowUsage
+  = ShowUsage
     -- ^ This is the default action in case parsing all others fail.
-    | Help
+  | Help
     -- ^ Shows the help message.
-    | ShowClaim !(Maybe (Either ClaimIndex RuleName))
+  | ShowClaim !(Maybe (Either ClaimIndex RuleName))
     -- ^ Show the nth claim or the current claim.
-    | ShowAxiom !(Either AxiomIndex RuleName)
+  | ShowAxiom !(Either AxiomIndex RuleName)
     -- ^ Show the nth axiom.
-    | Prove !(Either ClaimIndex RuleName)
+  | Prove !(Either ClaimIndex RuleName)
     -- ^ Drop the current proof state and re-initialize for the nth claim.
-    | ShowGraph !(Maybe FilePath)
+  | ShowGraph !(Maybe FilePath)
     -- ^ Show the current execution graph.
-    | ProveSteps !Natural
+  | ProveSteps !Natural
     -- ^ Do n proof steps from current node.
-    | ProveStepsF !Natural
+  | ProveStepsF !Natural
     -- ^ Do n proof steps (through branchings) from the current node.
-    | SelectNode !ReplNode
+  | SelectNode !ReplNode
     -- ^ Select a different node in the graph.
-    | ShowConfig !(Maybe ReplNode)
+  | ShowConfig !(Maybe ReplNode)
     -- ^ Show the configuration from the current node.
-    | OmitCell !(Maybe String)
+  | OmitCell !(Maybe String)
     -- ^ Adds or removes cell to omit list, or shows current omit list.
-    | ShowLeafs
+  | ShowLeafs
     -- ^ Show leafs which can continue evaluation and leafs which are stuck
-    | ShowRule !(Maybe ReplNode)
+  | ShowRule !(Maybe ReplNode)
     -- ^ Show the rule(s) that got us to this configuration.
-    | ShowPrecBranch !(Maybe ReplNode)
+  | ShowPrecBranch !(Maybe ReplNode)
     -- ^ Show the first preceding branch.
-    | ShowChildren !(Maybe ReplNode)
+  | ShowChildren !(Maybe ReplNode)
     -- ^ Show direct children of node.
-    | Label !(Maybe String)
+  | Label !(Maybe String)
     -- ^ Show all node labels or jump to a label.
-    | LabelAdd !String !(Maybe ReplNode)
+  | LabelAdd !String !(Maybe ReplNode)
     -- ^ Add a label to a node.
-    | LabelDel !String
+  | LabelDel !String
     -- ^ Remove a label.
-    | Redirect ReplCommand FilePath
+  | Redirect ReplCommand FilePath
     -- ^ Prints the output of the inner command to the file.
-    | Try !RuleReference
+  | Try !RuleReference
     -- ^ Attempt to apply axiom or claim to current node.
-    | TryF !RuleReference
+  | TryF !RuleReference
     -- ^ Force application of an axiom or claim to current node.
-    | Clear !(Maybe ReplNode)
+  | Clear !(Maybe ReplNode)
     -- ^ Remove child nodes from graph.
-    | Pipe ReplCommand !String ![String]
+  | Pipe ReplCommand !String ![String]
     -- ^ Pipes a repl command into an external script.
-    | SaveSession FilePath
+  | SaveSession FilePath
     -- ^ Writes all commands executed in this session to a file on disk.
-    | AppendTo ReplCommand FilePath
+  | AppendTo ReplCommand FilePath
     -- ^ Appends the output of a command to a file.
-    | Alias AliasDefinition
+  | Alias AliasDefinition
     -- ^ Alias a command.
-    | TryAlias ReplAlias
+  | TryAlias ReplAlias
     -- ^ Try running an alias.
-    | LoadScript FilePath
+  | LoadScript FilePath
     -- ^ Load script from file
-    | ProofStatus
+  | ProofStatus
     -- ^ Show proof status of each claim
-    | Log Logger.Severity LogType
+  | Log Logger.Severity LogType
     -- ^ Setup the Kore logger.
-    | Exit
+  | Exit
     -- ^ Exit the repl.
-    deriving (Eq, Show)
+  deriving (Eq, Show)
 
 commandSet :: Set String
-commandSet = Set.fromList
-    [ "help"
-    , "claim"
-    , "axiom"
-    , "prove"
-    , "graph"
-    , "step"
-    , "stepf"
-    , "select"
-    , "config"
-    , "omit"
-    , "leafs"
-    , "rule"
-    , "prec-branch"
-    , "proof-status"
-    , "children"
-    , "label"
-    , "try"
-    , "tryf"
-    , "clear"
-    , "save-session"
-    , "alias"
-    , "load"
-    , "log"
-    , "exit"
-    ]
+commandSet =
+  Set.fromList
+    [ "help",
+      "claim",
+      "axiom",
+      "prove",
+      "graph",
+      "step",
+      "stepf",
+      "select",
+      "config",
+      "omit",
+      "leafs",
+      "rule",
+      "prec-branch",
+      "proof-status",
+      "children",
+      "label",
+      "try",
+      "tryf",
+      "clear",
+      "save-session",
+      "alias",
+      "load",
+      "log",
+      "exit"
+      ]
 
 -- | Please remember to update this text whenever you update the ADT above.
 helpText :: String
 helpText =
-    "Available commands in the Kore REPL: \n\
+  "Available commands in the Kore REPL: \n\
     \help                                  shows this help message\n\
     \claim [n|<name>]                      shows the nth claim, the claim with\
                                            \ <name> or if used without args\
@@ -345,89 +389,92 @@ helpText =
 -- affect the outcome of the proof are stored.
 shouldStore :: ReplCommand -> Bool
 shouldStore =
-    \case
-        ShowUsage        -> False
-        Help             -> False
-        ShowClaim _      -> False
-        ShowAxiom _      -> False
-        ShowGraph _      -> False
-        ShowConfig _     -> False
-        ShowLeafs        -> False
-        ShowRule _       -> False
-        ShowPrecBranch _ -> False
-        ShowChildren _   -> False
-        SaveSession _    -> False
-        ProofStatus      -> False
-        Try _            -> False
-        Exit             -> False
-        _                -> True
+  \case
+    ShowUsage -> False
+    Help -> False
+    ShowClaim _ -> False
+    ShowAxiom _ -> False
+    ShowGraph _ -> False
+    ShowConfig _ -> False
+    ShowLeafs -> False
+    ShowRule _ -> False
+    ShowPrecBranch _ -> False
+    ShowChildren _ -> False
+    SaveSession _ -> False
+    ProofStatus -> False
+    Try _ -> False
+    Exit -> False
+    _ -> True
 
 -- Type synonym for the actual type of the execution graph.
-type ExecutionGraph rule =
-    Strategy.ExecutionGraph
-        CommonProofState
-        rule
+type ExecutionGraph rule
+  = Strategy.ExecutionGraph
+      CommonProofState
+      rule
 
-type InnerGraph rule =
-    Gr CommonProofState (Seq rule)
+type InnerGraph rule
+  = Gr CommonProofState (Seq rule)
 
 -- | State for the repl.
-data ReplState claim = ReplState
-    { axioms     :: [Rule claim]
-    -- ^ List of available axioms
-    , claims     :: [claim]
-    -- ^ List of claims to be proven
-    , claim      :: claim
-    -- ^ Currently focused claim in the repl
-    , claimIndex :: ClaimIndex
-    -- ^ Index of the currently focused claim in the repl
-    , graphs     :: Map ClaimIndex (ExecutionGraph (Rule claim))
-    -- ^ Execution graph for the current proof; initialized with root = claim
-    , node       :: ReplNode
-    -- ^ Currently selected node in the graph; initialized with node = root
-    , commands   :: Seq String
-    -- ^ All commands evaluated by the current repl session
-    , omit       :: Set String
-    -- ^ The omit list, initially empty
-    , labels  :: Map ClaimIndex (Map String ReplNode)
-    -- ^ Map from labels to nodes
-    , aliases :: Map String AliasDefinition
-    -- ^ Map of command aliases
-    , logging :: (Logger.Severity, LogType)
-    -- ^ The log level and log type decide what gets logged and where.
-    }
-    deriving (GHC.Generic)
+data ReplState claim
+  = ReplState
+      { axioms :: [Rule claim],
+        -- ^ List of available axioms
+        claims :: [claim],
+        -- ^ List of claims to be proven
+        claim :: claim,
+        -- ^ Currently focused claim in the repl
+        claimIndex :: ClaimIndex,
+        -- ^ Index of the currently focused claim in the repl
+        graphs :: Map ClaimIndex (ExecutionGraph (Rule claim)),
+        -- ^ Execution graph for the current proof; initialized with root = claim
+        node :: ReplNode,
+        -- ^ Currently selected node in the graph; initialized with node = root
+        commands :: Seq String,
+        -- ^ All commands evaluated by the current repl session
+        omit :: Set String,
+        -- ^ The omit list, initially empty
+        labels :: Map ClaimIndex (Map String ReplNode),
+        -- ^ Map from labels to nodes
+        aliases :: Map String AliasDefinition,
+        -- ^ Map of command aliases
+        logging :: (Logger.Severity, LogType)
+        -- ^ The log level and log type decide what gets logged and where.
+        }
+  deriving (GHC.Generic)
 
 -- | Configuration environment for the repl.
-data Config claim m = Config
-    { stepper
-        :: claim
-        -> [claim]
-        -> [Rule claim]
-        -> ExecutionGraph (Rule claim)
-        -> ReplNode
-        -> m (ExecutionGraph (Rule claim))
-    -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
-    , unifier
-        :: TermLike Variable
-        -> TermLike Variable
-        -> UnifierWithExplanation m (IPredicate.Predicate Variable)
-    -- ^ Unifier function, it is a partially applied 'unificationProcedure'
-    --   where we discard the result since we are looking for unification
-    --   failures
-    , logger  :: MVar (Logger.LogAction IO Logger.LogMessage)
-    -- ^ Logger function, see 'logging'.
-    , outputFile :: OutputFile
-    -- ^ Output resulting pattern to this file.
-    }
-    deriving (GHC.Generic)
+data Config claim m
+  = Config
+      { stepper
+          :: claim
+          -> [claim]
+          -> [Rule claim]
+          -> ExecutionGraph (Rule claim)
+          -> ReplNode
+          -> m (ExecutionGraph (Rule claim)),
+        -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
+        unifier
+          :: TermLike Variable
+          -> TermLike Variable
+          -> UnifierWithExplanation m (IPredicate.Predicate Variable),
+        -- ^ Unifier function, it is a partially applied 'unificationProcedure'
+        --   where we discard the result since we are looking for unification
+        --   failures
+        logger :: MVar (Logger.LogAction IO Logger.LogMessage),
+        -- ^ Logger function, see 'logging'.
+        outputFile :: OutputFile
+        -- ^ Output resulting pattern to this file.
+        }
+  deriving (GHC.Generic)
 
 -- | Unifier that stores the first 'explainBottom'.
 -- See 'runUnifierWithExplanation'.
-newtype UnifierWithExplanation m a =
-    UnifierWithExplanation
-        { getUnifierWithExplanation
-            :: UnifierT (AccumT (First ReplOutput) m) a
+newtype UnifierWithExplanation m a
+  = UnifierWithExplanation
+      { getUnifierWithExplanation
+          :: UnifierT (AccumT (First ReplOutput) m)
+               a
         }
   deriving (Alternative, Applicative, Functor, Monad)
 
@@ -435,101 +482,107 @@ deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
-instance Logger.WithLog Logger.LogMessage m
-    => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)
+instance
+  Logger.WithLog Logger.LogMessage m
+  => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)
   where
-    askLogAction =
-        Logger.hoistLogAction UnifierWithExplanation
-        <$> UnifierWithExplanation Logger.askLogAction
-    {-# INLINE askLogAction #-}
 
-    localLogAction locally =
-        UnifierWithExplanation
-        . Logger.localLogAction locally
-        . getUnifierWithExplanation
-    {-# INLINE localLogAction #-}
+  askLogAction =
+    Logger.hoistLogAction UnifierWithExplanation
+      <$> UnifierWithExplanation Logger.askLogAction
+  {-# INLINE askLogAction #-}
+
+  localLogAction locally =
+    UnifierWithExplanation
+      . Logger.localLogAction locally
+      . getUnifierWithExplanation
+  {-# INLINE localLogAction #-}
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 
 instance MonadSimplify m => MonadUnify (UnifierWithExplanation m) where
-    throwSubstitutionError =
-        UnifierWithExplanation . Monad.Unify.throwSubstitutionError
-    throwUnificationError =
-        UnifierWithExplanation . Monad.Unify.throwUnificationError
 
-    gather =
-        UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
-    scatter = UnifierWithExplanation . Monad.Unify.scatter
+  throwSubstitutionError =
+    UnifierWithExplanation . Monad.Unify.throwSubstitutionError
 
-    explainBottom info first second =
-        UnifierWithExplanation
-        . Monad.Trans.lift
-        . Monad.Accum.add
-        . First
-        . Just $ ReplOutput
-            [ AuxOut . show $ info <> "\n"
-            , AuxOut "When unifying:\n"
-            , KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n"
-            , AuxOut "With:\n"
-            , KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
+  throwUnificationError =
+    UnifierWithExplanation . Monad.Unify.throwUnificationError
+
+  gather =
+    UnifierWithExplanation . Monad.Unify.gather . getUnifierWithExplanation
+
+  scatter = UnifierWithExplanation . Monad.Unify.scatter
+
+  explainBottom info first second =
+    UnifierWithExplanation
+      . Monad.Trans.lift
+      . Monad.Accum.add
+      . First
+      . Just
+      $ ReplOutput
+          [ AuxOut . show $ info <> "\n",
+            AuxOut "When unifying:\n",
+            KoreOut $ (show . Pretty.indent 4 . unparse $ first) <> "\n",
+            AuxOut "With:\n",
+            KoreOut $ (show . Pretty.indent 4 . unparse $ second) <> "\n"
             ]
 
 -- | Result after running one or multiple proof steps.
 data StepResult
-    = NoResult
+  = NoResult
     -- ^ reached end of proof on current branch
-    | SingleResult ReplNode
+  | SingleResult ReplNode
     -- ^ single follow-up configuration
-    | BranchResult [ReplNode]
+  | BranchResult [ReplNode]
     -- ^ configuration branched
-    deriving (Show)
+  deriving (Show)
 
 data NodeState = StuckNode | UnevaluatedNode
-    deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show)
 
 data AliasError
-    = NameAlreadyDefined
-    | UnknownCommand
+  = NameAlreadyDefined
+  | UnknownCommand
 
 data GraphProofStatus
-    = NotStarted
-    | Completed
-    | InProgress [Graph.Node]
-    | StuckProof [Graph.Node]
-    | TrustedClaim
-    deriving (Eq, Show)
+  = NotStarted
+  | Completed
+  | InProgress [Graph.Node]
+  | StuckProof [Graph.Node]
+  | TrustedClaim
+  deriving (Eq, Show)
 
 makeAuxReplOutput :: String -> ReplOutput
 makeAuxReplOutput str =
-    ReplOutput . return . AuxOut $ str <> "\n"
+  ReplOutput . return . AuxOut $ str <> "\n"
 
 makeKoreReplOutput :: String -> ReplOutput
 makeKoreReplOutput str =
-    ReplOutput . return . KoreOut $ str <> "\n"
+  ReplOutput . return . KoreOut $ str <> "\n"
 
 runUnifierWithExplanation
-    :: forall m a
-    .  MonadSimplify m
-    => UnifierWithExplanation m a
-    -> m (Either ReplOutput (NonEmpty a))
+  :: forall m a. MonadSimplify m
+  => UnifierWithExplanation m a
+  -> m (Either ReplOutput (NonEmpty a))
 runUnifierWithExplanation (UnifierWithExplanation unifier) =
-    either explainError failWithExplanation <$> unificationResults
+  either explainError failWithExplanation <$> unificationResults
   where
     unificationResults
-        ::  m (Either UnificationOrSubstitutionError ([a], First ReplOutput))
+      :: m (Either UnificationOrSubstitutionError ([a], First ReplOutput))
     unificationResults =
-        fmap (\(r, ex) -> flip (,) ex <$> r)
+      fmap (\(r, ex) -> flip (,) ex <$> r)
         . flip runAccumT mempty
         . Monad.Unify.runUnifierT
         $ unifier
     explainError = Left . makeAuxReplOutput . show . Pretty.pretty
     failWithExplanation
-        :: ([a], First ReplOutput)
-        -> Either ReplOutput (NonEmpty a)
+      :: ([a], First ReplOutput)
+      -> Either ReplOutput (NonEmpty a)
     failWithExplanation (results, explanation) =
-        case results of
-            [] ->
-                Left $ fromMaybe
-                    (makeAuxReplOutput "No explanation given")
-                    (getFirst explanation)
-            r : rs -> Right (r :| rs)
+      case results of
+        [] ->
+          Left
+            $ fromMaybe
+                (makeAuxReplOutput "No explanation given")
+                (getFirst explanation)
+        r : rs -> Right (r :| rs)

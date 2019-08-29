@@ -13,85 +13,87 @@ an AST term in a single data type (e.g. 'UnifiedSort' that can be either
 Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
-
 module Kore.AST.Common where
 
 import Data.Hashable
 import Data.String
-       ( fromString )
+  ( fromString
+    )
 import GHC.Generics
-       ( Generic )
-
+  ( Generic
+    )
 import Kore.Unparser
 
 {-|Enumeration of patterns starting with @\@
 -}
 data MLPatternType
-    = AndPatternType
-    | BottomPatternType
-    | CeilPatternType
-    | DomainValuePatternType
-    | EqualsPatternType
-    | ExistsPatternType
-    | FloorPatternType
-    | ForallPatternType
-    | IffPatternType
-    | ImpliesPatternType
-    | InPatternType
-    | MuPatternType
-    | NextPatternType
-    | NotPatternType
-    | NuPatternType
-    | OrPatternType
-    | RewritesPatternType
-    | TopPatternType
-    deriving (Show, Generic)
+  = AndPatternType
+  | BottomPatternType
+  | CeilPatternType
+  | DomainValuePatternType
+  | EqualsPatternType
+  | ExistsPatternType
+  | FloorPatternType
+  | ForallPatternType
+  | IffPatternType
+  | ImpliesPatternType
+  | InPatternType
+  | MuPatternType
+  | NextPatternType
+  | NotPatternType
+  | NuPatternType
+  | OrPatternType
+  | RewritesPatternType
+  | TopPatternType
+  deriving (Show, Generic)
 
 instance Hashable MLPatternType
 
 instance Unparse MLPatternType where
-    unparse = ("\\" <>) . fromString . patternString
-    unparse2 = ("\\" <>) . fromString . patternString
+
+  unparse = ("\\" <>) . fromString . patternString
+
+  unparse2 = ("\\" <>) . fromString . patternString
 
 allPatternTypes :: [MLPatternType]
 allPatternTypes =
-    [ AndPatternType
-    , BottomPatternType
-    , CeilPatternType
-    , DomainValuePatternType
-    , EqualsPatternType
-    , ExistsPatternType
-    , FloorPatternType
-    , ForallPatternType
-    , IffPatternType
-    , ImpliesPatternType
-    , InPatternType
-    , MuPatternType
-    , NextPatternType
-    , NotPatternType
-    , NuPatternType
-    , OrPatternType
-    , RewritesPatternType
-    , TopPatternType
+  [ AndPatternType,
+    BottomPatternType,
+    CeilPatternType,
+    DomainValuePatternType,
+    EqualsPatternType,
+    ExistsPatternType,
+    FloorPatternType,
+    ForallPatternType,
+    IffPatternType,
+    ImpliesPatternType,
+    InPatternType,
+    MuPatternType,
+    NextPatternType,
+    NotPatternType,
+    NuPatternType,
+    OrPatternType,
+    RewritesPatternType,
+    TopPatternType
     ]
 
 patternString :: MLPatternType -> String
 patternString pt = case pt of
-    AndPatternType         -> "and"
-    BottomPatternType      -> "bottom"
-    CeilPatternType        -> "ceil"
-    DomainValuePatternType -> "dv"
-    EqualsPatternType      -> "equals"
-    ExistsPatternType      -> "exists"
-    FloorPatternType       -> "floor"
-    ForallPatternType      -> "forall"
-    IffPatternType         -> "iff"
-    ImpliesPatternType     -> "implies"
-    InPatternType          -> "in"
-    MuPatternType          -> "mu"
-    NextPatternType        -> "next"
-    NotPatternType         -> "not"
-    NuPatternType          -> "nu"
-    OrPatternType          -> "or"
-    RewritesPatternType    -> "rewrites"
-    TopPatternType         -> "top"
+  AndPatternType -> "and"
+  BottomPatternType -> "bottom"
+  CeilPatternType -> "ceil"
+  DomainValuePatternType -> "dv"
+  EqualsPatternType -> "equals"
+  ExistsPatternType -> "exists"
+  FloorPatternType -> "floor"
+  ForallPatternType -> "forall"
+  IffPatternType -> "iff"
+  ImpliesPatternType -> "implies"
+  InPatternType -> "in"
+  MuPatternType -> "mu"
+  NextPatternType -> "next"
+  NotPatternType -> "not"
+  NuPatternType -> "nu"
+  OrPatternType -> "or"
+  RewritesPatternType -> "rewrites"
+  TopPatternType -> "top"

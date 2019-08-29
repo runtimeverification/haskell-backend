@@ -7,14 +7,15 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
-
 module Kore.TopBottom
-    ( TopBottom (..)
-    , guardAgainstBottom
-    ) where
+  ( TopBottom (..),
+    guardAgainstBottom
+    )
+where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+  ( Alternative (..)
+    )
 import qualified Control.Monad as Monad
 
 {-| Class for types whose values work as top, bottom, or something between.
@@ -30,14 +31,18 @@ Instances of 'TopBottom' must satisfy the following laws:
 
 -}
 class TopBottom term where
-    -- | Whether the term works as 'Top'.
-    isTop :: term -> Bool
-    -- | Whether the term works as 'Bottom'.
-    isBottom :: term -> Bool
+
+  -- | Whether the term works as 'Top'.
+  isTop :: term -> Bool
+
+  -- | Whether the term works as 'Bottom'.
+  isBottom :: term -> Bool
 
 instance TopBottom () where
-    isTop _ = True
-    isBottom _ = False
+
+  isTop _ = True
+
+  isBottom _ = False
 
 {- | Fail using 'empty' when @term@ is bottom.
 

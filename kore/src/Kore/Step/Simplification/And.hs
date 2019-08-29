@@ -8,37 +8,46 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.And
-    ( makeEvaluate
-    , simplify
-    , simplifyEvaluated
-    , simplifyEvaluatedMultiple
-    , And (..)
-    ) where
+  ( makeEvaluate,
+    simplify,
+    simplifyEvaluated,
+    simplifyEvaluatedMultiple,
+    And (..)
+    )
+where
 
 import Control.Applicative
-       ( Alternative (empty) )
+  ( Alternative (empty)
+    )
 import Control.Monad
-       ( foldM )
+  ( foldM
+    )
 import Data.List
-       ( foldl1', nub )
+  ( foldl1',
+    nub
+    )
 import GHC.Stack
-       ( HasCallStack )
-
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+  ( HasCallStack
+    )
+import Kore.Internal.Conditional
+  ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
-                 ( termAnd )
-import           Kore.Step.Simplification.Data hiding
-                 ( And )
+  ( termAnd
+    )
+import Kore.Step.Simplification.Data hiding
+  ( And
+    )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+import Kore.Unparser
+import Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.
 
@@ -77,16 +86,16 @@ Also, we have
     the same for two string literals and two chars
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => And Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify And { andFirst = first, andSecond = second } =
-    simplifyEvaluated first second
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => And Sort (OrPattern variable)
+  -> simplifier (OrPattern variable)
+simplify And {andFirst = first, andSecond = second} =
+  simplifyEvaluated first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -106,56 +115,57 @@ to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => OrPattern variable
+  -> OrPattern variable
+  -> simplifier (OrPattern variable)
 simplifyEvaluated first second
-  | OrPattern.isFalse first  = return OrPattern.bottom
+  | OrPattern.isFalse first = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isTrue second  = return first
-  | otherwise                = do
-    result <-
+  | OrPattern.isTrue first = return second
+  | OrPattern.isTrue second = return first
+  | otherwise =
+    do
+      result <-
         gather $ do
-            first1 <- scatter first
-            second1 <- scatter second
-            makeEvaluate first1 second1
-    return (OrPattern.fromPatterns result)
+          first1 <- scatter first
+          second1 <- scatter second
+          makeEvaluate first1 second1
+      return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => [OrPattern variable]
-    -> simplifier (OrPattern variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       MonadSimplify simplifier
+       )
+  => [OrPattern variable]
+  -> simplifier (OrPattern variable)
 simplifyEvaluatedMultiple [] = return OrPattern.top
 simplifyEvaluatedMultiple (pat : patterns) =
-    foldM simplifyEvaluated pat patterns
+  foldM simplifyEvaluated pat patterns
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , HasCallStack
-        , MonadSimplify simplifier
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> BranchT simplifier (Pattern variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       HasCallStack,
+       MonadSimplify simplifier
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> BranchT simplifier (Pattern variable)
 makeEvaluate first second
   | Pattern.isBottom first || Pattern.isBottom second = empty
   | Pattern.isTop first = return second
@@ -163,39 +173,41 @@ makeEvaluate first second
   | otherwise = makeEvaluateNonBool first second
 
 makeEvaluateNonBool
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , HasCallStack
-        , MonadSimplify simplifier
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> BranchT simplifier (Pattern variable)
+  :: ( SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       FreshVariable variable,
+       HasCallStack,
+       MonadSimplify simplifier
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> BranchT simplifier (Pattern variable)
 makeEvaluateNonBool
-    first@Conditional { term = firstTerm }
-    second@Conditional { term = secondTerm }
-  = do
-    terms <- AndTerms.termAnd firstTerm secondTerm
-    let firstCondition = Conditional.withoutTerm first
-        secondCondition = Conditional.withoutTerm second
-        initialConditions = firstCondition <> secondCondition
-        merged = Conditional.andCondition terms initialConditions
-    normalized <- Substitution.normalize merged
-    return (applyAndIdempotence <$> normalized)
-        { predicate = applyAndIdempotence <$> Conditional.predicate normalized }
+  first@Conditional {term = firstTerm}
+  second@Conditional {term = secondTerm} =
+    do
+      terms <- AndTerms.termAnd firstTerm secondTerm
+      let firstCondition = Conditional.withoutTerm first
+          secondCondition = Conditional.withoutTerm second
+          initialConditions = firstCondition <> secondCondition
+          merged = Conditional.andCondition terms initialConditions
+      normalized <- Substitution.normalize merged
+      return
+        (applyAndIdempotence <$> normalized)
+          { predicate = applyAndIdempotence <$> Conditional.predicate normalized
+            }
 
 applyAndIdempotence
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
-    => TermLike variable
-    -> TermLike variable
+  :: ( Ord variable,
+       Show variable,
+       Unparse variable,
+       SortedVariable variable
+       )
+  => TermLike variable
+  -> TermLike variable
 applyAndIdempotence patt =
-    foldl1' mkAnd (nub (children patt))
+  foldl1' mkAnd (nub (children patt))
   where
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]

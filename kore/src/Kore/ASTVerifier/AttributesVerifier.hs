@@ -8,33 +8,35 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Kore.ASTVerifier.AttributesVerifier
-    ( verifyAttributes
-    , verifySortHookAttribute
-    , verifySymbolHookAttribute
-    , verifyNoHookAttribute
-    , AttributesVerification (..)
-    , parseAttributes
-    ) where
+  ( verifyAttributes,
+    verifySortHookAttribute,
+    verifySymbolHookAttribute,
+    verifyNoHookAttribute,
+    AttributesVerification (..),
+    parseAttributes
+    )
+where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Proxy
-                 ( Proxy )
-
-import           Kore.ASTVerifier.Error
-import           Kore.Attribute.Hook
+import Data.Proxy
+  ( Proxy
+    )
+import Kore.ASTVerifier.Error
+import Kore.Attribute.Hook
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
-import           Kore.Syntax.Definition
-import           Kore.Syntax.Pattern
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+  ( KoreIndexedModule
+    )
+import Kore.Syntax.Definition
+import Kore.Syntax.Pattern
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}
 data AttributesVerification declAtts axiomAtts
-    = VerifyAttributes (Proxy declAtts) (Proxy axiomAtts)
-    | DoNotVerifyAttributes
+  = VerifyAttributes (Proxy declAtts) (Proxy axiomAtts)
+  | DoNotVerifyAttributes
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -42,32 +44,32 @@ parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 {-|'verifyAttributes' verifies the wellformedness of the given attributes.
 -}
 verifyAttributes
-    :: MonadError (Error VerifyError) m
-    => Attributes
-    -> AttributesVerification declAtts axiomAtts
-    -> m VerifySuccess
+  :: MonadError (Error VerifyError) m
+  => Attributes
+  -> AttributesVerification declAtts axiomAtts
+  -> m VerifySuccess
 verifyAttributes
-    (Attributes patterns)
-    (VerifyAttributes _ _)
-  = do
-    withContext
+  (Attributes patterns)
+  (VerifyAttributes _ _) =
+    do
+      withContext
         "attributes"
         (mapM_ (verifyAttributePattern . project) patterns)
-    verifySuccess
-  where
-    project = Cofree.tailF . Recursive.project
+      verifySuccess
+    where
+      project = Cofree.tailF . Recursive.project
 verifyAttributes _ DoNotVerifyAttributes =
-    verifySuccess
+  verifySuccess
 
 verifyAttributePattern
-    :: MonadError (Error VerifyError) m
-    => PatternF variable (Pattern variable annotation)
-    -> m VerifySuccess
+  :: MonadError (Error VerifyError) m
+  => PatternF variable (Pattern variable annotation)
+  -> m VerifySuccess
 verifyAttributePattern pat =
-    case pat of
-        ApplicationF _ -> verifySuccess
-        _ ->
-            koreFail "Non-application attributes are not supported"
+  case pat of
+    ApplicationF _ -> verifySuccess
+    _ ->
+      koreFail "Non-application attributes are not supported"
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -77,16 +79,16 @@ verifyAttributePattern pat =
 
  -}
 verifySortHookAttribute
-    :: KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
-    -> Attributes
-    -> Either (Error VerifyError) Hook
+  :: KoreIndexedModule declAtts axiomAtts
+  -> AttributesVerification declAtts axiomAtts
+  -> Attributes
+  -> Either (Error VerifyError) Hook
 verifySortHookAttribute _indexedModule =
-    \case
-        DoNotVerifyAttributes ->
-            \_ -> return emptyHook
-        VerifyAttributes _ _ ->
-            parseAttributes
+  \case
+    DoNotVerifyAttributes ->
+      \_ -> return emptyHook
+    VerifyAttributes _ _ ->
+      parseAttributes
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -96,16 +98,16 @@ verifySortHookAttribute _indexedModule =
 
  -}
 verifySymbolHookAttribute
-    :: AttributesVerification declAtts axiomAtts
-    -> Attributes
-    -> Either (Error VerifyError) Hook
+  :: AttributesVerification declAtts axiomAtts
+  -> Attributes
+  -> Either (Error VerifyError) Hook
 verifySymbolHookAttribute =
-    \case
-        DoNotVerifyAttributes ->
-            -- Do not attempt to parse, verify, or return the hook attribute.
-            \_ -> return emptyHook
-        VerifyAttributes _ _ ->
-            parseAttributes
+  \case
+    DoNotVerifyAttributes ->
+      -- Do not attempt to parse, verify, or return the hook attribute.
+      \_ -> return emptyHook
+    VerifyAttributes _ _ ->
+      parseAttributes
 
 {- | Verify that the @hook{}()@ attribute is not present.
 
@@ -113,19 +115,19 @@ verifySymbolHookAttribute =
 
  -}
 verifyNoHookAttribute
-    :: AttributesVerification declAtts axiomAtts
-    -> Attributes
-    -> Either (Error VerifyError) ()
+  :: AttributesVerification declAtts axiomAtts
+  -> Attributes
+  -> Either (Error VerifyError) ()
 verifyNoHookAttribute =
-    \case
-        DoNotVerifyAttributes ->
-            -- Do not verify anything.
-            \_ -> return ()
-        VerifyAttributes _ _ -> \attributes -> do
-            Hook { getHook } <- castError (parseAttributes attributes)
-            case getHook of
-                Nothing ->
-                    -- The hook attribute is (correctly) absent.
-                    return ()
-                Just _ ->
-                    koreFail "Unexpected 'hook' attribute"
+  \case
+    DoNotVerifyAttributes ->
+      -- Do not verify anything.
+      \_ -> return ()
+    VerifyAttributes _ _ -> \attributes -> do
+      Hook {getHook} <- castError (parseAttributes attributes)
+      case getHook of
+        Nothing ->
+          -- The hook attribute is (correctly) absent.
+          return ()
+        Just _ ->
+          koreFail "Unexpected 'hook' attribute"

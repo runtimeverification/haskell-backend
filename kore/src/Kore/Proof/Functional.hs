@@ -5,22 +5,25 @@ Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : thomas.tuegel@runtimeverification.com
 -}
-
 module Kore.Proof.Functional
-    ( ConstructorLikeProof (..)
-    , FunctionProof (..)
-    , FunctionalProof (..)
-    , TotalProof (..)
-    , mapVariables
-    ) where
+  ( ConstructorLikeProof (..),
+    FunctionProof (..),
+    FunctionalProof (..),
+    TotalProof (..),
+    mapVariables
+    )
+where
 
 import Data.Hashable
-       ( Hashable )
+  ( Hashable
+    )
 import GHC.Generics
-       ( Generic )
-
+  ( Generic
+    )
 import Kore.Internal.TermLike
-       ( Builtin, Symbol )
+  ( Builtin,
+    Symbol
+    )
 import Kore.Sort
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.DomainValue
@@ -33,27 +36,29 @@ import Kore.Syntax.StringLiteral
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionalProof variable
-    = FunctionalVariable variable
+  = FunctionalVariable variable
     -- ^Variables are functional as per Corollary 5.19
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     -- |= ∃y . x = y
-    | FunctionalBuiltin (Builtin ())
+  | FunctionalBuiltin (Builtin ())
     -- ^ Builtin pattern without children are functional: they represent
     -- one value in the model.
-    | FunctionalDomainValue (DomainValue Sort ())
+  | FunctionalDomainValue (DomainValue Sort ())
     -- ^ Domain value pattern without children are functional: they represent
     -- one value in the model.
-    | FunctionalHead Symbol
+  | FunctionalHead Symbol
     -- ^Head of a total function, conforming to Definition 5.21
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
-    | FunctionalStringLiteral StringLiteral
+  | FunctionalStringLiteral StringLiteral
     -- ^A string literal is the repeated application of functional constructors.
-    | FunctionalCharLiteral CharLiteral
+  | FunctionalCharLiteral CharLiteral
     -- ^A char literal is a functional constructor without arguments.
-  deriving Generic
+  deriving (Generic)
 
 deriving instance Eq variable => Eq (FunctionalProof variable)
+
 deriving instance Ord variable => Ord (FunctionalProof variable)
+
 deriving instance Show variable => Show (FunctionalProof variable)
 
 instance Hashable variable => Hashable (FunctionalProof variable)
@@ -66,13 +71,15 @@ instance Hashable variable => Hashable (FunctionalProof variable)
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data FunctionProof variable
-    = FunctionProofFunctional (FunctionalProof variable)
+  = FunctionProofFunctional (FunctionalProof variable)
     -- ^ A functional component is also function-like.
-    | FunctionHead Symbol
+  | FunctionHead Symbol
     -- ^Head of a partial function.
 
 deriving instance Eq variable => Eq (FunctionProof variable)
+
 deriving instance Ord variable => Ord (FunctionProof variable)
+
 deriving instance Show variable => Show (FunctionProof variable)
 
 -- |'TotalProof' is used for providing arguments that a pattern is
@@ -82,13 +89,15 @@ deriving instance Show variable => Show (FunctionProof variable)
 -- TODO: replace this datastructures with proper ones representing
 -- both hypotheses and conclusions in the proof object.
 data TotalProof variable
-    = TotalProofFunctional (FunctionalProof variable)
+  = TotalProofFunctional (FunctionalProof variable)
     -- ^A functional component is also total.
-    | TotalHead Symbol
+  | TotalHead Symbol
     -- ^Head of a total symbol.
 
 deriving instance Eq variable => Eq (TotalProof variable)
+
 deriving instance Ord variable => Ord (TotalProof variable)
+
 deriving instance Show variable => Show (TotalProof variable)
 
 -- |Used for providing arguments that a pattern is made of constructor-like
@@ -97,14 +106,14 @@ data ConstructorLikeProof = ConstructorLikeProof
   deriving (Eq, Show)
 
 mapVariables
-    :: (variable1 -> variable2)
-    -> FunctionalProof variable1
-    -> FunctionalProof variable2
+  :: (variable1 -> variable2)
+  -> FunctionalProof variable1
+  -> FunctionalProof variable2
 mapVariables mapping =
-    \case
-        FunctionalVariable variable -> FunctionalVariable (mapping variable)
-        FunctionalBuiltin value -> FunctionalBuiltin value
-        FunctionalDomainValue value -> FunctionalDomainValue value
-        FunctionalHead symbol -> FunctionalHead symbol
-        FunctionalStringLiteral string -> FunctionalStringLiteral string
-        FunctionalCharLiteral char -> FunctionalCharLiteral char
+  \case
+    FunctionalVariable variable -> FunctionalVariable (mapping variable)
+    FunctionalBuiltin value -> FunctionalBuiltin value
+    FunctionalDomainValue value -> FunctionalDomainValue value
+    FunctionalHead symbol -> FunctionalHead symbol
+    FunctionalStringLiteral string -> FunctionalStringLiteral string
+    FunctionalCharLiteral char -> FunctionalCharLiteral char

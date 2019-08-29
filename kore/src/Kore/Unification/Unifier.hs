@@ -9,11 +9,14 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Unification.Unifier
-    ( module UnifierImpl
-    , module Error
-    ) where
+  ( module UnifierImpl,
+    module Error
+    )
+where
 
 import Kore.Unification.Error as Error
-       ( UnificationError (..) )
+  ( UnificationError (..)
+    )
 import Kore.Unification.UnifierImpl as UnifierImpl
-       ( normalizeSubstitutionDuplication )
+  ( normalizeSubstitutionDuplication
+    )

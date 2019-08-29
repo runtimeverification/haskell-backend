@@ -8,23 +8,28 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.Implies
-    ( simplify
-    , simplifyEvaluated
-    ) where
+  ( simplify,
+    simplifyEvaluated
+    )
+where
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+  ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Data
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Not as Not
-                 ( makeEvaluate, simplifyEvaluated )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+  ( makeEvaluate,
+    simplifyEvaluated
+    )
+import Kore.Unparser
+import Kore.Variables.Fresh
+  ( FreshVariable
+    )
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
@@ -40,16 +45,16 @@ Right now this uses the following simplifications:
 and it has a special case for children with top terms.
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => Implies Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify Implies { impliesFirst = first, impliesSecond = second } =
-    simplifyEvaluated first second
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => Implies Sort (OrPattern variable)
+  -> simplifier (OrPattern variable)
+simplify Implies {impliesFirst = first, impliesSecond = second} =
+  simplifyEvaluated first second
 
 {-| simplifies an Implies given its two 'OrPattern' children.
 
@@ -70,58 +75,58 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => OrPattern variable
+  -> OrPattern variable
+  -> simplifier (OrPattern variable)
 simplifyEvaluated first second
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isFalse first  = return OrPattern.top
-  | OrPattern.isTrue second  = return OrPattern.top
+  | OrPattern.isTrue first = return second
+  | OrPattern.isFalse first = return OrPattern.top
+  | OrPattern.isTrue second = return OrPattern.top
   | OrPattern.isFalse second = Not.simplifyEvaluated first
-  | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies first) second
-    return (MultiOr.flatten results)
+  | otherwise =
+    do
+      results <- traverse (simplifyEvaluateHalfImplies first) second
+      return (MultiOr.flatten results)
 
 simplifyEvaluateHalfImplies
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => OrPattern variable
-    -> Pattern variable
-    -> simplifier (OrPattern variable)
+  :: ( FreshVariable variable,
+       SortedVariable variable,
+       Show variable,
+       Unparse variable,
+       MonadSimplify simplifier
+       )
+  => OrPattern variable
+  -> Pattern variable
+  -> simplifier (OrPattern variable)
 simplifyEvaluateHalfImplies
-    first
-    second
-  | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])
-  | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isBottom second = Not.simplifyEvaluated first
-  | otherwise =
-    -- TODO: Also merge predicate-only patterns for 'Or'
-    return $ case MultiOr.extractPatterns first of
+  first
+  second
+    | OrPattern.isTrue first = return (OrPattern.fromPatterns [second])
+    | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
+    | Pattern.isTop second = return (OrPattern.fromPatterns [Pattern.top])
+    | Pattern.isBottom second = Not.simplifyEvaluated first
+    | otherwise =
+      -- TODO: Also merge predicate-only patterns for 'Or'
+      return $ case MultiOr.extractPatterns first of
         [firstP] -> makeEvaluateImplies firstP second
         _ -> makeEvaluateImplies (OrPattern.toPattern first) second
 
 makeEvaluateImplies
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
-makeEvaluateImplies
-    first second
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> OrPattern variable
+makeEvaluateImplies first second
   | Pattern.isTop first =
     OrPattern.fromPatterns [second]
   | Pattern.isBottom first =
@@ -134,50 +139,51 @@ makeEvaluateImplies
     makeEvaluateImpliesNonBool first second
 
 makeEvaluateImpliesNonBool
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => Pattern variable
-    -> Pattern variable
-    -> OrPattern variable
+  :: ( SortedVariable variable,
+       Ord variable,
+       Show variable,
+       Unparse variable
+       )
+  => Pattern variable
+  -> Pattern variable
+  -> OrPattern variable
 makeEvaluateImpliesNonBool
-    pattern1@Conditional
-        { term = firstTerm
-        , predicate = firstPredicate
-        , substitution = firstSubstitution
-        }
-    pattern2@Conditional
-        { term = secondTerm
-        , predicate = secondPredicate
-        , substitution = secondSubstitution
-        }
-  | isTop firstTerm, isTop secondTerm =
-    OrPattern.fromPatterns
+  pattern1@Conditional
+    { term = firstTerm,
+      predicate = firstPredicate,
+      substitution = firstSubstitution
+      }
+  pattern2@Conditional
+    { term = secondTerm,
+      predicate = secondPredicate,
+      substitution = secondSubstitution
+      }
+    | isTop firstTerm,
+      isTop secondTerm =
+      OrPattern.fromPatterns
         [ Conditional
-            { term = firstTerm
-            , predicate =
+            { term = firstTerm,
+              predicate =
                 Syntax.Predicate.makeImpliesPredicate
-                    (Syntax.Predicate.makeAndPredicate
-                        firstPredicate
-                        (Syntax.Predicate.fromSubstitution firstSubstitution)
+                  ( Syntax.Predicate.makeAndPredicate
+                      firstPredicate
+                      (Syntax.Predicate.fromSubstitution firstSubstitution)
                     )
-                    (Syntax.Predicate.makeAndPredicate
-                        secondPredicate
-                        (Syntax.Predicate.fromSubstitution secondSubstitution)
-                    )
-            , substitution = mempty
-            }
-        ]
-  | otherwise =
-    OrPattern.fromPatterns
+                  ( Syntax.Predicate.makeAndPredicate
+                      secondPredicate
+                      (Syntax.Predicate.fromSubstitution secondSubstitution)
+                    ),
+              substitution = mempty
+              }
+          ]
+    | otherwise =
+      OrPattern.fromPatterns
         [ Conditional
             { term =
                 mkImplies
-                    (Pattern.toTermLike pattern1)
-                    (Pattern.toTermLike pattern2)
-            , predicate = Syntax.Predicate.makeTruePredicate
-            , substitution = mempty
-            }
-        ]
+                  (Pattern.toTermLike pattern1)
+                  (Pattern.toTermLike pattern2),
+              predicate = Syntax.Predicate.makeTruePredicate,
+              substitution = mempty
+              }
+          ]

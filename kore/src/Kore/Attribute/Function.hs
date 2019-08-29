@@ -7,29 +7,31 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 module Kore.Attribute.Function
-    ( Function (..)
-    , functionId, functionSymbol, functionAttribute
-    ) where
+  ( Function (..),
+    functionId,
+    functionSymbol,
+    functionAttribute
+    )
+where
 
 import qualified Control.Monad as Monad
-import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-
+import qualified Generics.SOP as SOP
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 -- | @Function@ represents the @function@ attribute for symbols.
-newtype Function = Function { isDeclaredFunction :: Bool }
-    deriving (GHC.Generic, Eq, Ord, Show)
+newtype Function = Function {isDeclaredFunction :: Bool}
+  deriving (GHC.Generic, Eq, Ord, Show)
 
 instance Semigroup Function where
-    (<>) (Function a) (Function b) = Function (a || b)
+  (<>) (Function a) (Function b) = Function (a || b)
 
 instance Monoid Function where
-    mempty = Function False
+  mempty = Function False
 
 instance Default Function where
-    def = mempty
+  def = mempty
 
 instance NFData Function
 
@@ -46,25 +48,26 @@ functionId = "function"
 -- | Kore symbol representing the @function@ attribute.
 functionSymbol :: SymbolOrAlias
 functionSymbol =
-    SymbolOrAlias
-        { symbolOrAliasConstructor = functionId
-        , symbolOrAliasParams = []
-        }
+  SymbolOrAlias
+    { symbolOrAliasConstructor = functionId,
+      symbolOrAliasParams = []
+      }
 
 -- | Kore pattern representing the @function@ attribute.
 functionAttribute :: AttributePattern
 functionAttribute = attributePattern_ functionSymbol
 
 instance ParseAttributes Function where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Function { isDeclaredFunction } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isDeclaredFunction failDuplicate'
-            return Function { isDeclaredFunction = True }
-        withApplication' = Parser.withApplication functionId
-        failDuplicate' = Parser.failDuplicate functionId
 
-    toAttributes Function { isDeclaredFunction } =
-        Attributes [functionAttribute | isDeclaredFunction]
+  parseAttribute = withApplication' parseApplication
+    where
+      parseApplication params args Function {isDeclaredFunction} = do
+        Parser.getZeroParams params
+        Parser.getZeroArguments args
+        Monad.when isDeclaredFunction failDuplicate'
+        return Function {isDeclaredFunction = True}
+      withApplication' = Parser.withApplication functionId
+      failDuplicate' = Parser.failDuplicate functionId
+
+  toAttributes Function {isDeclaredFunction} =
+    Attributes [functionAttribute | isDeclaredFunction]

@@ -12,67 +12,81 @@ import Kore.Step.Strategy ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
 @
 -}
-
 module Kore.Step.Strategy
-    ( -- * Strategies
-      Strategy (..)
-    , and
-    , all
-    , or
-    , try
-    , any
-    , many
-    , some
-    , apply
-    , seq
-    , sequence
-    , stuck
-    , continue
-      -- * Running strategies
-    , GraphSearchOrder(..)
-    , constructExecutionGraph
-    , ExecutionGraph(..)
-    , insNode
-    , insEdge
-    , runStrategy
-    , runStrategyWithSearchOrder
-    , pickLongest
-    , pickFinal
-    , pickOne
-    , pickStar
-    , pickPlus
-    , assert
-    , executionHistoryStep
-    , emptyExecutionGraph
-    , module Kore.Step.Transition
-    ) where
+  ( -- * Strategies
+    Strategy (..),
+    and,
+    all,
+    or,
+    try,
+    any,
+    many,
+    some,
+    apply,
+    seq,
+    sequence,
+    stuck,
+    continue,
+    -- * Running strategies
+    GraphSearchOrder (..),
+    constructExecutionGraph,
+    ExecutionGraph (..),
+    insNode,
+    insEdge,
+    runStrategy,
+    runStrategyWithSearchOrder,
+    pickLongest,
+    pickFinal,
+    pickOne,
+    pickStar,
+    pickPlus,
+    assert,
+    executionHistoryStep,
+    emptyExecutionGraph,
+    module Kore.Step.Transition
+    )
+where
 
-import           Control.Applicative
-                 ( Alternative (empty, (<|>)) )
-import           Control.Monad
-                 ( (>=>) )
-import           Control.Monad.State.Strict
-                 ( MonadState, StateT )
+import Control.Applicative
+  ( Alternative ((<|>), empty)
+    )
+import Control.Monad
+  ( (>=>)
+    )
+import Control.Monad.State.Strict
+  ( MonadState,
+    StateT
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.Graph.Inductive.PatriciaTree
-                 ( Gr )
-import           Data.Hashable
+import Data.Graph.Inductive.PatriciaTree
+  ( Gr
+    )
+import Data.Hashable
 import qualified Data.List as List
-import           Data.Maybe
-import           Data.Sequence
-                 ( Seq )
+import Data.Maybe
+import Data.Sequence
+  ( Seq
+    )
 import qualified Data.Sequence as Seq
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
+import Kore.Profiler.Data
+  ( MonadProfiler
+    )
 import qualified Kore.Profiler.Profile as Profile
-                 ( executionQueueLength )
-import           Prelude hiding
-                 ( all, and, any, or, replicate, seq, sequence )
-
+  ( executionQueueLength
+    )
 import Kore.Step.Transition
+import Prelude hiding
+  ( all,
+    and,
+    any,
+    or,
+    replicate,
+    seq,
+    sequence
+    )
 
 assert :: Bool -> a -> a
 assert b a = if b then a else error "assertion failed"
@@ -88,29 +102,22 @@ assert b a = if b then a else error "assertion failed"
 -- execution is not a generic tree, but a cofree comonad with exactly the
 -- branching structure described by the strategy algebra.
 data Strategy prim where
+  -- The recursive arguments of these constructors are /intentionally/ lazy to
+  -- allow strategies to loop.
 
-    -- The recursive arguments of these constructors are /intentionally/ lazy to
-    -- allow strategies to loop.
-
-    -- | Apply two strategies in sequence.
-    Seq :: Strategy prim -> Strategy prim -> Strategy prim
-
-    -- | Apply both strategies to the same configuration, i.e. in parallel.
-    And :: Strategy prim -> Strategy prim -> Strategy prim
-
-    -- | Apply the second strategy if the first fails to produce children.
-    Or :: Strategy prim -> Strategy prim -> Strategy prim
-
-    -- | Apply the rewrite rule, then advance to the next strategy.
-    Apply :: !prim -> Strategy prim
-
-    -- | @Stuck@ produces no children.
-    Stuck :: Strategy prim
-
-    -- | @Continue@ produces one child identical to its parent.
-    Continue :: Strategy prim
-
-    deriving (Eq, Show)
+  -- | Apply two strategies in sequence.
+  Seq :: Strategy prim -> Strategy prim -> Strategy prim
+  -- | Apply both strategies to the same configuration, i.e. in parallel.
+  And :: Strategy prim -> Strategy prim -> Strategy prim
+  -- | Apply the second strategy if the first fails to produce children.
+  Or :: Strategy prim -> Strategy prim -> Strategy prim
+  -- | Apply the rewrite rule, then advance to the next strategy.
+  Apply :: !prim -> Strategy prim
+  -- | @Stuck@ produces no children.
+  Stuck :: Strategy prim
+  -- | @Continue@ produces one child identical to its parent.
+  Continue :: Strategy prim
+  deriving (Eq, Show)
 
 {- | Apply two strategies in sequence.
 
@@ -180,9 +187,9 @@ some strategy = seq strategy (many strategy)
 
 -- | Apply the rewrite rule, then advance to the next strategy.
 apply
-    :: prim
-    -- ^ rule
-    -> Strategy prim
+  :: prim
+  -- ^ rule
+  -> Strategy prim
 apply = Apply
 
 {- | Produce no children; the end of all strategies.
@@ -224,23 +231,25 @@ seq a continue === a
 continue :: Strategy prim
 continue = Continue
 
-data ExecutionGraph config rule = ExecutionGraph
-    { root :: Graph.Node
-    , graph :: Gr config (Seq rule)
-    }
-    deriving(Eq, Show)
+data ExecutionGraph config rule
+  = ExecutionGraph
+      { root :: Graph.Node,
+        graph :: Gr config (Seq rule)
+        }
+  deriving (Eq, Show)
 
 -- | A temporary data structure used to construct the 'ExecutionGraph'.
 -- Well, it was intended to be temporary, but for the purpose of making
 -- 'pickLongest' fast it turns out to be useful to keep it around.
-data ChildNode config rule = ChildNode
-    { config :: config
-    , parents :: [(Seq rule, Graph.Node)]
-    -- ^ The predecessor configurations in the execution graph and the sequence
-    -- of rules applied from the parent configuration to the present
-    -- configuration.
-    }
-    deriving (Eq, Show, Functor)
+data ChildNode config rule
+  = ChildNode
+      { config :: config,
+        parents :: [(Seq rule, Graph.Node)]
+        -- ^ The predecessor configurations in the execution graph and the sequence
+        -- of rules applied from the parent configuration to the present
+        -- configuration.
+        }
+  deriving (Eq, Show, Functor)
 
 {- | Insert a node into the execution graph.
 
@@ -248,11 +257,11 @@ The 'Graph.Node' index must not already exist in the graph.
 
  -}
 insNode
-    :: (Graph.Node, config)
-    -> ExecutionGraph config rule
-    -> ExecutionGraph config rule
-insNode lnode exe@ExecutionGraph { graph } =
-    exe { graph = Graph.insNode lnode graph }
+  :: (Graph.Node, config)
+  -> ExecutionGraph config rule
+  -> ExecutionGraph config rule
+insNode lnode exe@ExecutionGraph {graph} =
+  exe {graph = Graph.insNode lnode graph}
 
 {- | Insert an unlabeled edge into the execution graph.
 
@@ -260,32 +269,30 @@ The source and target 'Graph.Node' indices must already exist in the graph.
 
  -}
 insEdge
-    :: (Graph.Node, Graph.Node)
-    -- ^ (source, target) of the edge
-    -> ExecutionGraph config rule
-    -> ExecutionGraph config rule
-insEdge (fromNode, toNode) exe@ExecutionGraph { graph } =
-    exe { graph = Graph.insEdge (fromNode, toNode, mempty) graph }
+  :: (Graph.Node, Graph.Node)
+  -- ^ (source, target) of the edge
+  -> ExecutionGraph config rule
+  -> ExecutionGraph config rule
+insEdge (fromNode, toNode) exe@ExecutionGraph {graph} =
+  exe {graph = Graph.insEdge (fromNode, toNode, mempty) graph}
 
 insChildNode
-    :: MonadState (Gr config (Seq rule)) m
-    => ChildNode config rule
-    -> m Graph.Node
+  :: MonadState (Gr config (Seq rule)) m
+  => ChildNode config rule
+  -> m Graph.Node
 insChildNode configNode =
-    State.state insChildNodeWorker
+  State.state insChildNodeWorker
   where
-    ChildNode { config } = configNode
-    ChildNode { parents } = configNode
+    ChildNode {config} = configNode
+    ChildNode {parents} = configNode
     insChildNodeWorker graph =
-        let
-            node' = (succ . snd) (Graph.nodeRange graph)
-            lnode = (node', config)
-            ledges = do
-                (edge, node) <- parents
-                return (node, node', edge)
-            graph' = Graph.insEdges ledges $ Graph.insNode lnode graph
-        in
-            (node', graph')
+      let node' = (succ . snd) (Graph.nodeRange graph)
+          lnode = (node', config)
+          ledges = do
+            (edge, node) <- parents
+            return (node, node', edge)
+          graph' = Graph.insEdges ledges $ Graph.insNode lnode graph
+       in (node', graph')
 
 -- | Perform a single step in the execution starting from the selected node in
 -- the graph and returning the resulting graph. Note that this does *NOT* do
@@ -295,47 +302,44 @@ insChildNode configNode =
 -- Using simple ID's for nodes will likely be changed in the future in order to
 -- allow merging of states, loop detection, etc.
 executionHistoryStep
-    :: forall m config rule prim
-    .  Monad m
-    => Hashable config
-    => Show config
-    => (prim -> config -> TransitionT rule m config)
-    -- ^ Transition rule
-    -> Strategy prim
-    -- ^ Primitive strategy
-    -> ExecutionGraph config rule
-    -- ^ execution graph so far
-    -> Graph.Node
-    -- ^ current "selected" node
-    -> m (ExecutionGraph config rule)
-    -- ^ graph with one more step executed for the selected node
-executionHistoryStep transit prim exe@ExecutionGraph { graph } node
+  :: forall m config rule prim. Monad m
+  => Hashable config
+  => Show config
+  => (prim -> config -> TransitionT rule m config)
+  -- ^ Transition rule
+  -> Strategy prim
+  -- ^ Primitive strategy
+  -> ExecutionGraph config rule
+  -- ^ execution graph so far
+  -> Graph.Node
+  -- ^ current "selected" node
+  -> m (ExecutionGraph config rule)
+  -- ^ graph with one more step executed for the selected node
+executionHistoryStep transit prim exe@ExecutionGraph {graph} node
   | nodeIsNotLeaf = error "Node has already been evaluated"
   | otherwise =
     case Graph.lab graph node of
-        Nothing -> error "Node does not exist"
-        Just config -> do
-            configs <- runTransitionT (transitionRule transit prim config)
-            let
-                nodes  = mkChildNode <$> configs
-                graph' =
-                    State.execState
-                        (Foldable.traverse_ insChildNode nodes)
-                        graph
-            pure $ exe { graph = graph' }
+      Nothing -> error "Node does not exist"
+      Just config -> do
+        configs <- runTransitionT (transitionRule transit prim config)
+        let nodes = mkChildNode <$> configs
+            graph' =
+              State.execState
+                (Foldable.traverse_ insChildNode nodes)
+                graph
+        pure $ exe {graph = graph'}
   where
     nodeIsNotLeaf :: Bool
     nodeIsNotLeaf = Graph.outdeg graph node > 0
-
     mkChildNode
-        :: (config, Seq rule)
-        -- ^ Child node identifier and configuration
-        -> ChildNode config rule
+      :: (config, Seq rule)
+      -- ^ Child node identifier and configuration
+      -> ChildNode config rule
     mkChildNode (config, rules) =
-        ChildNode
-            { config
-            , parents = [(rules, node)]
-            }
+      ChildNode
+        { config,
+          parents = [(rules, node)]
+          }
 
 -- | Create a default/empty execution graph for the provided configuration. Note
 -- that the ID of the root node is NOT a hash but rather just '0'.
@@ -343,18 +347,17 @@ executionHistoryStep transit prim exe@ExecutionGraph { graph } node
 -- Using simple ID's for nodes will likely be changed in the future in order to
 -- allow merging of states, loop detection, etc.
 emptyExecutionGraph
-    :: forall config rule
-    .  config
-    -> ExecutionGraph config rule
+  :: forall config rule. config
+  -> ExecutionGraph config rule
 emptyExecutionGraph config =
-    ExecutionGraph
-        { root = 0
-        , graph = Graph.insNode (0, config) Graph.empty
-        }
+  ExecutionGraph
+    { root = 0,
+      graph = Graph.insNode (0, config) Graph.empty
+      }
 
 {-| Search order of the execution graph.
 -}
-data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
+data GraphSearchOrder = BreadthFirst | DepthFirst deriving (Eq)
 
 {- | Execute a 'Strategy'.
 
@@ -371,115 +374,104 @@ data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
 See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
   -}
-
 constructExecutionGraph
-    :: forall m config rule instr
-    .  (MonadProfiler m, Show config, Show rule)
-    => (instr -> config -> TransitionT rule m config)
-    -> [instr]
-    -> GraphSearchOrder
-    -> config
-    -> m (ExecutionGraph config rule)
+  :: forall m config rule instr. (MonadProfiler m, Show config, Show rule)
+  => (instr -> config -> TransitionT rule m config)
+  -> [instr]
+  -> GraphSearchOrder
+  -> config
+  -> m (ExecutionGraph config rule)
 constructExecutionGraph transit instrs0 searchOrder0 config0 = do
-    finalGraph <- State.execStateT
-                    (unfoldWorker initialSeed searchOrder0)
-                    initialGraph
-    return exe { graph = finalGraph }
+  finalGraph <-
+    State.execStateT
+      (unfoldWorker initialSeed searchOrder0)
+      initialGraph
+  return exe {graph = finalGraph}
   where
-    exe@ExecutionGraph { root, graph = initialGraph } =
-        emptyExecutionGraph config0
+    exe@ExecutionGraph {root, graph = initialGraph} =
+      emptyExecutionGraph config0
     initialSeed = Seq.singleton (root, instrs0)
-
     transit' instr config =
-        (Monad.Trans.lift . runTransitionT) (transit instr config)
-
+      (Monad.Trans.lift . runTransitionT) (transit instr config)
     unfoldWorker
-        :: Seq (Graph.Node, [instr])
-        -> GraphSearchOrder
-        -> StateT (Gr config (Seq rule)) m ()
+      :: Seq (Graph.Node, [instr])
+      -> GraphSearchOrder
+      -> StateT (Gr config (Seq rule)) m ()
     unfoldWorker Seq.Empty _ = return ()
     unfoldWorker ((node, instrs) Seq.:<| rest) searchOrder
-      | []              <- instrs = unfoldWorker rest searchOrder
-      | instr : instrs' <- instrs
-      = Profile.executionQueueLength (Seq.length rest) $ do
-        nodes' <- applyInstr instr node
-        let seeds = map (withInstrs instrs') nodes'
-        case searchOrder of
+      | [] <- instrs = unfoldWorker rest searchOrder
+      | instr : instrs' <- instrs =
+        Profile.executionQueueLength (Seq.length rest) $ do
+          nodes' <- applyInstr instr node
+          let seeds = map (withInstrs instrs') nodes'
+          case searchOrder of
             -- The graph is unfolded breadth-first by appending the new seeds
             -- to the end of the todo list. The next seed is always taken from
             -- the beginning of the sequence, so that all the pending seeds
             -- are unfolded once before the new seeds are unfolded.
-            BreadthFirst -> unfoldWorker
-                                (rest <> Seq.fromList seeds)
-                                searchOrder
+            BreadthFirst ->
+              unfoldWorker
+                (rest <> Seq.fromList seeds)
+                searchOrder
             -- The graph is unfolded depth-first by putting the new seeds to
             -- the head of the todo list.
-            DepthFirst -> unfoldWorker
-                              (Seq.fromList seeds <> rest)
-                              searchOrder
-
+            DepthFirst ->
+              unfoldWorker
+                (Seq.fromList seeds <> rest)
+                searchOrder
     withInstrs instrs nodes = (nodes, instrs)
-
     applyInstr instr node = do
-        config <- getNodeConfig node
-        configs' <- transit' instr config
-        traverse insChildNode (childOf node <$> configs')
-
+      config <- getNodeConfig node
+      configs' <- transit' instr config
+      traverse insChildNode (childOf node <$> configs')
     getNodeConfig node =
-        fromMaybe (error "Node does not exist")
+      fromMaybe (error "Node does not exist")
         <$> State.gets (`Graph.lab` node)
-
     childOf
-        :: Graph.Node
-        -> (config, Seq rule)
-        -- ^ Child node identifier and configuration
-        -> ChildNode config rule
+      :: Graph.Node
+      -> (config, Seq rule)
+      -- ^ Child node identifier and configuration
+      -> ChildNode config rule
     childOf node (config, rules) =
-        ChildNode
-            { config
-            , parents = [(rules, node)]
-            }
+      ChildNode
+        { config,
+          parents = [(rules, node)]
+          }
 
 {- | Transition rule for running a 'Strategy'.
 
  -}
 transitionRule
-    :: Monad m
-    => (prim -> config -> TransitionT rule m config)
-    -- ^ Primitive strategy rule
-    -> (Strategy prim -> config -> TransitionT rule m config)
+  :: Monad m
+  => (prim -> config -> TransitionT rule m config)
+  -- ^ Primitive strategy rule
+  -> (Strategy prim -> config -> TransitionT rule m config)
 transitionRule applyPrim = transitionRule0
   where
     transitionRule0 =
-        \case
-            Seq instr1 instr2 -> transitionSeq instr1 instr2
-            And instr1 instr2 -> transitionAnd instr1 instr2
-            Or instr1 instr2 -> transitionOr instr1 instr2
-            Apply prim -> transitionApply prim
-            Continue -> transitionContinue
-            Stuck -> transitionStuck
-
+      \case
+        Seq instr1 instr2 -> transitionSeq instr1 instr2
+        And instr1 instr2 -> transitionAnd instr1 instr2
+        Or instr1 instr2 -> transitionOr instr1 instr2
+        Apply prim -> transitionApply prim
+        Continue -> transitionContinue
+        Stuck -> transitionStuck
     -- End execution.
     transitionStuck _ = empty
-
     transitionContinue result = return result
-
     -- Apply the instructions in sequence.
     transitionSeq instr1 instr2 =
-        transitionRule0 instr1 >=> transitionRule0 instr2
-
+      transitionRule0 instr1 >=> transitionRule0 instr2
     -- Attempt both instructions, i.e. create a branch for each.
     transitionAnd instr1 instr2 config =
-        transitionRule0 instr1 config <|> transitionRule0 instr2 config
-
+      transitionRule0 instr1 config <|> transitionRule0 instr2 config
     -- Attempt the first instruction. Fall back to the second if it is
     -- unsuccessful.
     transitionOr instr1 instr2 config = do
-        results <- tryTransitionT (transitionRule0 instr1 config)
-        case results of
-            [] -> transitionRule0 instr2 config
-            _  -> scatter results
-
+      results <- tryTransitionT (transitionRule0 instr1 config)
+      case results of
+        [] -> transitionRule0 instr2 config
+        _ -> scatter results
     -- Apply a primitive rule. Throw an exception if the rule is not successful.
     transitionApply = applyPrim
 
@@ -496,38 +488,35 @@ strategy in the list; the tree is unfolded likewise by recursion.
 See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
  -}
-
 runStrategy
-    :: forall m prim rule config
-    .  (MonadProfiler m, Show config, Show rule)
-    => (prim -> config -> TransitionT rule m config)
-    -- ^ Primitive strategy rule
-    -> [Strategy prim]
-    -- ^ Strategies
-    -> config
-    -- ^ Initial configuration
-    -> m (ExecutionGraph config rule)
+  :: forall m prim rule config. (MonadProfiler m, Show config, Show rule)
+  => (prim -> config -> TransitionT rule m config)
+  -- ^ Primitive strategy rule
+  -> [Strategy prim]
+  -- ^ Strategies
+  -> config
+  -- ^ Initial configuration
+  -> m (ExecutionGraph config rule)
 runStrategy applyPrim instrs0 config0 =
-    runStrategyWithSearchOrder applyPrim instrs0 BreadthFirst config0
+  runStrategyWithSearchOrder applyPrim instrs0 BreadthFirst config0
 
 runStrategyWithSearchOrder
-    :: forall m prim rule config
-    .  (MonadProfiler m, Show config, Show rule)
-    => (prim -> config -> TransitionT rule m config)
-    -- ^ Primitive strategy rule
-    -> [Strategy prim]
-    -- ^ Strategies
-    -> GraphSearchOrder
-    -- ^ Search order of the execution graph
-    -> config
-    -- ^ Initial configuration
-    -> m (ExecutionGraph config rule)
+  :: forall m prim rule config. (MonadProfiler m, Show config, Show rule)
+  => (prim -> config -> TransitionT rule m config)
+  -- ^ Primitive strategy rule
+  -> [Strategy prim]
+  -- ^ Strategies
+  -> GraphSearchOrder
+  -- ^ Search order of the execution graph
+  -> config
+  -- ^ Initial configuration
+  -> m (ExecutionGraph config rule)
 runStrategyWithSearchOrder applyPrim instrs0 searchOrder0 config0 =
-    constructExecutionGraph
-        (transitionRule applyPrim)
-        instrs0
-        searchOrder0
-        config0
+  constructExecutionGraph
+    (transitionRule applyPrim)
+    instrs0
+    searchOrder0
+    config0
 
 {- | Construct the step-wise execution history of an 'ExecutionGraph'.
 
@@ -535,10 +524,10 @@ The step-wise execution history is the list of configurations at each time step.
 
  -}
 history :: ExecutionGraph config rule -> [[config]]
-history ExecutionGraph { root, graph } =
-    List.unfoldr history1 [root]
+history ExecutionGraph {root, graph} =
+  List.unfoldr history1 [root]
   where
-    history1 []    = Nothing
+    history1 [] = Nothing
     history1 nodes = Just (labs, concatMap (Graph.suc graph) nodes)
       where
         -- Node labels at this level. Using fromJust is safe because these
@@ -557,30 +546,29 @@ pickLongest exeGraph = head $ last $ history exeGraph
 {- | Return all 'stuck' configurations, i.e. all leaves of the 'Tree'.
  -}
 pickFinal :: ExecutionGraph config rule -> [config]
-pickFinal ExecutionGraph { graph } =
-    map (fromJust . Graph.lab graph) $
-    filter isFinal $
-    Graph.nodes graph
-        where isFinal = (0==) . Graph.outdeg graph
+pickFinal ExecutionGraph {graph} =
+  map (fromJust . Graph.lab graph)
+    $ filter isFinal
+    $ Graph.nodes graph
+  where
+    isFinal = (0 ==) . Graph.outdeg graph
 
 {- | Return all configurations reachable in one step.
  -}
 pickOne :: ExecutionGraph config rule -> [config]
-pickOne ExecutionGraph { root, graph } =
-    map (fromJust . Graph.lab graph) $
-    Graph.neighbors graph root
+pickOne ExecutionGraph {root, graph} =
+  map (fromJust . Graph.lab graph)
+    $ Graph.neighbors graph root
 
 {- | Return all reachable configurations.
  -}
-
 pickStar :: ExecutionGraph config rule -> [config]
-pickStar ExecutionGraph { graph } = map snd $ Graph.labNodes graph
+pickStar ExecutionGraph {graph} = map snd $ Graph.labNodes graph
 
 {- | Return all configurations reachable after at least one step.
  -}
-
 pickPlus :: ExecutionGraph config rule -> [config]
-pickPlus ExecutionGraph { root, graph } =
-    map snd $
-    filter ((/= root) . fst) $
-    Graph.labNodes graph
+pickPlus ExecutionGraph {root, graph} =
+  map snd
+    $ filter ((/= root) . fst)
+    $ Graph.labNodes graph
