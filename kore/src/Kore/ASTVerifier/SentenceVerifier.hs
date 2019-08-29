@@ -108,6 +108,7 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
 definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
     definedNamesForSentence (SentenceSymbolSentence sentence)
 
+-- TODO: these types should replace IndexedModule (so they should contain aux info as well)
 newtype SortIndex =
     SortIndex { sorts :: Map Id Verified.SentenceSort }
 
