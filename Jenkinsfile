@@ -41,13 +41,6 @@ pipeline {
             '''
           }
         }
-        stage('Unit Tests') {
-          steps {
-            sh '''
-              ./scripts/unit-test.sh STACK_BUILD_OPTS=--no-run-tests
-            '''
-          }
-        }
         stage('Executables') {
           steps {
             sh '''
