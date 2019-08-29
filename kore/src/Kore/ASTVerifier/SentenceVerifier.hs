@@ -136,8 +136,9 @@ data RuleIndex =
 verifySentencesNEW
     :: KoreIndexedModule Attribute.Symbol axiomAtts
     -> Builtin.Verifiers
+    -> AttributesVerification declAtts axiomAtts
     -> Either (Error VerifyError) [Verified.Sentence]
-verifySentencesNEW indexedModule builtinVerifiers = do
+verifySentencesNEW indexedModule builtinVerifiers attributesVerification = do
     let rawSorts =
             snd
             <$> indexedModuleSortDescriptions indexedModule
@@ -153,7 +154,7 @@ verifySentencesNEW indexedModule builtinVerifiers = do
         rawAxioms =
             snd
             <$> indexedModuleAxioms indexedModule
-    sortIndex <- verifySorts rawSorts
+    sortIndex <- verifySorts rawSorts attributesVerification
     symbolIndex <-
         verifySymbols
             indexedModule
@@ -190,12 +191,13 @@ getVerifiedSentences ruleIndex =
 
 verifySorts
     :: Map Id ParsedSentenceSort
+    -> AttributesVerification declAtts axiomAtts
     -> Either (Error VerifyError) SortIndex
-verifySorts rawSorts = do
+verifySorts rawSorts attributesVerification = do
     SortIndex <$> traverse verifySortWithContext rawSorts
   where
     verifySortWithContext sort =
-        withSentenceSortContext sort (verifySortSentence sort)
+        withSentenceSortContext sort (verifySortSentence sort attributesVerification)
 
 verifySymbols
     :: KoreIndexedModule declAtts axiomAtts
@@ -439,37 +441,6 @@ verifySentence builtinVerifiers indexedModule attributesVerification sentence =
     verifySentenceWorker = do
         verified <-
             case sentence of
-                SentenceSymbolSentence symbolSentence ->
-                    (<$>)
-                        SentenceSymbolSentence
-                        (verifySymbolSentence
-                            indexedModule
-                            symbolSentence
-                        )
-                SentenceAliasSentence aliasSentence ->
-                    (<$>)
-                        SentenceAliasSentence
-                        (verifyAliasSentence
-                            builtinVerifiers
-                            indexedModule
-                            aliasSentence
-                        )
-                SentenceAxiomSentence axiomSentence ->
-                    (<$>)
-                        SentenceAxiomSentence
-                        (verifyAxiomSentence
-                            axiomSentence
-                            builtinVerifiers
-                            indexedModule
-                        )
-                SentenceClaimSentence claimSentence ->
-                    (<$>)
-                        (SentenceClaimSentence . SentenceClaim)
-                        (verifyAxiomSentence
-                            (getSentenceClaim claimSentence)
-                            builtinVerifiers
-                            indexedModule
-                        )
                 SentenceImportSentence importSentence ->
                     -- Since we have an IndexedModule, we assume that imports
                     -- were already resolved, so there is nothing left to verify
@@ -477,10 +448,6 @@ verifySentence builtinVerifiers indexedModule attributesVerification sentence =
                     (<$>)
                         SentenceImportSentence
                         (traverse verifyNoPatterns importSentence)
-                SentenceSortSentence sortSentence ->
-                    (<$>)
-                        SentenceSortSentence
-                        (verifySortSentence sortSentence)
                 SentenceHookSentence hookSentence ->
                     (<$>)
                         SentenceHookSentence
@@ -526,7 +493,7 @@ verifyHookSentence
     verifyHookedSort
         sentence@SentenceSort { sentenceSortAttributes }
       = do
-        verified <- verifySortSentence sentence
+        verified <- verifySortSentence sentence attributesVerification
         hook <-
             verifySortHookAttribute
                 indexedModule
@@ -684,8 +651,10 @@ verifyAxiomSentence axiom builtinVerifiers indexedModule =
 
 verifySortSentence
     :: ParsedSentenceSort
+    -> AttributesVerification declAtts axiomAtts
     -> Either (Error VerifyError) Verified.SentenceSort
-verifySortSentence sentenceSort = do
+verifySortSentence sentenceSort attributesVerification = do
+    verifySentenceAttributes attributesVerification (SentenceSortSentence sentenceSort)
     _ <- buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
     traverse verifyNoPatterns sentenceSort
 

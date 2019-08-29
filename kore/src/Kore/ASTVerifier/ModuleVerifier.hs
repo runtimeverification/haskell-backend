@@ -67,6 +67,7 @@ verifyModule attributesVerification builtinVerifiers indexedModule =
                 SentenceVerifier.verifySentencesNEW
                     indexedModule
                     builtinVerifiers
+                    attributesVerification
             moduleSentences <-
                 SentenceVerifier.verifySentences
                     indexedModule
