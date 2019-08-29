@@ -31,7 +31,7 @@ pipeline {
         '''
       }
     }
-    stage('Stages') {
+    stage('Build') {
       failFast true
       parallel {
         stage('Documentation') {
@@ -53,56 +53,45 @@ pipeline {
             }
           }
         }
-        stage('Integration Tests') {
-          stages {
-
-            stage('Build test runner') {
-              steps {
-                sh '''
-                  ./scripts/kore-exec.sh
-                '''
-              }
-            }
-
-            stage('K') {
-              options {
-                timeout(time: 18, unit: 'MINUTES')
-              }
-              steps {
-                sh '''
-                  ./scripts/ktest.sh
-                '''
-              }
-            }
-
-            stage('KEVM') {
-              when {
-                anyOf {
-                  branch 'master'
-                  expression {
-                    TAGGED_KEVM_INTEGRATION = sh(returnStdout: true, script: './scripts/should-run-kevm-integration.sh "\\[kevm-integration\\]"').trim()
-                    return TAGGED_KEVM_INTEGRATION == 'true'
-                  }
-                }
-              }
-              options {
-                timeout(time: 18, unit: 'MINUTES')
-              }
-              steps {
-                sh '''
-                  ./scripts/kevm-integration.sh
-                '''
-              }
-              post {
-                unsuccessful {
-                  slackSend color: '#cb2431'                                            \
-                          , channel: '#haskell-backend'                                 \
-                          , message: "KEVM Integration Tests Failure: ${env.BUILD_URL}"
-                }
-              }
-            }
+        stage('Executables') {
+          steps {
+            sh '''
+              ./scripts/kore-exec.sh
+            '''
           }
         }
+      }
+    }
+    stage('Integration') {
+      failFast true
+      parallel {
+        stage('K') {
+          options {
+            timeout(time: 16, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/ktest.sh
+            '''
+          }
+        }
+
+        stage('KEVM') {
+          options {
+            timeout(time: 16, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/kevm-integration.sh
+            '''
+          }
+        }
+      }
+    }
+    stage('Update K Submodules') {
+      when { branch 'master' }
+      steps {
+        build job: 'rv-devops/master', parameters: [string(name: 'PR_REVIEWER', value: 'ttuegel'), booleanParam(name: 'UPDATE_DEPS_K_HASKELL', value: true)], propagate: true, wait: true
       }
     }
   }
