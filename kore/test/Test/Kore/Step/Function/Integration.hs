@@ -34,12 +34,11 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, definitionEvaluation,
-                 firstFullEvaluation, simplifierWithFallback )
+                 firstFullEvaluation, simplificationEvaluation,
+                 simplifierWithFallback )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Axiom.UserDefined
-                 ( equalityRuleEvaluator )
 import           Kore.Step.Rule
                  ( EqualityRule (..) )
 import           Kore.Step.Rule as RulePattern
@@ -973,8 +972,7 @@ axiomEvaluator
     -> TermLike Variable
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
-    BuiltinAndAxiomSimplifier
-        (equalityRuleEvaluator (axiom left right makeTruePredicate))
+    simplificationEvaluation (axiom left right makeTruePredicate)
 
 axiom
     :: TermLike Variable
