@@ -177,7 +177,7 @@ evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . evalSimplifier testEnv
-    . (`TermLike.simplifyToOr` Predicate.top)
+    . TermLike.simplifyToOr Predicate.top
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

@@ -87,7 +87,7 @@ simplify
     -> Predicate variable
     -> Simplifier (Pattern variable)
 simplify patt pred = do
-    orPatt <- simplifyToOr patt pred
+    orPatt <- simplifyToOr pred patt 
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
@@ -100,12 +100,12 @@ simplifyToOr
         , FreshVariable variable
         , MonadSimplify simplifier
         )
-    => TermLike variable
-    -> Predicate variable
+    => Predicate variable
+    -> TermLike variable
     -> simplifier (OrPattern variable)
 simplifyToOr term predicate =
     localSimplifierTermLike (const simplifier)
-        . (`simplifyInternal` predicate)
+        . simplifyInternal predicate
         $ term
   where
     simplifier = termLikeSimplifier simplifyToOr

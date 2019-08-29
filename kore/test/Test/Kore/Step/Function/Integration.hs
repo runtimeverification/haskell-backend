@@ -625,7 +625,7 @@ simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify =
     SMT.runSMT SMT.defaultConfig emptyLogger
     . evalSimplifier testEnv
-    . (`TermLike.simplifyToOr` Predicate.top)
+    . TermLike.simplifyToOr Predicate.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
