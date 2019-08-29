@@ -37,11 +37,7 @@ KORE_EXEC_OPTS =
 KORE_REPL = $(BUILD_DIR)/kore/bin/kore-repl
 
 $(KORE_EXEC):
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-exec
-	mkdir -p $(dir $(KORE_EXEC))
-	cp $$($(STACK) path --local-install-root)/bin/kore-exec $(KORE_EXEC)
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-exec
 
 $(KORE_REPL):
-	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) kore:exe:kore-repl
-	mkdir -p $(dir $(KORE_REPL))
-	cp $$($(STACK) path --local-install-root)/bin/kore-repl $(KORE_REPL)
+	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-repl
