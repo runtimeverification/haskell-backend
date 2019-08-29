@@ -14,19 +14,27 @@ module Kore.IndexedModule.MetadataTools
     , extractMetadataTools
     ) where
 
+import           Data.Function
+                 ( on )
 import           Data.Graph
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
+import           Data.Maybe
+                 ( mapMaybe )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
 
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Subsort
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Internal.ApplicationSorts
+import           Kore.Internal.Symbol
+                 ( Symbol )
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT.AST
                  ( SmtDeclarations )
@@ -47,6 +55,10 @@ data MetadataTools smt attributes = MetadataTools
     -- ^ Sorts for a specific symbol application.
     , symbolAttributes :: Id -> attributes
     -- ^ get the attributes of a symbol
+    , isOverloading :: Symbol -> Symbol -> Bool
+    -- ^ whether the first argument is overloading the second
+    , isOverloaded :: Symbol -> Bool
+    -- ^ Whether the symbol is overloaded
     , smtData :: smt
     -- ^ The SMT data for the given module.
     }
@@ -61,9 +73,9 @@ type SmtMetadataTools attributes =
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall declAtts axiomAtts smt.
-        VerifiedModule declAtts axiomAtts
-    ->  (  VerifiedModule declAtts axiomAtts
+    ::  forall declAtts smt.
+        VerifiedModule declAtts Attribute.Axiom
+    ->  (  VerifiedModule declAtts Attribute.Axiom
         -> smt
         )
     -> MetadataTools smt declAtts
@@ -74,6 +86,8 @@ extractMetadataTools m smtExtractor =
         , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
+        , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
+        , isOverloaded = checkOverloaded . Symbol.toSymbolOrAlias
         , smtData = smtExtractor m
         }
   where
@@ -105,3 +119,20 @@ extractMetadataTools m smtExtractor =
                 path sortGraph supId subId
             realCheckSubsort _ _ = False
         in realCheckSubsort
+
+    overloadPairsSet = Set.fromList overloadPairsList
+
+    overloadPairsList =
+        mapMaybe
+            (Attribute.getOverload . Attribute.overload . fst)
+            (recursiveIndexedModuleAxioms m)
+
+    allOverloadsList = concatMap (\(o1, o2) -> [o1,o2]) overloadPairsList
+
+    allOverloadsSet = Set.fromList allOverloadsList
+
+    checkOverloaded :: SymbolOrAlias -> Bool
+    checkOverloaded = (`Set.member` allOverloadsSet)
+
+    checkOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
+    checkOverloading head1 head2 = (head1, head2) `Set.member` overloadPairsSet
