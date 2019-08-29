@@ -278,9 +278,59 @@ verifyAliasSentenceNEW builtinVerifiers symbolIndex indexedModule sentence =
 
 verifyRules
     :: AliasIndex
+    -> Builtin.Verifiers
+    -> KoreIndexedModule Attribute.Symbol axiomAtts
     -> [SentenceRule ParsedPattern]
-    -> RuleIndex
-verifyRules _ _ = undefined
+    -> Either (Error VerifyError) RuleIndex
+verifyRules aliasIndex builtinVerifiers indexedModule rawRules = do
+    verifiedRules <- traverse verifyRule rawRules
+    pure RuleIndex
+        { ruleSorts = aliasSorts aliasIndex
+        , ruleSymbols = aliasSymbols aliasIndex
+        , ruleAliases = aliases aliasIndex
+        , rules = verifiedRules
+        }
+  where
+    verifyRule
+        :: SentenceRule ParsedPattern
+        -> Either (Error VerifyError) (SentenceRule Verified.Pattern)
+    verifyRule rawRule =
+        case rawRule of
+            SentenceRuleClaim (SentenceClaim axiom) ->
+                SentenceRuleClaim
+                . SentenceClaim
+                <$> verifyAxiomSentenceNEW
+                    axiom aliasIndex builtinVerifiers indexedModule
+            SentenceRuleAxiom axiom ->
+                SentenceRuleAxiom
+                <$> verifyAxiomSentenceNEW
+                    axiom aliasIndex builtinVerifiers indexedModule
+
+verifyAxiomSentenceNEW
+    :: ParsedSentenceAxiom
+    -> AliasIndex
+    -> Builtin.Verifiers
+    -> KoreIndexedModule Attribute.Symbol axiomAtts
+    -> Either (Error VerifyError) Verified.SentenceAxiom
+verifyAxiomSentenceNEW axiom aliasIndex builtinVerifiers indexedModule =
+    do
+        variables <- buildDeclaredSortVariables $ sentenceAxiomParameters axiom
+        let context =
+                PatternVerifier.Context
+                    { builtinDomainValueVerifiers =
+                        Builtin.domainValueVerifiers builtinVerifiers
+                    , indexedModule =
+                        indexedModule
+                        & IndexedModule.erasePatterns
+                        & IndexedModule.eraseAxiomAttributes
+                    , declaredSortVariables = variables
+                    , declaredVariables = emptyDeclaredVariables
+                    }
+        verifiedAxiomPattern <- runPatternVerifier context $
+            verifyStandalonePattern Nothing sentenceAxiomPattern
+        return axiom { sentenceAxiomPattern = verifiedAxiomPattern }
+  where
+    SentenceAxiom { sentenceAxiomPattern } = axiom
 
 -- TODO: remove
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
