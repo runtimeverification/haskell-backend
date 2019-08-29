@@ -973,10 +973,10 @@ overloadedConstructorSortInjectionAndEquals
       = overloadedAndEqualsOverloading termMerger tools first second
       | MetadataTools.isOverloaded tools secondHead
       , Symbol.isSortInjection firstHead
-      = overloadedAndEqualsOverloading termMerger tools second first 
+      = overloadedAndEqualsOverloading termMerger tools second first
       | otherwise = empty
 overloadedConstructorSortInjectionAndEquals _ _ _ = empty
- 
+
 overloadedAndEqualsOverloading
     ::  ( Eq variable
         , FreshVariable variable
@@ -1077,10 +1077,10 @@ constructorAndEqualsAssumesDifferentHeads _ _ = empty
 isConstructorOrOverloaded
     :: SmtMetadataTools Attribute.Symbol
     -> Symbol
-    -> Bool 
+    -> Bool
 isConstructorOrOverloaded tools s =
     Symbol.isConstructor s || MetadataTools.isOverloaded tools s
-        
+
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
 
