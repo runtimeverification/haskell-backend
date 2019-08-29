@@ -14,6 +14,8 @@ module Kore.IndexedModule.MetadataTools
     , extractMetadataTools
     ) where
 
+import           Data.Function
+                 ( on )
 import           Data.Graph
 import           Data.Map.Strict
                  ( Map )
@@ -30,6 +32,9 @@ import           Kore.Attribute.Subsort
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Internal.ApplicationSorts
+import           Kore.Internal.Symbol
+                 ( Symbol )
+import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT.AST
                  ( SmtDeclarations )
@@ -50,7 +55,7 @@ data MetadataTools smt attributes = MetadataTools
     -- ^ Sorts for a specific symbol application.
     , symbolAttributes :: Id -> attributes
     -- ^ get the attributes of a symbol
-    , isOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
+    , isOverloading :: Symbol -> Symbol -> Bool
     -- ^ whether the first argument is overloading the second
     , smtData :: smt
     -- ^ The SMT data for the given module.
@@ -79,7 +84,7 @@ extractMetadataTools m smtExtractor =
         , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
-        , isOverloading = checkOverloading
+        , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
         , smtData = smtExtractor m
         }
   where
@@ -119,8 +124,4 @@ extractMetadataTools m smtExtractor =
             (recursiveIndexedModuleAxioms m)
 
     checkOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
-    checkOverloading =
-        let
-            realCheckOverloading head1 head2 =
-                (head1, head2) `Set.member` overloads
-        in realCheckOverloading
+    checkOverloading head1 head2 = (head1, head2) `Set.member` overloads
