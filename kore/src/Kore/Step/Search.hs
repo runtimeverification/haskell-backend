@@ -125,13 +125,14 @@ matchWith
         , Unparse variable
         , MonadSimplify m
         )
-    => Pattern variable
+    => Predicate variable
+    -> Pattern variable
     -> Pattern variable
     -> MaybeT m (OrPredicate variable)
-matchWith e1 e2 = do
+matchWith predicate e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifierT
-        $ unificationProcedure t1 t2
+        $ unificationProcedure predicate t1 t2
     let
         maybeUnifiers :: Maybe [Predicate variable]
         maybeUnifiers = hush eitherUnifiers

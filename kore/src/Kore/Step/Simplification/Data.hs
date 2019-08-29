@@ -496,7 +496,7 @@ simplifyTerm
     -> simplifier (OrPattern variable)
 simplifyTerm termLike = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
-    results <- gather $ simplify Predicate.top termLike 
+    results <- gather $ simplify Predicate.top termLike
     return (OrPattern.fromPatterns results)
 
 
@@ -516,7 +516,7 @@ simplifyConditionalTerm
     -> BranchT simplifier (Pattern variable)
 simplifyConditionalTerm predicate termLike  = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
-    simplify predicate termLike 
+    simplify predicate termLike
 
 {- | Construct a 'TermLikeSimplifier' from a term simplifier.
 
@@ -557,7 +557,7 @@ termLikeSimplifier simplifier =
         initialCondition
         termLike
       = do
-        results <- Monad.Trans.lift $ simplifier initialCondition termLike 
+        results <- Monad.Trans.lift $ simplifier initialCondition termLike
         scatter results
 
 {-| 'PredicateSimplifier' wraps a function that simplifies

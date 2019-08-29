@@ -106,7 +106,8 @@ newtype UnificationProcedure =
             , FreshVariable variable
             , MonadUnify unifier
             )
-        => TermLike variable
+        => Predicate variable
+        -> TermLike variable
         -> TermLike variable
         -> unifier (Predicate variable)
         )
@@ -231,7 +232,7 @@ unifyRule
     -- configuration.
     let
         RulePattern { left = ruleLeft } = rule'
-    unification <- unifyPatterns ruleLeft initialTerm
+    unification <- unifyPatterns (withoutTerm initial) ruleLeft initialTerm
     -- Combine the unification solution with the rule's requirement clause,
     -- unless it's rendundant to do so.
     let

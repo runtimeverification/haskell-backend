@@ -16,8 +16,6 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( topTODO )
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
@@ -86,8 +84,8 @@ simplify
     => TermLike variable
     -> Predicate variable
     -> Simplifier (Pattern variable)
-simplify patt pred = do
-    orPatt <- simplifyToOr pred patt 
+simplify patt predicate = do
+    orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
@@ -121,7 +119,7 @@ simplifyInternal
     => TermLike variable
     -> Predicate variable
     -> simplifier (OrPattern variable)
-simplifyInternal term pred = simplifyInternalWorker term
+simplifyInternal term predicate = simplifyInternalWorker term
   where
     simplifyChildren
         :: Traversable t
@@ -141,12 +139,12 @@ simplifyInternal term pred = simplifyInternalWorker term
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                Application.simplify pred
+                Application.simplify predicate
                     =<< simplifyChildren applySymbolF
             CeilF ceilF ->
-                Ceil.simplify pred =<< simplifyChildren ceilF
+                Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->
-                Equals.simplify pred =<< simplifyChildren equalsF
+                Equals.simplify predicate =<< simplifyChildren equalsF
             ExistsF existsF ->
                 Exists.simplify =<< simplifyChildren existsF
             IffF iffF ->
@@ -154,7 +152,7 @@ simplifyInternal term pred = simplifyInternalWorker term
             ImpliesF impliesF ->
                 Implies.simplify =<< simplifyChildren impliesF
             InF inF ->
-                In.simplify pred =<< simplifyChildren inF
+                In.simplify predicate =<< simplifyChildren inF
             NotF notF ->
                 Not.simplify =<< simplifyChildren notF
             --

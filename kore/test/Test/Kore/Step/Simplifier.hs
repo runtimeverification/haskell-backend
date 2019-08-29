@@ -24,7 +24,7 @@ mockSimplifier
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockSimplifier values =
-    termLikeSimplifier 
+    termLikeSimplifier
         $ const $ mockSimplifierHelper Pattern.fromTermLike values
 
 mockPredicateSimplifier

@@ -117,10 +117,11 @@ deferred constraints, then matching fails.
 matchIncremental
     :: forall variable unifier
     .  (MatchingVariable variable, MonadUnify unifier)
-    => TermLike variable
+    => Predicate variable
+    -> TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-matchIncremental termLike1 termLike2 =
+matchIncremental configurationPredicate termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
@@ -129,7 +130,7 @@ matchIncremental termLike1 termLike2 =
         MatcherState
             { queued = Seq.singleton (Pair termLike1 termLike2)
             , deferred = empty
-            , predicate = empty
+            , predicate = pure $ Predicate.toPredicate configurationPredicate
             , substitution = mempty
             , bound = mempty
             , targets = free1

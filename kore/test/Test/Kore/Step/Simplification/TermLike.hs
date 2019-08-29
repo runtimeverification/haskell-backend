@@ -10,9 +10,9 @@ import Control.Monad
 
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import           Kore.Internal.TermLike
 import           Kore.Internal.Predicate as Predicate
                  ( top )
+import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Step.Simplification.Data

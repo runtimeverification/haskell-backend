@@ -409,7 +409,8 @@ data Config claim m = Config
         -> m (ExecutionGraph (Rule claim))
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
-        :: TermLike Variable
+        :: IPredicate.Predicate Variable
+        -> TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation m (IPredicate.Predicate Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
