@@ -44,13 +44,8 @@ pipeline {
         stage('Unit Tests') {
           steps {
             sh '''
-              ./scripts/unit-test.sh
+              ./scripts/unit-test.sh STACK_BUILD_OPTS=--no-run-tests
             '''
-          }
-          post {
-            always {
-              junit 'kore/test-results.xml'
-            }
           }
         }
         stage('Executables') {
@@ -62,10 +57,22 @@ pipeline {
         }
       }
     }
-    stage('Integration') {
+    stage('Test') {
       failFast true
       parallel {
-        stage('K') {
+        stage('Unit Tests') {
+          steps {
+            sh '''
+              ./scripts/unit-test.sh
+            '''
+          }
+          post {
+            always {
+              junit 'kore/test-results.xml'
+            }
+          }
+        }
+        stage('K Integration') {
           options {
             timeout(time: 16, unit: 'MINUTES')
           }
@@ -76,7 +83,7 @@ pipeline {
           }
         }
 
-        stage('KEVM') {
+        stage('KEVM Integration') {
           options {
             timeout(time: 16, unit: 'MINUTES')
           }
