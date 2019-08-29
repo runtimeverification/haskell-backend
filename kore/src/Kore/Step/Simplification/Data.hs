@@ -119,12 +119,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m (SmtMetadataTools Attribute.Symbol)
     askMetadataTools = Monad.Trans.lift askMetadataTools
+    {-# INLINE askMetadataTools #-}
 
     askSimplifierTermLike :: m TermLikeSimplifier
     default askSimplifierTermLike
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m TermLikeSimplifier
     askSimplifierTermLike = Monad.Trans.lift askSimplifierTermLike
+    {-# INLINE askSimplifierTermLike #-}
 
     localSimplifierTermLike
         :: (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
@@ -133,12 +135,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         => (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
     localSimplifierTermLike locally =
         Monad.Morph.hoist (localSimplifierTermLike locally)
+    {-# INLINE localSimplifierTermLike #-}
 
     askSimplifierPredicate :: m PredicateSimplifier
     default askSimplifierPredicate
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m PredicateSimplifier
     askSimplifierPredicate = Monad.Trans.lift askSimplifierPredicate
+    {-# INLINE askSimplifierPredicate #-}
 
     localSimplifierPredicate
         :: (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
@@ -147,12 +151,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         => (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
     localSimplifierPredicate locally =
         Monad.Morph.hoist (localSimplifierPredicate locally)
+    {-# INLINE localSimplifierPredicate #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
     default askSimplifierAxioms
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m BuiltinAndAxiomSimplifierMap
     askSimplifierAxioms = Monad.Trans.lift askSimplifierAxioms
+    {-# INLINE askSimplifierAxioms #-}
 
     localSimplifierAxioms
         :: (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap)
@@ -163,6 +169,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         -> m a -> m a
     localSimplifierAxioms locally =
         Monad.Morph.hoist (localSimplifierAxioms locally)
+    {-# INLINE localSimplifierAxioms #-}
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
