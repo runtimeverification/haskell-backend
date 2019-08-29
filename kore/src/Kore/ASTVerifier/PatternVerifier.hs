@@ -27,7 +27,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import           Data.Function
-                 ( (&) )
+                 ( on, (&) )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import           Data.Set
@@ -95,7 +95,6 @@ newtype PatternVerifier a =
     deriving (Applicative, Functor, Monad)
 
 deriving instance MonadReader Context PatternVerifier
-
 deriving instance e ~ VerifyError => MonadError (Error e) PatternVerifier
 
 runPatternVerifier
@@ -605,30 +604,27 @@ verifyApplication
     ->  Application SymbolOrAlias (PatternVerifier Verified.Pattern)
     ->  PatternVerifier (Base (TermLike Variable) Verified.Pattern)
 verifyApplication getChildAttributes application = do
-    -- TODO(Vladimir): it is unfortunate that the ordering is important here.
-    -- The reason is because we use `MaybeT` to signal whether it's a symbol
-    -- or alias, but within it is an `Either` that contains the error.
-    --
-    -- However, we want to return the actual error from applying an alias,
-    -- so we sometimes get a `Just (Left error)` instead of `Nothing`.
-    --
-    -- What we mean is: if symbol works, that's all we need. If not,
-    -- then if alias doesn't work, we want to retain that error.
-    result <-  verifyApplySymbol' <|> verifyApplyAlias' & runMaybeT
-    maybe (koreFail . noHead $ applicationSymbolOrAlias) return result
+    ((<|>) `on` maybeToPatternVerifier) verifyApplyAlias' verifyApplySymbol'
   where
     Application { applicationSymbolOrAlias, applicationChildren }
         = application
     transCofreeF fg (a :< fb) = a :< fg fb
 
     ensureChildIsElementVar
-        :: PatternVerifier Verified.Pattern
+        :: Verified.Pattern
         -> PatternVerifier ()
-    ensureChildIsElementVar ver = do
-        pat <- ver
-        case pat of
+    ensureChildIsElementVar =
+        \case
             Internal.ElemVar_ _ -> pure ()
             _ -> koreFailText "Child is not an element variable."
+
+    maybeToPatternVerifier
+        :: MaybeT PatternVerifier a
+        -> PatternVerifier a
+    maybeToPatternVerifier m =
+        runMaybeT m >>= \case
+            Nothing -> koreFail . noHead $ applicationSymbolOrAlias
+            Just a  -> pure a
 
     verifyApplyAlias'
         :: MaybeT
@@ -639,7 +635,7 @@ verifyApplication getChildAttributes application = do
                 Verified.Pattern
             )
     verifyApplyAlias' = do
-        Trans.lift $ Foldable.traverse_ ensureChildIsElementVar applicationChildren
+        Trans.lift $ Foldable.traverse_ (>>= ensureChildIsElementVar) applicationChildren
         transCofreeF Internal.ApplyAliasF
             <$> verifyApplyAlias getChildAttributes application
 
