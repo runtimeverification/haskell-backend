@@ -9,8 +9,9 @@ import Test.Tasty.HUnit
 import Test.Terse
        ( gives_ )
 
-import Prelude hiding
-       ( null )
+import qualified Data.Set as Set
+import           Prelude hiding
+                 ( null )
 
 import Kore.Internal.TermLike hiding
        ( mapVariables )
@@ -187,11 +188,11 @@ variablesTests =
             . variables $ wrap emptyRawSubst
     , testCase "singleton normalized subst has one variable"
         $ assertEqual ""
-           (fst <$> singletonSubst)
+           (Set.fromList $ fst <$> singletonSubst)
            . variables $ unsafeWrap singletonSubst
     , testCase "singleton subst has one variable"
         $ assertEqual ""
-           (fst <$> singletonSubst)
+           (Set.fromList $ fst <$> singletonSubst)
            . variables $ wrap singletonSubst
     ]
 

@@ -18,6 +18,7 @@ import           Control.Applicative
 import qualified Control.Applicative as Applicative
 import           Control.Error
                  ( MaybeT, runMaybeT )
+import qualified Control.Exception as Exception
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
 import           Data.Maybe
@@ -37,7 +38,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
-import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
@@ -88,9 +88,9 @@ instance
     )
     => Evaluable (Conditional variable term)
   where
-    evaluate patt = evaluate (Predicate.toPredicate predicate)
-      where
-        (_term, predicate) = Conditional.splitTerm patt
+    evaluate conditional =
+        Exception.assert (Conditional.isNormalized conditional)
+        $ evaluate (Conditional.predicate conditional)
 
 {- | Removes from a MultiOr all items refuted by an external SMT solver. -}
 filterMultiOr
