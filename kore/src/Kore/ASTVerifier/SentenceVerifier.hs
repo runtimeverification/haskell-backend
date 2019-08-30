@@ -11,6 +11,10 @@ module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
     , verifySentences
     , noConstructorWithDomainValuesMessage
+    , SentenceVerifier
+    , runSentenceVerifier
+    , verifySortSentence
+    , verifySymbolSentence
     ) where
 
 import           Control.Monad
@@ -107,7 +111,8 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
 data SentenceContext =
     forall axiomAttrs.
     SentenceContext
-        { indexedModule :: !(KoreIndexedModule Attribute.Symbol axiomAttrs)
+        { indexedModule :: !(VerifiedModule Attribute.Symbol axiomAttrs)
+            -- TODO: Make indexedModule a "state" field.
         , attributesVerification
             :: !(AttributesVerification Attribute.Symbol axiomAttrs)
         -- ^ The indexed Kore module containing all definitions in scope.
@@ -127,7 +132,7 @@ deriving instance e ~ VerifyError => MonadError (Error e) SentenceVerifier
 
 {- | Look up a sort declaration.
  -}
-findSort :: Id -> SentenceVerifier (SentenceSort ParsedPattern)
+findSort :: Id -> SentenceVerifier (SentenceSort Verified.Pattern)
 findSort identifier = do
     SentenceContext { indexedModule } <- Reader.ask
     findIndexedSort indexedModule identifier
@@ -140,7 +145,7 @@ be used in another context.
  -}
 askFindSort
     :: MonadError (Error e) error
-    => SentenceVerifier (Id -> error (SentenceSort ParsedPattern))
+    => SentenceVerifier (Id -> error (SentenceSort Verified.Pattern))
 askFindSort = do
     SentenceContext { indexedModule } <- Reader.ask
     return (findIndexedSort indexedModule)
@@ -165,7 +170,7 @@ askPatternContext variables = do
 
 runSentenceVerifier
     :: SentenceVerifier a
-    -> KoreIndexedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol axiomAttrs
     -> AttributesVerification Attribute.Symbol axiomAttrs
     -> Builtin.Verifiers
     -> Either (Error VerifyError) a
@@ -187,7 +192,7 @@ runSentenceVerifier
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
-    :: KoreIndexedModule Attribute.Symbol axiomAtts
+    :: VerifiedModule Attribute.Symbol axiomAtts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> AttributesVerification Attribute.Symbol axiomAtts
