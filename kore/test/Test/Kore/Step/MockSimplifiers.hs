@@ -19,8 +19,7 @@ substitutionSimplifier =
   where
     -- TODO (thomas.tuegel): Remove simplifierWrapPredicate.
     simplifierWrapPredicate =
-        termLikeSimplifier $ \predicate patt -> (flip const) predicate $
-        -- just ignoring the predicate without problems from 'pedantic'
+        termLikeSimplifier $ \_ patt ->
             (return . OrPattern.fromPattern)
                 (Pattern.topOf (termLikeSort patt))
                     { Pattern.predicate = wrapPredicate patt }
