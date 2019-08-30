@@ -41,8 +41,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
-import           Data.Function
-                 ( on )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -69,14 +67,12 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Logger as Log
-import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -238,32 +234,8 @@ unifyRule
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Predicate.fromPredicate ruleRequires
-    unification' <- addRequiresUnlessRedundant unification requires'
+    unification' <- Substitution.normalizeExcept (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
-  where
-    addRequiresUnlessRedundant unificationSolution requires = do
-        let predicate =
-                (requiresRedundancyPredicate `on` Predicate.toPredicate)
-                    unificationSolution requires
-        isRequiresRedundant <- SMT.Evaluator.evaluate predicate
-        let nonRedundantPredicate =
-                case isRequiresRedundant of
-                    Just False -> unificationSolution
-                    _         -> unificationSolution <> requires
-        Substitution.normalizeExcept nonRedundantPredicate
-
-    -- | ¬(⌈L ∧ φ⌉ ∧ P → Pre)
-    requiresRedundancyPredicate unificationSolution requires =
-        Syntax.makeNotPredicate
-            $ Syntax.makeImpliesPredicate
-                (Syntax.makeAndPredicate
-                     unificationSolution
-                     initialPredicate
-                )
-                requires
-
-    initialPredicate =
-        Conditional.toPredicate $ Conditional.withoutTerm initial
 
 unifyRules
     ::  forall unifier variable
@@ -317,12 +289,11 @@ applyInitialConditions initial unification = do
         Monad.liftM MultiOr.make
         $ Monad.Unify.gather
         $ Substitution.normalizeExcept (initial <> unification)
-    evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'applied' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
-    TopBottom.guardAgainstBottom evaluated
-    return evaluated
+    TopBottom.guardAgainstBottom applied
+    return applied
 
 {- | Produce the final configurations of an applied rule.
 

@@ -225,10 +225,6 @@ null :: Substitution variable -> Bool
 null (Substitution denorm)         = List.null denorm
 null (NormalizedSubstitution norm) = Map.null norm
 
--- | Returns the list of variables in the 'Substitution'.
-variables :: Ord variable => Substitution variable -> [UnifiedVariable variable]
-variables = fmap fst . unwrap
-
 -- | Filter the variables of the 'Substitution'.
 filter
     :: Ord variable
@@ -361,3 +357,11 @@ freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
   where
     freeVariablesWorker (x, t) =
         freeVariable x <> TermLike.freeVariables t
+
+-- | The left-hand side variables of the 'Substitution'.
+variables
+    :: Ord variable
+    => Substitution variable
+    -> Set (UnifiedVariable variable)
+variables (NormalizedSubstitution subst) = Map.keysSet subst
+variables (Substitution subst) = Foldable.foldMap (Set.singleton . fst) subst

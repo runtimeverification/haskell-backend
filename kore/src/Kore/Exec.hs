@@ -218,7 +218,7 @@ search verifiedModule strategy termLike searchPattern searchConfig =
         execution <- execute verifiedModule strategy termLike
         let
             Execution { executionGraph } = execution
-            match target config = Search.matchWith Predicate.top target config
+            match target config = Search.matchWith target config
         solutionsLists <-
             searchGraph searchConfig (match searchPattern) executionGraph
         let

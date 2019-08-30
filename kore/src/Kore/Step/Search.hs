@@ -35,7 +35,7 @@ import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Conditional
 import qualified Kore.Internal.Predicate as Predicate
-                 ( bottom, fromSubstitution )
+                 ( bottom, fromSubstitution, top )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
 import           Kore.Step.Simplification.Data
@@ -125,14 +125,13 @@ matchWith
         , Unparse variable
         , MonadSimplify m
         )
-    => Predicate variable
-    -> Pattern variable
+    => Pattern variable
     -> Pattern variable
     -> MaybeT m (OrPredicate variable)
-matchWith predicate e1 e2 = do
+matchWith e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifierT
-        $ unificationProcedure predicate t1 t2
+        $ unificationProcedure Predicate.top t1 t2
     let
         maybeUnifiers :: Maybe [Predicate variable]
         maybeUnifiers = hush eitherUnifiers

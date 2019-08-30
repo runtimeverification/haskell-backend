@@ -102,8 +102,7 @@ transitionRule =
     transitionRewrite rule config = do
         Transition.addRule rule
         let unificationProcedure =
-                Step.UnificationProcedure
-                    $ Unification.unificationProcedure
+                Step.UnificationProcedure Unification.unificationProcedure
         eitherResults <-
             Monad.Trans.lift
             $ Monad.Unify.runUnifierT

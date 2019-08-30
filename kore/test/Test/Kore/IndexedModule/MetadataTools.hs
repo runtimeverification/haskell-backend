@@ -10,7 +10,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Subsort
                  ( subsortAttribute )
 import           Kore.Attribute.Symbol as Attribute
@@ -60,7 +60,7 @@ testSubsorts =
     test name cond = testCase name (assertBool "" cond)
     testSubsort name list = testCase name . assertEqual "" (Set.fromList list)
     moduleIndex ::
-        Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null)
+        Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
     Right moduleIndex =
         verifyAndIndexDefinition
             DoNotVerifyAttributes

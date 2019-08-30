@@ -203,21 +203,27 @@ makeEvaluateTerm
                                         child
 
       | otherwise = do
-        evaluation <- Axiom.evaluatePattern
-            configurationPredicate
-            Conditional
-                { term = ()
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-            (mkCeil_ term)
-            (OrPattern.fromPattern Conditional
-                { term = mkTop_
-                , predicate = makeCeilPredicate term
-                , substitution = mempty
-                }
-            )
-        return (fmap toPredicate evaluation)
+            substitutionSimplifier <- Simplifier.askSimplifierPredicate
+            simplifier <- Simplifier.askSimplifierTermLike
+            axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
+            evaluation <- Axiom.evaluatePattern
+                substitutionSimplifier
+                simplifier
+                axiomIdToEvaluator
+                configurationPredicate
+                Conditional
+                    { term = ()
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                (mkCeil_ term)
+                (OrPattern.fromPattern Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate term
+                    , substitution = mempty
+                    }
+                )
+            return (fmap toPredicate evaluation)
 
     toPredicate Conditional {term = Top_ _, predicate, substitution} =
         Conditional {term = (), predicate, substitution}

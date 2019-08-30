@@ -27,4 +27,4 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-make test-interactive-run -j8 TEST_CONCRETE_BACKEND=haskell
+make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-run test-interactive-search

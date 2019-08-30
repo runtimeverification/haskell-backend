@@ -951,7 +951,7 @@ match first second =
     matchResult =
         (fmap . fmap) MultiOr.make
         $ Monad.Unify.runUnifierT
-        $ matchIncremental Predicate.top first second
+        $ matchIncremental first second
 
 withMatch
     :: GHC.HasCallStack

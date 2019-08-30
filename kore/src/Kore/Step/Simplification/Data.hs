@@ -10,23 +10,20 @@ Portability : portable
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     , Simplifier
+    , TermSimplifier
     , SimplifierT, runSimplifierT
     , Env (..)
     , runSimplifier
     , evalSimplifier
-    , lookupSimplifierAxiom
     , BranchT
-    , mapBranchT
     , evalSimplifierBranch
     , gather
     , gatherAll
-    , gatherPatterns
     , scatter
     , foldBranchT
     , alternate
     , PredicateSimplifier (..)
     , emptyPredicateSimplifier
-    , simplifyPredicate
     , TermLikeSimplifier
     , termLikeSimplifier
     , emptyTermLikeSimplifier
@@ -53,7 +50,6 @@ module Kore.Step.Simplification.Data
 import           Control.Applicative
 import           Control.Comonad.Trans.Cofree
 import           Control.DeepSeq
-import qualified Control.Error as Error
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
@@ -74,6 +70,7 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
+import           Data.Maybe
 import           Data.Typeable
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
@@ -98,7 +95,6 @@ import           Kore.Profiler.Data
                  ( MonadProfiler (profileDuration) )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
-import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import           Kore.Syntax.Application
 import           Kore.Syntax.Variable
                  ( SortedVariable )
@@ -115,6 +111,9 @@ This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
 
+type TermSimplifier variable m =
+    TermLike variable -> TermLike variable -> m (Pattern variable)
+
 class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     => MonadSimplify m
   where
@@ -124,12 +123,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m (SmtMetadataTools Attribute.Symbol)
     askMetadataTools = Monad.Trans.lift askMetadataTools
+    {-# INLINE askMetadataTools #-}
 
     askSimplifierTermLike :: m TermLikeSimplifier
     default askSimplifierTermLike
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m TermLikeSimplifier
     askSimplifierTermLike = Monad.Trans.lift askSimplifierTermLike
+    {-# INLINE askSimplifierTermLike #-}
 
     localSimplifierTermLike
         :: (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
@@ -138,12 +139,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         => (TermLikeSimplifier -> TermLikeSimplifier) -> m a -> m a
     localSimplifierTermLike locally =
         Monad.Morph.hoist (localSimplifierTermLike locally)
+    {-# INLINE localSimplifierTermLike #-}
 
     askSimplifierPredicate :: m PredicateSimplifier
     default askSimplifierPredicate
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m PredicateSimplifier
     askSimplifierPredicate = Monad.Trans.lift askSimplifierPredicate
+    {-# INLINE askSimplifierPredicate #-}
 
     localSimplifierPredicate
         :: (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
@@ -152,12 +155,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         => (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
     localSimplifierPredicate locally =
         Monad.Morph.hoist (localSimplifierPredicate locally)
+    {-# INLINE localSimplifierPredicate #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
     default askSimplifierAxioms
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
         => m BuiltinAndAxiomSimplifierMap
     askSimplifierAxioms = Monad.Trans.lift askSimplifierAxioms
+    {-# INLINE askSimplifierAxioms #-}
 
     localSimplifierAxioms
         :: (BuiltinAndAxiomSimplifierMap -> BuiltinAndAxiomSimplifierMap)
@@ -168,6 +173,7 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         -> m a -> m a
     localSimplifierAxioms locally =
         Monad.Morph.hoist (localSimplifierAxioms locally)
+    {-# INLINE localSimplifierAxioms #-}
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
@@ -204,21 +210,6 @@ instance MonadSimplify m => MonadSimplify (ListT m) where
 instance MonadSimplify m => MonadSimplify (MaybeT m)
 
 instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
-
-{- | Look up the 'BuiltinAndAxiomSimplifier' for the given 'TermLike'.
-
-@lookupSimplifierAxiom@ is empty if no simplifier is defined for the pattern.
-
- -}
-lookupSimplifierAxiom
-    :: MonadSimplify simplifier
-    => TermLike variable
-    -> MaybeT simplifier BuiltinAndAxiomSimplifier
-lookupSimplifierAxiom termLike = do
-    simplifierAxioms <- askSimplifierAxioms
-    Error.hoistMaybe $ do
-        identifier <- Axiom.Identifier.matchAxiomIdentifier termLike
-        Map.lookup identifier simplifierAxioms
 
 -- * Branching
 
@@ -268,9 +259,6 @@ deriving instance MonadProfiler m => MonadProfiler (BranchT m)
 
 deriving instance MonadSimplify m => MonadSimplify (BranchT m)
 
-mapBranchT :: Monad m => (forall x. m x -> m x) -> BranchT m a -> BranchT m a
-mapBranchT f (BranchT listT) = BranchT (ListT.mapListT f listT)
-
 {- | Collect results from many simplification branches into one result.
 
 @gather@ returns all the results of a @'BranchT' m a@ in a single list.
@@ -302,13 +290,6 @@ See also: 'scatter', 'gather'
  -}
 gatherAll :: Monad m => BranchT m [a] -> m [a]
 gatherAll simpl = Monad.join <$> gather simpl
-
-
-gatherPatterns
-    :: (Ord variable, Monad m)
-    => BranchT m (Pattern variable)
-    -> m (OrPattern variable)
-gatherPatterns = Monad.liftM OrPattern.fromPatterns . gather
 
 {- | Disperse results into many simplification branches.
 
@@ -582,18 +563,6 @@ newtype PredicateSimplifier =
 emptyPredicateSimplifier :: PredicateSimplifier
 emptyPredicateSimplifier = PredicateSimplifier return
 
-simplifyPredicate
-    ::  forall variable simplifier
-    .   ( FreshVariable variable, SortedVariable variable
-        , Show variable, Unparse variable
-        , MonadSimplify simplifier
-        )
-    => Predicate variable
-    -> BranchT simplifier (Predicate variable)
-simplifyPredicate predicate = do
-    PredicateSimplifier simplify <- askSimplifierPredicate
-    simplify predicate
-
 {-| 'BuiltinAndAxiomSimplifier' simplifies patterns using either an axiom
 or builtin code.
 
@@ -747,19 +716,21 @@ hasRemainders NotApplicable = False
  -}
 maybeNotApplicable
     :: Functor m
-    => MaybeT m (AttemptedAxiomResults variable)
+    => MaybeT m (AttemptedAxiom variable)
     ->        m (AttemptedAxiom variable)
 maybeNotApplicable =
-    fmap (maybe NotApplicable Applied) . runMaybeT
+    fmap (fromMaybe NotApplicable) . runMaybeT
 
 {- | Return a 'NotApplicable' result for a failing 'ExceptT' action.
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiomResults variable)
+    => ExceptT e m (AttemptedAxiom variable)
     ->           m (AttemptedAxiom variable)
 exceptNotApplicable =
-    fmap (either (const NotApplicable) Applied) . runExceptT
+    fmap (either (const notApplicable) id) . runExceptT
+  where
+    notApplicable = NotApplicable
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator :: Applicative m => m (AttemptedAxiom variable)

@@ -359,7 +359,13 @@ mapVariables
 splitTerm :: Conditional variable term -> (term, Conditional variable ())
 splitTerm patt@Conditional { term } = (term, withoutTerm patt)
 
-{- | Is the 'Conditional' 'Substitution' normalized?
+{- | Is the condition normalized?
+
+The 'Substitution' must be normalized and must have been substituted into the
+'Predicate'.
+
  -}
-isNormalized :: Conditional variable term -> Bool
-isNormalized = Substitution.isNormalized . substitution
+isNormalized :: Ord variable => Conditional variable term -> Bool
+isNormalized Conditional { predicate, substitution } =
+    Substitution.isNormalized substitution
+    && Predicate.isFreeOf predicate (Substitution.variables substitution)

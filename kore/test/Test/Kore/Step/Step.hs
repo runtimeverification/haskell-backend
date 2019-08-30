@@ -186,38 +186,6 @@ test_unifyRule =
             expect = Right []
         actual <- unifyRule initial axiom
         assertEqualWithExplanation "" expect actual
-
-    , testCase "does not add unnecessary conditions" $ do
-        let initial =
-                Conditional
-                    { term = Mock.a
-                    , predicate =
-                        makeEqualsPredicate
-                            (Mock.functional11 Mock.a)
-                            (Mock.functional10 Mock.a)
-                    , substitution = mempty
-                    }
-            axiom =
-                RulePattern
-                    { left = Mock.a
-                    , right = Mock.b
-                    , requires =
-                        makeEqualsPredicate
-                            (Mock.functional11 Mock.a)
-                            (Mock.functional10 Mock.a)
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            expect =
-                Right
-                    [ Conditional
-                        { term = axiom
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
-        actual <- unifyRule initial axiom
-        assertEqualWithExplanation "" expect actual
     ]
 
 -- | Apply the 'RewriteRule' to the configuration, but discard remainders.
@@ -601,46 +569,6 @@ test_applyRewriteRule_ =
         let expect = Right [ ]
             initial = pure Mock.c
         actual <- applyRewriteRule_ initial axiomRequiresBottom
-        assertEqualWithExplanation "" expect actual
-
-    , testCase "does not add unnecessary non-trivial conditions" $ do
-        let aLt5 =
-                makeEqualsPredicate
-                    (Mock.lessInt
-                        (Mock.fTestInt Mock.a)
-                        (Mock.builtinInt 5)
-                    )
-                    (Mock.builtinBool True)
-            initial =
-                Conditional
-                    { term = Mock.fTestInt Mock.a
-                    , predicate = aLt5
-                    , substitution = mempty
-                    }
-            axiom =
-                RewriteRule RulePattern
-                    { left = Mock.fTestInt Mock.a
-                    , right = Mock.b
-                    , requires =
-                        makeNotPredicate
-                            $ makeEqualsPredicate
-                                (Mock.fTestInt Mock.a)
-                                (Mock.builtinInt 6)
-                    , ensures = makeTruePredicate
-                    , attributes = Default.def
-                    }
-            expect =
-                Right
-                    [ OrPattern.fromPatterns [ Conditional
-                        { term = Mock.b
-                        , predicate =
-                            makeAndPredicate
-                                aLt5
-                                $ makeCeilPredicate (Mock.fTestInt Mock.a)
-                        , substitution = mempty
-                        }
-                    ] ]
-        actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
     ]
   where

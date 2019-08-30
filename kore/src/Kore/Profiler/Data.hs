@@ -58,12 +58,15 @@ class Monad profiler => MonadProfiler profiler where
 
 -- Instance for tests.
 instance MonadProfiler Identity where
-    profileDuration _ = id
+    profileDuration = \_ x -> x
+    {-# INLINE profileDuration #-}
+
     profileConfiguration =
         return Configuration
             { identifierFilter = Nothing
             , dumpIdentifier = Nothing
             }
+    {-# INLINE profileConfiguration #-}
 
 data Configuration =
     Configuration

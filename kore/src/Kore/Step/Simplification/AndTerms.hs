@@ -26,7 +26,6 @@ import           Control.Error
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
-import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
@@ -45,7 +44,6 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.IndexedModule.MetadataTools
                  ( SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPredicate
                  ( OrPredicate )
@@ -67,6 +65,8 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
+import           Kore.Step.Simplification.NoConfusion
+import           Kore.Step.Simplification.Overloading
 import           Kore.Step.Substitution
                  ( PredicateMerger,
                  createLiftedPredicatesAndSubstitutionsMerger,
@@ -85,9 +85,6 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 
 data SimplificationTarget = AndT | EqualsT | BothT
-
-type TermSimplifier variable m =
-    TermLike variable -> TermLike variable -> m (Pattern variable)
 
 {- | Simplify an equality relation of two patterns.
 
@@ -387,6 +384,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
     , (BothT,   \_ _ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
     , (BothT,   \_ t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
@@ -684,43 +682,6 @@ functionVariableAndEquals
 functionVariableAndEquals predicate simplificationType first second =
     variableFunctionAndEquals predicate simplificationType second first
 
-{- | Unify two application patterns with equal, injective heads.
-
-This includes constructors and sort injections.
-
-See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
-'Attribute.isConstructor'
-
- -}
-equalInjectiveHeadsAndEquals
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermSimplifier variable unifier
-    -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-equalInjectiveHeadsAndEquals
-    termMerger
-    (App_ firstHead firstChildren)
-    (App_ secondHead secondChildren)
-  | isFirstInjective && isSecondInjective && firstHead == secondHead =
-    Monad.Trans.lift $ do
-        children <- Monad.zipWithM termMerger firstChildren secondChildren
-        let merged = Foldable.foldMap Pattern.withoutTerm children
-            term = mkApplySymbol firstHead (Pattern.term <$> children)
-        return (Pattern.withCondition term merged)
-  where
-    isFirstInjective = Symbol.isInjective firstHead
-    isSecondInjective = Symbol.isInjective secondHead
-
-equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
-
 {- | Simplify the conjunction of two sort injections.
 
 Assumes that the two heads were already tested for equality and were found
@@ -935,36 +896,6 @@ constructorSortInjectionAndEquals
             (Symbol.isConstructor   firstHead && Symbol.isSortInjection secondHead)
             (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
 constructorSortInjectionAndEquals _ _ = empty
-
-{-| Unify two constructor application patterns.
-
-Assumes that the two patterns were already tested for equality and were found
-to be different; therefore their conjunction is @\\bottom@.
-
- -}
-constructorAndEqualsAssumesDifferentHeads
-    ::  ( Eq variable
-        , SortedVariable variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier a
-constructorAndEqualsAssumesDifferentHeads
-    first@(App_ firstHead _)
-    second@(App_ secondHead _)
-  | Symbol.isConstructor firstHead
-  , Symbol.isConstructor secondHead =
-    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-        explainBottom
-            "Cannot unify different constructors or incompatible \
-            \sort injections."
-            first
-            second
-        empty
-constructorAndEqualsAssumesDifferentHeads _ _ = empty
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.

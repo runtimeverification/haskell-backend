@@ -533,6 +533,8 @@ mockMetadataTools = MetadataTools
     , subsorts = Set.singleton
     , applicationSorts = undefined
     , symbolAttributes = undefined
+    , isOverloading = undefined
+    , isOverloaded = undefined
     , smtData = undefined
     }
 

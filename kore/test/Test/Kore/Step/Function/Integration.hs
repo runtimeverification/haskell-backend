@@ -2,8 +2,8 @@ module Test.Kore.Step.Function.Integration
     ( test_functionIntegration
     , test_Nat
     , test_List
-    , test_lookupMap
-    , test_updateMap
+    , test_Map
+    , test_Pair
     ) where
 
 import Test.Tasty
@@ -12,36 +12,20 @@ import Test.Tasty.HUnit
 import qualified Control.Lens as Lens
 import           Data.Function
 import           Data.Generics.Product
-import           Data.Map
-                 ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
-import           Data.Proxy
 import           Prelude hiding
                  ( succ )
 
 import           Data.Sup
-import           Kore.ASTVerifier.DefinitionVerifier
-import           Kore.ASTVerifier.Error
-                 ( VerifyError )
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
                  ( builtinFunctions )
 import qualified Kore.Builtin.Map as Map
                  ( builtinFunctions )
-import qualified Kore.Error
-import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
+import           Kore.Internal.Predicate as Predicate
 import           Kore.Internal.Symbol
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
@@ -51,11 +35,12 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import           Kore.Step.Axiom.EvaluationStrategy
                  ( builtinEvaluation, definitionEvaluation,
-                 firstFullEvaluation, simplificationEvaluation,
-                 simplifierWithFallback )
+                 firstFullEvaluation, simplifierWithFallback )
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import           Kore.Step.Axiom.UserDefined
+                 ( equalityRuleEvaluator )
 import           Kore.Step.Rule
                  ( EqualityRule (..) )
 import           Kore.Step.Rule as RulePattern
@@ -63,11 +48,8 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
-import           Kore.Syntax.Definition hiding
-                 ( Symbol (..) )
+                 ( simplify )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
@@ -75,13 +57,14 @@ import           Kore.Variables.UnifiedVariable
 import qualified SMT
 
 import           Test.Kore
-import qualified Test.Kore.Builtin.Bool as Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
 import           Test.Kore.Comparators ()
+import qualified Test.Kore.Step.Axiom.EvaluationStrategy as Axiom
+                 ( evaluate )
 import           Test.Kore.Step.Axiom.Matcher
                  ( doesn'tMatch, matches )
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -553,15 +536,6 @@ test_functionIntegration =
                 (Mock.f (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
     ]
-  where
-    evaluate
-        :: BuiltinAndAxiomSimplifierMap
-        -> TermLike Variable
-        -> IO (Pattern Variable)
-    evaluate functionIdToEvaluator patt =
-        SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt Predicate.top
 
 test_Nat :: [TestTree]
 test_Nat =
@@ -594,48 +568,25 @@ test_Nat =
     , applies            "plus(1, 1) => ..."
         plusRules
         (plus one one)
-    , equals "0 + 1 = 1 : Nat" (plus zero one) [one]
-    , equals "0 + 1 = 1 : Nat" (plus one one) [two]
-    , equals "0 * 1 = 0 : Nat" (times zero one) [zero]
-    , equals "1 * 1 = 1 : Nat" (times one one) [one]
-    , equals "1 * 2 = 2 : Nat" (times one two) [two]
-    , equals "2 * 1 = 2 : Nat" (times two one) [two]
-    , equals "0! = 1 : Nat" (factorial zero) [one]
-    , equals "1! = 1 : Nat" (factorial one) [one]
-    , equals "2! = 2 : Nat" (factorial two) [two]
-    , equals "fibonacci(0) = 1 : Nat" (fibonacci zero) [one]
-    , equals "fibonacci(1) = 1 : Nat" (fibonacci one) [one]
-    , equals "fibonacci(2) = 2 : Nat" (fibonacci two) [two]
+    , equals "0 + 1 = 1 : Nat" (plus zero one) one
+    , equals "0 + 1 = 1 : Nat" (plus one one) two
+    , equals "0 * 1 = 0 : Nat" (times zero one) zero
+    , equals "1 * 1 = 1 : Nat" (times one one) one
+    , equals "1 * 2 = 2 : Nat" (times one two) two
+    , equals "2 * 1 = 2 : Nat" (times two one) two
+    , equals "0! = 1 : Nat" (factorial zero) one
+    , equals "1! = 1 : Nat" (factorial one) one
+    , equals "2! = 2 : Nat" (factorial two) two
+    , equals "fibonacci(0) = 1 : Nat" (fibonacci zero) one
+    , equals "fibonacci(1) = 1 : Nat" (fibonacci one) one
+    , equals "fibonacci(2) = 2 : Nat" (fibonacci two) two
     ]
-
--- Evaluation tests: check the result of evaluating the term
-equals
-    :: HasCallStack
-    => TestName
-    -> TermLike Variable
-    -> [TermLike Variable]
-    -> TestTree
-equals comment term results =
-    testCase comment $ do
-        actual <- simplify term
-        let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
-        assertEqualWithExplanation "" expect actual
-
-simplify :: TermLike Variable -> IO (OrPattern Variable)
-simplify =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier testEnv
-    . TermLike.simplifyToOr Predicate.top
-
-evaluateWith
-    :: BuiltinAndAxiomSimplifier
-    -> TermLike Variable
-    -> Predicate Variable
-    -> IO CommonAttemptedAxiom
-evaluateWith simplifier patt predicate =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier predicate patt
+  where
+    -- Evaluation tests: check the result of evaluating the term
+    equals comment term expect =
+        testCase comment $ do
+            actual <- evaluate natSimplifiers term
+            assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -646,7 +597,7 @@ withApplied
     -> TestTree
 withApplied check comment rules term =
     testCase comment $ do
-        actual <- evaluateWith (definitionEvaluation rules) term Predicate.top
+        actual <- Axiom.evaluate (definitionEvaluation rules) term
         check actual
 
 applies, notApplies
@@ -719,17 +670,6 @@ functionEvaluator
     -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 functionEvaluator symb rules =
     (AxiomIdentifier.Application ident, definitionEvaluation rules)
-  where
-    ident = symbolConstructor symb
-
-functionSimplifier
-    :: Symbol
-    -> [EqualityRule Variable]  -- ^ Function simplification rule
-    -> (AxiomIdentifier, BuiltinAndAxiomSimplifier)
-functionSimplifier symb rules =
-    ( AxiomIdentifier.Application ident
-    , firstFullEvaluation (simplificationEvaluation <$> rules)
-    )
   where
     ident = symbolConstructor symb
 
@@ -814,21 +754,42 @@ test_List =
         (lengthList (mkList [mkInt 1, mkInt 2]))
     , equals                   "lengthList([]) = 0 : Int"
         (lengthList (mkList []))
-        [mkInt 0]
+        (mkInt 0)
     , equals                   "lengthList([1]) = 1 : Int"
         (lengthList (mkList [mkInt 1]))
-        [mkInt 1]
+        (mkInt 1)
     , equals                   "lengthList([1, 2]) = 2 : Int"
         (lengthList (mkList [mkInt 1, mkInt 2]))
-        [mkInt 2]
+        (mkInt 2)
 
     , applies                  "removeList([], M) => ... ~ removeList([], [(0, 1)])"
         [removeListUnitRule]
         (removeList unitList (mkMap [(mkInt 0, mkInt 1)] []))
     , equals "removeList([1], [(0, 1)]) = [(0, 1)]"
         (removeList (mkList [mkInt 1]) (mkMap [(mkInt 0, mkInt 1)] []))
-        [mkMap [(mkInt 0, mkInt 1)] []]
+        (mkMap [(mkInt 0, mkInt 1)] [])
     ]
+  where
+    -- Evaluation tests: check the result of evaluating the term
+    equals comment term expect =
+        testCase comment $ do
+            actual <- evaluate' listSimplifiers term
+            assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+
+    evaluate'
+        :: BuiltinAndAxiomSimplifierMap
+        -> TermLike Variable
+        -> IO (Pattern Variable)
+    evaluate' functionIdToEvaluator patt =
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier env
+        $ TermLike.simplify patt Predicate.top
+      where
+        env =
+            Mock.env
+                { metadataTools = Builtin.testMetadataTools
+                , simplifierAxioms = functionIdToEvaluator
+                }
 
 listSort, intSort, mapSort :: Sort
 listSort = Builtin.listSort
@@ -858,14 +819,11 @@ addInt = Builtin.addInt
 unitList :: TermLike Variable
 unitList = mkList []
 
-varX, varY, varL, mMapTerm :: TermLike Variable
-varX = mkElemVar xInt
-varY = mkElemVar yInt
+varX, varY, varL, mMap :: TermLike Variable
+varX = mkElemVar (elemVarS (testId "xInt") intSort)
+varY = mkElemVar (elemVarS (testId "yInt") intSort)
 varL = mkElemVar (elemVarS (testId "lList") listSort)
-mMapTerm = mkElemVar mMap
-
-mMap :: ElementVariable Variable
-mMap = elemVarS (testId "mMap") mapSort
+mMap = mkElemVar (elemVarS (testId "mMap") mapSort)
 
 lengthListSymbol :: Symbol
 lengthListSymbol = Mock.symbol "lengthList" [listSort] intSort & function
@@ -900,11 +858,11 @@ removeList :: TermLike Variable -> TermLike Variable -> TermLike Variable
 removeList l m = mkApplySymbol removeListSymbol [l, m]
 
 removeListUnitRule, removeListConsRule :: EqualityRule Variable
-removeListUnitRule = axiom_ (removeList unitList mMapTerm) mMapTerm
+removeListUnitRule = axiom_ (removeList unitList mMap) mMap
 removeListConsRule =
     axiom_
-        (removeList (consList varX varL) mMapTerm)
-        (removeMap mMapTerm varX)
+        (removeList (consList varX varL) mMap)
+        (removeMap mMap varX)
 
 removeListRules :: [EqualityRule Variable]
 removeListRules = [removeListUnitRule, removeListConsRule]
@@ -930,27 +888,54 @@ listSimplifiers =
         AxiomIdentifier.Application
         $ symbolConstructor Builtin.removeMapSymbol
 
-test_lookupMap :: [TestTree]
-test_lookupMap =
-    [ equals "lookupMap(.Map, 1) = \\bottom"
+test_Map :: [TestTree]
+test_Map =
+    [ equals "lookupMap(.Map, 1) = lookupMap(.Map, 1)"
         (lookupMap (mkMap [] []) (mkInt 1))
-        []
+        (lookupMap (mkMap [] []) (mkInt 1))
     , equals "lookupMap(1 |-> 2, 1) = 2"
         (lookupMap (mkMap [(mkInt 1, mkInt 2)] []) (mkInt 1))
-        [mkInt 2]
+        (mkInt 2)
     , equals "lookupMap(0 |-> 1  1 |-> 2, 1) = 2"
         (lookupMap (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []) (mkInt 1))
-        [mkInt 2]
+        (mkInt 2)
     ]
+  where
+    -- Evaluation tests: check the result of evaluating the term
+    equals
+        :: HasCallStack
+        => TestName
+        -> TermLike Variable
+        -> TermLike Variable
+        -> TestTree
+    equals comment term expect =
+        testCase comment $ do
+            actual <- evaluate' mapSimplifiers term
+            assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+
+    evaluate'
+        :: BuiltinAndAxiomSimplifierMap
+        -> TermLike Variable
+        -> IO (Pattern Variable)
+    evaluate' functionIdToEvaluator patt =
+        SMT.runSMT SMT.defaultConfig emptyLogger
+        $ evalSimplifier env
+        $ TermLike.simplify patt Predicate.top
+      where
+        env =
+            Mock.env
+                { metadataTools = Builtin.testMetadataTools
+                , simplifierAxioms = functionIdToEvaluator
+                }
 
 lookupMapSymbol :: Symbol
-lookupMapSymbol = Builtin.lookupMapSymbol
+lookupMapSymbol = Mock.symbol "lookupMap" [mapSort, intSort] intSort & function
 
 lookupMap :: TermLike Variable -> TermLike Variable -> TermLike Variable
-lookupMap = Builtin.lookupMap
+lookupMap m k = mkApplySymbol lookupMapSymbol [m, k]
 
 lookupMapRule :: EqualityRule Variable
-lookupMapRule = axiom_ (lookupMap (mkMap [(varX, varY)] [mMapTerm]) varX) varY
+lookupMapRule = axiom_ (lookupMap (mkMap [(varX, varY)] [mMap]) varX) varY
 
 lookupMapRules :: [EqualityRule Variable]
 lookupMapRules = [lookupMapRule]
@@ -958,96 +943,39 @@ lookupMapRules = [lookupMapRule]
 lookupMapEvaluator :: (AxiomIdentifier, BuiltinAndAxiomSimplifier)
 lookupMapEvaluator = functionEvaluator lookupMapSymbol lookupMapRules
 
-test_updateMap :: [TestTree]
-test_updateMap =
-    [ notApplies "different concrete keys"
-        [updateMapSimplifier]
-        (updateMap
-            (updateMap mMapTerm (mkInt 0) (mkInt 1))
-            (mkInt 1)
-            (mkInt 2)
-        )
-    , applies "same concrete key"
-        [updateMapSimplifier]
-        (updateMap
-            (updateMap mMapTerm (mkInt 0) (mkInt 1))
-            (mkInt 0)
-            (mkInt 2)
-        )
-    , notApplies "different abstract keys; evaluates requires with SMT"
-        [updateMapSimplifier]
-        (updateMap
-            (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
-            (addInt (mkElemVar xInt) (mkInt 1))
-            (mkInt 2)
-        )
-    , notApplies "different keys; evaluates requires with function rule"
-        [updateMapSimplifier]
-        (updateMap
-            (updateMap Builtin.unitMap (mkInt 0) (mkInt 1))
-            (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
-            (mkInt 2)
-        )
-    , equals "different keys; evaluates updateMap"
-        (updateMap
-            (updateMap Builtin.unitMap (mkInt 0) (mkInt 1))
-            (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
-            (mkInt 2)
-        )
-        [mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []]
-    , applies "same abstract key"
-        [updateMapSimplifier]
-        (updateMap
-            (updateMap mMapTerm (mkElemVar xInt) (mkInt 1))
-            (mkElemVar xInt)
-            (mkInt 2)
-        )
-    ]
-
-updateMap
-    :: TermLike Variable  -- ^ Map
-    -> TermLike Variable  -- ^ Key
-    -> TermLike Variable  -- ^ Value
-    -> TermLike Variable
-updateMap = Builtin.updateMap
-
-updateMapSimplifier :: EqualityRule Variable
-updateMapSimplifier =
-    axiom
-        (updateMap (updateMap mMapTerm u v) x y)
-        (updateMap mMapTerm u y)
-        (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
-  where
-    [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
-    injK = Builtin.inj Builtin.kSort
-
-dummyIntSimplifier :: EqualityRule Variable
-dummyIntSimplifier =
-    axiom_ (Builtin.dummyInt (mkElemVar xInt)) (mkElemVar xInt)
-
-mkBool :: Bool -> TermLike Variable
-mkBool = Bool.asInternal
-
 mapSimplifiers :: BuiltinAndAxiomSimplifierMap
 mapSimplifiers =
     Map.fromList
         [ lookupMapEvaluator
-        , functionSimplifier Builtin.updateMapSymbol [updateMapSimplifier]
-        , functionEvaluator Builtin.dummyIntSymbol [dummyIntSimplifier]
         ]
 
-uInt, vInt, xInt, yInt :: ElementVariable Variable
-uInt = elemVarS (testId "uInt") intSort
-vInt = elemVarS (testId "vInt") intSort
+test_Pair :: [TestTree]
+test_Pair =
+    [ applies "pair constructor axiom applies"
+        [pairCtorAxiom]
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+    ]
+
+mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
+mkPair = Builtin.pair
+
+xInt, yInt :: ElementVariable Variable
 xInt = elemVarS (testId "xInt") intSort
 yInt = elemVarS (testId "yInt") intSort
+
+pairCtorAxiom :: EqualityRule Variable
+pairCtorAxiom =
+    EqualityRule $ rulePattern
+        (mkExists xInt . mkExists yInt $ mkPair (mkElemVar xInt) (mkElemVar yInt))
+        (mkTop $ Builtin.pairSort intSort intSort)
 
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
-    simplificationEvaluation (axiom left right makeTruePredicate)
+    BuiltinAndAxiomSimplifier
+        (equalityRuleEvaluator (axiom left right makeTruePredicate))
 
 axiom
     :: TermLike Variable
@@ -1095,99 +1023,11 @@ mockEvaluator
     -> simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ _ _ _ = return evaluation
 
--- ---------------------------------------------------------------------
--- * Definition
-
-natModuleName :: ModuleName
-natModuleName = ModuleName "NAT"
-
-natSortDecl :: Sentence pattern'
-natSortDecl =
-    asSentence SentenceSort
-        { sentenceSortName =
-            let SortActualSort SortActual { sortActualName } = natSort
-            in sortActualName
-        , sentenceSortParameters = []
-        , sentenceSortAttributes = Attributes []
-        }
-
--- | Declare the @BOOL@ builtins.
-natModule :: ParsedModule
-natModule =
-    Module
-        { moduleName = natModuleName
-        , moduleAttributes = Attributes []
-        , moduleSentences =
-            [ natSortDecl
-            , Builtin.symbolDecl zeroSymbol
-            , Builtin.symbolDecl succSymbol
-            , Builtin.symbolDecl plusSymbol
-            , Builtin.symbolDecl timesSymbol
-            , Builtin.symbolDecl fibonacciSymbol
-            , Builtin.symbolDecl factorialSymbol
-            ]
-        }
-
-testModuleName :: ModuleName
-testModuleName = ModuleName "INTEGRATION-TEST"
-
-testModule :: ParsedModule
-testModule =
-    Module
-        { moduleName = testModuleName
-        , moduleAttributes = Attributes []
-        , moduleSentences =
-            [ Builtin.importParsedModule Builtin.testModuleName
-            , Builtin.importParsedModule natModuleName
-            ]
-        }
-
-testDefinition :: ParsedDefinition
-testDefinition =
-    Builtin.testDefinition
-    & field @"definitionModules" Lens.<>~ [natModule, testModule]
-
-verify
-    :: ParsedDefinition
-    -> Either
-        (Kore.Error.Error VerifyError)
-        (Map
-            ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
-        )
-verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
-  where
-    attrVerify = defaultAttributesVerification Proxy Proxy
-
-verifiedModules
-    :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
-verifiedModules = Kore.Error.assertRight (verify testDefinition)
-
-verifiedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
-Just verifiedModule = Map.lookup testModuleName verifiedModules
-
-testMetadataTools :: SmtMetadataTools Attribute.Symbol
-testMetadataTools = MetadataTools.build verifiedModule
-
-testSubstitutionSimplifier :: PredicateSimplifier
-testSubstitutionSimplifier = Simplifier.Predicate.create
-
-testEvaluators :: BuiltinAndAxiomSimplifierMap
-testEvaluators = Builtin.koreEvaluators verifiedModule
-
-testTermLikeSimplifier :: TermLikeSimplifier
-testTermLikeSimplifier = Simplifier.create
-
-testEnv :: Env
-testEnv =
-    Env
-        { metadataTools = testMetadataTools
-        , simplifierTermLike = testTermLikeSimplifier
-        , simplifierPredicate = testSubstitutionSimplifier
-        , simplifierAxioms =
-            mconcat
-                [ testEvaluators
-                , natSimplifiers
-                , listSimplifiers
-                , mapSimplifiers
-                ]
-        }
+evaluate
+    :: BuiltinAndAxiomSimplifierMap
+    -> TermLike Variable
+    -> IO (Pattern Variable)
+evaluate functionIdToEvaluator patt =
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ evalSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
+    $ TermLike.simplify patt Predicate.top

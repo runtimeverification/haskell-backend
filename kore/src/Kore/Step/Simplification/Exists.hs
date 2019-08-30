@@ -179,7 +179,7 @@ matchesToVariableSubstitution
   , Substitution.null boundSubstitution
   , not (hasFreeVariable (ElemVar variable) term)
   = do
-    matchResult <- runUnifierT $ matchIncremental Predicate.topTODO first second
+    matchResult <- runUnifierT $ matchIncremental first second
     case matchResult of
         Left _ -> return False
         Right results ->
