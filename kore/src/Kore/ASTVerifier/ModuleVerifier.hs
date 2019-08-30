@@ -52,23 +52,16 @@ verifyModule
     -> IndexedModule ParsedPattern Attribute.Symbol axiomAtts
     -> Either (Error VerifyError) (Module Verified.Sentence)
 verifyModule attributesVerification builtinVerifiers indexedModule =
-    withContext
-        (  "module '"
-        ++ getModuleNameForError (indexedModuleName indexedModule)
-        ++ "'"
-        )
-        (do
-            verifyAttributes
-                (snd (indexedModuleAttributes indexedModule))
+    withContext context $ do
+        verifyAttributes moduleAttributes attributesVerification
+        moduleSentences <-
+            SentenceVerifier.verifySentences
+                indexedModule
                 attributesVerification
-            moduleSentences <-
-                SentenceVerifier.verifySentences
-                    indexedModule
-                    attributesVerification
-                    builtinVerifiers
-                    (indexedModuleRawSentences indexedModule)
-            return Module { moduleName, moduleSentences, moduleAttributes }
-        )
+                builtinVerifiers
+                (indexedModuleRawSentences indexedModule)
+        return Module { moduleName, moduleSentences, moduleAttributes }
   where
     moduleName = indexedModuleName indexedModule
     (_, moduleAttributes) = indexedModuleAttributes indexedModule
+    context = "module '" ++ getModuleNameForError moduleName ++ "'"
