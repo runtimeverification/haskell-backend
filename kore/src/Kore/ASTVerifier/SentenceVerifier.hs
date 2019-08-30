@@ -10,7 +10,7 @@ Portability : POSIX
 module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
     , verifySentences
-    , verifySentencesNEW
+--    , verifySentencesNEW
     , noConstructorWithDomainValuesMessage
     ) where
 
@@ -109,20 +109,28 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
     definedNamesForSentence (SentenceSymbolSentence sentence)
 
 -- TODO: these types should replace IndexedModule (so they should contain aux info as well)
-newtype SortIndex =
-    SortIndex { sorts :: Map Id Verified.SentenceSort }
+data SortIndex =
+    SortIndex
+        { sorts :: Map Id Verified.SentenceSort
+        , importedSorts :: Map Id ParsedSentenceSort
+        }
 
 data SymbolIndex =
     SymbolIndex
         { symbolSorts :: Map Id Verified.SentenceSort
+        , importedSymbolSorts :: Map Id ParsedSentenceSort
         , symbols :: Map Id Verified.SentenceSymbol
+        , importedSymbols :: Map Id ParsedSentenceSymbol
         }
 
 data AliasIndex =
     AliasIndex
         { aliasSorts :: Map Id Verified.SentenceSort
+        , importedAliasSorts :: Map Id ParsedSentenceSort
         , aliasSymbols :: Map Id Verified.SentenceSymbol
+        , importedAliasSymbols :: Map Id ParsedSentenceSymbol
         , aliases :: Map Id Verified.SentenceAlias
+        , importedAliases :: Map Id ParsedSentenceAlias
         }
 
 data RuleIndex =
@@ -134,46 +142,106 @@ data RuleIndex =
         , axioms :: [Verified.SentenceAxiom]
         }
 
+makeSortIndex
+    :: KoreIndexedModule Attribute.Symbol axiomAtts
+    -> AttributesVerification Attribute.Symbol axiomAtts
+    -> Either (Error VerifyError) SortIndex
+makeSortIndex indexedModule attributesVerification = do
+    verifiedSorts <- verifySorts localSorts attributesVerification
+    pure SortIndex
+        { sorts = verifiedSorts
+        , importedSorts = importedSorts
+        }
+  where
+    localSorts = snd <$> indexedModuleSortDescriptions indexedModule
+    importedSorts =
+        snd <$> foldr
+                (<>)
+                Map.empty
+                ( getImportedSorts
+                <$> indexedModuleImports indexedModule
+                )
+    getImportedSorts (_, _, importedModule) =
+        indexedModuleSortDescriptions importedModule
+
+makeSymbolIndex
+    :: KoreIndexedModule Attribute.Symbol axiomAtts
+    -> SortIndex
+    -> AttributesVerification Attribute.Symbol axiomAtts
+    -> Either (Error VerifyError) SymbolIndex
+makeSymbolIndex indexedModule sortIndex attributesVerification = do
+    verifiedSymbols <-
+        verifySymbols
+            indexedModule
+            sortIndex
+            localSymbols
+    pure SymbolIndex
+        { symbolSorts = sorts sortIndex
+        , importedSymbolSorts = importedSorts sortIndex
+        , symbols = verifiedSymbols
+        , importedSymbols = importedSymbols
+        }
+  where
+    localSymbols = snd <$> indexedModuleSymbolSentences indexedModule
+    importedSymbols =
+        snd <$> foldr
+                (<>)
+                Map.empty
+                ( getImportedSymbols
+                <$> indexedModuleImports indexedModule
+                )
+    getImportedSymbols (_, _, importedModule) =
+        indexedModuleSymbolSentences importedModule
+
+makeAliasIndex
+    :: KoreIndexedModule Attribute.Symbol axiomAtts
+    -> Builtin.Verifiers
+    -> SymbolIndex
+    -> AttributesVerification Attribute.Symbol axiomAtts
+    -> Either (Error VerifyError) AliasIndex
+makeAliasIndex indexedModule builtinVerifiers symbolIndex attributesVerification = do
+    verifiedAliases <-
+        verifyAliases
+            symbolIndex
+            builtinVerifiers
+            indexedModule
+            localAliases
+    pure AliasIndex
+        { aliasSorts = symbolSorts symbolIndex
+        , importedAliasSorts = importedSymbolSorts symbolIndex
+        , aliasSymbols = symbols symbolIndex
+        , importedAliasSymbols = importedSymbols symbolIndex
+        , aliases = verifiedAliases
+        , importedAliases = importedAliases
+        }
+  where
+    localAliases = snd <$> indexedModuleAliasSentences indexedModule
+    importedAliases =
+        snd <$> foldr
+                (<>)
+                Map.empty
+                ( getImportedAliases
+                <$> indexedModuleImports indexedModule
+                )
+    getImportedAliases (_, _, importedModule) =
+        indexedModuleAliasSentences importedModule
+
 verifySentencesNEW
     :: KoreIndexedModule Attribute.Symbol axiomAtts
     -> Builtin.Verifiers
-    -> AttributesVerification declAtts axiomAtts
+    -> AttributesVerification Attribute.Symbol axiomAtts
     -> Either (Error VerifyError) [Verified.Sentence]
 verifySentencesNEW indexedModule builtinVerifiers attributesVerification = do
-    let rawSorts =
-            snd
-            <$> indexedModuleSortDescriptions indexedModule
-        rawSymbols =
-            snd
-            <$> indexedModuleSymbolSentences indexedModule
-        rawAliases =
-            snd
-            <$> indexedModuleAliasSentences indexedModule
-        rawClaims =
+    let rawClaims =
             snd
             <$> indexedModuleClaims indexedModule
         rawAxioms =
             snd
             <$> indexedModuleAxioms indexedModule
-    sortIndex <- verifySorts rawSorts attributesVerification
-    symbolIndex <-
-        verifySymbols
-            indexedModule
-            sortIndex
-            rawSymbols
-    aliasIndex <-
-        verifyAliases
-            symbolIndex
-            builtinVerifiers
-            indexedModule
-            rawAliases
-    ruleIndex <-
-        verifyRules
-            aliasIndex
-            builtinVerifiers
-            indexedModule
-            rawClaims
-            rawAxioms
+    sortIndex <- makeSortIndex indexedModule attributesVerification
+    symbolIndex <- makeSymbolIndex indexedModule sortIndex attributesVerification
+    aliasIndex <- makeAliasIndex indexedModule builtinVerifiers symbolIndex attributesVerification
+    ruleIndex <- verifyRules aliasIndex builtinVerifiers indexedModule rawClaims rawAxioms
     pure . getVerifiedSentences $ ruleIndex
 
 getVerifiedSentences :: RuleIndex -> [Verified.Sentence]
@@ -193,9 +261,9 @@ getVerifiedSentences ruleIndex =
 verifySorts
     :: Map Id ParsedSentenceSort
     -> AttributesVerification declAtts axiomAtts
-    -> Either (Error VerifyError) SortIndex
+    -> Either (Error VerifyError) (Map Id Verified.SentenceSort)
 verifySorts rawSorts attributesVerification = do
-    SortIndex <$> traverse verifySortWithContext rawSorts
+    traverse verifySortWithContext rawSorts
   where
     verifySortWithContext sort =
         withSentenceSortContext sort (verifySortSentence sort attributesVerification)
@@ -204,14 +272,9 @@ verifySymbols
     :: KoreIndexedModule declAtts axiomAtts
     -> SortIndex
     -> Map Id ParsedSentenceSymbol
-    -> Either (Error VerifyError) SymbolIndex
+    -> Either (Error VerifyError) (Map Id Verified.SentenceSymbol)
 verifySymbols indexedModule sortIndex rawSymbols = do
-    verifiedSymbols <-
-        traverse verifySymbolWithContext rawSymbols
-    pure SymbolIndex
-        { symbolSorts = sorts sortIndex
-        , symbols = verifiedSymbols
-        }
+    traverse verifySymbolWithContext rawSymbols
   where
     verifySymbolWithContext symbol =
         withSentenceSymbolContext
@@ -284,17 +347,11 @@ verifyAliases
     -> Builtin.Verifiers
     -> KoreIndexedModule Attribute.Symbol axiomAtts
     -> Map Id ParsedSentenceAlias
-    -> Either (Error VerifyError) AliasIndex
+    -> Either (Error VerifyError) (Map Id Verified.SentenceAlias)
 verifyAliases symbolIndex builtinVerifiers indexedModule rawAliases = do
-    verifiedAliases <-
-        traverse
-            verifyAliasWithContext
-            rawAliases
-    pure AliasIndex
-        { aliasSorts = symbolSorts symbolIndex
-        , aliasSymbols = symbols symbolIndex
-        , aliases = verifiedAliases
-        }
+    traverse
+        verifyAliasWithContext
+        rawAliases
   where
     verifyAliasWithContext alias =
         withSentenceAliasContext

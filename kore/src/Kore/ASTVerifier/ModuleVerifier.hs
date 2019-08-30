@@ -63,11 +63,11 @@ verifyModule attributesVerification builtinVerifiers indexedModule =
             verifyAttributes
                 (snd (indexedModuleAttributes indexedModule))
                 attributesVerification
-            moduleSentencesNEW <-
-                SentenceVerifier.verifySentencesNEW
-                    indexedModule
-                    builtinVerifiers
-                    attributesVerification
+            -- moduleSentencesNEW <-
+            --     SentenceVerifier.verifySentencesNEW
+            --         indexedModule
+            --         builtinVerifiers
+            --         attributesVerification
             moduleSentences <-
                 SentenceVerifier.verifySentences
                     indexedModule
