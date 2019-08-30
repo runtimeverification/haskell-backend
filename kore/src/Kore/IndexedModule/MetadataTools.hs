@@ -139,6 +139,7 @@ extractMetadataTools m smtExtractor =
     checkOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
     checkOverloading head1 head2 = (head1, head2) `Set.member` overloadPairsSet
 
+-- |Checks whether symbol is constructor or overloaded
 isConstructorOrOverloaded
     :: SmtMetadataTools Attribute.Symbol
     -> Symbol
