@@ -15,10 +15,15 @@ module Kore.ASTVerifier.SentenceVerifier
 
 import           Control.Monad
                  ( foldM )
+import           Control.Monad.Reader
+                 ( MonadReader, ReaderT, runReaderT )
+import qualified Control.Monad.Reader as Reader
 import           Data.Function
 import qualified Data.Map as Map
 import           Data.Maybe
                  ( isJust )
+import           Data.Set
+                 ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
@@ -99,6 +104,86 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
 definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
     definedNamesForSentence (SentenceSymbolSentence sentence)
 
+data SentenceContext =
+    forall axiomAttrs.
+    SentenceContext
+        { indexedModule :: !(KoreIndexedModule Attribute.Symbol axiomAttrs)
+        , attributesVerification
+            :: !(AttributesVerification Attribute.Symbol axiomAttrs)
+        -- ^ The indexed Kore module containing all definitions in scope.
+        , builtinVerifiers :: !Builtin.Verifiers
+        }
+
+newtype SentenceVerifier a =
+    SentenceVerifier
+        { getSentenceVerifier
+            :: ReaderT SentenceContext (Either (Error VerifyError)) a
+        }
+    deriving (Applicative, Functor, Monad)
+
+deriving instance MonadReader SentenceContext SentenceVerifier
+
+deriving instance e ~ VerifyError => MonadError (Error e) SentenceVerifier
+
+{- | Look up a sort declaration.
+ -}
+findSort :: Id -> SentenceVerifier (SentenceSort ParsedPattern)
+findSort identifier = do
+    SentenceContext { indexedModule } <- Reader.ask
+    findIndexedSort indexedModule identifier
+
+{- | Look up a sort declaration outside 'SentenceVerifier'.
+
+@askFindSort@ captures the current context so that the function it returns can
+be used in another context.
+
+ -}
+askFindSort
+    :: MonadError (Error e) error
+    => SentenceVerifier (Id -> error (SentenceSort ParsedPattern))
+askFindSort = do
+    SentenceContext { indexedModule } <- Reader.ask
+    return (findIndexedSort indexedModule)
+
+{- | Construct a 'PatternVerifier.Context' in the current 'SentenceContext'.
+ -}
+askPatternContext
+    :: Set SortVariable  -- ^ Declared sort variables
+    -> SentenceVerifier PatternVerifier.Context
+askPatternContext variables = do
+    SentenceContext { indexedModule, builtinVerifiers } <- Reader.ask
+    return PatternVerifier.Context
+        { builtinDomainValueVerifiers =
+            Builtin.domainValueVerifiers builtinVerifiers
+        , indexedModule =
+            indexedModule
+            & IndexedModule.erasePatterns
+            & IndexedModule.eraseAxiomAttributes
+        , declaredSortVariables = variables
+        , declaredVariables = emptyDeclaredVariables
+        }
+
+runSentenceVerifier
+    :: SentenceVerifier a
+    -> KoreIndexedModule Attribute.Symbol axiomAttrs
+    -> AttributesVerification Attribute.Symbol axiomAttrs
+    -> Builtin.Verifiers
+    -> Either (Error VerifyError) a
+runSentenceVerifier
+    sentenceVerifier
+    indexedModule
+    attributesVerification
+    builtinVerifiers
+  =
+    runReaderT (getSentenceVerifier sentenceVerifier) sentenceContext
+  where
+    sentenceContext =
+        SentenceContext
+            { indexedModule
+            , attributesVerification
+            , builtinVerifiers
+            }
+
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
@@ -109,89 +194,59 @@ verifySentences
     -> Builtin.Verifiers
     -> [ParsedSentence]
     -> Either (Error VerifyError) [Verified.Sentence]
-verifySentences indexedModule attributesVerification builtinVerifiers =
-    traverse
-        (verifySentence
-            builtinVerifiers
-            indexedModule
-            attributesVerification
-        )
+verifySentences
+    indexedModule
+    attributesVerification
+    builtinVerifiers
+    sentences
+  =
+    runSentenceVerifier
+        (traverse verifySentence sentences)
+        indexedModule
+        attributesVerification
+        builtinVerifiers
 
-verifySentence
-    :: Builtin.Verifiers
-    -> KoreIndexedModule Attribute.Symbol axiomAtts
-    -> AttributesVerification Attribute.Symbol axiomAtts
-    -> ParsedSentence
-    -> Either (Error VerifyError) Verified.Sentence
-verifySentence builtinVerifiers indexedModule attributesVerification sentence =
+verifySentence :: ParsedSentence -> SentenceVerifier Verified.Sentence
+verifySentence sentence =
     withSentenceContext sentence verifySentenceWorker
   where
-    verifySentenceWorker :: Either (Error VerifyError) Verified.Sentence
+    verifySentenceWorker :: SentenceVerifier Verified.Sentence
     verifySentenceWorker = do
         verified <-
             case sentence of
                 SentenceSymbolSentence symbolSentence ->
-                    (<$>)
-                        SentenceSymbolSentence
-                        (verifySymbolSentence
-                            indexedModule
-                            symbolSentence
-                        )
+                    SentenceSymbolSentence
+                        <$> verifySymbolSentence symbolSentence
                 SentenceAliasSentence aliasSentence ->
-                    (<$>)
-                        SentenceAliasSentence
-                        (verifyAliasSentence
-                            builtinVerifiers
-                            indexedModule
-                            aliasSentence
-                        )
+                    SentenceAliasSentence
+                        <$> verifyAliasSentence aliasSentence
                 SentenceAxiomSentence axiomSentence ->
-                    (<$>)
-                        SentenceAxiomSentence
-                        (verifyAxiomSentence
-                            axiomSentence
-                            builtinVerifiers
-                            indexedModule
-                        )
+                    SentenceAxiomSentence
+                        <$> verifyAxiomSentence axiomSentence
                 SentenceClaimSentence claimSentence ->
-                    (<$>)
-                        (SentenceClaimSentence . SentenceClaim)
-                        (verifyAxiomSentence
-                            (getSentenceClaim claimSentence)
-                            builtinVerifiers
-                            indexedModule
-                        )
+                    (SentenceClaimSentence . SentenceClaim)
+                        <$> verifyAxiomSentence (getSentenceClaim claimSentence)
                 SentenceImportSentence importSentence ->
                     -- Since we have an IndexedModule, we assume that imports
                     -- were already resolved, so there is nothing left to verify
                     -- here.
-                    (<$>)
-                        SentenceImportSentence
-                        (traverse verifyNoPatterns importSentence)
+                    SentenceImportSentence
+                        <$> traverse verifyNoPatterns importSentence
                 SentenceSortSentence sortSentence ->
-                    (<$>)
-                        SentenceSortSentence
-                        (verifySortSentence sortSentence)
+                    SentenceSortSentence
+                        <$> verifySortSentence sortSentence
                 SentenceHookSentence hookSentence ->
-                    (<$>)
-                        SentenceHookSentence
-                        (verifyHookSentence
-                            builtinVerifiers
-                            indexedModule
-                            attributesVerification
-                            hookSentence
-                        )
-        verifySentenceAttributes
-            attributesVerification
-            sentence
+                    SentenceHookSentence
+                        <$> verifyHookSentence hookSentence
+        verifySentenceAttributes sentence
         return verified
 
 verifySentenceAttributes
-    :: AttributesVerification declAtts axiomAtts
-    -> ParsedSentence
-    -> Either (Error VerifyError) VerifySuccess
-verifySentenceAttributes attributesVerification sentence =
+    :: ParsedSentence
+    -> SentenceVerifier VerifySuccess
+verifySentenceAttributes sentence =
     do
+        SentenceContext { attributesVerification } <- Reader.ask
         let attributes = sentenceAttributes sentence
         verifyAttributes attributes attributesVerification
         case sentence of
@@ -200,59 +255,54 @@ verifySentenceAttributes attributesVerification sentence =
         verifySuccess
 
 verifyHookSentence
-    :: Builtin.Verifiers
-    -> KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
-    -> ParsedSentenceHook
-    -> Either (Error VerifyError) Verified.SentenceHook
-verifyHookSentence
-    builtinVerifiers
-    indexedModule
-    attributesVerification
-  =
-    \case
-        SentenceHookedSort s -> SentenceHookedSort <$> verifyHookedSort s
-        SentenceHookedSymbol s -> SentenceHookedSymbol <$> verifyHookedSymbol s
-  where
-    verifyHookedSort
-        sentence@SentenceSort { sentenceSortAttributes }
-      = do
-        verified <- verifySortSentence sentence
-        hook <-
-            verifySortHookAttribute
-                indexedModule
-                attributesVerification
-                sentenceSortAttributes
-        attrs <-
-            Attribute.Parser.liftParser
-            $ Attribute.Parser.parseAttributes sentenceSortAttributes
-        Builtin.sortDeclVerifier
-            builtinVerifiers
-            hook
-            (IndexedModule.eraseAttributes indexedModule)
-            sentence
-            attrs
-        return verified
+    :: ParsedSentenceHook -> SentenceVerifier Verified.SentenceHook
+verifyHookSentence (SentenceHookedSort s) =
+    SentenceHookedSort <$> verifyHookedSort s
+verifyHookSentence (SentenceHookedSymbol s) =
+    SentenceHookedSymbol <$> verifyHookedSymbol s
 
-    verifyHookedSymbol
-        sentence@SentenceSymbol { sentenceSymbolAttributes }
-      = do
-        verified <- verifySymbolSentence indexedModule sentence
-        hook <-
-            verifySymbolHookAttribute
-                attributesVerification
-                sentenceSymbolAttributes
-        Builtin.runSymbolVerifier
-            (Builtin.symbolVerifier builtinVerifiers hook) findSort sentence
-        return verified
+verifyHookedSort :: ParsedSentenceSort -> SentenceVerifier Verified.SentenceSort
+verifyHookedSort sentence@SentenceSort { sentenceSortAttributes } = do
+    verified <- verifySortSentence sentence
+    SentenceContext { attributesVerification, builtinVerifiers } <- Reader.ask
+    hook <-
+        verifySortHookAttribute
+            attributesVerification
+            sentenceSortAttributes
+    attrs <-
+        Attribute.Parser.liftParser
+        $ Attribute.Parser.parseAttributes sentenceSortAttributes
+    SentenceContext { indexedModule } <- Reader.ask
+    Builtin.sortDeclVerifier
+        builtinVerifiers
+        hook
+        (IndexedModule.eraseAttributes indexedModule)
+        sentence
+        attrs
+        & either throwError return
+    return verified
 
-    findSort = findIndexedSort indexedModule
+verifyHookedSymbol
+    :: ParsedSentenceSymbol -> SentenceVerifier Verified.SentenceSymbol
+verifyHookedSymbol sentence@SentenceSymbol { sentenceSymbolAttributes } = do
+    verified <- verifySymbolSentence sentence
+    SentenceContext { attributesVerification, builtinVerifiers } <- Reader.ask
+    hook <-
+        verifySymbolHookAttribute
+            attributesVerification
+            sentenceSymbolAttributes
+    findSort' <- askFindSort
+    Builtin.runSymbolVerifier
+        (Builtin.symbolVerifier builtinVerifiers hook)
+        findSort'
+        sentence
+        & either throwError return
+    return verified
 
 verifySymbolSentence
-    :: KoreIndexedModule declAtts axiomAtts
-    -> ParsedSentenceSymbol
-    -> Either (Error VerifyError) Verified.SentenceSymbol
-verifySymbolSentence indexedModule sentence =
+    :: ParsedSentenceSymbol
+    -> SentenceVerifier Verified.SentenceSymbol
+verifySymbolSentence sentence =
     do
         variables <- buildDeclaredSortVariables sortParams
         mapM_
@@ -265,11 +315,11 @@ verifySymbolSentence indexedModule sentence =
             (sentenceSymbolResultSort sentence)
         traverse verifyNoPatterns sentence
   where
-    findSort = findIndexedSort indexedModule
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
-    verifyConstructorNotInHookedOrDvSort :: Either (Error VerifyError) ()
-    verifyConstructorNotInHookedOrDvSort =
+    verifyConstructorNotInHookedOrDvSort :: SentenceVerifier ()
+    verifyConstructorNotInHookedOrDvSort = do
+        SentenceContext { indexedModule } <- Reader.ask
         let
             symbol = symbolConstructor $ sentenceSymbolSymbol sentence
             attributes = sentenceSymbolAttributes sentence
@@ -286,7 +336,7 @@ verifySymbolSentence indexedModule sentence =
                         $ indexedModuleSortDescriptions indexedModule
                 return
                     (maybeHook sortDescription, hasDomainValues sortDescription)
-        in case sortData of
+        case sortData of
             Nothing -> return ()
             Just (resultSortHook, resultHasDomainValues) -> do
                 koreFailWhen
@@ -310,80 +360,57 @@ hasDomainValues =
     . Attribute.Sort.hasDomainValues
 
 verifyAliasSentence
-    :: Builtin.Verifiers
-    -> KoreIndexedModule Attribute.Symbol axiomAtts
-    -> ParsedSentenceAlias
-    -> Either (Error VerifyError) Verified.SentenceAlias
-verifyAliasSentence builtinVerifiers indexedModule sentence =
-    do
-        variables <- buildDeclaredSortVariables sortParams
-        mapM_ (verifySort findSort variables) sentenceAliasSorts
-        verifySort findSort variables sentenceAliasResultSort
-        let context =
-                PatternVerifier.Context
-                    { builtinDomainValueVerifiers =
-                        Builtin.domainValueVerifiers builtinVerifiers
-                    , indexedModule =
-                        IndexedModule.eraseAxiomAttributes
-                        $ IndexedModule.erasePatterns indexedModule
-                    , declaredSortVariables = variables
-                    , declaredVariables = emptyDeclaredVariables
-                    }
-        runPatternVerifier context $ do
-            (declaredVariables, verifiedLeftPattern) <-
-                verifyAliasLeftPattern leftPattern
-            verifiedRightPattern <-
-                withDeclaredVariables declaredVariables
-                $ verifyPattern (Just expectedSort) rightPattern
-            return sentence
-                { sentenceAliasLeftPattern = verifiedLeftPattern
-                , sentenceAliasRightPattern = verifiedRightPattern
-                }
+    :: ParsedSentenceAlias
+    -> SentenceVerifier Verified.SentenceAlias
+verifyAliasSentence sentence = do
+    variables <- buildDeclaredSortVariables sortParams
+    mapM_ (verifySort findSort variables) sentenceAliasSorts
+    verifySort findSort variables sentenceAliasResultSort
+    context <- askPatternContext variables
+    either throwError return . runPatternVerifier context $ do
+        (declaredVariables, verifiedLeftPattern) <-
+            verifyAliasLeftPattern leftPattern
+        verifiedRightPattern <-
+            withDeclaredVariables declaredVariables
+            $ verifyPattern (Just expectedSort) rightPattern
+        return sentence
+            { sentenceAliasLeftPattern = verifiedLeftPattern
+            , sentenceAliasRightPattern = verifiedRightPattern
+            }
   where
     SentenceAlias { sentenceAliasLeftPattern = leftPattern } = sentence
     SentenceAlias { sentenceAliasRightPattern = rightPattern } = sentence
     SentenceAlias { sentenceAliasSorts } = sentence
     SentenceAlias { sentenceAliasResultSort } = sentence
-    findSort     = findIndexedSort indexedModule
     sortParams   = (aliasParams . sentenceAliasAlias) sentence
     expectedSort = sentenceAliasResultSort
 
 verifyAxiomSentence
     :: ParsedSentenceAxiom
-    -> Builtin.Verifiers
-    -> KoreIndexedModule Attribute.Symbol axiomAtts
-    -> Either (Error VerifyError) Verified.SentenceAxiom
-verifyAxiomSentence axiom builtinVerifiers indexedModule =
-    do
-        variables <- buildDeclaredSortVariables $ sentenceAxiomParameters axiom
-        let context =
-                PatternVerifier.Context
-                    { builtinDomainValueVerifiers =
-                        Builtin.domainValueVerifiers builtinVerifiers
-                    , indexedModule =
-                        indexedModule
-                        & IndexedModule.erasePatterns
-                        & IndexedModule.eraseAxiomAttributes
-                    , declaredSortVariables = variables
-                    , declaredVariables = emptyDeclaredVariables
-                    }
-        verifiedAxiomPattern <- runPatternVerifier context $
-            verifyStandalonePattern Nothing sentenceAxiomPattern
-        return axiom { sentenceAxiomPattern = verifiedAxiomPattern }
+    -> SentenceVerifier Verified.SentenceAxiom
+verifyAxiomSentence axiom = do
+    variables <- buildDeclaredSortVariables $ sentenceAxiomParameters axiom
+    context <- askPatternContext variables
+    verifiedAxiomPattern <-
+        either throwError return
+        . runPatternVerifier context
+        $ verifyStandalonePattern Nothing sentenceAxiomPattern
+    return axiom { sentenceAxiomPattern = verifiedAxiomPattern }
   where
     SentenceAxiom { sentenceAxiomPattern } = axiom
 
 verifySortSentence
     :: ParsedSentenceSort
-    -> Either (Error VerifyError) Verified.SentenceSort
+    -> SentenceVerifier Verified.SentenceSort
 verifySortSentence sentenceSort = do
     _ <- buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
     traverse verifyNoPatterns sentenceSort
 
 buildDeclaredSortVariables
-    :: [SortVariable]
-    -> Either (Error VerifyError) (Set.Set SortVariable)
-buildDeclaredSortVariables [] = Right Set.empty
+    :: MonadError (Error e) error
+    => [SortVariable]
+    -> error (Set.Set SortVariable)
+buildDeclaredSortVariables [] = return Set.empty
 buildDeclaredSortVariables (unifiedVariable : list) = do
     variables <- buildDeclaredSortVariables list
     koreFailWithLocationsWhen
