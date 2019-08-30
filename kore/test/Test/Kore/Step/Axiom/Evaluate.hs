@@ -20,11 +20,13 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate, makeTruePredicate )
+                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
+                 makeNotPredicate, makeOrPredicate, makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Axiom.Evaluate as Kore
 import           Kore.Step.Rule
@@ -55,6 +57,18 @@ test_evaluateAxioms =
     , doesn'tApply "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
         [axiom_ (sigma x x) (g x)]
         (sigma y z)
+    , doesn'tApply
+        -- using SMT
+        "Σ(X, Y) => A requires (X > 0 and not Y > 0) doesn't apply to Σ(Z, Z)"
+        [axiom (sigma x y) a (positive x `andNot` positive y)]
+        (sigma z z)
+    , applies
+        -- using SMT
+        "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
+        [axiom (sigma x y) a (positive x `orNot` positive y)]
+        (sigma a a)
+        -- SMT not used to simplify trivial constraints
+        [a `andRequires` (positive a `orNot` positive a)]
     ]
 
 -- * Test data
@@ -73,6 +87,29 @@ z = mkElemVar Mock.z
 
 a :: TermLike Variable
 a = Mock.a
+
+positive :: TermLike Variable -> Syntax.Predicate Variable
+positive u =
+    makeEqualsPredicate
+        (Mock.lessInt
+            (Mock.fTestInt u)  -- wrap the given term for sort agreement
+            (Mock.builtinInt 0)
+        )
+        (Mock.builtinBool False)
+
+andNot, orNot
+    :: Syntax.Predicate Variable
+    -> Syntax.Predicate Variable
+    -> Syntax.Predicate Variable
+andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
+orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
+
+andRequires
+    :: TermLike Variable
+    -> Syntax.Predicate Variable
+    -> Pattern Variable
+andRequires termLike requires =
+    Pattern.withCondition termLike (Predicate.fromPredicate requires)
 
 -- * Helpers
 
