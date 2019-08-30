@@ -1,10 +1,10 @@
 include include.mk
 
-.PHONY: all clean docs haddock jenkins kore k-frontend \
-        test test-kore test-k
+.PHONY: all clean docs haddock jenkins k-frontend \
+        test test-kore test-k \
+				kore-exec kore-repl
 
-kore:
-	$(STACK) $(STACK_BUILD) $(STACK_BUILD_OPTS)
+kore: kore-exec kore-repl
 
 kore-exec: $(KORE_EXEC)
 

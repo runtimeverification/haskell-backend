@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     , Simplifier
+    , TermSimplifier
     , SimplifierT, runSimplifierT
     , Env (..)
     , runSimplifier
@@ -108,6 +109,9 @@ import           SMT
 This type is used to distinguish between the two in the common code.
 -}
 data SimplificationType = And | Equals
+
+type TermSimplifier variable m =
+    TermLike variable -> TermLike variable -> m (Pattern variable)
 
 class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     => MonadSimplify m
