@@ -17,6 +17,7 @@ module Kore.Internal.Conditional
     , splitTerm
     , toPredicate
     , Kore.Internal.Conditional.mapVariables
+    , isNormalized
     ) where
 
 import           Control.DeepSeq
@@ -357,3 +358,14 @@ mapVariables
 
 splitTerm :: Conditional variable term -> (term, Conditional variable ())
 splitTerm patt@Conditional { term } = (term, withoutTerm patt)
+
+{- | Is the condition normalized?
+
+The 'Substitution' must be normalized and must have been substituted into the
+'Predicate'.
+
+ -}
+isNormalized :: Ord variable => Conditional variable term -> Bool
+isNormalized Conditional { predicate, substitution } =
+    Substitution.isNormalized substitution
+    && Predicate.isFreeOf predicate (Substitution.variables substitution)
