@@ -16,6 +16,8 @@ module Kore.ASTVerifier.SentenceVerifier
 
 import Debug.Trace
 
+import           Control.Applicative
+                 ( (<|>) )
 import           Control.Error.Util
                  ( hush, note )
 import           Control.Monad
@@ -299,14 +301,22 @@ verifySymbolSentenceNEW indexedModule sortIndex sentence =
             (sentenceSymbolResultSort sentence)
         traverse verifyNoPatterns sentence
   where
-    -- findSort :: Id -> Either (Error VerifyError) Verified.SentenceSort
-    -- findSort sortId =
-    --     maybe
-    --         (koreFailWithLocations [sortId] $ noSortText sortId)
-    --         pure
-    --         $ Map.lookup sortId (sorts sortIndex)
+    findSort :: Id -> Either (Error VerifyError) (Either ParsedSentenceSort Verified.SentenceSort)
+    findSort sortId =
+        maybe
+            (koreFailWithLocations [sortId] $ noSortText sortId)
+            pure
+            $ lookupSort sortId (sorts sortIndex) (importedSorts sortIndex)
+    lookupSort :: Id -> (Map Id Verified.SentenceSort) -> (Map Id ParsedSentenceSort) -> Maybe (Either ParsedSentenceSort Verified.SentenceSort)
+    lookupSort sortId verifsorts parsedsorts =
+        case Map.lookup sortId verifsorts of
+            Just x -> Just . Right $ x
+            Nothing ->
+                case Map.lookup sortId parsedsorts of
+                    Just x -> Just . Left $ x
+                    Nothing -> Nothing
 
-    findSort = findIndexedSort indexedModule
+    -- findSort = findIndexedSort indexedModule
     sortParams = (symbolParams . sentenceSymbolSymbol) sentence
 
     verifyConstructorNotInHookedOrDvSort :: Either (Error VerifyError) ()
