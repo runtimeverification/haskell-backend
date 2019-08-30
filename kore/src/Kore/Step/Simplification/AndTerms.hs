@@ -26,7 +26,6 @@ import           Control.Error
 import qualified Control.Error as Error
 import           Control.Exception
                  ( assert )
-import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
@@ -66,6 +65,8 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
+import           Kore.Step.Simplification.NoConfusion
+import           Kore.Step.Simplification.Overloading
 import           Kore.Step.Substitution
                  ( PredicateMerger,
                  createLiftedPredicatesAndSubstitutionsMerger,
@@ -84,9 +85,6 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
 
 data SimplificationTarget = AndT | EqualsT | BothT
-
-type TermSimplifier variable m =
-    TermLike variable -> TermLike variable -> m (Pattern variable)
 
 {- | Simplify an equality relation of two patterns.
 
@@ -683,43 +681,6 @@ functionVariableAndEquals
 functionVariableAndEquals predicate simplificationType first second =
     variableFunctionAndEquals predicate simplificationType second first
 
-{- | Unify two application patterns with equal, injective heads.
-
-This includes constructors and sort injections.
-
-See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
-'Attribute.isConstructor'
-
- -}
-equalInjectiveHeadsAndEquals
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermSimplifier variable unifier
-    -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-equalInjectiveHeadsAndEquals
-    termMerger
-    (App_ firstHead firstChildren)
-    (App_ secondHead secondChildren)
-  | isFirstInjective && isSecondInjective && firstHead == secondHead =
-    Monad.Trans.lift $ do
-        children <- Monad.zipWithM termMerger firstChildren secondChildren
-        let merged = Foldable.foldMap Pattern.withoutTerm children
-            term = mkApplySymbol firstHead (Pattern.term <$> children)
-        return (Pattern.withCondition term merged)
-  where
-    isFirstInjective = Symbol.isInjective firstHead
-    isSecondInjective = Symbol.isInjective secondHead
-
-equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
-
 {- | Simplify the conjunction of two sort injections.
 
 Assumes that the two heads were already tested for equality and were found
@@ -934,152 +895,6 @@ constructorSortInjectionAndEquals
             (Symbol.isConstructor   firstHead && Symbol.isSortInjection secondHead)
             (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
 constructorSortInjectionAndEquals _ _ = empty
-
-{- | Unify an overloaded constructor application pattern with a sort injection
-pattern over an (overloaded) constructor.
-
-See https://github.com/kframework/kore/blob/master/docs/2019-08-27-Unification-modulo-overloaded-constructors.md
-
-If the two constructors form an overload pair, then use the sorting information
-for the two overloaded constructors to directly derive the new goals
-(apply the overload axiom right-to-left on the right and retry)
-otherwise, return bottom, as the constructors are incompatible
-
- -}
-overloadedConstructorSortInjectionAndEquals
-    ::  ( Eq variable
-        , FreshVariable variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermSimplifier variable unifier
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-overloadedConstructorSortInjectionAndEquals
-    termMerger
-    first@(App_ firstHead _)
-    second@(App_ secondHead _)
-   = do
-    tools <- Simplifier.askMetadataTools
-    helper tools
-  where
-    helper tools
-      | MetadataTools.isOverloaded tools firstHead
-      , Symbol.isSortInjection secondHead
-      = overloadedAndEqualsOverloading termMerger tools first second
-      | MetadataTools.isOverloaded tools secondHead
-      , Symbol.isSortInjection firstHead
-      = overloadedAndEqualsOverloading termMerger tools second first
-      | otherwise = empty
-overloadedConstructorSortInjectionAndEquals _ _ _ = empty
-
-overloadedAndEqualsOverloading
-    ::  ( Eq variable
-        , FreshVariable variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermSimplifier variable unifier
-    -> SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-overloadedAndEqualsOverloading
-    termMerger
-    tools
-    first@(App_ firstHead _)
-    second@(App_ sortInjection [App_ secondHead secondChildren])
-  | MetadataTools.isOverloading tools firstHead secondHead
-  = equalInjectiveHeadsAndEquals
-        termMerger
-        first
-        (revertOverloading sortInjection firstHead secondHead secondChildren)
-  | isConstructorOrOverloaded tools secondHead
-  = Monad.Trans.lift $ do
-        explainBottom
-            "Cannot unify overloaded constructor with different injected ctor."
-            first
-            second
-        empty
-overloadedAndEqualsOverloading _ _ _ _ = empty
-
-revertOverloading
-    :: Ord variable
-    => SortedVariable variable
-    => Unparse variable
-    => GHC.HasCallStack
-    => Symbol
-    -> Symbol
-    -> Symbol
-    -> [TermLike variable]
-    -> TermLike variable
-revertOverloading
-    sortInjection
-    overloadedHead
-    overloadingHead
-    overloadingChildren
-  = mkApplySymbol overloadedHead
-    $ zipWith mkApplySymbol
-        (zipWith (Symbol.coerceSortInjection sortInjection)
-            overloadingChildrenSorts
-            overloadedChildrenSorts
-        )
-        (map pure overloadingChildren)
-  where
-    overloadedChildrenSorts =
-        Symbol.applicationSortsOperands (symbolSorts overloadedHead)
-    overloadingChildrenSorts =
-        Symbol.applicationSortsOperands (symbolSorts overloadingHead)
-
-{-| Unify two constructor application patterns.
-
-Assumes that the two patterns were already tested for equality and were found
-to be different; therefore their conjunction is @\\bottom@.
-
- -}
-constructorAndEqualsAssumesDifferentHeads
-    ::  ( Eq variable
-        , SortedVariable variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier a
-constructorAndEqualsAssumesDifferentHeads
-    first@(App_ firstHead _)
-    second@(App_ secondHead _)
-  = do
-    tools <- Simplifier.askMetadataTools
-    helper tools
-  where
-    helper tools
-      | isConstructorOrOverloaded tools firstHead
-      , isConstructorOrOverloaded tools secondHead =
-        assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-            explainBottom
-                "Cannot unify different constructors or incompatible \
-                \sort injections."
-                first
-                second
-            empty
-      | otherwise = empty
-constructorAndEqualsAssumesDifferentHeads _ _ = empty
-
-isConstructorOrOverloaded
-    :: SmtMetadataTools Attribute.Symbol
-    -> Symbol
-    -> Bool
-isConstructorOrOverloaded tools s =
-    Symbol.isConstructor s || MetadataTools.isOverloaded tools s
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.

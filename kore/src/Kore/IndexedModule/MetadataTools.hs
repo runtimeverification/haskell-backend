@@ -12,6 +12,7 @@ module Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
     , SmtMetadataTools
     , extractMetadataTools
+    , isConstructorOrOverloaded
     ) where
 
 import           Data.Function
@@ -29,6 +30,7 @@ import qualified Data.Set as Set
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import           Kore.Attribute.Subsort
+import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.IndexedModule.IndexedModule
 import           Kore.IndexedModule.Resolvers
 import           Kore.Internal.ApplicationSorts
@@ -136,3 +138,10 @@ extractMetadataTools m smtExtractor =
 
     checkOverloading :: SymbolOrAlias -> SymbolOrAlias -> Bool
     checkOverloading head1 head2 = (head1, head2) `Set.member` overloadPairsSet
+
+isConstructorOrOverloaded
+    :: SmtMetadataTools Attribute.Symbol
+    -> Symbol
+    -> Bool
+isConstructorOrOverloaded tools s =
+    Symbol.isConstructor s || isOverloaded tools s
