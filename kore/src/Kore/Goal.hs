@@ -37,6 +37,8 @@ import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
+import qualified Kore.Step.Simplification.OrPattern as OrPattern
+                 ( filterMultiOrWithTermCeil )
 import           Kore.Step.Simplification.Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -327,7 +329,7 @@ instance
         configs <-
             Monad.Trans.lift
             $ simplifyAndRemoveTopExists configuration
-        filteredConfigs <- SMT.Evaluator.filterMultiOr configs
+        filteredConfigs <- OrPattern.filterMultiOrWithTermCeil configs
         if null filteredConfigs
            then pure $ makeRuleFromPatterns Pattern.bottom destination
            else do
