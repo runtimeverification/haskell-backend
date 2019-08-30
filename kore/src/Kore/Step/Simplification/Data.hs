@@ -70,7 +70,6 @@ import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
-import           Data.Maybe
 import           Data.Typeable
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
@@ -716,21 +715,19 @@ hasRemainders NotApplicable = False
  -}
 maybeNotApplicable
     :: Functor m
-    => MaybeT m (AttemptedAxiom variable)
+    => MaybeT m (AttemptedAxiomResults variable)
     ->        m (AttemptedAxiom variable)
 maybeNotApplicable =
-    fmap (fromMaybe NotApplicable) . runMaybeT
+    fmap (maybe NotApplicable Applied) . runMaybeT
 
 {- | Return a 'NotApplicable' result for a failing 'ExceptT' action.
  -}
 exceptNotApplicable
     :: Functor m
-    => ExceptT e m (AttemptedAxiom variable)
+    => ExceptT e m (AttemptedAxiomResults variable)
     ->           m (AttemptedAxiom variable)
 exceptNotApplicable =
-    fmap (either (const notApplicable) id) . runExceptT
-  where
-    notApplicable = NotApplicable
+    fmap (either (const NotApplicable) Applied) . runExceptT
 
 -- |Yields a pure 'Simplifier' which always returns 'NotApplicable'
 notApplicableAxiomEvaluator :: Applicative m => m (AttemptedAxiom variable)
