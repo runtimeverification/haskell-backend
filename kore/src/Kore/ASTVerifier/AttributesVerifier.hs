@@ -25,8 +25,6 @@ import           Kore.ASTVerifier.Error
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
 import           Kore.Syntax.Definition
 import           Kore.Syntax.Pattern
 
@@ -77,11 +75,11 @@ verifyAttributePattern pat =
 
  -}
 verifySortHookAttribute
-    :: KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
+    :: MonadError (Error VerifyError) error
+    => AttributesVerification declAtts axiomAtts
     -> Attributes
-    -> Either (Error VerifyError) Hook
-verifySortHookAttribute _indexedModule =
+    -> error Hook
+verifySortHookAttribute =
     \case
         DoNotVerifyAttributes ->
             \_ -> return emptyHook
@@ -96,9 +94,10 @@ verifySortHookAttribute _indexedModule =
 
  -}
 verifySymbolHookAttribute
-    :: AttributesVerification declAtts axiomAtts
+    :: MonadError (Error VerifyError) error
+    => AttributesVerification declAtts axiomAtts
     -> Attributes
-    -> Either (Error VerifyError) Hook
+    -> error Hook
 verifySymbolHookAttribute =
     \case
         DoNotVerifyAttributes ->
@@ -113,16 +112,17 @@ verifySymbolHookAttribute =
 
  -}
 verifyNoHookAttribute
-    :: AttributesVerification declAtts axiomAtts
+    :: MonadError (Error VerifyError) error
+    => AttributesVerification declAtts axiomAtts
     -> Attributes
-    -> Either (Error VerifyError) ()
+    -> error ()
 verifyNoHookAttribute =
     \case
         DoNotVerifyAttributes ->
             -- Do not verify anything.
             \_ -> return ()
         VerifyAttributes _ _ -> \attributes -> do
-            Hook { getHook } <- castError (parseAttributes attributes)
+            Hook { getHook } <- parseAttributes attributes
             case getHook of
                 Nothing ->
                     -- The hook attribute is (correctly) absent.
