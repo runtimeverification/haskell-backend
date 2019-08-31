@@ -14,8 +14,8 @@ module Kore.Step.Simplification.Predicate
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
-import           Data.List
-                 ( group )
+import qualified Data.Foldable as Foldable
+import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.Conditional as Conditional
@@ -38,8 +38,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
 import           Kore.Variables.Fresh
                  ( FreshVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
@@ -90,8 +88,7 @@ simplify
                     -- simplifiedSubstitution have distinct variables, it is
                     -- enough to check that, say, simplifiedSubstitution's
                     -- variables are not among substitution's variables.
-                    assertDistinctVariables
-                        (substitution <> simplifiedSubstitution)
+                    assertDistinctVariables substitution simplifiedSubstitution
                     mergedPredicate <-
                         mergePredicatesAndSubstitutions
                             [simplifiedPredicate]
@@ -105,24 +102,24 @@ simplify
 
 assertDistinctVariables
     :: forall variable m
-    .   ( Show variable
-        , Ord variable
+    .   ( Ord variable
+        , Unparse variable
         , Monad m
         )
     => Substitution variable
+    -> Substitution variable
     -> m ()
-assertDistinctVariables subst =
-    case filter moreThanOne (group variables) of
-        [] -> return ()
-        (var : _) -> error ("Duplicated variable: " ++ show var)
+assertDistinctVariables subst1 subst2
+  | null intersection = return ()
+  | otherwise =
+    (error . show . Pretty.vsep)
+        [ "Duplicated variables:"
+        , Pretty.indent 4 . Pretty.vsep $ unparse <$> intersection
+        ]
   where
-    moreThanOne :: [UnifiedVariable variable] -> Bool
-    moreThanOne [] = False
-    moreThanOne [_] = False
-    moreThanOne _ = True
-
-    variables :: [UnifiedVariable variable]
-    variables = Substitution.variables subst
+    intersection = Foldable.toList $ Set.intersection vars1 vars2
+    vars1 = Substitution.variables subst1
+    vars2 = Substitution.variables subst2
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.
 

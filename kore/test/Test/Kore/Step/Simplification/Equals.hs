@@ -28,7 +28,7 @@ import           Kore.Predicate.Predicate
                  makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
                  makeTruePredicate )
 import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+                 ( evalSimplifier )
 import           Kore.Step.Simplification.Equals
                  ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
 import qualified Kore.Unification.Substitution as Substitution
@@ -39,7 +39,6 @@ import qualified SMT
 
 import           Test.Kore
 import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 import           Test.Tasty.HUnit.Extensions
 
@@ -211,7 +210,7 @@ test_equalsSimplification_Or_Pattern =
                                 [ definedF
                                 , definedG
                                 , makeImpliesPredicate
-                                    definedGSubstituted
+                                    definedG
                                     (makeEqualsPredicate Mock.cf Mock.cg)
                                 , makeImpliesPredicate
                                     definedH
@@ -253,10 +252,6 @@ test_equalsSimplification_Or_Pattern =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cg)
                         (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
-                definedGSubstituted =
-                    makeAndPredicate
-                        (makeCeilPredicate Mock.cg)
-                        (makeEqualsPredicate Mock.a Mock.a)
                 definedH = makeCeilPredicate Mock.ch
             first =
                 OrPattern.fromPatterns
@@ -916,7 +911,7 @@ evaluateOr equals =
     $ evalSimplifier mockEnv
     $ simplify Predicate.top equals
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
 
 evaluate
     :: Pattern Variable
@@ -927,7 +922,7 @@ evaluate first second =
     $ evalSimplifier mockEnv
     $ makeEvaluate first second Predicate.top
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
 
 evaluateTermsGeneric
     :: TermLike Variable
@@ -938,4 +933,4 @@ evaluateTermsGeneric first second =
     $ evalSimplifier mockEnv
     $ makeEvaluateTermsToPredicate first second Predicate.top
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env

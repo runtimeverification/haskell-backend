@@ -41,6 +41,18 @@ pipeline {
             '''
           }
         }
+        stage('Executables') {
+          steps {
+            sh '''
+              ./scripts/kore-exec.sh
+            '''
+          }
+        }
+      }
+    }
+    stage('Test') {
+      failFast true
+      parallel {
         stage('Unit Tests') {
           steps {
             sh '''
@@ -53,19 +65,7 @@ pipeline {
             }
           }
         }
-        stage('Executables') {
-          steps {
-            sh '''
-              ./scripts/kore-exec.sh
-            '''
-          }
-        }
-      }
-    }
-    stage('Integration') {
-      failFast true
-      parallel {
-        stage('K') {
+        stage('K Integration') {
           options {
             timeout(time: 16, unit: 'MINUTES')
           }
@@ -76,7 +76,7 @@ pipeline {
           }
         }
 
-        stage('KEVM') {
+        stage('KEVM Integration') {
           options {
             timeout(time: 16, unit: 'MINUTES')
           }
