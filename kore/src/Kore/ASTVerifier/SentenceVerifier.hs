@@ -379,7 +379,7 @@ verifyAliasSentence sentence = do
     context <- askPatternContext variables
     either throwError return . runPatternVerifier context $ do
         (declaredVariables, verifiedLeftPattern) <-
-            verifyAliasLeftPattern leftPattern
+            verifyAliasLeftPattern alias sentenceAliasSorts leftPattern
         verifiedRightPattern <-
             withDeclaredVariables declaredVariables
             $ verifyPattern (Just expectedSort) rightPattern
@@ -388,6 +388,7 @@ verifyAliasSentence sentence = do
             , sentenceAliasRightPattern = verifiedRightPattern
             }
   where
+    SentenceAlias { sentenceAliasAlias = alias } = sentence
     SentenceAlias { sentenceAliasLeftPattern = leftPattern } = sentence
     SentenceAlias { sentenceAliasRightPattern = rightPattern } = sentence
     SentenceAlias { sentenceAliasSorts } = sentence
