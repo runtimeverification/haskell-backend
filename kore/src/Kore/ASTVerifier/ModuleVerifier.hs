@@ -140,13 +140,13 @@ verifyModuleByName
             "Circular module import dependency."
     notFound = koreFail "Module not found."
     alreadyIndexed = return
---    notYetIndexed
---        :: StateT
---                (Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
---                ModuleVerifier
---                (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    notYetIndexed
+        :: StateT
+                (Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
+                ModuleVerifier
+                (VerifiedModule Attribute.Symbol Attribute.Axiom)
     notYetIndexed = do
-        ModuleContext
+        context@ModuleContext
             { implicitModule
             , modules
             , importing
@@ -160,49 +160,52 @@ verifyModuleByName
             Module { moduleSentences } = module'
             sentences = List.sort moduleSentences
         indexedModule1 <-
-                Trans.lift . ModuleVerifier . Trans.lift
-                $ runModuleVerifier
-                    implicitModule
-                    modules
-                    importing'
-                    attributesVerification
-                    builtinVerifiers
-                $ flip execStateT indexedModule0 $ do
-                    field @"indexedModuleAttributes" .= (attrs, moduleAttributes)
-                    Foldable.traverse_ indexSentenceImport sentences
-                    Foldable.traverse_ indexSentenceSort sentences
-                    Foldable.traverse_ indexSentenceSymbol sentences
-                    -- TODO: indexSentenceAlias
-                    -- TODO: indexSentenceAxiom
-                    -- TODO: indexSentenceClaim
-                    -- TODO: The corresponding functions in
-                    -- Kore.IndexedModule.IndexedModule can go away.
+            Trans.lift . ModuleVerifier . (ReaderT context) $ flip execStateT indexedModule0 $ do
+                field @"indexedModuleAttributes" .= (attrs, moduleAttributes)
+                Foldable.traverse_
+                    (indexSentenceImport implicitModule modules importing' attributesVerification builtinVerifiers)
+                    sentences
+                Foldable.traverse_
+                    (indexSentenceSort attributesVerification builtinVerifiers)
+                    sentences
+                Foldable.traverse_
+                    (indexSentenceSymbol attributesVerification builtinVerifiers)
+                    sentences
+                -- TODO: indexSentenceAlias
+                -- TODO: indexSentenceAxiom
+                -- TODO: indexSentenceClaim
+                -- TODO: The corresponding functions in
+                -- Kore.IndexedModule.IndexedModule can go away.
         _ <- internalIndexedModuleSubsorts indexedModule1
         State.modify (Map.insert name indexedModule1)
         return indexedModule1
 
 indexSentenceImport
-    :: Sentence ParsedPattern
-    -> StateT (VerifiedModule Attribute.Symbol Attribute.Axiom)
-           (StateT (Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
-                    ModuleVerifier)
-           ()
-indexSentenceImport =
+    ::  Maybe (ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom)
+    ->  Map ModuleName (Module ParsedSentence)
+    ->  Set ModuleName
+    ->  AttributesVerification Attribute.Symbol Attribute.Axiom
+    ->  Builtin.Verifiers
+    ->  Sentence ParsedPattern
+    ->  StateT (VerifiedModule Attribute.Symbol Attribute.Axiom)
+            (StateT (Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
+                (Either (Error VerifyError)))
+            ()
+indexSentenceImport
+    implicitModule
+    modules
+    importing
+    attributesVerification
+    builtinVerifiers
+  =
     \case
         SentenceImportSentence sentence -> worker sentence
         _ -> return ()
   where
     worker sentence = do
-        ModuleContext
-            { implicitModule
-            , modules
-            , importing
-            , attributesVerification
-            , builtinVerifiers
-            } <- Reader.ask
         _ <- parseAttributes' @Attribute.Symbol (sentenceImportAttributes sentence)
         let name = sentenceImportModuleName sentence
-        _ <- Trans.lift $ verifyModuleByName name
+        _ <- Trans.lift $ runModuleVerifier implicitModule modules importing attributesVerification builtinVerifiers $ verifyModuleByName name
         return ()
 
 parseAttributes'
@@ -214,20 +217,18 @@ parseAttributes' =
     Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
 indexSentenceSort
-    ::  Sentence ParsedPattern
+    ::  AttributesVerification Attribute.Symbol Attribute.Axiom
+    ->  Builtin.Verifiers
+    ->  Sentence ParsedPattern
     ->  StateT (VerifiedModule Attribute.Symbol Attribute.Axiom)
             (StateT (Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
-                ModuleVerifier)
+                (Either (Error VerifyError)))
             ()
-indexSentenceSort sentence = do
-    ModuleContext
-        { implicitModule
-        , modules
-        , importing
-        , attributesVerification
-        , builtinVerifiers
-        } <- Reader.ask
-    case sentence of
+indexSentenceSort
+    attributesVerification
+    builtinVerifiers
+  =
+    \case
         SentenceSortSentence sentence ->
             worker False sentence
         SentenceHookSentence (SentenceHookedSort sentence) ->
@@ -252,20 +253,18 @@ indexSentenceSort sentence = do
                 %= Map.alter (Just . maybe [name] (name :)) hook
 
 indexSentenceSymbol
-    ::  Sentence ParsedPattern
+    ::  AttributesVerification Attribute.Symbol Attribute.Axiom
+    ->  Builtin.Verifiers
+    ->  Sentence ParsedPattern
     ->  StateT (VerifiedModule Attribute.Symbol Attribute.Axiom)
             (StateT (Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
-                ModuleVerifier)
+                (Either (Error VerifyError)))
             ()
-indexSentenceSymbol sentence = do
-    ModuleContext
-        { implicitModule
-        , modules
-        , importing
-        , attributesVerification
-        , builtinVerifiers
-        } <- Reader.ask
-    case sentence of
+indexSentenceSymbol
+    attributesVerification
+    builtinVerifiers
+  =
+    \case
         SentenceSymbolSentence sentence ->
             worker False sentence
         SentenceHookSentence (SentenceHookedSymbol sentence) ->
