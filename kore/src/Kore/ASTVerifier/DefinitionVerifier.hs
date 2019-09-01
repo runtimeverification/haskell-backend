@@ -18,6 +18,7 @@ module Kore.ASTVerifier.DefinitionVerifier
 
 import           Control.Monad
                  ( foldM )
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
 import           Data.Maybe
 import           Data.Proxy
@@ -25,17 +26,17 @@ import           Data.Proxy
 import           Data.Text
                  ( Text )
 
-import           Kore.ASTVerifier.AttributesVerifier
+import           Kore.ASTVerifier.AttributesVerifier hiding
+                 ( parseAttributes )
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.ModuleVerifier
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Attribute.Parser
-                 ( ParseAttributes (..) )
+import           Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-import           Kore.Syntax as Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
@@ -59,8 +60,8 @@ e.g.:
 
 -}
 verifyDefinition
-    :: ParseAttributes axiomAtts
-    => AttributesVerification Attribute.Symbol axiomAtts
+    :: ParseAttributes Attribute.Axiom
+    => AttributesVerification Attribute.Symbol Attribute.Axiom
     -> Builtin.Verifiers
     -> ParsedDefinition
     -> Either (Error VerifyError) VerifySuccess
@@ -74,13 +75,13 @@ verifyDefinition attributesVerification builtinVerifiers definition = do
 collection of the definition's modules.
 -}
 verifyAndIndexDefinition
-    :: ParseAttributes axiomAtts
-    => AttributesVerification Attribute.Symbol axiomAtts
+    :: ParseAttributes Attribute.Axiom
+    => AttributesVerification Attribute.Symbol Attribute.Axiom
     -> Builtin.Verifiers
     -> ParsedDefinition
     -> Either
         (Error VerifyError)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol axiomAtts))
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
 verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
@@ -97,17 +98,15 @@ If verification is successfull, it returns the updated maps op indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase
-    :: forall axiomAtts
-    .  ParseAttributes axiomAtts
-    => Maybe
-        ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol axiomAtts)
+    :: Maybe
+        ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
-    -> AttributesVerification Attribute.Symbol axiomAtts
+    -> AttributesVerification Attribute.Symbol Attribute.Axiom
     -> Builtin.Verifiers
     -> ParsedDefinition
     -> Either (Error VerifyError)
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol axiomAtts)
+        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
 verifyAndIndexDefinitionWithBase
@@ -117,64 +116,32 @@ verifyAndIndexDefinitionWithBase
     definition
   = do
     let
-        (baseIndexedModules, baseNames) =
+        (_, baseNames) =
             fromMaybe (implicitModules, implicitNames) maybeBaseDefinition
 
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
     let
-        defaultModule
-            :: ImplicitIndexedModule ParsedPattern Attribute.Symbol axiomAtts
-        defaultModule = ImplicitIndexedModule implicitIndexedModule
-        indexModules
-            :: [ParsedModule]
-            -> Either
-                (Error VerifyError)
-                (Map.Map ModuleName (KoreIndexedModule Attribute.Symbol axiomAtts))
-        indexModules modules =
-            castError $ foldM
-                (indexModuleIfNeeded
-                    (Just defaultModule)
-                    (modulesByName modules)
-                )
-                baseIndexedModules
-                modules
-
-        verifyModule' = verifyModule attributesVerification builtinVerifiers
-        verifyModules = traverse verifyModule'
-
-    -- Index the unverified modules.
-    indexedModules <- indexModules (definitionModules definition)
+        verifiedDefaultModule
+            :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
+        verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
 
     -- Verify the contents of the definition.
-    verifiedModules <- verifyModules (Map.elems indexedModules)
+    (_, index) <-
+        runModuleVerifier
+            (Foldable.traverse_
+                verifyModuleByName
+                (moduleName <$> definitionModules definition)
+            )
+            (Just verifiedDefaultModule)
+            (modulesByName $ definitionModules definition)
+            attributesVerification
+            builtinVerifiers
     verifyAttributes
         (definitionAttributes definition)
         attributesVerification
 
-    let
-        verifiedDefaultModule
-            :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol axiomAtts
-        verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
-        indexVerifiedModules
-            :: [Module Verified.Sentence]
-            -> Either
-                (Error VerifyError)
-                (Map.Map ModuleName (VerifiedModule Attribute.Symbol axiomAtts))
-        indexVerifiedModules modules =
-            castError $ foldM
-                (indexModuleIfNeeded
-                    (Just verifiedDefaultModule)
-                    verifiedModulesByName
-                )
-                implicitModules
-                modules
-          where
-            verifiedModulesByName = modulesByName modules
-
-    -- Re-index the (now verified) modules.
-    reindexedModules <- indexVerifiedModules verifiedModules
-    return (reindexedModules, names)
+    return (index, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
 

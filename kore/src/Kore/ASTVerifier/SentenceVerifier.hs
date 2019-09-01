@@ -11,6 +11,15 @@ module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
     , verifySentences
     , noConstructorWithDomainValuesMessage
+    , SentenceVerifier
+    , runSentenceVerifier
+    , verifySortSentence
+    , verifySymbolSentence
+    , verifyAliasSentence
+    , verifyAxiomSentence
+    , verifyClaimSentence
+    , verifyHookedSort
+    , verifyHookedSymbol
     ) where
 
 import           Control.Monad
@@ -107,7 +116,8 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
 data SentenceContext =
     forall axiomAttrs.
     SentenceContext
-        { indexedModule :: !(KoreIndexedModule Attribute.Symbol axiomAttrs)
+        { indexedModule :: !(VerifiedModule Attribute.Symbol axiomAttrs)
+            -- TODO: Make indexedModule a "state" field.
         , attributesVerification
             :: !(AttributesVerification Attribute.Symbol axiomAttrs)
         -- ^ The indexed Kore module containing all definitions in scope.
@@ -127,7 +137,7 @@ deriving instance e ~ VerifyError => MonadError (Error e) SentenceVerifier
 
 {- | Look up a sort declaration.
  -}
-findSort :: Id -> SentenceVerifier (SentenceSort ParsedPattern)
+findSort :: Id -> SentenceVerifier (SentenceSort Verified.Pattern)
 findSort identifier = do
     SentenceContext { indexedModule } <- Reader.ask
     findIndexedSort indexedModule identifier
@@ -140,7 +150,7 @@ be used in another context.
  -}
 askFindSort
     :: MonadError (Error e) error
-    => SentenceVerifier (Id -> error (SentenceSort ParsedPattern))
+    => SentenceVerifier (Id -> error (SentenceSort Verified.Pattern))
 askFindSort = do
     SentenceContext { indexedModule } <- Reader.ask
     return (findIndexedSort indexedModule)
@@ -165,7 +175,7 @@ askPatternContext variables = do
 
 runSentenceVerifier
     :: SentenceVerifier a
-    -> KoreIndexedModule Attribute.Symbol axiomAttrs
+    -> VerifiedModule Attribute.Symbol axiomAttrs
     -> AttributesVerification Attribute.Symbol axiomAttrs
     -> Builtin.Verifiers
     -> Either (Error VerifyError) a
@@ -187,7 +197,7 @@ runSentenceVerifier
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
-    :: KoreIndexedModule Attribute.Symbol axiomAtts
+    :: VerifiedModule Attribute.Symbol axiomAtts
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
     -> AttributesVerification Attribute.Symbol axiomAtts
@@ -224,8 +234,8 @@ verifySentence sentence =
                     SentenceAxiomSentence
                         <$> verifyAxiomSentence axiomSentence
                 SentenceClaimSentence claimSentence ->
-                    (SentenceClaimSentence . SentenceClaim)
-                        <$> verifyAxiomSentence (getSentenceClaim claimSentence)
+                    SentenceClaimSentence
+                        <$> verifyClaimSentence claimSentence
                 SentenceImportSentence importSentence ->
                     -- Since we have an IndexedModule, we assume that imports
                     -- were already resolved, so there is nothing left to verify
@@ -398,6 +408,12 @@ verifyAxiomSentence axiom = do
     return axiom { sentenceAxiomPattern = verifiedAxiomPattern }
   where
     SentenceAxiom { sentenceAxiomPattern } = axiom
+
+verifyClaimSentence
+    :: SentenceClaim ParsedPattern
+    -> SentenceVerifier Verified.SentenceClaim
+verifyClaimSentence claimSentence =
+    SentenceClaim <$> verifyAxiomSentence (getSentenceClaim claimSentence)
 
 verifySortSentence
     :: ParsedSentenceSort

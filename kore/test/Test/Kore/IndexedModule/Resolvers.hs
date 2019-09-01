@@ -11,7 +11,7 @@ import qualified Data.Map as Map
 import qualified Data.Ord
 
 import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -150,7 +150,7 @@ testDefinition =
             ]
         }
 
-indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null)
+indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
 Right indexedModules =
     verifyAndIndexDefinition
         DoNotVerifyAttributes
@@ -158,7 +158,7 @@ Right indexedModules =
         testDefinition
 
 testIndexedModule, testIndexedObjectModule
-    :: VerifiedModule Attribute.Symbol Attribute.Null
+    :: VerifiedModule Attribute.Symbol Attribute.Axiom
 Just testIndexedModule = Map.lookup testMainModuleName indexedModules
 Just testIndexedObjectModule = Map.lookup testObjectModuleName indexedModules
 

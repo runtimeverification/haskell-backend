@@ -24,6 +24,7 @@ module Kore.IndexedModule.IndexedModule
     , KoreImplicitIndexedModule
     , KoreIndexedModule
     , VerifiedModule
+    , indexedModuleWithDefaultImports
     , eraseAttributes
     , eraseAxiomAttributes
     , erasePatterns
@@ -34,7 +35,10 @@ module Kore.IndexedModule.IndexedModule
     , getIndexedSentence
     , hookedObjectSymbolSentences
     , indexedModuleSubsorts
+    , indexModuleSentence
+    , internalIndexedModuleSubsorts
     , indexedModulesInScope
+    , toModule
     , toVerifiedModule
     , toVerifiedDefinition
     , recursiveIndexedModuleAxioms
@@ -316,6 +320,21 @@ type KoreIndexedModule = IndexedModule ParsedPattern
 
 type VerifiedModule = IndexedModule Verified.Pattern
 
+{- | Convert a 'IndexedModule' back into a 'Module'.
+
+The original module attributes /are/ preserved.
+
+ -}
+toModule
+    :: IndexedModule patternType declAtts axiomAtts
+    -> Module (Sentence patternType)
+toModule module' =
+    Module
+        { moduleName = indexedModuleName module'
+        , moduleSentences = indexedModuleRawSentences module'
+        , moduleAttributes = snd (indexedModuleAttributes module')
+        }
+
 {- | Convert a 'VerifiedModule' back into a 'Module'.
 
 The original module attributes /are/ preserved.
@@ -324,12 +343,7 @@ The original module attributes /are/ preserved.
 toVerifiedModule
     :: VerifiedModule declAtts axiomAtts
     -> Module Verified.Sentence
-toVerifiedModule module' =
-    Module
-        { moduleName = indexedModuleName module'
-        , moduleSentences = indexedModuleRawSentences module'
-        , moduleAttributes = snd (indexedModuleAttributes module')
-        }
+toVerifiedModule = toModule
 
 {- | Convert any collection of 'VerifiedModule's back into a 'Definition'.
 
@@ -449,7 +463,8 @@ indexedModuleWithDefaultImports name defaultImport =
 the module is already in the 'IndexedModule' map.
 -}
 indexModuleIfNeeded
-    ::  ( ParseAttributes declAttrs
+    ::  ( MonadError (Error e) error
+        , ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
         , Ord sentence
         , sentence ~ Sentence patternType
@@ -463,7 +478,7 @@ indexModuleIfNeeded
     -- ^ Map containing all modules that were already indexed.
     -> Module sentence
     -- ^ Module to be indexed
-    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed)
+    -> error (Map.Map ModuleName indexed)
     -- ^ If the module was indexed succesfully, the map returned on 'Right'
     -- contains everything that the provided 'IndexedModule' map contained,
     -- plus the current module, plus all the modules that were indexed when
@@ -474,7 +489,8 @@ indexModuleIfNeeded implicitModule nameToModule indexedModules koreModule =
             implicitModule Set.empty nameToModule indexedModules koreModule
 
 internalIndexModuleIfNeeded
-    ::  ( ParseAttributes declAttrs
+    ::  ( MonadError (Error e) error
+        , ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
         , Ord sentence
         , sentence ~ Sentence patternType
@@ -485,7 +501,7 @@ internalIndexModuleIfNeeded
     -> Map.Map ModuleName (Module sentence)
     -> Map.Map ModuleName indexed
     -> Module sentence
-    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
+    -> error (Map.Map ModuleName indexed, indexed)
 internalIndexModuleIfNeeded
     implicitModule importingModules nameToModule indexedModules koreModule
   =
@@ -532,7 +548,8 @@ internalIndexModuleIfNeeded
     importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
 
 indexModuleSentence
-    ::  ( ParseAttributes declAttrs
+    ::  ( MonadError (Error e) error
+        , ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
         , Ord sentence
         , sentence ~ Sentence patternType
@@ -543,7 +560,7 @@ indexModuleSentence
     -> Map.Map ModuleName (Module sentence)
     -> (Map.Map ModuleName indexed, indexed)
     -> Sentence patternType
-    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
+    -> error (Map.Map ModuleName indexed, indexed)
 indexModuleSentence
     implicitModule
     importingModules
@@ -725,7 +742,8 @@ indexModuleSentence
             )
 
 indexImportedModule
-    ::  ( ParseAttributes declAttrs
+    ::  ( MonadError (Error e) error
+        , ParseAttributes declAttrs
         , ParseAttributes axiomAttrs
         , Ord sentence
         , sentence ~ Sentence patternType
@@ -736,7 +754,7 @@ indexImportedModule
     -> Map.Map ModuleName (Module sentence)
     -> Map.Map ModuleName indexed
     -> ModuleName
-    -> Either (Error IndexModuleError) (Map.Map ModuleName indexed, indexed)
+    -> error (Map.Map ModuleName indexed, indexed)
 indexImportedModule
     implicitModule
     importingModules
@@ -770,9 +788,10 @@ indexImportedModule
 See also: 'parseAttributes'
 -}
 parseAttributes
-    :: ParseAttributes a
+    :: MonadError (Error e) error
+    => ParseAttributes a
     => Attributes
-    -> Either (Error IndexModuleError) a
+    -> error a
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
 {- | Retrieve those object-level symbol sentences that are hooked.
@@ -800,8 +819,9 @@ indexedModuleSubsorts imod =
             ++ show err
 
 internalIndexedModuleSubsorts
-    :: IndexedModule pat declAtts axiomAtts
-    -> Either (Error IndexModuleError) [Subsort]
+    :: MonadError (Error e) error
+    => IndexedModule pat declAtts axiomAtts
+    -> error [Subsort]
 internalIndexedModuleSubsorts imod = do
     let
         attributes =

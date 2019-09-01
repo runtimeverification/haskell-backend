@@ -104,7 +104,7 @@ import           Kore.Error
                  ( Error )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule, VerifiedModule )
+                 ( IndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -144,7 +144,7 @@ type Function = BuiltinAndAxiomSimplifier
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-        KoreIndexedModule Attribute.Null Attribute.Null
+        VerifiedModule Attribute.Null Attribute.Null
     -- ^ Indexed module, to look up symbol declarations
     ->  ParsedSentenceSort
     -- ^ Sort declaration to verify
@@ -320,7 +320,7 @@ Fail if the symbol is not defined or the attribute is missing.
 
  -}
 assertSymbolHook
-    :: KoreIndexedModule declAttrs axiomAttrs
+    :: IndexedModule patternType declAttrs axiomAttrs
     -> Id
     -- ^ Symbol identifier
     -> Text
@@ -350,7 +350,7 @@ Fail if the symbol is not defined.
 
  -}
 assertSymbolResultSort
-    :: KoreIndexedModule declAttrs axiomAttrs
+    :: IndexedModule patternType declAttrs axiomAttrs
     -> Id
     -- ^ Symbol identifier
     -> Sort
