@@ -332,7 +332,7 @@ verifyAlias verifiedModule name =
         sentence <- lookupParsedAlias name
         verifiedModule' <- verifyAliasDependencies verifiedModule sentence
         verified <-
-            Trans.lift . liftSentenceVerifier verifiedModule
+            Trans.lift . liftSentenceVerifier verifiedModule'
             $ SentenceVerifier.verifyAliasSentence sentence
         attrs <- parseAttributes' $ sentenceAliasAttributes verified
         return $ addAlias verified attrs verifiedModule'
