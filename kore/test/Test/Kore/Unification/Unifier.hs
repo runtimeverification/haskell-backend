@@ -21,7 +21,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
@@ -244,7 +243,7 @@ unificationProcedureSuccessWithSimplifiers
             runSMT
             $ evalSimplifier mockEnv
             $ Monad.Unify.runUnifierT
-            $ unificationProcedure Predicate.top term1 term2
+            $ unificationProcedure term1 term2
         let
             normalize
                 :: Predicate Variable

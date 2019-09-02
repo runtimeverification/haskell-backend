@@ -93,7 +93,7 @@ equalityRuleEvaluator
     notApplicable = return AttemptedAxiom.NotApplicable
 
     unificationProcedure :: UnificationProcedure
-    unificationProcedure = UnificationProcedure (const matchIncremental)
+    unificationProcedure = UnificationProcedure matchIncremental
 
     applyRule
         :: TermLike variable

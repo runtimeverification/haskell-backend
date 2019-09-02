@@ -459,7 +459,7 @@ runUnifier first second = do
     mvar <- asks logger
     liftSimplifierWithLogger mvar
         . runUnifierWithExplanation
-        $ unifier IPredicate.top first second
+        $ unifier first second
 
 getNodeState :: InnerGraph axiom -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =

@@ -52,11 +52,10 @@ unificationProcedure
         , FreshVariable variable
         , MonadUnify unifier
         )
-    => Predicate variable
-    -> TermLike variable
+    => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-unificationProcedure predicate p1 p2
+unificationProcedure p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom
         "Cannot unify different sorts."
@@ -78,7 +77,7 @@ unificationProcedure predicate p1 p2
     if Conditional.isBottom pat
         then empty
         else do
-            orCeil <- Ceil.makeEvaluateTerm predicate term
+            orCeil <- Ceil.makeEvaluateTerm (Conditional.withoutTerm pat) term
             orResult <-
                 BranchT.alternate $ OrPattern.mergeWithPredicateAssumesEvaluated
                     createPredicatesAndSubstitutionsMerger

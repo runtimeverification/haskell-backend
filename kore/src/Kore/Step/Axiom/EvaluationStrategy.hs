@@ -387,7 +387,7 @@ evaluateWithDefinitionAxioms
         Monad.Unify.maybeUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
-    ignoreUnificationErrors unification _predicate pattern1 pattern2 =
+    ignoreUnificationErrors unification pattern1 pattern2 =
         Monad.Unify.runUnifierT (unification pattern1 pattern2)
         >>= either (couldNotMatch pattern1 pattern2) Monad.Unify.scatter
 
