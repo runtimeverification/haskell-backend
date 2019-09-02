@@ -201,6 +201,7 @@ verifyModuleByName name =
             >>= verifySymbols        sentences
             >>= verifyHookedSorts    sentences
             >>= verifyHookedSymbols  sentences
+            >>= verifyNonHooks       sentences
             >>= verifyAliases        sentences
             >>= verifyAxioms         sentences
             >>= verifyClaims         sentences
@@ -535,6 +536,25 @@ verifyClaim verifiedModule sentence =
         Lens.over
             (field @"indexedModuleClaims")
             ((attrs, verified) :)
+
+verifyNonHooks
+    :: [ParsedSentence]
+    -> VerifiedModule'
+    -> ModuleVerifier VerifiedModule'
+verifyNonHooks sentences verifiedModule = do
+    Foldable.traverse_ verifyNonHook nonHookSentences
+    return verifiedModule
+  where
+    nonHookSentences = mapMaybe project sentences
+    project (SentenceHookSentence _) = Nothing
+    project sentence = Just sentence
+
+verifyNonHook :: ParsedSentence -> ModuleVerifier ()
+verifyNonHook sentence =
+    withSentenceContext sentence $ do
+        ModuleContext { attributesVerification } <- Reader.ask
+        verifyNoHookAttribute attributesVerification
+            $ sentenceAttributes sentence
 
 liftSentenceVerifier
     :: VerifiedModule'
