@@ -73,6 +73,7 @@ import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -287,11 +288,12 @@ applyInitialConditions initial unification = do
         Monad.liftM MultiOr.make
         $ Monad.Unify.gather
         $ Substitution.normalizeExcept (initial <> unification)
+    evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'applied' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
-    TopBottom.guardAgainstBottom applied
-    return applied
+    TopBottom.guardAgainstBottom evaluated
+    return evaluated
 
 {- | Produce the final configurations of an applied rule.
 

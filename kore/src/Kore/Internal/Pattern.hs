@@ -23,6 +23,7 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeElementVariables
     -- * Re-exports
     , Conditional (..)
+    , Conditional.andCondition
     , Conditional.withCondition
     , Conditional.withoutTerm
     , Predicate
