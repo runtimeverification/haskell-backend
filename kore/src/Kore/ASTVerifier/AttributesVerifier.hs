@@ -83,8 +83,11 @@ verifySortHookAttribute =
     \case
         DoNotVerifyAttributes ->
             \_ -> return emptyHook
-        VerifyAttributes _ _ ->
-            parseAttributes
+        VerifyAttributes _ _ -> \attrs -> do
+            hook <- parseAttributes attrs
+            case getHook hook of
+                Just _  -> return hook
+                Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -103,8 +106,11 @@ verifySymbolHookAttribute =
         DoNotVerifyAttributes ->
             -- Do not attempt to parse, verify, or return the hook attribute.
             \_ -> return emptyHook
-        VerifyAttributes _ _ ->
-            parseAttributes
+        VerifyAttributes _ _ -> \attrs -> do
+            hook <- parseAttributes attrs
+            case getHook hook of
+                Just _  -> return hook
+                Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is not present.
 
