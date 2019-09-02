@@ -266,9 +266,7 @@ verifySort verifiedModule sentence =
     addSort verified attrs =
         Lens.over
             (field @"indexedModuleSortDescriptions")
-            (Map.insert name (attrs, verified))
-      where
-        name = sentenceSortName verified
+            (Map.insert (sentenceSortName verified) (attrs, verified))
 
 verifyAliases
     :: [ParsedSentence]
