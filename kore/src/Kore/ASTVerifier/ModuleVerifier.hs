@@ -318,12 +318,12 @@ verifyAlias
     -> Id
     -> AliasVerifierT ModuleVerifier VerifiedModule'
 verifyAlias verifiedModule name =
-    withContext aliasContext $ do
+    withLocationAndContext name aliasContext $ do
         checkAliasCycle
         lookupVerifiedAlias name verifiedModule
             >>= maybe notYetVerified alreadyVerified
   where
-    aliasContext = "alias '" ++ getIdForError name ++ "' declaration"
+    aliasContext = "alias '" <> getId name <> "' declaration"
     alreadyVerified _ = return verifiedModule
     checkAliasCycle = do
         isCycle <- Reader.asks (Set.member name . verifying)
