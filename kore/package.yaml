@@ -60,6 +60,7 @@ dependencies:
   - profunctors
   - recursion-schemes
   - reflection
+  - semialign
   - template-haskell
   - text
   - these
