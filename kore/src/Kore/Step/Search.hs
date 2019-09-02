@@ -35,7 +35,7 @@ import           Kore.Internal.Pattern
                  ( Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Conditional
 import qualified Kore.Internal.Predicate as Predicate
-                 ( bottom, fromSubstitution)
+                 ( bottom, fromSubstitution )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
 import           Kore.Step.Simplification.Data
