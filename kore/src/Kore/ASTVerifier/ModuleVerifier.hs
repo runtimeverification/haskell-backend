@@ -76,7 +76,7 @@ data ModuleContext =
     ModuleContext
         { implicitModule         :: !(Maybe ImplicitModule)
         , modules                :: !(Map ModuleName (Module ParsedSentence))
-        , importing              :: !(Set ModuleName)
+        , importing              :: ![ModuleName]
         , attributesVerification :: !AttributesVerification'
         , builtinVerifiers       :: !Builtin.Verifiers
         }
@@ -130,7 +130,7 @@ runModuleVerifier
         ModuleContext
             { implicitModule
             , modules
-            , importing = Set.empty
+            , importing = []
             , attributesVerification
             , builtinVerifiers
             }
@@ -142,11 +142,27 @@ lookupParsedModule :: ModuleName -> ModuleVerifier (Module ParsedSentence)
 lookupParsedModule name =
     Reader.asks (Map.lookup name . modules) >>= maybe notFound return
   where
-    notFound = koreFail "Module not found."
+    notFound =
+        koreFail ("Module '" ++ getModuleNameForError name ++ "' not found.")
 
 whileImporting :: ModuleName -> ModuleVerifier a -> ModuleVerifier a
-whileImporting name =
-    Reader.local $ Lens.over (field @"importing") (Set.insert name)
+whileImporting name locally = do
+    ModuleContext { importing } <- Reader.ask
+    let failCycle =
+            koreFailWhen
+                (elem name importing)
+                "Circular module import dependency."
+        importing' = name : importing
+    foldr withModuleContext failCycle (reverse importing')
+    Reader.local (Lens.set (field @"importing") importing') locally
+
+withModuleContext
+    :: MonadError (Error e) error
+    => ModuleName
+    -> error a
+    -> error a
+withModuleContext moduleName =
+    withContext ("module '" ++ getModuleNameForError moduleName ++ "'")
 
 newIndexedModule :: Module ParsedSentence -> ModuleVerifier VerifiedModule'
 newIndexedModule module' = do
@@ -178,14 +194,8 @@ verifyUniqueNames existingNames koreModule =
 
 verifyModuleByName :: ModuleName -> ModuleVerifier VerifiedModule'
 verifyModuleByName name =
-    withContext moduleContext $ do
-        checkImportCycle
-        lookupVerifiedModule name >>= maybe notYetIndexed alreadyIndexed
+    lookupVerifiedModule name >>= maybe notYetIndexed alreadyIndexed
   where
-    moduleContext = "module '" ++ getModuleNameForError name ++ "'"
-    checkImportCycle = do
-        isCycle <- Reader.asks (Set.member name . importing)
-        koreFailWhen isCycle "Circular module import dependency."
     alreadyIndexed = return
     notYetIndexed = whileImporting name $ do
         module' <- lookupParsedModule name
@@ -193,19 +203,21 @@ verifyModuleByName name =
             sentences = List.sort moduleSentences
         indexedModule <-
             -- TODO: Refactor this in a type-safe way.
-                newIndexedModule module'
+                withModuleContext name (newIndexedModule module')
             -- TODO: The corresponding functions in
             -- Kore.IndexedModule.IndexedModule can go away.
             >>= verifyImports        sentences
-            >>= verifySorts          sentences
-            >>= verifySymbols        sentences
-            >>= verifyHookedSorts    sentences
-            >>= verifyHookedSymbols  sentences
-            >>= verifyNonHooks       sentences
-            >>= verifyAliases        sentences
-            >>= verifyAxioms         sentences
-            >>= verifyClaims         sentences
-        _ <- internalIndexedModuleSubsorts indexedModule
+            >>= withModuleContext name . verifySorts          sentences
+            >>= withModuleContext name . verifySymbols        sentences
+            >>= withModuleContext name . verifyHookedSorts    sentences
+            >>= withModuleContext name . verifyHookedSymbols  sentences
+            >>= withModuleContext name . verifyNonHooks       sentences
+            >>= withModuleContext name . verifyAliases        sentences
+            >>= withModuleContext name . verifyAxioms         sentences
+            >>= withModuleContext name . verifyClaims         sentences
+        _ <-
+            withModuleContext name
+            $ internalIndexedModuleSubsorts indexedModule
         field @"verifiedModules" %= Map.insert name indexedModule
         return indexedModule
 
