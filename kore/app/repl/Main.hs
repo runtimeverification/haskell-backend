@@ -174,6 +174,7 @@ mainWithOptions
         indexedDefinition@(indexedModules, _) <-
             verifyDefinitionWithBase
               Nothing
+              Nothing
               True
               parsedDefinition
         indexedModule <-
@@ -187,6 +188,7 @@ mainWithOptions
                     indexedDefinition
         (specDefIndexedModules, _) <-
             verifyDefinitionWithBase
+              (Just indexedDefinition)
               (Just unverifiedDefinition)
               True
               specDef
