@@ -330,8 +330,7 @@ Also prints timing information; see 'mainParse'.
 
  -}
 verifyDefinitionWithBase
-    :: Maybe
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    ::  ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
@@ -345,7 +344,7 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase
-    maybeAlreadyVerified
+    alreadyVerified
     willChkAttr
     definition
   =
@@ -357,7 +356,7 @@ verifyDefinitionWithBase
       verifyResult <-
         clockSomething "Verifying the definition"
             (verifyAndIndexDefinitionWithBase
-                maybeAlreadyVerified
+                alreadyVerified
                 attributesVerification
                 Builtin.koreVerifiers
                 definition

@@ -22,7 +22,6 @@ import qualified Data.Foldable as Foldable
 import           Data.Map
                  ( Map )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
@@ -88,7 +87,7 @@ verifyAndIndexDefinition
 verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
-            Nothing
+            mempty
             attributesVerification
             builtinVerifiers
             definition
@@ -101,22 +100,21 @@ If verification is successfull, it returns the updated maps op indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase
-    ::  Maybe (Map ModuleName VerifiedModule', Map Text AstLocation)
+    ::  (Map ModuleName VerifiedModule', Map Text AstLocation)
     ->  AttributesVerification Attribute.Symbol Attribute.Axiom
     ->  Builtin.Verifiers
     ->  ParsedDefinition
     ->  Either (Error VerifyError)
             (Map ModuleName VerifiedModule', Map Text AstLocation)
 verifyAndIndexDefinitionWithBase
-    maybeAlreadyVerified
+    alreadyVerified
     attributesVerification
     builtinVerifiers
     definition
   = do
     let
-        (_, baseNames) =
-            fromMaybe (implicitModules, implicitNames) maybeAlreadyVerified
-        verifiedModulesCache = maybe Map.empty fst maybeAlreadyVerified
+        (verifiedModulesCache, baseNames) =
+            (implicitModules, implicitNames) <> alreadyVerified
 
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
