@@ -30,12 +30,10 @@ module Kore.IndexedModule.IndexedModule
     , erasePatterns
     , mapPatterns
     , indexedModuleRawSentences
-    , indexModuleIfNeeded
     , SortDescription
     , getIndexedSentence
     , hookedObjectSymbolSentences
     , indexedModuleSubsorts
-    , indexModuleSentence
     , internalIndexedModuleSubsorts
     , indexedModulesInScope
     , toModule
@@ -56,8 +54,6 @@ import           Control.DeepSeq
                  ( NFData (..) )
 import qualified Control.Lens as Lens hiding
                  ( makeLenses )
-import           Control.Monad
-                 ( foldM )
 import           Control.Monad.Extra
                  ( unlessM )
 import           Control.Monad.State.Strict
@@ -66,7 +62,6 @@ import qualified Control.Monad.State.Strict as Monad.State
 import           Data.Default as Default
 import qualified Data.Foldable as Foldable
 import           Data.Function
-import qualified Data.List as List
 import           Data.Map.Strict
                  ( Map )
 import qualified Data.Map.Strict as Map
@@ -78,11 +73,7 @@ import           Data.Text
 import           GHC.Generics
                  ( Generic )
 
-import           Kore.AST.Error
-import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Attribute.Parser
-                 ( ParseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
                  ( Sort )
@@ -457,342 +448,6 @@ indexedModuleWithDefaultImports name defaultImport =
                 Nothing ->
                     []
         }
-
-
-{-|'indexModuleIfNeeded' transforms a 'Module' into an 'IndexedModule', unless
-the module is already in the 'IndexedModule' map.
--}
-indexModuleIfNeeded
-    ::  ( MonadError (Error e) error
-        , ParseAttributes declAttrs
-        , ParseAttributes axiomAttrs
-        , Ord sentence
-        , sentence ~ Sentence patternType
-        , indexed ~ IndexedModule patternType declAttrs axiomAttrs
-        )
-    => Maybe (ImplicitIndexedModule patternType declAttrs axiomAttrs)
-    -- ^ Module containing the implicit Kore definitions
-    -> Map.Map ModuleName (Module sentence)
-    -- ^ Map containing all defined modules, used for resolving imports.
-    -> Map.Map ModuleName indexed
-    -- ^ Map containing all modules that were already indexed.
-    -> Module sentence
-    -- ^ Module to be indexed
-    -> error (Map.Map ModuleName indexed)
-    -- ^ If the module was indexed succesfully, the map returned on 'Right'
-    -- contains everything that the provided 'IndexedModule' map contained,
-    -- plus the current module, plus all the modules that were indexed when
-    -- resolving imports.
-indexModuleIfNeeded implicitModule nameToModule indexedModules koreModule =
-    fst <$>
-        internalIndexModuleIfNeeded
-            implicitModule Set.empty nameToModule indexedModules koreModule
-
-internalIndexModuleIfNeeded
-    ::  ( MonadError (Error e) error
-        , ParseAttributes declAttrs
-        , ParseAttributes axiomAttrs
-        , Ord sentence
-        , sentence ~ Sentence patternType
-        , indexed ~ IndexedModule patternType declAttrs axiomAttrs
-        )
-    => Maybe (ImplicitIndexedModule patternType declAttrs axiomAttrs)
-    -> Set.Set ModuleName
-    -> Map.Map ModuleName (Module sentence)
-    -> Map.Map ModuleName indexed
-    -> Module sentence
-    -> error (Map.Map ModuleName indexed, indexed)
-internalIndexModuleIfNeeded
-    implicitModule importingModules nameToModule indexedModules koreModule
-  =
-    withContext
-        ("module '" ++ getModuleNameForError koreModuleName ++ "'")
-        (do
-            koreFailWhen
-                (koreModuleName `Set.member` importingModules)
-                "Circular module import dependency."
-            case Map.lookup koreModuleName indexedModules of
-                Just indexedModule -> return (indexedModules, indexedModule)
-                Nothing -> do
-                    parsedModuleAtts <- parseAttributes moduleAtts
-                    let
-                        indexedModulesAndStartingIndexedModule =
-                            ( indexedModules
-                            , (indexedModuleWithDefaultImports
-                                    (moduleName koreModule) implicitModule)
-                                { indexedModuleAttributes =
-                                    (parsedModuleAtts, moduleAtts)
-                                }
-                            )
-                    (newIndex, newModule) <-
-                        foldM
-                            (indexModuleSentence
-                                implicitModule
-                                importingModulesWithCurrentOne
-                                nameToModule
-                            )
-                            indexedModulesAndStartingIndexedModule
-                            (List.sort $ moduleSentences koreModule)
-                    -- Parse subsorts to fail now if subsort attributes are
-                    -- malformed, so indexedModuleSubsorts can appear total
-                    -- TODO: consider making subsorts an IndexedModule field
-                    _ <- internalIndexedModuleSubsorts newModule
-                    return
-                        ( Map.insert koreModuleName newModule newIndex
-                        , newModule
-                        )
-        )
-  where
-    moduleAtts = moduleAttributes koreModule
-    koreModuleName = moduleName koreModule
-    importingModulesWithCurrentOne = Set.insert koreModuleName importingModules
-
-indexModuleSentence
-    ::  ( MonadError (Error e) error
-        , ParseAttributes declAttrs
-        , ParseAttributes axiomAttrs
-        , Ord sentence
-        , sentence ~ Sentence patternType
-        , indexed ~ IndexedModule patternType declAttrs axiomAttrs
-        )
-    => Maybe (ImplicitIndexedModule patternType declAttrs axiomAttrs)
-    -> Set.Set ModuleName
-    -> Map.Map ModuleName (Module sentence)
-    -> (Map.Map ModuleName indexed, indexed)
-    -> Sentence patternType
-    -> error (Map.Map ModuleName indexed, indexed)
-indexModuleSentence
-    implicitModule
-    importingModules
-    nameToModule
-    ( indexedModules
-    , indexedModule@IndexedModule
-        { indexedModuleAliasSentences
-        , indexedModuleSymbolSentences
-        , indexedModuleAxioms
-        , indexedModuleClaims
-        , indexedModuleImports
-        , indexedModuleSortDescriptions
-        , indexedModuleHookedIdentifiers
-        , indexedModuleHooks
-        }
-    )
-    sentence
-  =
-    withSentenceContext sentence indexModuleMetaSentence0
-  where
-    indexModuleMetaSentence0 =
-        case sentence of
-            SentenceAliasSentence s  -> indexSentenceAlias s
-            SentenceSymbolSentence s -> indexSentenceSymbol s
-            SentenceAxiomSentence s  -> indexSentenceAxiom s
-            SentenceClaimSentence s  -> indexSentenceClaim s
-            SentenceImportSentence s -> indexSentenceImport s
-            SentenceSortSentence s   -> indexSentenceSort s
-            SentenceHookSentence s   -> indexSentenceHook s
-
-    indexSentenceAlias
-        _sentence@SentenceAlias
-            { sentenceAliasAlias = Alias { aliasConstructor }
-            , sentenceAliasAttributes
-            }
-      = do
-        atts <- parseAttributes sentenceAliasAttributes
-        return
-            ( indexedModules
-            , indexedModule
-                { indexedModuleAliasSentences =
-                    Map.insert aliasConstructor (atts, _sentence)
-                        indexedModuleAliasSentences
-                }
-            )
-
-    indexSentenceSymbol
-        _sentence@SentenceSymbol
-            { sentenceSymbolSymbol = Symbol { symbolConstructor }
-            , sentenceSymbolAttributes
-            }
-      = do
-        atts <- parseAttributes sentenceSymbolAttributes
-        return
-            ( indexedModules
-            , indexedModule
-                { indexedModuleSymbolSentences =
-                    Map.insert
-                        symbolConstructor
-                        (atts, _sentence)
-                        indexedModuleSymbolSentences
-                }
-            )
-
-    indexSentenceAxiom
-        _sentence@SentenceAxiom { sentenceAxiomAttributes }
-      = do
-        atts <- parseAttributes sentenceAxiomAttributes
-        return
-            ( indexedModules
-            , indexedModule
-                { indexedModuleAxioms =
-                    (atts, _sentence) : indexedModuleAxioms
-                }
-            )
-
-    indexSentenceClaim
-        _sentence@(SentenceClaim SentenceAxiom { sentenceAxiomAttributes })
-      = do
-        atts <- parseAttributes sentenceAxiomAttributes
-        return
-            ( indexedModules
-            , indexedModule
-                { indexedModuleClaims =
-                    (atts, _sentence) : indexedModuleClaims
-                }
-            )
-
-    indexSentenceImport
-        SentenceImport
-            { sentenceImportModuleName = importedModuleName
-            , sentenceImportAttributes = attributes
-            }
-      = do
-        (newIndexedModules, importedModule) <-
-            indexImportedModule
-                implicitModule
-                importingModules
-                nameToModule
-                indexedModules
-                importedModuleName
-        atts <- parseAttributes attributes
-        return
-            ( newIndexedModules
-            , indexedModule
-                { indexedModuleImports =
-                    (:) (atts, attributes, importedModule)
-                        indexedModuleImports
-                }
-            )
-
-    indexSentenceSort
-        _sentence@SentenceSort
-            { sentenceSortAttributes
-            , sentenceSortName
-            }
-      = do
-        atts <- parseAttributes sentenceSortAttributes
-        return
-            ( indexedModules
-            , indexedModule
-                { indexedModuleSortDescriptions =
-                    Map.insert sentenceSortName (atts, _sentence)
-                        indexedModuleSortDescriptions
-                }
-            )
-
-    indexSentenceHook
-        (SentenceHookedSort _sentence@SentenceSort
-            { sentenceSortName
-            , sentenceSortAttributes
-            }
-        )
-      = do
-        (indexedModules', indexedModule') <-
-            indexModuleSentence
-                implicitModule
-                importingModules
-                nameToModule
-                (indexedModules, indexedModule)
-                (SentenceSortSentence _sentence)
-        hook <- getHookAttribute sentenceSortAttributes
-        return
-            ( indexedModules'
-            , indexedModule'
-                { indexedModuleHookedIdentifiers =
-                    Set.insert sentenceSortName indexedModuleHookedIdentifiers
-                , indexedModuleHooks =
-                    Map.alter
-                        (Just . maybe [sentenceSortName] (sentenceSortName :))
-                        hook
-                        indexedModuleHooks
-                }
-            )
-
-    indexSentenceHook
-        (SentenceHookedSymbol _sentence@SentenceSymbol
-            { sentenceSymbolAttributes
-            , sentenceSymbolSymbol = Symbol { symbolConstructor }
-            }
-        )
-      = do
-        atts <- parseAttributes sentenceSymbolAttributes
-        hook <- getHookAttribute sentenceSymbolAttributes
-        return
-            ( indexedModules
-            , indexedModule
-                { indexedModuleSymbolSentences =
-                    Map.insert symbolConstructor (atts, _sentence)
-                        indexedModuleSymbolSentences
-                , indexedModuleHookedIdentifiers =
-                    Set.insert symbolConstructor indexedModuleHookedIdentifiers
-                , indexedModuleHooks =
-                    Map.alter
-                        (Just . maybe [symbolConstructor] (symbolConstructor :))
-                        hook
-                        indexedModuleHooks
-                }
-            )
-
-indexImportedModule
-    ::  ( MonadError (Error e) error
-        , ParseAttributes declAttrs
-        , ParseAttributes axiomAttrs
-        , Ord sentence
-        , sentence ~ Sentence patternType
-        , indexed ~ IndexedModule patternType declAttrs axiomAttrs
-        )
-    => Maybe (ImplicitIndexedModule patternType declAttrs axiomAttrs)
-    -> Set.Set ModuleName
-    -> Map.Map ModuleName (Module sentence)
-    -> Map.Map ModuleName indexed
-    -> ModuleName
-    -> error (Map.Map ModuleName indexed, indexed)
-indexImportedModule
-    implicitModule
-    importingModules
-    nameToModule
-    indexedModules
-    importedModuleName
-  =
-    case Map.lookup importedModuleName indexedModules of
-        Just indexedModule -> return (indexedModules, indexedModule)
-        Nothing -> do
-            koreModule <-
-                case Map.lookup importedModuleName nameToModule of
-                    Nothing ->
-                        koreFail
-                            (  "Module '"
-                            ++ getModuleNameForError importedModuleName
-                            ++ "' imported but not found."
-                            )
-                    Just m -> return m
-            internalIndexModuleIfNeeded
-                implicitModule
-                importingModules
-                nameToModule
-                indexedModules
-                koreModule
-
-{- | Parse attributes in the context of indexing a module.
-
-'AttributeParserError's are cast to 'IndexModuleError'.
-
-See also: 'parseAttributes'
--}
-parseAttributes
-    :: MonadError (Error e) error
-    => ParseAttributes a
-    => Attributes
-    -> error a
-parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 
 {- | Retrieve those object-level symbol sentences that are hooked.
 
