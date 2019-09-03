@@ -20,7 +20,7 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Conditional
 import           Kore.Internal.Predicate as Predicate
-                 ( Predicate, topTODO )
+                 ( Predicate )
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import qualified Kore.Step.Merging.OrPattern as OrPattern
@@ -55,7 +55,7 @@ unificationProcedure
     => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
-unificationProcedure  p1 p2
+unificationProcedure p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom
         "Cannot unify different sorts."
@@ -77,7 +77,7 @@ unificationProcedure  p1 p2
     if Conditional.isBottom pat
         then empty
         else do
-            orCeil <- Ceil.makeEvaluateTerm Predicate.topTODO term
+            orCeil <- Ceil.makeEvaluateTerm (Conditional.withoutTerm pat) term
             orResult <-
                 BranchT.alternate $ OrPattern.mergeWithPredicateAssumesEvaluated
                     createPredicatesAndSubstitutionsMerger

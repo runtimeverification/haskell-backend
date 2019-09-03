@@ -229,7 +229,7 @@ unifyRule
     let
         RulePattern { left = ruleLeft } = rule'
     unification <- unifyPatterns ruleLeft initialTerm
-    -- Combine the unification solution with the rule's requirement clause.
+    -- Combine the unification solution with the rule's requirement clause,
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Predicate.fromPredicate ruleRequires
