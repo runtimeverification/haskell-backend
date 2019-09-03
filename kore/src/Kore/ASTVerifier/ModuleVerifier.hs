@@ -18,28 +18,20 @@ import           Control.Lens
                  ( (%=) )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import           Control.Monad.Reader
-                 ( ReaderT, runReaderT )
-import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.Reader.Class as Reader
 import qualified Control.Monad.State.Class as State
-import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import           Data.Function
-import qualified Data.Functor.Foldable as Recursive
 import           Data.Generics.Product
 import qualified Data.List as List
-import           Data.Map
-                 ( Map )
 import qualified Data.Map as Map
 import           Data.Maybe
-import           Data.Set
-                 ( Set )
 import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
-import qualified GHC.Generics as GHC
 
 import           Kore.AST.Error
+import           Kore.ASTVerifier.AliasVerifier
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SentenceVerifier
@@ -59,7 +51,6 @@ import           Kore.IndexedModule.Resolvers
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
-import qualified Kore.Verified as Verified
 
 newIndexedModule :: Module ParsedSentence -> Verifier VerifiedModule'
 newIndexedModule module' = do
@@ -174,101 +165,6 @@ verifySort sentence =
         Lens.over
             (field @"indexedModuleSortDescriptions")
             (Map.insert (sentenceSortName verified) (attrs, verified))
-
-verifyAliases
-    :: [ParsedSentence]
-    -> SentenceVerifier ()
-verifyAliases sentences= do
-    let aliases =
-            Map.fromList . map (\sentence -> (aliasName sentence, sentence))
-            $ mapMaybe projectSentenceAlias sentences
-        aliasIds = Map.keysSet aliases
-    runReaderT
-        (Foldable.traverse_ verifyAlias aliasIds)
-        AliasContext { aliases, verifying = Set.empty }
-
-aliasName :: SentenceAlias patternType -> Id
-aliasName = aliasConstructor . sentenceAliasAlias
-
-type AliasVerifierT = ReaderT AliasContext
-
-data AliasContext =
-    AliasContext
-        { aliases   :: !(Map Id ParsedSentenceAlias)
-        , verifying :: !(Set Id)
-        }
-    deriving (GHC.Generic)
-
-type VerifiedAlias = (Attribute.Symbol, SentenceAlias Verified.Pattern)
-
-lookupVerifiedAlias
-    :: Id
-    -> AliasVerifierT SentenceVerifier (Maybe VerifiedAlias)
-lookupVerifiedAlias name = do
-    verifiedAliases <- State.gets indexedModuleAliasSentences
-    return $ Map.lookup name verifiedAliases
-
-lookupParsedAlias
-    :: MonadError (Error e) monad
-    => Id
-    -> AliasVerifierT monad ParsedSentenceAlias
-lookupParsedAlias name =
-    Reader.asks (Map.lookup name . aliases) >>= maybe notFound return
-  where
-    notFound = koreFail "Alias not found."
-
-verifyAlias :: Id -> AliasVerifierT SentenceVerifier ()
-verifyAlias name =
-    withLocationAndContext name aliasContext $ do
-        checkAliasCycle
-        lookupVerifiedAlias name >>= maybe notCached cached
-  where
-    aliasContext = "alias '" <> getId name <> "' declaration"
-    checkAliasCycle = do
-        isCycle <- Reader.asks (Set.member name . verifying)
-        koreFailWhen isCycle "Circular alias dependency."
-    cached _ = return ()
-    notCached = verifyUncachedAlias name
-
-verifyUncachedAlias :: Id -> AliasVerifierT SentenceVerifier ()
-verifyUncachedAlias name = do
-    sentence <- lookupParsedAlias name
-    verifyAliasDependencies sentence
-    verified <- SentenceVerifier.verifyAliasSentence sentence & Trans.lift
-    attrs <- parseAttributes' $ sentenceAliasAttributes verified
-    State.modify' $ addAlias verified attrs
-  where
-    addAlias verified attrs =
-        Lens.over
-            (field @"indexedModuleAliasSentences")
-            (Map.insert (aliasName verified) (attrs, verified))
-
-verifyAliasDependencies
-    :: SentenceAlias ParsedPattern
-    -> AliasVerifierT SentenceVerifier ()
-verifyAliasDependencies sentence = do
-    deps <- Recursive.fold collectAliasIds aliasPattern
-    Foldable.traverse_ verifyAlias deps
-  where
-    aliasPattern = sentenceAliasRightPattern sentence
-
-collectAliasIds
-    :: Monad monad
-    => Base ParsedPattern (AliasVerifierT monad (Set Id))
-    -> AliasVerifierT monad (Set Id)
-collectAliasIds base = do
-    _ :< patternF <- sequence base
-    let names = Foldable.fold patternF
-    AliasContext { aliases } <- Reader.ask
-    case patternF of
-        ApplicationF application | Map.member name aliases ->
-            return $ Set.insert name names
-          where
-            name =
-                symbolOrAliasConstructor
-                . applicationSymbolOrAlias
-                $ application
-        _ -> return names
 
 addIndexedModuleHook
     :: Id
