@@ -561,7 +561,7 @@ test_functionIntegration =
     evaluate functionIdToEvaluator patt =
         SMT.runSMT SMT.defaultConfig emptyLogger
         $ evalSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt
+        $ TermLike.simplify patt Predicate.top
 
 test_Nat :: [TestTree]
 test_Nat =
@@ -625,7 +625,7 @@ simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify =
     SMT.runSMT SMT.defaultConfig emptyLogger
     . evalSimplifier testEnv
-    . TermLike.simplifyToOr
+    . (TermLike.simplifyToOr Predicate.top)
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier

@@ -174,13 +174,14 @@ ceilChildOfApplicationOrTop
        , Unparse variable
        , MonadSimplify m
        )
-    => TermLike variable
+    => Predicate variable
+    -> TermLike variable
     -> m (Predicate variable)
-ceilChildOfApplicationOrTop patt =
+ceilChildOfApplicationOrTop predicate patt =
     case patt of
         App_ _ children -> do
             ceil <-
-                traverse (Ceil.makeEvaluateTerm Predicate.topTODO) children
+                traverse (Ceil.makeEvaluateTerm predicate) children
                 >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
                     . MultiAnd.make
                     )

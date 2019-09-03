@@ -24,14 +24,15 @@ mockSimplifier
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockSimplifier values =
-    termLikeSimplifier $ mockSimplifierHelper Pattern.fromTermLike values
+    termLikeSimplifier
+        $ const $ mockSimplifierHelper Pattern.fromTermLike values
 
 mockPredicateSimplifier
     :: (Ord variable, SortedVariable variable)
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockPredicateSimplifier values =
-    termLikeSimplifier
+    termLikeSimplifier $ const $
         (mockSimplifierHelper
             (\patt -> Conditional
                 { term = mkTop_

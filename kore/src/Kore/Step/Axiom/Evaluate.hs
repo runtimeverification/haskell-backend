@@ -16,6 +16,7 @@ import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
 import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
@@ -68,7 +69,7 @@ evaluateAxioms
     Monad.guard (any Result.hasResults results)
     mapM_ rejectNarrowing results
 
-    ceilChild <- ceilChildOfApplicationOrTop patt
+    ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
     let
         result =
             Result.mergeResults results
