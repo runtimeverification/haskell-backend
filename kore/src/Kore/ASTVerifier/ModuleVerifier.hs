@@ -12,8 +12,6 @@ module Kore.ASTVerifier.ModuleVerifier
     , verifyUniqueNames
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
 import           Control.Lens
                  ( (%=) )
 import qualified Control.Lens as Lens
@@ -31,7 +29,6 @@ import           Data.Text
 
 import           Kore.AST.Error
 import           Kore.ASTVerifier.AliasVerifier
-import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SentenceVerifier
                  ( SentenceVerifier, verifyAxioms, verifyClaims,

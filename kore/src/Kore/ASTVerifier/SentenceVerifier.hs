@@ -15,10 +15,10 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyHookedSorts
     , verifySymbols
     , verifyHookedSymbols
-    , verifyAliasSentence
     , verifyAxioms
     , verifyClaims
     , verifyNonHooks
+    , verifyAliasSentence
     ) where
 
 import           Control.Applicative
@@ -49,7 +49,6 @@ import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import           Kore.ASTVerifier.SortVerifier
 import           Kore.ASTVerifier.Verifier
-import qualified Kore.Attribute.Constructor as Attribute
 import qualified Kore.Attribute.Hook as Attribute
 import           Kore.Attribute.Parser
                  ( ParseAttributes )
@@ -58,8 +57,6 @@ import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
                  ( Sort )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
-import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -134,19 +131,6 @@ findSort identifier = do
     verifiedModule <- State.get
     findIndexedSort verifiedModule identifier
 
-{- | Look up a sort declaration outside 'SentenceVerifier'.
-
-@askFindSort@ captures the current context so that the function it returns can
-be used in another context.
-
- -}
-askFindSort
-    :: MonadError (Error e) error
-    => SentenceVerifier (Id -> error (SentenceSort Verified.Pattern))
-askFindSort = do
-    verifiedModule <- State.get
-    return (findIndexedSort verifiedModule)
-
 askVerifierContext :: SentenceVerifier VerifierContext
 askVerifierContext = Reader.ask
 
@@ -177,7 +161,7 @@ It is an error to use this before 'verifySorts'.
 lookupSortAttributes :: Id -> SentenceVerifier Attribute.Sort
 lookupSortAttributes name = do
     sorts <- State.gets indexedModuleSortDescriptions
-    Map.lookup name sorts & maybe (error $ noSort name) (return . fst)
+    Map.lookup name sorts & maybe (koreFail $ noSort name) (return . fst)
 
 runSentenceVerifier
     :: SentenceVerifier a
@@ -255,23 +239,6 @@ addIndexedModuleHook name hook =
         Map.alter (Just . maybe [name] (name :)) hookId
       | otherwise           = id
 
-verifyHookedSymbol
-    :: ParsedSentenceSymbol -> SentenceVerifier Verified.SentenceSymbol
-verifyHookedSymbol sentence@SentenceSymbol { sentenceSymbolAttributes } = do
-    verified <- verifySymbolSentence sentence
-    VerifierContext { attributesVerification, builtinVerifiers } <- askVerifierContext
-    hook <-
-        verifySymbolHookAttribute
-            attributesVerification
-            sentenceSymbolAttributes
-    findSort' <- askFindSort
-    Builtin.runSymbolVerifier
-        (Builtin.symbolVerifier builtinVerifiers hook)
-        findSort'
-        sentence
-        & either throwError return
-    return verified
-
 verifySymbols :: [ParsedSentence] -> SentenceVerifier ()
 verifySymbols = Foldable.traverse_ verifySymbolSentence . mapMaybe project
   where
@@ -295,7 +262,7 @@ verifySymbolSentence sentence =
                 Attribute.Symbol.isConstructor
                 . Attribute.Symbol.constructor
                 $ attrs
-        Monad.when isConstructor (verifyConstructor verified attrs)
+        Monad.when isConstructor (verifyConstructor verified)
         State.modify' $ addSymbol verified attrs
         return verified
   where
@@ -308,9 +275,8 @@ verifySymbolSentence sentence =
 
 verifyConstructor
     :: Verified.SentenceSymbol
-    -> Attribute.Symbol
     -> SentenceVerifier ()
-verifyConstructor verified attrs = do
+verifyConstructor verified = do
     sortAttrs <- lookupSortAttributes (getSortId resultSort)
     let
         isHookedSort =
@@ -330,14 +296,6 @@ verifyConstructor verified attrs = do
   where
     symbolName = (symbolConstructor . sentenceSymbolSymbol) verified
     resultSort = sentenceSymbolResultSort verified
-
-maybeHook :: Attribute.Sort -> Maybe Text
-maybeHook = Attribute.getHook . Attribute.Sort.hook
-
-hasDomainValues :: Attribute.Sort -> Bool
-hasDomainValues =
-    Attribute.HasDomainValues.getHasDomainValues
-    . Attribute.Sort.hasDomainValues
 
 verifyAliasSentence
     :: ParsedSentenceAlias
