@@ -105,7 +105,6 @@ default-extensions:
   - TypeFamilies
   - TypeOperators
   - TypeSynonymInstances
-  - UndecidableInstances
   - ViewPatterns
 
 ghc-options: -fno-ignore-asserts
