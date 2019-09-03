@@ -12,6 +12,7 @@ module Test.Kore.Builtin.Builtin
     , evaluateT
     , evaluateToList
     , indexedModule
+    , verifiedModule
     , runStep
     , runSMT
     ) where
@@ -138,7 +139,7 @@ verifiedModules =
 verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
-indexedModule :: KoreIndexedModule Attribute.Symbol axiomAttrs
+indexedModule :: KoreIndexedModule Attribute.Symbol Attribute.Null
 indexedModule =
     verifiedModule
     & IndexedModule.eraseAxiomAttributes
