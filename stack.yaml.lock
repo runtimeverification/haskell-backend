@@ -5,29 +5,6 @@
 
 packages:
 - completed:
-    hackage: graphviz-2999.20.0.3@sha256:cde383c356bc41136ed53cd27e0800f46dbd2185600dd0de18d66d5c49739d94,7677
-    pantry-tree:
-      size: 4322
-      sha256: f7d9f7e161d68a5783d915358c28a95a2b8c94f3e302325fa604b91e8d2295c8
-  original:
-    hackage: graphviz-2999.20.0.3@sha256:cde383c356bc41136ed53cd27e0800f46dbd2185600dd0de18d66d5c49739d94
-- completed:
-    size: 1248687
-    url: https://github.com/ttuegel/haskell-src-exts/archive/363dbd17d91ba58ac877d205c5e82c1672367008.tar.gz
-    cabal-file:
-      size: 4467
-      sha256: 02421cacaa48c055551b8e5796efc543301b7ea9527a38e1385403d2b85512fb
-    name: haskell-src-exts
-    version: 1.21.0
-    sha256: e02e7317509cb1c766b7f591bb7304fb436928ce6d99565a214f70467781aabe
-    pantry-tree:
-      size: 96118
-      sha256: 50c1163d5416f5052c1d5c03b4b68f906151ae3d1b23d0587e0d7cb4881c7392
-  original:
-    size: 1248687
-    url: https://github.com/ttuegel/haskell-src-exts/archive/363dbd17d91ba58ac877d205c5e82c1672367008.tar.gz
-    sha256: e02e7317509cb1c766b7f591bb7304fb436928ce6d99565a214f70467781aabe
-- completed:
     hackage: ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2,1991
     pantry-tree:
       size: 647
