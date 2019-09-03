@@ -326,7 +326,7 @@ genInternalBool builtinBoolSort =
 genInternalString :: Sort -> Gen Domain.InternalString
 genInternalString internalStringSort =
     Domain.InternalString internalStringSort
-    <$> Gen.text (Range.linear 0 1024) Gen.unicode
+    <$> Gen.text (Range.linear 0 1024) (Reader.lift Gen.unicode)
 
 existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
 existsGen = existsForallGen Exists

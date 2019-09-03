@@ -15,6 +15,8 @@ builtin modules.
 @
 -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Builtin.AssociativeCommutative
     ( asInternal
     , asInternalConcrete
