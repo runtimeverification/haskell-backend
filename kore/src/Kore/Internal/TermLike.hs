@@ -279,7 +279,7 @@ type Builtin = Domain.Builtin (TermLike Concrete)
 data TermLikeF variable child
     = AndF           !(And Sort child)
     | ApplySymbolF   !(Application Symbol child)
-    | ApplyAliasF    !(Application Alias child)
+    | ApplyAliasF    !(Application (Alias (TermLike Variable)) child)
     | BottomF        !(Bottom Sort child)
     | CeilF          !(Ceil Sort child)
     | DomainValueF   !(DomainValue Sort child)
@@ -1077,7 +1077,7 @@ See also: 'applyAlias', 'applySymbol'
 mkApplyAlias
     :: (Ord variable, SortedVariable variable, Unparse variable)
     => GHC.HasCallStack
-    => Alias
+    => Alias (TermLike Variable)
     -- ^ Application symbol or alias
     -> [TermLike variable]
     -- ^ Application arguments
@@ -1818,7 +1818,7 @@ pattern App_
     -> TermLike variable
 
 pattern ApplyAlias_
-    :: Alias
+    :: Alias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable
 

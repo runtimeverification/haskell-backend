@@ -903,10 +903,10 @@ instance EqualWithExplanation Sort where
     compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
-instance StructEqualWithExplanation TermLike.Alias where
+instance StructEqualWithExplanation (TermLike.Alias (TermLike Variable)) where
     structFieldsWithNames
-        expected@(TermLike.Alias _ _ _)
-        actual@(TermLike.Alias _ _ _)
+        expected@(TermLike.Alias _ _ _ _ _)
+        actual@(TermLike.Alias _ _ _ _ _)
       =
         [ Function.on (EqWrap "aliasConstructor = ")
             TermLike.aliasConstructor expected actual
@@ -915,7 +915,7 @@ instance StructEqualWithExplanation TermLike.Alias where
         ]
     structConstructorName _ = "Alias"
 
-instance EqualWithExplanation TermLike.Alias where
+instance EqualWithExplanation (TermLike.Alias (TermLike Variable)) where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 

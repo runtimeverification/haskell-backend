@@ -190,7 +190,7 @@ allPathGlobally :: Text
 allPathGlobally = "allPathGlobally"
 
 qualifiedAxiomOpToConstructor
-    :: Alias
+    :: Alias (TermLike Variable)
     -> Maybe (RulePattern variable -> QualifiedAxiomPattern variable)
 qualifiedAxiomOpToConstructor patternHead
     | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
@@ -388,7 +388,7 @@ onePathRuleToPattern (OnePathRule rulePatt) =
     sort :: Sort
     sort = termLikeSort . right $ rulePatt
 
-wEF :: Sort -> Alias
+wEF :: Sort -> Alias (TermLike Variable)
 wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
@@ -399,6 +399,9 @@ wEF sort = Alias
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
         }
+    , aliasLeft = []
+    , aliasRight =
+        mkElemVar $ elemVarS "X" sort
     }
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
