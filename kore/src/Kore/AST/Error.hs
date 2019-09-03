@@ -20,6 +20,7 @@ module Kore.AST.Error
     , withSentenceSortContext
     , withSentenceSymbolContext
     , withSentenceContext
+    , withModuleContext
     ) where
 
 import           Data.Text
@@ -169,7 +170,7 @@ withSentenceImportContext
     -> error a
 withSentenceImportContext _ = id
 
-{- | Identify and  locate the given sentence in the error context.
+{- | Identify and locate the given sentence in the error context.
  -}
 withSentenceContext
     :: MonadError (Error e) error
@@ -185,3 +186,13 @@ withSentenceContext =
         SentenceImportSentence s -> withSentenceImportContext s
         SentenceSortSentence s -> withSentenceSortContext s
         SentenceSymbolSentence s -> withSentenceSymbolContext s
+
+{- | Identify the given module in the error context.
+ -}
+withModuleContext
+    :: MonadError (Error e) error
+    => ModuleName
+    -> error a
+    -> error a
+withModuleContext moduleName =
+    withContext ("module '" ++ getModuleNameForError moduleName ++ "'")

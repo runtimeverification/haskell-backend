@@ -159,14 +159,6 @@ whileImporting name locally = do
     foldr withModuleContext failCycle (reverse importing')
     Reader.local (Lens.set (field @"importing") importing') locally
 
-withModuleContext
-    :: MonadError (Error e) error
-    => ModuleName
-    -> error a
-    -> error a
-withModuleContext moduleName =
-    withContext ("module '" ++ getModuleNameForError moduleName ++ "'")
-
 newIndexedModule :: Module ParsedSentence -> ModuleVerifier VerifiedModule'
 newIndexedModule module' = do
     ModuleContext { implicitModule } <- Reader.ask
