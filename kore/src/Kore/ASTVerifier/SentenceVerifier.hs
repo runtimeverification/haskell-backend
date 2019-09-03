@@ -9,12 +9,11 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.SentenceVerifier
     ( verifyUniqueNames
-    , noConstructorWithDomainValuesMessage
     , SentenceVerifier
     , runSentenceVerifier
     , verifySorts
     , verifyHookedSorts
-    , verifySymbolSentence
+    , verifySymbols
     , verifyHookedSymbols
     , verifyAliasSentence
     , verifyAxiomSentence
@@ -26,6 +25,7 @@ import           Control.Applicative
 import qualified Control.Lens as Lens
 import           Control.Monad
                  ( foldM )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
 import           Control.Monad.State.Strict
                  ( StateT, runStateT )
@@ -57,6 +57,9 @@ import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
                  ( Sort )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
+import qualified Kore.Attribute.Symbol as Attribute
+                 ( Symbol )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.Error
@@ -268,57 +271,64 @@ verifyHookedSymbol sentence@SentenceSymbol { sentenceSymbolAttributes } = do
         & either throwError return
     return verified
 
+verifySymbols :: [ParsedSentence] -> SentenceVerifier ()
+verifySymbols = Foldable.traverse_ verifySymbolSentence . mapMaybe project
+  where
+    project sentence =
+        projectSentenceSymbol sentence <|> projectSentenceHookedSymbol sentence
+
 verifySymbolSentence
-    :: ParsedSentenceSymbol
+    :: SentenceSymbol ParsedPattern
     -> SentenceVerifier Verified.SentenceSymbol
 verifySymbolSentence sentence =
-    do
+    withSentenceSymbolContext sentence $ do
+        let sortParams = (symbolParams . sentenceSymbolSymbol) sentence
         variables <- buildDeclaredSortVariables sortParams
-        mapM_
-            (verifySort findSort variables)
-            (sentenceSymbolSorts sentence)
-        verifyConstructorNotInHookedOrDvSort
-        verifySort
-            findSort
-            variables
-            (sentenceSymbolResultSort sentence)
-        traverse verifyNoPatterns sentence
+        let sorts = sentenceSymbolSorts sentence
+        mapM_ (verifySort findSort variables) sorts
+        let resultSort = sentenceSymbolResultSort sentence
+        verifySort findSort variables resultSort
+        verified <- traverse verifyNoPatterns sentence
+        attrs <- parseAttributes' $ sentenceSymbolAttributes sentence
+        let isConstructor =
+                Attribute.Symbol.isConstructor
+                . Attribute.Symbol.constructor
+                $ attrs
+        Monad.when isConstructor (verifyConstructor verified attrs)
+        State.modify' $ addSymbol verified attrs
+        return verified
   where
-    sortParams = (symbolParams . sentenceSymbolSymbol) sentence
+    addSymbol verified attrs =
+        Lens.over
+            (field @"indexedModuleSymbolSentences")
+            (Map.insert name (attrs, verified))
+      where
+        Symbol { symbolConstructor = name } = sentenceSymbolSymbol verified
 
-    verifyConstructorNotInHookedOrDvSort :: SentenceVerifier ()
-    verifyConstructorNotInHookedOrDvSort = do
-        verifiedModule <- State.get
-        let
-            symbol = symbolConstructor $ sentenceSymbolSymbol sentence
-            attributes = sentenceSymbolAttributes sentence
-            resultSort = sentenceSymbolResultSort sentence
-            resultSortId = getSortId resultSort
+verifyConstructor
+    :: Verified.SentenceSymbol
+    -> Attribute.Symbol
+    -> SentenceVerifier ()
+verifyConstructor verified attrs = do
+    sortAttrs <- lookupSortAttributes (getSortId resultSort)
+    let
+        isHookedSort =
+            isJust
+            . Attribute.getHook
+            . Attribute.Sort.hook
+            $ sortAttrs
+        hasDomainValues =
+            Attribute.HasDomainValues.getHasDomainValues
+            . Attribute.Sort.hasDomainValues
+            $ sortAttrs
+    koreFailWhen isHookedSort
+        (noConstructorInHookedSort symbolName resultSort)
+    koreFailWhen hasDomainValues
+        (noConstructorWithDomainValues symbolName resultSort)
 
-            -- TODO(vladimir.ciobanu): Lookup this attribute in the symbol
-            -- attribute record when it becomes available.
-            isCtor =
-                Attribute.constructorAttribute  `elem` getAttributes attributes
-            sortData = do
-                (sortDescription, _) <-
-                    Map.lookup resultSortId
-                        $ indexedModuleSortDescriptions verifiedModule
-                return
-                    (maybeHook sortDescription, hasDomainValues sortDescription)
-        case sortData of
-            Nothing -> return ()
-            Just (resultSortHook, resultHasDomainValues) -> do
-                koreFailWhen
-                    (isCtor && isJust resultSortHook)
-                    ( "Cannot define constructor '"
-                    ++ getIdForError symbol
-                    ++ "' for hooked sort '"
-                    ++ getIdForError resultSortId
-                    ++ "'."
-                    )
-                koreFailWhen
-                    (isCtor && resultHasDomainValues)
-                    (noConstructorWithDomainValuesMessage symbol resultSort)
+  where
+    symbolName = (symbolConstructor . sentenceSymbolSymbol) verified
+    resultSort = sentenceSymbolResultSort verified
 
 maybeHook :: Attribute.Sort -> Maybe Text
 maybeHook = Attribute.getHook . Attribute.Sort.hook
