@@ -124,9 +124,8 @@ verifyAndIndexDefinitionWithBase
     let
         (_, baseNames) =
             fromMaybe (implicitModules, implicitNames) maybeBaseDefinition
-        modulesInScope =
-            maybe Map.empty fst maybeBaseDefinition
-        alreadyVerifiedModules =
+        modulesInScope = maybe Map.empty fst maybeBaseDefinition
+        verifiedModulesCache =
             maybe Map.empty fst maybeAlreadyVerifiedDefinition
 
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
@@ -135,20 +134,19 @@ verifyAndIndexDefinitionWithBase
         verifiedDefaultModule
             :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
         verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
-        allModules =
+        parsedModules =
             modulesByName (definitionModules definition)
             <> fmap toModule modulesInScope
+        definitionModuleNames = moduleName <$> definitionModules definition
+        verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
 
     -- Verify the contents of the definition.
     (_, index) <-
         runModuleVerifier
-            (Foldable.traverse_
-                verifyModuleByName
-                (moduleName <$> definitionModules definition)
-            )
-            alreadyVerifiedModules
+            verifyModules
+            verifiedModulesCache
             (Just verifiedDefaultModule)
-            allModules
+            parsedModules
             attributesVerification
             builtinVerifiers
     verifyAttributes

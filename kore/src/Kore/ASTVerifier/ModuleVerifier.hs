@@ -8,7 +8,7 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Kore.ASTVerifier.ModuleVerifier
-    ( verifyModuleByName
+    ( verifyModule
     , verifyUniqueNames
     , ModuleVerifier
     , runModuleVerifier
@@ -195,34 +195,36 @@ verifyUniqueNames existingNames koreModule =
             existingNames
         )
 
-verifyModuleByName :: ModuleName -> ModuleVerifier VerifiedModule'
-verifyModuleByName name =
-    lookupVerifiedModule name >>= maybe notYetIndexed alreadyIndexed
+verifyModule :: ModuleName -> ModuleVerifier VerifiedModule'
+verifyModule name = lookupVerifiedModule name >>= maybe notCached cached
   where
-    alreadyIndexed = return
-    notYetIndexed = whileImporting name $ do
-        module' <- lookupParsedModule name
-        let Module { moduleSentences } = module'
-            sentences = List.sort moduleSentences
-        indexedModule <-
-            -- TODO: Refactor this in a type-safe way.
-                withModuleContext name (newIndexedModule module')
-            -- TODO: The corresponding functions in
-            -- Kore.IndexedModule.IndexedModule can go away.
-            >>= verifyImports        sentences
-            >>= withModuleContext name . verifySorts          sentences
-            >>= withModuleContext name . verifySymbols        sentences
-            >>= withModuleContext name . verifyHookedSorts    sentences
-            >>= withModuleContext name . verifyHookedSymbols  sentences
-            >>= withModuleContext name . verifyNonHooks       sentences
-            >>= withModuleContext name . verifyAliases        sentences
-            >>= withModuleContext name . verifyAxioms         sentences
-            >>= withModuleContext name . verifyClaims         sentences
-        _ <-
-            withModuleContext name
-            $ internalIndexedModuleSubsorts indexedModule
-        field @"verifiedModules" %= Map.insert name indexedModule
-        return indexedModule
+    cached = return
+    notCached = verifyUncachedModule name
+
+verifyUncachedModule :: ModuleName -> ModuleVerifier VerifiedModule'
+verifyUncachedModule name = whileImporting name $ do
+    module' <- lookupParsedModule name
+    let Module { moduleSentences } = module'
+        sentences = List.sort moduleSentences
+    indexedModule <-
+        -- TODO: Refactor this in a type-safe way.
+            withModuleContext name (newIndexedModule module')
+        -- TODO: The corresponding functions in
+        -- Kore.IndexedModule.IndexedModule can go away.
+        >>= verifyImports        sentences
+        >>= withModuleContext name . verifySorts          sentences
+        >>= withModuleContext name . verifySymbols        sentences
+        >>= withModuleContext name . verifyHookedSorts    sentences
+        >>= withModuleContext name . verifyHookedSymbols  sentences
+        >>= withModuleContext name . verifyNonHooks       sentences
+        >>= withModuleContext name . verifyAliases        sentences
+        >>= withModuleContext name . verifyAxioms         sentences
+        >>= withModuleContext name . verifyClaims         sentences
+    _ <-
+        withModuleContext name
+        $ internalIndexedModuleSubsorts indexedModule
+    field @"verifiedModules" %= Map.insert name indexedModule
+    return indexedModule
 
 verifyImports
     :: [ParsedSentence]
@@ -240,7 +242,7 @@ verifyImport verifiedModule sentence =
     withSentenceImportContext sentence $ do
         let SentenceImport { sentenceImportAttributes = attrs0 } = sentence
         attrs1 <- parseAttributes' attrs0
-        verified <- verifyModuleByName $ sentenceImportModuleName sentence
+        verified <- verifyModule $ sentenceImportModuleName sentence
         return $ addImport verified attrs1 attrs0 verifiedModule
   where
     addImport verified attrs1 attrs0 =
