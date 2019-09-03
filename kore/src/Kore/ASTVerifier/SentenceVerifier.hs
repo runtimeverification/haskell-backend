@@ -60,9 +60,8 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
-import           Kore.IndexedModule.Error
 import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.IndexedModule.Resolvers
+import           Kore.IndexedModule.Resolvers as Resolvers
 import           Kore.Sort
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
@@ -160,8 +159,9 @@ It is an error to use this before 'verifySorts'.
  -}
 lookupSortAttributes :: Id -> SentenceVerifier Attribute.Sort
 lookupSortAttributes name = do
-    sorts <- State.gets indexedModuleSortDescriptions
-    Map.lookup name sorts & maybe (koreFail $ noSort name) (return . fst)
+    verifiedModule <- State.get
+    (attrs, _) <- Resolvers.resolveSort verifiedModule name
+    return attrs
 
 runSentenceVerifier
     :: SentenceVerifier a
