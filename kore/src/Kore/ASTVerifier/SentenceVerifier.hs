@@ -13,6 +13,7 @@ module Kore.ASTVerifier.SentenceVerifier
     , noConstructorWithDomainValuesMessage
     , SentenceVerifier
     , runSentenceVerifier
+    , liftSentenceVerifier
     , verifySortSentence
     , verifySymbolSentence
     , verifyAliasSentence
@@ -27,6 +28,7 @@ import           Control.Monad
 import           Control.Monad.Reader
                  ( MonadReader, ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
+import qualified Control.Monad.Trans as Trans
 import           Data.Function
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -42,6 +44,9 @@ import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import           Kore.ASTVerifier.SortVerifier
+import           Kore.ASTVerifier.Verifier
+import qualified Kore.Attribute.Axiom as Attribute
+                 ( Axiom )
 import qualified Kore.Attribute.Constructor as Attribute
 import qualified Kore.Attribute.Hook as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
@@ -118,16 +123,12 @@ data SentenceContext =
     SentenceContext
         { indexedModule :: !(VerifiedModule Attribute.Symbol axiomAttrs)
             -- TODO: Make indexedModule a "state" field.
-        , attributesVerification
-            :: !(AttributesVerification Attribute.Symbol axiomAttrs)
-        -- ^ The indexed Kore module containing all definitions in scope.
-        , builtinVerifiers :: !Builtin.Verifiers
         }
 
 newtype SentenceVerifier a =
     SentenceVerifier
         { getSentenceVerifier
-            :: ReaderT SentenceContext (Either (Error VerifyError)) a
+            :: ReaderT SentenceContext Verifier a
         }
     deriving (Applicative, Functor, Monad)
 
@@ -155,13 +156,17 @@ askFindSort = do
     SentenceContext { indexedModule } <- Reader.ask
     return (findIndexedSort indexedModule)
 
+askVerifierContext :: SentenceVerifier VerifierContext
+askVerifierContext = SentenceVerifier . Trans.lift $ Reader.ask
+
 {- | Construct a 'PatternVerifier.Context' in the current 'SentenceContext'.
  -}
 askPatternContext
     :: Set SortVariable  -- ^ Declared sort variables
     -> SentenceVerifier PatternVerifier.Context
 askPatternContext variables = do
-    SentenceContext { indexedModule, builtinVerifiers } <- Reader.ask
+    SentenceContext { indexedModule } <- Reader.ask
+    VerifierContext { builtinVerifiers } <- askVerifierContext
     return PatternVerifier.Context
         { builtinDomainValueVerifiers =
             Builtin.domainValueVerifiers builtinVerifiers
@@ -175,46 +180,34 @@ askPatternContext variables = do
 
 runSentenceVerifier
     :: SentenceVerifier a
-    -> VerifiedModule Attribute.Symbol axiomAttrs
-    -> AttributesVerification Attribute.Symbol axiomAttrs
-    -> Builtin.Verifiers
-    -> Either (Error VerifyError) a
+    -> VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> Verifier a
 runSentenceVerifier
     sentenceVerifier
     indexedModule
-    attributesVerification
-    builtinVerifiers
   =
     runReaderT (getSentenceVerifier sentenceVerifier) sentenceContext
   where
-    sentenceContext =
-        SentenceContext
-            { indexedModule
-            , attributesVerification
-            , builtinVerifiers
-            }
+    sentenceContext = SentenceContext { indexedModule }
+
+liftSentenceVerifier
+    :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> SentenceVerifier a
+    -> Verifier a
+liftSentenceVerifier = flip runSentenceVerifier
 
 {-|'verifySentences' verifies the welformedness of a list of Kore 'Sentence's.
 -}
 verifySentences
-    :: VerifiedModule Attribute.Symbol axiomAtts
+    :: VerifiedModule Attribute.Symbol Attribute.Axiom
     -- ^ The module containing all definitions which are visible in this
     -- pattern.
-    -> AttributesVerification Attribute.Symbol axiomAtts
-    -> Builtin.Verifiers
     -> [ParsedSentence]
-    -> Either (Error VerifyError) [Verified.Sentence]
-verifySentences
-    indexedModule
-    attributesVerification
-    builtinVerifiers
-    sentences
-  =
+    -> Verifier [Verified.Sentence]
+verifySentences indexedModule sentences =
     runSentenceVerifier
         (traverse verifySentence sentences)
         indexedModule
-        attributesVerification
-        builtinVerifiers
 
 verifySentence :: ParsedSentence -> SentenceVerifier Verified.Sentence
 verifySentence sentence =
@@ -256,7 +249,7 @@ verifySentenceAttributes
     -> SentenceVerifier VerifySuccess
 verifySentenceAttributes sentence =
     do
-        SentenceContext { attributesVerification } <- Reader.ask
+        VerifierContext { attributesVerification } <- askVerifierContext
         let attributes = sentenceAttributes sentence
         verifyAttributes attributes attributesVerification
         case sentence of
@@ -274,7 +267,7 @@ verifyHookSentence (SentenceHookedSymbol s) =
 verifyHookedSort :: ParsedSentenceSort -> SentenceVerifier Verified.SentenceSort
 verifyHookedSort sentence@SentenceSort { sentenceSortAttributes } = do
     verified <- verifySortSentence sentence
-    SentenceContext { attributesVerification, builtinVerifiers } <- Reader.ask
+    VerifierContext { attributesVerification, builtinVerifiers } <- askVerifierContext
     hook <-
         verifySortHookAttribute
             attributesVerification
@@ -296,7 +289,7 @@ verifyHookedSymbol
     :: ParsedSentenceSymbol -> SentenceVerifier Verified.SentenceSymbol
 verifyHookedSymbol sentence@SentenceSymbol { sentenceSymbolAttributes } = do
     verified <- verifySymbolSentence sentence
-    SentenceContext { attributesVerification, builtinVerifiers } <- Reader.ask
+    VerifierContext { attributesVerification, builtinVerifiers } <- askVerifierContext
     hook <-
         verifySymbolHookAttribute
             attributesVerification

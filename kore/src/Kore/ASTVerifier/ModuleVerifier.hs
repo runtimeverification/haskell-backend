@@ -10,8 +10,6 @@ Portability : POSIX
 module Kore.ASTVerifier.ModuleVerifier
     ( verifyModule
     , verifyUniqueNames
-    , ModuleVerifier
-    , runModuleVerifier
     ) where
 
 import           Control.Applicative
@@ -23,9 +21,6 @@ import qualified Control.Monad as Monad
 import           Control.Monad.Reader
                  ( ReaderT, runReaderT )
 import qualified Control.Monad.Reader as Reader
-import           Control.Monad.RWS.Strict
-                 ( MonadReader, MonadState, RWST, runRWST )
-import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import           Data.Function
@@ -47,7 +42,7 @@ import           Kore.AST.Error
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
-import qualified Kore.Attribute.Axiom as Attribute
+import           Kore.ASTVerifier.Verifier
 import           Kore.Attribute.Parser
                  ( ParseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
@@ -63,105 +58,9 @@ import           Kore.Syntax.Definition
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
 
-type ImplicitModule =
-    ImplicitIndexedModule
-        Verified.Pattern
-        Attribute.Symbol
-        Attribute.Axiom
-
-type AttributesVerification' =
-    AttributesVerification Attribute.Symbol Attribute.Axiom
-
-data ModuleContext =
-    ModuleContext
-        { implicitModule         :: !(Maybe ImplicitModule)
-        , modules                :: !(Map ModuleName (Module ParsedSentence))
-        , importing              :: ![ModuleName]
-        , attributesVerification :: !AttributesVerification'
-        , builtinVerifiers       :: !Builtin.Verifiers
-        }
-    deriving (GHC.Generic)
-
-type VerifiedModule' = VerifiedModule Attribute.Symbol Attribute.Axiom
-
-data ModuleState =
-    ModuleState
-        { verifiedModules :: !(Map ModuleName VerifiedModule')
-        }
-    deriving (GHC.Generic)
-
-newtype ModuleVerifier a =
-    ModuleVerifier
-        { getModuleVerifier
-            ::  RWST ModuleContext () ModuleState
-                    (Either (Error VerifyError)) a
-        }
-    deriving (Functor, Applicative, Monad)
-
-deriving instance MonadReader ModuleContext ModuleVerifier
-
-deriving instance MonadState ModuleState ModuleVerifier
-
-deriving instance MonadError (Error VerifyError) ModuleVerifier
-
-runModuleVerifier
-    :: ModuleVerifier a
-    -> Map ModuleName VerifiedModule'
-    -> Maybe ImplicitModule
-    -> Map ModuleName (Module ParsedSentence)
-    -> AttributesVerification'
-    -> Builtin.Verifiers
-    -> Either (Error VerifyError) (a, Map ModuleName VerifiedModule')
-runModuleVerifier
-    moduleVerifier
-    alreadyVerifiedModules
-    implicitModule
-    modules
-    attributesVerification
-    builtinVerifiers
-  = do
-    (a, moduleState', ()) <-
-        runRWST
-            (getModuleVerifier moduleVerifier)
-            moduleContext
-            moduleState
-    return (a, verifiedModules moduleState')
-  where
-    moduleState =
-        ModuleState { verifiedModules = alreadyVerifiedModules}
-    moduleContext =
-        ModuleContext
-            { implicitModule
-            , modules
-            , importing = []
-            , attributesVerification
-            , builtinVerifiers
-            }
-
-lookupVerifiedModule :: ModuleName -> ModuleVerifier (Maybe VerifiedModule')
-lookupVerifiedModule name = State.gets (Map.lookup name . verifiedModules)
-
-lookupParsedModule :: ModuleName -> ModuleVerifier (Module ParsedSentence)
-lookupParsedModule name =
-    Reader.asks (Map.lookup name . modules) >>= maybe notFound return
-  where
-    notFound =
-        koreFail ("Module '" ++ getModuleNameForError name ++ "' not found.")
-
-whileImporting :: ModuleName -> ModuleVerifier a -> ModuleVerifier a
-whileImporting name locally = do
-    ModuleContext { importing } <- Reader.ask
-    let failCycle =
-            koreFailWhen
-                (elem name importing)
-                "Circular module import dependency."
-        importing' = name : importing
-    foldr withModuleContext failCycle (reverse importing')
-    Reader.local (Lens.set (field @"importing") importing') locally
-
-newIndexedModule :: Module ParsedSentence -> ModuleVerifier VerifiedModule'
+newIndexedModule :: Module ParsedSentence -> Verifier VerifiedModule'
 newIndexedModule module' = do
-    ModuleContext { implicitModule } <- Reader.ask
+    VerifierContext { implicitModule } <- Reader.ask
     let Module { moduleName, moduleAttributes } = module'
     attrs <- parseAttributes' moduleAttributes
     return
@@ -187,13 +86,13 @@ verifyUniqueNames existingNames koreModule =
             existingNames
         )
 
-verifyModule :: ModuleName -> ModuleVerifier VerifiedModule'
+verifyModule :: ModuleName -> Verifier VerifiedModule'
 verifyModule name = lookupVerifiedModule name >>= maybe notCached cached
   where
     cached = return
     notCached = verifyUncachedModule name
 
-verifyUncachedModule :: ModuleName -> ModuleVerifier VerifiedModule'
+verifyUncachedModule :: ModuleName -> Verifier VerifiedModule'
 verifyUncachedModule name = whileImporting name $ do
     module' <- lookupParsedModule name
     let Module { moduleSentences } = module'
@@ -221,7 +120,7 @@ verifyUncachedModule name = whileImporting name $ do
 verifyImports
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyImports sentences verifiedModule =
     Monad.foldM verifyImport verifiedModule
     $ mapMaybe projectSentenceImport sentences
@@ -229,7 +128,7 @@ verifyImports sentences verifiedModule =
 verifyImport
     :: VerifiedModule'
     -> SentenceImport ParsedPattern
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyImport verifiedModule sentence =
     withSentenceImportContext sentence $ do
         let SentenceImport { sentenceImportAttributes = attrs0 } = sentence
@@ -253,7 +152,7 @@ parseAttributes' =
 verifySorts
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifySorts sentences verifiedModule =
     Monad.foldM verifySort verifiedModule
     $ mapMaybe project sentences
@@ -264,12 +163,12 @@ verifySorts sentences verifiedModule =
 verifySort
     :: VerifiedModule'
     -> SentenceSort ParsedPattern
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifySort verifiedModule sentence =
     withSentenceSortContext sentence $ do
         verified <-
-            liftSentenceVerifier verifiedModule
-            $ SentenceVerifier.verifySortSentence sentence
+            SentenceVerifier.verifySortSentence sentence
+            & SentenceVerifier.liftSentenceVerifier verifiedModule
         attrs <- parseAttributes' $ sentenceSortAttributes verified
         return $ addSort verified attrs verifiedModule
   where
@@ -281,7 +180,7 @@ verifySort verifiedModule sentence =
 verifyAliases
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyAliases sentences verifiedModule = do
     let aliases =
             Map.fromList . map (\sentence -> (aliasName sentence, sentence))
@@ -308,7 +207,7 @@ type VerifiedAlias = (Attribute.Symbol, SentenceAlias Verified.Pattern)
 lookupVerifiedAlias
     :: Id
     -> VerifiedModule'
-    -> AliasVerifierT ModuleVerifier (Maybe VerifiedAlias)
+    -> AliasVerifierT Verifier (Maybe VerifiedAlias)
 lookupVerifiedAlias name verifiedModule =
     return $ Map.lookup name $ indexedModuleAliasSentences verifiedModule
 
@@ -324,7 +223,7 @@ lookupParsedAlias name =
 verifyAlias
     :: VerifiedModule'
     -> Id
-    -> AliasVerifierT ModuleVerifier VerifiedModule'
+    -> AliasVerifierT Verifier VerifiedModule'
 verifyAlias verifiedModule name =
     withLocationAndContext name aliasContext $ do
         checkAliasCycle
@@ -340,8 +239,8 @@ verifyAlias verifiedModule name =
         sentence <- lookupParsedAlias name
         verifiedModule' <- verifyAliasDependencies verifiedModule sentence
         verified <-
-            Trans.lift . liftSentenceVerifier verifiedModule'
-            $ SentenceVerifier.verifyAliasSentence sentence
+            SentenceVerifier.verifyAliasSentence sentence
+            & Trans.lift . SentenceVerifier.liftSentenceVerifier verifiedModule'
         attrs <- parseAttributes' $ sentenceAliasAttributes verified
         return $ addAlias verified attrs verifiedModule'
       where
@@ -353,7 +252,7 @@ verifyAlias verifiedModule name =
 verifyAliasDependencies
     :: VerifiedModule'
     -> SentenceAlias ParsedPattern
-    -> AliasVerifierT ModuleVerifier VerifiedModule'
+    -> AliasVerifierT Verifier VerifiedModule'
 verifyAliasDependencies verifiedModule sentence = do
     deps <- Recursive.fold collectAliasIds aliasPattern
     Monad.foldM verifyAlias verifiedModule deps
@@ -395,7 +294,7 @@ addIndexedModuleHook name hook =
 verifyHookedSorts
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyHookedSorts sentences verifiedModule =
     Monad.foldM verifyHookedSort verifiedModule
     $ mapMaybe projectSentenceHookedSort sentences
@@ -416,18 +315,18 @@ lookupSortAttributesHere name verifiedModule =
 verifyHookedSort
     :: VerifiedModule'
     -> SentenceSort ParsedPattern
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyHookedSort verifiedModule sentence =
     withSentenceHookContext (SentenceHookedSort sentence) $ do
         let SentenceSort { sentenceSortAttributes } = sentence
-        ModuleContext { attributesVerification } <- Reader.ask
+        VerifierContext { attributesVerification } <- Reader.ask
         hook <-
             verifySortHookAttribute
                 attributesVerification
                 sentenceSortAttributes
         let SentenceSort { sentenceSortName = name } = sentence
             attrs = lookupSortAttributesHere name verifiedModule
-        ModuleContext { builtinVerifiers } <- Reader.ask
+        VerifierContext { builtinVerifiers } <- Reader.ask
         Builtin.sortDeclVerifier
             builtinVerifiers
             hook
@@ -440,7 +339,7 @@ verifyHookedSort verifiedModule sentence =
 verifySymbols
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifySymbols sentences verifiedModule =
     Monad.foldM verifySymbol verifiedModule
     $ mapMaybe project sentences
@@ -451,12 +350,12 @@ verifySymbols sentences verifiedModule =
 verifySymbol
     :: VerifiedModule'
     -> SentenceSymbol ParsedPattern
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifySymbol verifiedModule sentence =
     withSentenceSymbolContext sentence $ do
         verified <-
-            liftSentenceVerifier verifiedModule
-            $ SentenceVerifier.verifySymbolSentence sentence
+            SentenceVerifier.verifySymbolSentence sentence
+            & SentenceVerifier.liftSentenceVerifier verifiedModule
         attrs <- parseAttributes' $ sentenceSymbolAttributes sentence
         return $ addSymbol verified attrs verifiedModule
   where
@@ -470,7 +369,7 @@ verifySymbol verifiedModule sentence =
 verifyHookedSymbols
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyHookedSymbols sentences verifiedModule =
     Monad.foldM verifyHookedSymbol verifiedModule
     $ mapMaybe projectSentenceHookedSymbol sentences
@@ -478,16 +377,16 @@ verifyHookedSymbols sentences verifiedModule =
 verifyHookedSymbol
     :: VerifiedModule'
     -> SentenceSymbol ParsedPattern
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyHookedSymbol verifiedModule sentence =
     withSentenceHookContext (SentenceHookedSymbol sentence) $ do
         let SentenceSymbol { sentenceSymbolAttributes } = sentence
-        ModuleContext { attributesVerification } <- Reader.ask
+        VerifierContext { attributesVerification } <- Reader.ask
         hook <-
             verifySymbolHookAttribute
                 attributesVerification
                 sentenceSymbolAttributes
-        ModuleContext { builtinVerifiers } <- Reader.ask
+        VerifierContext { builtinVerifiers } <- Reader.ask
         Builtin.runSymbolVerifier
             (Builtin.symbolVerifier builtinVerifiers hook)
             (findIndexedSort verifiedModule)
@@ -499,7 +398,7 @@ verifyHookedSymbol verifiedModule sentence =
 verifyAxioms
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyAxioms sentences verifiedModule =
     Monad.foldM verifyAxiom verifiedModule
     $ mapMaybe projectSentenceAxiom sentences
@@ -507,12 +406,12 @@ verifyAxioms sentences verifiedModule =
 verifyAxiom
     :: VerifiedModule'
     -> SentenceAxiom ParsedPattern
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyAxiom verifiedModule sentence =
     withSentenceAxiomContext sentence $ do
         verified <-
-            liftSentenceVerifier verifiedModule
-            $ SentenceVerifier.verifyAxiomSentence sentence
+            SentenceVerifier.verifyAxiomSentence sentence
+            & SentenceVerifier.liftSentenceVerifier verifiedModule
         attrs <- parseAttributes' $ sentenceAxiomAttributes sentence
         return $ addAxiom verified attrs verifiedModule
   where
@@ -524,7 +423,7 @@ verifyAxiom verifiedModule sentence =
 verifyClaims
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyClaims sentences verifiedModule =
     Monad.foldM verifyClaim verifiedModule
     $ mapMaybe projectSentenceClaim sentences
@@ -532,12 +431,12 @@ verifyClaims sentences verifiedModule =
 verifyClaim
     :: VerifiedModule'
     -> SentenceClaim ParsedPattern
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyClaim verifiedModule sentence =
     withSentenceClaimContext sentence $ do
         verified <-
-            liftSentenceVerifier verifiedModule
-            $ SentenceVerifier.verifyClaimSentence sentence
+            SentenceVerifier.verifyClaimSentence sentence
+            & SentenceVerifier.liftSentenceVerifier verifiedModule
         attrs <- parseAttributes' $ sentenceClaimAttributes sentence
         return $ addClaim verified attrs verifiedModule
   where
@@ -549,7 +448,7 @@ verifyClaim verifiedModule sentence =
 verifyNonHooks
     :: [ParsedSentence]
     -> VerifiedModule'
-    -> ModuleVerifier VerifiedModule'
+    -> Verifier VerifiedModule'
 verifyNonHooks sentences verifiedModule = do
     Foldable.traverse_ verifyNonHook nonHookSentences
     return verifiedModule
@@ -558,22 +457,9 @@ verifyNonHooks sentences verifiedModule = do
     project (SentenceHookSentence _) = Nothing
     project sentence = Just sentence
 
-verifyNonHook :: ParsedSentence -> ModuleVerifier ()
+verifyNonHook :: ParsedSentence -> Verifier ()
 verifyNonHook sentence =
     withSentenceContext sentence $ do
-        ModuleContext { attributesVerification } <- Reader.ask
+        VerifierContext { attributesVerification } <- Reader.ask
         verifyNoHookAttribute attributesVerification
             $ sentenceAttributes sentence
-
-liftSentenceVerifier
-    :: VerifiedModule'
-    -> SentenceVerifier.SentenceVerifier a
-    -> ModuleVerifier a
-liftSentenceVerifier verifiedModule sentenceVerifier = do
-    ModuleContext { attributesVerification, builtinVerifiers } <- Reader.ask
-    ModuleVerifier . Trans.lift
-        $ SentenceVerifier.runSentenceVerifier
-            sentenceVerifier
-            verifiedModule
-            attributesVerification
-            builtinVerifiers

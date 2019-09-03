@@ -30,6 +30,7 @@ import           Kore.ASTVerifier.AttributesVerifier hiding
                  ( parseAttributes )
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.ModuleVerifier
+import           Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Parser as Attribute.Parser
@@ -142,7 +143,7 @@ verifyAndIndexDefinitionWithBase
 
     -- Verify the contents of the definition.
     (_, index) <-
-        runModuleVerifier
+        runVerifier
             verifyModules
             verifiedModulesCache
             (Just verifiedDefaultModule)
