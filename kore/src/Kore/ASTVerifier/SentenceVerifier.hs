@@ -16,7 +16,7 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifySymbols
     , verifyHookedSymbols
     , verifyAliasSentence
-    , verifyAxiomSentence
+    , verifyAxioms
     , verifyClaimSentence
     ) where
 
@@ -364,6 +364,29 @@ verifyAliasSentence sentence = do
     SentenceAlias { sentenceAliasResultSort } = sentence
     sortParams   = (aliasParams . sentenceAliasAlias) sentence
     expectedSort = sentenceAliasResultSort
+
+verifyAxioms :: [ParsedSentence] -> SentenceVerifier ()
+verifyAxioms = Foldable.traverse_ verifyAxiom . mapMaybe projectSentenceAxiom
+
+verifyAxiom :: SentenceAxiom ParsedPattern -> SentenceVerifier ()
+verifyAxiom sentence =
+    withSentenceAxiomContext sentence $ do
+        let sortParams = sentenceAxiomParameters sentence
+        variables <- buildDeclaredSortVariables sortParams
+        context <- askPatternContext variables
+        verified <-
+            field @"sentenceAxiomPattern"
+                (verifyStandalonePattern Nothing)
+                sentence
+            & runPatternVerifier context
+            & either throwError return
+        attrs <- parseAttributes' $ sentenceAxiomAttributes sentence
+        State.modify $ addAxiom verified attrs
+  where
+    addAxiom verified attrs =
+        Lens.over
+            (field @"indexedModuleAxioms")
+            ((attrs, verified) :)
 
 verifyAxiomSentence
     :: ParsedSentenceAxiom
