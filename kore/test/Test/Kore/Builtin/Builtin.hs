@@ -138,7 +138,7 @@ verifiedModules =
 verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
 Just verifiedModule = Map.lookup testModuleName verifiedModules
 
-indexedModule :: KoreIndexedModule Attribute.Symbol Attribute.Null
+indexedModule :: KoreIndexedModule Attribute.Symbol axiomAttrs
 indexedModule =
     verifiedModule
     & IndexedModule.eraseAxiomAttributes
