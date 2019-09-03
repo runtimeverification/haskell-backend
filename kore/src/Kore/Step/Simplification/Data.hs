@@ -453,14 +453,14 @@ newtype TermLikeSimplifier =
             , SortedVariable variable
             , MonadSimplify m
             )
-        => TermLike variable
-        -> Predicate variable
+        => Predicate variable
+        -> TermLike variable
         -> BranchT m (Pattern variable)
         )
 
 emptyTermLikeSimplifier :: TermLikeSimplifier
 emptyTermLikeSimplifier =
-    TermLikeSimplifier $ \term condition ->
+    TermLikeSimplifier $ \condition term ->
         return (Conditional.withCondition term condition)
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern.
@@ -481,7 +481,7 @@ simplifyTerm
     -> simplifier (OrPattern variable)
 simplifyTerm termLike = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
-    results <- gather $ simplify termLike Predicate.top
+    results <- gather $ simplify Predicate.top termLike
     return (OrPattern.fromPatterns results)
 
 
@@ -496,12 +496,12 @@ simplifyConditionalTerm
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => TermLike variable
-    -> Predicate variable
+    => Predicate variable
+    -> TermLike variable
     -> BranchT simplifier (Pattern variable)
-simplifyConditionalTerm termLike predicate = do
+simplifyConditionalTerm predicate termLike  = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
-    simplify termLike predicate
+    simplify predicate termLike
 
 {- | Construct a 'TermLikeSimplifier' from a term simplifier.
 
@@ -518,7 +518,8 @@ termLikeSimplifier
             , SortedVariable variable
             , MonadSimplify m
             )
-        => TermLike variable
+        => Predicate variable
+        -> TermLike variable
         -> m (OrPattern variable)
         )
     -> TermLikeSimplifier
@@ -534,16 +535,15 @@ termLikeSimplifier simplifier =
             , SortedVariable variable
             , MonadSimplify m
             )
-        => TermLike variable
-        -> Predicate variable
+        => Predicate variable
+        -> TermLike variable
         -> BranchT m (Pattern variable)
     termLikeSimplifierWorker
-        termLike
         initialCondition
+        termLike
       = do
-        results <- Monad.Trans.lift $ simplifier termLike
-        result <- scatter results
-        return (result `Conditional.andCondition` initialCondition)
+        results <- Monad.Trans.lift $ simplifier initialCondition termLike
+        scatter results
 
 {-| 'PredicateSimplifier' wraps a function that simplifies
 'Predicate's. The minimal requirement from this function is

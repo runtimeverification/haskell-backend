@@ -333,7 +333,7 @@ andFunctions =
     forAnd
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forAnd f = f SimplificationType.And
+    forAnd f = f Predicate.topTODO SimplificationType.And
 
 equalsFunctions
     ::  forall variable unifier
@@ -358,7 +358,7 @@ equalsFunctions =
     forEquals
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forEquals f = f SimplificationType.Equals
+    forEquals f = f Predicate.topTODO SimplificationType.Equals
 
 andEqualsFunctions
     ::  forall variable unifier
@@ -374,25 +374,25 @@ andEqualsFunctions
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \_ _ _ -> bottomTermEquals Predicate.topTODO, "bottomTermEquals")
-    , (EqualsT, \_ _ _ -> termBottomEquals Predicate.topTODO, "termBottomEquals")
-    , (BothT,   \t _ _ -> variableFunctionAndEquals Predicate.topTODO t, "variableFunctionAndEquals")
-    , (BothT,   \t _ _ -> functionVariableAndEquals Predicate.topTODO t, "functionVariableAndEquals")
-    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
-    , (BothT,   \t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
-    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
-    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
+    [ (AndT,    \_ _ _ _ -> boolAnd, "boolAnd")
+    , (BothT,   \_ _ _ _ -> equalAndEquals, "equalAndEquals")
+    , (EqualsT, \p _ _ _ -> bottomTermEquals p, "bottomTermEquals")
+    , (EqualsT, \p _ _ _ -> termBottomEquals p, "termBottomEquals")
+    , (BothT,   \p t _ _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
+    , (BothT,   \p t _ _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
+    , (BothT,   \_ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
+    , (BothT,   \_ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
+    , (BothT,   \_ _ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
+    , (BothT,   \_ t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
+    , (BothT,   \_ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (BothT,   \_ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
+    , (AndT,    \_ _ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
     mapEqualsFunctions (target, termTransform, name) =
@@ -402,7 +402,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
         :: String
         -> TermTransformation variable unifier
         -> TermTransformation variable unifier
-    logTT fnName termTransformation sType pm ts t1 t2 =
+    logTT fnName termTransformation predicate sType pm ts t1 t2 =
         mapMaybeT (\getResult -> do
             mresult <- getResult
             case mresult of
@@ -434,7 +434,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
                             ]
                     return mresult
             )
-            $ termTransformation sType pm ts t1 t2
+            $ termTransformation predicate sType pm ts t1 t2
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -450,7 +450,8 @@ call 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation variable unifier =
-       SimplificationType
+       Predicate variable
+    -> SimplificationType
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -> TermLike variable

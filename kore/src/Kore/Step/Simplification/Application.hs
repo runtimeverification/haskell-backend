@@ -77,12 +77,12 @@ makeAndEvaluateApplications
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    =>  Predicate variable
-    ->  Symbol
+    => Predicate variable
+    -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateApplications predicate symbol children =
-    makeAndEvaluateSymbolApplications predicate symbol children
+makeAndEvaluateApplications =
+    makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
     ::  ( Show variable
@@ -98,7 +98,9 @@ makeAndEvaluateSymbolApplications
 makeAndEvaluateSymbolApplications predicate symbol children = do
     expandedApplications <-
         BranchT.gather $ makeExpandedApplication symbol children
-    orResults <- traverse (evaluateApplicationFunction predicate) expandedApplications
+    orResults <- traverse
+                    (evaluateApplicationFunction predicate)
+                    expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
@@ -113,7 +115,10 @@ evaluateApplicationFunction
     -> ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplicationFunction configurationPredicate Conditional { term, predicate, substitution } =
+evaluateApplicationFunction
+    configurationPredicate
+    Conditional { term, predicate, substitution }
+  =
     evaluateApplication
         configurationPredicate
         Conditional { term = (), predicate, substitution }
