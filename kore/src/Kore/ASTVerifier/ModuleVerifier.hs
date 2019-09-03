@@ -52,16 +52,6 @@ import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
 
-newIndexedModule :: Module ParsedSentence -> Verifier VerifiedModule'
-newIndexedModule module' = do
-    VerifierContext { implicitModule } <- Reader.ask
-    let Module { moduleName, moduleAttributes } = module'
-    attrs <- parseAttributes' moduleAttributes
-    return
-        ( indexedModuleWithDefaultImports moduleName implicitModule
-        & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
-        )
-
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}
 verifyUniqueNames
@@ -92,8 +82,7 @@ verifyUncachedModule name = whileImporting name $ do
     let Module { moduleSentences } = module'
         sentences = List.sort moduleSentences
     (_, indexedModule) <-
-        -- TODO: Refactor this in a type-safe way.
-            withModuleContext name (newIndexedModule module')
+            withModuleContext name (newVerifiedModule module')
         >>= verifyImports        sentences
         >>= SentenceVerifier.runSentenceVerifier
             (withModuleContext name $ do
@@ -113,6 +102,16 @@ verifyUncachedModule name = whileImporting name $ do
         $ internalIndexedModuleSubsorts indexedModule
     field @"verifiedModules" %= Map.insert name indexedModule
     return indexedModule
+
+newVerifiedModule :: Module ParsedSentence -> Verifier VerifiedModule'
+newVerifiedModule module' = do
+    VerifierContext { implicitModule } <- Reader.ask
+    let Module { moduleName, moduleAttributes } = module'
+    attrs <- parseAttributes' moduleAttributes
+    return
+        ( indexedModuleWithDefaultImports moduleName implicitModule
+        & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
+        )
 
 verifyImports
     :: [ParsedSentence]
