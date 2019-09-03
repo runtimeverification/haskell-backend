@@ -121,9 +121,9 @@ verifyAndIndexDefinitionWithBase
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
     let
-        verifiedDefaultModule
+        implicitModule
             :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
-        verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
+        implicitModule = ImplicitIndexedModule implicitIndexedModule
         parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition
         verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
@@ -133,7 +133,7 @@ verifyAndIndexDefinitionWithBase
         runVerifier
             verifyModules
             verifiedModulesCache
-            (Just verifiedDefaultModule)
+            implicitModule
             parsedModules
             attributesVerification
             builtinVerifiers

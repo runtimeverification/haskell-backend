@@ -53,7 +53,7 @@ type VerifiedModule' = VerifiedModule Attribute.Symbol Attribute.Axiom
 
 data VerifierContext =
     VerifierContext
-        { implicitModule         :: !(Maybe ImplicitModule)
+        { implicitModule         :: !ImplicitModule
         , modules                :: !(Map ModuleName ParsedModule)
         , importing              :: ![ModuleName]
         , attributesVerification :: !AttributesVerification'
@@ -84,7 +84,7 @@ deriving instance MonadError (Error VerifyError) Verifier
 runVerifier
     :: Verifier a
     -> Map ModuleName VerifiedModule'
-    -> Maybe ImplicitModule
+    -> ImplicitModule
     -> Map ModuleName (Module ParsedSentence)
     -> AttributesVerification'
     -> Builtin.Verifiers

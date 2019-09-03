@@ -103,7 +103,7 @@ newVerifiedModule module' = do
     let Module { moduleName, moduleAttributes } = module'
     attrs <- parseAttributes' moduleAttributes
     return
-        ( indexedModuleWithDefaultImports moduleName implicitModule
+        ( indexedModuleWithDefaultImports moduleName (Just implicitModule)
         & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
         )
 
