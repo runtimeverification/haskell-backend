@@ -29,40 +29,45 @@ import Kore.Syntax.Variable
        ( Variable )
 import Kore.Unparser
 
-data Alias patternType =
+data Alias (patternType :: * -> *) (variable :: *) =
     Alias
         { aliasConstructor :: !Id
         , aliasParams      :: ![Sort]
         , aliasSorts       :: !ApplicationSorts
-        , aliasLeft        :: [Variable]
-        , aliasRight       :: patternType
+        , aliasLeft        :: [variable]
+        , aliasRight       :: patternType variable
         }
     deriving (GHC.Generic, Show)
 
-instance Eq (Alias patternType) where
+instance Eq (Alias patternType variable) where
     (==) a b =
             Function.on (==) aliasConstructor a b
         &&  Function.on (==) aliasParams a b
     {-# INLINE (==) #-}
 
-instance Ord (Alias patternType) where
+instance Ord (Alias patternType variable) where
     compare a b =
             Function.on compare aliasConstructor a b
         <>  Function.on compare aliasParams a b
 
-instance Hashable (Alias patternType) where
+instance Hashable (Alias patternType variable) where
     hashWithSalt salt Alias { aliasConstructor, aliasParams } =
         salt `hashWithSalt` aliasConstructor `hashWithSalt` aliasParams
 
-instance NFData patternType => NFData (Alias patternType)
+instance ( NFData (patternType variable)
+         , NFData variable
+         ) => NFData (Alias patternType variable)
 
-instance SOP.Generic (Alias patternType)
+instance SOP.Generic (Alias patternType variable)
 
-instance SOP.HasDatatypeInfo (Alias patternType)
+instance SOP.HasDatatypeInfo (Alias patternType variable)
 
-instance Debug patternType => Debug (Alias patternType)
+instance ( Debug (patternType variable)
+         , Debug variable
+         ) => Debug (Alias patternType variable)
 
-instance Unparse (Alias patternType) where
+-- TODO: unparse definition as well
+instance Unparse (Alias patternType variable) where
     unparse Alias { aliasConstructor, aliasParams } =
         unparse aliasConstructor
         <> parameters aliasParams
@@ -72,13 +77,13 @@ instance Unparse (Alias patternType) where
 
 instance
     Ord variable =>
-    Synthetic (FreeVariables variable) (Application (Alias patternType))
+    Synthetic (FreeVariables variable) (Application (Alias patternType variable))
   where
     -- TODO (thomas.tuegel): Consider that there could be bound variables here.
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
 
-instance Synthetic Sort (Application (Alias patternType)) where
+instance Synthetic Sort (Application (Alias patternType variable)) where
     synthetic application =
         resultSort Function.& deepseq (matchSorts operandSorts children)
       where
@@ -88,7 +93,7 @@ instance Synthetic Sort (Application (Alias patternType)) where
         resultSort = applicationSortsResult aliasSorts
         operandSorts = applicationSortsOperands aliasSorts
 
-toSymbolOrAlias :: Alias patternType -> SymbolOrAlias
+toSymbolOrAlias :: Alias patternType variable -> SymbolOrAlias
 toSymbolOrAlias alias =
     SymbolOrAlias
         { symbolOrAliasConstructor = aliasConstructor alias

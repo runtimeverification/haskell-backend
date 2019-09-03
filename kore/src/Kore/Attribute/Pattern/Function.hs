@@ -62,7 +62,7 @@ instance Synthetic Function (Application Internal.Symbol) where
         children = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
-instance Synthetic Function (Application (Internal.Alias patternType)) where
+instance Synthetic Function (Application (Internal.Alias patternType variable)) where
     synthetic = const (Function False)
     {-# INLINE synthetic #-}
 
