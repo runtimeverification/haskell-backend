@@ -17,7 +17,7 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyHookedSymbols
     , verifyAliasSentence
     , verifyAxioms
-    , verifyClaimSentence
+    , verifyClaims
     ) where
 
 import           Control.Applicative
@@ -366,20 +366,14 @@ verifyAliasSentence sentence = do
     expectedSort = sentenceAliasResultSort
 
 verifyAxioms :: [ParsedSentence] -> SentenceVerifier ()
-verifyAxioms = Foldable.traverse_ verifyAxiom . mapMaybe projectSentenceAxiom
+verifyAxioms =
+    Foldable.traverse_ verifyAxiomSentence
+    . mapMaybe projectSentenceAxiom
 
-verifyAxiom :: SentenceAxiom ParsedPattern -> SentenceVerifier ()
-verifyAxiom sentence =
+verifyAxiomSentence :: SentenceAxiom ParsedPattern -> SentenceVerifier ()
+verifyAxiomSentence sentence =
     withSentenceAxiomContext sentence $ do
-        let sortParams = sentenceAxiomParameters sentence
-        variables <- buildDeclaredSortVariables sortParams
-        context <- askPatternContext variables
-        verified <-
-            field @"sentenceAxiomPattern"
-                (verifyStandalonePattern Nothing)
-                sentence
-            & runPatternVerifier context
-            & either throwError return
+        verified <- verifyAxiomSentenceWorker sentence
         attrs <- parseAttributes' $ sentenceAxiomAttributes sentence
         State.modify $ addAxiom verified attrs
   where
@@ -388,32 +382,41 @@ verifyAxiom sentence =
             (field @"indexedModuleAxioms")
             ((attrs, verified) :)
 
-verifyAxiomSentence
+verifyAxiomSentenceWorker
     :: ParsedSentenceAxiom
     -> SentenceVerifier Verified.SentenceAxiom
-verifyAxiomSentence axiom = do
-    variables <- buildDeclaredSortVariables $ sentenceAxiomParameters axiom
+verifyAxiomSentenceWorker sentence = do
+    let sortParams = sentenceAxiomParameters sentence
+    variables <- buildDeclaredSortVariables sortParams
     context <- askPatternContext variables
-    verifiedAxiomPattern <-
-        either throwError return
-        . runPatternVerifier context
-        $ verifyStandalonePattern Nothing sentenceAxiomPattern
-    return axiom { sentenceAxiomPattern = verifiedAxiomPattern }
-  where
-    SentenceAxiom { sentenceAxiomPattern } = axiom
+    field @"sentenceAxiomPattern" (verifyStandalonePattern Nothing) sentence
+        & runPatternVerifier context
+        & either throwError return
 
-verifyClaimSentence
-    :: SentenceClaim ParsedPattern
-    -> SentenceVerifier Verified.SentenceClaim
-verifyClaimSentence claimSentence =
-    SentenceClaim <$> verifyAxiomSentence (getSentenceClaim claimSentence)
+verifyClaims
+    :: [ParsedSentence]
+    -> SentenceVerifier ()
+verifyClaims =
+    Foldable.traverse_ verifyClaimSentence
+    . mapMaybe projectSentenceClaim
+
+verifyClaimSentence :: SentenceClaim ParsedPattern -> SentenceVerifier ()
+verifyClaimSentence sentence =
+    withSentenceClaimContext sentence $ do
+        verified <- verifyAxiomSentenceWorker (getSentenceClaim sentence)
+        attrs <- parseAttributes' $ sentenceClaimAttributes sentence
+        State.modify' $ addClaim (SentenceClaim verified) attrs
+  where
+    addClaim verified attrs =
+        Lens.over
+            (field @"indexedModuleClaims")
+            ((attrs, verified) :)
 
 verifySorts :: [ParsedSentence] -> SentenceVerifier ()
 verifySorts = Foldable.traverse_ verifySortSentence . mapMaybe project
   where
     project sentence =
         projectSentenceSort sentence <|> projectSentenceHookedSort sentence
-
 
 verifySortSentence
     :: SentenceSort ParsedPattern

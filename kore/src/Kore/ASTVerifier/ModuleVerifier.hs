@@ -34,8 +34,9 @@ import           Kore.ASTVerifier.AliasVerifier
 import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SentenceVerifier
-                 ( SentenceVerifier, verifyAxioms, verifyHookedSorts,
-                 verifyHookedSymbols, verifySorts, verifySymbols )
+                 ( SentenceVerifier, verifyAxioms, verifyClaims,
+                 verifyHookedSorts, verifyHookedSymbols, verifySorts,
+                 verifySymbols )
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
 import           Kore.ASTVerifier.Verifier
 import           Kore.Attribute.Parser
@@ -133,23 +134,6 @@ parseAttributes'
     -> error attrs
 parseAttributes' =
     Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
-
-verifyClaims
-    :: [ParsedSentence]
-    -> SentenceVerifier ()
-verifyClaims = Foldable.traverse_ verifyClaim . mapMaybe projectSentenceClaim
-
-verifyClaim :: SentenceClaim ParsedPattern -> SentenceVerifier ()
-verifyClaim sentence =
-    withSentenceClaimContext sentence $ do
-        verified <- SentenceVerifier.verifyClaimSentence sentence
-        attrs <- parseAttributes' $ sentenceClaimAttributes sentence
-        State.modify' $ addClaim verified attrs
-  where
-    addClaim verified attrs =
-        Lens.over
-            (field @"indexedModuleClaims")
-            ((attrs, verified) :)
 
 verifyNonHooks
     :: [ParsedSentence]
