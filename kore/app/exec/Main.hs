@@ -383,16 +383,6 @@ type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
 
 type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
--- loadDefinitionAndSpecification
---     :: KoreExecOptions
---     -> Main (LoadedModule, LoadedModule, LoadedDefinition)
---     --       ^ spec        ^ definition
--- loadDefinitionAndSpecification options = do
---     let KoreExecOptions { definitionFileName } = options
---     parsedDefinition <- parseDefinition definitionFileName
---     let KoreProveOptions { specFileName } = proveOptions
---     spec <- parseDefinition specFileName
-
 loadDefinition :: KoreExecOptions -> Main (LoadedModule, LoadedDefinition)
 loadDefinition options = do
     let KoreExecOptions { definitionFileName } = options
