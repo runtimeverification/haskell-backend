@@ -3,30 +3,26 @@
 
 module Main (main) where
 
-import           Control.Applicative
-                 ( optional )
-import           Control.Concurrent.MVar
-import           Control.Monad.Trans
-                 ( lift )
-import           Control.Monad.Trans.Reader
-                 ( runReaderT )
-import qualified Data.Bifunctor as Bifunctor
-import           Data.Maybe
-import           Data.Semigroup
-                 ( (<>) )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, auto, flag, fullDesc, header,
-                 help, long, metavar, option, progDesc, readerError, short,
-                 str, strOption, value )
-import           System.Exit
-                 ( exitFailure )
+import Control.Applicative
+       ( optional )
+import Control.Concurrent.MVar
+import Control.Monad.Trans
+       ( lift )
+import Control.Monad.Trans.Reader
+       ( runReaderT )
+import Data.Maybe
+import Data.Semigroup
+       ( (<>) )
+import Options.Applicative
+       ( InfoMod, Parser, argument, auto, flag, fullDesc, header, help, long,
+       metavar, option, progDesc, readerError, short, str, strOption, value )
+import System.Exit
+       ( exitFailure )
 
 import           Data.Limit
                  ( Limit (..) )
-import qualified Kore.Builtin as Builtin
 import           Kore.Exec
                  ( proveWithRepl )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Logger.Output
                  ( emptyLogger, getLoggerT, swappableLogger )
 import           Kore.Repl.Data
@@ -174,22 +170,14 @@ mainWithOptions
         indexedDefinition@(indexedModules, _) <-
             verifyDefinitionWithBase
               Nothing
-              Nothing
               True
               parsedDefinition
         indexedModule <-
             lift $ lookupMainModule mainModuleName indexedModules
         specDef <- parseDefinition specFile
-        let unverifiedDefinition =
-                Bifunctor.first
-                    ((fmap . IndexedModule.mapPatterns)
-                        Builtin.externalizePattern
-                    )
-                    indexedDefinition
         (specDefIndexedModules, _) <-
             verifyDefinitionWithBase
               (Just indexedDefinition)
-              (Just unverifiedDefinition)
               True
               specDef
 

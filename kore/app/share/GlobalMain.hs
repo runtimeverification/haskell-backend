@@ -67,7 +67,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule, VerifiedModule )
+                 ( VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Logger.Output as Logger
 import           Kore.Parser
@@ -335,11 +335,6 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
-    -> Maybe
-        ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -- ^ base definition to use for verification
     -> Bool
     -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
@@ -350,8 +345,7 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase
-    maybeAlreadyVerifiedDefinition
-    maybeBaseModule
+    maybeAlreadyVerified
     willChkAttr
     definition
   =
@@ -363,8 +357,7 @@ verifyDefinitionWithBase
       verifyResult <-
         clockSomething "Verifying the definition"
             (verifyAndIndexDefinitionWithBase
-                maybeAlreadyVerifiedDefinition
-                maybeBaseModule
+                maybeAlreadyVerified
                 attributesVerification
                 Builtin.koreVerifiers
                 definition

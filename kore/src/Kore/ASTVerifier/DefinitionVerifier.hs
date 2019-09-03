@@ -19,7 +19,9 @@ module Kore.ASTVerifier.DefinitionVerifier
 import           Control.Monad
                  ( foldM )
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
+import           Data.Map
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Maybe
 import           Data.Proxy
                  ( Proxy (..) )
@@ -87,7 +89,6 @@ verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
             Nothing
-            Nothing
             attributesVerification
             builtinVerifiers
             definition
@@ -100,34 +101,22 @@ If verification is successfull, it returns the updated maps op indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase
-    :: Maybe
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -> Maybe
-        ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -> AttributesVerification Attribute.Symbol Attribute.Axiom
-    -> Builtin.Verifiers
-    -> ParsedDefinition
-    -> Either (Error VerifyError)
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
+    ::  Maybe (Map ModuleName VerifiedModule', Map Text AstLocation)
+    ->  AttributesVerification Attribute.Symbol Attribute.Axiom
+    ->  Builtin.Verifiers
+    ->  ParsedDefinition
+    ->  Either (Error VerifyError)
+            (Map ModuleName VerifiedModule', Map Text AstLocation)
 verifyAndIndexDefinitionWithBase
-    maybeAlreadyVerifiedDefinition
-    maybeBaseDefinition
+    maybeAlreadyVerified
     attributesVerification
     builtinVerifiers
     definition
   = do
     let
         (_, baseNames) =
-            fromMaybe (implicitModules, implicitNames) maybeBaseDefinition
-        modulesInScope = maybe Map.empty fst maybeBaseDefinition
-        verifiedModulesCache =
-            maybe Map.empty fst maybeAlreadyVerifiedDefinition
+            fromMaybe (implicitModules, implicitNames) maybeAlreadyVerified
+        verifiedModulesCache = maybe Map.empty fst maybeAlreadyVerified
 
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
@@ -135,9 +124,7 @@ verifyAndIndexDefinitionWithBase
         verifiedDefaultModule
             :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
         verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
-        parsedModules =
-            modulesByName (definitionModules definition)
-            <> fmap toModule modulesInScope
+        parsedModules = modulesByName (definitionModules definition)
         definitionModuleNames = moduleName <$> definitionModules definition
         verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
 

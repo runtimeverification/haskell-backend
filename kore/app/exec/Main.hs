@@ -9,7 +9,6 @@ import           Control.Monad.IO.Unlift
 import qualified Control.Monad.Reader.Class as Reader
 import           Control.Monad.Trans
                  ( lift )
-import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import           Data.List
@@ -40,13 +39,11 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
 import           Kore.Error
                  ( printError )
 import           Kore.Exec
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
                  ( build )
 import           Kore.Internal.Pattern
@@ -388,7 +385,7 @@ loadDefinition options = do
     let KoreExecOptions { definitionFileName } = options
     parsedDefinition <- parseDefinition definitionFileName
     definition@(indexedModules, _) <-
-        verifyDefinitionWithBase Nothing Nothing True parsedDefinition
+        verifyDefinitionWithBase Nothing True parsedDefinition
     let KoreExecOptions { mainModuleName } = options
     mainModule <- lookupMainModule mainModuleName indexedModules
     return (mainModule, definition)
@@ -398,13 +395,9 @@ loadSpecification
     -> LoadedDefinition
     -> Main (LoadedModule, LoadedDefinition)
 loadSpecification proveOptions definition = do
-    let base =
-            (Bifunctor.first . fmap . IndexedModule.mapPatterns)
-                Builtin.externalizePattern
-                definition
     let KoreProveOptions { specFileName } = proveOptions
     spec <- parseDefinition specFileName
-    specDef@(modules, _) <- verifyDefinitionWithBase (Just definition) (Just base) True spec
+    specDef@(modules, _) <- verifyDefinitionWithBase (Just definition) True spec
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- lookupMainModule specMainModule modules
     return (specModule, specDef)
