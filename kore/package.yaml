@@ -94,7 +94,6 @@ default-extensions:
   - InstanceSigs
   - KindSignatures
   - LambdaCase
-  - MonoLocalBinds
   - MultiParamTypeClasses
   - NamedFieldPuns
   - OverloadedStrings
