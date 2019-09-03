@@ -9,4 +9,4 @@ source $TOP/scripts/run-on-haskell.include.sh
 stack install stylish-haskell
 export PATH=$(stack path --bin-path)
 
-runOnHaskellFiles "$TOP" stack exec stylish-haskell -- -i
+runOnHaskellFiles "$TOP" .build/kore/bin/stylish-haskell -i
