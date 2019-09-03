@@ -7,6 +7,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..)
     , Simplifier

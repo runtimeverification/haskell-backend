@@ -10,6 +10,9 @@ counter used for fresh variable generation. The type 'Counter' provides a
 concrete implementation of the class.
 
 -}
+
+{-# LANGUAGE UndecidableInstances #-}
+
 module Control.Monad.Counter
     ( -- * Class
       MonadCounter (..)
