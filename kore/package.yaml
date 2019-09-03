@@ -60,6 +60,7 @@ dependencies:
   - profunctors
   - recursion-schemes
   - reflection
+  - semialign
   - template-haskell
   - text
   - these
@@ -93,12 +94,10 @@ default-extensions:
   - InstanceSigs
   - KindSignatures
   - LambdaCase
-  - MonoLocalBinds
   - MultiParamTypeClasses
   - NamedFieldPuns
   - OverloadedStrings
   - PatternSynonyms
-  - QuantifiedConstraints
   - RankNTypes
   - ScopedTypeVariables
   - StandaloneDeriving
