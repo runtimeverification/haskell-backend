@@ -86,6 +86,7 @@ verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
             Nothing
+            Nothing
             attributesVerification
             builtinVerifiers
             definition
@@ -99,6 +100,10 @@ and defined names.
 -}
 verifyAndIndexDefinitionWithBase
     :: Maybe
+        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+        , Map.Map Text AstLocation
+        )
+    -> Maybe
         ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
@@ -110,6 +115,7 @@ verifyAndIndexDefinitionWithBase
         , Map.Map Text AstLocation
         )
 verifyAndIndexDefinitionWithBase
+    maybeAlreadyVerifiedDefinition
     maybeBaseDefinition
     attributesVerification
     builtinVerifiers
@@ -118,6 +124,10 @@ verifyAndIndexDefinitionWithBase
     let
         (_, baseNames) =
             fromMaybe (implicitModules, implicitNames) maybeBaseDefinition
+        modulesInScope =
+            maybe Map.empty fst maybeBaseDefinition
+        alreadyVerifiedModules =
+            maybe Map.empty fst maybeAlreadyVerifiedDefinition
 
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
@@ -125,6 +135,9 @@ verifyAndIndexDefinitionWithBase
         verifiedDefaultModule
             :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
         verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
+        allModules =
+            modulesByName (definitionModules definition)
+            <> fmap toModule modulesInScope
 
     -- Verify the contents of the definition.
     (_, index) <-
@@ -133,8 +146,9 @@ verifyAndIndexDefinitionWithBase
                 verifyModuleByName
                 (moduleName <$> definitionModules definition)
             )
+            alreadyVerifiedModules
             (Just verifiedDefaultModule)
-            (modulesByName $ definitionModules definition)
+            allModules
             attributesVerification
             builtinVerifiers
     verifyAttributes

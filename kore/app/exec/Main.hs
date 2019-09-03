@@ -383,12 +383,22 @@ type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
 
 type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
+-- loadDefinitionAndSpecification
+--     :: KoreExecOptions
+--     -> Main (LoadedModule, LoadedModule, LoadedDefinition)
+--     --       ^ spec        ^ definition
+-- loadDefinitionAndSpecification options = do
+--     let KoreExecOptions { definitionFileName } = options
+--     parsedDefinition <- parseDefinition definitionFileName
+--     let KoreProveOptions { specFileName } = proveOptions
+--     spec <- parseDefinition specFileName
+
 loadDefinition :: KoreExecOptions -> Main (LoadedModule, LoadedDefinition)
 loadDefinition options = do
     let KoreExecOptions { definitionFileName } = options
     parsedDefinition <- parseDefinition definitionFileName
     definition@(indexedModules, _) <-
-        verifyDefinitionWithBase Nothing True parsedDefinition
+        verifyDefinitionWithBase Nothing Nothing True parsedDefinition
     let KoreExecOptions { mainModuleName } = options
     mainModule <- lookupMainModule mainModuleName indexedModules
     return (mainModule, definition)
@@ -404,7 +414,7 @@ loadSpecification proveOptions definition = do
                 definition
     let KoreProveOptions { specFileName } = proveOptions
     spec <- parseDefinition specFileName
-    specDef@(modules, _) <- verifyDefinitionWithBase (Just base) True spec
+    specDef@(modules, _) <- verifyDefinitionWithBase (Just definition) (Just base) True spec
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- lookupMainModule specMainModule modules
     return (specModule, specDef)

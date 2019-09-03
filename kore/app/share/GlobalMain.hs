@@ -331,8 +331,12 @@ Also prints timing information; see 'mainParse'.
  -}
 verifyDefinitionWithBase
     :: Maybe
-        ( Map.Map ModuleName
-            (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
+        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+        , Map.Map Text AstLocation
+        )
+    -- ^ already verified definition
+    -> Maybe
+        ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
     -- ^ base definition to use for verification
@@ -345,7 +349,12 @@ verifyDefinitionWithBase
             (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
-verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
+verifyDefinitionWithBase
+    maybeAlreadyVerifiedDefinition
+    maybeBaseModule
+    willChkAttr
+    definition
+  =
     let attributesVerification =
             if willChkAttr
             then defaultAttributesVerification Proxy Proxy
@@ -354,6 +363,7 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
       verifyResult <-
         clockSomething "Verifying the definition"
             (verifyAndIndexDefinitionWithBase
+                maybeAlreadyVerifiedDefinition
                 maybeBaseModule
                 attributesVerification
                 Builtin.koreVerifiers

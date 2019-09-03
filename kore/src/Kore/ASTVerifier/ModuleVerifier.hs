@@ -106,6 +106,7 @@ deriving instance MonadError (Error VerifyError) ModuleVerifier
 
 runModuleVerifier
     :: ModuleVerifier a
+    -> Map ModuleName VerifiedModule'
     -> Maybe ImplicitModule
     -> Map ModuleName (Module ParsedSentence)
     -> AttributesVerification'
@@ -113,6 +114,7 @@ runModuleVerifier
     -> Either (Error VerifyError) (a, Map ModuleName VerifiedModule')
 runModuleVerifier
     moduleVerifier
+    alreadyVerifiedModules
     implicitModule
     modules
     attributesVerification
@@ -125,7 +127,8 @@ runModuleVerifier
             moduleState
     return (a, verifiedModules moduleState')
   where
-    moduleState = ModuleState { verifiedModules = Map.empty }
+    moduleState =
+        ModuleState { verifiedModules = alreadyVerifiedModules}
     moduleContext =
         ModuleContext
             { implicitModule
