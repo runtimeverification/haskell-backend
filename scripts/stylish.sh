@@ -6,7 +6,7 @@ export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 
 source $TOP/scripts/run-on-haskell.include.sh
 
-stack install stylish-haskell
+stack build stylish-haskell
 export PATH=$(stack path --bin-path)
 
-runOnHaskellFiles "$TOP" stylish-haskell -i
+runOnHaskellFiles "$TOP" stack exec stylish-haskell -- -i
