@@ -63,12 +63,22 @@ verifyUniqueNames existingNames koreModule =
             existingNames
         )
 
+{- | Verify the named module.
+
+The cached 'VerifiedModule' is returned if available; otherwise the module is
+verified and cached.
+
+See also: 'verifyUncachedModule'
+
+ -}
 verifyModule :: ModuleName -> Verifier VerifiedModule'
 verifyModule name = lookupVerifiedModule name >>= maybe notCached cached
   where
     cached = return
     notCached = verifyUncachedModule name
 
+{- | Verify the named module, irrespective of the cache.
+ -}
 verifyUncachedModule :: ModuleName -> Verifier VerifiedModule'
 verifyUncachedModule name = whileImporting name $ do
     module' <- lookupParsedModule name
@@ -80,8 +90,6 @@ verifyUncachedModule name = whileImporting name $ do
             (do
                 verifyImports sentences
                 withModuleContext name $ do
-                    -- TODO: The corresponding functions in
-                    -- Kore.IndexedModule.IndexedModule can go away.
                     verifySorts         sentences
                     verifySymbols       sentences
                     verifyHookedSorts   sentences
@@ -97,7 +105,13 @@ verifyUncachedModule name = whileImporting name $ do
     field @"verifiedModules" %= Map.insert name indexedModule
     return indexedModule
 
-newVerifiedModule :: Module ParsedSentence -> Verifier VerifiedModule'
+{- | Construct a new 'VerifiedModule' for the 'ParsedModule'.
+
+The new 'VerifiedModule' is empty except for its 'ModuleName', its 'Attributes',
+and the 'ImplicitModule' import.
+
+ -}
+newVerifiedModule :: ParsedModule -> Verifier VerifiedModule'
 newVerifiedModule module' = do
     VerifierContext { implicitModule } <- Reader.ask
     let Module { moduleName, moduleAttributes } = module'
@@ -107,6 +121,11 @@ newVerifiedModule module' = do
         & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
         )
 
+{- | Project the 'SentenceImport's out the list and verify them.
+
+The named modules are verified and imported into the current 'VerifiedModule'.
+
+ -}
 verifyImports :: [ParsedSentence] -> SentenceVerifier ()
 verifyImports = Foldable.traverse_ verifyImport . mapMaybe projectSentenceImport
 
