@@ -240,7 +240,7 @@ verifyHookedSort sentence@SentenceSort { sentenceSortAttributes } = do
     Builtin.sortDeclVerifier
         builtinVerifiers
         hook
-        (IndexedModule.eraseAttributes verifiedModule)
+        verifiedModule
         sentence
         attrs
         & either throwError return

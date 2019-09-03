@@ -162,10 +162,10 @@ verifyHookedSorts =
 It is an error to use this before 'verifySorts'.
 
  -}
-lookupSortAttributesHere :: Id -> VerifiedModule' -> Attribute.Sort
-lookupSortAttributesHere name verifiedModule =
-    Map.lookup name (indexedModuleSortDescriptions verifiedModule)
-    & maybe (error $ noSort name) fst
+lookupSortAttributes :: Id -> SentenceVerifier Attribute.Sort
+lookupSortAttributes name = do
+    sorts <- State.gets indexedModuleSortDescriptions
+    Map.lookup name sorts & maybe (error $ noSort name) (return . fst)
 
 verifyHookedSort :: SentenceSort ParsedPattern -> SentenceVerifier ()
 verifyHookedSort sentence =
@@ -177,13 +177,13 @@ verifyHookedSort sentence =
                 attributesVerification
                 sentenceSortAttributes
         let SentenceSort { sentenceSortName = name } = sentence
-        verifiedModule <- State.get
-        let attrs = lookupSortAttributesHere name verifiedModule
+        attrs <- lookupSortAttributes name
         VerifierContext { builtinVerifiers } <- Reader.ask
+        verifiedModule <- State.get
         Builtin.sortDeclVerifier
             builtinVerifiers
             hook
-            (IndexedModule.eraseAttributes verifiedModule)
+            verifiedModule
             sentence
             attrs
             & either throwError return
