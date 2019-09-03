@@ -48,6 +48,14 @@ noConstructorInHookedSort symbolId sort =
         , Pretty.squotes (unparse sort) <> Pretty.dot
         ]
 
+noConstructorWithVariableSort :: Id -> String
+noConstructorWithVariableSort symbolId =
+    (show . Pretty.hsep)
+        [ "Cannot define constructor"
+        , Pretty.squotes (unparse symbolId)
+        , "with variable result sort."
+        ]
+
 sortNeedsDomainValueAttributeMessage :: Text
 sortNeedsDomainValueAttributeMessage =
     "Sorts used with domain value must have the '"

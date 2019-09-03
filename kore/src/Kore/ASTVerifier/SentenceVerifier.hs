@@ -277,17 +277,23 @@ verifyConstructor
     :: Verified.SentenceSymbol
     -> SentenceVerifier ()
 verifyConstructor verified = do
-    sortAttrs <- lookupSortAttributes (getSortId resultSort)
+    resultSortId <-
+        case resultSort of
+            SortVariableSort _ ->
+                koreFail (noConstructorWithVariableSort symbolName)
+            SortActualSort _ ->
+                return (getSortId resultSort)
+    attrs <- lookupSortAttributes resultSortId
     let
         isHookedSort =
             isJust
             . Attribute.getHook
             . Attribute.Sort.hook
-            $ sortAttrs
+            $ attrs
         hasDomainValues =
             Attribute.HasDomainValues.getHasDomainValues
             . Attribute.Sort.hasDomainValues
-            $ sortAttrs
+            $ attrs
     koreFailWhen isHookedSort
         (noConstructorInHookedSort symbolName resultSort)
     koreFailWhen hasDomainValues
