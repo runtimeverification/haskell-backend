@@ -76,7 +76,11 @@ simplify
     => Predicate.Predicate variable
     -> Ceil Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify predicate Ceil { ceilChild = child } = simplifyEvaluated predicate child
+simplify
+    predicate
+    Ceil { ceilChild = child }
+  =
+    simplifyEvaluated predicate child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
@@ -172,7 +176,10 @@ makeEvaluateTerm
     => Predicate.Predicate variable
     -> TermLike variable
     -> simplifier (OrPredicate variable)
-makeEvaluateTerm configurationPredicate term@(Recursive.project -> _ :< projected) =
+makeEvaluateTerm
+    configurationPredicate
+    term@(Recursive.project -> _ :< projected)
+  =
     makeEvaluateTermWorker
   where
     makeEvaluateTermWorker
@@ -185,11 +192,15 @@ makeEvaluateTerm configurationPredicate term@(Recursive.project -> _ :< projecte
       , let headAttributes = symbolAttributes patternHead
       , Attribute.Symbol.isTotal headAttributes = do
             let Application { applicationChildren = children } = app
-            simplifiedChildren <- mapM (makeEvaluateTerm configurationPredicate) children
+            simplifiedChildren <- mapM
+                                    (makeEvaluateTerm configurationPredicate)
+                                    children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 
-      | BuiltinF child <- projected = makeEvaluateBuiltin configurationPredicate child
+      | BuiltinF child <- projected = makeEvaluateBuiltin
+                                        configurationPredicate
+                                        child
 
       | otherwise = do
             substitutionSimplifier <- Simplifier.askSimplifierPredicate
@@ -304,7 +315,9 @@ makeEvaluateNormalizedAc
         , opaque = []
         }
   = Just $ do
-    variableKeyConditions <- mapM (makeEvaluateTerm configurationPredicate) variableKeys
+    variableKeyConditions <- mapM
+                                (makeEvaluateTerm configurationPredicate)
+                                variableKeys
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
 
@@ -339,7 +352,10 @@ makeEvaluateNormalizedAc
     evaluateDistinct (variableTerm : variableTerms) concreteTerms = do
         equalities <-
             mapM
-                (flip (Equals.makeEvaluateTermsToPredicate variableTerm) configurationPredicate)
+                (flip
+                    (Equals.makeEvaluateTermsToPredicate variableTerm)
+                    configurationPredicate
+                )
                 -- TODO(virgil): consider eliminating these repeated
                 -- concatenations.
                 (variableTerms ++ concreteTerms)
@@ -387,5 +403,7 @@ makeEvaluateNormalizedAc
         , concreteElements
         , opaque = [opaqueAc]
         }
-  | Map.null concreteElements = Just $ makeEvaluateTerm configurationPredicate opaqueAc
+  | Map.null concreteElements = Just $ makeEvaluateTerm
+                                        configurationPredicate
+                                        opaqueAc
 makeEvaluateNormalizedAc _  _ = Nothing

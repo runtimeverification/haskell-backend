@@ -16,8 +16,6 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( topTODO )
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
                  ( simplify )
@@ -84,9 +82,10 @@ simplify
         , FreshVariable variable
         )
     => TermLike variable
+    -> Predicate variable
     -> Simplifier (Pattern variable)
-simplify patt = do
-    orPatt <- simplifyToOr patt
+simplify patt predicate = do
+    orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
@@ -99,10 +98,13 @@ simplifyToOr
         , FreshVariable variable
         , MonadSimplify simplifier
         )
-    => TermLike variable
+    => Predicate variable
+    -> TermLike variable
     -> simplifier (OrPattern variable)
-simplifyToOr =
-    localSimplifierTermLike (const simplifier) . simplifyInternal
+simplifyToOr term predicate =
+    localSimplifierTermLike (const simplifier)
+        . simplifyInternal predicate
+        $ term
   where
     simplifier = termLikeSimplifier simplifyToOr
 
@@ -115,8 +117,9 @@ simplifyInternal
         , MonadSimplify simplifier
         )
     => TermLike variable
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-simplifyInternal = simplifyInternalWorker
+simplifyInternal term predicate = simplifyInternalWorker term
   where
     simplifyChildren
         :: Traversable t
@@ -136,11 +139,12 @@ simplifyInternal = simplifyInternalWorker
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                Application.simplify Predicate.topTODO =<< simplifyChildren applySymbolF
+                Application.simplify predicate
+                    =<< simplifyChildren applySymbolF
             CeilF ceilF ->
-                Ceil.simplify Predicate.topTODO =<< simplifyChildren ceilF
+                Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->
-                Equals.simplify Predicate.topTODO =<< simplifyChildren equalsF
+                Equals.simplify predicate =<< simplifyChildren equalsF
             ExistsF existsF ->
                 Exists.simplify =<< simplifyChildren existsF
             IffF iffF ->
@@ -148,7 +152,7 @@ simplifyInternal = simplifyInternalWorker
             ImpliesF impliesF ->
                 Implies.simplify =<< simplifyChildren impliesF
             InF inF ->
-                In.simplify =<< simplifyChildren inF
+                In.simplify predicate =<< simplifyChildren inF
             NotF notF ->
                 Not.simplify =<< simplifyChildren notF
             --
