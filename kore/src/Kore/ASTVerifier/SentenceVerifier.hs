@@ -18,6 +18,7 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyAliasSentence
     , verifyAxioms
     , verifyClaims
+    , verifyNonHooks
     ) where
 
 import           Control.Applicative
@@ -433,6 +434,23 @@ verifySortSentence sentence =
         Lens.over
             (field @"indexedModuleSortDescriptions")
             (Map.insert (sentenceSortName verified) (attrs, verified))
+
+verifyNonHooks
+    :: [ParsedSentence]
+    -> SentenceVerifier ()
+verifyNonHooks sentences=
+    Foldable.traverse_ verifyNonHookSentence nonHookSentences
+  where
+    nonHookSentences = mapMaybe project sentences
+    project (SentenceHookSentence _) = Nothing
+    project sentence = Just sentence
+
+verifyNonHookSentence :: ParsedSentence -> SentenceVerifier ()
+verifyNonHookSentence sentence =
+    withSentenceContext sentence $ do
+        VerifierContext { attributesVerification } <- Reader.ask
+        verifyNoHookAttribute attributesVerification
+            $ sentenceAttributes sentence
 
 buildDeclaredSortVariables
     :: MonadError (Error e) error

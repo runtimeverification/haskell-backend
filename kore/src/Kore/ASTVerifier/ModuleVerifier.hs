@@ -35,8 +35,8 @@ import           Kore.ASTVerifier.AttributesVerifier
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.SentenceVerifier
                  ( SentenceVerifier, verifyAxioms, verifyClaims,
-                 verifyHookedSorts, verifyHookedSymbols, verifySorts,
-                 verifySymbols )
+                 verifyHookedSorts, verifyHookedSymbols, verifyNonHooks,
+                 verifySorts, verifySymbols )
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
 import           Kore.ASTVerifier.Verifier
 import           Kore.Attribute.Parser
@@ -134,20 +134,3 @@ parseAttributes'
     -> error attrs
 parseAttributes' =
     Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
-
-verifyNonHooks
-    :: [ParsedSentence]
-    -> SentenceVerifier ()
-verifyNonHooks sentences=
-    Foldable.traverse_ verifyNonHook nonHookSentences
-  where
-    nonHookSentences = mapMaybe project sentences
-    project (SentenceHookSentence _) = Nothing
-    project sentence = Just sentence
-
-verifyNonHook :: ParsedSentence -> SentenceVerifier ()
-verifyNonHook sentence =
-    withSentenceContext sentence $ do
-        VerifierContext { attributesVerification } <- Reader.ask
-        verifyNoHookAttribute attributesVerification
-            $ sentenceAttributes sentence
