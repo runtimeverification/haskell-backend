@@ -13,13 +13,9 @@ import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import           Data.List
                  ( intercalate )
-import           Data.Map
-                 ( Map )
 import           Data.Reflection
 import           Data.Semigroup
                  ( (<>) )
-import           Data.Text
-                 ( Text )
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 import           Data.Text.Prettyprint.Doc.Render.Text
@@ -314,7 +310,10 @@ mainWithOptions execOptions@KoreExecOptions { koreLogOptions } =
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
-    (mainModule, _) <- loadDefinition execOptions
+    let KoreExecOptions { definitionFileName } = execOptions
+    definition <- loadDefinitions [definitionFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
     let KoreSearchOptions { searchFileName } = searchOptions
     target <- mainParseSearchPattern mainModule searchFileName
     let KoreExecOptions { patternFileName } = execOptions
@@ -331,7 +330,10 @@ koreSearch execOptions searchOptions = do
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
-    (mainModule, _) <- loadDefinition execOptions
+    let KoreExecOptions { definitionFileName } = execOptions
+    definition <- loadDefinitions [definitionFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <- execute execOptions mainModule $ do
@@ -346,8 +348,13 @@ koreRun execOptions = do
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
-    (mainModule, definition) <- loadDefinition execOptions
-    (specModule, _) <- loadSpecification proveOptions definition
+    let KoreExecOptions { definitionFileName } = execOptions
+        KoreProveOptions { specFileName } = proveOptions
+    definition <- loadDefinitions [definitionFileName, specFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
+    let KoreProveOptions { specMainModule } = proveOptions
+    specModule <- loadModule specMainModule definition
     (exitCode, final) <- execute execOptions mainModule $ do
         let KoreExecOptions { stepLimit } = execOptions
             KoreProveOptions { graphSearch, bmc } = proveOptions
@@ -375,37 +382,6 @@ koreProve execOptions proveOptions = do
         ( ExitSuccess
         , mkElemVar $ elemVarS "Unknown" (mkSort $ noLocationId "SortUnknown")
         )
-
-type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
-
-type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
-
-loadDefinition :: KoreExecOptions -> Main (LoadedModule, LoadedDefinition)
-loadDefinition options = do
-    let KoreExecOptions { definitionFileName } = options
-    parsedDefinition <- parseDefinition definitionFileName
-    definition@(indexedModules, _) <-
-        verifyDefinitionWithBase Nothing True parsedDefinition
-    let KoreExecOptions { mainModuleName } = options
-    mainModule <- lookupMainModule mainModuleName indexedModules
-    return (mainModule, definition)
-
-loadSpecification
-    :: KoreProveOptions
-    -> LoadedDefinition
-    -> Main (LoadedModule, LoadedDefinition)
-loadSpecification proveOptions definition = do
-    let KoreProveOptions { specFileName } = proveOptions
-    spec <- parseDefinition specFileName
-    specDef@(modules, _) <- verifyDefinitionWithBase (Just definition) True spec
-    let KoreProveOptions { specMainModule } = proveOptions
-    specModule <- lookupMainModule specMainModule modules
-    return (specModule, specDef)
-
-loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike Variable)
-loadPattern mainModule (Just fileName) =
-    mainPatternParseAndVerify mainModule fileName
-loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
 
 type MonadExecute exe =
     ( MonadIO exe
@@ -440,6 +416,11 @@ execute options mainModule worker = do
             { SMT.timeOut = smtTimeOut
             , SMT.preludeFile = smtPrelude
             }
+
+loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike Variable)
+loadPattern mainModule (Just fileName) =
+    mainPatternParseAndVerify mainModule fileName
+loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.

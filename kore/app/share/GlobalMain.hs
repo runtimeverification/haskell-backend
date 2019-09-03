@@ -16,6 +16,10 @@ module GlobalMain
     , verifyDefinitionWithBase
     , mainParse
     , lookupMainModule
+    , LoadedDefinition
+    , LoadedModule
+    , loadDefinitions
+    , loadModule
     ) where
 
 import           Colog
@@ -24,12 +28,15 @@ import           Control.Exception
                  ( evaluate )
 import           Control.Monad
                  ( when )
+import qualified Control.Monad as Monad
 import           Control.Monad.Trans.Class
                  ( lift )
 import           Data.Function
                  ( (&) )
 import           Data.List
                  ( intercalate )
+import           Data.Map
+                 ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -385,3 +392,15 @@ mainParse parser fileName = do
     case parseResult of
         Left err         -> error err
         Right definition -> return definition
+
+type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
+
+type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
+
+loadDefinitions :: [FilePath] -> Main LoadedDefinition
+loadDefinitions filePaths =
+    Monad.foldM (\loaded -> verifyDefinitionWithBase loaded True) mempty
+    =<< traverse parseDefinition filePaths
+
+loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
+loadModule moduleName = lookupMainModule moduleName . fst

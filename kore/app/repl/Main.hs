@@ -166,23 +166,9 @@ mainWithOptions
     mLogger <- newMVar emptyLogger
     let emptySwappableLogger = swappableLogger mLogger
     flip runReaderT emptySwappableLogger . getLoggerT $ do
-        parsedDefinition <- parseDefinition definitionFileName
-        indexedDefinition@(indexedModules, _) <-
-            verifyDefinitionWithBase
-              Nothing
-              True
-              parsedDefinition
-        indexedModule <-
-            lift $ lookupMainModule mainModuleName indexedModules
-        specDef <- parseDefinition specFile
-        (specDefIndexedModules, _) <-
-            verifyDefinitionWithBase
-              (Just indexedDefinition)
-              True
-              specDef
-
-        specDefIndexedModule <-
-            lift $ lookupMainModule specModule specDefIndexedModules
+        definition <- loadDefinitions [definitionFileName, specFile]
+        indexedModule <- loadModule mainModuleName definition
+        specDefIndexedModule <- loadModule specModule definition
 
         let
             smtConfig =
