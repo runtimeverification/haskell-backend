@@ -99,7 +99,6 @@ default-extensions:
   - NamedFieldPuns
   - OverloadedStrings
   - PatternSynonyms
-  - QuantifiedConstraints
   - RankNTypes
   - ScopedTypeVariables
   - StandaloneDeriving
