@@ -12,7 +12,7 @@ module Kore.ASTVerifier.SentenceVerifier
     , noConstructorWithDomainValuesMessage
     , SentenceVerifier
     , runSentenceVerifier
-    , verifySortSentence
+    , verifySortSentences
     , verifySymbolSentence
     , verifyAliasSentence
     , verifyAxiomSentence
@@ -21,18 +21,21 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyHookedSymbol
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
+import qualified Control.Lens as Lens
 import           Control.Monad
                  ( foldM )
-import           Control.Monad.Reader
-                 ( MonadReader )
 import qualified Control.Monad.Reader as Reader
 import           Control.Monad.State.Strict
-                 ( MonadState, StateT, runStateT )
+                 ( StateT, runStateT )
 import qualified Control.Monad.State.Strict as State
+import qualified Data.Foldable as Foldable
 import           Data.Function
+import           Data.Generics.Product.Fields
 import qualified Data.Map as Map
 import           Data.Maybe
-                 ( isJust )
+                 ( isJust, mapMaybe )
 import           Data.Set
                  ( Set )
 import qualified Data.Set as Set
@@ -47,6 +50,8 @@ import           Kore.ASTVerifier.SortVerifier
 import           Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Constructor as Attribute
 import qualified Kore.Attribute.Hook as Attribute
+import           Kore.Attribute.Parser
+                 ( ParseAttributes )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
@@ -115,16 +120,7 @@ definedNamesForSentence (SentenceHookSentence (SentenceHookedSort sentence)) =
 definedNamesForSentence (SentenceHookSentence (SentenceHookedSymbol sentence)) =
     definedNamesForSentence (SentenceSymbolSentence sentence)
 
-newtype SentenceVerifier a =
-    SentenceVerifier
-        { getSentenceVerifier :: StateT VerifiedModule' Verifier a }
-    deriving (Applicative, Functor, Monad)
-
-deriving instance MonadState VerifiedModule' SentenceVerifier
-
-deriving instance MonadReader VerifierContext SentenceVerifier
-
-deriving instance e ~ VerifyError => MonadError (Error e) SentenceVerifier
+type SentenceVerifier = StateT VerifiedModule' Verifier
 
 {- | Look up a sort declaration.
  -}
@@ -173,7 +169,7 @@ runSentenceVerifier
     -> VerifiedModule'
     -> Verifier (a, VerifiedModule')
 runSentenceVerifier sentenceVerifier verifiedModule =
-    runStateT (getSentenceVerifier sentenceVerifier) verifiedModule
+    runStateT sentenceVerifier verifiedModule
 
 verifySentence :: ParsedSentence -> SentenceVerifier Verified.Sentence
 verifySentence sentence =
@@ -374,12 +370,28 @@ verifyClaimSentence
 verifyClaimSentence claimSentence =
     SentenceClaim <$> verifyAxiomSentence (getSentenceClaim claimSentence)
 
+verifySortSentences :: [ParsedSentence] -> SentenceVerifier ()
+verifySortSentences = Foldable.traverse_ verifySortSentence . mapMaybe project
+  where
+    project sentence =
+        projectSentenceSort sentence <|> projectSentenceHookedSort sentence
+
+
 verifySortSentence
-    :: ParsedSentenceSort
+    :: SentenceSort ParsedPattern
     -> SentenceVerifier Verified.SentenceSort
-verifySortSentence sentenceSort = do
-    _ <- buildDeclaredSortVariables (sentenceSortParameters sentenceSort)
-    traverse verifyNoPatterns sentenceSort
+verifySortSentence sentence =
+    withSentenceSortContext sentence $ do
+        _ <- buildDeclaredSortVariables $ sentenceSortParameters sentence
+        verified <- traverse verifyNoPatterns sentence
+        attrs <- parseAttributes' $ sentenceSortAttributes verified
+        State.modify' $ addSort verified attrs
+        return verified
+  where
+    addSort verified attrs =
+        Lens.over
+            (field @"indexedModuleSortDescriptions")
+            (Map.insert (sentenceSortName verified) (attrs, verified))
 
 buildDeclaredSortVariables
     :: MonadError (Error e) error
@@ -397,3 +409,11 @@ buildDeclaredSortVariables (unifiedVariable : list) = do
     return (Set.insert unifiedVariable variables)
   where
     extractVariableName variable = getId (getSortVariable variable)
+
+parseAttributes'
+    :: forall attrs error e
+    .  (MonadError (Error e) error, ParseAttributes attrs)
+    => Attributes
+    -> error attrs
+parseAttributes' =
+    Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
