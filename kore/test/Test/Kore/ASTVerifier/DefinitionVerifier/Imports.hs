@@ -902,7 +902,7 @@ aliasVisibilityTests =
                                 defaultSort
                         , aliasLeft = []
                         , aliasRight =
-                            mkTop $ termLikeSort aliasPattern
+                            mkTop (simpleSort . SortName $ "sortAlias2")
                         }
                     [aliasPattern]
             , sentenceAxiomAttributes = Attributes []

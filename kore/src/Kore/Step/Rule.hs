@@ -400,7 +400,8 @@ wEF sort = Alias
         , applicationSortsResult = sort
         }
     , aliasLeft = []
-    , aliasRight = mkTop sort
+    , aliasRight =
+        mkElemVar $ elemVarS "X" sort
     }
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
