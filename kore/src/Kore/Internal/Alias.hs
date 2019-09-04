@@ -56,9 +56,23 @@ instance Ord patternType => Ord (Alias patternType) where
         <>  Function.on compare aliasLeft a b
         <>  Function.on compare aliasRight a b
 
-instance Hashable (Alias patternType) where
-    hashWithSalt salt Alias { aliasConstructor, aliasParams } =
-        salt `hashWithSalt` aliasConstructor `hashWithSalt` aliasParams
+instance Hashable patternType => Hashable (Alias patternType) where
+    hashWithSalt
+        salt
+        Alias
+            { aliasConstructor
+            , aliasParams
+            , aliasSorts
+            , aliasLeft
+            , aliasRight
+            }
+      =
+        salt
+        `hashWithSalt` aliasConstructor
+        `hashWithSalt` aliasParams
+        `hashWithSalt` aliasSorts
+        `hashWithSalt` aliasLeft
+        `hashWithSalt` aliasRight
 
 instance NFData patternType => NFData (Alias patternType)
 
