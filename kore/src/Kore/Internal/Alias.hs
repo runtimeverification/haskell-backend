@@ -82,7 +82,6 @@ instance SOP.HasDatatypeInfo (Alias patternType)
 
 instance Debug patternType => Debug (Alias patternType)
 
--- TODO: unparse definition as well
 instance Unparse (Alias patternType) where
     unparse Alias { aliasConstructor, aliasParams } =
         unparse aliasConstructor
