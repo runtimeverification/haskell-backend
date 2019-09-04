@@ -39,40 +39,20 @@ data Alias patternType =
         }
     deriving (GHC.Generic, Show)
 
-instance Eq patternType => Eq (Alias patternType) where
+instance Eq (Alias patternType) where
     (==) a b =
             Function.on (==) aliasConstructor a b
         &&  Function.on (==) aliasParams a b
-        &&  Function.on (==) aliasSorts a b
-        &&  Function.on (==) aliasLeft a b
-        &&  Function.on (==) aliasRight a b
     {-# INLINE (==) #-}
 
-instance Ord patternType => Ord (Alias patternType) where
+instance Ord (Alias patternType) where
     compare a b =
             Function.on compare aliasConstructor a b
         <>  Function.on compare aliasParams a b
-        <>  Function.on compare aliasSorts a b
-        <>  Function.on compare aliasLeft a b
-        <>  Function.on compare aliasRight a b
 
-instance Hashable patternType => Hashable (Alias patternType) where
-    hashWithSalt
-        salt
-        Alias
-            { aliasConstructor
-            , aliasParams
-            , aliasSorts
-            , aliasLeft
-            , aliasRight
-            }
-      =
-        salt
-        `hashWithSalt` aliasConstructor
-        `hashWithSalt` aliasParams
-        `hashWithSalt` aliasSorts
-        `hashWithSalt` aliasLeft
-        `hashWithSalt` aliasRight
+instance Hashable (Alias patternType) where
+    hashWithSalt salt Alias { aliasConstructor, aliasParams } =
+        salt `hashWithSalt` aliasConstructor `hashWithSalt` aliasParams
 
 instance NFData patternType => NFData (Alias patternType)
 
@@ -82,6 +62,7 @@ instance SOP.HasDatatypeInfo (Alias patternType)
 
 instance Debug patternType => Debug (Alias patternType)
 
+-- TODO: unparse definition as well
 instance Unparse (Alias patternType) where
     unparse Alias { aliasConstructor, aliasParams } =
         unparse aliasConstructor
