@@ -98,12 +98,7 @@ See also: 'termAnd'
 
  -}
 termEquals
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -116,13 +111,8 @@ termEquals first second = MaybeT $ do
             MultiOr.make (map Predicate.eraseConditionalTerm results)
 
 termEqualsAnd
-    ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -175,11 +165,7 @@ termEqualsAnd
                 }
 
 maybeTermEquals
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -208,11 +194,7 @@ the special cases handled by this.
 -- signature.
 termUnification
     ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -258,12 +240,7 @@ See also: 'termUnification'
 -- signature.
 termAnd
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -293,11 +270,7 @@ termAnd p1 p2 =
         andPattern = Pattern.fromTermLike (mkAnd first second)
 
 maybeTermAnd
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -312,11 +285,7 @@ maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
     ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
@@ -337,11 +306,7 @@ andFunctions =
 
 equalsFunctions
     ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
@@ -362,12 +327,7 @@ equalsFunctions =
 
 andEqualsFunctions
     ::  forall variable unifier
-    .   ( Eq variable
-        , FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
@@ -542,10 +502,7 @@ equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
 bottomTermEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -586,10 +543,7 @@ See also: 'bottomTermEquals'
 
  -}
 termBottomEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -597,7 +551,8 @@ termBottomEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termBottomEquals predicate first second = bottomTermEquals predicate second first
+termBottomEquals predicate first second =
+    bottomTermEquals predicate second first
 
 {- | Unify a variable with a function pattern.
 
@@ -605,10 +560,7 @@ See also: 'isFunctionPattern'
 
  -}
 variableFunctionAndEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -667,12 +619,7 @@ See also: 'variableFunctionAndEquals'
 
  -}
 functionVariableAndEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
+    :: (SimplifierVariable variable, MonadUnify unifier)
     => GHC.HasCallStack
     => Predicate variable
     -> SimplificationType

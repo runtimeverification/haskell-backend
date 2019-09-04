@@ -46,15 +46,10 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import           Kore.TopBottom
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-| Which configurations are considered for matching?
 
@@ -117,33 +112,27 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable m .
-        ( SortedVariable variable
-        , FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify m
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Pattern variable
     -> Pattern variable
-    -> MaybeT m (OrPredicate variable)
+    -> MaybeT simplifier (OrPredicate variable)
 matchWith e1 e2 = do
     eitherUnifiers <-
-        Monad.Trans.lift $ Monad.Unify.runUnifierT
+        Monad.Trans.lift . Monad.Unify.runUnifierT
         $ unificationProcedure t1 t2
     let
         maybeUnifiers :: Maybe [Predicate variable]
         maybeUnifiers = hush eitherUnifiers
         mergeAndEvaluate
             :: Predicate variable
-            -> m (OrPredicate variable)
+            -> simplifier (OrPredicate variable)
         mergeAndEvaluate predSubst = do
             results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
             :: Predicate variable
-            -> BranchT m (Predicate variable)
+            -> BranchT simplifier (Predicate variable)
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions

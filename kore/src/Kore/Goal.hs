@@ -36,7 +36,7 @@ import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..), RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+                 ( MonadSimplify, SimplifierVariable )
 import           Kore.Step.Simplification.Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -49,8 +49,6 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse, unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 import           Kore.Variables.UnifiedVariable
 
 {- | The state of the all-path reachability proof strategy for @goal@.
@@ -297,12 +295,9 @@ removalPredicate destination config =
                 (Pattern.toTermLike config)
 
 instance
-    ( SortedVariable variable
-    , Debug variable
-    , Unparse variable
-    , Show variable
-    , FreshVariable variable
-    ) => Goal (OnePathRule variable) where
+    (SimplifierVariable variable , Debug variable)
+    => Goal (OnePathRule variable)
+  where
 
     newtype Rule (OnePathRule variable) =
         Rule { unRule :: RewriteRule variable }
@@ -430,11 +425,8 @@ instance Debug variable => Debug (Rule (OnePathRule variable))
 removeDestSimplifyRemainder
     :: forall variable m
     .  MonadSimplify m
-    => SortedVariable variable
+    => SimplifierVariable variable
     => Debug variable
-    => Unparse variable
-    => Show variable
-    => FreshVariable variable
     => OnePathRule variable
     -> Strategy.TransitionT (Rule (OnePathRule variable)) m (ProofState (OnePathRule variable))
 removeDestSimplifyRemainder remainder = do

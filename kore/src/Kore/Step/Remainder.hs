@@ -32,13 +32,11 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify (..) )
+                 ( MonadSimplify (..), SimplifierVariable )
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
@@ -167,16 +165,11 @@ substitutionConditions subst =
         Syntax.Predicate.makeEqualsPredicate (mkVar x) t
 
 ceilChildOfApplicationOrTop
-    :: forall variable m
-    .  ( FreshVariable variable
-       , SortedVariable variable
-       , Show variable
-       , Unparse variable
-       , MonadSimplify m
-       )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> TermLike variable
-    -> m (Predicate variable)
+    -> simplifier (Predicate variable)
 ceilChildOfApplicationOrTop predicate patt =
     case patt of
         App_ _ children -> do

@@ -26,21 +26,14 @@ import           Kore.Internal.OrPredicate
 import           Kore.Internal.Pattern
                  ( Predicate )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify )
+                 ( BranchT, MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 simplifyEvaluatedMultiPredicate
     :: forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => MultiAnd (OrPredicate variable)
     -> simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate predicates = do

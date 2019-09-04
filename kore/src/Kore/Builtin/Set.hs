@@ -83,8 +83,6 @@ import           Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
                  ( Unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {- | Builtin name of the @Set@ sort.
  -}
@@ -507,13 +505,8 @@ internalize tools termLike
     reject the definition.
  -}
 unifyEquals
-    ::  forall variable unifier
-    .   ( SortedVariable variable
-        , Unparse variable
-        , Show variable
-        , FreshVariable variable
-        , MonadUnify unifier
-        )
+    :: forall variable unifier
+    .  (SimplifierVariable variable, MonadUnify unifier)
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
     -> TermLike variable

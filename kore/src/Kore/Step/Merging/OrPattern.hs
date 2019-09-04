@@ -35,10 +35,7 @@ import           Kore.Variables.Fresh
 to the given OrPattern.
 -}
 mergeWithPredicate
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )

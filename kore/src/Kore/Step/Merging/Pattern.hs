@@ -30,11 +30,7 @@ import           Kore.Variables.Fresh
 with the given pattern.
 -}
 mergeWithPredicate
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -65,11 +61,7 @@ mergeWithPredicate
         evaluatedCondition
 
 mergeWithEvaluatedCondition
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )

@@ -34,8 +34,6 @@ import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
 import           Kore.Step.Simplification.Data
 import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
@@ -47,12 +45,7 @@ Right now this uses the following:
 
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Not Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify Not { notChild } = simplifyEvaluated notChild
@@ -76,12 +69,7 @@ to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated simplified =
@@ -197,12 +185,7 @@ scatterAnd = scatter . distributeAnd
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}
 mkMultiAndPattern
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
 mkMultiAndPattern patterns =

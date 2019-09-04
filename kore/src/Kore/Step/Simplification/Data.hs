@@ -12,6 +12,8 @@ Portability : portable
 
 module Kore.Step.Simplification.Data
     ( MonadSimplify (..)
+    , Cacheable
+    , SimplifierVariable
     , Simplifier
     , TermSimplifier
     , SimplifierT, runSimplifierT
@@ -121,6 +123,22 @@ import qualified ListT
 import           SMT
                  ( MonadSMT (..), SMT, SmtT (..) )
 
+-- | Constraint on types which can be cached.
+type Cacheable cacheable =
+    ( Eq cacheable
+    , Hashable cacheable
+    , Typeable cacheable
+    )
+
+-- | Constraint on variables which the simplifier can work with.
+type SimplifierVariable variable =
+    ( Cacheable variable
+    , FreshVariable variable
+    , Show variable
+    , SortedVariable variable
+    , Unparse variable
+    )
+
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
 -}
@@ -191,21 +209,21 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     {-# INLINE localSimplifierAxioms #-}
 
     simplifierMemo
-        :: (Eq key, Hashable key, Typeable key, Typeable value)
+        :: (Cacheable key, Typeable value)
         => key -> value -> m ()
     default simplifierMemo
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
-        => (Eq key, Hashable key, Typeable key, Typeable value)
+        => (Cacheable key, Typeable value)
         => key -> value -> m ()
     simplifierMemo key value = Monad.Trans.lift (simplifierMemo key value)
     {-# INLINE simplifierMemo #-}
 
     simplifierRecall
-        :: (Eq key, Hashable key, Typeable key, Typeable value)
+        :: (Cacheable key, Typeable value)
         => key -> m (Maybe value)
     default simplifierRecall
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
-        => (Eq key, Hashable key, Typeable key, Typeable value)
+        => (Cacheable key, Typeable value)
         => key -> m (Maybe value)
     simplifierRecall key = Monad.Trans.lift (simplifierRecall key)
     {-# INLINE simplifierRecall #-}
@@ -500,17 +518,11 @@ evalSimplifier env =
 -}
 newtype TermLikeSimplifier =
     TermLikeSimplifier
-        ( forall variable m
-        .   ( FreshVariable variable
-            , Ord variable
-            , Show variable
-            , Unparse variable
-            , SortedVariable variable
-            , MonadSimplify m
-            )
+        ( forall variable simplifier
+        .  (SimplifierVariable variable , MonadSimplify simplifier)
         => Predicate variable
         -> TermLike variable
-        -> BranchT m (Pattern variable)
+        -> BranchT simplifier (Pattern variable)
         )
 
 emptyTermLikeSimplifier :: TermLikeSimplifier
@@ -525,13 +537,7 @@ The pattern is considered as an isolated term without extra initial conditions.
  -}
 simplifyTerm
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> simplifier (OrPattern variable)
 simplifyTerm termLike = do
@@ -544,13 +550,7 @@ simplifyTerm termLike = do
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
@@ -565,38 +565,23 @@ simplification, but only attaches it unmodified to the final result.
 
  -}
 termLikeSimplifier
-    ::  ( forall variable m
-        .   ( FreshVariable variable
-            , Ord variable
-            , Show variable
-            , Unparse variable
-            , SortedVariable variable
-            , MonadSimplify m
-            )
+    ::  ( forall variable simplifier
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
         => Predicate variable
         -> TermLike variable
-        -> m (OrPattern variable)
+        -> simplifier (OrPattern variable)
         )
     -> TermLikeSimplifier
 termLikeSimplifier simplifier =
     TermLikeSimplifier termLikeSimplifierWorker
   where
     termLikeSimplifierWorker
-        :: forall variable m
-        .   ( FreshVariable variable
-            , Ord variable
-            , Show variable
-            , Unparse variable
-            , SortedVariable variable
-            , MonadSimplify m
-            )
+        :: forall variable simplifier
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
         => Predicate variable
         -> TermLike variable
-        -> BranchT m (Pattern variable)
-    termLikeSimplifierWorker
-        initialCondition
-        termLike
-      = do
+        -> BranchT simplifier (Pattern variable)
+    termLikeSimplifierWorker initialCondition termLike = do
         results <- Monad.Trans.lift $ simplifier initialCondition termLike
         scatter results
 
@@ -607,16 +592,10 @@ that it applies the substitution on the predicate.
 newtype PredicateSimplifier =
     PredicateSimplifier
         { getPredicateSimplifier
-            ::  forall variable m
-            .   ( FreshVariable variable
-                , Ord variable
-                , Show variable
-                , Unparse variable
-                , SortedVariable variable
-                , MonadSimplify m
-                )
+            :: forall variable simplifier
+            .  (SimplifierVariable variable , MonadSimplify simplifier)
             => Predicate variable
-            -> BranchT m (Predicate variable)
+            -> BranchT simplifier (Predicate variable)
         }
 
 emptyPredicateSimplifier :: PredicateSimplifier
@@ -627,13 +606,7 @@ emptyPredicateSimplifier = PredicateSimplifier return
  -}
 simplifyPredicate
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> BranchT simplifier (Predicate variable)
 simplifyPredicate predicate = do
@@ -667,12 +640,7 @@ newtype BuiltinAndAxiomSimplifier =
     -- TODO (thomas.tuegel): Remove extra arguments.
     BuiltinAndAxiomSimplifier
         (forall variable simplifier
-        .   ( FreshVariable variable
-            , SortedVariable variable
-            , Show variable
-            , Unparse variable
-            , MonadSimplify simplifier
-            )
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
@@ -682,13 +650,8 @@ newtype BuiltinAndAxiomSimplifier =
         )
 
 runBuiltinAndAxiomSimplifier
-    ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
     -> Predicate variable
     -> TermLike variable

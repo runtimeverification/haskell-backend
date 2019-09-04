@@ -529,13 +529,8 @@ multiple sorts are hooked to the same builtin domain, the verifier should
 reject the definition.
 -}
 unifyEquals
-    ::  forall variable unifier
-    .   ( SortedVariable variable
-        , FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
+    :: forall variable unifier
+    .  (SimplifierVariable variable, MonadUnify unifier)
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
     -> TermLike variable

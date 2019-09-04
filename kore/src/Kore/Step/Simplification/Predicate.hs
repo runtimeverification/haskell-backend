@@ -29,15 +29,11 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
@@ -51,13 +47,7 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Int
     -> Predicate variable
     -> BranchT simplifier (Predicate variable)
@@ -130,13 +120,7 @@ See also: 'simplify'
 
 -}
 simplifyPartial
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Syntax.Predicate variable
     -> BranchT simplifier (Predicate variable)
 simplifyPartial

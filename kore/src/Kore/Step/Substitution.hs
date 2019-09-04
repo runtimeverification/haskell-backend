@@ -36,8 +36,6 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as Branch
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Error
                  ( substitutionToUnifyOrSubError )
@@ -51,8 +49,6 @@ import           Kore.Unification.UnifierImpl
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 newtype PredicateMerger variable m =
     PredicateMerger
@@ -64,12 +60,7 @@ newtype PredicateMerger variable m =
 -- | Normalize the substitution and predicate of 'expanded'.
 normalize
     :: forall variable term simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Unparse variable
-        , Show variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Conditional variable term
     -> BranchT simplifier (Conditional variable term)
 normalize Conditional { term, predicate, substitution } = do
@@ -94,11 +85,7 @@ normalize Conditional { term, predicate, substitution } = do
 
 normalizeExcept
     ::  forall unifier variable
-    .   ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -152,11 +139,7 @@ hs-boot: Please remember to update the hs-boot file when changing the signature.
 -}
 mergePredicatesAndSubstitutions
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , Ord variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , HasCallStack
         , WithLog LogMessage simplifier
@@ -182,11 +165,7 @@ mergePredicatesAndSubstitutions predicates substitutions = do
 
 mergePredicatesAndSubstitutionsExcept
     ::  forall variable unifier
-    .   ( Show variable
-        , SortedVariable variable
-        , Ord variable
-        , Unparse variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , HasCallStack
         , MonadUnify unifier
         , WithLog LogMessage unifier
@@ -210,10 +189,7 @@ can't handle.
 -}
 createPredicatesAndSubstitutionsMergerExcept
     ::  forall variable unifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -236,12 +212,7 @@ unifications it can't handle.
 -}
 createPredicatesAndSubstitutionsMerger
     :: forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => PredicateMerger variable (BranchT simplifier)
 createPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
@@ -262,11 +233,7 @@ over the base monad.
 -}
 createLiftedPredicatesAndSubstitutionsMerger
     ::  forall variable unifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , Ord variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )

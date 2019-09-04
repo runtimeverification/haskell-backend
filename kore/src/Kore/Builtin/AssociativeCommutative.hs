@@ -672,11 +672,8 @@ reject the definition.
 -}
 unifyEqualsNormalized
     :: forall normalized unifier variable
-    .   ( SortedVariable variable
-        , Unparse variable
-        , Show variable
+    .   ( SimplifierVariable variable
         , Traversable (Domain.Value normalized)
-        , FreshVariable variable
         , TermWrapper normalized
         , MonadUnify unifier
         )
@@ -747,11 +744,8 @@ Currently allows at most one opaque term in the two arguments taken together.
 -}
 unifyEqualsNormalizedAc
     ::  forall normalized variable unifier
-    .   ( SortedVariable variable
-        , Unparse variable
-        , Show variable
+    .   ( SimplifierVariable variable
         , Traversable (Domain.Value normalized)
-        , FreshVariable variable
         , TermWrapper normalized
         , MonadUnify unifier
         )

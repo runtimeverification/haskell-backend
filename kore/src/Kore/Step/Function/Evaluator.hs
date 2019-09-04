@@ -50,19 +50,12 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {-| Evaluates functions on an application pattern.
 -}
 evaluateApplication
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -- ^ The predicate from the configuration
     -> Predicate variable
@@ -70,7 +63,8 @@ evaluateApplication
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication configurationPredicate childrenPredicate application = do
+evaluateApplication configurationPredicate childrenPredicate application =
+    cachedOr $ do
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -115,14 +109,21 @@ evaluateApplication configurationPredicate childrenPredicate application = do
             return unchanged
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
 
+  where
+    cachedOr compute = do
+        let key = (configurationPredicate, childrenPredicate, application)
+        simplifierRecall key >>= \case
+            Just value -> return value
+            Nothing -> do
+                value <- compute
+                simplifierMemo key value
+                return value
+
 {-| Evaluates axioms on patterns.
 -}
 evaluatePattern
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -167,10 +168,7 @@ Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -314,10 +312,7 @@ evaluateSortInjection ap
 was evaluated.
 -}
 reevaluateFunctions
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -334,10 +329,7 @@ reevaluateFunctions rewriting = do
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )

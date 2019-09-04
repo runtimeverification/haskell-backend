@@ -28,30 +28,22 @@ import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
+import           Kore.Step.Simplification.Data
+                 ( SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as BranchT
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 -- |'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
 -- are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
 -- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedure
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadUnify unifier
-        )
+    :: (SimplifierVariable variable, MonadUnify unifier)
     => TermLike variable
     -> TermLike variable
     -> unifier (Predicate variable)
