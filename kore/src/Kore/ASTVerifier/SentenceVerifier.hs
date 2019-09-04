@@ -146,7 +146,6 @@ askPatternContext variables = do
             Builtin.domainValueVerifiers builtinVerifiers
         , indexedModule =
             verifiedModule
-            -- & IndexedModule.erasePatterns
             & IndexedModule.eraseAxiomAttributes
         , declaredSortVariables = variables
         , declaredVariables = emptyDeclaredVariables

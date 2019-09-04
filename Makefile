@@ -2,7 +2,7 @@ include include.mk
 
 .PHONY: all clean docs haddock jenkins k-frontend \
         test test-kore test-k \
-				kore-exec kore-repl
+        kore-exec kore-repl
 
 kore: kore-exec kore-repl
 
