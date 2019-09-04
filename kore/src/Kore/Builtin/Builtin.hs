@@ -90,9 +90,10 @@ import qualified Kore.AST.Error as Kore.Error
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import qualified Kore.Attribute.Axiom as Attribute
+                 ( Axiom )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
-import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
@@ -144,8 +145,8 @@ type Function = BuiltinAndAxiomSimplifier
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-        VerifiedModule Attribute.Null Attribute.Null
-    -- ^ Indexed module, to look up symbol declarations
+        VerifiedModule Attribute.Symbol Attribute.Axiom
+    -- ^ Indexed module, to look up sort declarations
     ->  ParsedSentenceSort
     -- ^ Sort declaration to verify
     ->  Attribute.Sort

@@ -54,6 +54,8 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import           Kore.Internal.Pattern
                  ( Pattern )
+import           Kore.Internal.Predicate as Predicate
+                 ( top )
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike
 import           Kore.Parser
@@ -167,7 +169,7 @@ testEnv =
         }
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
-evaluate = evalSimplifier testEnv . TermLike.simplify
+evaluate = evalSimplifier testEnv . (`TermLike.simplify` Predicate.top)
 
 evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
@@ -176,7 +178,7 @@ evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . evalSimplifier testEnv
-    . TermLike.simplifyToOr
+    . TermLike.simplifyToOr Predicate.top
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

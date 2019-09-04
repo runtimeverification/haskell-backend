@@ -9,6 +9,8 @@ This module implements the list monad transformer.
 
 -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module ListT
     ( ListT (..)
     , cons

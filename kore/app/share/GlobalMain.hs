@@ -16,6 +16,10 @@ module GlobalMain
     , verifyDefinitionWithBase
     , mainParse
     , lookupMainModule
+    , LoadedDefinition
+    , LoadedModule
+    , loadDefinitions
+    , loadModule
     ) where
 
 import           Colog
@@ -24,12 +28,15 @@ import           Control.Exception
                  ( evaluate )
 import           Control.Monad
                  ( when )
+import qualified Control.Monad as Monad
 import           Control.Monad.Trans.Class
                  ( lift )
 import           Data.Function
                  ( (&) )
 import           Data.List
                  ( intercalate )
+import           Data.Map
+                 ( Map )
 import qualified Data.Map as Map
 import           Data.Proxy
                  ( Proxy (..) )
@@ -67,7 +74,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule, VerifiedModule )
+                 ( VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Logger.Output as Logger
 import           Kore.Parser
@@ -330,16 +337,10 @@ Also prints timing information; see 'mainParse'.
 
  -}
 verifyDefinitionWithBase
-    :: Maybe
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+    ::  ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
-    -> Maybe
-        ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -- ^ base definition to use for verification
     -> Bool
     -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
@@ -350,8 +351,7 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
 verifyDefinitionWithBase
-    maybeAlreadyVerifiedDefinition
-    maybeBaseModule
+    alreadyVerified
     willChkAttr
     definition
   =
@@ -363,8 +363,7 @@ verifyDefinitionWithBase
       verifyResult <-
         clockSomething "Verifying the definition"
             (verifyAndIndexDefinitionWithBase
-                maybeAlreadyVerifiedDefinition
-                maybeBaseModule
+                alreadyVerified
                 attributesVerification
                 Builtin.koreVerifiers
                 definition
@@ -393,3 +392,15 @@ mainParse parser fileName = do
     case parseResult of
         Left err         -> error err
         Right definition -> return definition
+
+type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
+
+type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
+
+loadDefinitions :: [FilePath] -> Main LoadedDefinition
+loadDefinitions filePaths =
+    Monad.foldM (\loaded -> verifyDefinitionWithBase loaded True) mempty
+    =<< traverse parseDefinition filePaths
+
+loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
+loadModule moduleName = lookupMainModule moduleName . fst

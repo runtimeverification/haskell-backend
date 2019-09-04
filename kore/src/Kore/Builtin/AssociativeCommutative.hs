@@ -15,6 +15,8 @@ builtin modules.
 @
 -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Builtin.AssociativeCommutative
     ( asInternal
     , asInternalConcrete
@@ -937,7 +939,7 @@ unifyEqualsNormalizedAc
         return (terms, predicate)
 
     simplify :: TermLike variable -> unifier (Pattern variable)
-    simplify term = alternate $ simplifyConditionalTerm term Predicate.top
+    simplify term = alternate $ simplifyConditionalTerm Predicate.top term
 
     simplifyPair
         :: (TermLike variable, Domain.Value normalized (TermLike variable))
@@ -976,7 +978,7 @@ unifyEqualsNormalizedAc
       where
         simplifyTermLike :: TermLike variable -> unifier (Pattern variable)
         simplifyTermLike term =
-            alternate $ simplifyConditionalTerm term Predicate.top
+            alternate $ simplifyConditionalTerm Predicate.top term
 
 buildResultFromUnifiers
     :: forall normalized unifier variable

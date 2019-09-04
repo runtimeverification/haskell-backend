@@ -9,6 +9,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE UndecidableInstances #-}
+
 module Test.Kore.Comparators where
 
 import           Control.Applicative

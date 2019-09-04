@@ -55,14 +55,14 @@ equalitySimplification identifier thing action = do
                 (traceM (unparseToString thing))
         Nothing -> return ()
     filteredLogging
-        identifier ["equalitySimplification", strIdentifier] action
+        identifier ["evaluate", strIdentifier, "0", "total"] action
 
 -- TODO(virgil): Enable this on-demand.
 axiomEvaluation
     :: MonadProfiler profiler
     => AxiomIdentifier -> profiler result -> profiler result
 axiomEvaluation identifier =
-    filteredLogging identifier ["axiomEvaluation", oneLiner identifier]
+    filteredLogging identifier ["evaluate", oneLiner identifier, "1", "apply"]
 
 -- TODO(virgil): Enable this on-demand.
 resimplification
@@ -78,7 +78,7 @@ mergeSubstitutions
     :: MonadProfiler profiler
     => AxiomIdentifier -> profiler result -> profiler result
 mergeSubstitutions identifier =
-    filteredLogging identifier ["mergeSubstitutions", oneLiner identifier]
+    filteredLogging identifier ["evaluate", oneLiner identifier, "1", "merge"]
 
 filteredLogging
     :: MonadProfiler profiler

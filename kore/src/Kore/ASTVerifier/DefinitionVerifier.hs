@@ -19,8 +19,9 @@ module Kore.ASTVerifier.DefinitionVerifier
 import           Control.Monad
                  ( foldM )
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
-import           Data.Maybe
+import           Data.Map
+                 ( Map )
+import qualified Data.Map.Strict as Map
 import           Data.Proxy
                  ( Proxy (..) )
 import           Data.Text
@@ -30,6 +31,7 @@ import           Kore.ASTVerifier.AttributesVerifier hiding
                  ( parseAttributes )
 import           Kore.ASTVerifier.Error
 import           Kore.ASTVerifier.ModuleVerifier
+import           Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import           Kore.Attribute.Parser as Attribute.Parser
@@ -85,8 +87,7 @@ verifyAndIndexDefinition
 verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
-            Nothing
-            Nothing
+            mempty
             attributesVerification
             builtinVerifiers
             definition
@@ -99,56 +100,39 @@ If verification is successfull, it returns the updated maps op indexed modules
 and defined names.
 -}
 verifyAndIndexDefinitionWithBase
-    :: Maybe
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -> Maybe
-        ( Map.Map ModuleName (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
-    -> AttributesVerification Attribute.Symbol Attribute.Axiom
-    -> Builtin.Verifiers
-    -> ParsedDefinition
-    -> Either (Error VerifyError)
-        ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
-        , Map.Map Text AstLocation
-        )
+    ::  (Map ModuleName VerifiedModule', Map Text AstLocation)
+    ->  AttributesVerification Attribute.Symbol Attribute.Axiom
+    ->  Builtin.Verifiers
+    ->  ParsedDefinition
+    ->  Either (Error VerifyError)
+            (Map ModuleName VerifiedModule', Map Text AstLocation)
 verifyAndIndexDefinitionWithBase
-    maybeAlreadyVerifiedDefinition
-    maybeBaseDefinition
+    alreadyVerified
     attributesVerification
     builtinVerifiers
     definition
   = do
     let
-        (_, baseNames) =
-            fromMaybe (implicitModules, implicitNames) maybeBaseDefinition
-        modulesInScope =
-            maybe Map.empty fst maybeBaseDefinition
-        alreadyVerifiedModules =
-            maybe Map.empty fst maybeAlreadyVerifiedDefinition
+        (verifiedModulesCache, baseNames) =
+            (implicitModules, implicitNames) <> alreadyVerified
 
     names <- foldM verifyUniqueNames baseNames (definitionModules definition)
 
     let
-        verifiedDefaultModule
+        implicitModule
             :: ImplicitIndexedModule Verified.Pattern Attribute.Symbol Attribute.Axiom
-        verifiedDefaultModule = ImplicitIndexedModule implicitIndexedModule
-        allModules =
-            modulesByName (definitionModules definition)
-            <> fmap toModule modulesInScope
+        implicitModule = ImplicitIndexedModule implicitIndexedModule
+        parsedModules = modulesByName (definitionModules definition)
+        definitionModuleNames = moduleName <$> definitionModules definition
+        verifyModules = Foldable.traverse_ verifyModule definitionModuleNames
 
     -- Verify the contents of the definition.
     (_, index) <-
-        runModuleVerifier
-            (Foldable.traverse_
-                verifyModuleByName
-                (moduleName <$> definitionModules definition)
-            )
-            alreadyVerifiedModules
-            (Just verifiedDefaultModule)
-            allModules
+        runVerifier
+            verifyModules
+            verifiedModulesCache
+            implicitModule
+            parsedModules
             attributesVerification
             builtinVerifiers
     verifyAttributes
