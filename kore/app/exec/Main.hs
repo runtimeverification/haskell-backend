@@ -318,24 +318,21 @@ mainWithOptions execOptions@KoreExecOptions { koreLogOptions } =
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
     (mainModule, _) <- loadDefinition execOptions
-    let KoreSearchOptions { searchFileName } = searchOptions
     target <- mainParseSearchPattern mainModule searchFileName
-    let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     final <- execute execOptions mainModule $ do
         search mainModule strategy' initial target config
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where
-    KoreSearchOptions { bound, searchType } = searchOptions
+    KoreSearchOptions { bound, searchType, searchFileName } = searchOptions
     config = Search.Config { bound, searchType }
-    KoreExecOptions { stepLimit, strategy } = execOptions
+    KoreExecOptions { patternFileName, stepLimit, strategy } = execOptions
     strategy' = Limit.replicate stepLimit . strategy
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
     (mainModule, _) <- loadDefinition execOptions
-    let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <- execute execOptions mainModule $ do
         final <- exec mainModule strategy' initial
@@ -344,7 +341,7 @@ koreRun execOptions = do
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
-    KoreExecOptions { stepLimit, strategy } = execOptions
+    KoreExecOptions { patternFileName, stepLimit, strategy } = execOptions
     strategy' = Limit.replicate stepLimit . strategy
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
@@ -385,11 +382,10 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinition :: KoreExecOptions -> Main (LoadedModule, LoadedDefinition)
 loadDefinition options = do
-    let KoreExecOptions { definitionFileName } = options
+    let KoreExecOptions { definitionFileName, mainModuleName} = options
     parsedDefinition <- parseDefinition definitionFileName
     definition@(indexedModules, _) <-
         verifyDefinitionWithBase Nothing True parsedDefinition
-    let KoreExecOptions { mainModuleName } = options
     mainModule <- lookupMainModule mainModuleName indexedModules
     return (mainModule, definition)
 
@@ -402,10 +398,9 @@ loadSpecification proveOptions definition = do
             (Bifunctor.first . fmap . IndexedModule.mapPatterns)
                 Builtin.externalizePattern
                 definition
-    let KoreProveOptions { specFileName } = proveOptions
+    let KoreProveOptions { specFileName, specMainModule } = proveOptions
     spec <- parseDefinition specFileName
     specDef@(modules, _) <- verifyDefinitionWithBase (Just base) True spec
-    let KoreProveOptions { specMainModule } = proveOptions
     specModule <- lookupMainModule specMainModule modules
     return (specModule, specDef)
 

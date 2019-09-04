@@ -398,19 +398,19 @@ execute verifiedModule strategy inputPattern =
     Log.withLogScope "setUpConcreteExecution"
     $ initialize verifiedModule $ \initialized -> do
         let
-            Initialized { rewriteRules } = initialized
-            Initialized { simplifier } = initialized
-            Initialized { substitutionSimplifier } = initialized
-            Initialized { axiomIdToSimplifier } = initialized
+            Initialized
+                { rewriteRules
+                , simplifier
+                , substitutionSimplifier
+                , axiomIdToSimplifier
+                } = initialized
         simplifiedPatterns <-
             Pattern.simplify (Pattern.fromTermLike inputPattern)
         let
             initialPattern =
                 case MultiOr.extractPatterns simplifiedPatterns of
-                    [] -> Pattern.bottomOf patternSort
+                    []           -> Pattern.bottomOf patternSort
                     (config : _) -> config
-              where
-                patternSort = termLikeSort inputPattern
             runStrategy' = runStrategy transitionRule (strategy rewriteRules)
         executionGraph <- runStrategy' initialPattern
         return Execution
@@ -419,6 +419,9 @@ execute verifiedModule strategy inputPattern =
             , axiomIdToSimplifier
             , executionGraph
             }
+  where
+    patternSort = termLikeSort inputPattern
+
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
