@@ -915,6 +915,10 @@ instance StructEqualWithExplanation (TermLike.Alias (TermLike Variable)) where
             TermLike.aliasConstructor expected actual
         , Function.on (EqWrap "aliasParams = ")
             TermLike.aliasParams expected actual
+        , Function.on (EqWrap "aliasLeft = ")
+            TermLike.aliasLeft expected actual
+        , Function.on (EqWrap "aliasRight = ")
+            TermLike.aliasRight expected actual
         ]
     structConstructorName _ = "Alias"
 
