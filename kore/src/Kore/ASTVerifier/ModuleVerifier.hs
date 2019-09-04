@@ -12,21 +12,38 @@ module Kore.ASTVerifier.ModuleVerifier
     , verifyUniqueNames
     ) where
 
+import           Control.Lens
+                 ( (%=) )
+import qualified Control.Lens as Lens
+import qualified Control.Monad.Reader.Class as Reader
+import qualified Control.Monad.State.Class as State
+import qualified Control.Monad.Trans as Trans
+import qualified Data.Foldable as Foldable
+import           Data.Function
+import           Data.Generics.Product
+import qualified Data.List as List
 import qualified Data.Map as Map
+import           Data.Maybe
 import           Data.Text
                  ( Text )
 
-import           Kore.ASTVerifier.AttributesVerifier
+import           Kore.AST.Error
+import           Kore.ASTVerifier.AliasVerifier
 import           Kore.ASTVerifier.Error
+import           Kore.ASTVerifier.SentenceVerifier
+                 ( SentenceVerifier, verifyAxioms, verifyClaims,
+                 verifyHookedSorts, verifyHookedSymbols, verifyNonHooks,
+                 verifySorts, verifySymbols )
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
-import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
+import           Kore.ASTVerifier.Verifier
+import           Kore.Attribute.Parser
+                 ( ParseAttributes )
+import qualified Kore.Attribute.Parser as Attribute.Parser
 import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
+import           Kore.IndexedModule.IndexedModule as IndexedModule
 import           Kore.Syntax
 import           Kore.Syntax.Definition
 import           Kore.Unparser
-import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}
@@ -43,32 +60,93 @@ verifyUniqueNames existingNames koreModule =
         ("module '" ++ getModuleNameForError (moduleName koreModule) ++ "'")
         (SentenceVerifier.verifyUniqueNames
             (moduleSentences koreModule)
-            existingNames)
+            existingNames
+        )
 
-{-|'verifyModule' verifies the welformedness of a Kore 'Module'. -}
-verifyModule
-    :: AttributesVerification Attribute.Symbol axiomAtts
-    -> Builtin.Verifiers
-    -> IndexedModule ParsedPattern Attribute.Symbol axiomAtts
-    -> Either (Error VerifyError) (Module Verified.Sentence)
-verifyModule attributesVerification builtinVerifiers indexedModule =
-    withContext
-        (  "module '"
-        ++ getModuleNameForError (indexedModuleName indexedModule)
-        ++ "'"
-        )
-        (do
-            verifyAttributes
-                (snd (indexedModuleAttributes indexedModule))
-                attributesVerification
-            moduleSentences <-
-                SentenceVerifier.verifySentences
-                    indexedModule
-                    attributesVerification
-                    builtinVerifiers
-                    (indexedModuleRawSentences indexedModule)
-            return Module { moduleName, moduleSentences, moduleAttributes }
-        )
+{- | Verify the named module.
+
+The cached 'VerifiedModule' is returned if available; otherwise the module is
+verified and cached.
+
+See also: 'verifyUncachedModule'
+
+ -}
+verifyModule :: ModuleName -> Verifier VerifiedModule'
+verifyModule name = lookupVerifiedModule name >>= maybe notCached cached
   where
-    moduleName = indexedModuleName indexedModule
-    (_, moduleAttributes) = indexedModuleAttributes indexedModule
+    cached = return
+    notCached = verifyUncachedModule name
+
+{- | Verify the named module, irrespective of the cache.
+ -}
+verifyUncachedModule :: ModuleName -> Verifier VerifiedModule'
+verifyUncachedModule name = whileImporting name $ do
+    module' <- lookupParsedModule name
+    let Module { moduleSentences } = module'
+        sentences = List.sort moduleSentences
+    (_, indexedModule) <-
+            withModuleContext name (newVerifiedModule module')
+        >>= SentenceVerifier.runSentenceVerifier
+            (do
+                verifyImports sentences
+                withModuleContext name $ do
+                    verifySorts         sentences
+                    verifySymbols       sentences
+                    verifyHookedSorts   sentences
+                    verifyHookedSymbols sentences
+                    verifyNonHooks      sentences
+                    verifyAliases       sentences
+                    verifyAxioms        sentences
+                    verifyClaims        sentences
+            )
+    _ <-
+        withModuleContext name
+        $ internalIndexedModuleSubsorts indexedModule
+    field @"verifiedModules" %= Map.insert name indexedModule
+    return indexedModule
+
+{- | Construct a new 'VerifiedModule' for the 'ParsedModule'.
+
+The new 'VerifiedModule' is empty except for its 'ModuleName', its 'Attributes',
+and the 'ImplicitModule' import.
+
+ -}
+newVerifiedModule :: ParsedModule -> Verifier VerifiedModule'
+newVerifiedModule module' = do
+    VerifierContext { implicitModule } <- Reader.ask
+    let Module { moduleName, moduleAttributes } = module'
+    attrs <- parseAttributes' moduleAttributes
+    return
+        ( indexedModuleWithDefaultImports moduleName (Just implicitModule)
+        & Lens.set (field @"indexedModuleAttributes") (attrs, moduleAttributes)
+        )
+
+{- | Project the 'SentenceImport's out the list and verify them.
+
+The named modules are verified and imported into the current 'VerifiedModule'.
+
+ -}
+verifyImports :: [ParsedSentence] -> SentenceVerifier ()
+verifyImports = Foldable.traverse_ verifyImport . mapMaybe projectSentenceImport
+
+verifyImport :: SentenceImport ParsedPattern -> SentenceVerifier ()
+verifyImport sentence =
+    withSentenceImportContext sentence $ do
+        let SentenceImport { sentenceImportAttributes = attrs0 } = sentence
+        attrs1 <- parseAttributes' attrs0
+        let importName = sentenceImportModuleName sentence
+        verified <- Trans.lift $ verifyModule importName
+        State.modify' $ addImport verified attrs1 attrs0
+  where
+    addImport verified attrs1 attrs0 =
+        Lens.over
+            (field @"indexedModuleImports")
+            ((attrs1, attrs0, verified) :)
+
+parseAttributes'
+    :: forall attrs error e
+    .  (MonadError (Error e) error, ParseAttributes attrs)
+    => Attributes
+    -> error attrs
+parseAttributes' =
+    Attribute.Parser.liftParser . Attribute.Parser.parseAttributes

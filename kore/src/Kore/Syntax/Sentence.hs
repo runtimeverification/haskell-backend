@@ -17,9 +17,18 @@ module Kore.Syntax.Sentence
     , coerceSentenceSort
     , SentenceAxiom (..)
     , SentenceClaim (..)
+    , sentenceClaimAttributes
     , SentenceHook (..)
     , coerceSentenceHook
     , Sentence (..)
+    , projectSentenceImport
+    , projectSentenceSort
+    , projectSentenceSymbol
+    , projectSentenceHookedSort
+    , projectSentenceHookedSymbol
+    , projectSentenceAlias
+    , projectSentenceAxiom
+    , projectSentenceClaim
     , sentenceAttributes
     , eraseSentenceAnnotations
     -- * Injections and projections
@@ -48,7 +57,10 @@ module Kore.Syntax.Sentence
 
 import           Control.DeepSeq
                  ( NFData (..) )
+import qualified Control.Monad as Monad
 import           Data.Coerce
+import           Data.Generics.Sum.Typed
+                 ( projectTyped )
 import           Data.Hashable
                  ( Hashable (..) )
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -478,6 +490,9 @@ newtype SentenceClaim (patternType :: *) =
     SentenceClaim { getSentenceClaim :: SentenceAxiom patternType }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
+sentenceClaimAttributes :: SentenceClaim patternType -> Attributes
+sentenceClaimAttributes = sentenceAxiomAttributes . getSentenceClaim
+
 instance Hashable patternType => Hashable (SentenceClaim patternType)
 
 instance NFData patternType => NFData (SentenceClaim patternType)
@@ -560,6 +575,51 @@ instance Debug patternType => Debug (Sentence patternType)
 instance Unparse patternType => Unparse (Sentence patternType) where
      unparse = unparseGeneric
      unparse2 = unparse2Generic
+
+projectSentenceImport
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceImport ParsedPattern)
+projectSentenceImport = projectTyped
+
+projectSentenceSort
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceSort ParsedPattern)
+projectSentenceSort = projectTyped
+
+projectSentenceSymbol
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceSymbol ParsedPattern)
+projectSentenceSymbol = projectTyped
+
+projectSentenceHook
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceHook ParsedPattern)
+projectSentenceHook = projectTyped
+
+projectSentenceHookedSort
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceSort ParsedPattern)
+projectSentenceHookedSort = projectSentenceHook Monad.>=> projectTyped
+
+projectSentenceHookedSymbol
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceSymbol ParsedPattern)
+projectSentenceHookedSymbol = projectSentenceHook Monad.>=> projectTyped
+
+projectSentenceAlias
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceAlias ParsedPattern)
+projectSentenceAlias = projectTyped
+
+projectSentenceAxiom
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceAxiom ParsedPattern)
+projectSentenceAxiom = projectTyped
+
+projectSentenceClaim
+    :: Sentence ParsedPattern
+    -> Maybe (SentenceClaim ParsedPattern)
+projectSentenceClaim = projectTyped
 
 {- | The attributes associated with a sentence.
 
