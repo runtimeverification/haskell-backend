@@ -115,16 +115,30 @@ runVerifier
             , builtinVerifiers
             }
 
+{- | Find the named 'VerifiedModule' in the cache, if present.
+
+ -}
 lookupVerifiedModule :: ModuleName -> Verifier (Maybe VerifiedModule')
 lookupVerifiedModule name = State.gets (Map.lookup name . verifiedModules)
 
-lookupParsedModule :: ModuleName -> Verifier (Module ParsedSentence)
+{- | Find the named 'ParsedModule'.
+
+It is an error if the module is missing.
+
+ -}
+lookupParsedModule :: ModuleName -> Verifier ParsedModule
 lookupParsedModule name =
     Reader.asks (Map.lookup name . modules) >>= maybe notFound return
   where
     notFound =
         koreFail ("Module '" ++ getModuleNameForError name ++ "' not found.")
 
+{- | Add the 'ModuleName' to the import stack.
+
+It is an error if there is a dependency cycle among modules, i.e. if the
+'ModuleName' was already on the stack.
+
+ -}
 whileImporting :: ModuleName -> Verifier a -> Verifier a
 whileImporting name locally = do
     VerifierContext { importing } <- Reader.ask
