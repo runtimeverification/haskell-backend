@@ -900,8 +900,9 @@ aliasVisibilityTests =
                             applicationSorts
                                 [termLikeSort aliasPattern]
                                 defaultSort
-                        , aliasLeft = undefined
-                        , aliasRight = undefined
+                        , aliasLeft = []
+                        , aliasRight =
+                            mkTop (simpleSort . SortName $ "sortAlias2")
                         }
                     [aliasPattern]
             , sentenceAxiomAttributes = Attributes []
