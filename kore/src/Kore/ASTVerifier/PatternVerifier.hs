@@ -240,25 +240,39 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 
  -}
 verifyAliasLeftPattern
-    :: Application SymbolOrAlias (ElementVariable Variable)
+    :: Alias
+    -> [Sort]
+    -> Application SymbolOrAlias (ElementVariable Variable)
     -> PatternVerifier
         ( DeclaredVariables
         , Application SymbolOrAlias (ElementVariable Variable)
         )
-verifyAliasLeftPattern leftPattern = do
-    _ :< verified <-
-        verifyApplyAlias snd (expectVariable . ElemVar  <$> leftPattern)
-        & runMaybeT
-        & (>>= maybe (error . noHead $ symbolOrAlias) return)
+verifyAliasLeftPattern alias aliasSorts leftPattern = do
+    koreFailWhen (declaredHead /= symbolOrAlias) aliasDeclarationMismatch
+    let expect = expectVariable . ElemVar <$> applicationChildren leftPattern
+    verified <- verifyPatternsWithSorts snd aliasSorts expect
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
-    let verifiedLeftPattern = traverse extractElementVariable
-            leftPattern
-                { applicationChildren = fst <$> applicationChildren verified }
+    let verifiedLeftPattern =
+            traverse
+                extractElementVariable
+                leftPattern { applicationChildren = fst <$> verified }
     case verifiedLeftPattern of
         Just result -> return (declaredVariables, result)
         Nothing -> error "Impossible change from element var to set var"
   where
     symbolOrAlias = applicationSymbolOrAlias leftPattern
+    declaredHead =
+        SymbolOrAlias
+            { symbolOrAliasConstructor = aliasConstructor alias
+            , symbolOrAliasParams = SortVariableSort <$> aliasParams alias
+            }
+    aliasDeclarationMismatch =
+        (show . Pretty.vsep)
+            [ "Alias left-hand side:"
+            , Pretty.indent 4 $ unparse symbolOrAlias
+            , "does not match declaration:"
+            , Pretty.indent 4 $ unparse alias
+            ]
     expectVariable
         :: UnifiedVariable Variable
         -> PatternVerifier

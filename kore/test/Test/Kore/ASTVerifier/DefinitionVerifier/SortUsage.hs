@@ -13,7 +13,6 @@ import           Data.Maybe
 import qualified Data.Text as Text
 
 import           Kore.ASTVerifier.Error
-                 ( noConstructorWithDomainValuesMessage )
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
@@ -80,7 +79,7 @@ test_sortUsage =
                 [ "module 'MODULE'"
                 , "symbol 'a' declaration (<test data>)"
                 ]
-            , errorError   = noConstructorWithDomainValuesMessage
+            , errorError   = noConstructorWithDomainValues
                 (testId "a")
                 (simpleSort (SortName "mySort"))
             }

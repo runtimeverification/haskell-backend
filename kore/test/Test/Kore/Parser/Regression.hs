@@ -27,7 +27,7 @@ import           System.FilePath
                  ( addExtension, splitFileName, (</>) )
 
 import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Error
@@ -83,7 +83,7 @@ verify definition =
     verifyDefinition attrVerify Builtin.koreVerifiers definition
     & bimap printError (const definition)
   where
-    attrVerify :: AttributesVerification Attribute.Symbol Attribute.Null
+    attrVerify :: AttributesVerification Attribute.Symbol Attribute.Axiom
     attrVerify = defaultAttributesVerification Proxy Proxy
 
 runParser :: String -> VerifyRequest -> IO ByteString

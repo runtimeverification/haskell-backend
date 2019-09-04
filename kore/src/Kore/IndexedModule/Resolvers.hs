@@ -266,11 +266,12 @@ resolveHooks indexedModule builtinName =
 
  -}
 findIndexedSort
-    :: IndexedModule patternType declAtts axiomAtts
+    :: MonadError (Error e) error
+    => IndexedModule patternType declAtts axiomAtts
     -- ^ indexed module
     -> Id
     -- ^ sort identifier
-    -> Either (Error e) (SentenceSort patternType)
+    -> error (SentenceSort patternType)
 findIndexedSort indexedModule sort =
     fmap getIndexedSentence (resolveSort indexedModule sort)
 
