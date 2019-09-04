@@ -55,6 +55,9 @@ module Kore.Step.Simplification.Data
 import           Control.Applicative
 import           Control.Comonad.Trans.Cofree
 import           Control.DeepSeq
+import           Control.Lens
+                 ( (%=) )
+import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
 import           Control.Monad.Catch
                  ( MonadCatch, MonadThrow )
@@ -66,6 +69,8 @@ import qualified Control.Monad.Morph as Monad.Morph
 import           Control.Monad.Reader
 import           Control.Monad.State.Class
                  ( MonadState )
+import           Control.Monad.State.Strict
+                 ( StateT, evalStateT )
 import qualified Control.Monad.State.Strict as Strict
 import qualified Control.Monad.Trans as Monad.Trans
 import           Control.Monad.Trans.Accum
@@ -74,11 +79,17 @@ import           Control.Monad.Trans.Identity
 import           Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
+import           Data.Generics.Product.Fields
+import           Data.Hashable
+                 ( Hashable )
 import qualified Data.Map as Map
 import           Data.Typeable
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
+import           Data.Map.Dynamic
+                 ( DynamicMap )
+import qualified Data.Map.Dynamic as DynamicMap
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
@@ -178,6 +189,26 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     localSimplifierAxioms locally =
         Monad.Morph.hoist (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
+
+    simplifierMemo
+        :: (Eq key, Hashable key, Typeable key, Typeable value)
+        => key -> value -> m ()
+    default simplifierMemo
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => (Eq key, Hashable key, Typeable key, Typeable value)
+        => key -> value -> m ()
+    simplifierMemo key value = Monad.Trans.lift (simplifierMemo key value)
+    {-# INLINE simplifierMemo #-}
+
+    simplifierRecall
+        :: (Eq key, Hashable key, Typeable key, Typeable value)
+        => key -> m (Maybe value)
+    default simplifierRecall
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => (Eq key, Hashable key, Typeable key, Typeable value)
+        => key -> m (Maybe value)
+    simplifierRecall key = Monad.Trans.lift (simplifierRecall key)
+    {-# INLINE simplifierRecall #-}
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
@@ -342,6 +373,9 @@ data Env =
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         }
 
+data Cache = Cache { simplifierCache :: !DynamicMap }
+    deriving GHC.Generic
+
 {- | @Simplifier@ represents a simplification action.
 
 A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
@@ -350,11 +384,16 @@ A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
 newtype SimplifierT m a = SimplifierT
-    { runSimplifierT :: ReaderT Env m a
+    { runSimplifierT :: ReaderT Env (StateT Cache m) a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
-    deriving (MonadIO, MonadCatch, MonadThrow, MonadTrans)
+    deriving (MonadIO, MonadCatch, MonadThrow)
     deriving (MonadReader Env)
+    deriving (MonadState Cache)
+
+instance MonadTrans SimplifierT where
+    lift m = SimplifierT (Monad.Trans.lift (Monad.Trans.lift m))
+    {-# INLINE lift #-}
 
 type Simplifier = SimplifierT (SmtT IO)
 
@@ -404,6 +443,14 @@ instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
             env { simplifierAxioms = locally simplifierAxioms }
     {-# INLINE localSimplifierAxioms #-}
 
+    simplifierMemo key value =
+        field @"simplifierCache" %= DynamicMap.insert key value
+    {-# INLINE simplifierMemo #-}
+
+    simplifierRecall key =
+        DynamicMap.lookup key <$> Lens.use (field @"simplifierCache")
+    {-# INLINE simplifierRecall #-}
+
 {- | Run a simplification, returning the results along all branches.
  -}
 evalSimplifierBranch
@@ -436,11 +483,16 @@ that may branch.
 
   -}
 evalSimplifier
-    :: GHC.HasCallStack
+    :: (GHC.HasCallStack, Monad smt)
     => Env
     -> SimplifierT smt a
     -> smt a
-evalSimplifier env = flip runReaderT env . runSimplifierT
+evalSimplifier env =
+    flip evalStateT cache
+    . flip runReaderT env
+    . runSimplifierT
+  where
+    cache = Cache { simplifierCache = DynamicMap.empty }
 
 -- * Implementation
 
