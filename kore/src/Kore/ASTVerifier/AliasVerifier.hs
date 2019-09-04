@@ -38,6 +38,16 @@ import           Kore.Syntax
 import           Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
+{- | Project the 'SentenceAlias'es from the list and verify them.
+
+The verified aliases are added to the current 'VerifiedModule'. The aliases are
+verified in the order they occur in the list, except that the dependencies of
+each alias are verified before itself.
+
+It is an error if any alias if it depends on itself (directly, or in a cycle
+through another alias).
+
+ -}
 verifyAliases
     :: [ParsedSentence]
     -> SentenceVerifier ()
@@ -64,17 +74,30 @@ data AliasContext =
 
 type VerifiedAlias = (Attribute.Symbol, SentenceAlias Verified.Pattern)
 
+{- | Look up a 'VerifiedAlias' in the cache, if present.
+ -}
 lookupVerifiedAlias :: Id -> AliasVerifier (Maybe VerifiedAlias)
 lookupVerifiedAlias name = do
     verifiedAliases <- State.gets indexedModuleAliasSentences
     return $ Map.lookup name verifiedAliases
 
+{- | Lookup a 'ParsedSentencAlias' in the current module.
+
+It is an error if the alias is missing.
+
+ -}
 lookupParsedAlias :: Id -> AliasVerifier ParsedSentenceAlias
 lookupParsedAlias name =
     Reader.asks (Map.lookup name . aliases) >>= maybe notFound return
   where
     notFound = koreFail "Alias not found."
 
+{- | Verify and add the named alias to the current module.
+
+The alias is fetched from the cache, if available; otherwise is is verified and
+cached.
+
+ -}
 verifyAlias :: Id -> AliasVerifier ()
 verifyAlias name =
     withLocationAndContext name aliasContext $ do
@@ -88,6 +111,8 @@ verifyAlias name =
     cached _ = return ()
     notCached = verifyUncachedAlias name
 
+{- | Verify the named alias without using the cache.
+ -}
 verifyUncachedAlias :: Id -> AliasVerifier ()
 verifyUncachedAlias name = do
     sentence <- lookupParsedAlias name
@@ -102,9 +127,13 @@ verifyUncachedAlias name = do
             (field @"indexedModuleAliasSentences")
             (Map.insert (aliasName verified) (attrs, verified))
 
-aliasDependencies :: SentenceAlias ParsedPattern -> AliasVerifier (Set Id)
+{- | Determine the names of all aliases the 'ParsedSentenceAlias' depends on.
+ -}
+aliasDependencies :: ParsedSentenceAlias -> AliasVerifier (Set Id)
 aliasDependencies = Recursive.fold collectAliasIds . sentenceAliasRightPattern
 
+{- | Collect the names of all aliases which a pattern depends on.
+ -}
 collectAliasIds
     :: Base ParsedPattern (AliasVerifier (Set Id))
     -> AliasVerifier (Set Id)
