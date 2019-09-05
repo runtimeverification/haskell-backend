@@ -198,33 +198,32 @@ maybeEvaluatePattern
         Nothing -> Nothing
         Just (BuiltinAndAxiomSimplifier evaluator) ->
             Just . tracing $ do
-                result <- axiomEvaluationTracing $
-                    evaluator
-                        substitutionSimplifier
-                        simplifier
-                        axiomIdToEvaluator
-                        patt
-                        configurationPredicate
-                flattened <- case result of
-                    AttemptedAxiom.NotApplicable ->
-                        return AttemptedAxiom.NotApplicable
-                    AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results = orResults
-                        , remainders = orRemainders
-                        } -> do
-                            simplified <-
-                                resimplificationTracing (length orResults)
-                                $ mapM simplifyIfNeeded orResults
-                            return
-                                (AttemptedAxiom.Applied AttemptedAxiomResults
-                                    { results =
-                                        MultiOr.flatten simplified
-                                    , remainders = orRemainders
-                                    }
-                                )
-                merged <-
-                    mergeTracing
-                    $ mergeWithConditionAndSubstitution
+                merged <- cachedOr $ do
+                    result <- axiomEvaluationTracing $
+                        evaluator
+                            substitutionSimplifier
+                            simplifier
+                            axiomIdToEvaluator
+                            patt
+                            configurationPredicate
+                    flattened <- case result of
+                        AttemptedAxiom.NotApplicable ->
+                            return AttemptedAxiom.NotApplicable
+                        AttemptedAxiom.Applied AttemptedAxiomResults
+                            { results = orResults
+                            , remainders = orRemainders
+                            } -> do
+                                simplified <-
+                                    resimplificationTracing (length orResults)
+                                    $ mapM simplifyIfNeeded orResults
+                                return
+                                    (AttemptedAxiom.Applied AttemptedAxiomResults
+                                        { results =
+                                            MultiOr.flatten simplified
+                                        , remainders = orRemainders
+                                        }
+                                    )
+                    mergeTracing $ mergeWithConditionAndSubstitution
                         childrenPredicate
                         flattened
                 case merged of
@@ -235,6 +234,15 @@ maybeEvaluatePattern
                         AttemptedAxiomResults { results, remainders } =
                             attemptResults
   where
+    cachedOr compute = do
+        let key = (configurationPredicate, childrenPredicate, patt)
+        simplifierRecall key >>= \case
+            Just value -> return value
+            Nothing -> do
+                value <- compute
+                simplifierMemo key value
+                return value
+
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.matchAxiomIdentifier patt
 
