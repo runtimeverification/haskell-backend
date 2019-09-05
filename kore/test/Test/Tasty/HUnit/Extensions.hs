@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Test.Tasty.HUnit.Extensions where
 
 import Test.Tasty.HUnit

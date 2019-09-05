@@ -1140,7 +1140,7 @@ pairSymbolDecl =
                     , symbolParams = [leftSortVariable, rightSortVariable]
                     }
             , sentenceSymbolSorts = [leftSort, rightSort]
-            , sentenceSymbolResultSort = rightSort
+            , sentenceSymbolResultSort = pairSort leftSort rightSort
             , sentenceSymbolAttributes =
                 Attributes
                     [ constructorAttribute

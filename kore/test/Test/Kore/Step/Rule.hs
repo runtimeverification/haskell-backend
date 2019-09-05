@@ -18,7 +18,7 @@ import           Data.Text
 import qualified Data.Text as Text
 
 import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import           Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
@@ -330,8 +330,8 @@ extractIndexedModule
     :: Text
     -> Either
         (Error a)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null))
-    -> VerifiedModule Attribute.Symbol Attribute.Null
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
+    -> VerifiedModule Attribute.Symbol Attribute.Axiom
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

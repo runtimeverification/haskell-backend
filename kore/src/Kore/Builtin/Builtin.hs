@@ -90,9 +90,10 @@ import qualified Kore.AST.Error as Kore.Error
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import qualified Kore.Attribute.Axiom as Attribute
+                 ( Axiom )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
-import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
@@ -104,7 +105,7 @@ import           Kore.Error
                  ( Error )
 import qualified Kore.Error
 import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule, VerifiedModule )
+                 ( IndexedModule, VerifiedModule )
 import           Kore.IndexedModule.MetadataTools
                  ( MetadataTools (MetadataTools), SmtMetadataTools )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
@@ -144,8 +145,8 @@ type Function = BuiltinAndAxiomSimplifier
 
 -- | Verify a sort declaration.
 type SortDeclVerifier =
-        KoreIndexedModule Attribute.Null Attribute.Null
-    -- ^ Indexed module, to look up symbol declarations
+        VerifiedModule Attribute.Symbol Attribute.Axiom
+    -- ^ Indexed module, to look up sort declarations
     ->  ParsedSentenceSort
     -- ^ Sort declaration to verify
     ->  Attribute.Sort
@@ -320,7 +321,7 @@ Fail if the symbol is not defined or the attribute is missing.
 
  -}
 assertSymbolHook
-    :: KoreIndexedModule declAttrs axiomAttrs
+    :: IndexedModule patternType declAttrs axiomAttrs
     -> Id
     -- ^ Symbol identifier
     -> Text
@@ -350,7 +351,7 @@ Fail if the symbol is not defined.
 
  -}
 assertSymbolResultSort
-    :: KoreIndexedModule declAttrs axiomAttrs
+    :: IndexedModule patternType declAttrs axiomAttrs
     -> Id
     -- ^ Symbol identifier
     -> Sort

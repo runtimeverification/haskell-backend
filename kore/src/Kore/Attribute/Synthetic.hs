@@ -5,6 +5,8 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Attribute.Synthetic
     ( Synthetic (..)
     , resynthesize, resynthesizeAux

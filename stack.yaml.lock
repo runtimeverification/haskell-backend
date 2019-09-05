@@ -5,36 +5,6 @@
 
 packages:
 - completed:
-    hackage: graphviz-2999.20.0.3@sha256:cde383c356bc41136ed53cd27e0800f46dbd2185600dd0de18d66d5c49739d94,7677
-    pantry-tree:
-      size: 4322
-      sha256: f7d9f7e161d68a5783d915358c28a95a2b8c94f3e302325fa604b91e8d2295c8
-  original:
-    hackage: graphviz-2999.20.0.3@sha256:cde383c356bc41136ed53cd27e0800f46dbd2185600dd0de18d66d5c49739d94
-- completed:
-    hackage: tasty-hedgehog-0.2.0.0@sha256:83a8b777fa472040979e44dba43c32441f55d5ddb9641a4d53deee4b0e09fa34,1656
-    pantry-tree:
-      size: 330
-      sha256: 1db78ecf877d3c31643d20160c26e6dd8096d1ae69a27edb2021c72511dba1d8
-  original:
-    hackage: tasty-hedgehog-0.2.0.0@sha256:83a8b777fa472040979e44dba43c32441f55d5ddb9641a4d53deee4b0e09fa34
-- completed:
-    size: 1248687
-    url: https://github.com/ttuegel/haskell-src-exts/archive/363dbd17d91ba58ac877d205c5e82c1672367008.tar.gz
-    cabal-file:
-      size: 4467
-      sha256: 02421cacaa48c055551b8e5796efc543301b7ea9527a38e1385403d2b85512fb
-    name: haskell-src-exts
-    version: 1.21.0
-    sha256: e02e7317509cb1c766b7f591bb7304fb436928ce6d99565a214f70467781aabe
-    pantry-tree:
-      size: 96118
-      sha256: 50c1163d5416f5052c1d5c03b4b68f906151ae3d1b23d0587e0d7cb4881c7392
-  original:
-    size: 1248687
-    url: https://github.com/ttuegel/haskell-src-exts/archive/363dbd17d91ba58ac877d205c5e82c1672367008.tar.gz
-    sha256: e02e7317509cb1c766b7f591bb7304fb436928ce6d99565a214f70467781aabe
-- completed:
     hackage: ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2,1991
     pantry-tree:
       size: 647
@@ -43,7 +13,7 @@ packages:
     hackage: ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2
 snapshots:
 - completed:
-    size: 500539
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/29.yaml
-    sha256: 006398c5e92d1d64737b7e98ae4d63987c36808814504d1451f56ebd98093f75
-  original: lts-13.29
+    size: 523884
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/4.yaml
+    sha256: 16f24be248b42c9e16d59db84378836b1e7c239448a041cae46d32daffa45a8b
+  original: lts-14.4

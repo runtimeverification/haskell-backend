@@ -11,7 +11,7 @@ import Data.Text
 
 import           Kore.ASTVerifier.DefinitionVerifier
 import           Kore.ASTVerifier.Error
-import qualified Kore.Attribute.Null as Attribute
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import           Kore.Debug
@@ -129,7 +129,7 @@ expectFailureWithError description expectedError unverifiedDefinition =
         )
 
 attributesVerificationForTests
-    :: AttributesVerification Attribute.Symbol Attribute.Null
+    :: AttributesVerification Attribute.Symbol Attribute.Axiom
 attributesVerificationForTests = defaultAttributesVerification Proxy Proxy
 
 printDefinition :: ParsedDefinition -> String
