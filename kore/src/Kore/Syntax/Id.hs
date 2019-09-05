@@ -21,7 +21,6 @@ module Kore.Syntax.Id
 import           Control.DeepSeq
                  ( NFData )
 import           Data.Hashable
-                 ( Hashable )
 import           Data.String
                  ( IsString (..) )
 import           Data.Text
@@ -54,8 +53,12 @@ instance Ord Id where
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
     first == second = compare first second == EQ
+    {-# INLINE (==) #-}
 
-instance Hashable Id
+-- | 'Hashable' ignores the 'AstLocation'
+instance Hashable Id where
+    hashWithSalt salt (Id text _) = hashWithSalt salt text
+    {-# INLINE hashWithSalt #-}
 
 instance NFData Id
 
