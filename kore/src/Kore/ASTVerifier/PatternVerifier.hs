@@ -109,7 +109,7 @@ runPatternVerifier context PatternVerifier { getPatternVerifier } =
 
 lookupSortDeclaration
     :: Id
-    -> PatternVerifier (SentenceSort (TermLike Variable))
+    -> PatternVerifier Verified.SentenceSort
 lookupSortDeclaration sortId = do
     Context { indexedModule } <- Reader.ask
     (_, sortDecl) <- resolveSort indexedModule sortId
