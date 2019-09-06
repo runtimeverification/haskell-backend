@@ -85,7 +85,7 @@ data Context =
         { declaredVariables :: !DeclaredVariables
         , declaredSortVariables :: !(Set SortVariable)
         -- ^ The sort variables in scope.
-        , indexedModule :: !(IndexedModule () Attribute.Symbol Attribute.Null)
+        , indexedModule :: !(VerifiedModule Attribute.Symbol Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
@@ -109,7 +109,7 @@ runPatternVerifier context PatternVerifier { getPatternVerifier } =
 
 lookupSortDeclaration
     :: Id
-    -> PatternVerifier (SentenceSort ())
+    -> PatternVerifier Verified.SentenceSort
 lookupSortDeclaration sortId = do
     Context { indexedModule } <- Reader.ask
     (_, sortDecl) <- resolveSort indexedModule sortId
@@ -117,7 +117,7 @@ lookupSortDeclaration sortId = do
 
 lookupAlias
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier Internal.Alias
+    ->  MaybeT PatternVerifier (Internal.Alias (TermLike Variable))
 lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
@@ -125,14 +125,23 @@ lookupAlias symbolOrAlias = do
     aliasSorts <-
         Trans.lift
         $ applicationSortsFromSymbolOrAliasSentence symbolOrAlias decl
+    let aliasLeft = leftDefinition decl
+        aliasRight = sentenceAliasRightPattern decl
     return Internal.Alias
         { aliasConstructor
         , aliasParams
         , aliasSorts
+        , aliasLeft
+        , aliasRight
         }
   where
     aliasConstructor = symbolOrAliasConstructor symbolOrAlias
     aliasParams = symbolOrAliasParams symbolOrAlias
+    leftDefinition def =
+        fmap getElementVariable
+        . applicationChildren
+        . sentenceAliasLeftPattern
+        $ def
 
 lookupSymbol
     ::  SymbolOrAlias
@@ -566,7 +575,7 @@ verifyApplyAlias
     ->  Application SymbolOrAlias (PatternVerifier child)
     ->  MaybeT PatternVerifier
             (CofreeF
-                (Application Internal.Alias)
+                (Application (Internal.Alias (TermLike Variable)))
                 (Attribute.Pattern Variable)
                 child
             )
