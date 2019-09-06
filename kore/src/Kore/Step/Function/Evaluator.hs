@@ -64,7 +64,8 @@ evaluateApplication
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication configurationPredicate childrenPredicate application = do
+evaluateApplication configurationPredicate childrenPredicate application =
+    cachedOr $ do
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -110,6 +111,29 @@ evaluateApplication configurationPredicate childrenPredicate application = do
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
 
   where
+    symbol = applicationSymbolOrAlias application
+    cachedOr compute
+      | Symbol.isMemo symbol
+      , isTop configurationPredicate
+      , isTop childrenPredicate
+      , Just application' <- traverse asConcrete application
+      = do
+        let key = application'
+        recalled <- simplifierRecall key
+        case recalled of
+            Just value ->
+                return $ OrPattern.fromTermLike $ fromConcrete value
+            Nothing -> do
+                results <- compute
+                case OrPattern.toPatterns results of
+                    [result]
+                      | isTop (Pattern.predicate result)
+                      , Just result' <- asConcrete (Pattern.term result)
+                      ->
+                        simplifierMemo key result'
+                    _ -> return ()
+                return results
+      | otherwise = compute
 
 {-| Evaluates axioms on patterns.
 -}
@@ -190,7 +214,7 @@ maybeEvaluatePattern
         Nothing -> Nothing
         Just (BuiltinAndAxiomSimplifier evaluator) ->
             Just . tracing $ do
-                merged <- cachedOr $ do
+                merged <- do
                     result <- axiomEvaluationTracing $
                         evaluator
                             substitutionSimplifier
@@ -226,36 +250,6 @@ maybeEvaluatePattern
                         AttemptedAxiomResults { results, remainders } =
                             attemptResults
   where
-    cachedOr compute
-      | isTop configurationPredicate
-      , isTop childrenPredicate
-      , Just termLike' <- asConcrete termLike
-      = do
-        let key = termLike'
-        recalled <- simplifierRecall key
-        case recalled of
-            Just value ->
-                return $ AttemptedAxiom.Applied AttemptedAxiomResults
-                    { results = OrPattern.fromTermLike $ fromConcrete value
-                    , remainders = mempty
-                    }
-            Nothing -> do
-                attempted <- compute
-                case attempted of
-                    AttemptedAxiom.Applied attemptResults
-                      | isBottom remainders
-                      , [result] <- OrPattern.toPatterns results
-                      , isTop (Pattern.predicate result)
-                      , Just result' <- asConcrete (Pattern.term result)
-                      ->
-                        simplifierMemo key result'
-                      where
-                        AttemptedAxiomResults { results, remainders } =
-                            attemptResults
-                    _ -> return ()
-                return attempted
-      | otherwise = compute
-
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
