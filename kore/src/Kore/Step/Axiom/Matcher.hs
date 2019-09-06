@@ -333,12 +333,7 @@ matchBuiltinMap _ = empty
 
 -- * Implementation
 
-type MatchingVariable variable =
-    ( FreshVariable variable
-    , SortedVariable variable
-    , Show variable
-    , Unparse variable
-    )
+type MatchingVariable variable = Simplifier.SimplifierVariable variable
 
 {- | A matching constraint is a @Pair@ of patterns.
 
@@ -494,7 +489,7 @@ setSubstitute sVariable termLike = do
     substitute1 = substituteTermLike subst
 
 substituteTermLike
-    :: (FreshVariable variable, SortedVariable variable)
+    :: MatchingVariable variable
     => (Show variable, Unparse variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> TermLike variable

@@ -23,9 +23,6 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
@@ -34,12 +31,7 @@ Right now this has special cases only for top and bottom children
 and for children with top terms.
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Iff Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify Iff { iffFirst = first, iffSecond = second } =
@@ -63,12 +55,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -95,11 +82,7 @@ simplifyEvaluated
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable
@@ -111,11 +94,7 @@ makeEvaluate first second
   | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable

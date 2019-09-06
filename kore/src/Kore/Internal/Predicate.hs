@@ -28,6 +28,7 @@ import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
+import           Kore.Internal.Variable
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
@@ -43,7 +44,7 @@ eraseConditionalTerm
     -> Predicate variable
 eraseConditionalTerm = Conditional.withoutTerm
 
-top :: (Ord variable, SortedVariable variable) => Predicate variable
+top :: InternalVariable variable => Predicate variable
 top =
     Conditional
         { term = ()
@@ -52,10 +53,10 @@ top =
         }
 
 -- | A 'top' 'Predicate' for refactoring which should eventually be removed.
-topTODO :: (Ord variable, SortedVariable variable) => Predicate variable
+topTODO :: InternalVariable variable => Predicate variable
 topTODO = top
 
-bottom :: (Ord variable, SortedVariable variable) => Predicate variable
+bottom :: InternalVariable variable => Predicate variable
 bottom =
     Conditional
         { term = ()
@@ -63,12 +64,10 @@ bottom =
         , substitution = mempty
         }
 
-topPredicate :: (Ord variable, SortedVariable variable) => Predicate variable
+topPredicate :: InternalVariable variable => Predicate variable
 topPredicate = top
 
-bottomPredicate
-    :: (Ord variable, SortedVariable variable)
-    => Predicate variable
+bottomPredicate :: InternalVariable variable => Predicate variable
 bottomPredicate = bottom
 
 {- | Extract the set of free variables from a predicate and substitution.
@@ -100,11 +99,7 @@ See also: 'substitutionToPredicate'.
 
 -}
 toPredicate
-    :: ( SortedVariable variable
-       , Ord variable
-       , Show variable
-       , Unparse variable
-       )
+    :: InternalVariable variable
     => Predicate variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate

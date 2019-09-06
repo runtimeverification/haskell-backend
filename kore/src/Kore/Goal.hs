@@ -260,11 +260,7 @@ onePathFollowupStep claims axioms =
 {- | The predicate to remove the destination from the present configuration.
  -}
 removalPredicate
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -- ^ Destination
     -> Pattern variable
@@ -463,10 +459,7 @@ getDestination (coerce -> RulePattern { right, ensures }) =
 
 makeRuleFromPatterns
     :: forall rule variable
-    .  Ord variable
-    => SortedVariable variable
-    => Unparse variable
-    => Show variable
+    .  InternalVariable variable
     => Coercible (RulePattern variable) rule
     => Pattern variable
     -> Pattern variable

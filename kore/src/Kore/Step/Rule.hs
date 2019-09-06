@@ -111,7 +111,7 @@ instance
         RulePattern { left, right, requires, ensures } = rulePattern'
 
 rulePattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> RulePattern variable
@@ -546,10 +546,7 @@ to avoid collision with any variables in the given set.
  -}
 refreshRulePattern
     :: forall variable
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    .  SubstitutionVariable variable
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
     -> (Renaming variable, RulePattern variable)
@@ -608,10 +605,7 @@ contain none of the targeted variables.
 
  -}
 substitute
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    :: SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable

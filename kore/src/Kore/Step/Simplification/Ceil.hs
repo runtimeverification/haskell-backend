@@ -54,9 +54,6 @@ import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
 import           Kore.TopBottom
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 
@@ -67,12 +64,7 @@ A ceil(or) is equal to or(ceil). We also take into account that
 * ceil transforms terms into predicates
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate.Predicate variable
     -> Ceil Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -99,10 +91,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -116,12 +105,7 @@ simplifyEvaluated predicate child =
 for details.
 -}
 makeEvaluate
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -134,11 +118,7 @@ makeEvaluate predicate child
   | otherwise              = makeEvaluateNonBoolCeil predicate child
 
 makeEvaluateNonBoolCeil
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -166,10 +146,7 @@ makeEvaluateNonBoolCeil predicate patt@Conditional {term}
 -- signature.
 makeEvaluateTerm
     ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -240,10 +217,7 @@ makeEvaluateTerm
 -}
 makeEvaluateBuiltin
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Unparse variable
-        , Show variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -292,13 +266,9 @@ makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrPredicate.top
 
 makeEvaluateNormalizedAc
     :: forall normalized variable simplifier
-    .   ( FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
         , Traversable (Domain.Value normalized)
-        , Unparse variable
         , Domain.AcWrapper normalized
         )
     =>  Predicate.Predicate variable

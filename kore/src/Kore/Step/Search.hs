@@ -46,15 +46,10 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import           Kore.TopBottom
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-| Which configurations are considered for matching?
 
@@ -117,14 +112,8 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable m .
-        ( SortedVariable variable
-        , FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify m
-        )
+    :: forall variable m
+    .  (SimplifierVariable variable, MonadSimplify m)
     => Pattern variable
     -> Pattern variable
     -> MaybeT m (OrPredicate variable)

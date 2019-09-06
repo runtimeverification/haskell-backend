@@ -25,17 +25,12 @@ import           Kore.Internal.OrPattern
 import           Kore.Internal.TermLike
 import           Kore.Predicate.Predicate
                  ( makeFalsePredicate )
-import           Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
 -}
 simplify
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => Builtin (OrPattern variable)
     -> OrPattern variable
 simplify builtin =
@@ -44,11 +39,7 @@ simplify builtin =
         return (mkBuiltin <$> child)
 
 simplifyBuiltin
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => Builtin (OrPattern variable)
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyBuiltin =
@@ -62,12 +53,7 @@ simplifyBuiltin =
             (return . pure) (Domain.BuiltinString string)
 
 simplifyInternal
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , Traversable t
-        )
+    :: (InternalVariable variable, Traversable t)
     => (t (TermLike variable) -> Maybe (t (TermLike variable)))
     -> t (OrPattern variable)
     -> MultiOr (Conditional variable (t (TermLike variable)))
@@ -78,11 +64,7 @@ simplifyInternal normalizer tOrPattern = do
     return normalized
 
 simplifyInternalMap
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Domain.InternalMap (TermLike Concrete) (OrPattern variable)
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalMap =
@@ -97,11 +79,7 @@ normalizeInternalMap =
     Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
 
 simplifyInternalSet
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Domain.InternalSet (TermLike Concrete) (OrPattern variable)
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalSet =
@@ -116,11 +94,7 @@ normalizeInternalSet =
     Lens.traverseOf (field @"builtinAcChild") Builtin.renormalize
 
 simplifyInternalList
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Domain.InternalList (OrPattern variable)
     -> MultiOr (Conditional variable (Builtin (TermLike variable)))
 simplifyInternalList = (fmap . fmap) Domain.BuiltinList . simplifyInternal pure

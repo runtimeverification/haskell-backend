@@ -37,17 +37,11 @@ import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
 import           Kore.Variables.Fresh
 
 evaluateAxioms
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [EqualityRule Variable]
     -> TermLike variable
     -> simplifier (AttemptedAxiom variable)

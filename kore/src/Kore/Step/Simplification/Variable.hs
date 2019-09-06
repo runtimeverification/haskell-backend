@@ -21,7 +21,7 @@ import           Kore.Variables.UnifiedVariable
 an or containing a term made of that variable.
 -}
 simplify
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => UnifiedVariable variable
     -> OrPattern variable
 simplify var = OrPattern.fromTermLike $ mkVar var

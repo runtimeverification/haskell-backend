@@ -4,7 +4,7 @@ License     : NCSA
 -}
 
 module Kore.Unification.Unify
-    ( MonadUnify (..)
+    ( MonadUnify (..), SimplifierVariable
     , UnifierT (..)
     , throwUnificationOrSubstitutionError
     , lowerExceptT
@@ -30,7 +30,7 @@ import           Kore.Logger
 import           Kore.Profiler.Data
                  ( MonadProfiler )
 import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify (..) )
+                 ( BranchT, MonadSimplify (..), SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
 import           Kore.Unification.Error
