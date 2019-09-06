@@ -1,4 +1,4 @@
-module Test.Kore.OnePath.Verification
+module Test.Kore.Strategies.OnePath.Verification
     ( test_onePathVerification
     ) where
 
@@ -24,7 +24,6 @@ import           Kore.Internal.Pattern as Conditional
                  ( Conditional (..) )
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import qualified Kore.OnePath.Verification as OnePath
 import           Kore.Predicate.Predicate
                  ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
 import           Kore.Step.Rule
@@ -34,6 +33,7 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import qualified Kore.Strategies.OnePath.Verification as OnePath
 import qualified SMT
 
 import           Test.Kore

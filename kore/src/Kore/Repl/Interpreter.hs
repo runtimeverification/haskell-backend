@@ -94,8 +94,6 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
-import           Kore.OnePath.Verification
-                 ( Claim, CommonProofState )
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.State
@@ -107,6 +105,8 @@ import qualified Kore.Step.Rule as Axiom
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Strategies.OnePath.Verification
+                 ( Claim, CommonProofState )
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )

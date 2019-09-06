@@ -84,7 +84,6 @@ import           Kore.Internal.TermLike
                  ( Sort, TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
-import           Kore.OnePath.Verification
 import           Kore.Predicate.Predicate as Predicate
 import           Kore.Repl.Data
 import           Kore.Step.Rule
@@ -93,6 +92,7 @@ import           Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Strategies.OnePath.Verification
 import           Kore.Syntax.Variable
                  ( Variable )
 

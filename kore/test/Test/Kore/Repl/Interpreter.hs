@@ -38,8 +38,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
                  ( TermLike, elemVarS, mkBottom_, mkElemVar )
 import qualified Kore.Logger.Output as Logger
-import           Kore.OnePath.Verification
-                 ( verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
@@ -48,6 +46,8 @@ import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
                  ( Simplifier, evalSimplifier )
+import           Kore.Strategies.OnePath.Verification
+                 ( verifyClaimStep )
 import           Kore.Syntax.Variable
                  ( SortedVariable, Variable )
 import           Kore.Unification.Procedure

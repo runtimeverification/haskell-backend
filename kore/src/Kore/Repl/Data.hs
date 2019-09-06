@@ -67,13 +67,13 @@ import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Logger.Output as Logger
-import           Kore.OnePath.Verification
-                 ( CommonProofState )
 import           Kore.Profiler.Data
                  ( MonadProfiler )
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Strategies.OnePath.Verification
+                 ( CommonProofState )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Error
