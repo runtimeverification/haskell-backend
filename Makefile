@@ -51,8 +51,6 @@ coverage_report: test-kore
 
 test-k:
 	$(MAKE) --directory src/main/k/working test-k
-
-test-bmc:
 	$(MAKE) --directory src/main/k/in-progress/bmc/example1 test-bmc
 
 clean:
