@@ -698,9 +698,7 @@ because the entire tree must be traversed to inspect for variables before
 deciding if the result is @Nothing@ or @Just _@.
 
  -}
-asConcrete
-    :: TermLike variable
-    -> Maybe (TermLike Concrete)
+asConcrete :: TermLike variable -> Maybe (TermLike Concrete)
 asConcrete = traverseVariables (\case { _ -> Nothing })
 
 isConcrete :: TermLike variable -> Bool

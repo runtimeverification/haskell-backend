@@ -50,6 +50,7 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import           Kore.TopBottom
 
 {-| Evaluates functions on an application pattern.
 -}
@@ -63,8 +64,7 @@ evaluateApplication
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication configurationPredicate childrenPredicate application =
-    cachedOr $ do
+evaluateApplication configurationPredicate childrenPredicate application = do
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -110,14 +110,6 @@ evaluateApplication configurationPredicate childrenPredicate application =
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
 
   where
-    cachedOr compute = do
-        let key = (configurationPredicate, childrenPredicate, application)
-        simplifierRecall key >>= \case
-            Just value -> return value
-            Nothing -> do
-                value <- compute
-                simplifierMemo key value
-                return value
 
 {-| Evaluates axioms on patterns.
 -}
@@ -190,7 +182,7 @@ maybeEvaluatePattern
     simplifier
     axiomIdToEvaluator
     childrenPredicate
-    patt
+    termLike
     defaultValue
     configurationPredicate
   =
@@ -204,7 +196,7 @@ maybeEvaluatePattern
                             substitutionSimplifier
                             simplifier
                             axiomIdToEvaluator
-                            patt
+                            termLike
                             configurationPredicate
                     flattened <- case result of
                         AttemptedAxiom.NotApplicable ->
@@ -234,17 +226,38 @@ maybeEvaluatePattern
                         AttemptedAxiomResults { results, remainders } =
                             attemptResults
   where
-    cachedOr compute = do
-        let key = (configurationPredicate, childrenPredicate, patt)
-        simplifierRecall key >>= \case
-            Just value -> return value
+    cachedOr compute
+      | isTop configurationPredicate
+      , isTop childrenPredicate
+      , Just termLike' <- asConcrete termLike
+      = do
+        let key = termLike'
+        recalled <- simplifierRecall key
+        case recalled of
+            Just value ->
+                return $ AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = OrPattern.fromTermLike $ fromConcrete value
+                    , remainders = mempty
+                    }
             Nothing -> do
-                value <- compute
-                simplifierMemo key value
-                return value
+                attempted <- compute
+                case attempted of
+                    AttemptedAxiom.Applied attemptResults
+                      | isBottom remainders
+                      , [result] <- OrPattern.toPatterns results
+                      , isTop (Pattern.predicate result)
+                      , Just result' <- asConcrete (Pattern.term result)
+                      ->
+                        simplifierMemo key result'
+                      where
+                        AttemptedAxiomResults { results, remainders } =
+                            attemptResults
+                    _ -> return ()
+                return attempted
+      | otherwise = compute
 
     identifier :: Maybe AxiomIdentifier
-    identifier = AxiomIdentifier.matchAxiomIdentifier patt
+    identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
     maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
     maybeEvaluator = do
@@ -258,7 +271,7 @@ maybeEvaluatePattern
         . case identifier of
             Nothing -> id
             Just identifier' ->
-                Profile.equalitySimplification identifier' patt
+                Profile.equalitySimplification identifier' termLike
 
     axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
     resimplificationTracing resultCount =
@@ -272,7 +285,7 @@ maybeEvaluatePattern
 
     unchangedPatt =
         Conditional
-            { term         = patt
+            { term         = termLike
             , predicate    = predicate
             , substitution = substitution
             }
