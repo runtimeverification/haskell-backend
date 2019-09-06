@@ -783,6 +783,8 @@ aliasVisibilityTests =
                 { aliasConstructor = testId "alias1"
                 , aliasParams = [ defaultSort ]
                 , aliasSorts = applicationSorts [] defaultSort
+                , aliasLeft = []
+                , aliasRight = mkTop defaultSort
                 }
             []
     aliasDeclaration =
@@ -816,6 +818,8 @@ aliasVisibilityTests =
                 { aliasConstructor = testId "#alias1"
                 , aliasParams = [ charMetaSort ]
                 , aliasSorts = applicationSorts [] charMetaSort
+                , aliasLeft = []
+                , aliasRight = mkTop charMetaSort
                 }
             []
     metaAliasDeclaration =
@@ -896,6 +900,9 @@ aliasVisibilityTests =
                             applicationSorts
                                 [termLikeSort aliasPattern]
                                 defaultSort
+                        , aliasLeft = []
+                        , aliasRight =
+                            mkTop $ termLikeSort aliasPattern
                         }
                     [aliasPattern]
             , sentenceAxiomAttributes = Attributes []
