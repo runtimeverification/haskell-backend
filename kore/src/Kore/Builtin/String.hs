@@ -140,11 +140,10 @@ symbolVerifiers =
     ,   ( ordKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
-        -- TODO: argument should be domain value
     ,   ( token2StringKey
         , Builtin.verifySymbol
             assertSort
-            [Builtin.acceptAnySort]
+            [Builtin.verifySortHasDomainValues]
         )
     ]
 
@@ -439,14 +438,14 @@ evalOrd = Builtin.functionEvaluator evalOrd0
 evalToken2String :: Builtin.Function
 evalToken2String = Builtin.functionEvaluator evalToken2String0
   where
-    evalToken2String0 _ resultSort arguments =
-        Builtin.getAttemptedAxiom $ do
-            let _dv =
-                    case arguments of
-                        [_dv] -> _dv
-                        _     -> Builtin.wrongArity chrKey
-            _dv <- lift $ patternVerifier _dv
-            Builtin.appliedFunction . asTermLike $ _dv
+      evalToken2String0 _ resultSort arguments = undefined
+--        Builtin.getAttemptedAxiom $ do
+--            let _dv =
+--                    case arguments of
+--                        [_dv] -> _dv
+--                        _     -> Builtin.wrongArity chrKey
+--            _dv <- lift $ patternVerifier _dv
+--            Builtin.appliedFunction . asTermLike $ _dv
 
 {- | Implement builtin function evaluation.
  -}

@@ -36,6 +36,7 @@ module Kore.Builtin.Builtin
     , assertSymbolHook
     , assertSymbolResultSort
     , verifySort
+    , verifySortHasDomainValues
     , acceptAnySort
     , verifySymbol
     , verifySymbolArguments
@@ -397,6 +398,18 @@ verifySort builtinName =
         Kore.Error.koreFail
             ("unexpected sort variable '"
                 ++ getIdForError getSortVariable ++ "'")
+
+-- Verify a sort by only checking if it has domain values
+verifySortHasDomainValues :: SortVerifier
+verifySortHasDomainValues = SortVerifier worker
+  where
+    worker
+        :: forall patternType
+        .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+        -> Sort
+        -> Either (Error VerifyError) ()
+    worker findSort sort = undefined
+
 
 -- | Wildcard for sort verification on parameterized builtin sorts
 acceptAnySort :: SortVerifier
