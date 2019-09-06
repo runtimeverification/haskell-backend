@@ -60,6 +60,7 @@ instance Synthetic Defined (Application Internal.Symbol) where
         children = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
+-- TODO: calculate by looking at RHS of alias
 instance Synthetic Defined (Application (Internal.Alias patternType)) where
     synthetic = const (Defined False)
     {-# INLINE synthetic #-}

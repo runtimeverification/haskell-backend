@@ -43,18 +43,12 @@ instance Eq patternType => Eq (Alias patternType) where
     (==) a b =
             Function.on (==) aliasConstructor a b
         &&  Function.on (==) aliasParams a b
-        &&  Function.on (==) aliasSorts a b
-        &&  Function.on (==) aliasLeft a b
-        &&  Function.on (==) aliasRight a b
     {-# INLINE (==) #-}
 
 instance Ord patternType => Ord (Alias patternType) where
     compare a b =
             Function.on compare aliasConstructor a b
         <>  Function.on compare aliasParams a b
-        <>  Function.on compare aliasSorts a b
-        <>  Function.on compare aliasLeft a b
-        <>  Function.on compare aliasRight a b
 
 instance Hashable patternType => Hashable (Alias patternType) where
     hashWithSalt salt Alias { aliasConstructor, aliasParams } =
