@@ -416,6 +416,16 @@ is not found.
         [hook{}("STRING.find")]
 ~~~
 
+### STRING.token2string
+
+~~~
+    hooked-symbol token2string{}(\dv{...}(...)) : String{}
+        [hook{}("STRING.token2string")]
+~~~
+
+### STRING.string2token
+TODO
+
 ## MAP
 
 Depends on `BOOL`.

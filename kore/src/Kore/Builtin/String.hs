@@ -38,12 +38,15 @@ module Kore.Builtin.String
     , string2BaseKey
     , chrKey
     , ordKey
+    , token2StringKey
     ) where
 
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
+import           Control.Monad.Trans.Class
+                 ( lift )
 import           Data.Char
                  ( chr, ord )
 import qualified Data.HashMap.Strict as HashMap
@@ -71,6 +74,8 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
+import           Kore.Unparser
+                 ( unparseToString )
 
 {- | Builtin name of the @String@ sort.
  -}
@@ -134,6 +139,12 @@ symbolVerifiers =
         )
     ,   ( ordKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
+        )
+        -- TODO: argument should be domain value
+    ,   ( token2StringKey
+        , Builtin.verifySymbol
+            assertSort
+            [Builtin.acceptAnySort]
         )
     ]
 
@@ -285,6 +296,9 @@ chrKey = "STRING.chr"
 ordKey :: IsString s => s
 ordKey = "STRING.ord"
 
+token2StringKey :: IsString s => s
+token2StringKey= "STRING.token2string"
+
 evalSubstr :: Builtin.Function
 evalSubstr = Builtin.functionEvaluator evalSubstr0
   where
@@ -422,6 +436,18 @@ evalOrd = Builtin.functionEvaluator evalOrd0
             . toInteger
             . ord
 
+evalToken2String :: Builtin.Function
+evalToken2String = Builtin.functionEvaluator evalToken2String0
+  where
+    evalToken2String0 _ resultSort arguments =
+        Builtin.getAttemptedAxiom $ do
+            let _dv =
+                    case arguments of
+                        [_dv] -> _dv
+                        _     -> Builtin.wrongArity chrKey
+            _dv <- lift $ patternVerifier _dv
+            Builtin.appliedFunction . asTermLike $ _dv
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -436,6 +462,7 @@ builtinFunctions =
     , (string2IntKey, evalString2Int)
     , (chrKey, evalChr)
     , (ordKey, evalOrd)
+    , (token2StringKey, evalToken2String)
     ]
   where
     comparator name op =
