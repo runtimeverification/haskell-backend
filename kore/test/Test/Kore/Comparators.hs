@@ -35,13 +35,13 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Goal
 import           Kore.Internal.MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
+import           Kore.ProofState
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier

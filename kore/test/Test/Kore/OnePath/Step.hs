@@ -34,6 +34,7 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
+import           Kore.ProofState
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (RewriteRule),
                  RulePattern (RulePattern) )
@@ -42,9 +43,9 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, runStrategy )
-import           Kore.Step.Strategy
-                 ( ExecutionGraph (..) )
+                 ( ExecutionGraph (..), Strategy, pickFinal, runStrategy )
+import           Kore.Strategies.OnePath.Actions
+                 ( makeRuleFromPatterns )
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution

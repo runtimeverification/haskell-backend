@@ -21,6 +21,7 @@ import           Kore.Logger
                  ( LogMessage (..), WithLog (..) )
 import           Kore.Profiler.Data
                  ( Configuration (..), MonadProfiler (..) )
+import qualified Kore.ProofState as Goal
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify (..) )
 import qualified Kore.Step.Strategy as Strategy

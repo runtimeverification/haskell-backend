@@ -94,6 +94,9 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
+import           Kore.ProofState
+                 ( ProofStateTransformer (ProofStateTransformer), proofState )
+import qualified Kore.ProofState as ProofState.DoNotUse
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.State

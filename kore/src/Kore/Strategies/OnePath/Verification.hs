@@ -34,6 +34,8 @@ import           Kore.Debug
 import           Kore.Goal
 import           Kore.Internal.Pattern
                  ( Pattern )
+import           Kore.ProofState
+                 ( ProofState (Goal) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -41,6 +43,8 @@ import           Kore.Step.Strategy
 import           Kore.Step.Transition
                  ( runTransitionT )
 import qualified Kore.Step.Transition as Transition
+import           Kore.Strategies.OnePath.Actions
+                 ( getConfiguration, getDestination, makeRuleFromPatterns )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser

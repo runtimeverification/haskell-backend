@@ -85,6 +85,10 @@ import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.Predicate.Predicate as Predicate
+import           Kore.ProofState
+                 ( ProofState (Goal),
+                 ProofStateTransformer (ProofStateTransformer), proofState )
+import qualified Kore.ProofState as ProofState.DoNotUse
 import           Kore.Repl.Data
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
