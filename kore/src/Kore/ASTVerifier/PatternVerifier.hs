@@ -61,7 +61,7 @@ import qualified Kore.Internal.Alias as Internal
 import           Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike
-                 ( TermLike, TermLikeF )
+                 ( TermLikeF )
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Parser
                  ( ParsedPattern )
@@ -117,7 +117,7 @@ lookupSortDeclaration sortId = do
 
 lookupAlias
     ::  SymbolOrAlias
-    ->  MaybeT PatternVerifier (Internal.Alias (TermLike Variable))
+    ->  MaybeT PatternVerifier Verified.Alias
 lookupAlias symbolOrAlias = do
     Context { indexedModule } <- Reader.ask
     let resolveAlias' = resolveAlias indexedModule aliasConstructor
@@ -519,8 +519,7 @@ verifyPatternsWithSorts getChildAttributes sorts operands = do
 verifyApplyAlias
     :: (child -> Attribute.Pattern Variable)
     -> Application SymbolOrAlias (PatternVerifier child)
-    ->  MaybeT PatternVerifier
-            (Application (Internal.Alias Verified.Pattern) child)
+    -> MaybeT PatternVerifier (Application Verified.Alias child)
 verifyApplyAlias getChildAttributes application =
     lookupAlias symbolOrAlias >>= \alias -> Trans.lift $ do
     let verified = application { applicationSymbolOrAlias = alias }
