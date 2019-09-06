@@ -48,7 +48,7 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step
 
 %.kbmc.output: $(DEFINITION) $(KORE_EXEC)
-	-$(KBMC) $(KPROVE_OPTS) --raw-spec $(basename $*).k -d . -m VERIFICATION --depth $(subst ., ,$(suffix $*)) --output-file $@
+	$(KBMC) $(KPROVE_OPTS) --raw-spec $(basename $*).k -d . -m VERIFICATION --depth $(subst ., ,$(suffix $*)) --output-file $@ || exit 0
 
 %.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
