@@ -161,7 +161,6 @@ execBenchmark root kFile definitionFile mainModuleName test =
                             Builtin.domainValueVerifiers Builtin.koreVerifiers
                         , indexedModule =
                             verifiedModule
-                            & IndexedModule.erasePatterns
                             & IndexedModule.eraseAxiomAttributes
                         , declaredSortVariables = Set.empty
                         , declaredVariables =

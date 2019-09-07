@@ -12,6 +12,7 @@ module Test.Kore.Builtin.Builtin
     , evaluateT
     , evaluateToList
     , indexedModule
+    , verifiedModule
     , runStep
     , runSMT
     ) where
