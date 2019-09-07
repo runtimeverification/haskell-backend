@@ -37,6 +37,7 @@ module Kore.Builtin.Builtin
     , assertSymbolResultSort
     , verifySort
     , verifySortHasDomainValues
+    , expectDomainValue
     , acceptAnySort
     , verifySymbol
     , verifySymbolArguments
@@ -65,6 +66,8 @@ module Kore.Builtin.Builtin
     , unifyEqualsUnsolved
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( MaybeT (..), fromMaybe )
@@ -401,7 +404,7 @@ verifySort builtinName =
             ("unexpected sort variable '"
                 ++ getIdForError getSortVariable ++ "'")
 
--- Verify a sort by only checking if it has domain values
+-- Verify a sort by only checking if it has domain values.
 verifySortHasDomainValues :: SortVerifier
 verifySortHasDomainValues = SortVerifier worker
   where
@@ -427,7 +430,23 @@ verifySortHasDomainValues = SortVerifier worker
             ("unexpected sort variable '"
                 ++ getIdForError getSortVariable ++ "'")
 
-
+expectDomainValue
+    :: Monad m
+    => Text
+    -- ^ Context for error message
+    -> TermLike variable
+    -- ^ Operand pattern
+    -> MaybeT m Text
+expectDomainValue ctx =
+    \case
+        DV_ sort child ->
+            case child of
+                StringLiteral_ text ->
+                    return text
+                _ ->
+                    verifierBug
+                    $ Text.unpack ctx ++ ": Domain value is not a stringliteral"
+        _ -> empty
 
 -- | Wildcard for sort verification on parameterized builtin sorts
 acceptAnySort :: SortVerifier
