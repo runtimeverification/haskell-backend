@@ -310,6 +310,15 @@ test_string2Int =
         bottom
     ]
 
+-- test_token2String :: [TestTree]
+-- test_token2String =
+--     [ testString
+--         "STRING.token2string(\\dv{intId{}}('48')) is '48'"
+--         token2StringStringSymbol
+--         [mkDomainValue $ DomainValue intSort (mkStringLiteral "48")]
+--         (asPattern "48")
+--     ]
+
 -- | Another name for 'asInternal'.
 stringLiteral :: Text -> TermLike Variable
 stringLiteral = asInternal
