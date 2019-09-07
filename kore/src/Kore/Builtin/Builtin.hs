@@ -95,10 +95,12 @@ import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Error
@@ -409,8 +411,17 @@ verifySortHasDomainValues = SortVerifier worker
         -> Sort
         -> Either (Error VerifyError) ()
     worker findSort (SortActualSort SortActual { sortActualName }) = do
-        sort <- findSort sortActualName
-        return undefined
+        SentenceSort { sentenceSortAttributes } <- findSort sortActualName
+        sortAttr :: Attribute.Sort <-
+            Attribute.Parser.liftParser
+                $ Attribute.Parser.parseAttributes sentenceSortAttributes
+        let hasDomainValues =
+                Attribute.getHasDomainValues
+                . Attribute.hasDomainValues
+                $ sortAttr
+        Kore.Error.koreFailWhen (not hasDomainValues)
+            ("Sort '" ++ getIdForError sortActualName
+                ++ "' does not have domain values. '")
     worker _ (SortVariableSort SortVariable { getSortVariable }) =
         Kore.Error.koreFail
             ("unexpected sort variable '"
