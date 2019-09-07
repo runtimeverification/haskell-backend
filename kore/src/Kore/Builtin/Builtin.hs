@@ -408,7 +408,14 @@ verifySortHasDomainValues = SortVerifier worker
         .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
         -> Sort
         -> Either (Error VerifyError) ()
-    worker findSort sort = undefined
+    worker findSort (SortActualSort SortActual { sortActualName }) = do
+        sort <- findSort sortActualName
+        return undefined
+    worker _ (SortVariableSort SortVariable { getSortVariable }) =
+        Kore.Error.koreFail
+            ("unexpected sort variable '"
+                ++ getIdForError getSortVariable ++ "'")
+
 
 
 -- | Wildcard for sort verification on parameterized builtin sorts
