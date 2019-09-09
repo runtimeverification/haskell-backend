@@ -1,0 +1,20 @@
+  <T>
+    <k>
+      #execute
+    </k>
+    <state>
+      "x" |-> X +Int 1
+    </state>
+  </T>
+#And
+  {
+    5 <Int X andBool X <Int 8
+  #Equals
+    true
+  }
+#And
+  {
+    X >Int 5
+  #Equals
+    true
+  }
