@@ -5,6 +5,8 @@ module Test.Kore.Step.Simplification.And
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import           Branch
+                 ( gather )
 import           Kore.Internal.MultiOr
                  ( MultiOr (MultiOr) )
 import           Kore.Internal.OrPattern
@@ -17,7 +19,7 @@ import           Kore.Predicate.Predicate
                  makeFalsePredicate, makeTruePredicate )
 import           Kore.Step.Simplification.And
 import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier, gather )
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )

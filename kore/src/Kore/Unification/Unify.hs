@@ -25,14 +25,13 @@ import           Data.Text.Prettyprint.Doc
 
 import           Branch
                  ( BranchT )
+import qualified Branch as BranchT
 import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import           Kore.Logger
                  ( LogMessage, WithLog (..) )
 import           Kore.Profiler.Data
                  ( MonadProfiler )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather, scatter )
 import           Kore.Step.Simplification.Simplify
                  ( MonadSimplify (..), SimplifierVariable )
 import           Kore.Unification.Error

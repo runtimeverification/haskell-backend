@@ -18,16 +18,8 @@ module Kore.Step.Simplification.Data
     , Env (..)
     , runSimplifier
     , evalSimplifier
-    , SimplificationType (..)
-    -- * Branching
-    , BranchT
-    , mapBranchT
     , evalSimplifierBranch
-    , gather
-    , gatherAll
-    , scatter
-    , foldBranchT
-    , alternate
+    , SimplificationType (..)
     ) where
 
 import           Control.Monad.Catch

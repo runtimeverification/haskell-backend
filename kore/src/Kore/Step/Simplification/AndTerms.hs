@@ -36,6 +36,9 @@ import qualified GHC.Stack as GHC
 import           Prelude hiding
                  ( concat )
 
+import           Branch
+                 ( BranchT )
+import qualified Branch as BranchT
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
@@ -63,8 +66,6 @@ import           Kore.Step.PatternAttributes
 import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather, scatter )
 import           Kore.Step.Simplification.NoConfusion
 import           Kore.Step.Simplification.Overloading
 import           Kore.Step.Substitution
@@ -155,7 +156,7 @@ termEqualsAnd
         scatterResults =
             maybe
                 (return equalsPredicate) -- default if no results
-                (alternate . BranchT.scatter)
+                (BranchT.alternate . BranchT.scatter)
             . sequence
         equalsPredicate =
             Conditional
