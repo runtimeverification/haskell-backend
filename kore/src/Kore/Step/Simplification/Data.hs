@@ -37,14 +37,10 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Logger
 import           Kore.Profiler.Data
                  ( MonadProfiler (profileDuration) )
+import           Kore.Step.Simplification.SimplificationType
 import           Kore.Step.Simplification.Simplify
 import           SMT
                  ( MonadSMT (..), SMT, SmtT (..) )
-
-{-| 'And' simplification is very similar to 'Equals' simplification.
-This type is used to distinguish between the two in the common code.
--}
-data SimplificationType = And | Equals
 
 -- * Simplifier
 
