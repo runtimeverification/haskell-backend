@@ -19,7 +19,6 @@ module Kore.Step.Simplification.Data
     , runSimplifier
     , evalSimplifier
     , evalSimplifierBranch
-    , SimplificationType (..)
     ) where
 
 import           Control.Monad.Catch
@@ -37,7 +36,6 @@ import           Kore.IndexedModule.MetadataTools
 import           Kore.Logger
 import           Kore.Profiler.Data
                  ( MonadProfiler (profileDuration) )
-import           Kore.Step.Simplification.SimplificationType
 import           Kore.Step.Simplification.Simplify
 import           SMT
                  ( MonadSMT (..), SMT, SmtT (..) )

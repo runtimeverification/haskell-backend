@@ -27,7 +27,6 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
                  ( substitute )
-import           Kore.Step.Simplification.Data
 import           Kore.Step.Simplification.Simplify
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )

@@ -63,11 +63,13 @@ import           Kore.Predicate.Predicate
                  makeNotPredicate, makeTruePredicate )
 import           Kore.Step.PatternAttributes
                  ( isConstructorLikeTop )
-import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as SimplificationType
-                 ( SimplificationType (..) )
 import           Kore.Step.Simplification.NoConfusion
 import           Kore.Step.Simplification.Overloading
+import           Kore.Step.Simplification.SimplificationType
+                 ( SimplificationType )
+import qualified Kore.Step.Simplification.SimplificationType as SimplificationType
+                 ( SimplificationType (..) )
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Step.Substitution
                  ( PredicateMerger,
                  createLiftedPredicatesAndSubstitutionsMerger,

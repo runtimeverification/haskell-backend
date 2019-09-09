@@ -67,9 +67,9 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionMatch
                  ( SortInjectionMatch (..) )
 import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplification
                  ( SortInjectionSimplification (..) )
-import qualified Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Simplification.Simplify
                  ( SimplifierVariable )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
 import qualified Kore.Unification.Substitution as Substitution

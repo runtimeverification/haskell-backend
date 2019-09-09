@@ -122,9 +122,7 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Proof.Value as Value
 import           Kore.Sort
                  ( predicateSort )
-import           Kore.Step.Simplification.Data
-                 ( SimplificationType )
-import qualified Kore.Step.Simplification.Data as SimplificationType
+import           Kore.Step.Simplification.SimplificationType as SimplificationType
                  ( SimplificationType (..) )
 import           Kore.Step.Simplification.Simplify
                  ( AttemptedAxiom (..),
