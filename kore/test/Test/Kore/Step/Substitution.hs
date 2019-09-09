@@ -8,7 +8,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 
-import qualified Branch
 import Kore.Internal.MultiOr
     ( MultiOr
     )
@@ -20,7 +19,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import Kore.Step.Simplification.Data
 import Kore.Step.Substitution
     ( mergePredicatesAndSubstitutionsExcept
     )
@@ -31,14 +29,10 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import SMT
-    ( SMT
-    )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Extensions
 
 test_normalize :: [TestTree]
@@ -341,19 +335,14 @@ merge
     -> [(UnifiedVariable Variable, TermLike Variable)]
     -> IO (Either UnificationOrSubstitutionError [Predicate Variable])
 merge s1 s2 =
-    runSMT
-    $ evalSimplifier mockEnv
+    Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
     $ mergePredicatesAndSubstitutionsExcept [] $ Substitution.wrap <$> [s1, s2]
   where
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
-normalize predicated =
-    runSMT
-    $ evalSimplifier mockEnv
-    $ Branch.gather
-    $ Substitution.normalize predicated
+normalize = Test.runSimplifierBranch mockEnv . Substitution.normalize
   where
     mockEnv = Mock.env
 
@@ -366,16 +355,11 @@ normalizeExcept
         )
 normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
-    $ runSMT
-    $ evalSimplifier mockEnv
+    $ Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
     $ Substitution.normalizeExcept predicated
   where
     mockEnv = Mock.env
-
--- | Run an 'SMT' computation with the default configuration.
-runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
 
 -- | Check that 'Predicate.substitution' is normalized for all arguments.
 assertNormalizedPredicates :: Foldable f => f [Predicate Variable] -> Assertion

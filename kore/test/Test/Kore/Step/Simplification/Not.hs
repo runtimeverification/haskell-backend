@@ -23,9 +23,6 @@ import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.Substitution
     ( Substitution
@@ -35,11 +32,10 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
@@ -131,8 +127,6 @@ simplifyEvaluated
     :: OrPattern Variable
     -> IO (OrPattern Variable)
 simplifyEvaluated =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier mockEnv
-    . Not.simplifyEvaluated
+    runSimplifier mockEnv . Not.simplifyEvaluated
   where
     mockEnv = Mock.env

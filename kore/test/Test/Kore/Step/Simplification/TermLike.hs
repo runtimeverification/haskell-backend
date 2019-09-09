@@ -16,15 +16,11 @@ import Kore.Internal.Predicate as Predicate
     ( top
     )
 import Kore.Internal.TermLike
-import Kore.Logger.Output
-    ( emptyLogger
-    )
-import Kore.Step.Simplification.Data
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
-import qualified SMT
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 
 test_simplifyInternal :: [TestTree]
 test_simplifyInternal =
@@ -34,10 +30,8 @@ test_simplifyInternal =
 
 simplifyInternalEvaluated :: TermLike Variable -> IO (OrPattern Variable)
 simplifyInternalEvaluated original =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier env
-    $ (`TermLike.simplifyInternal` Predicate.top)
-        original
+    runSimplifier env
+    $ TermLike.simplifyInternal original Predicate.top
   where
     env = Mock.env
         { simplifierTermLike =

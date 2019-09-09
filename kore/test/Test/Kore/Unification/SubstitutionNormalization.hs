@@ -11,9 +11,6 @@ import qualified Data.Map.Strict as Map
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import Kore.TopBottom
     ( isBottom
     )
@@ -29,7 +26,7 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import qualified Test.SMT
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 data NormalizationResult
@@ -234,8 +231,8 @@ runNormalizeSubstitution
     :: [(UnifiedVariable Variable, TermLike Variable)]
     -> IO NormalizationResult
 runNormalizeSubstitution substitution = do
-    normalizedSubstitution <- Test.SMT.runSMT
-        $ evalSimplifier Mock.env
+    normalizedSubstitution <-
+        runSimplifier Mock.env
         $ Except.runExceptT
         $ normalizeSubstitution (Map.fromList substitution)
     case normalizedSubstitution of
