@@ -19,6 +19,7 @@ import qualified Kore.Internal.Symbol as Internal
 import           Kore.Internal.TermLike hiding
                  ( Alias, Symbol )
 import           Kore.Syntax.Definition
+import           Kore.Variables.UnifiedVariable
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -474,7 +475,7 @@ sortVisibilityTests =
                             , symbolOrAliasParams = []
                             }
                     , applicationChildren =
-                        [ ElementVariable Variable
+                        [ ElemVar $ ElementVariable Variable
                             { variableSort = sort
                             , variableCounter = mempty
                             , variableName = testId "x"
@@ -931,7 +932,7 @@ aliasVisibilityTests =
                                 ]
                             }
                     , applicationChildren =
-                        [ ElementVariable Variable
+                        [ SetVar $ SetVariable Variable
                             { variableName = testId "x"
                             , variableCounter = mempty
                             , variableSort =

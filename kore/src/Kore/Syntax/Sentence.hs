@@ -73,12 +73,12 @@ import qualified Kore.Attribute.Null as Attribute
 import           Kore.Debug
 import           Kore.Sort
 import           Kore.Syntax.Application
-import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.Module
 import           Kore.Syntax.Pattern
                  ( Pattern )
 import           Kore.Syntax.Variable
 import           Kore.Unparser
+import           Kore.Variables.UnifiedVariable
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
 @symbol-declaration@ syntactic category from the Semantics of K, Section 9.1.6
@@ -159,7 +159,7 @@ data SentenceAlias (patternType :: *) =
         , sentenceAliasSorts        :: ![Sort]
         , sentenceAliasResultSort   :: !Sort
         , sentenceAliasLeftPattern
-            :: !(Application SymbolOrAlias (ElementVariable Variable))
+            :: !(Application SymbolOrAlias (UnifiedVariable Variable))
         , sentenceAliasRightPattern :: !patternType
         , sentenceAliasAttributes   :: !Attributes
         }

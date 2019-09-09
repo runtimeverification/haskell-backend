@@ -16,6 +16,7 @@ k-frontend:
 	curl --location --output $(K_NIGHTLY) $(K_NIGHTLY_URL)
 	mkdir -p $(K_DIST_DEFAULT)
 	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIST_DEFAULT)
+	cp src/main/kore/prelude.kore $(K_DIST_DEFAULT)/include/kore
 	$(KRUN) --version
 
 docs: haddock

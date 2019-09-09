@@ -385,7 +385,7 @@ sentenceAliasWithSortArgument
                             SortVariableSort <$> parameters
                         }
                 , applicationChildren =
-                    [ ElementVariable Variable
+                    [ ElemVar $ ElementVariable Variable
                         { variableName = testId "x"
                         , variableCounter = mempty
                         , variableSort = sortArgument
@@ -401,7 +401,7 @@ sentenceAliasWithAttributes
     -> [SortVariable]
     -> Sort
     -> [ParsedPattern]
-    -> Application SymbolOrAlias (ElementVariable Variable)
+    -> Application SymbolOrAlias (UnifiedVariable Variable)
     -> ParsedPattern
     -> ParsedSentenceAlias
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
@@ -561,7 +561,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [ElementVariable Variable] -> ParsedSentence
+    :: AliasName -> Sort -> [UnifiedVariable Variable] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -572,7 +572,7 @@ objectAliasSentenceWithArguments a b c =
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
-    -> [ElementVariable Variable]
+    -> [UnifiedVariable Variable]
     -> patternType
     -> Sentence patternType
 aliasSentenceWithArguments (AliasName name) sort operands r =
@@ -583,7 +583,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
                 , aliasParams = []
                 }
             , sentenceAliasSorts =
-                variableSort . getElementVariable <$> operands
+                foldMapVariable variableSort <$> operands
             , sentenceAliasResultSort = sort
             , sentenceAliasLeftPattern =
                 Application
