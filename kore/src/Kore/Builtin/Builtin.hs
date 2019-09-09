@@ -126,14 +126,23 @@ import           Kore.Step.Simplification.Data
                  ( SimplificationType )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
 import           Kore.Step.Simplification.Simplify
+                 ( AttemptedAxiom (..),
+                 AttemptedAxiomResults (AttemptedAxiomResults),
+                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
+                 BuiltinAndAxiomSimplifierMap, MonadSimplify,
+                 PredicateSimplifier, TermLikeSimplifier,
+                 applicationAxiomSimplifier )
+import           Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import           Kore.Syntax.Definition
                  ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
+
+-- TODO (thomas.tuegel): Split up verifiers and evaluators.
 
 type Parser = Parsec Void Text
 

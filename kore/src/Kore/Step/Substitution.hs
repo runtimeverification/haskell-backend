@@ -26,6 +26,7 @@ import qualified Data.Map as Map
 import           GHC.Stack
                  ( HasCallStack )
 
+import           Branch
 import           Kore.Internal.Predicate
                  ( Conditional (..), Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -34,8 +35,7 @@ import           Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as Branch
+import           Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Error
                  ( substitutionToUnifyOrSubError )

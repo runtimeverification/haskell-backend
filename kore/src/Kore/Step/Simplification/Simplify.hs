@@ -187,6 +187,8 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 
 -- * Term simplifiers
 
+-- TODO (thomas.tuegel): Factor out these types.
+
 {-| Wraps a function that evaluates Kore functions on TermLikes.
 -}
 newtype TermLikeSimplifier =

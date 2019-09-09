@@ -48,9 +48,9 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Rule
                  ( OnePathRule (..), RulePattern (..) )
-import           Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Simplify as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data as AttemptedAxiomResults
+import           Kore.Step.Simplification.Simplify as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.SMT.AST as SMT
                  ( Declarations (Declarations), Encodable,

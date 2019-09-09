@@ -23,6 +23,7 @@ import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Evaluator as Kore
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Simplification.Data as Kore
+import qualified Kore.Step.Simplification.Simplify as Kore
 import           Kore.Syntax.Application
                  ( Application (..) )
 

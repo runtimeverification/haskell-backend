@@ -61,10 +61,11 @@ import           Kore.Step.Rule
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
-import           Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.Simplification.Simplify
+import           Kore.Step.Simplification.Simplify as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import           Kore.Syntax.Definition hiding
                  ( Symbol (..) )

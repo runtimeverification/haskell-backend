@@ -18,6 +18,8 @@ module Kore.Step.Simplification.Data
     , Env (..)
     , runSimplifier
     , evalSimplifier
+    , SimplificationType (..)
+    -- * Branching
     , BranchT
     , mapBranchT
     , evalSimplifierBranch
@@ -26,30 +28,6 @@ module Kore.Step.Simplification.Data
     , scatter
     , foldBranchT
     , alternate
-    , PredicateSimplifier (..)
-    , emptyPredicateSimplifier
-    , simplifyPredicate
-    , TermLikeSimplifier
-    , termLikeSimplifier
-    , emptyTermLikeSimplifier
-    , simplifyTerm
-    , simplifyConditionalTerm
-    , SimplificationType (..)
-    -- * Builtin and axiom simplifiers
-    , BuiltinAndAxiomSimplifier (..)
-    , runBuiltinAndAxiomSimplifier
-    , BuiltinAndAxiomSimplifierMap
-    , AttemptedAxiom (..)
-    , isApplicable, isNotApplicable
-    , AttemptedAxiomResults (..)
-    , CommonAttemptedAxiom
-    , emptyAttemptedAxiom
-    , hasRemainders
-    , maybeNotApplicable
-    , exceptNotApplicable
-    , applicationAxiomSimplifier
-    , notApplicableAxiomEvaluator
-    , purePatternAxiomEvaluator
     ) where
 
 import           Control.Monad.Catch
