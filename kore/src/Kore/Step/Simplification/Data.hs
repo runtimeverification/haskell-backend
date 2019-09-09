@@ -107,9 +107,15 @@ import qualified ListT
 import           SMT
                  ( MonadSMT (..), SMT, SmtT (..) )
 
--- | 'SimplifierVariable' constrains variables that are used in the simplifier.
-type SimplifierVariable variable =
-    SubstitutionVariable variable
+{- | 'SimplifierVariable' constrains variables that are used in the simplifier.
+
+'SimplifierVariable' requires only that the variable be a 'SubstitutionVariable'
+(and in turn, an 'InternalVariable'), but simplifier functions should use this
+constraint instead of either "lesser" constraint in case that changes in the
+future.
+
+ -}
+type SimplifierVariable variable = SubstitutionVariable variable
 
 {-| 'And' simplification is very similar to 'Equals' simplification.
 This type is used to distinguish between the two in the common code.
