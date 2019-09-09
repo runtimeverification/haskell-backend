@@ -165,10 +165,13 @@ instance
 -}
 newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (ImplicationRule variable)
-deriving instance Ord variable => Ord (ImplicationRule variable)
-deriving instance Show variable => Show (ImplicationRule variable)
+instance SOP.Generic (ImplicationRule variable)
+
+instance SOP.HasDatatypeInfo (ImplicationRule variable)
+
+instance Debug variable => Debug (ImplicationRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
