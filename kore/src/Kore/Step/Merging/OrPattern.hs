@@ -19,9 +19,9 @@ import           Kore.Internal.Pattern
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
+import           Kore.Step.Simplification.Simplify
 import           Kore.Step.Substitution
                  ( PredicateMerger )
 import           Kore.TopBottom

@@ -123,16 +123,12 @@ import qualified Kore.Proof.Value as Value
 import           Kore.Sort
                  ( predicateSort )
 import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom (..),
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap, MonadSimplify,
-                 PredicateSimplifier, SimplificationType, SimplifierVariable,
-                 TermLikeSimplifier, applicationAxiomSimplifier )
+                 ( SimplificationType )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
+import           Kore.Step.Simplification.Simplify
 import           Kore.Syntax.Definition
                  ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )

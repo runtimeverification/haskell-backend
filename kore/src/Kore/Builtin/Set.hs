@@ -69,9 +69,9 @@ import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
-import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Syntax.Sentence
                  ( SentenceSort (SentenceSort) )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse

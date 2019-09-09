@@ -12,7 +12,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( wrapPredicate )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
                  ( MonadSimplify, SimplifierVariable, TermLikeSimplifier,
                  termLikeSimplifier )
 import           Kore.Syntax.Variable

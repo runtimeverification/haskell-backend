@@ -11,6 +11,9 @@ module Kore.Step.Simplification.Pattern
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
 
+import           Branch
+                 ( BranchT )
+import qualified Branch
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
@@ -24,11 +27,9 @@ import           Kore.Logger
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+import           Kore.Step.Simplification.Simplify
+                 ( MonadSimplify, SimplifierVariable )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 
@@ -60,7 +61,7 @@ simplify
 simplify pattern'@Conditional { term } = do
     simplifiedTerm <- Simplifier.simplifyTerm term
     orPatterns <-
-        BranchT.gather
+        Branch.gather
         $ traverse
             (Pattern.mergeWithPredicate $ Pattern.withoutTerm pattern')
             simplifiedTerm

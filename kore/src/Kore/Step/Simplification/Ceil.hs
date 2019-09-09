@@ -50,9 +50,9 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Step.Function.Evaluator as Axiom
                  ( evaluatePattern )
 import qualified Kore.Step.Simplification.AndPredicates as And
-import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.TopBottom
 
 {-| Simplify a 'Ceil' of 'OrPattern'.

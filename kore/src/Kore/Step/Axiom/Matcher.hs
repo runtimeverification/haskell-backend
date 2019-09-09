@@ -68,6 +68,8 @@ import qualified Kore.Step.Simplification.AndTerms as SortInjectionMatch
 import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplification
                  ( SortInjectionSimplification (..) )
 import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Simplify
+                 ( SimplifierVariable )
 import           Kore.Unification.Error
                  ( unsupportedPatterns )
 import qualified Kore.Unification.Substitution as Substitution
@@ -333,7 +335,7 @@ matchBuiltinMap _ = empty
 
 -- * Implementation
 
-type MatchingVariable variable = Simplifier.SimplifierVariable variable
+type MatchingVariable variable = SimplifierVariable variable
 
 {- | A matching constraint is a @Pair@ of patterns.
 

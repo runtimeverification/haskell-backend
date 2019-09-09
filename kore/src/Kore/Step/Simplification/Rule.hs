@@ -24,12 +24,12 @@ import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue )
 import           Kore.Step.Rule
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.Simplification.Simplify
+                 ( MonadSimplify, SimplifierVariable )
 import qualified Kore.Unification.Substitution as Substitution
 
 {- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.

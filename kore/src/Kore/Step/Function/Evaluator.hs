@@ -44,12 +44,12 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import           Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import           Kore.Step.Simplification.Simplify as Simplifier
 
 {-| Evaluates functions on an application pattern.
 -}

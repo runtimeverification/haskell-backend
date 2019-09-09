@@ -35,16 +35,16 @@ import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Evaluate
 import           Kore.Step.Rule
                  ( EqualityRule )
-import           Kore.Step.Simplification.Data
+import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
+import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+                 ( AttemptedAxiom (..), hasRemainders )
+import           Kore.Step.Simplification.Simplify
                  ( AttemptedAxiom,
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap,
                  MonadSimplify, PredicateSimplifier, SimplifierVariable,
                  TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..), hasRemainders )
 import           Kore.Unparser
                  ( unparse )
 

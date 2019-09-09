@@ -23,16 +23,18 @@ import           Control.Monad.Trans.Class
 import           Data.Text.Prettyprint.Doc
                  ( Doc )
 
+import           Branch
+                 ( BranchT )
 import           Kore.Internal.TermLike
                  ( SortedVariable, TermLike )
 import           Kore.Logger
                  ( LogMessage, WithLog (..) )
 import           Kore.Profiler.Data
                  ( MonadProfiler )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify (..), SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
+import           Kore.Step.Simplification.Simplify
+                 ( MonadSimplify (..), SimplifierVariable )
 import           Kore.Unification.Error
 import           Kore.Unparser
                  ( Unparse )

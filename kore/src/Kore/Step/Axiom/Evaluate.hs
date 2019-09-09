@@ -29,10 +29,10 @@ import           Kore.Step.Rule
                  ( EqualityRule (..) )
 import qualified Kore.Step.Rule as RulePattern
                  ( RulePattern (..), mapVariables )
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Data as AttemptedAxiom
                  ( AttemptedAxiom (..), maybeNotApplicable )
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
+import           Kore.Step.Simplification.Simplify
 import           Kore.Step.Step
                  ( UnificationProcedure (..) )
 import qualified Kore.Step.Step as Step

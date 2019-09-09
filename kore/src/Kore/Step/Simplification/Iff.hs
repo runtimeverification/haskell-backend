@@ -20,9 +20,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
+import           Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.

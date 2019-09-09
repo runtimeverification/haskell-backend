@@ -41,8 +41,6 @@ import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termEquals )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
-import           Kore.Step.Simplification.Data as Simplifier hiding
-                 ( Equals )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -51,6 +49,7 @@ import qualified Kore.Step.Simplification.Not as Not
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.

@@ -17,10 +17,10 @@ import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, SimplifierVariable, simplifyPredicate )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
+import           Kore.Step.Simplification.Simplify
+                 ( MonadSimplify, SimplifierVariable, simplifyPredicate )
 
 {- | Attempt to simplify a predicate. -}
 simplify

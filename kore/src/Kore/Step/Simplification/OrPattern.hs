@@ -10,12 +10,12 @@ module Kore.Step.Simplification.OrPattern
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.OrPattern
                  ( OrPattern )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyPredicate )
+import           Kore.Step.Simplification.Simplify
+                 ( MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
                  ( filterMultiOr )
 

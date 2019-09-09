@@ -60,6 +60,8 @@ import           Data.Text.Prettyprint.Doc
 import           GHC.Stack
                  ( HasCallStack )
 
+import           Branch
+                 ( alternate )
 import qualified Kore.Attribute.Symbol as Attribute
                  ( Symbol )
 import qualified Kore.Builtin.Builtin as Builtin
@@ -87,9 +89,9 @@ import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
-import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Simplification.Data
                  ( AttemptedAxiom, emptyAttemptedAxiom )
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Syntax.ElementVariable
                  ( ElementVariable (getElementVariable) )
 import           Kore.Syntax.Variable
