@@ -79,9 +79,15 @@ import           ListT
 import           SMT
                  ( MonadSMT (..) )
 
--- | 'SimplifierVariable' constrains variables that are used in the simplifier.
-type SimplifierVariable variable =
-    SubstitutionVariable variable
+{- | 'SimplifierVariable' constrains variables that are used in the simplifier.
+
+'SimplifierVariable' requires only that the variable be a 'SubstitutionVariable'
+(and in turn, an 'InternalVariable'), but simplifier functions should use this
+constraint instead of either "lesser" constraint in case that changes in the
+future.
+
+ -}
+type SimplifierVariable variable = SubstitutionVariable variable
 
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)

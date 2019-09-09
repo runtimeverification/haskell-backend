@@ -1,5 +1,5 @@
 {-|
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
@@ -19,7 +19,13 @@ import Kore.Syntax.Variable
 import Kore.Unparser
        ( Unparse )
 
--- | 'InternalVariable' is the constraint on internal variable types.
+{- | 'InternalVariable' is the basic constraint on variable types.
+
+All variable types must implement these constraints, and in practice most
+functions which are polymorphic over the variable type require most or all of
+these constraints.
+
+ -}
 type InternalVariable variable =
     ( Ord variable
     , Debug variable, Show variable, Unparse variable

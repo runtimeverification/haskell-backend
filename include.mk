@@ -17,6 +17,7 @@ K = $(K_DIST_LIB)/java/kernel-1.0-SNAPSHOT.jar
 KOMPILE = $(K_DIST_BIN)/kompile
 KRUN = $(K_DIST_BIN)/krun
 KPROVE = $(K_DIST_BIN)/kprove
+KBMC = $(K_DIST_BIN)/kbmc
 
 KOMPILE_OPTS = --backend haskell
 KRUN_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"

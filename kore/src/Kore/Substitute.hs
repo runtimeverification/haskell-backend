@@ -36,7 +36,15 @@ import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
--- | 'SubstitutionVariable' constrains variable types that can be substituted.
+{- | 'SubstitutionVariable' constrains variable types that can be substituted.
+
+'SubstitutionVariable' is an extension of 'InternalVariable'; we require in
+addition that variables be 'FreshVariable', i.e. that we can refresh bound
+variables to avoid capturing while substituting. In practice, all variable types
+are both 'InternalVariable's and 'FreshVariable's, but we reserve the right to
+make 'SubstitutionVariable' even more restrictive in the future.
+
+ -}
 type SubstitutionVariable variable =
     ( InternalVariable variable
     , FreshVariable variable
