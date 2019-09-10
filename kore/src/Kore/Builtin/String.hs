@@ -39,14 +39,13 @@ module Kore.Builtin.String
     , chrKey
     , ordKey
     , token2StringKey
+    , string2TokenKey
     ) where
 
 import           Control.Applicative
                  ( Alternative (..) )
 import           Control.Error
                  ( MaybeT )
-import           Control.Monad.Trans.Class
-                 ( lift )
 import           Data.Char
                  ( chr, ord )
 import qualified Data.HashMap.Strict as HashMap
@@ -74,8 +73,6 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike as TermLike
-import           Kore.Unparser
-                 ( unparseToString )
 
 {- | Builtin name of the @String@ sort.
  -}
@@ -144,6 +141,11 @@ symbolVerifiers =
         , Builtin.verifySymbol
             assertSort
             [Builtin.verifySortHasDomainValues]
+        )
+    ,   ( string2TokenKey
+        , Builtin.verifySymbol
+            Builtin.verifySortHasDomainValues
+            [assertSort]
         )
     ]
 
@@ -296,7 +298,10 @@ ordKey :: IsString s => s
 ordKey = "STRING.ord"
 
 token2StringKey :: IsString s => s
-token2StringKey= "STRING.token2string"
+token2StringKey = "STRING.token2string"
+
+string2TokenKey :: IsString s => s
+string2TokenKey = "STRING.string2token"
 
 evalSubstr :: Builtin.Function
 evalSubstr = Builtin.functionEvaluator evalSubstr0
@@ -447,6 +452,24 @@ evalToken2String = Builtin.functionEvaluator evalToken2String0
               _dv <- Builtin.expectDomainValue token2StringKey _dv
               Builtin.appliedFunction . asPattern resultSort $ _dv
 
+evalString2Token :: Builtin.Function
+evalString2Token = Builtin.functionEvaluator evalString2Token0
+  where
+      evalString2Token0 _ resultSort arguments =
+          Builtin.getAttemptedAxiom $ do
+              let _str =
+                      case arguments of
+                          [_str] -> _str
+                          _     -> Builtin.wrongArity token2StringKey
+              _str <- expectBuiltinString string2TokenKey _str
+              Builtin.appliedFunction
+                  . Pattern.fromTermLike
+                  . mkDomainValue
+                  $ DomainValue
+                        { domainValueSort = resultSort
+                        , domainValueChild = mkStringLiteral _str
+                        }
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -462,6 +485,7 @@ builtinFunctions =
     , (chrKey, evalChr)
     , (ordKey, evalOrd)
     , (token2StringKey, evalToken2String)
+    , (string2TokenKey, evalString2Token)
     ]
   where
     comparator name op =

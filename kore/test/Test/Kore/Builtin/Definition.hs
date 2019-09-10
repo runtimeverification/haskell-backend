@@ -578,6 +578,11 @@ token2StringStringSymbol =
     builtinSymbol "token2stringString" stringSort [userTokenSort]
     & hook "STRING.token2string"
 
+string2TokenStringSymbol :: Internal.Symbol
+string2TokenStringSymbol =
+    builtinSymbol "string2tokenString" userTokenSort [stringSort]
+    & hook "STRING.string2token"
+
 -- * Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
@@ -1248,6 +1253,7 @@ stringModule =
             , hookedSymbolDecl string2BaseStringSymbol
             , hookedSymbolDecl string2IntStringSymbol
             , hookedSymbolDecl token2StringStringSymbol
+            , hookedSymbolDecl string2TokenStringSymbol
             ]
         }
 

@@ -319,6 +319,15 @@ test_token2String =
         (asPattern "test")
     ]
 
+test_string2Token :: [TestTree]
+test_string2Token =
+    [ testString
+        "STRING.string2token('test') is \\dv{userTokenSortId{}}('test')"
+        string2TokenStringSymbol
+        [asInternal "test"]
+        (fromTermLike . mkDomainValue $ DomainValue userTokenSort (mkStringLiteral "test"))
+    ]
+
 -- | Another name for 'asInternal'.
 stringLiteral :: Text -> TermLike Variable
 stringLiteral = asInternal
