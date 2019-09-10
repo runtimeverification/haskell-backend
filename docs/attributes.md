@@ -95,7 +95,7 @@ productionID{}("id")
 ### Priority
 
 ```
-priority{}("integer")
+priority{}("123")
 ```
 
 ### Simplification
