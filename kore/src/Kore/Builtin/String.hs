@@ -140,11 +140,11 @@ symbolVerifiers =
     ,   ( ordKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
-   -- ,   ( token2StringKey
-   --     , Builtin.verifySymbol
-   --         assertSort
-   --         [Builtin.verifySortHasDomainValues]
-   --     )
+    ,   ( token2StringKey
+        , Builtin.verifySymbol
+            assertSort
+            [Builtin.verifySortHasDomainValues]
+        )
     ]
 
 {- | Verify that domain value patterns are well-formed.

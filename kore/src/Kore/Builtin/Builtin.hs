@@ -94,6 +94,8 @@ import qualified Kore.AST.Error as Kore.Error
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import           Kore.Attribute.Attributes
+                 ( Attributes (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import           Kore.Attribute.Hook
@@ -415,20 +417,24 @@ verifySortHasDomainValues = SortVerifier worker
         -> Either (Error VerifyError) ()
     worker findSort (SortActualSort SortActual { sortActualName }) = do
         SentenceSort { sentenceSortAttributes } <- findSort sortActualName
-        sortAttr :: Attribute.Sort <-
-            Attribute.Parser.liftParser
-                $ Attribute.Parser.parseAttributes sentenceSortAttributes
+        sortAttr <- parseSortAttributes sentenceSortAttributes
         let hasDomainValues =
                 Attribute.getHasDomainValues
                 . Attribute.hasDomainValues
                 $ sortAttr
         Kore.Error.koreFailWhen (not hasDomainValues)
             ("Sort '" ++ getIdForError sortActualName
-                ++ "' does not have domain values. '")
+                ++ "' does not have domain values.")
     worker _ (SortVariableSort SortVariable { getSortVariable }) =
         Kore.Error.koreFail
             ("unexpected sort variable '"
                 ++ getIdForError getSortVariable ++ "'")
+    parseSortAttributes
+        :: Attributes
+        -> Either (Error VerifyError) Attribute.Sort
+    parseSortAttributes attributes =
+        Attribute.Parser.liftParser
+        $ Attribute.Parser.parseAttributes attributes
 
 expectDomainValue
     :: Monad m
