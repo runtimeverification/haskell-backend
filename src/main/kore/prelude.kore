@@ -28,8 +28,8 @@ endmodule []
 
 module INJ
   symbol inj{From,To}(From) : To [sortInjection{}()]
- 
-  axiom{S1,S2,S3,R} 
+
+  axiom{S1,S2,S3,R}
     \equals{S3,R}(
       inj{S2,S3}(inj{S1,S2}(T:S1)),
       inj{S1,S3}(T:S1))
@@ -44,14 +44,14 @@ module K
   // Defnitions for reachability aliases
   // Until we will have `mu` we resort to dummy definitions
   alias weakExistsFinally{A}(A) : A
-  where weakExistsFinally{A}(X:A) := X:A []
+  where weakExistsFinally{A}(@X:A) := @X:A []
 
   alias weakAlwaysFinally{A}(A) : A
-  where weakAlwaysFinally{A}(X:A) := X:A []
+  where weakAlwaysFinally{A}(@X:A) := @X:A []
 
   // Definitions for CTL aliases
   // Until we will have `mu` we resort to dummy definitions
   alias allPathGlobally{A}(A) : A
-  where allPathGlobally{A}(X:A) := X:A []
+  where allPathGlobally{A}(@X:A) := @X:A []
 
 endmodule []
