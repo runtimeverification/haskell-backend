@@ -57,7 +57,7 @@ test_twoArguments =
             [attributeString "illegal", attributeString "illegal"]
 
 test_negative :: TestTree
-test_negative = 
+test_negative =
     testCase "[priority{}(\"-32\")]"
         $ expectSuccess Priority { getPriority = Just (-32) }
         $ parsePriority

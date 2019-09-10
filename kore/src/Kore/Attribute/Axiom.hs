@@ -47,8 +47,8 @@ import Kore.Attribute.Label
 import Kore.Attribute.Overload
 import Kore.Attribute.Parser
        ( ParseAttributes (..) )
-import Kore.Attribute.ProductionID
 import Kore.Attribute.Priority
+import Kore.Attribute.ProductionID
 import Kore.Attribute.RuleIndex
 import Kore.Attribute.Simplification
 import Kore.Attribute.SmtLemma
