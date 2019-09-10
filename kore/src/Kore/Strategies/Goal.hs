@@ -14,11 +14,10 @@ import           GHC.Generics as GHC
 
 import           Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.TermLike
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..) )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+                 ( MonadSimplify, SimplifierVariable )
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
@@ -26,8 +25,6 @@ import qualified Kore.Strategies.OnePath.Actions as OnePath
 import           Kore.Strategies.ProofState
 import           Kore.Unparser
                  ( Unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {- | The final nodes of an execution graph which were not proven.
 
@@ -184,13 +181,7 @@ onePathFollowupStep claims axioms =
         , TriviallyValid
         ]
 
-instance
-    ( SortedVariable variable
-    , Debug variable
-    , Unparse variable
-    , Show variable
-    , FreshVariable variable
-    ) => Goal (OnePathRule variable) where
+instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
 
     newtype Rule (OnePathRule variable) =
         Rule { unRule :: RewriteRule variable }

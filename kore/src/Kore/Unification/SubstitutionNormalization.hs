@@ -38,12 +38,10 @@ import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+                 ( MonadSimplify, SimplifierVariable )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
@@ -65,14 +63,8 @@ Returns an error when the substitution is not normalizable (i.e. it contains
 x = f(x) or something equivalent).
 -}
 normalizeSubstitution
-    ::  forall m variable
-     .  ( Ord variable
-        , MonadSimplify m
-        , FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        )
+    :: forall m variable
+    .  (MonadSimplify m, SimplifierVariable variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution substitution = do
@@ -166,12 +158,7 @@ variableToSubstitution varToPattern var =
         Nothing   -> error ("variable " ++ show var ++ " not found.")
 
 normalizeSortedSubstitution
-    ::  ( Ord variable
-        , Monad m
-        , FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    :: (Monad m, SimplifierVariable variable)
     => [(UnifiedVariable variable, TermLike variable)]
     -> [(UnifiedVariable variable, TermLike variable)]
     -> [(UnifiedVariable variable, TermLike variable)]

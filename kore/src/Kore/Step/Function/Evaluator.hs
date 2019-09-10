@@ -50,19 +50,12 @@ import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {-| Evaluates functions on an application pattern.
 -}
 evaluateApplication
-    ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -- ^ The predicate from the configuration
     -> Predicate variable
@@ -119,10 +112,7 @@ evaluateApplication configurationPredicate childrenPredicate application = do
 -}
 evaluatePattern
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -167,10 +157,7 @@ Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -314,10 +301,7 @@ evaluateSortInjection ap
 was evaluated.
 -}
 reevaluateFunctions
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -334,10 +318,7 @@ reevaluateFunctions rewriting = do
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )

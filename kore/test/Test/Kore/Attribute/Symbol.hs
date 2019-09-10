@@ -1,6 +1,7 @@
 module Test.Kore.Attribute.Symbol
     ( test_stepperAttributes
     , test_Anywhere
+    , test_Memo
     ) where
 
 import Test.Tasty
@@ -126,4 +127,14 @@ test_Anywhere =
     , testCase "isInjective" $ assertEqual ""
         (Right False)
         (isInjective <$> parse [ anywhereAttribute ])
+    ]
+
+test_Memo :: [TestTree]
+test_Memo =
+    [ testCase "parseAttribute" $ assertEqual "[memo{}()]"
+        (Right Memo { isMemo = True })
+        (memo <$> parse [ memoAttribute ])
+    , testCase "defaultSymbolAttributes" $ assertEqual "[]"
+        (Right def)
+        (memo <$> parse [])
     ]
