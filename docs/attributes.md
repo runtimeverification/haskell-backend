@@ -181,6 +181,15 @@ injective{}()
 A symbol is injective if it is given the `injective` attribute, the
 `constructor` attribute, or the `sortInjection` attribute.
 
+### Memo
+
+```
+memo{}()
+```
+
+The `memo` attribute signals that the backend may cache, or memoize, the result
+of a symbol application (usually a `function`).
+
 ### Smtlib
 
 The `smtlib` attribute specifies how a Kore application pattern built with the
