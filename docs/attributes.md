@@ -92,6 +92,12 @@ axiom{R} \equals{SortSet{}, R} (
 productionID{}("id")
 ```
 
+### Priority
+
+```
+priority{}("integer")
+```
+
 ### Simplification
 
 ```
