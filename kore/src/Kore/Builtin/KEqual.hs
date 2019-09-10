@@ -48,9 +48,6 @@ import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Or as Or
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -108,12 +105,7 @@ builtinFunctions =
     ]
 
 evalKEq
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Unparse variable
-        , Show variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Bool
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -157,11 +149,8 @@ evalKEq true _ _ _ (valid :< app) =
             }
 
 evalKIte
-    ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap

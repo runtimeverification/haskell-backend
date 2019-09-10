@@ -14,28 +14,18 @@ module Kore.Step.Condition.Evaluator
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, simplifyPredicate )
+                 ( MonadSimplify, SimplifierVariable, simplifyPredicate )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {- | Attempt to simplify a predicate. -}
 simplify
-    ::  forall variable m .
-        ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify m
-        )
+    :: forall variable m
+    .  (SimplifierVariable variable, MonadSimplify m)
     => Syntax.Predicate variable
     -- ^ The condition to be evaluated.
     -> m (Predicate variable)

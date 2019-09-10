@@ -127,8 +127,8 @@ import           Kore.Step.Simplification.Data
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap, MonadSimplify,
-                 PredicateSimplifier, SimplificationType, TermLikeSimplifier,
-                 applicationAxiomSimplifier )
+                 PredicateSimplifier, SimplificationType, SimplifierVariable,
+                 TermLikeSimplifier, applicationAxiomSimplifier )
 import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
@@ -540,8 +540,7 @@ unaryOperator
     .   (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Parse operand
     ->  (forall variable
-            .   (Ord variable, SortedVariable variable)
-            =>  Sort -> b -> Pattern variable
+        . InternalVariable variable => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -560,7 +559,7 @@ unaryOperator
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     unaryOperator0
-        :: (Ord variable, SortedVariable variable)
+        :: InternalVariable variable
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -590,8 +589,7 @@ binaryOperator
     .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
     ->  (forall variable
-            .   (Ord variable, SortedVariable variable)
-            =>  Sort -> b -> Pattern variable
+        . InternalVariable variable => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -610,7 +608,7 @@ binaryOperator
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     binaryOperator0
-        :: (Ord variable, SortedVariable variable)
+        :: SimplifierVariable variable
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -640,8 +638,7 @@ ternaryOperator
     .  (forall variable. Text -> Builtin (TermLike variable) -> a)
     -- ^ Extract domain value
     ->  (forall variable
-            .   (Ord variable, SortedVariable variable)
-            =>  Sort -> b -> Pattern variable
+        . InternalVariable variable => Sort -> b -> Pattern variable
         )
     -- ^ Render result as pattern with given sort
     -> Text
@@ -660,7 +657,7 @@ ternaryOperator
     get :: Builtin (TermLike variable) -> a
     get = extractVal ctx
     ternaryOperator0
-        :: (Ord variable, SortedVariable variable)
+        :: SimplifierVariable variable
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -677,7 +674,7 @@ ternaryOperator
 
 type FunctionImplementation
     = forall variable m
-        .  (Ord variable, SortedVariable variable)
+        .  SimplifierVariable variable
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -689,7 +686,7 @@ functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
     evaluator
-        :: (Ord variable, Show variable, SortedVariable variable)
+        :: SimplifierVariable variable
         => MonadSimplify simplifier
         => PredicateSimplifier
         -> TermLikeSimplifier
@@ -894,12 +891,7 @@ getAttemptedAxiom attempt =
 
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
-    ::  ( Monad m
-        , Ord variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        )
+    :: (Monad m, SimplifierVariable variable)
     => SimplificationType
     -> TermLike variable
     -> TermLike variable

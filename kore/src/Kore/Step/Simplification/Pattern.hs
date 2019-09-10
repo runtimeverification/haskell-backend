@@ -25,22 +25,15 @@ import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
 import qualified Kore.Step.Merging.Pattern as Pattern
 import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify )
+                 ( BranchT, MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 simplifyAndRemoveTopExists
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -58,10 +51,7 @@ simplifyAndRemoveTopExists patt = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -79,10 +69,7 @@ simplify pattern'@Conditional { term } = do
 {-| Simplifies the predicate inside an 'Pattern'.
 -}
 simplifyPredicate
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )

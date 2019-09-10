@@ -28,7 +28,6 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.TopBottom
                  ( TopBottom (..) )
-import           Kore.Unparser
 
 
 {-| The disjunction of 'Predicate'.
@@ -68,7 +67,7 @@ bottom = fromPredicates []
 @
 
  -}
-top :: (Ord variable, SortedVariable variable) => OrPredicate variable
+top :: InternalVariable variable => OrPredicate variable
 top = fromPredicate Predicate.top
 
 {-| 'isFalse' checks if the 'OrPredicate' is composed only of bottom items.
@@ -83,11 +82,7 @@ isTrue = isTop
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => MultiOr (Syntax.Predicate variable) -> Syntax.Predicate variable
 toPredicate multiOr =
     Syntax.Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
