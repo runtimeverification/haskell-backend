@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.ProofState
+module Kore.Strategies.ProofState
     ( extractGoalRem
     , extractUnproven
     , ProofState (..)

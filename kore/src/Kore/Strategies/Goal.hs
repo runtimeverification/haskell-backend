@@ -2,7 +2,7 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Goal where
+module Kore.Strategies.Goal where
 
 import           Control.Applicative
                  ( Alternative (..) )
@@ -15,7 +15,6 @@ import           GHC.Generics as GHC
 import           Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.TermLike
-import           Kore.ProofState
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (..) )
 import           Kore.Step.Simplification.Data
@@ -24,6 +23,7 @@ import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.OnePath.Actions as OnePath
+import           Kore.Strategies.ProofState
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh

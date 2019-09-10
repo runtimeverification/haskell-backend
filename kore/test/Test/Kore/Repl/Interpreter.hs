@@ -31,7 +31,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
-import           Kore.Goal
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
@@ -46,6 +45,7 @@ import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
                  ( Simplifier, evalSimplifier )
+import           Kore.Strategies.Goal
 import           Kore.Strategies.OnePath.Verification
                  ( verifyClaimStep )
 import           Kore.Syntax.Variable

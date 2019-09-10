@@ -37,7 +37,6 @@ import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Predicate
-import qualified Kore.ProofState as Goal
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
                  ( OnePathRule (OnePathRule), RewriteRule (RewriteRule),
@@ -51,6 +50,7 @@ import           Kore.Step.Simplification.Pattern
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Strategies.ProofState as Goal
 import           Kore.Syntax.Variable
                  ( SortedVariable )
 import           Kore.TopBottom

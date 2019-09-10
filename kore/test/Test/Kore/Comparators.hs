@@ -41,7 +41,6 @@ import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
 import           Kore.Proof.Functional
-import           Kore.ProofState
 import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -70,6 +69,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
+import           Kore.Strategies.ProofState
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Sentence as Syntax
 import           Kore.Unification.Error

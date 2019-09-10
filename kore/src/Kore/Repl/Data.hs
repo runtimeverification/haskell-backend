@@ -62,7 +62,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import           Numeric.Natural
 
-import           Kore.Goal
 import qualified Kore.Internal.Predicate as IPredicate
 import           Kore.Internal.TermLike
                  ( TermLike )
@@ -72,6 +71,7 @@ import           Kore.Profiler.Data
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Strategies.Goal
 import           Kore.Strategies.OnePath.Verification
                  ( CommonProofState )
 import           Kore.Syntax.Variable

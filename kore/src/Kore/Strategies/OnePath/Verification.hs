@@ -31,11 +31,8 @@ import           Data.Limit
 import qualified Data.Limit as Limit
 
 import           Kore.Debug
-import           Kore.Goal
 import           Kore.Internal.Pattern
                  ( Pattern )
-import           Kore.ProofState
-                 ( ProofState (Goal) )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
@@ -43,8 +40,11 @@ import           Kore.Step.Strategy
 import           Kore.Step.Transition
                  ( runTransitionT )
 import qualified Kore.Step.Transition as Transition
+import           Kore.Strategies.Goal
 import           Kore.Strategies.OnePath.Actions
                  ( getConfiguration, getDestination, makeRuleFromPatterns )
+import           Kore.Strategies.ProofState
+                 ( ProofState (Goal) )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unparser

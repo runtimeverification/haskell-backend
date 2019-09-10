@@ -20,7 +20,6 @@ import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
 
-import           Kore.Goal
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
@@ -34,7 +33,6 @@ import           Kore.Predicate.Predicate
                  makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
-import           Kore.ProofState
 import           Kore.Step.Rule
                  ( OnePathRule (..), RewriteRule (RewriteRule),
                  RulePattern (RulePattern) )
@@ -44,8 +42,10 @@ import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..), Strategy, pickFinal, runStrategy )
+import           Kore.Strategies.Goal
 import           Kore.Strategies.OnePath.Actions
                  ( makeRuleFromPatterns )
+import           Kore.Strategies.ProofState
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution

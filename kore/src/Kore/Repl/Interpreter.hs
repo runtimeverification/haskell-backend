@@ -84,7 +84,6 @@ import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom (..), RuleIndex (..), sourceLocation )
 import qualified Kore.Attribute.Label as AttrLabel
 import           Kore.Attribute.RuleIndex
-import           Kore.Goal
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Pattern
@@ -94,9 +93,6 @@ import           Kore.Internal.TermLike
                  ( TermLike )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
-import           Kore.ProofState
-                 ( ProofStateTransformer (ProofStateTransformer), proofState )
-import qualified Kore.ProofState as ProofState.DoNotUse
 import           Kore.Repl.Data
 import           Kore.Repl.Parser
 import           Kore.Repl.State
@@ -108,8 +104,12 @@ import qualified Kore.Step.Rule as Axiom
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Strategies.Goal
 import           Kore.Strategies.OnePath.Verification
                  ( Claim, CommonProofState )
+import           Kore.Strategies.ProofState
+                 ( ProofStateTransformer (ProofStateTransformer), proofState )
+import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import           Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
                  ( Id (..) )

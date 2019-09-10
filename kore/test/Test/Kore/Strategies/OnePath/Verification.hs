@@ -17,7 +17,6 @@ import Numeric.Natural
        ( Natural )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Goal
 import           Kore.Internal.Pattern
                  ( Conditional (Conditional) )
 import           Kore.Internal.Pattern as Conditional
@@ -33,6 +32,7 @@ import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
+import           Kore.Strategies.Goal
 import qualified Kore.Strategies.OnePath.Verification as OnePath
 import qualified SMT
 

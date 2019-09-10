@@ -39,7 +39,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Goal as Goal
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
@@ -86,6 +85,7 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Strategies.Goal as Goal
 import           Kore.Strategies.OnePath.Verification
                  ( Claim, defaultStrategy, verify )
 import           SMT

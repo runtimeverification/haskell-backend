@@ -74,7 +74,6 @@ import           Control.Monad.Reader
                  ( MonadReader, asks )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
-import           Kore.Goal
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import           Kore.Internal.Pattern
@@ -85,10 +84,6 @@ import           Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
 import           Kore.Predicate.Predicate as Predicate
-import           Kore.ProofState
-                 ( ProofState (Goal),
-                 ProofStateTransformer (ProofStateTransformer), proofState )
-import qualified Kore.ProofState as ProofState.DoNotUse
 import           Kore.Repl.Data
 import           Kore.Step.Rule
                  ( RewriteRule (..), RulePattern (..) )
@@ -96,7 +91,12 @@ import           Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Strategies.Goal
 import           Kore.Strategies.OnePath.Verification
+import           Kore.Strategies.ProofState
+                 ( ProofState (Goal),
+                 ProofStateTransformer (ProofStateTransformer), proofState )
+import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
 import           Kore.Syntax.Variable
                  ( Variable )
 
