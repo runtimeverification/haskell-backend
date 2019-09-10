@@ -48,7 +48,7 @@ test_zeroArguments =
 
 test_twoArguments :: TestTree
 test_twoArguments =
-    testCase "[priority{}()]"
+    testCase "[priority{}(\"illegal\", \"illegal\")]"
         $ expectFailure
         $ parsePriority $ Attributes [ illegalAttribute ]
   where
@@ -56,17 +56,26 @@ test_twoArguments =
         attributePattern prioritySymbol
             [attributeString "illegal", attributeString "illegal"]
 
-test_parameters :: TestTree
-test_parameters =
-    testCase "[priority{illegal}(\"123\")]"
+test_negative :: TestTree
+test_negative = 
+    testCase "[priority{}(\"-32\")]"
+        $ expectSuccess Priority { getPriority = Just (-32) }
+        $ parsePriority
+        $ Attributes [ priorityAttribute "-32"]
+
+test_string :: TestTree
+test_string =
+    testCase "[priority{}(\"abc\")]"
         $ expectFailure
-        $ parsePriority $ Attributes [ illegalAttribute ]
+        $ parsePriority $ Attributes [ attr ]
   where
-    illegalAttribute =
-        attributePattern
-            SymbolOrAlias
-                { symbolOrAliasConstructor = priorityId
-                , symbolOrAliasParams =
-                    [ SortVariableSort (SortVariable "illegal") ]
-                }
-            [attributeString "123"]
+    attr = priorityAttribute "abc"
+
+
+test_space :: TestTree
+test_space =
+    testCase "[priority{}(\" \")]"
+        $ expectFailure
+        $ parsePriority $ Attributes [ attr ]
+  where
+    attr = priorityAttribute " "
