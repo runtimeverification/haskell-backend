@@ -418,13 +418,23 @@ is not found.
 
 ### STRING.token2string
 
+Takes a value of any sort which is declared with the `token` attribute and returns that value unparsed.
+For example: `\dv{TokenSort{}}("TOKEN")` is `"TOKEN"`, where `TokenSort{}` is a sort declared with the `token` attribute.
+
 ~~~
-    hooked-symbol token2string{}(\dv{...}(...)) : String{}
+    hooked-symbol token2string{}(TokenSort{}) : String{}
         [hook{}("STRING.token2string")]
 ~~~
 
 ### STRING.string2token
-TODO
+
+Takes a string and parses it into a token value of a hooked sort declared with the `token` attribute.
+For example: `"TOKEN"` is `\dv{TokenSort{}("TOKEN")}`, where `TokenSort{}` is a sort declared with the `token` attribute.
+
+~~~
+    hooked-symbol string2token(String{}) : TokenSort{}
+        [hook{}("STRING.string2token")]
+~~
 
 ## MAP
 
