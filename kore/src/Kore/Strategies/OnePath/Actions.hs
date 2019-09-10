@@ -44,7 +44,7 @@ import           Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+                 ( MonadSimplify, SimplifierVariable )
 import           Kore.Step.Simplification.Pattern
                  ( simplifyAndRemoveTopExists )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -73,10 +73,7 @@ isTrusted =
 
 removeDestination
     ::  ( MonadSimplify m
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
+        , SimplifierVariable variable
         , goal ~ OnePathRule variable
         )
     => goal
@@ -89,12 +86,8 @@ removeDestination goal = do
     pure $ makeRuleFromPatterns result destination
 
 simplify
-    ::  ( FreshVariable variable
-        , MonadSimplify m
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
+    ::  ( MonadSimplify m
+        , SimplifierVariable variable
         , goal ~ OnePathRule variable
         )
     => goal
@@ -233,10 +226,7 @@ deriveSeq rules goal = do
 
 makeRuleFromPatterns
     :: forall rule variable
-    .  Ord variable
-    => SortedVariable variable
-    => Unparse variable
-    => Show variable
+    .  SimplifierVariable variable
     => Coercible (RulePattern variable) rule
     => Pattern variable
     -> Pattern variable
@@ -252,11 +242,7 @@ makeRuleFromPatterns configuration destination =
 {- | The predicate to remove the destination from the present configuration.
  -}
 removalPredicate
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: SimplifierVariable variable
     => Pattern variable
     -- ^ Destination
     -> Pattern variable

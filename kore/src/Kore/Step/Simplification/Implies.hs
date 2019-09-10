@@ -22,9 +22,6 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Not as Not
                  ( makeEvaluate, simplifyEvaluated )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
 children.
@@ -40,12 +37,7 @@ Right now this uses the following simplifications:
 and it has a special case for children with top terms.
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Implies Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify Implies { impliesFirst = first, impliesSecond = second } =
@@ -70,12 +62,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -89,12 +76,7 @@ simplifyEvaluated first second
     return (MultiOr.flatten results)
 
 simplifyEvaluateHalfImplies
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => OrPattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
@@ -112,11 +94,7 @@ simplifyEvaluateHalfImplies
         _ -> makeEvaluateImplies (OrPattern.toPattern first) second
 
 makeEvaluateImplies
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable
@@ -134,11 +112,7 @@ makeEvaluateImplies
     makeEvaluateImpliesNonBool first second
 
 makeEvaluateImpliesNonBool
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable

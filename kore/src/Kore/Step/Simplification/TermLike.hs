@@ -66,8 +66,6 @@ import qualified Kore.Step.Simplification.Top as Top
                  ( simplify )
 import qualified Kore.Step.Simplification.Variable as Variable
                  ( simplify )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -75,12 +73,7 @@ import           Kore.Variables.Fresh
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        , FreshVariable variable
-        )
+    :: SimplifierVariable variable
     => TermLike variable
     -> Predicate variable
     -> Simplifier (Pattern variable)
@@ -92,12 +85,7 @@ simplify patt predicate = do
 'OrPattern'.
 -}
 simplifyToOr
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
@@ -109,13 +97,8 @@ simplifyToOr term predicate =
     simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
-    ::  forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> Predicate variable
     -> simplifier (OrPattern variable)

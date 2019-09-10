@@ -29,7 +29,6 @@ import           Kore.Internal.OrPattern
                  ( OrPattern )
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Internal.TermLike
-import           Kore.Unparser
 \end{code}
 
 == Driver
@@ -39,11 +38,7 @@ import           Kore.Unparser
 children by merging the two children.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Or Sort (OrPattern variable)
     -> OrPattern variable
 \end{code}
@@ -60,11 +55,7 @@ simplify Or { orFirst = first, orSecond = second } =
 See 'simplify' for detailed documentation.
 -}
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => OrPattern variable
     -> OrPattern variable
     -> OrPattern variable
@@ -110,11 +101,7 @@ This simplification case is only applied if the configurations have the same
 
  -}
 disjoinPredicates
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -- ^ Configuration
     -> Pattern variable
@@ -188,11 +175,7 @@ disjoinPredicates
 {- | 'Top' patterns are the annihilator of 'Or'.
  -}
 topAnnihilates
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -- ^ Configuration
     -> Pattern variable

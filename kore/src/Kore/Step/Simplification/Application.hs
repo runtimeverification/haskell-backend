@@ -29,8 +29,6 @@ import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 type ExpandedApplication variable =
     Conditional variable (Application Symbol (TermLike variable))
@@ -46,12 +44,7 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -71,12 +64,7 @@ simplify predicate application = do
       = application
 
 makeAndEvaluateApplications
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Symbol
     -> [Pattern variable]
@@ -85,12 +73,7 @@ makeAndEvaluateApplications =
     makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Symbol
     -> [Pattern variable]
@@ -104,12 +87,7 @@ makeAndEvaluateSymbolApplications predicate symbol children = do
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -- ^ The predicate from the configuration
     -> ExpandedApplication variable
@@ -125,12 +103,7 @@ evaluateApplicationFunction
         term
 
 makeExpandedApplication
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Symbol
     -> [Pattern variable]
     -> BranchT simplifier (ExpandedApplication variable)

@@ -20,7 +20,7 @@ import           Kore.Internal.TermLike
 an or containing a term made of that variable.
 -}
 simplify
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => SetVariable variable
     -> OrPattern variable
 simplify setVar = OrPattern.fromTermLike $ mkSetVar setVar

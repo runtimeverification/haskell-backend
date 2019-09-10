@@ -49,7 +49,7 @@ import           Prelude hiding
 import           Kore.Attribute.Pattern.FreeVariables
 import           Kore.Debug
 import           Kore.Internal.TermLike
-                 ( TermLike, pattern Var_, mkVar )
+                 ( InternalVariable, TermLike, pattern Var_, mkVar )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Syntax.Variable
                  ( SortedVariable )
@@ -255,11 +255,8 @@ renormalizes, if needed.
 -}
 reverseIfRhsIsVar
     :: forall variable
-    .   ( Eq variable
+    .   ( InternalVariable variable
         , FreshVariable variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
         )
     => UnifiedVariable variable
     -> Substitution variable
