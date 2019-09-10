@@ -882,6 +882,7 @@ stringSort =
         { sortActualName = testId "String"
         , sortActualSorts = []
         }
+
 -- | A user defined token sort
 userTokenSort :: Sort
 userTokenSort =
