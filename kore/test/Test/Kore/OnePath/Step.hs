@@ -20,7 +20,6 @@ import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
 
-import           Kore.Goal
 import           Kore.Internal.Conditional
                  ( Conditional (Conditional) )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
@@ -42,9 +41,11 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, runStrategy )
-import           Kore.Step.Strategy
-                 ( ExecutionGraph (..) )
+                 ( ExecutionGraph (..), Strategy, pickFinal, runStrategy )
+import           Kore.Strategies.Goal
+import           Kore.Strategies.OnePath.Actions
+                 ( makeRuleFromPatterns )
+import           Kore.Strategies.ProofState
 import           Kore.Syntax.Variable
                  ( Variable (..) )
 import qualified Kore.Unification.Substitution as Substitution
