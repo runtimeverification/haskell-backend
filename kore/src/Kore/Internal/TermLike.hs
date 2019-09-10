@@ -1153,7 +1153,7 @@ applyAlias sentence params children =
                 symbolOrAliasSorts params sentence
                 & assertRight
             , aliasLeft =
-                fmap getElementVariable
+                fmap (foldMapVariable id)
                 . applicationChildren
                 . sentenceAliasLeftPattern
                 $ sentence
@@ -1774,7 +1774,7 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [ElementVariable Variable]
+    -> [UnifiedVariable Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
@@ -1800,7 +1800,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = variableSort . getElementVariable <$> arguments
+    argumentSorts = foldMapVariable variableSort <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 
@@ -1810,7 +1810,7 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [ElementVariable Variable]
+    -> [UnifiedVariable Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []
