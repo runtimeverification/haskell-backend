@@ -25,15 +25,12 @@ import           Kore.Predicate.Predicate
                  ( pattern PredicateTrue )
 import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+                 ( MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-                 ( Unparse )
-import           Kore.Variables.Fresh
 
 {- | Simplify a 'Map' of 'EqualityRule's using only matching logic rules.
 
@@ -41,26 +38,16 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyFunctionAxioms
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    =>  Map identifier [EqualityRule variable]
-    ->  simplifier (Map identifier [EqualityRule variable])
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => Map identifier [EqualityRule variable]
+    -> simplifier (Map identifier [EqualityRule variable])
 simplifyFunctionAxioms =
     (traverse . traverse) simplifyEqualityRule
 
 simplifyEqualityRule
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    =>  EqualityRule variable
-    ->  simplifier (EqualityRule variable)
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => EqualityRule variable
+    -> simplifier (EqualityRule variable)
 simplifyEqualityRule (EqualityRule rule) =
     EqualityRule <$> simplifyRulePattern rule
 
@@ -70,14 +57,9 @@ See also: 'simplifyRulePattern'
 
  -}
 simplifyRewriteRule
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    =>  RewriteRule variable
-    ->  simplifier (RewriteRule variable)
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => RewriteRule variable
+    -> simplifier (RewriteRule variable)
 simplifyRewriteRule (RewriteRule rule) =
     RewriteRule <$> simplifyRulePattern rule
 
@@ -88,14 +70,9 @@ narrowly-defined criteria.
 
  -}
 simplifyRulePattern
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    =>  RulePattern variable
-    ->  simplifier (RulePattern variable)
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => RulePattern variable
+    -> simplifier (RulePattern variable)
 simplifyRulePattern rule = do
     let RulePattern { left } = rule
     simplifiedLeft <- simplifyPattern left
@@ -129,14 +106,9 @@ simplifyRulePattern rule = do
 
 -- | Simplify a 'TermLike' using only matching logic rules.
 simplifyPattern
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    =>  TermLike variable
-    ->  simplifier (OrPattern variable)
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => TermLike variable
+    -> simplifier (OrPattern variable)
 simplifyPattern termLike =
     Simplifier.localSimplifierTermLike (const Simplifier.create)
     $ Simplifier.localSimplifierPredicate (const Predicate.create)

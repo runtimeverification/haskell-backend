@@ -32,7 +32,6 @@ import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import           Kore.TopBottom
                  ( TopBottom (..) )
-import           Kore.Unparser
 
 {-| The disjunction of 'Pattern'.
 -}
@@ -65,7 +64,7 @@ See also: 'fromPattern'
 
  -}
 fromTermLike
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => TermLike variable
     -> OrPattern variable
 fromTermLike = fromPattern . Pattern.fromTermLike
@@ -92,7 +91,7 @@ isFalse = isBottom
 @
 
  -}
-top :: (Ord variable, SortedVariable variable) => OrPattern variable
+top :: InternalVariable variable => OrPattern variable
 top = fromPattern Pattern.top
 
 {-| 'isTrue' checks if the 'Or' has a single top pattern.
@@ -103,13 +102,7 @@ isTrue = isTop
 {-| 'toPattern' transforms an 'Pattern' into
 an 'Pattern.Pattern'.
 -}
-toPattern
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
-    => OrPattern variable -> Pattern variable
+toPattern :: InternalVariable variable => OrPattern variable -> Pattern variable
 toPattern multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> Pattern.bottom
@@ -124,11 +117,7 @@ toPattern multiOr =
 {-| Transforms a 'Pattern' into a 'TermLike'.
 -}
 toTermLike
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => OrPattern variable -> TermLike variable
 toTermLike multiOr =
     case MultiOr.extractPatterns multiOr of

@@ -780,7 +780,7 @@ sentenceAliasParserTests =
                                     [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
-                            [ ElementVariable Variable
+                            [ ElemVar $ ElementVariable Variable
                                 { variableName = testId "X" :: Id
                                 , variableSort = sortVariableSort "s2"
                                 , variableCounter = mempty
@@ -830,12 +830,12 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ ElementVariable Variable
+                                [ ElemVar $ ElementVariable Variable
                                     { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
-                                , ElementVariable Variable
+                                , ElemVar $ ElementVariable Variable
                                     { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
@@ -977,7 +977,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias = aliasHead
-                            , applicationChildren = [varA, varB]
+                            , applicationChildren = ElemVar <$> [varA, varB]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalizePattern
@@ -1015,7 +1015,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias  = aliasHead
-                            , applicationChildren = [var]
+                            , applicationChildren = [ElemVar var]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalizePattern $ Internal.mkNext arg

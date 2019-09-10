@@ -64,8 +64,8 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-                 ( pattern App_, pattern Builtin_, Concrete, TermLike,
-                 mkApplySymbol, mkSort, termLikeSort )
+                 ( pattern App_, pattern Builtin_, Concrete, InternalVariable,
+                 TermLike, mkApplySymbol, mkSort, termLikeSort )
 import qualified Kore.Internal.TermLike as TermLike
 import           Kore.Sort
                  ( Sort )
@@ -76,15 +76,9 @@ import           Kore.Syntax.Sentence
                  ( SentenceSort (SentenceSort) )
 import qualified Kore.Syntax.Sentence as Sentence.DoNotUse
                  ( SentenceSort (..) )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-                 ( Unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {- | Builtin name of the @Set@ sort.
  -}
@@ -213,10 +207,7 @@ expectConcreteBuiltinSet ctx _set = do
 as a function result.
 -}
 returnConcreteSet
-    ::  ( MonadSimplify m
-        , Ord variable
-        , SortedVariable variable
-        )
+    :: (MonadSimplify m, InternalVariable variable)
     => Sort
     -> Map (TermLike Concrete) (Domain.SetValue (TermLike variable))
     -> m (AttemptedAxiom variable)
@@ -279,7 +270,7 @@ evalConcat =
   where
     evalConcat0
         :: forall variable m
-        .  (Ord variable, SortedVariable variable)
+        .  InternalVariable variable
         => MonadSimplify m
         => TermLikeSimplifier
         -> Sort
@@ -413,7 +404,7 @@ builtinFunctions =
 -}
 asTermLike
     :: forall variable
-    .  (Ord variable, SortedVariable variable, Unparse variable)
+    .  InternalVariable variable
     => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 asTermLike builtin =
@@ -471,7 +462,7 @@ internalize subterms.
 
  -}
 internalize
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
@@ -507,13 +498,8 @@ internalize tools termLike
     reject the definition.
  -}
 unifyEquals
-    ::  forall variable unifier
-    .   ( SortedVariable variable
-        , Unparse variable
-        , Show variable
-        , FreshVariable variable
-        , MonadUnify unifier
-        )
+    :: forall variable unifier
+    .  (SimplifierVariable variable, MonadUnify unifier)
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike variable
     -> TermLike variable
