@@ -1,20 +1,17 @@
+{-|
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
 
-
-
-
-
-
-
-
-module Kore.Attribute.Priority where
-
-
-
+-}
+module Kore.Attribute.Priority
+    ( Priority (..)
+    , priorityId, prioritySymbol, priorityAttribute
+    ) where
 
 import qualified Control.Monad as Monad
 import qualified Data.Maybe as Maybe
 import           Data.Text
-                 ( Text , pack)
+                 ( Text, pack )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -22,11 +19,12 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 
-
+{- | @Priority@ represents the @priority@ attribute.
+ -}
 newtype Priority = Priority { getPriority :: Maybe Integer }
     deriving (Eq, GHC.Generic, Ord, Show)
 
-instance SOP.Generic Priority 
+instance SOP.Generic Priority
 
 instance SOP.HasDatatypeInfo Priority
 
@@ -37,18 +35,19 @@ instance NFData Priority
 instance Default Priority where
     def = Priority Nothing
 
-
+-- | Kore identifier representing the @priority@ attribute symbol.
 priorityId :: Id
 priorityId = "priority"
 
-
+-- | Kore symbol representing the @priority@ attribute.
 prioritySymbol :: SymbolOrAlias
-prioritySymbol = 
+prioritySymbol =
     SymbolOrAlias
         { symbolOrAliasConstructor = priorityId
         , symbolOrAliasParams = []
         }
 
+-- | Kore pattern representing a @priority@ attribute.
 priorityAttribute :: Text -> AttributePattern
 priorityAttribute name =
     attributePattern prioritySymbol [attributeString name]

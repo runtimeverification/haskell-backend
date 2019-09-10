@@ -15,7 +15,7 @@ test_priority :: TestTree
 test_priority =
     testCase "[priority{}(\"123\")] :: Priority"
         $ expectSuccess Priority { getPriority = Just 123 }
-        $ parsePriority 
+        $ parsePriority
         $ Attributes [ priorityAttribute "123" ]
 
 test_Attributes :: TestTree
@@ -39,7 +39,7 @@ test_zeroArguments =
         $ expectFailure
         $ parsePriority $ Attributes [ illegalAttribute ]
   where
-    illegalAttribute = 
+    illegalAttribute =
         (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = prioritySymbol
@@ -58,7 +58,7 @@ test_twoArguments =
 
 test_parameters :: TestTree
 test_parameters =
-    testCase "[productionID{illegal}(\"123\")]"
+    testCase "[priority{illegal}(\"123\")]"
         $ expectFailure
         $ parsePriority $ Attributes [ illegalAttribute ]
   where
