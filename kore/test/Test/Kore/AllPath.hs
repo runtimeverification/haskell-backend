@@ -15,7 +15,6 @@ import qualified Data.Sequence as Seq
 import           GHC.Stack
                  ( HasCallStack )
 
-import qualified Kore.Goal as Goal
 import qualified Kore.Internal.MultiOr as MultiOr
 import           Kore.Logger
                  ( LogMessage (..), WithLog (..) )
@@ -27,6 +26,8 @@ import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Transition
                  ( runTransitionT )
 import qualified Kore.Step.Transition as Transition
+import qualified Kore.Strategies.Goal as Goal
+import qualified Kore.Strategies.ProofState as Goal
 import           SMT
                  ( MonadSMT (..) )
 

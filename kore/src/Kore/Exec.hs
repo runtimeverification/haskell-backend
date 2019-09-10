@@ -39,7 +39,6 @@ import           Kore.Attribute.Symbol
                  ( StepperAttributes )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Goal as Goal
 import           Kore.IndexedModule.IndexedModule
                  ( VerifiedModule )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
@@ -55,8 +54,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
-import           Kore.OnePath.Verification
-                 ( Claim, defaultStrategy, verify )
 import           Kore.Predicate.Predicate
                  ( makeMultipleOrPredicate, unwrapPredicate )
 import           Kore.Profiler.Data
@@ -88,6 +85,9 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Strategies.Goal as Goal
+import           Kore.Strategies.OnePath.Verification
+                 ( Claim, defaultStrategy, verify )
 import           SMT
                  ( MonadSMT, SMT )
 
