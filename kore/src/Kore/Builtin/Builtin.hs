@@ -434,9 +434,9 @@ verifySortHasDomainValues = SortVerifier worker
     parseSortAttributes
         :: Attributes
         -> Either (Error VerifyError) Attribute.Sort
-    parseSortAttributes attributes =
+    parseSortAttributes rawSortAttributes =
         Attribute.Parser.liftParser
-        $ Attribute.Parser.parseAttributes attributes
+        $ Attribute.Parser.parseAttributes rawSortAttributes
 
 expectDomainValue
     :: Monad m
@@ -447,7 +447,7 @@ expectDomainValue
     -> MaybeT m Text
 expectDomainValue ctx =
     \case
-        DV_ sort child ->
+        DV_ _ child ->
             case child of
                 StringLiteral_ text ->
                     return text
