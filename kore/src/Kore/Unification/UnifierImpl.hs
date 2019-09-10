@@ -35,10 +35,7 @@ import           Kore.Unification.Substitution
                  ( Substitution )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
-                 ( MonadUnify )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+                 ( MonadUnify, SimplifierVariable )
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
@@ -49,10 +46,7 @@ import {-# SOURCE #-} Kore.Step.Substitution
 
 simplifyAnds
     ::  forall variable unifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -102,10 +96,7 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: ( Show variable
-       , Unparse variable
-       , SortedVariable variable
-       , FreshVariable variable
+    :: ( SimplifierVariable variable
        , MonadUnify unifier
        , WithLog LogMessage unifier
        )
@@ -131,10 +122,7 @@ solveGroupedSubstitution var patterns = do
 -- stabilizes.
 normalizeSubstitutionDuplication
     :: forall variable unifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -179,11 +167,7 @@ normalizeSubstitutionDuplication subst
             ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
 
 mergePredicateList
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => [Predicate variable]
     -> Predicate variable
 mergePredicateList [] = Predicate.top

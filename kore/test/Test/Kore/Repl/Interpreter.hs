@@ -31,15 +31,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
-import           Kore.Goal
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
-                 ( TermLike, elemVarS, mkBottom_, mkElemVar )
+                 ( InternalVariable, TermLike, elemVarS, mkBottom_, mkElemVar )
 import qualified Kore.Logger.Output as Logger
-import           Kore.OnePath.Verification
-                 ( verifyClaimStep )
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.State
@@ -48,8 +45,11 @@ import           Kore.Step.Simplification.AndTerms
                  ( cannotUnifyDistinctDomainValues )
 import           Kore.Step.Simplification.Data
                  ( Simplifier, evalSimplifier )
+import           Kore.Strategies.Goal
+import           Kore.Strategies.OnePath.Verification
+                 ( verifyClaimStep )
 import           Kore.Syntax.Variable
-                 ( SortedVariable, Variable )
+                 ( Variable )
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import           Kore.Unification.Unify
@@ -532,7 +532,7 @@ emptyClaim =
     $ rulePatternWithName mkBottom_ mkBottom_ "emptyClaim"
 
 rulePatternWithName
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> String

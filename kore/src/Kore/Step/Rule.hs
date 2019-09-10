@@ -111,7 +111,7 @@ instance
         RulePattern { left, right, requires, ensures } = rulePattern'
 
 rulePattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> RulePattern variable
@@ -165,10 +165,13 @@ instance
 -}
 newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (ImplicationRule variable)
-deriving instance Ord variable => Ord (ImplicationRule variable)
-deriving instance Show variable => Show (ImplicationRule variable)
+instance SOP.Generic (ImplicationRule variable)
+
+instance SOP.HasDatatypeInfo (ImplicationRule variable)
+
+instance Debug variable => Debug (ImplicationRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -546,10 +549,7 @@ to avoid collision with any variables in the given set.
  -}
 refreshRulePattern
     :: forall variable
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    .  SubstitutionVariable variable
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
     -> (Renaming variable, RulePattern variable)
@@ -608,10 +608,7 @@ contain none of the targeted variables.
 
  -}
 substitute
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    :: SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable

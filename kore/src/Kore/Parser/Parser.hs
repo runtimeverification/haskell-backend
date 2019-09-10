@@ -32,6 +32,8 @@ Conventions used:
 -}
 module Kore.Parser.Parser where
 
+import           Control.Applicative
+                 ( (<|>) )
 import           Control.Arrow
                  ( (&&&) )
 import qualified Control.Monad as Monad
@@ -404,6 +406,12 @@ setVariableParser = do
     c <- ParserUtils.peekChar'
     if c == '@' then SetVariable <$> variableParser
     else fail "Expecting set variable token"
+
+unifiedVariableParser :: Parser (UnifiedVariable Variable)
+unifiedVariableParser =
+    (<|>)
+        (ElemVar <$> singletonVariableParser)
+        (SetVar  <$> setVariableParser)
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern), using an open recursion scheme for its children.
@@ -880,7 +888,7 @@ aliasSentenceRemainderParser = do
     resultSort <- objectSortParser
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- applicationParser singletonVariableParser
+    leftPattern <- applicationParser unifiedVariableParser
     mlLexemeParser ":="
     rightPattern <- korePatternParser
     attributes <- attributesParser

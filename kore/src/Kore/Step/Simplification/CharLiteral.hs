@@ -20,9 +20,6 @@ import           Kore.Internal.TermLike
 {-| 'simplify' simplifies a 'CharLiteral' pattern, which means returning
 an or containing a term made of that literal.
 -}
-simplify
-    :: (Ord variable, SortedVariable variable)
-    => CharLiteral
-    -> OrPattern variable
+simplify :: InternalVariable variable => CharLiteral -> OrPattern variable
 simplify (CharLiteral char) =
     OrPattern.fromPattern $ Pattern.fromTermLike $ mkCharLiteral char

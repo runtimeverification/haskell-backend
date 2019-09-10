@@ -138,7 +138,7 @@ lookupAlias symbolOrAlias = do
     aliasConstructor = symbolOrAliasConstructor symbolOrAlias
     aliasParams = symbolOrAliasParams symbolOrAlias
     leftDefinition def =
-        fmap getElementVariable
+        fmap (foldMapVariable id)
         . applicationChildren
         . sentenceAliasLeftPattern
         $ def
@@ -251,23 +251,19 @@ See also: 'uniqueDeclaredVariables', 'withDeclaredVariables'
 verifyAliasLeftPattern
     :: Alias
     -> [Sort]
-    -> Application SymbolOrAlias (ElementVariable Variable)
+    -> Application SymbolOrAlias (UnifiedVariable Variable)
     -> PatternVerifier
         ( DeclaredVariables
-        , Application SymbolOrAlias (ElementVariable Variable)
+        , Application SymbolOrAlias (UnifiedVariable Variable)
         )
 verifyAliasLeftPattern alias aliasSorts leftPattern = do
     koreFailWhen (declaredHead /= symbolOrAlias) aliasDeclarationMismatch
-    let expect = expectVariable . ElemVar <$> applicationChildren leftPattern
+    let expect = expectVariable <$> applicationChildren leftPattern
     verified <- verifyPatternsWithSorts snd aliasSorts expect
     declaredVariables <- uniqueDeclaredVariables (fst <$> verified)
     let verifiedLeftPattern =
-            traverse
-                extractElementVariable
-                leftPattern { applicationChildren = fst <$> verified }
-    case verifiedLeftPattern of
-        Just result -> return (declaredVariables, result)
-        Nothing -> error "Impossible change from element var to set var"
+            leftPattern { applicationChildren = fst <$> verified }
+    return (declaredVariables, verifiedLeftPattern)
   where
     symbolOrAlias = applicationSymbolOrAlias leftPattern
     declaredHead =
@@ -571,21 +567,49 @@ verifyPatternsWithSorts getChildAttributes sorts operands = do
     actualOperandCount = length operands
 
 verifyApplyAlias
-    ::  (child -> Attribute.Pattern Variable)
-    ->  Application SymbolOrAlias (PatternVerifier child)
+    ::  (Verified.Pattern -> Attribute.Pattern Variable)
+    ->  Application SymbolOrAlias (PatternVerifier Verified.Pattern)
     ->  MaybeT PatternVerifier
             (CofreeF
                 (Application (Internal.Alias (TermLike Variable)))
                 (Attribute.Pattern Variable)
-                child
+                Verified.Pattern
             )
 verifyApplyAlias getChildAttributes application =
     lookupAlias symbolOrAlias >>= \alias -> Trans.lift $ do
     let verified = application { applicationSymbolOrAlias = alias }
         sorts = Internal.aliasSorts alias
+    leftVariables <- getLeftVariables (Internal.aliasConstructor alias)
+    Foldable.traverse_ ensureChildIsDeclaredVarType $ zip leftVariables children
     verifyApplicationChildren getChildAttributes verified sorts
   where
-    Application { applicationSymbolOrAlias = symbolOrAlias } = application
+    Application
+        { applicationSymbolOrAlias = symbolOrAlias
+        , applicationChildren      = children
+        } = application
+
+    getLeftVariables :: Id -> PatternVerifier [UnifiedVariable Variable]
+    getLeftVariables aliasId = do
+        indexedModule <- Reader.asks indexedModule
+        alias <- resolveAlias indexedModule aliasId
+        pure . applicationChildren . sentenceAliasLeftPattern . snd $ alias
+
+    -- If an alias was defined using an element variable, it can only take an
+    -- argument that is an element variable.
+    -- If it was defined using a set variable, we can use it with any argument.
+    -- Otherwise, it is a verification error.
+    ensureChildIsDeclaredVarType
+        :: (UnifiedVariable Variable, PatternVerifier Verified.Pattern)
+        -> PatternVerifier ()
+    ensureChildIsDeclaredVarType (var, mpat) = do
+        pat <- mpat
+        case (var, pat) of
+            (ElemVar _, Internal.ElemVar_ _) -> pure ()
+            (SetVar  _, _) -> pure ()
+            _ ->
+                koreFail
+                    "The alias was declared with an element variable, but its\
+                    \argument is not an element variable."
 
 verifyApplySymbol
     ::  (child -> Attribute.Pattern Variable)

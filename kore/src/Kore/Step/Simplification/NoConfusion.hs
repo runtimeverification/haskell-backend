@@ -30,7 +30,6 @@ import           Kore.Internal.TermLike
 import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Unification.Unify as Unify
 import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {- | Unify two application patterns with equal, injective heads.
 
@@ -41,10 +40,7 @@ See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
 
  -}
 equalInjectiveHeadsAndEquals
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         )
     => GHC.HasCallStack

@@ -28,13 +28,11 @@ import           GHC.Exts
 import           GHC.Generics
                  ( Generic )
 
+import Kore.Internal.Variable
 import Kore.Predicate.Predicate
        ( Predicate, makeAndPredicate, makeTruePredicate )
-import Kore.Syntax.Variable
 import Kore.TopBottom
        ( TopBottom (..) )
-import Kore.Unparser
-       ( Unparse )
 
 {-| 'MultiAnd' is a Matching logic and of its children
 
@@ -163,7 +161,7 @@ filterGeneric andFilter (MultiAnd patts) =
             AndUnknown -> go filterAnd' (element:filtered) unfiltered
 
 toPredicate
-    :: (Ord variable, SortedVariable variable, Unparse variable)
+    :: InternalVariable variable
     => MultiAnd (Predicate variable)
     -> Predicate variable
 toPredicate (MultiAnd predicates) =
