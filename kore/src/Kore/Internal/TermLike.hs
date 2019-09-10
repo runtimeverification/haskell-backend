@@ -1153,8 +1153,7 @@ applyAlias sentence params children =
                 symbolOrAliasSorts params sentence
                 & assertRight
             , aliasLeft =
-                fmap (foldMapVariable id)
-                . applicationChildren
+                applicationChildren
                 . sentenceAliasLeftPattern
                 $ sentence
             , aliasRight = sentenceAliasRightPattern sentence

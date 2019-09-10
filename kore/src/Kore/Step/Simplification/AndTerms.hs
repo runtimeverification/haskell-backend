@@ -65,6 +65,8 @@ import qualified Kore.Step.Simplification.Data as SimplificationType
                  ( SimplificationType (..) )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather, scatter )
+import           Kore.Step.Simplification.ExpandAlias
+                 ( expandAlias )
 import           Kore.Step.Simplification.NoConfusion
 import           Kore.Step.Simplification.Overloading
 import           Kore.Step.Substitution
@@ -374,7 +376,8 @@ andEqualsFunctions
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ _ _ -> boolAnd, "boolAnd")
+    [ (AndT,    \_ _ m s -> expandAlias (maybeTermAnd m s), "expandAlias")
+    , (AndT,    \_ _ _ _ -> boolAnd, "boolAnd")
     , (BothT,   \_ _ _ _ -> equalAndEquals, "equalAndEquals")
     , (EqualsT, \p _ _ _ -> bottomTermEquals p, "bottomTermEquals")
     , (EqualsT, \p _ _ _ -> termBottomEquals p, "termBottomEquals")

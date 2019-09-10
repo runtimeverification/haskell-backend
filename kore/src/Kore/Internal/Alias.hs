@@ -28,13 +28,14 @@ import Kore.Syntax.Application
 import Kore.Syntax.Variable
        ( Variable )
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 
 data Alias patternType =
     Alias
         { aliasConstructor :: !Id
         , aliasParams      :: ![Sort]
         , aliasSorts       :: !ApplicationSorts
-        , aliasLeft        :: [Variable]
+        , aliasLeft        :: [UnifiedVariable Variable]
         , aliasRight       :: patternType
         }
     deriving (GHC.Generic, Show)
