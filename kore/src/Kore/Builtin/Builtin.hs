@@ -62,6 +62,8 @@ module Kore.Builtin.Builtin
     , isSort
     , toKey
     , getAttemptedAxiom
+    , makeDomainValueTerm
+    , makeDomainValuePattern
       -- * Implementing builtin unification
     , unifyEqualsUnsolved
     ) where
@@ -123,7 +125,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import           Kore.Internal.Pattern as Pattern
-                 ( top )
+                 ( fromTermLike, top )
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
@@ -968,3 +970,30 @@ unifyEqualsUnsolved SimplificationType.And a b =
         return (pure unified) { predicate }
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top {predicate = makeEqualsPredicate a b}
+
+makeDomainValueTerm
+    :: forall variable
+    .  ( Ord variable
+       , SortedVariable variable
+       )
+    => Sort
+    -> Text
+    -> TermLike variable
+makeDomainValueTerm sort stringLiteral =
+    mkDomainValue
+    $ DomainValue
+          { domainValueSort = sort
+          , domainValueChild = mkStringLiteral stringLiteral
+          }
+
+makeDomainValuePattern
+    :: forall variable
+    .  ( Ord variable
+       , SortedVariable variable
+       )
+    => Sort
+    -> Text
+    -> Pattern variable
+makeDomainValuePattern sort stringLiteral =
+    Pattern.fromTermLike
+    $ makeDomainValueTerm sort stringLiteral

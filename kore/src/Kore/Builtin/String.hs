@@ -463,12 +463,9 @@ evalString2Token = Builtin.functionEvaluator evalString2Token0
                           _     -> Builtin.wrongArity token2StringKey
               _str <- expectBuiltinString string2TokenKey _str
               Builtin.appliedFunction
-                  . Pattern.fromTermLike
-                  . mkDomainValue
-                  $ DomainValue
-                        { domainValueSort = resultSort
-                        , domainValueChild = mkStringLiteral _str
-                        }
+                 $ Builtin.makeDomainValuePattern
+                    resultSort
+                    _str
 
 {- | Implement builtin function evaluation.
  -}
