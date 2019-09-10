@@ -18,10 +18,11 @@ import           Kore.Internal.Alias
 import           Kore.Internal.Pattern
                  ( Pattern )
 import           Kore.Internal.TermLike
-                 ( pattern ApplyAlias_, TermLike, Variable, substitute )
+                 ( pattern ApplyAlias_, TermLike, Variable, mapVariables,
+                 substitute )
 import qualified Kore.Logger as Logger
 import           Kore.Syntax.Variable
-                 ( SortedVariable )
+                 ( SortedVariable (..) )
 import           Kore.Unification.Unify
                  ( MonadUnify )
 import           Kore.Unparser
@@ -51,7 +52,10 @@ expandAlias recurse t1 t2 = do
         (t1', t2') -> recurse (maybe t1 id t1') (maybe t2 id t2')
 
 expandSingleAlias
-    :: TermLike variable
+    :: SortedVariable variable
+    => FreshVariable variable
+    => Show variable
+    => TermLike variable
     -> Maybe (TermLike variable)
 expandSingleAlias =
     \case
@@ -62,12 +66,16 @@ expandSingleAlias =
 -- with the *bounded* variables in the rhs is empty (because we can't currently
 -- handle things like \mu.
 substituteWorker
-    :: Alias (TermLike Variable)
+    :: SortedVariable variable
+    => FreshVariable variable
+    => Show variable
+    => Alias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable
 substituteWorker Alias { aliasLeft, aliasRight } children =
     substitute
         substitutionMap
-        aliasRight
+        (mapVariables fromVariable aliasRight)
   where
-    substitutionMap = Map.fromList $ zip aliasLeft children
+    substitutionMap =
+        Map.fromList $ zip (fmap fromVariable <$> aliasLeft) children
