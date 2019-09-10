@@ -453,7 +453,7 @@ expectDomainValue ctx =
                     return text
                 _ ->
                     verifierBug
-                    $ Text.unpack ctx ++ ": Domain value is not a stringliteral"
+                    $ Text.unpack ctx ++ ": Domain value is not a string literal"
         _ -> empty
 
 -- | Wildcard for sort verification on parameterized builtin sorts
