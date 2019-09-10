@@ -109,10 +109,11 @@ import           SMT
 
 {- | 'SimplifierVariable' constrains variables that are used in the simplifier.
 
-'SimplifierVariable' requires only that the variable be a 'SubstitutionVariable'
-(and in turn, an 'InternalVariable'), but simplifier functions should use this
-constraint instead of either "lesser" constraint in case that changes in the
-future.
+We reserve the right to change this constraint in the future; although it is
+presently the same as 'SubstitutionVariable', that may not always be true.
+Functions taking the 'MonadSimplify' constraint should use the
+'SimplifierVariable' constraint on their variable type, even if a lesser
+constraint (such as 'InternalVariable') seems sufficient at present.
 
  -}
 type SimplifierVariable variable = SubstitutionVariable variable
