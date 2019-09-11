@@ -967,10 +967,7 @@ unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top {predicate = makeEqualsPredicate a b}
 
 makeDomainValueTerm
-    :: forall variable
-    .  ( Ord variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => Sort
     -> Text
     -> TermLike variable
@@ -982,10 +979,7 @@ makeDomainValueTerm sort stringLiteral =
           }
 
 makeDomainValuePattern
-    :: forall variable
-    .  ( Ord variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => Sort
     -> Text
     -> Pattern variable
