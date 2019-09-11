@@ -7,28 +7,41 @@ module Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     ) where
 
-import           Control.Error
-                 ( MaybeT )
-import           Control.Error.Util
-                 ( nothing )
-import           Control.Exception
-                 ( assert )
+import Control.Error
+    ( MaybeT
+    )
+import Control.Error.Util
+    ( nothing
+    )
+import Control.Exception
+    ( assert
+    )
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 
-import           Kore.Internal.Alias
-                 ( Alias (..) )
-import           Kore.Internal.Pattern
-                 ( Pattern )
-import           Kore.Internal.TermLike
-                 ( pattern ApplyAlias_, SubstitutionVariable, TermLike,
-                 Variable, mapVariables, substitute )
+import Kore.Internal.Alias
+    ( Alias (..)
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import Kore.Internal.TermLike
+    ( pattern ApplyAlias_
+    , SubstitutionVariable
+    , TermLike
+    , Variable
+    , mapVariables
+    , substitute
+    )
 import qualified Kore.Logger as Logger
-import           Kore.Syntax.Variable
-                 ( SortedVariable (..) )
-import           Kore.Unification.Unify
-                 ( MonadUnify )
+import Kore.Syntax.Variable
+    ( SortedVariable (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 
 expandAlias
     :: forall variable unifier
