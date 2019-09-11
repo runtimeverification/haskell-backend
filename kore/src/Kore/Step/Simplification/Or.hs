@@ -9,17 +9,20 @@ module Kore.Step.Simplification.Or
     ) where
 
 import Control.Applicative
-       ( Alternative (..) )
+    ( Alternative (..)
+    )
 
-import           Kore.Internal.Conditional as Conditional
+import Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeOrPredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeOrPredicate
+    )
 
 -- * Driver
 
