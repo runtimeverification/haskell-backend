@@ -9,6 +9,7 @@ module Kore.Variables.UnifiedVariable
     , isSetVar
     , extractElementVariable
     , foldMapVariable
+    , unifiedVariableSort
     ) where
 
 import           Control.DeepSeq
@@ -74,3 +75,10 @@ extractElementVariable _ = Nothing
 foldMapVariable :: (variable -> a) -> UnifiedVariable variable -> a
 foldMapVariable f (ElemVar v) = f (getElementVariable v)
 foldMapVariable f (SetVar v) = f (getSetVariable v)
+
+-- | The 'Sort' of a 'SetVariable' or an 'ElementVariable'.
+unifiedVariableSort
+    :: SortedVariable variable
+    => UnifiedVariable variable
+    -> Sort
+unifiedVariableSort = foldMapVariable sortedVariableSort
