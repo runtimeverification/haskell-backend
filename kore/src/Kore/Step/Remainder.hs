@@ -31,7 +31,7 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
                  ( MonadSimplify (..), SimplifierVariable )
 import           Kore.Unification.Substitution
                  ( Substitution )

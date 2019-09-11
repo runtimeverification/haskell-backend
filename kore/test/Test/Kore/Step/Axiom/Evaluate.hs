@@ -32,7 +32,8 @@ import qualified Kore.Step.Axiom.Evaluate as Kore
 import           Kore.Step.Rule
                  ( EqualityRule (..), RulePattern (..), rulePattern )
 import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom (..), Env, evalSimplifier, isNotApplicable )
+                 ( Env, evalSimplifier )
+import           Kore.Step.Simplification.Simplify
 import           Kore.Unparser
 import qualified SMT
 

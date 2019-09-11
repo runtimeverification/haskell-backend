@@ -24,6 +24,7 @@ import Data.List
 import GHC.Stack
        ( HasCallStack )
 
+import           Branch
 import           Kore.Internal.Conditional
                  ( Conditional (..) )
 import qualified Kore.Internal.Conditional as Conditional
@@ -34,8 +35,7 @@ import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termAnd )
-import           Kore.Step.Simplification.Data hiding
-                 ( And )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.

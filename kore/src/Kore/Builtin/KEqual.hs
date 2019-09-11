@@ -44,8 +44,8 @@ import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Or as Or
+import           Kore.Step.Simplification.Simplify
 import           Kore.Syntax.Definition
                  ( SentenceSymbol (..) )
 

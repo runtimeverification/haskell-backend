@@ -8,6 +8,7 @@ import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 
+import qualified Branch
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -345,7 +346,7 @@ normalize :: Conditional Variable term -> IO [Conditional Variable term]
 normalize predicated =
     runSMT
     $ evalSimplifier mockEnv
-    $ gather
+    $ Branch.gather
     $ Substitution.normalize predicated
   where
     mockEnv = Mock.env

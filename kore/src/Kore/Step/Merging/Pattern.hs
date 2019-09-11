@@ -10,6 +10,8 @@ module Kore.Step.Merging.Pattern
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
 
+import           Branch
+                 ( BranchT )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
@@ -17,7 +19,7 @@ import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
-import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )

@@ -22,7 +22,7 @@ import           Kore.Predicate.Predicate
                  ( makeInPredicate )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.

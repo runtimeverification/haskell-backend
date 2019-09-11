@@ -122,22 +122,25 @@ import           Kore.Predicate.Predicate
 import qualified Kore.Proof.Value as Value
 import           Kore.Sort
                  ( predicateSort )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.SimplificationType as SimplificationType
+                 ( SimplificationType (..) )
+import           Kore.Step.Simplification.Simplify
                  ( AttemptedAxiom (..),
                  AttemptedAxiomResults (AttemptedAxiomResults),
                  BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
                  BuiltinAndAxiomSimplifierMap, MonadSimplify,
-                 PredicateSimplifier, SimplificationType, SimplifierVariable,
-                 TermLikeSimplifier, applicationAxiomSimplifier )
-import qualified Kore.Step.Simplification.Data as SimplificationType
-                 ( SimplificationType (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 PredicateSimplifier, TermLikeSimplifier,
+                 applicationAxiomSimplifier )
+import           Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import           Kore.Syntax.Definition
                  ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
                  SentenceSymbol (..) )
 import           Kore.Unparser
 import qualified Kore.Verified as Verified
+
+-- TODO (thomas.tuegel): Split up verifiers and evaluators.
 
 type Parser = Parsec Void Text
 

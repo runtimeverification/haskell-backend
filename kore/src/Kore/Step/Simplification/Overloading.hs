@@ -25,8 +25,8 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.Data as Simplifier
 import           Kore.Step.Simplification.NoConfusion
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Unification.Unify as Unify
 
 {- | Unify an overloaded constructor application pattern with a sort injection

@@ -17,6 +17,9 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
+import           Branch
+                 ( BranchT )
+import qualified Branch
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
@@ -31,11 +34,9 @@ import           Kore.Sort
                  ( predicateSort )
 import           Kore.Step.Axiom.Matcher
                  ( matchIncremental )
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
@@ -122,7 +123,7 @@ makeEvaluate
     -> Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluate variable original
-  = fmap OrPattern.fromPatterns $ BranchT.gather $ do
+  = fmap OrPattern.fromPatterns $ Branch.gather $ do
     normalized <- Substitution.normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
@@ -224,7 +225,7 @@ makeEvaluateBoundLeft
                         $ Conditional.predicate normalized
                     }
         orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
-        BranchT.scatter (MultiOr.extractPatterns orPattern)
+        Branch.scatter (MultiOr.extractPatterns orPattern)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 

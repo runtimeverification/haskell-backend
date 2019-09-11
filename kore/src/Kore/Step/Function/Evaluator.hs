@@ -19,6 +19,7 @@ import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Text as Text
 
+import qualified Branch as BranchT
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
@@ -42,14 +43,12 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import           Kore.Step.Simplification.Simplify as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 
 {-| Evaluates functions on an application pattern.
 -}

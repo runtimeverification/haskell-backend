@@ -16,6 +16,7 @@ import           Kore.Internal.TermLike
 import           Kore.Logger.Output
                  ( emptyLogger )
 import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified SMT
 

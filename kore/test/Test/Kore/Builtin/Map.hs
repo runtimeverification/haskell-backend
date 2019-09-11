@@ -47,7 +47,7 @@ import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )

@@ -30,6 +30,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
                  ( simplify )
 import           Kore.Step.Simplification.Data
+                 ( Simplifier )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
                  ( simplify )
 import qualified Kore.Step.Simplification.Equals as Equals
@@ -60,6 +61,7 @@ import qualified Kore.Step.Simplification.Or as Or
                  ( simplify )
 import qualified Kore.Step.Simplification.Rewrites as Rewrites
                  ( simplify )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
                  ( simplify )
 import qualified Kore.Step.Simplification.Top as Top

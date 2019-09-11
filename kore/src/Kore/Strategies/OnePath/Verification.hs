@@ -35,7 +35,7 @@ import           Kore.Internal.Pattern
                  ( Pattern )
 import           Kore.Step.Rule as RulePattern
                  ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
 import           Kore.Step.Strategy
 import           Kore.Step.Transition
                  ( runTransitionT )
