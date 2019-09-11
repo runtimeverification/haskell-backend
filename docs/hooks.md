@@ -418,8 +418,9 @@ is not found.
 
 ### STRING.token2string
 
-Takes a value of any sort which is declared with the `token` attribute and returns that value unparsed.
-For example: `\dv{TokenSort{}}("TOKEN")` is `"TOKEN"`, where `TokenSort{}` is a sort declared with the `token` attribute.
+Takes a value of any sort which is declared with the `hasDomainValues` attribute and returns that value unparsed.
+For example: `\dv{TokenSort{}}("TOKEN")` is `"TOKEN"`, where `TokenSort{}` is a sort declared with the `hasDomainValues`
+attribute.
 
 ~~~
     hooked-symbol token2string{}(TokenSort{}) : String{}
@@ -428,8 +429,9 @@ For example: `\dv{TokenSort{}}("TOKEN")` is `"TOKEN"`, where `TokenSort{}` is a 
 
 ### STRING.string2token
 
-Takes a string and parses it into a token value of a hooked sort declared with the `token` attribute.
-For example: `"TOKEN"` is `\dv{TokenSort{}("TOKEN")}`, where `TokenSort{}` is a sort declared with the `token` attribute.
+Takes a string and parses it into a token value of a hooked sort declared with the `hasDomainValues` attribute.
+For example: `"TOKEN"` is `\dv{TokenSort{}("TOKEN")}`, where `TokenSort{}` is a sort declared with the `hasDomainValues`
+attribute.
 
 ~~~
     hooked-symbol string2token(String{}) : TokenSort{}
