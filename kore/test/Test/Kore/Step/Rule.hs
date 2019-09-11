@@ -56,6 +56,7 @@ axiomPatternsUnitTests =
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
+                    , antiLeft = Nothing
                     , right = varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
                     , ensures = Predicate.wrapPredicate (mkTop sortAInt)
@@ -101,6 +102,7 @@ axiomPatternsUnitTests =
                 $ assertEqual ""
                     [ RewriteRule RulePattern
                         { left = varI1
+                        , antiLeft = Nothing
                         , right = varI2
                         , requires = Predicate.wrapPredicate (mkTop sortAInt)
                         , ensures = Predicate.wrapPredicate (mkTop sortAInt)
@@ -116,6 +118,7 @@ axiomPatternsUnitTests =
             assertEqual ""
                 (Right $ FunctionAxiomPattern $ EqualityRule RulePattern
                     { left = mkCeil sortR term
+                    , antiLeft = Nothing
                     , right = mkTop sortR
                     , requires = Predicate.makeTruePredicate
                     , ensures = Predicate.makeTruePredicate
@@ -181,6 +184,7 @@ axiomPatternsIntegrationTests =
     rule =
         RulePattern
             { left
+            , antiLeft = Nothing
             , right
             , requires = Predicate.wrapPredicate (mkTop sortTCell)
             , ensures = Predicate.wrapPredicate (mkTop sortTCell)
@@ -372,6 +376,7 @@ testRulePattern =
         { left =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
+        , antiLeft = Nothing
         , right =
             -- Include a binder to ensure that we respect them.
             mkExists Mock.y (mkElemVar Mock.y)

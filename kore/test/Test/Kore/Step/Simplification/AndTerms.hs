@@ -970,6 +970,7 @@ test_equalsTermsSimplification =
                             (AxiomIdentifier.Application Mock.cfId)
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cf
+                            , antiLeft = Nothing
                             , right =
                                 mkOr
                                     (mkAnd
@@ -1046,6 +1047,7 @@ test_equalsTermsSimplification =
                             (AxiomIdentifier.Application Mock.cfId)
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cf
+                            , antiLeft = Nothing
                             , right =
                                 mkOr
                                     (mkAnd
@@ -1073,6 +1075,7 @@ test_equalsTermsSimplification =
                             (AxiomIdentifier.Application Mock.cgId)
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cg
+                            , antiLeft = Nothing
                             , right =
                                 mkOr
                                     (mkAnd

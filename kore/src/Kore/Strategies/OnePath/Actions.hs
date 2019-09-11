@@ -237,7 +237,13 @@ makeRuleFromPatterns configuration destination =
         (right, Conditional.toPredicate -> ensures) =
             Pattern.splitTerm destination
     in coerce RulePattern
-        { left, right, requires, ensures, attributes = Default.def }
+        { left
+        , antiLeft = Nothing
+        , right
+        , requires
+        , ensures
+        , attributes = Default.def
+        }
 
 {- | The predicate to remove the destination from the present configuration.
  -}

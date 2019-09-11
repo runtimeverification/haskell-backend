@@ -93,6 +93,7 @@ simplifyRulePattern rule = do
                 RulePattern { attributes } = rule
             return RulePattern
                 { left = left'
+                , antiLeft = Nothing
                 , right = right'
                 , requires = requires'
                 , ensures = ensures'

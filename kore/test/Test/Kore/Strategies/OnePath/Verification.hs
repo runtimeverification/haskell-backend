@@ -341,6 +341,7 @@ simpleTrustedClaim left right =
     OnePathRule
     $ RulePattern
             { left = left
+            , antiLeft = Nothing
             , right = right
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
@@ -355,6 +356,7 @@ simpleRewrite
 simpleRewrite left right =
     RewriteRule RulePattern
         { left = left
+        , antiLeft = Nothing
         , right = right
         , requires = makeTruePredicate
         , ensures = makeTruePredicate

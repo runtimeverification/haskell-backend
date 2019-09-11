@@ -144,6 +144,7 @@ test_unifyRule =
             axiom =
                 RulePattern
                     { left = Mock.f (mkElemVar Mock.x)
+                    , antiLeft = Nothing
                     , right = Mock.g (mkElemVar Mock.x)
                     , requires =
                         Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
@@ -161,6 +162,7 @@ test_unifyRule =
             axiom =
                 RulePattern
                     { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , antiLeft = Nothing
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
                     , ensures = makeTruePredicate
@@ -178,6 +180,7 @@ test_unifyRule =
             axiom =
                 RulePattern
                     { left = Mock.functionalConstr11 (mkElemVar Mock.x)
+                    , antiLeft = Nothing
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
                     , ensures = makeTruePredicate
@@ -264,6 +267,7 @@ test_applyRewriteRule_ =
             axiom =
                 RewriteRule RulePattern
                     { left = mkElemVar Mock.x
+                    , antiLeft = Nothing
                     , right = mkExists Mock.y (mkElemVar Mock.x)
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
@@ -437,6 +441,7 @@ test_applyRewriteRule_ =
             axiom =
                 RewriteRule RulePattern
                     { left = mkStringLiteral "sl1"
+                    , antiLeft = Nothing
                     , right = mkElemVar Mock.x
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
@@ -575,6 +580,7 @@ test_applyRewriteRule_ =
     ruleId =
         RulePattern
             { left = mkElemVar Mock.x
+            , antiLeft = Nothing
             , right = mkElemVar Mock.x
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
@@ -585,6 +591,7 @@ test_applyRewriteRule_ =
     axiomBottom =
         RewriteRule RulePattern
             { left = Mock.a
+            , antiLeft = Nothing
             , right = mkBottom Mock.testSort
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
@@ -594,6 +601,7 @@ test_applyRewriteRule_ =
     axiomEnsuresBottom =
         RewriteRule RulePattern
             { left = Mock.a
+            , antiLeft = Nothing
             , right = Mock.b
             , requires = makeTruePredicate
             , ensures = makeFalsePredicate
@@ -603,6 +611,7 @@ test_applyRewriteRule_ =
     axiomRequiresBottom =
         RewriteRule RulePattern
             { left = Mock.a
+            , antiLeft = Nothing
             , right = Mock.b
             , requires = makeFalsePredicate
             , ensures = makeTruePredicate
@@ -612,6 +621,7 @@ test_applyRewriteRule_ =
     axiomSigmaId =
         RewriteRule RulePattern
             { left = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x)
+            , antiLeft = Nothing
             , right = mkElemVar Mock.x
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
@@ -624,6 +634,7 @@ test_applyRewriteRule_ =
                 Mock.sigma
                     (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
                     (Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y))
+            , antiLeft = Nothing
             , right = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
@@ -636,6 +647,7 @@ test_applyRewriteRule_ =
                 Mock.sigma
                     (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
                     (mkElemVar Mock.y)
+            , antiLeft = Nothing
             , right = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
@@ -958,6 +970,7 @@ test_applyRewriteRulesParallel =
         Right actual <- applyRewriteRulesParallel initial
             [ RewriteRule RulePattern
                 { left = Mock.a
+                , antiLeft = Nothing
                 , right = mkElemVar Mock.x
                 , requires = makeTruePredicate
                 , ensures = makeTruePredicate
@@ -972,6 +985,7 @@ axiomIfThen :: RewriteRule Variable
 axiomIfThen =
     RewriteRule RulePattern
         { left = Mock.functionalConstr20 Mock.a (mkElemVar Mock.y)
+        , antiLeft = Nothing
         , right = mkElemVar Mock.y
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -982,6 +996,7 @@ axiomSignum :: RewriteRule Variable
 axiomSignum =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (mkElemVar Mock.y)
+        , antiLeft = Nothing
         , right = Mock.a
         , requires = makeEqualsPredicate (Mock.f (mkElemVar Mock.y)) Mock.b
         , ensures = makeTruePredicate
@@ -996,6 +1011,7 @@ axiomCaseA =
                 Mock.a
                 (mkElemVar Mock.y)
                 (mkElemVar Mock.z)
+        , antiLeft = Nothing
         , right = mkElemVar Mock.y
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -1010,6 +1026,7 @@ axiomCaseB =
                 Mock.b
                 (mkElemVar Mock.y)
                 (mkElemVar Mock.z)
+        , antiLeft = Nothing
         , right = mkElemVar Mock.z
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -1122,6 +1139,7 @@ test_applyRewriteRulesSequence =
         Right actual <- applyRewriteRulesSequence initial
             [ RewriteRule RulePattern
                 { left = Mock.a
+                , antiLeft = Nothing
                 , right = mkElemVar Mock.x
                 , requires = makeTruePredicate
                 , ensures = makeTruePredicate

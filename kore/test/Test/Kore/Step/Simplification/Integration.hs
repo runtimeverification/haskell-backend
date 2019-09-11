@@ -179,6 +179,7 @@ test_simplificationIntegration =
                                                 (mkElemVar Mock.m)
                                             )
                                             (mkElemVar Mock.x)
+                                    , antiLeft = Nothing
                                     , right = mkElemVar Mock.y
                                     , requires = makeTruePredicate
                                     , ensures = makeTruePredicate
@@ -216,6 +217,7 @@ test_simplificationIntegration =
                         [ (AxiomIdentifier.Application Mock.fIntId
                           , [ EqualityRule RulePattern
                                 { left = Mock.fInt (mkElemVar Mock.xInt)
+                                , antiLeft = Nothing
                                 , right = mkElemVar Mock.xInt
                                 , requires = makeTruePredicate
                                 , ensures = makeTruePredicate
@@ -230,6 +232,7 @@ test_simplificationIntegration =
                                     $ Mock.tdivInt
                                         (mkElemVar Mock.xInt)
                                         (mkElemVar Mock.yInt)
+                                , antiLeft = Nothing
                                 , right =
                                     mkCeil testSortVariable
                                     . mkNot
@@ -315,6 +318,7 @@ test_simplificationIntegration =
                     [   ( AxiomIdentifier.Application Mock.cfId
                         ,   [ EqualityRule RulePattern
                                 { left = Mock.cf
+                                , antiLeft = Nothing
                                 , right = Mock.f (mkElemVar Mock.x)
                                 , requires = makeTruePredicate
                                 , ensures = makeTruePredicate

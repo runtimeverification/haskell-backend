@@ -75,6 +75,7 @@ newtype AxiomPatternError = AxiomPatternError ()
  -}
 data RulePattern variable = RulePattern
     { left  :: !(TermLike variable)
+    , antiLeft :: !(Maybe (TermLike variable))  -- new field, name needs work
     , right :: !(TermLike variable)
     , requires :: !(Predicate variable)
     , ensures :: !(Predicate variable)
@@ -96,7 +97,7 @@ instance
     (SortedVariable variable, Unparse variable) =>
     Pretty (RulePattern variable)
   where
-    pretty rulePattern'@(RulePattern _ _ _ _ _) =
+    pretty rulePattern'@(RulePattern _ _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -118,6 +119,7 @@ rulePattern
 rulePattern left right =
     RulePattern
         { left
+        , antiLeft = Nothing
         , right
         , requires = Predicate.makeTruePredicate
         , ensures  = Predicate.makeTruePredicate
@@ -423,6 +425,7 @@ patternToAxiomPattern attributes pat =
         Rewrites_ _ (And_ _ requires lhs) (And_ _ ensures rhs) ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.wrapPredicate ensures
@@ -433,6 +436,7 @@ patternToAxiomPattern attributes pat =
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
             pure $ constructor RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.wrapPredicate ensures
@@ -443,6 +447,7 @@ patternToAxiomPattern attributes pat =
             -- TODO (traiansf): ensure that _ensures is \top
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.makeTruePredicate
@@ -452,6 +457,7 @@ patternToAxiomPattern attributes pat =
         Equals_ _ _ lhs rhs ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.makeTruePredicate
                 , ensures = Predicate.makeTruePredicate
@@ -461,6 +467,7 @@ patternToAxiomPattern attributes pat =
         ceil@(Ceil_ _ resultSort _) ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = ceil
+                , antiLeft = Nothing
                 , right = mkTop resultSort
                 , requires = Predicate.makeTruePredicate
                 , ensures = Predicate.makeTruePredicate
@@ -473,6 +480,7 @@ patternToAxiomPattern attributes pat =
             | isModalSymbol op ->
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
+                    , antiLeft = Nothing
                     , right = rhs
                     , requires = Predicate.makeTruePredicate
                     , ensures = Predicate.makeTruePredicate
@@ -593,6 +601,7 @@ mapVariables
 mapVariables mapping rule1 =
     rule1
         { left = TermLike.mapVariables mapping left
+        , antiLeft = Nothing
         , right = TermLike.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures

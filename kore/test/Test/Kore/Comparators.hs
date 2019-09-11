@@ -1581,8 +1581,8 @@ instance
   where
     structConstructorName _ = "RulePattern"
     structFieldsWithNames
-        expect@(RulePattern _ _ _ _ _)
-        actual@(RulePattern _ _ _ _ _)
+        expect@(RulePattern _ _ _ _ _ _)
+        actual@(RulePattern _ _ _ _ _ _)
       =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "left = "      ) left

@@ -168,6 +168,7 @@ rewritesTo :: TestPattern -> TestPattern -> RewriteRule Variable
 rewritesTo left right =
     RewriteRule $ RulePattern
         { left
+        , antiLeft = Nothing
         , right
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -193,6 +194,7 @@ rewriteIdentity :: RewriteRule Variable
 rewriteIdentity =
     RewriteRule RulePattern
         { left = mkElemVar (x1 Mock.testSort)
+        , antiLeft = Nothing
         , right = mkElemVar (x1 Mock.testSort)
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -203,6 +205,7 @@ setRewriteIdentity :: RewriteRule Variable
 setRewriteIdentity =
     RewriteRule RulePattern
         { left = Mock.mkTestUnifiedVariable "@x"
+        , antiLeft = Nothing
         , right = Mock.mkTestUnifiedVariable "@x"
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -213,6 +216,7 @@ setRewriteFnIdentity :: RewriteRule Variable
 setRewriteFnIdentity =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x")
+        , antiLeft = Nothing
         , right = Mock.mkTestUnifiedVariable "@x"
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -223,6 +227,7 @@ rewriteImplies :: RewriteRule Variable
 rewriteImplies =
     RewriteRule $ RulePattern
         { left = mkElemVar (x1 Mock.testSort)
+        , antiLeft = Nothing
         , right =
             mkImplies
                 (mkElemVar $ x1 Mock.testSort)
@@ -276,6 +281,7 @@ actualFailSimple =
                 metaSigma
                     (mkElemVar $ x1 Mock.testSort)
                     (mkElemVar $ x1 Mock.testSort)
+            , antiLeft = Nothing
             , right =
                 mkElemVar (x1 Mock.testSort)
             , requires = makeTruePredicate
@@ -307,6 +313,7 @@ actualFailCycle =
                 metaSigma
                     (metaF (mkElemVar $ x1 Mock.testSort))
                     (mkElemVar $ x1 Mock.testSort)
+            , antiLeft = Nothing
             , right =
                 mkElemVar (x1 Mock.testSort)
             , ensures = makeTruePredicate
@@ -420,6 +427,7 @@ test_SMT =
             (smtPattern Mock.b PredicatePositive)
             [ RewriteRule $ RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
+                , antiLeft = Nothing
                 , right = Mock.a
                 , ensures = makeTruePredicate
                 , requires =
@@ -428,6 +436,7 @@ test_SMT =
                 }
             , RewriteRule $ RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
+                , antiLeft = Nothing
                 , right = Mock.c
                 , ensures = makeTruePredicate
                 , requires =
@@ -459,6 +468,7 @@ test_SMT =
                 }
             [ RewriteRule RulePattern
                 { left = Mock.functionalConstr10 (TermLike.mkElemVar Mock.x)
+                , antiLeft = Nothing
                 , right = Mock.a
                 , ensures = makeTruePredicate
                 , requires =
@@ -562,6 +572,7 @@ axiomMetaSigmaId =
             metaSigma
                 (mkElemVar $ x1 Mock.testSort)
                 (mkElemVar $ x1 Mock.testSort)
+        , antiLeft = Nothing
         , right = mkElemVar $ x1 Mock.testSort
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
