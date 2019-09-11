@@ -11,11 +11,14 @@ module Kore.Step.SMT.Declaration.All
     ) where
 
 import qualified Kore.Step.SMT.AST as AST
-                 ( SmtDeclarations )
+    ( SmtDeclarations
+    )
 import qualified Kore.Step.SMT.Declaration.Sorts as Sorts
-                 ( declare )
+    ( declare
+    )
 import qualified Kore.Step.SMT.Declaration.Symbols as Symbols
-                 ( declare )
+    ( declare
+    )
 import qualified SMT
 
 {-| Sends all given declarations to the SMT.

@@ -22,71 +22,123 @@ module GlobalMain
     , loadModule
     ) where
 
-import           Colog
-                 ( (<&) )
-import           Control.Exception
-                 ( evaluate )
-import           Control.Monad
-                 ( when )
+import Colog
+    ( (<&)
+    )
+import Control.Exception
+    ( evaluate
+    )
+import Control.Monad
+    ( when
+    )
 import qualified Control.Monad as Monad
-import           Control.Monad.Trans.Class
-                 ( lift )
-import           Data.Function
-                 ( (&) )
-import           Data.List
-                 ( intercalate )
-import           Data.Map
-                 ( Map )
+import Control.Monad.Trans.Class
+    ( lift
+    )
+import Data.Function
+    ( (&)
+    )
+import Data.List
+    ( intercalate
+    )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Proxy
-                 ( Proxy (..) )
-import           Data.Semigroup
-                 ( (<>) )
+import Data.Proxy
+    ( Proxy (..)
+    )
+import Data.Semigroup
+    ( (<>)
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text, pack )
-import           Data.Time.Format
-                 ( defaultTimeLocale, formatTime )
-import           Data.Time.LocalTime
-                 ( ZonedTime, getZonedTime )
-import           Data.Version
-                 ( showVersion )
-import           Development.GitRev
-                 ( gitBranch, gitCommitDate, gitHash )
-import           GHC.Stack
-                 ( emptyCallStack )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, disabled, execParser, flag,
-                 flag', help, helper, hidden, info, internal, long, metavar,
-                 option, readerError, str, strOption, switch, value, (<**>),
-                 (<|>) )
-import           System.Clock
-                 ( Clock (Monotonic), diffTimeSpec, getTime )
+import Data.Text
+    ( Text
+    , pack
+    )
+import Data.Time.Format
+    ( defaultTimeLocale
+    , formatTime
+    )
+import Data.Time.LocalTime
+    ( ZonedTime
+    , getZonedTime
+    )
+import Data.Version
+    ( showVersion
+    )
+import Development.GitRev
+    ( gitBranch
+    , gitCommitDate
+    , gitHash
+    )
+import GHC.Stack
+    ( emptyCallStack
+    )
+import Options.Applicative
+    ( InfoMod
+    , Parser
+    , argument
+    , disabled
+    , execParser
+    , flag
+    , flag'
+    , help
+    , helper
+    , hidden
+    , info
+    , internal
+    , long
+    , metavar
+    , option
+    , readerError
+    , str
+    , strOption
+    , switch
+    , value
+    , (<**>)
+    , (<|>)
+    )
+import System.Clock
+    ( Clock (Monotonic)
+    , diffTimeSpec
+    , getTime
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes),
-                 defaultAttributesVerification,
-                 verifyAndIndexDefinitionWithBase )
-import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import Kore.ASTVerifier.DefinitionVerifier
+    ( AttributesVerification (DoNotVerifyAttributes)
+    , defaultAttributesVerification
+    , verifyAndIndexDefinitionWithBase
+    )
+import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Logger.Output as Logger
-import           Kore.Parser
-                 ( ParsedPattern, parseKoreDefinition )
-import           Kore.Step.Strategy
-                 ( GraphSearchOrder (..) )
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-                 ( ModuleName (..), ParsedDefinition, getModuleNameForError )
+import Kore.Logger.Output as Logger
+import Kore.Parser
+    ( ParsedPattern
+    , parseKoreDefinition
+    )
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
+import Kore.Syntax
+import Kore.Syntax.Definition
+    ( ModuleName (..)
+    , ParsedDefinition
+    , getModuleNameForError
+    )
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
-                 ( version )
+    ( version
+    )
 
 type Main = LoggerT IO
 

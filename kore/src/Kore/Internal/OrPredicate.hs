@@ -16,18 +16,22 @@ module Kore.Internal.OrPredicate
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.TopBottom
-                 ( TopBottom (..) )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 
 
 {-| The disjunction of 'Predicate'.

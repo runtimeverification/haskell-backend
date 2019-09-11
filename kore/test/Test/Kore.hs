@@ -32,35 +32,45 @@ module Test.Kore
     , Logger.emptyLogger
     ) where
 
-import           Hedgehog
-                 ( MonadGen )
+import Hedgehog
+    ( MonadGen
+    )
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import           Control.Monad.Reader
-                 ( ReaderT )
+import Control.Monad.Reader
+    ( ReaderT
+    )
 import qualified Control.Monad.Reader as Reader
-import           Data.Functor.Const
-import           Data.Text
-                 ( Text )
+import Data.Functor.Const
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.TermLike as TermLike hiding
-                 ( Alias, Symbol )
+import Kore.Internal.TermLike as TermLike hiding
+    ( Alias
+    , Symbol
+    )
 import qualified Kore.Logger.Output as Logger
-                 ( emptyLogger )
-import           Kore.Parser
-                 ( ParsedPattern, asParsedPattern )
-import           Kore.Parser.Lexeme
+    ( emptyLogger
+    )
+import Kore.Parser
+    ( ParsedPattern
+    , asParsedPattern
+    )
+import Kore.Parser.Lexeme
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Syntax.Definition
+import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}

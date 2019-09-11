@@ -8,9 +8,10 @@ module Kore.Syntax.SetVariable
     ( SetVariable (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Hashable
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

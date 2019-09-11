@@ -20,9 +20,10 @@ module Kore.Syntax.Application
     , mapHead
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Hashable
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Hashable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

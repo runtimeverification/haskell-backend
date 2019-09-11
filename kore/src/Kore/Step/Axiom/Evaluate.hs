@@ -9,37 +9,50 @@ module Kore.Step.Axiom.Evaluate
 
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
-import           Data.Function
+import Data.Function
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Step.Axiom.Matcher
-                 ( matchIncremental )
-import           Kore.Step.Remainder
-                 ( ceilChildOfApplicationOrTop )
+import Kore.Step.Axiom.Matcher
+    ( matchIncremental
+    )
+import Kore.Step.Remainder
+    ( ceilChildOfApplicationOrTop
+    )
 import qualified Kore.Step.Result as Result
-import           Kore.Step.Rule
-                 ( EqualityRule (..) )
+import Kore.Step.Rule
+    ( EqualityRule (..)
+    )
 import qualified Kore.Step.Rule as RulePattern
-                 ( RulePattern (..), mapVariables )
+    ( RulePattern (..)
+    , mapVariables
+    )
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
-import           Kore.Step.Simplification.Simplify
-                 ( AttemptedAxiom, AttemptedAxiomResults (..), MonadSimplify,
-                 SimplifierVariable )
+import Kore.Step.Simplification.Simplify
+    ( AttemptedAxiom
+    , AttemptedAxiomResults (..)
+    , MonadSimplify
+    , SimplifierVariable
+    )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
-                 ( AttemptedAxiom (..), maybeNotApplicable )
-import           Kore.Step.Step
-                 ( UnificationProcedure (..) )
+    ( AttemptedAxiom (..)
+    , maybeNotApplicable
+    )
+import Kore.Step.Step
+    ( UnificationProcedure (..)
+    )
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Variables.Fresh
+import Kore.Variables.Fresh
 
 evaluateAxioms
     :: forall variable simplifier

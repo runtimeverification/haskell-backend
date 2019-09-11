@@ -3,21 +3,26 @@ module Test.Kore.Step.Simplification.Top
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Step.Simplification.Top
-                 ( simplify )
-import           Kore.Syntax
+import Kore.Step.Simplification.Top
+    ( simplify
+    )
+import Kore.Syntax
 
 import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
-       ( testSort )
+    ( testSort
+    )
 import Test.Tasty.HUnit.Extensions
 
 test_topSimplification :: [TestTree]

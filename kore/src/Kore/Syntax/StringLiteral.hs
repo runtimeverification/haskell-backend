@@ -8,18 +8,21 @@ module Kore.Syntax.StringLiteral
     ( StringLiteral (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Functor.Const
-import           Data.Hashable
-import           Data.Text
-                 ( Text )
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Functor.Const
+import Data.Hashable
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
-       ( FreeVariables )
+    ( FreeVariables
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort

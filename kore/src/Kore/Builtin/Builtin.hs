@@ -68,40 +68,53 @@ module Kore.Builtin.Builtin
     , unifyEqualsUnsolved
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Control.Error
-                 ( MaybeT (..), fromMaybe )
-import           Control.Monad
-                 ( zipWithM_ )
+import Control.Error
+    ( MaybeT (..)
+    , fromMaybe
+    )
+import Control.Monad
+    ( zipWithM_
+    )
 import qualified Control.Monad as Monad
-import           Data.Function
+import Data.Function
 import qualified Data.Functor.Foldable as Recursive
-import           Data.HashMap.Strict
-                 ( HashMap )
+import Data.HashMap.Strict
+    ( HashMap
+    )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           Data.Void
-                 ( Void )
-import           GHC.Stack
-                 ( HasCallStack )
-import           Text.Megaparsec
-                 ( Parsec )
+import Data.Void
+    ( Void
+    )
+import GHC.Stack
+    ( HasCallStack
+    )
+import Text.Megaparsec
+    ( Parsec
+    )
 import qualified Text.Megaparsec as Parsec
 
 import qualified Kore.AST.Error as Kore.Error
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
-import           Kore.ASTVerifier.Error
-                 ( VerifyError )
-import           Kore.Attribute.Attributes
-                 ( Attributes (..) )
+import Kore.ASTVerifier.Error
+    ( VerifyError
+    )
+import Kore.Attribute.Attributes
+    ( Attributes (..)
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
-import           Kore.Attribute.Hook
-                 ( Hook (..) )
+    ( Axiom
+    )
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
@@ -110,44 +123,64 @@ import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Builtin.Error
-import           Kore.Error
-                 ( Error )
+import Kore.Builtin.Error
+import Kore.Error
+    ( Error
+    )
 import qualified Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule, VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SmtMetadataTools )
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule
+    , VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( MetadataTools (MetadataTools)
+    , SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
-import           Kore.Internal.ApplicationSorts
+import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
-import           Kore.Internal.Pattern as Pattern
-                 ( fromTermLike, top )
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
+import Kore.Internal.Pattern as Pattern
+    ( fromTermLike
+    , top
+    )
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    , makeEqualsPredicate
+    )
 import qualified Kore.Proof.Value as Value
-import           Kore.Sort
-                 ( predicateSort )
-import           Kore.Step.Simplification.SimplificationType as SimplificationType
-                 ( SimplificationType (..) )
-import           Kore.Step.Simplification.Simplify
-                 ( AttemptedAxiom (..),
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap, MonadSimplify,
-                 PredicateSimplifier, TermLikeSimplifier,
-                 applicationAxiomSimplifier )
-import           Kore.Step.Simplification.Simplify
+import Kore.Sort
+    ( predicateSort
+    )
+import Kore.Step.Simplification.SimplificationType as SimplificationType
+    ( SimplificationType (..)
+    )
+import Kore.Step.Simplification.Simplify
+    ( AttemptedAxiom (..)
+    , AttemptedAxiomResults (AttemptedAxiomResults)
+    , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
+    , BuiltinAndAxiomSimplifierMap
+    , MonadSimplify
+    , PredicateSimplifier
+    , TermLikeSimplifier
+    , applicationAxiomSimplifier
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Syntax.Definition
-                 ( ParsedSentenceSort, ParsedSentenceSymbol, SentenceSort (..),
-                 SentenceSymbol (..) )
-import           Kore.Unparser
+    ( AttemptedAxiomResults (..)
+    )
+import Kore.Syntax.Definition
+    ( ParsedSentenceSort
+    , ParsedSentenceSymbol
+    , SentenceSort (..)
+    , SentenceSymbol (..)
+    )
+import Kore.Unparser
 import qualified Kore.Verified as Verified
 
 -- TODO (thomas.tuegel): Split up verifiers and evaluators.

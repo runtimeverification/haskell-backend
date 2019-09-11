@@ -12,13 +12,15 @@ module Kore.Step.Condition.Evaluator
     ) where
 
 import qualified Branch
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Simplify
+import Kore.Step.Simplification.Simplify
 
 {- | Attempt to simplify a predicate. -}
 simplify

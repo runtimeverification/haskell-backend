@@ -11,22 +11,24 @@ module Kore.Internal.Alias
     , module Kore.Internal.ApplicationSorts
     ) where
 
-import           Control.DeepSeq
+import Control.DeepSeq
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
-import           Data.Hashable
+import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
-       ( FreeVariables )
+    ( FreeVariables
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.ApplicationSorts
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
-       ( Variable )
+    ( Variable
+    )
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
 

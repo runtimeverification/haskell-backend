@@ -15,22 +15,28 @@ module Kore.ASTHelpers
     ( quantifyFreeVariables
     ) where
 
-import           Control.Comonad.Trans.Cofree
-                 ( CofreeF (..) )
-import           Data.Foldable
-                 ( foldl' )
+import Control.Comonad.Trans.Cofree
+    ( CofreeF (..)
+    )
+import Data.Foldable
+    ( foldl'
+    )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Syntax hiding
-                 ( substituteSortVariables )
-import           Kore.Unparser
-import           Kore.Variables.Free
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..), foldMapVariable )
+import Kore.Syntax hiding
+    ( substituteSortVariables
+    )
+import Kore.Unparser
+import Kore.Variables.Free
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    , foldMapVariable
+    )
 
 
 {-|'quantifyFreeVariables' quantifies all free variables in the given pattern.

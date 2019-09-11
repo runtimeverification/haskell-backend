@@ -12,24 +12,32 @@ module Kore.Step.Simplification.Application
     , Application (..)
     ) where
 
-import           Branch
-                 ( BranchT )
+import Branch
+    ( BranchT
+    )
 import qualified Branch as Branch
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( fullCrossProduct, mergeAll )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+    ( fullCrossProduct
+    , mergeAll
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Step.Function.Evaluator
-                 ( evaluateApplication )
-import           Kore.Step.Simplification.Simplify as Simplifier
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
+import Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
+import Kore.Step.Function.Evaluator
+    ( evaluateApplication
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.Substitution
+    ( mergePredicatesAndSubstitutions
+    )
 
 type ExpandedApplication variable =
     Conditional variable (Application Symbol (TermLike variable))

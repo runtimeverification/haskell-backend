@@ -3,57 +3,84 @@ module Test.Kore.Repl.Interpreter
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( Assertion, testCase, (@?=) )
+    ( Assertion
+    , testCase
+    , (@?=)
+    )
 
-import           Control.Applicative
-import           Control.Concurrent.MVar
+import Control.Applicative
+import Control.Concurrent.MVar
 import qualified Control.Lens as Lens
-import           Control.Monad.Reader
-                 ( runReaderT )
-import           Control.Monad.Trans.State.Strict
-                 ( evalStateT, runStateT )
-import           Data.Coerce
-                 ( coerce )
-import           Data.Function
-import           Data.Generics.Product
-import           Data.IORef
-                 ( IORef, modifyIORef, newIORef, readIORef )
-import           Data.List.NonEmpty
-                 ( NonEmpty (..) )
+import Control.Monad.Reader
+    ( runReaderT
+    )
+import Control.Monad.Trans.State.Strict
+    ( evalStateT
+    , runStateT
+    )
+import Data.Coerce
+    ( coerce
+    )
+import Data.Function
+import Data.Generics.Product
+import Data.IORef
+    ( IORef
+    , modifyIORef
+    , newIORef
+    , readIORef
+    )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
-import           Data.Text
-                 ( pack )
+import Data.Text
+    ( pack
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-                 ( InternalVariable, TermLike, elemVarS, mkBottom_, mkElemVar )
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , TermLike
+    , elemVarS
+    , mkBottom_
+    , mkElemVar
+    )
 import qualified Kore.Logger.Output as Logger
-import           Kore.Repl.Data
-import           Kore.Repl.Interpreter
-import           Kore.Repl.State
-import           Kore.Step.Rule
-import           Kore.Step.Simplification.AndTerms
-                 ( cannotUnifyDistinctDomainValues )
-import           Kore.Step.Simplification.Data
-                 ( Simplifier, evalSimplifier )
-import           Kore.Strategies.Goal
-import           Kore.Strategies.OnePath.Verification
-                 ( verifyClaimStep )
-import           Kore.Syntax.Variable
-                 ( Variable )
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
-import           Kore.Unification.Unify
-                 ( explainBottom )
+import Kore.Repl.Data
+import Kore.Repl.Interpreter
+import Kore.Repl.State
+import Kore.Step.Rule
+import Kore.Step.Simplification.AndTerms
+    ( cannotUnifyDistinctDomainValues
+    )
+import Kore.Step.Simplification.Data
+    ( Simplifier
+    , evalSimplifier
+    )
+import Kore.Strategies.Goal
+import Kore.Strategies.OnePath.Verification
+    ( verifyClaimStep
+    )
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Kore.Unification.Procedure
+    ( unificationProcedure
+    )
+import Kore.Unification.Unify
+    ( explainBottom
+    )
 import qualified SMT
 
 import Test.Kore

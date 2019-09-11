@@ -15,14 +15,17 @@ module Kore.Syntax.PatternF
     , Const (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Functor.Const
-import           Data.Functor.Identity
-                 ( Identity (..) )
-import           Data.Hashable
-import           Data.Text
-                 ( Text )
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Functor.Const
+import Data.Functor.Identity
+    ( Identity (..)
+    )
+import Data.Hashable
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

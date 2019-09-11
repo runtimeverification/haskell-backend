@@ -1,33 +1,40 @@
 module Test.Kore.Step.Condition.Evaluator where
 
 import Hedgehog hiding
-       ( property )
+    ( property
+    )
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Monad.Trans as Trans
 
-import           Kore.Internal.Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeNotPredicate,
-                 makeTruePredicate )
+import Kore.Internal.Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Step.Simplification.Data
+    ( Predicate
+    )
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import           SMT
-                 ( SMT )
+import SMT
+    ( SMT
+    )
 
-import           Test.Kore
+import Test.Kore
 import qualified Test.Kore.Builtin.Bool as Builtin.Bool
-import           Test.Kore.Builtin.Builtin
-                 ( testEnv )
-import           Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.Builtin
+    ( testEnv
+    )
+import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
-import           Test.Kore.Predicate.Predicate ()
-import           Test.SMT
+import Test.Kore.Predicate.Predicate ()
+import Test.SMT
 
 test_andNegation :: TestTree
 test_andNegation =

@@ -1,9 +1,12 @@
 module Test.Kore.Parser.CharDict (test_charDict) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+    ( assertEqual
+    , testCase
+    )
 
 import Kore.Parser.CharDict
 

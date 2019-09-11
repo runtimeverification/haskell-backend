@@ -13,76 +13,102 @@ module Kore.Step.Axiom.Matcher
     , matchIncremental
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Error as Error
-import           Control.Lens
-                 ( (%=), (.=), (<>=) )
+import Control.Lens
+    ( (%=)
+    , (.=)
+    , (<>=)
+    )
 import qualified Control.Lens as Lens
 import qualified Control.Monad as Monad
-import           Control.Monad.State.Strict
-                 ( MonadState, StateT )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT
+    )
 import qualified Control.Monad.State.Strict as Monad.State
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Maybe
-                 ( MaybeT (..) )
+import Control.Monad.Trans.Maybe
+    ( MaybeT (..)
+    )
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Generics.Product
-import           Data.Map
-                 ( Map )
+import Data.Function
+import Data.Generics.Product
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-import           Data.Sequence
-                 ( pattern (:<|), pattern (:|>), Seq )
+import Data.Maybe
+import Data.Sequence
+    ( pattern (:<|)
+    , pattern (:|>)
+    , Seq
+    )
 import qualified Data.Sequence as Seq
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables (..) )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
+    )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike hiding
-                 ( substitute )
+import Kore.Internal.TermLike hiding
+    ( substitute
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate )
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.AndTerms
-                 ( SortInjectionMatch (SortInjectionMatch),
-                 simplifySortInjections )
+import Kore.Step.Simplification.AndTerms
+    ( SortInjectionMatch (SortInjectionMatch)
+    , simplifySortInjections
+    )
 import qualified Kore.Step.Simplification.AndTerms as SortInjectionMatch
-                 ( SortInjectionMatch (..) )
+    ( SortInjectionMatch (..)
+    )
 import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplification
-                 ( SortInjectionSimplification (..) )
-import           Kore.Step.Simplification.Simplify
-                 ( SimplifierVariable )
+    ( SortInjectionSimplification (..)
+    )
+import Kore.Step.Simplification.Simplify
+    ( SimplifierVariable
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
-import           Kore.Unification.Error
-                 ( unsupportedPatterns )
+import Kore.Unification.Error
+    ( unsupportedPatterns
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( MonadUnify )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.Binding
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.Unparser
+import Kore.Variables.Binding
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
 import qualified Kore.Variables.Fresh as Variables
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 -- * Matching
 

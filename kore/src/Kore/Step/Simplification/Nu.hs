@@ -8,7 +8,8 @@ module Kore.Step.Simplification.Nu
     ) where
 
 import Kore.Internal.OrPattern
-       ( OrPattern )
+    ( OrPattern
+    )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 
