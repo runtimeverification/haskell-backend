@@ -11,6 +11,7 @@ import Data.Text
 import GHC.Stack
        ( HasCallStack )
 
+import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
 import           Kore.Internal.Pattern
 import           Kore.Internal.TermLike
@@ -308,6 +309,24 @@ test_string2Int =
         string2IntStringSymbol
         [asInternal "baad"]
         bottom
+    ]
+
+test_token2String :: [TestTree]
+test_token2String =
+    [ testString
+        "STRING.token2string(\\dv{userTokenSortId{}}('test')) is 'test'"
+        token2StringStringSymbol
+        [Builtin.makeDomainValueTerm userTokenSort "test"]
+        (asPattern "test")
+    ]
+
+test_string2Token :: [TestTree]
+test_string2Token =
+    [ testString
+        "STRING.string2token('test') is \\dv{userTokenSortId{}}('test')"
+        string2TokenStringSymbol
+        [asInternal "test"]
+        (Builtin.makeDomainValuePattern userTokenSort "test")
     ]
 
 -- | Another name for 'asInternal'.

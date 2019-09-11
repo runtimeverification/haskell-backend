@@ -78,11 +78,10 @@ import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
-                 ( MonadUnify )
+                 ( MonadUnify, SimplifierVariable )
 import qualified Kore.Unification.Unify as Monad.Unify
                  ( gather, scatter )
 import           Kore.Unparser
-import           Kore.Variables.Fresh
 import           Kore.Variables.Target
                  ( Target )
 import qualified Kore.Variables.Target as Target
@@ -96,13 +95,7 @@ import           Kore.Variables.UnifiedVariable
 newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier
-        .   ( SortedVariable variable
-            , Ord variable
-            , Show variable
-            , Unparse variable
-            , FreshVariable variable
-            , MonadUnify unifier
-            )
+        .  (SimplifierVariable variable, MonadUnify unifier)
         => TermLike variable
         -> TermLike variable
         -> unifier (Predicate variable)
@@ -146,11 +139,7 @@ unwrapRule = Rule.mapVariables Target.unwrapVariable
  -}
 unwrapAndQuantifyConfiguration
     :: forall variable
-    .   ( Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    .  InternalVariable variable
     => Pattern (Target variable)
     -> Pattern variable
 unwrapAndQuantifyConfiguration config@Conditional { substitution } =
@@ -200,11 +189,7 @@ unification. The substitution is not applied to the renamed rule.
  -}
 unifyRule
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -238,11 +223,7 @@ unifyRule
 
 unifyRules
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -266,11 +247,7 @@ The rule is considered to apply if the result is not @\\bottom@.
  -}
 applyInitialConditions
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -309,11 +286,7 @@ See also: 'applyInitialConditions'
  -}
 finalizeAppliedRule
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -350,11 +323,7 @@ finalizeAppliedRule renamedRule appliedConditions =
  -}
 applyRemainder
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -383,11 +352,7 @@ toConfigurationVariables
 toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
 finalizeRule
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -409,11 +374,7 @@ finalizeRule initialCondition unifiedRule =
 
 finalizeRulesParallel
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
@@ -436,11 +397,7 @@ finalizeRulesParallel initial unifiedRules = do
 
 finalizeRulesSequence
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
@@ -491,13 +448,8 @@ we added to the result.
 the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
-    ::  forall variable unifier
-    .   ( SortedVariable variable
-        , Ord     variable
-        , Show    variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
+    :: forall variable unifier
+    .  (SimplifierVariable variable, MonadUnify unifier)
     => Pattern (Target variable)
     -- ^ Initial configuration
     -> UnifiedRule (Target variable)
@@ -560,11 +512,7 @@ See also: 'applyRewriteRule'
  -}
 applyRulesParallel
     ::  forall unifier variable
-    .   ( Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -591,11 +539,7 @@ See also: 'applyRewriteRule'
  -}
 applyRewriteRulesParallel
     ::  forall unifier variable
-    .   ( Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -615,11 +559,7 @@ See also: 'applyRewriteRule'
  -}
 applyRulesSequence
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -646,11 +586,7 @@ See also: 'applyRewriteRulesParallel'
  -}
 applyRewriteRulesSequence
     ::  forall unifier variable
-    .   ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , FreshVariable  variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )

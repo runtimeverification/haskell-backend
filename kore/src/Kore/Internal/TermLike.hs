@@ -120,6 +120,8 @@ module Kore.Internal.TermLike
     , pattern CharLiteral_
     , pattern Evaluated_
     -- * Re-exports
+    , module Kore.Internal.Variable
+    , Substitute.SubstitutionVariable
     , Symbol (..)
     , Alias (..)
     , SortedVariable (..)
@@ -147,8 +149,6 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.Nu
     , module Kore.Syntax.Or
     , module Kore.Syntax.Rewrites
-    , module Kore.Syntax.ElementVariable
-    , module Kore.Syntax.SetVariable
     , module Kore.Syntax.StringLiteral
     , module Kore.Syntax.Top
     , module Variable
@@ -204,6 +204,7 @@ import qualified Kore.Domain.Builtin as Domain
 import           Kore.Error
 import           Kore.Internal.Alias
 import           Kore.Internal.Symbol
+import           Kore.Internal.Variable
 import           Kore.Sort
 import qualified Kore.Substitute as Substitute
 import           Kore.Syntax.And
@@ -215,7 +216,6 @@ import           Kore.Syntax.Definition hiding
                  ( Alias, Symbol )
 import qualified Kore.Syntax.Definition as Syntax
 import           Kore.Syntax.DomainValue
-import           Kore.Syntax.ElementVariable
 import           Kore.Syntax.Equals
 import           Kore.Syntax.Exists
 import           Kore.Syntax.Floor
@@ -231,7 +231,6 @@ import           Kore.Syntax.Not
 import           Kore.Syntax.Nu
 import           Kore.Syntax.Or
 import           Kore.Syntax.Rewrites
-import           Kore.Syntax.SetVariable
 import           Kore.Syntax.StringLiteral
 import           Kore.Syntax.Top
 import           Kore.Syntax.Variable as Variable
@@ -732,11 +731,7 @@ may appear in the right-hand side of any substitution, but this is not checked.
  -}
 -- TODO (thomas.tuegel): This should normalize internal representations.
 substitute
-    ::  ( FreshVariable variable
-        , Ord variable
-        , SortedVariable variable
-        , Show variable
-        )
+    ::  Substitute.SubstitutionVariable variable
     =>  Map (UnifiedVariable variable) (TermLike variable)
     ->  TermLike variable
     ->  TermLike variable
@@ -1153,7 +1148,7 @@ applyAlias sentence params children =
                 symbolOrAliasSorts params sentence
                 & assertRight
             , aliasLeft =
-                fmap getElementVariable
+                fmap (foldMapVariable id)
                 . applicationChildren
                 . sentenceAliasLeftPattern
                 $ sentence
@@ -1774,7 +1769,7 @@ mkAlias
     :: Id
     -> [SortVariable]
     -> Sort
-    -> [ElementVariable Variable]
+    -> [UnifiedVariable Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias aliasConstructor aliasParams resultSort' arguments right =
@@ -1800,7 +1795,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
         , sentenceAliasAttributes = Attributes []
         }
   where
-    argumentSorts = variableSort . getElementVariable <$> arguments
+    argumentSorts = foldMapVariable variableSort <$> arguments
 
 {- | Construct an alias declaration with no parameters.
 
@@ -1810,7 +1805,7 @@ See also: 'mkAlias'
 mkAlias_
     :: Id
     -> Sort
-    -> [ElementVariable Variable]
+    -> [UnifiedVariable Variable]
     -> TermLike Variable
     -> SentenceAlias (TermLike Variable)
 mkAlias_ aliasConstructor = mkAlias aliasConstructor []

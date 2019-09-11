@@ -29,14 +29,11 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplify )
 import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap, Env (..), MonadSimplify,
-                 PredicateSimplifier, TermLikeSimplifier, evalSimplifier )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
+                 ( Env (..), MonadSimplify, evalSimplifier )
+import           Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.Fresh

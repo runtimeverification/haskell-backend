@@ -8,6 +8,7 @@ module Kore.Step.Merging.OrPattern
     , mergeWithPredicateAssumesEvaluated
     ) where
 
+import qualified Branch as BranchT
 import           Kore.Internal.MultiOr
                  ( MultiOr )
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -19,26 +20,17 @@ import           Kore.Internal.Pattern
 import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+import           Kore.Step.Simplification.Simplify
 import           Kore.Step.Substitution
                  ( PredicateMerger )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import           Kore.TopBottom
                  ( TopBottom )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {-| 'mergeWithPredicate' ands the given predicate/substitution
 to the given OrPattern.
 -}
 mergeWithPredicate
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -58,14 +50,7 @@ Assumes that the initial patterns are simplified, so it does not attempt
 to re-simplify them.
 -}
 mergeWithPredicateAssumesEvaluated
-    ::  ( FreshVariable variable
-        , Monad m
-        , Ord term
-        , Show variable
-        , SortedVariable variable
-        , TopBottom term
-        , Unparse variable
-        )
+    :: (SimplifierVariable variable, Monad m, TopBottom term)
     => PredicateMerger variable m
     -> Predicate variable
     -- ^ Predicate to add.

@@ -36,7 +36,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import           Kore.Step.Rule
                  ( ImplicationRule (ImplicationRule), RewriteRule,
                  RulePattern (..) )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
                  ( MonadSimplify )
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..), GraphSearchOrder, Strategy, pickFinal,

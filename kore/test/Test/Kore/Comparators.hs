@@ -35,7 +35,6 @@ import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
 import           Kore.Domain.Builtin as Domain
 import           Kore.Error
-import           Kore.Goal
 import           Kore.Internal.MultiOr
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
@@ -48,9 +47,9 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import           Kore.Step.Rule
                  ( OnePathRule (..), RulePattern (..) )
-import           Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Simplify as AttemptedAxiom
                  ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data as AttemptedAxiomResults
+import           Kore.Step.Simplification.Simplify as AttemptedAxiomResults
                  ( AttemptedAxiomResults (..) )
 import qualified Kore.Step.SMT.AST as SMT
                  ( Declarations (Declarations), Encodable,
@@ -70,6 +69,7 @@ import qualified Kore.Step.SMT.AST as SMT.SymbolReference
                  ( SymbolReference (..) )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
                  ( IndirectSymbolDeclaration (..) )
+import           Kore.Strategies.ProofState
 import           Kore.Syntax as Syntax
 import           Kore.Syntax.Sentence as Syntax
 import           Kore.Unification.Error

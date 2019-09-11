@@ -38,6 +38,8 @@ module Kore.Builtin.String
     , string2BaseKey
     , chrKey
     , ordKey
+    , token2StringKey
+    , string2TokenKey
     ) where
 
 import           Control.Applicative
@@ -135,6 +137,16 @@ symbolVerifiers =
     ,   ( ordKey
         , Builtin.verifySymbol Int.assertSort [assertSort]
         )
+    ,   ( token2StringKey
+        , Builtin.verifySymbol
+            assertSort
+            [Builtin.verifySortHasDomainValues]
+        )
+    ,   ( string2TokenKey
+        , Builtin.verifySymbol
+            Builtin.verifySortHasDomainValues
+            [assertSort]
+        )
     ]
 
 {- | Verify that domain value patterns are well-formed.
@@ -230,7 +242,7 @@ asInternal internalStringSort internalStringValue =
 
  -}
 asTermLike
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Domain.InternalString  -- ^ builtin value to render
     -> TermLike variable
 asTermLike internal =
@@ -243,7 +255,7 @@ asTermLike internal =
     Domain.InternalString { internalStringValue } = internal
 
 asPattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Text  -- ^ builtin value to render
     -> Pattern variable
@@ -251,7 +263,7 @@ asPattern resultSort =
     Pattern.fromTermLike . asInternal resultSort
 
 asPartialPattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Maybe Text  -- ^ builtin value to render
     -> Pattern variable
@@ -284,6 +296,12 @@ chrKey = "STRING.chr"
 
 ordKey :: IsString s => s
 ordKey = "STRING.ord"
+
+token2StringKey :: IsString s => s
+token2StringKey = "STRING.token2string"
+
+string2TokenKey :: IsString s => s
+string2TokenKey = "STRING.string2token"
 
 evalSubstr :: Builtin.Function
 evalSubstr = Builtin.functionEvaluator evalSubstr0
@@ -422,6 +440,33 @@ evalOrd = Builtin.functionEvaluator evalOrd0
             . toInteger
             . ord
 
+evalToken2String :: Builtin.Function
+evalToken2String = Builtin.functionEvaluator evalToken2String0
+  where
+      evalToken2String0 _ resultSort arguments =
+          Builtin.getAttemptedAxiom $ do
+              let _dv =
+                      case arguments of
+                          [_dv] -> _dv
+                          _     -> Builtin.wrongArity token2StringKey
+              _dv <- Builtin.expectDomainValue token2StringKey _dv
+              Builtin.appliedFunction . asPattern resultSort $ _dv
+
+evalString2Token :: Builtin.Function
+evalString2Token = Builtin.functionEvaluator evalString2Token0
+  where
+      evalString2Token0 _ resultSort arguments =
+          Builtin.getAttemptedAxiom $ do
+              let _str =
+                      case arguments of
+                          [_str] -> _str
+                          _     -> Builtin.wrongArity token2StringKey
+              _str <- expectBuiltinString string2TokenKey _str
+              Builtin.appliedFunction
+                 $ Builtin.makeDomainValuePattern
+                    resultSort
+                    _str
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -436,6 +481,8 @@ builtinFunctions =
     , (string2IntKey, evalString2Int)
     , (chrKey, evalChr)
     , (ordKey, evalOrd)
+    , (token2StringKey, evalToken2String)
+    , (string2TokenKey, evalString2Token)
     ]
   where
     comparator name op =

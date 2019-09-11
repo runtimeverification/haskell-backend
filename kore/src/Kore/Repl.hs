@@ -43,9 +43,7 @@ import           Text.Megaparsec
                  ( parseMaybe )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Goal
 import qualified Kore.Logger as Logger
-import           Kore.OnePath.Verification
 import           Kore.Repl.Data
 import           Kore.Repl.Interpreter
 import           Kore.Repl.Parser
@@ -54,6 +52,8 @@ import qualified Kore.Step.Rule as Rule
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
+import           Kore.Strategies.Goal
+import           Kore.Strategies.OnePath.Verification
 import           Kore.Syntax.Variable
 import           Kore.Unification.Procedure
                  ( unificationProcedure )

@@ -36,7 +36,7 @@ import           Kore.Logger
                  ( WithLog (..) )
 import           Kore.Profiler.Data
                  ( MonadProfiler )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
                  ( MonadSimplify (..) )
 import           ListT
                  ( ListT, mapListT )

@@ -17,7 +17,6 @@ import           Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Unparser
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -37,11 +36,7 @@ For this reason, we don't even try to see if the variable actually occurs in
 the pattern except for the top/bottom cases.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Forall Sort variable (OrPattern variable)
     -> OrPattern variable
 simplify
@@ -63,11 +58,7 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => ElementVariable variable
     -> OrPattern variable
     -> OrPattern variable
@@ -81,11 +72,7 @@ simplifyEvaluated variable simplified
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => ElementVariable variable
     -> Pattern variable
     -> Pattern variable

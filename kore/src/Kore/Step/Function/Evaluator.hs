@@ -19,6 +19,7 @@ import           Data.Maybe
                  ( fromMaybe )
 import qualified Data.Text as Text
 
+import qualified Branch as BranchT
 import           Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Attribute.Synthetic
@@ -42,27 +43,18 @@ import           Kore.Step.Axiom.Identifier
                  ( AxiomIdentifier )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import           Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+import           Kore.Step.Simplification.Simplify as AttemptedAxiom
+                 ( AttemptedAxiom (..) )
+import           Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 
 {-| Evaluates functions on an application pattern.
 -}
 evaluateApplication
-    ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -- ^ The predicate from the configuration
     -> Predicate variable
@@ -119,10 +111,7 @@ evaluateApplication configurationPredicate childrenPredicate application = do
 -}
 evaluatePattern
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -167,10 +156,7 @@ Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
     ::  forall variable simplifier
-    .   ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -314,10 +300,7 @@ evaluateSortInjection ap
 was evaluated.
 -}
 reevaluateFunctions
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -334,10 +317,7 @@ reevaluateFunctions rewriting = do
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
