@@ -9,6 +9,7 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
+import           Branch
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.OrPredicate
@@ -23,14 +24,12 @@ import           Kore.Step.Axiom.EvaluationStrategy
                  ( firstFullEvaluation )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
-import           Kore.Step.Simplification.Data hiding
-                 ( runSimplifier )
+import           Kore.Step.Simplification.Data
+                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
                  ( create )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import qualified SMT
@@ -285,11 +284,7 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeEvaluator
-    ::  (forall variable
-        .   ( FreshVariable variable
-            , SortedVariable variable
-            , Unparse variable
-            )
+    :: (forall variable. SimplifierVariable variable
         => [(TermLike variable, TermLike variable)]
         )
     -> BuiltinAndAxiomSimplifier
@@ -298,10 +293,7 @@ makeEvaluator mapping =
     $ const $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
     -> Predicate variable

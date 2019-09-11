@@ -35,19 +35,13 @@ import qualified Kore.Proof.Value as Value
 import           Kore.Step.Axiom.Evaluate
 import           Kore.Step.Rule
                  ( EqualityRule )
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap,
-                 MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
                  ( AttemptedAxiom (..), hasRemainders )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+                 ( AttemptedAxiomResults (..) )
 import           Kore.Unparser
-                 ( Unparse, unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+                 ( unparse )
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -92,13 +86,8 @@ totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
   where
     totalDefinitionEvaluationWorker
-        ::  forall variable simplifier
-        .   ( FreshVariable variable
-            , SortedVariable variable
-            , Show variable
-            , Unparse variable
-            , MonadSimplify simplifier
-            )
+        :: forall variable simplifier
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
@@ -147,12 +136,7 @@ builtinEvaluation evaluator =
 
 evaluateBuiltin
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -193,12 +177,7 @@ evaluateBuiltin
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> PredicateSimplifier

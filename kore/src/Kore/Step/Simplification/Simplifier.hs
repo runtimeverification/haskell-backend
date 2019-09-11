@@ -12,7 +12,7 @@ module Kore.Step.Simplification.Simplifier
     ( create
     ) where
 
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
                  ( simplifyToOr )
 

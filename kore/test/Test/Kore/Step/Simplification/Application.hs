@@ -24,12 +24,10 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-                 ( Unparse )
-import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import qualified SMT
@@ -188,20 +186,12 @@ test_applicationSimplification =
                 let
                     zvar
                         :: forall variable
-                        .   ( FreshVariable variable
-                            , Ord variable
-                            , SortedVariable variable
-                            )
+                        .  InternalVariable variable
                         => ElementVariable variable
                     zvar = fromVariable <$> z'
                     result
                         :: forall variable
-                        .   ( FreshVariable variable
-                            , Ord variable
-                            , Show variable
-                            , SortedVariable variable
-                            , Unparse variable
-                            )
+                        .  SimplifierVariable variable
                         => AttemptedAxiom variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns
@@ -246,9 +236,7 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB, gOfA, gOfB
-        :: (Ord variable, SortedVariable variable, Unparse variable)
-        => TermLike variable
+    fOfA, fOfB, gOfA, gOfB :: InternalVariable variable => TermLike variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
@@ -275,9 +263,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded
-        :: (Ord variable, SortedVariable variable, Unparse variable)
-        => Pattern variable
+    gOfAExpanded :: InternalVariable variable => Pattern variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate

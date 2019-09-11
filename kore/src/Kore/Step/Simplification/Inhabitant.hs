@@ -16,7 +16,7 @@ import           Kore.Internal.TermLike
 an or containing a term made of that literal.
 -}
 simplify
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Inhabitant (OrPattern variable)
     -> OrPattern variable
 simplify Inhabitant { inhSort } = OrPattern.fromTermLike $ mkInhabitant inhSort

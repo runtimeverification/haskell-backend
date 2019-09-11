@@ -41,8 +41,6 @@ import qualified Kore.Step.Simplification.AndTerms as AndTerms
                  ( termEquals )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, makeEvaluateTerm )
-import           Kore.Step.Simplification.Data as Simplifier hiding
-                 ( Equals )
 import qualified Kore.Step.Simplification.Iff as Iff
                  ( makeEvaluate )
 import qualified Kore.Step.Simplification.Implies as Implies
@@ -51,9 +49,8 @@ import qualified Kore.Step.Simplification.Not as Not
                  ( simplifyEvaluated )
 import qualified Kore.Step.Simplification.Or as Or
                  ( simplifyEvaluated )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 
@@ -131,12 +128,7 @@ Normalization of the compared terms is not implemented yet, so
 Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -157,12 +149,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> OrPattern variable
     -> OrPattern variable
@@ -191,12 +178,7 @@ simplifyEvaluated predicate first second
 
 makeEvaluateFunctionalOr
     :: forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Pattern variable
     -> [Pattern variable]
@@ -236,12 +218,7 @@ makeEvaluateFunctionalOr predicate first seconds = do
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Pattern variable
     -> Pattern variable
     -> Predicate variable
@@ -290,12 +267,7 @@ makeEvaluate
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottom
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
@@ -317,12 +289,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
 -- assumes that some extra conditions will be added on the outside
 makeEvaluateTermsAssumesNoBottomMaybe
     :: forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
     -> MaybeT simplifier (OrPattern variable)
@@ -341,12 +308,7 @@ because it returns an 'or').
 See 'simplify' for detailed documentation.
 -}
 makeEvaluateTermsToPredicate
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
     -> Predicate variable
