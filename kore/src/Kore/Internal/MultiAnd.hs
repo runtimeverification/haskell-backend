@@ -18,21 +18,29 @@ module Kore.Internal.MultiAnd
     , toPredicate
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.DeepSeq
-                 ( NFData )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Data.Set as Set
-import           GHC.Exts
-                 ( IsList )
-import           GHC.Generics
-                 ( Generic )
+import GHC.Exts
+    ( IsList
+    )
+import GHC.Generics
+    ( Generic
+    )
 
 import Kore.Internal.Variable
 import Kore.Predicate.Predicate
-       ( Predicate, makeAndPredicate, makeTruePredicate )
+    ( Predicate
+    , makeAndPredicate
+    , makeTruePredicate
+    )
 import Kore.TopBottom
-       ( TopBottom (..) )
+    ( TopBottom (..)
+    )
 
 {-| 'MultiAnd' is a Matching logic and of its children
 

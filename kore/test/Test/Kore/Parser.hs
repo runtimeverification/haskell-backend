@@ -1,14 +1,22 @@
 module Test.Kore.Parser where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( Assertion, assertBool, assertEqual, testCase )
+    ( Assertion
+    , assertBool
+    , assertEqual
+    , testCase
+    )
 
 import Data.Either
-       ( isLeft )
+    ( isLeft
+    )
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 import Kore.Parser.ParserUtils
 

@@ -21,47 +21,59 @@ module Test.Kore.Step.Axiom.Matcher
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Function
-                 ( on )
+import Data.Function
+    ( on
+    )
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( make )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
+    ( make
+    )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Predicate
-                 ( Conditional (..) )
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.Matcher
-                 ( matchIncremental )
-import           Kore.Step.Simplification.Data
-import           Kore.Unification.Error
-                 ( UnificationError (..), UnificationOrSubstitutionError (..) )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.Matcher
+    ( matchIncremental
+    )
+import Kore.Step.Simplification.Data
+import Kore.Unification.Error
+    ( UnificationError (..)
+    , UnificationOrSubstitutionError (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 import qualified SMT
 
-import           Test.Kore
-                 ( emptyLogger, testId )
+import Test.Kore
+    ( emptyLogger
+    , testId
+    )
 import qualified Test.Kore.Builtin.Builtin as Test
 import qualified Test.Kore.Builtin.Definition as Test
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Map as Test.Map
 import qualified Test.Kore.Builtin.Set as Test.Set
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =

@@ -10,37 +10,54 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Conditional
-import           Kore.Internal.Predicate
-                 ( Conditional (..), Predicate )
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
-                 makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
-                 makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
-                 makeTruePredicate )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.Step.Simplification.Equals
-                 ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( pattern PredicateFalse
+    , makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeIffPredicate
+    , makeImpliesPredicate
+    , makeMultipleAndPredicate
+    , makeNotPredicate
+    , makeOrPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Simplification.Data
+    ( evalSimplifier
+    )
+import Kore.Step.Simplification.Equals
+    ( makeEvaluate
+    , makeEvaluateTermsToPredicate
+    , simplify
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_equalsSimplification_Or_Pattern :: [TestTree]
 test_equalsSimplification_Or_Pattern =

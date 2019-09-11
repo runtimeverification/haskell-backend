@@ -10,83 +10,106 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Control.Lens as Lens
-import           Data.Function
-import           Data.Generics.Product
-import           Data.Map
-                 ( Map )
+import Data.Function
+import Data.Generics.Product
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Maybe
-import           Data.Proxy
-import           Prelude hiding
-                 ( succ )
+import Data.Maybe
+import Data.Proxy
+import Prelude hiding
+    ( succ
+    )
 
-import           Data.Sup
-import           Kore.ASTVerifier.DefinitionVerifier
-import           Kore.ASTVerifier.Error
-                 ( VerifyError )
+import Data.Sup
+import Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.Error
+    ( VerifyError
+    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
-                 ( builtinFunctions )
+    ( builtinFunctions
+    )
 import qualified Kore.Builtin.Map as Map
-                 ( builtinFunctions )
+    ( builtinFunctions
+    )
 import qualified Kore.Error
-import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeTruePredicate )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( builtinEvaluation, definitionEvaluation,
-                 firstFullEvaluation, simplificationEvaluation,
-                 simplifierWithFallback )
-import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
+    ( Predicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( builtinEvaluation
+    , definitionEvaluation
+    , firstFullEvaluation
+    , simplificationEvaluation
+    , simplifierWithFallback
+    )
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Rule
-                 ( EqualityRule (..) )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..), rulePattern )
-import           Kore.Step.Simplification.Data
+import Kore.Step.Rule
+    ( EqualityRule (..)
+    )
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    , rulePattern
+    )
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Simplification.Simplify
-import           Kore.Step.Simplification.Simplify as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+import Kore.Step.Simplification.Simplify
+import Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    )
 import qualified Kore.Step.Simplification.TermLike as TermLike
-import           Kore.Syntax.Definition hiding
-                 ( Symbol (..) )
+import Kore.Syntax.Definition hiding
+    ( Symbol (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
+import Test.Kore
 import qualified Test.Kore.Builtin.Bool as Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
-import           Test.Kore.Comparators ()
-import           Test.Kore.Step.Axiom.Matcher
-                 ( doesn'tMatch, matches )
+import Test.Kore.Comparators ()
+import Test.Kore.Step.Axiom.Matcher
+    ( doesn'tMatch
+    , matches
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_functionIntegration :: [TestTree]
 test_functionIntegration =

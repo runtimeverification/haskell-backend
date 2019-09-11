@@ -8,20 +8,29 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Data.Functor.Identity
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Data.Functor.Identity
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Sequence as Seq
-import           Numeric.Natural
-import           Prelude hiding
-                 ( and, const, or, seq )
+import Numeric.Natural
+import Prelude hiding
+    ( and
+    , const
+    , or
+    , seq
+    )
 
-import           Data.Limit
-                 ( Limit (..) )
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.Limit as Limit
-import           Kore.Step.Strategy
-                 ( ExecutionGraph (..), Strategy, TransitionT )
+import Kore.Step.Strategy
+    ( ExecutionGraph (..)
+    , Strategy
+    , TransitionT
+    )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 

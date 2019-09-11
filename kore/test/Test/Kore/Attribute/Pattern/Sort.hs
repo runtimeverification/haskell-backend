@@ -8,10 +8,12 @@ import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Internal.TermLike
-       ( TermLikeF (..) )
+    ( TermLikeF (..)
+    )
 import Kore.Sort
 import Kore.Syntax hiding
-       ( PatternF (..) )
+    ( PatternF (..)
+    )
 import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock

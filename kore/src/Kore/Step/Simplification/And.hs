@@ -16,26 +16,34 @@ module Kore.Step.Simplification.And
     ) where
 
 import Control.Applicative
-       ( Alternative (empty) )
+    ( Alternative (empty)
+    )
 import Control.Monad
-       ( foldM )
+    ( foldM
+    )
 import Data.List
-       ( foldl1', nub )
+    ( foldl1'
+    , nub
+    )
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
-import           Branch
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+import Branch
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
-                 ( termAnd )
-import           Kore.Step.Simplification.Simplify
+    ( termAnd
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.

@@ -3,20 +3,23 @@ module Test.Kore.Step.PatternAttributes
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
 import Kore.Internal.TermLike
 import Kore.Proof.Functional as Proof.Functional
 import Kore.Step.PatternAttributes
 import Kore.Step.PatternAttributesError
-       ( ConstructorLikeError (..) )
+    ( ConstructorLikeError (..)
+    )
 
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 newtype LevelInt level = LevelInt Int
 newtype LevelString level = LevelString String

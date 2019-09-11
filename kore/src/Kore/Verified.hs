@@ -14,8 +14,10 @@ module Kore.Verified
     , SentenceSymbol
     ) where
 
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
+import Kore.Internal.TermLike
+    ( TermLike
+    , Variable
+    )
 import qualified Kore.Syntax.Sentence as Syntax
 
 type Pattern = TermLike Variable

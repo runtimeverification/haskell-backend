@@ -57,41 +57,53 @@ module Kore.Attribute.Parser
     , module Kore.Syntax.Application
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Monad as Monad
-import           Control.Monad.Except
-                 ( MonadError )
+import Control.Monad.Except
+    ( MonadError
+    )
 import qualified Control.Monad.Except as Monad.Except
-import           Data.Default
-                 ( Default (..) )
+import Data.Default
+    ( Default (..)
+    )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           GHC.Generics
-                 ( Generic )
+import GHC.Generics
+    ( Generic
+    )
 
-import           Kore.AST.Common
+import Kore.AST.Common
 import qualified Kore.AST.Error as Kore.Error
-import           Kore.Attribute.Attributes
+import Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute
-                 ( Null )
+    ( Null
+    )
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
-import           Kore.Error
-                 ( Error, castError )
+import Kore.Error
+    ( Error
+    , castError
+    )
 import qualified Kore.Error
-import           Kore.Sort
-import           Kore.Syntax.Application
-import           Kore.Syntax.Pattern
-import           Kore.Syntax.StringLiteral
-                 ( StringLiteral (StringLiteral) )
-import           SMT.SimpleSMT
-                 ( SExpr, readSExprs, showSExpr )
+import Kore.Sort
+import Kore.Syntax.Application
+import Kore.Syntax.Pattern
+import Kore.Syntax.StringLiteral
+    ( StringLiteral (StringLiteral)
+    )
+import SMT.SimpleSMT
+    ( SExpr
+    , readSExprs
+    , showSExpr
+    )
 
 data ParseError
 

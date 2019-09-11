@@ -1,20 +1,25 @@
 module Test.Kore.Parser.Parser (test_koreParser) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 
 import Data.Text
-       ( Text )
+    ( Text
+    )
 
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Parser.Parser
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
+import Kore.Parser.Parser
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
 
 import Test.Kore hiding
-       ( sortVariable, sortVariableSort )
+    ( sortVariable
+    , sortVariableSort
+    )
 import Test.Kore.Parser
 
 test_koreParser :: [TestTree]

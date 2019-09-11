@@ -14,33 +14,48 @@ module Test.Kore.Step.SMT.Representation.Builders
 import Test.Kore.Step.SMT.Builders ()
 
 import qualified Data.Map as Map
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Sort as Kore
-                 ( Sort )
+    ( Sort
+    )
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations), Encodable (AlreadyEncoded),
-                 IndirectSymbolDeclaration (IndirectSymbolDeclaration),
-                 KoreSortDeclaration (..), KoreSymbolDeclaration (..),
-                 Sort (Sort), SortReference (SortReference),
-                 SortReference (SortReference), Symbol (Symbol),
-                 SymbolReference (SymbolReference), UnresolvedConstructor,
-                 UnresolvedConstructorArgument, UnresolvedSort,
-                 UnresolvedSymbol, encodable, encode )
+    ( Declarations (Declarations)
+    , Encodable (AlreadyEncoded)
+    , IndirectSymbolDeclaration (IndirectSymbolDeclaration)
+    , KoreSortDeclaration (..)
+    , KoreSymbolDeclaration (..)
+    , Sort (Sort)
+    , SortReference (SortReference)
+    , SortReference (SortReference)
+    , Symbol (Symbol)
+    , SymbolReference (SymbolReference)
+    , UnresolvedConstructor
+    , UnresolvedConstructorArgument
+    , UnresolvedSort
+    , UnresolvedSymbol
+    , encodable
+    , encode
+    )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Syntax.Id as Kore
-                 ( Id )
+    ( Id
+    )
 import qualified SMT.AST as AST
-                 ( Constructor (Constructor),
-                 ConstructorArgument (ConstructorArgument),
-                 DataTypeDeclaration (DataTypeDeclaration),
-                 FunctionDeclaration (FunctionDeclaration), SExpr (Atom),
-                 SortDeclaration (SortDeclaration) )
+    ( Constructor (Constructor)
+    , ConstructorArgument (ConstructorArgument)
+    , DataTypeDeclaration (DataTypeDeclaration)
+    , FunctionDeclaration (FunctionDeclaration)
+    , SExpr (Atom)
+    , SortDeclaration (SortDeclaration)
+    )
 import qualified SMT.AST as AST.DoNotUse
 
 import Test.Kore
-       ( testId )
+    ( testId
+    )
 
 emptyDeclarations :: AST.Declarations sort symbol name
 emptyDeclarations = AST.Declarations {sorts = Map.empty, symbols = Map.empty}

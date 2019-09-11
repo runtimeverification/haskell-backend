@@ -3,32 +3,43 @@ module Test.Kore.Step.SMT.Evaluator where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.Internal.Conditional
-                 ( Conditional (Conditional) )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( make )
-import           Kore.Internal.Pattern
-                 ( Pattern )
-import           Kore.Internal.TermLike
-                 ( TermLike, mkElemVar )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate )
+    ( make
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkElemVar
+    )
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Step.Simplification.Data
+    ( Predicate
+    )
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import           Kore.Syntax.Variable
-                 ( Variable )
+import Kore.Syntax.Variable
+    ( Variable
+    )
 
-import           Test.Kore.Comparators ()
-import           Test.Kore.Predicate.Predicate ()
+import Test.Kore.Comparators ()
+import Test.Kore.Predicate.Predicate ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.SMT
-import           Test.Tasty.HUnit.Extensions
+import Test.SMT
+import Test.Tasty.HUnit.Extensions
 
 contradictoryPredicate :: Syntax.Predicate Variable
 contradictoryPredicate =

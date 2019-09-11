@@ -57,11 +57,13 @@ module Test.Terse
 
 import Control.Exception
 import Data.Foldable
-       ( traverse_ )
+    ( traverse_
+    )
 
 import Prelude
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
 import Test.Tasty.HUnit.Extensions
 

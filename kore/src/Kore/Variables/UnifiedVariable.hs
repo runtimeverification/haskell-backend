@@ -11,13 +11,15 @@ module Kore.Variables.UnifiedVariable
     , foldMapVariable
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Functor.Const
-import           Data.Hashable
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Functor.Const
+import Data.Hashable
 import qualified Generics.SOP as SOP
-import           GHC.Generics
-                 ( Generic )
+import GHC.Generics
+    ( Generic
+    )
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
@@ -25,7 +27,8 @@ import Kore.Sort
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
-       ( SortedVariable (..) )
+    ( SortedVariable (..)
+    )
 import Kore.Unparser
 
 {- | @UnifiedVariable@ helps distinguish set variables (introduced by 'SetVar')

@@ -12,44 +12,63 @@ module Kore.Step.Search
     , matchWith
     ) where
 
-import           Control.Error
-                 ( MaybeT (..), nothing )
-import           Control.Error.Util
-                 ( hush )
+import Control.Error
+    ( MaybeT (..)
+    , nothing
+    )
+import Control.Error.Util
+    ( hush
+    )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Class
-                 ( lift )
-import           Data.Maybe
-                 ( catMaybes )
-import           Numeric.Natural
-                 ( Natural )
+import Control.Monad.Trans.Class
+    ( lift
+    )
+import Data.Maybe
+    ( catMaybes
+    )
+import Numeric.Natural
+    ( Natural
+    )
 
-import           Branch
-                 ( BranchT )
+import Branch
+    ( BranchT
+    )
 import qualified Branch
-import           Data.Limit
-                 ( Limit (..) )
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.Limit as Limit
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( make, mergeAll )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern
-                 ( Pattern, Predicate )
+    ( make
+    , mergeAll
+    )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    , Predicate
+    )
 import qualified Kore.Internal.Pattern as Conditional
 import qualified Kore.Internal.Predicate as Predicate
-                 ( bottom, fromSubstitution )
+    ( bottom
+    , fromSubstitution
+    )
 import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( simplify )
-import           Kore.Step.Simplification.Simplify
+    ( simplify
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
+    ( evaluate
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
-import           Kore.TopBottom
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
+import Kore.Step.Substitution
+    ( mergePredicatesAndSubstitutions
+    )
+import Kore.TopBottom
+import Kore.Unification.Procedure
+    ( unificationProcedure
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
 
 {-| Which configurations are considered for matching?

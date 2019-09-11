@@ -6,17 +6,17 @@ module Test.Kore.Builtin.KEqual
     ) where
 
 import qualified Data.Text as Text
-import           Hedgehog
+import Hedgehog
 import qualified Hedgehog.Gen as Gen
-import           Test.Tasty
+import Test.Tasty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
-import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.Builtin
+import Test.Kore.Builtin.Definition
 
 import Test.SMT
 

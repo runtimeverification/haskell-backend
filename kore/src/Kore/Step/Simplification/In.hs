@@ -11,18 +11,23 @@ module Kore.Step.Simplification.In
     ( simplify
     ) where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( Predicate )
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeInPredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate as Predicate
+    ( Predicate
+    )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeInPredicate
+    )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluate, simplifyEvaluated )
-import           Kore.Step.Simplification.Simplify
+    ( makeEvaluate
+    , simplifyEvaluated
+    )
+import Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.

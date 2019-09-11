@@ -1,26 +1,29 @@
 module Test.Kore.Builtin.String where
 
-import           Hedgehog hiding
-                 ( Concrete )
+import Hedgehog hiding
+    ( Concrete
+    )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import           Test.Tasty
+import Test.Tasty
 
 import Data.Text
-       ( Text )
+    ( Text
+    )
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.String as String
-import           Kore.Internal.Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern
+import Kore.Internal.TermLike
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
-import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.Builtin
+import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
-import           Test.SMT
+import Test.SMT
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.unicode

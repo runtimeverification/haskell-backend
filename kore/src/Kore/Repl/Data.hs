@@ -35,55 +35,74 @@ module Kore.Repl.Data
     , makeAuxReplOutput, makeKoreReplOutput
     ) where
 
-import           Control.Applicative
-                 ( Alternative )
-import           Control.Concurrent.MVar
-import           Control.Monad.Trans.Accum
-                 ( AccumT, runAccumT )
+import Control.Applicative
+    ( Alternative
+    )
+import Control.Concurrent.MVar
+import Control.Monad.Trans.Accum
+    ( AccumT
+    , runAccumT
+    )
 import qualified Control.Monad.Trans.Accum as Monad.Accum
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.Graph.Inductive.PatriciaTree
-                 ( Gr )
-import           Data.List.NonEmpty
-                 ( NonEmpty (..) )
-import           Data.Map.Strict
-                 ( Map )
-import           Data.Maybe
-                 ( fromMaybe )
-import           Data.Monoid
-                 ( First (..) )
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
+import Data.Graph.Inductive.PatriciaTree
+    ( Gr
+    )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
+import Data.Map.Strict
+    ( Map
+    )
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Monoid
+    ( First (..)
+    )
+import Data.Sequence
+    ( Seq
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
-import           Numeric.Natural
+import Numeric.Natural
 
 import qualified Kore.Internal.Predicate as IPredicate
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Logger.Output as Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+import Kore.Profiler.Data
+    ( MonadProfiler
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Strategies.Goal
-import           Kore.Strategies.OnePath.Verification
-                 ( CommonProofState )
-import           Kore.Syntax.Variable
-                 ( Variable )
-import           Kore.Unification.Error
-import           Kore.Unification.Unify
-                 ( MonadUnify, UnifierT (..) )
+import Kore.Strategies.Goal
+import Kore.Strategies.OnePath.Verification
+    ( CommonProofState
+    )
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Kore.Unification.Error
+import Kore.Unification.Unify
+    ( MonadUnify
+    , UnifierT (..)
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-                 ( unparse )
-import           SMT
-                 ( MonadSMT )
+import Kore.Unparser
+    ( unparse
+    )
+import SMT
+    ( MonadSMT
+    )
 
 -- | Represents an optional file name which contains a sequence of
 -- repl commands.

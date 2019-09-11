@@ -16,7 +16,8 @@ module Kore.Parser.CharSet
     ) where
 
 import Prelude hiding
-       ( elem )
+    ( elem
+    )
 
 import Kore.Parser.CharDict as CharDict
 

@@ -11,10 +11,11 @@ module Kore.Attribute.Comm
     , commId, commSymbol, commAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Monad as Monad
-import           Data.Default
+import Data.Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

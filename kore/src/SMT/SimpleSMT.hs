@@ -151,43 +151,71 @@ module SMT.SimpleSMT
     ) where
 
 import qualified Colog
-import           Control.Concurrent
-                 ( forkIO )
+import Control.Concurrent
+    ( forkIO
+    )
 import qualified Control.Exception as X
 import qualified Control.Monad as Monad
-import           Data.Bits
-                 ( testBit )
-import           Data.Ratio
-                 ( denominator, numerator, (%) )
-import           Data.Text
-                 ( Text )
+import Data.Bits
+    ( testBit
+    )
+import Data.Ratio
+    ( denominator
+    , numerator
+    , (%)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.IO as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified GHC.Generics as GHC
-import           GHC.Stack
-                 ( callStack )
+import GHC.Stack
+    ( callStack
+    )
 import qualified GHC.Stack as GHC
-import           Numeric
-                 ( readHex, showFFloat, showHex )
-import           Prelude hiding
-                 ( abs, and, concat, const, div, mod, not, or )
+import Numeric
+    ( readHex
+    , showFFloat
+    , showHex
+    )
+import Prelude hiding
+    ( abs
+    , and
+    , concat
+    , const
+    , div
+    , mod
+    , not
+    , or
+    )
 import qualified Prelude
-import           System.Exit
-                 ( ExitCode )
-import           System.IO
-                 ( Handle, hClose, hFlush, hPutChar )
-import           System.Process
-                 ( ProcessHandle, runInteractiveProcess, waitForProcess )
+import System.Exit
+    ( ExitCode
+    )
+import System.IO
+    ( Handle
+    , hClose
+    , hFlush
+    , hPutChar
+    )
+import System.Process
+    ( ProcessHandle
+    , runInteractiveProcess
+    , waitForProcess
+    )
 import qualified Text.Megaparsec as Parser
-import           Text.Read
-                 ( readMaybe )
+import Text.Read
+    ( readMaybe
+    )
 
-import           Kore.Debug hiding
-                 ( debug )
+import Kore.Debug hiding
+    ( debug
+    )
 import qualified Kore.Logger as Logger
-import           SMT.AST
+import SMT.AST
 
 -- ---------------------------------------------------------------------
 -- * Features

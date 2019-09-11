@@ -1,33 +1,37 @@
 module Test.Kore.Builtin.List where
 
-import           Hedgehog
+import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Reflection as Reflection
-import           Data.Sequence
-                 ( Seq )
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
 
-import           Kore.Attribute.Hook
-                 ( Hook )
+import Kore.Attribute.Hook
+    ( Hook
+    )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 
-import           Test.Kore
-                 ( testId )
-import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Definition
+import Test.Kore
+    ( testId
+    )
+import Test.Kore.Builtin.Builtin
+import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.SMT
+import Test.SMT
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)

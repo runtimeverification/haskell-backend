@@ -20,56 +20,66 @@ module Kore.ASTVerifier.PatternVerifier
     , assertSameSort
     ) where
 
-import           Control.Applicative
+import Control.Applicative
 import qualified Control.Monad as Monad
-import           Control.Monad.Reader
-                 ( MonadReader, ReaderT, runReaderT )
+import Control.Monad.Reader
+    ( MonadReader
+    , ReaderT
+    , runReaderT
+    )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
-import           Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
-import           Data.Function
-                 ( (&) )
+import Data.Function
+    ( (&)
+    )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( (<+>) )
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.Text.Prettyprint.Doc.Render.Text
-                 ( renderStrict )
+import Data.Text.Prettyprint.Doc.Render.Text
+    ( renderStrict
+    )
 
-import           Kore.AST.Error
-import           Kore.ASTVerifier.Error
-import           Kore.ASTVerifier.SortVerifier
+import Kore.AST.Error
+import Kore.ASTVerifier.Error
+import Kore.ASTVerifier.SortVerifier
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Attribute.Synthetic
+import Kore.Attribute.Synthetic
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.Error
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.Resolvers
+import Kore.Error
+import Kore.IndexedModule.Error
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.Resolvers
 import qualified Kore.Internal.Alias as Internal
-import           Kore.Internal.ApplicationSorts
+import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Parser
-                 ( ParsedPattern )
-import           Kore.Syntax as Syntax
-import           Kore.Syntax.Definition
-import           Kore.Unparser
+import Kore.Parser
+    ( ParsedPattern
+    )
+import Kore.Syntax as Syntax
+import Kore.Syntax.Definition
+import Kore.Unparser
 import qualified Kore.Variables.Free as Variables
-import           Kore.Variables.UnifiedVariable
+import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
 newtype DeclaredVariables =

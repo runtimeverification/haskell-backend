@@ -7,12 +7,16 @@ import qualified Hedgehog.Gen as Gen
 import qualified Data.Default as Default
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.Symbol
-import           Kore.Sort
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.Symbol
+import Kore.Sort
 
 import Test.Kore
-       ( Gen, couple, idGen, sortGen )
+    ( Gen
+    , couple
+    , idGen
+    , sortGen
+    )
 
 symbolGen :: Sort -> Gen Symbol
 symbolGen resultSort =
