@@ -1,4 +1,5 @@
-
+Combining rewrite Axioms
+========================
 
 In the
 [Polkadot Verification](https://github.com/runtimeverification/polkadot-verification/issues/20)
@@ -8,7 +9,7 @@ combine rules into a single one. This document details the matching logic
 reasoning and assumptions behind these.
 
 Summary
-=======
+-------
 
 If we have this chain of axioms: `α₁(X₁)⇒β₁(X₁)` … `αₙ(Xₙ)⇒βₙ(Xₙ)` in which
 all the LHS are *function-like* and *injection-based*, and all the RHS
@@ -22,7 +23,7 @@ TODO: We may need to figure out how to handle maps, sets, and other structures
 based on non-injective symbols.
 
 The general transformation
-==========================
+--------------------------
 
 Let us take a configuration `φ(X)` which is functional,
 and which can be a single variable.
@@ -36,7 +37,7 @@ Then, similar to
 1. α(Y) ∧ ⌈α(Y) ∧ φ(X)⌉ → (•β(Y)) ∧ ⌈α(Y) ∧ φ(X)⌉
    // from (1) and propositional reasoning
 1. α(Y) ∧ ⌈α(Y) ∧ φ(X)⌉ = α(Y) ∧ φ(X)
-   // ML paper Prop. 5.24
+   // ML paper Prop. 5.24, needs `α` and `φ` to be functional
 1. α(Y) ∧ φ(X) → (•β(Y)) ∧ ⌈α(Y) ∧ φ(X)⌉
    // from (2) and (3)
 1. φ(X) ∧ ⌈α(Y) ∧ φ(X)⌉ → (•β(Y)) ∧ ⌈α(Y) ∧ φ(X)⌉
@@ -58,9 +59,6 @@ When doing normal rewriting, we usually expect to get substitutions for the
 variables in `Y` and `Y’` when computing `⌈α(Y) ∧ φ(X)⌉`, which usually allows
 us to remove these variables. However, when combining rewriting axioms,
 we don’t always get such substitutions, so we need to take a different approach.
-
-Note that the above also work for all patterns `φ` and `α`, not only functional
-ones.
 
 First, let us note that if `φ₁`, `φ₂` and `φ₃` are *functional*, then
 ```
@@ -87,7 +85,7 @@ iff
 Now, if, additionally, `α(Y)` is *constructor-based* (or, at least,
 injection-based), then
 ```
-⌈α(Y’) ∧ α(Y)⌉ \iff Y = Y’
+⌈α(Y’) ∧ α(Y)⌉ iff Y = Y’
 ```
 Note that this might also hold in some constrained cases when using
 non-constructor LHS, e.g. LHS that use maps or sets.
@@ -114,10 +112,9 @@ So, assuming that, we have the following transformations:
 ```
 
 Implementation concerns
-=======================
+-----------------------
 
-Eliminating variables
----------------------
+### Eliminating variables
 
 Note that if `⌈α(Y) ∧ φ(X)⌉` contains a substitution `y=ζ` then we can apply it
 and remove the variable `y` from the expression above (proof not shown here, one
@@ -132,8 +129,7 @@ into
 ```
 above to make it work).
 
-Using function-like patterns
-----------------------------
+### Using function-like patterns
 
 Usually `φ(X)` and `α(X)` are only function-like, but the above requires
 functional patterns. We will show that the same formula also works for function-like patterns.
@@ -152,8 +148,7 @@ functional patterns. We will show that the same formula also works for function-
    // ⌈α(Y) ∧ φ(X)⌉ -> ⌈φ(X)⌉
 ```
 
-Combining rewrite rules
-=======================
+### Combining rewrite rules
 
 Let’s say that our axioms are `α₁(X₁)⇒β₁(X₁)` … `αₙ(Xₙ)⇒βₙ(Xₙ)`.
 
@@ -167,7 +162,12 @@ We have an axiom `a -> •b` and we inferred `(P ∧ b) → •c`. Then, from th
 axiom, we can infer `(P ∧ a) -> •(P ∧ b)`. By combining the two inferences we
 get `(P ∧ a) → ••(P ∧ c)`, which is equivalent to `(P ∧ a) → ••c`.
 
-TODO: Does the above hold? Why?
+The above holds because of this:
+```
+Hypothesis: a → •b and b → •c
+From b → •c, by framing: •b → ••c
+From a → •b and •b → ••c: a → ••c
+```
 
 Then we have
 ```
@@ -181,7 +181,7 @@ By applying this iteratively, we get
 ```
 
 Applying rules to some initial configuration
-============================================
+--------------------------------------------
 
 The result is the same as above, except that, if the initial configuration is
 `φ(X)`, we get
