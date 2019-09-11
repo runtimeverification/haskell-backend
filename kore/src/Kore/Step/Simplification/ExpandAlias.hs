@@ -11,7 +11,11 @@ import           Control.Error
                  ( MaybeT )
 import           Control.Error.Util
                  ( nothing )
+import           Control.Exception
+                 ( assert )
 import qualified Data.Map as Map
+import           Data.Maybe
+                 ( fromMaybe )
 
 import           Kore.Internal.Alias
                  ( Alias (..) )
@@ -41,7 +45,7 @@ expandAlias
 expandAlias recurse t1 t2 = do
     case (expandSingleAlias t1, expandSingleAlias t2) of
         (Nothing, Nothing) -> nothing
-        (t1', t2') -> recurse (maybe t1 id t1') (maybe t2 id t2')
+        (t1', t2') -> recurse (fromMaybe t1 t1') (fromMaybe t2 t2')
 
 expandSingleAlias
     :: SubstitutionVariable variable
@@ -61,9 +65,10 @@ substituteWorker
     -> [TermLike variable]
     -> TermLike variable
 substituteWorker Alias { aliasLeft, aliasRight } children =
-    substitute
-        substitutionMap
-        (mapVariables fromVariable aliasRight)
+    assert (length aliasLeft == length children)
+        $ substitute
+            substitutionMap
+            (mapVariables fromVariable aliasRight)
   where
     substitutionMap =
         Map.fromList $ zip (fmap fromVariable <$> aliasLeft) children

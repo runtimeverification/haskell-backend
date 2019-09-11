@@ -987,14 +987,7 @@ applyAlias' alias arg = applyAlias alias [] [arg]
 
 assertExpectTop :: ([Pattern Variable], Maybe [Pattern Variable]) -> IO ()
 assertExpectTop =
-    assertEqualWithExplanation "" ([expectTop_], Just [expectTop_])
-  where
-    expectTop_ =
-        Conditional
-            { term = mkTop_
-            , predicate = makeTruePredicate
-            , substitution = mempty
-            }
+    assertEqualWithExplanation "" ([Pattern.top], Just [Pattern.top])
 
 test_equalsTermsSimplification :: [TestTree]
 test_equalsTermsSimplification =
