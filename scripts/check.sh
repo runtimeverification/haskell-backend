@@ -22,7 +22,7 @@ do
         *.hs|*.hs-boot) ;;
         *) continue ;;
     esac
-    $TOP/.build/kore/bin/stylish-haskell/stylish-haskell $file >$file.tmp
+    $TOP/.build/kore/bin/stylish-haskell $file >$file.tmp
     if diff -Nau $file $file.tmp
     then
         changed+=($file)
