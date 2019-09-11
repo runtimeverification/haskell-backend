@@ -6,14 +6,16 @@ import Test.Tasty.HUnit
 
 import qualified Data.Set
 import qualified GHC.Stack as GHC
-import           Prelude hiding
-                 ( concatMap )
+import Prelude hiding
+    ( concatMap
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Kore
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.TermLike
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.TermLike
 
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin

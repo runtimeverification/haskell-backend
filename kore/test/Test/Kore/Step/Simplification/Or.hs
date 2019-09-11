@@ -1,36 +1,47 @@
 module Test.Kore.Step.Simplification.Or where
 
 import Test.Kore
-       ( testId )
+    ( testId
+    )
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Terse
 
 import qualified Data.List as List
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeFalsePredicate, makeOrPredicate,
-                 makeTruePredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeEqualsPredicate
+    , makeFalsePredicate
+    , makeOrPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Step.Simplification.Or
-                 ( simplify, simplifyEvaluated )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+    ( Predicate
+    )
+import Kore.Step.Simplification.Or
+    ( simplify
+    , simplifyEvaluated
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unparser as Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 -- * Part 1: 'simplifyEvaluated'

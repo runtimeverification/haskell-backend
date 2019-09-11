@@ -19,41 +19,53 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
-                 ( isTotal )
+    ( isTotal
+    )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
-                 ( make )
+    ( make
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Logger
-                 ( LogMessage, WithLog )
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeTruePredicate )
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Step.Function.Evaluator as Axiom
-                 ( evaluatePattern )
+    ( evaluatePattern
+    )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
-import           Kore.Step.Simplification.Simplify as Simplifier
-import           Kore.TopBottom
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.TopBottom
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 

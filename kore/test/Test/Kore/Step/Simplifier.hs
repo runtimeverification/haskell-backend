@@ -3,18 +3,23 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( wrapPredicate )
-import           Kore.Step.Simplification.Simplify
-import           Kore.Syntax.Variable
-                 ( SortedVariable (..) )
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( wrapPredicate
+    )
+import Kore.Step.Simplification.Simplify
+import Kore.Syntax.Variable
+    ( SortedVariable (..)
+    )
 
 mockSimplifier
     :: SimplifierVariable variable

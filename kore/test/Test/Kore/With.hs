@@ -6,67 +6,97 @@ module Test.Kore.With
     , VariableElement (..)
     ) where
 
-import           Data.List
-                 ( foldl' )
+import Data.List
+    ( foldl'
+    )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
-import           Kore.Attribute.Attributes
-                 ( AttributePattern )
+import Kore.Attribute.Attributes
+    ( AttributePattern
+    )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Sort as Kore
-                 ( Sort )
+    ( Sort
+    )
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations),
-                 IndirectSymbolDeclaration (IndirectSymbolDeclaration),
-                 KoreSortDeclaration (..), KoreSymbolDeclaration (..),
-                 Sort (Sort), SortReference (SortReference), Symbol (Symbol),
-                 UnresolvedIndirectSymbolDeclaration,
-                 UnresolvedKoreSymbolDeclaration, UnresolvedSymbol )
+    ( Declarations (Declarations)
+    , IndirectSymbolDeclaration (IndirectSymbolDeclaration)
+    , KoreSortDeclaration (..)
+    , KoreSymbolDeclaration (..)
+    , Sort (Sort)
+    , SortReference (SortReference)
+    , Symbol (Symbol)
+    , UnresolvedIndirectSymbolDeclaration
+    , UnresolvedKoreSymbolDeclaration
+    , UnresolvedSymbol
+    )
 import qualified Kore.Step.SMT.AST as AST.Declarations
-                 ( Declarations (..) )
+    ( Declarations (..)
+    )
 import qualified Kore.Step.SMT.AST as AST.Sort
-                 ( Sort (..) )
+    ( Sort (..)
+    )
 import qualified Kore.Step.SMT.AST as AST.Symbol
-                 ( Symbol (..) )
+    ( Symbol (..)
+    )
 import qualified Kore.Step.SMT.AST as AST.IndirectSymbolDeclaration
-                 ( IndirectSymbolDeclaration (..) )
-import           Kore.Syntax.Definition
-                 ( Attributes (Attributes), Definition (Definition),
-                 Module (Module),
-                 Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence),
-                 SentenceAlias (SentenceAlias), SentenceAxiom (SentenceAxiom),
-                 SentenceHook (SentenceHookedSort, SentenceHookedSymbol),
-                 SentenceImport (SentenceImport), SentenceSort (SentenceSort),
-                 SentenceSymbol (SentenceSymbol) )
+    ( IndirectSymbolDeclaration (..)
+    )
+import Kore.Syntax.Definition
+    ( Attributes (Attributes)
+    , Definition (Definition)
+    , Module (Module)
+    , Sentence (SentenceAliasSentence, SentenceAxiomSentence, SentenceClaimSentence, SentenceHookSentence, SentenceImportSentence, SentenceSortSentence, SentenceSymbolSentence)
+    , SentenceAlias (SentenceAlias)
+    , SentenceAxiom (SentenceAxiom)
+    , SentenceHook (SentenceHookedSort, SentenceHookedSymbol)
+    , SentenceImport (SentenceImport)
+    , SentenceSort (SentenceSort)
+    , SentenceSymbol (SentenceSymbol)
+    )
 import qualified Kore.Syntax.Definition as Definition
-                 ( Definition (..) )
+    ( Definition (..)
+    )
 import qualified Kore.Syntax.Id as Kore
-                 ( Id )
+    ( Id
+    )
 import qualified Kore.Syntax.Module as Module
-                 ( Module (..) )
-import           Kore.Syntax.Sentence
+    ( Module (..)
+    )
+import Kore.Syntax.Sentence
 import qualified Kore.Syntax.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
+    ( SentenceAxiom (..)
+    )
 import qualified Kore.Syntax.Sentence as SentenceAlias
-                 ( SentenceAlias (..) )
+    ( SentenceAlias (..)
+    )
 import qualified Kore.Syntax.Sentence as SentenceImport
-                 ( SentenceImport (..) )
+    ( SentenceImport (..)
+    )
 import qualified Kore.Syntax.Sentence as SentenceSort
-                 ( SentenceSort (..) )
+    ( SentenceSort (..)
+    )
 import qualified Kore.Syntax.Sentence as SentenceSymbol
-                 ( SentenceSymbol (..) )
-import           Kore.Syntax.Variable
-                 ( Concrete )
+    ( SentenceSymbol (..)
+    )
+import Kore.Syntax.Variable
+    ( Concrete
+    )
 import qualified SMT.AST as AST
-                 ( Constructor (Constructor), ConstructorArgument,
-                 DataTypeDeclaration (DataTypeDeclaration) )
+    ( Constructor (Constructor)
+    , ConstructorArgument
+    , DataTypeDeclaration (DataTypeDeclaration)
+    )
 import qualified SMT.AST as AST.DataTypeDeclaration
-                 ( DataTypeDeclaration (..) )
+    ( DataTypeDeclaration (..)
+    )
 import qualified SMT.AST as AST.Constructor
-                 ( Constructor (..) )
+    ( Constructor (..)
+    )
 
 class With a b where
     with :: a -> b -> a

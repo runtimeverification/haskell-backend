@@ -6,28 +6,34 @@ module Kore.Step.Simplification.Overloading
     ( overloadedConstructorSortInjectionAndEquals
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT (..) )
-import           Control.Exception
-                 ( assert )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT (..)
+    )
+import Control.Exception
+    ( assert
+    )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified GHC.Stack as GHC
-import           Prelude hiding
-                 ( concat )
+import Prelude hiding
+    ( concat
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.NoConfusion
-import           Kore.Step.Simplification.Simplify as Simplifier
-import           Kore.Unification.Unify as Unify
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.NoConfusion
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Unification.Unify as Unify
 
 {- | Unify an overloaded constructor application pattern with a sort injection
 pattern over an (overloaded) constructor.

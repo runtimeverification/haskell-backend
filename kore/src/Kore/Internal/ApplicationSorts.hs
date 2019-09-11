@@ -10,13 +10,16 @@ module Kore.Internal.ApplicationSorts
     , symbolOrAliasSorts
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Function
-import           Data.Hashable
-                 ( Hashable )
-import           Data.Map
-                 ( Map )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Function
+import Data.Hashable
+    ( Hashable
+    )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -24,7 +27,8 @@ import qualified GHC.Generics as GHC
 import Kore.Debug
 import Kore.Error
 import Kore.Sort hiding
-       ( substituteSortVariables )
+    ( substituteSortVariables
+    )
 import Kore.Syntax.Sentence
 
 data ApplicationSorts = ApplicationSorts

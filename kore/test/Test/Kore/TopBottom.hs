@@ -3,13 +3,19 @@ module Test.Kore.TopBottom where
 import qualified Test.Tasty as Tasty
 
 import Prelude hiding
-       ( and, floor, or )
+    ( and
+    , floor
+    , or
+    )
 
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
+import Kore.Internal.TermLike
+    ( TermLike
+    , Variable
+    )
 import qualified Kore.Internal.TermLike as AST
-import           Kore.Predicate.Predicate
-                 ( Predicate )
+import Kore.Predicate.Predicate
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.TopBottom as TopBottom
 

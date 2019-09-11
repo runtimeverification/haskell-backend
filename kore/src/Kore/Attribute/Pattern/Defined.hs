@@ -8,23 +8,24 @@ module Kore.Attribute.Pattern.Defined
     ( Defined (..)
     ) where
 
-import           Control.DeepSeq
+import Control.DeepSeq
 import qualified Data.Foldable as Foldable
-import           Data.Functor.Const
-import           Data.Hashable
+import Data.Functor.Const
+import Data.Hashable
 import qualified Data.Map as Map
-import           Data.Monoid
+import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Synthetic
-import           Kore.Debug
-import           Kore.Domain.Builtin
+import Kore.Attribute.Synthetic
+import Kore.Debug
+import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Syntax
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Syntax
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {- | A pattern is 'Defined' if it matches at least one element.
  -}

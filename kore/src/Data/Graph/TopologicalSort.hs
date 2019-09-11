@@ -12,8 +12,10 @@ module Data.Graph.TopologicalSort
     , ToplogicalSortCycles(..)
     ) where
 
-import           Data.Graph
-                 ( SCC (..), stronglyConnComp )
+import Data.Graph
+    ( SCC (..)
+    , stronglyConnComp
+    )
 import qualified Data.Map as Map
 
 newtype ToplogicalSortCycles node = ToplogicalSortCycles [node]

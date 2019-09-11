@@ -26,12 +26,14 @@ module Kore.Attribute.Axiom
     , RuleIndex (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Monad as Monad
-import           Data.Default
-                 ( Default (..) )
-import           Data.Generics.Product
+import Data.Default
+    ( Default (..)
+    )
+import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -45,7 +47,8 @@ import Kore.Attribute.Idem
 import Kore.Attribute.Label
 import Kore.Attribute.Overload
 import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
+    ( ParseAttributes (..)
+    )
 import Kore.Attribute.ProductionID
 import Kore.Attribute.RuleIndex
 import Kore.Attribute.Simplification

@@ -11,36 +11,51 @@ module Kore.Step.SMT.Representation.Symbols
     ) where
 
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( mapMaybe )
+import Data.Maybe
+    ( mapMaybe
+    )
 
 import qualified Kore.Attribute.Constructor as Attribute
-                 ( Constructor (Constructor, isConstructor) )
+    ( Constructor (Constructor, isConstructor)
+    )
 import qualified Kore.Attribute.Functional as Attribute
-                 ( Functional (Functional, isDeclaredFunctional) )
+    ( Functional (Functional, isDeclaredFunctional)
+    )
 import qualified Kore.Attribute.Smtlib.Smthook as Attribute
-                 ( Smthook (Smthook, getSmthook) )
+    ( Smthook (Smthook, getSmthook)
+    )
 import qualified Kore.Attribute.Smtlib.Smtlib as Attribute
-                 ( Smtlib (Smtlib, getSmtlib) )
+    ( Smtlib (Smtlib, getSmtlib)
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
-                 ( Symbol (..) )
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule, recursiveIndexedModuleSymbolSentences )
-import           Kore.Sort
-                 ( Sort )
+    ( Symbol (..)
+    )
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule
+    , recursiveIndexedModuleSymbolSentences
+    )
+import Kore.Sort
+    ( Sort
+    )
 import qualified Kore.Step.SMT.AST as AST
-import           Kore.Syntax.Id
-                 ( Id )
-import           Kore.Syntax.Sentence
-                 ( SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol) )
+import Kore.Syntax.Id
+    ( Id
+    )
+import Kore.Syntax.Sentence
+    ( SentenceSymbol (SentenceSymbol, sentenceSymbolResultSort, sentenceSymbolSorts, sentenceSymbolSymbol)
+    )
 import qualified Kore.Syntax.Sentence as Sentence
-                 ( Symbol (Symbol) )
+    ( Symbol (Symbol)
+    )
 import qualified Kore.Syntax.Sentence as Sentence.Symbol
-                 ( Symbol (..) )
-import           Kore.Unparser
-                 ( unparseToString )
+    ( Symbol (..)
+    )
+import Kore.Unparser
+    ( unparseToString
+    )
 import qualified Kore.Verified as Verified
 import qualified SMT
 

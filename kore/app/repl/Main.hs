@@ -4,30 +4,57 @@
 module Main (main) where
 
 import Control.Applicative
-       ( optional )
+    ( optional
+    )
 import Control.Concurrent.MVar
 import Control.Monad.Trans
-       ( lift )
+    ( lift
+    )
 import Control.Monad.Trans.Reader
-       ( runReaderT )
+    ( runReaderT
+    )
 import Data.Maybe
 import Data.Semigroup
-       ( (<>) )
+    ( (<>)
+    )
 import Options.Applicative
-       ( InfoMod, Parser, argument, auto, flag, fullDesc, header, help, long,
-       metavar, option, progDesc, readerError, short, str, strOption, value )
+    ( InfoMod
+    , Parser
+    , argument
+    , auto
+    , flag
+    , fullDesc
+    , header
+    , help
+    , long
+    , metavar
+    , option
+    , progDesc
+    , readerError
+    , short
+    , str
+    , strOption
+    , value
+    )
 import System.Exit
-       ( exitFailure )
+    ( exitFailure
+    )
 
-import           Data.Limit
-                 ( Limit (..) )
-import           Kore.Exec
-                 ( proveWithRepl )
-import           Kore.Logger.Output
-                 ( emptyLogger, getLoggerT, swappableLogger )
-import           Kore.Repl.Data
-import           Kore.Syntax.Module
-                 ( ModuleName (..) )
+import Data.Limit
+    ( Limit (..)
+    )
+import Kore.Exec
+    ( proveWithRepl
+    )
+import Kore.Logger.Output
+    ( emptyLogger
+    , getLoggerT
+    , swappableLogger
+    )
+import Kore.Repl.Data
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import qualified SMT
 
 import GlobalMain

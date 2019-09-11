@@ -3,21 +3,23 @@ module Test.Kore.Predicate.Predicate (test_predicate) where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Foldable
-                 ( traverse_ )
+import Data.Foldable
+    ( traverse_
+    )
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate as Predicate
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate as Predicate
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_predicate :: [TestTree]
 test_predicate =

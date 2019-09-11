@@ -11,16 +11,21 @@ module Data.Sup
     ( Sup (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Data
-                 ( Data )
-import           Data.Hashable
-                 ( Hashable )
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty (..) )
-import           Data.Typeable
-                 ( Typeable )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Data
+    ( Data
+    )
+import Data.Hashable
+    ( Hashable
+    )
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
+    )
+import Data.Typeable
+    ( Typeable
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

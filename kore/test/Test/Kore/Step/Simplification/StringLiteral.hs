@@ -3,20 +3,26 @@ module Test.Kore.Step.Simplification.StringLiteral
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..) )
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Step.Simplification.StringLiteral
-                 ( simplify )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeTruePredicate
+    )
+import Kore.Step.Simplification.StringLiteral
+    ( simplify
+    )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

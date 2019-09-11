@@ -1,72 +1,119 @@
 module Main (main) where
 
-import           Control.Applicative
-                 ( Alternative (..), optional )
-import           Control.Monad.IO.Class
-                 ( MonadIO )
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO )
+import Control.Applicative
+    ( Alternative (..)
+    , optional
+    )
+import Control.Monad.IO.Class
+    ( MonadIO
+    )
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO
+    )
 import qualified Control.Monad.Reader.Class as Reader
-import           Control.Monad.Trans
-                 ( lift )
+import Control.Monad.Trans
+    ( lift
+    )
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
-import           Data.List
-                 ( intercalate )
-import           Data.Reflection
-import           Data.Semigroup
-                 ( (<>) )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
-import           Data.Text.Prettyprint.Doc.Render.Text
-                 ( hPutDoc, putDoc )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, readerError, str, strOption,
-                 value )
+import Data.List
+    ( intercalate
+    )
+import Data.Reflection
+import Data.Semigroup
+    ( (<>)
+    )
+import Data.Text.Prettyprint.Doc
+    ( Doc
+    )
+import Data.Text.Prettyprint.Doc.Render.Text
+    ( hPutDoc
+    , putDoc
+    )
+import Options.Applicative
+    ( InfoMod
+    , Parser
+    , argument
+    , auto
+    , fullDesc
+    , header
+    , help
+    , long
+    , metavar
+    , option
+    , progDesc
+    , readerError
+    , str
+    , strOption
+    , value
+    )
 import qualified Options.Applicative as Options
-import           System.Exit
-                 ( ExitCode (..), exitWith )
-import           System.IO
-                 ( IOMode (WriteMode), withFile )
+import System.Exit
+    ( ExitCode (..)
+    , exitWith
+    )
+import System.IO
+    ( IOMode (WriteMode)
+    , withFile
+    )
 
-import           Data.Limit
-                 ( Limit (..) )
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol as Attribute
-import           Kore.Error
-                 ( printError )
-import           Kore.Exec
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+import Kore.Attribute.Symbol as Attribute
+import Kore.Error
+    ( printError
+    )
+import Kore.Exec
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-                 ( build )
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
-import           Kore.Internal.TermLike
-import           Kore.Logger.Output
-                 ( KoreLogOptions (..), LogMessage, LoggerT (..), WithLog,
-                 parseKoreLogOptions, runLoggerT )
+    ( build
+    )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
+import Kore.Internal.TermLike
+import Kore.Logger.Output
+    ( KoreLogOptions (..)
+    , LogMessage
+    , LoggerT (..)
+    , WithLog
+    , parseKoreLogOptions
+    , runLoggerT
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
-                 ( CheckResult (..) )
-import           Kore.Parser
-                 ( ParsedPattern, parseKorePattern )
-import           Kore.Predicate.Predicate
-                 ( makePredicate )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
-import           Kore.Step
-import           Kore.Step.Search
-                 ( SearchType (..) )
+    ( CheckResult (..)
+    )
+import Kore.Parser
+    ( ParsedPattern
+    , parseKorePattern
+    )
+import Kore.Predicate.Predicate
+    ( makePredicate
+    )
+import Kore.Profiler.Data
+    ( MonadProfiler
+    )
+import Kore.Step
+import Kore.Step.Search
+    ( SearchType (..)
+    )
 import qualified Kore.Step.Search as Search
-import           Kore.Step.SMT.Lemma
-import           Kore.Syntax.Definition
-                 ( ModuleName (..) )
-import           Kore.Unparser
-                 ( unparse )
-import           SMT
-                 ( MonadSMT )
+import Kore.Step.SMT.Lemma
+import Kore.Syntax.Definition
+    ( ModuleName (..)
+    )
+import Kore.Unparser
+    ( unparse
+    )
+import SMT
+    ( MonadSMT
+    )
 import qualified SMT
 
 import GlobalMain

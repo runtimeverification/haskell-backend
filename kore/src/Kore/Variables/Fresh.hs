@@ -12,11 +12,13 @@ module Kore.Variables.Fresh
     ) where
 
 import qualified Data.Foldable as Foldable
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 
 import Data.Sup
@@ -25,7 +27,8 @@ import Kore.Syntax.Id
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
+    ( UnifiedVariable (..)
+    )
 
 {- | A @FreshVariable@ can be renamed to avoid colliding with a set of names.
 -}

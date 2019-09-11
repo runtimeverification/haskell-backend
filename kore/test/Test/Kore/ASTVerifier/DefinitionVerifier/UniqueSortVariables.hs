@@ -3,13 +3,16 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueSortVariables
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
-                 ( ModuleName (..), asSentence )
+import Kore.Error
+import Kore.Internal.TermLike
+import Kore.Syntax.Definition
+    ( ModuleName (..)
+    , asSentence
+    )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

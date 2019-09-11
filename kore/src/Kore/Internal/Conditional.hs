@@ -20,31 +20,41 @@ module Kore.Internal.Conditional
     , isNormalized
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Hashable
-import           Data.Monoid
-                 ( (<>) )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Hashable
+import Data.Monoid
+    ( (<>)
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
-import           Kore.Debug
-import           Kore.Internal.TermLike
-                 ( InternalVariable, TermLike, termLikeSort )
-import           Kore.Predicate.Predicate
-                 ( Predicate )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
+import Kore.Debug
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , TermLike
+    , termLikeSort
+    )
+import Kore.Predicate.Predicate
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 
 {- | @Conditional@ represents a value conditioned on a predicate.
 

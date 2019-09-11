@@ -13,23 +13,33 @@ module Kore.Step.Simplification.AndPredicates
 
 import qualified Data.Foldable as Foldable
 
-import           Branch
-                 ( BranchT )
+import Branch
+    ( BranchT
+    )
 import qualified Branch as BranchT
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-                 ( extractPatterns )
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+    ( extractPatterns
+    )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( fullCrossProduct, mergeAll )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern
-                 ( Predicate )
-import           Kore.Step.Simplification.Simplify
-                 ( MonadSimplify, SimplifierVariable )
+    ( fullCrossProduct
+    , mergeAll
+    )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern
+    ( Predicate
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , SimplifierVariable
+    )
 import qualified Kore.Step.Substitution as Substitution
 
 simplifyEvaluatedMultiPredicate

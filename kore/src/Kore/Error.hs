@@ -22,14 +22,18 @@ module Kore.Error
     , module Control.Monad.Except
     ) where
 
-import           Control.Monad
-                 ( when )
-import           Control.Monad.Except
-                 ( MonadError (..) )
-import           Data.List
-                 ( intercalate )
-import           Data.Text
-                 ( Text )
+import Control.Monad
+    ( when
+    )
+import Control.Monad.Except
+    ( MonadError (..)
+    )
+import Data.List
+    ( intercalate
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 {-|'Error' represents a Kore error with a stacktrace-like context.

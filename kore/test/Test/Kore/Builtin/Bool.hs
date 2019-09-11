@@ -1,17 +1,17 @@
 module Test.Kore.Builtin.Bool where
 
-import           Hedgehog
+import Hedgehog
 import qualified Hedgehog.Gen as Gen
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
 import qualified Data.Text as Text
 
-import           Kore.Attribute.Hook
+import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Internal.Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern
+import Kore.Internal.TermLike
 import qualified SMT
 
 import Test.Kore.Builtin.Builtin

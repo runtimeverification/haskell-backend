@@ -9,10 +9,12 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module Kore.Domain.Class where
 
 import qualified Control.Lens as Lens
-import           Data.Functor.Const
-                 ( Const )
-import           Data.Void
-                 ( Void )
+import Data.Functor.Const
+    ( Const
+    )
+import Data.Void
+    ( Void
+    )
 
 import Kore.Sort
 import Kore.Syntax.DomainValue

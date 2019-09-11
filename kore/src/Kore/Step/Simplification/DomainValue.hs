@@ -12,10 +12,12 @@ module Kore.Step.Simplification.DomainValue
     ) where
 
 import Kore.Internal.Conditional
-       ( Conditional )
+    ( Conditional
+    )
 import Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
-       ( OrPattern )
+    ( OrPattern
+    )
 import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning

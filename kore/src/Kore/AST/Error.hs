@@ -23,8 +23,9 @@ module Kore.AST.Error
     , withModuleContext
     ) where
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import Kore.AST.AstWithLocation

@@ -5,20 +5,24 @@ import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
-import           Kore.Attribute.Pattern.Functional
-import           Kore.Attribute.Synthetic
+import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.TermLike
-                 ( TermLike, TermLikeF (..) )
-import           Kore.Syntax hiding
-                 ( PatternF (..) )
-import           Kore.Variables.UnifiedVariable
+import Kore.Internal.TermLike
+    ( TermLike
+    , TermLikeF (..)
+    )
+import Kore.Syntax hiding
+    ( PatternF (..)
+    )
+import Kore.Variables.UnifiedVariable
 
-import           Test.Kore.Builtin.Builtin
-                 ( emptyNormalizedSet )
+import Test.Kore.Builtin.Builtin
+    ( emptyNormalizedSet
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Kore.With
+import Test.Kore.With
 
 test_instance_Synthetic :: [TestTree]
 test_instance_Synthetic =
