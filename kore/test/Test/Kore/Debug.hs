@@ -12,7 +12,7 @@ import Kore.Sort
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.Variable
 
-import           Test.Kore
+import Test.Kore
 import qualified Test.Terse as Terse
 
 -- A simple type with one constructor

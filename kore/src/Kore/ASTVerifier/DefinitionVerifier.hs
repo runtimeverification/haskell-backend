@@ -16,30 +16,35 @@ module Kore.ASTVerifier.DefinitionVerifier
     , AttributesVerification (..)
     ) where
 
-import           Control.Monad
-                 ( foldM )
+import Control.Monad
+    ( foldM
+    )
 import qualified Data.Foldable as Foldable
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Proxy
-                 ( Proxy (..) )
-import           Data.Text
-                 ( Text )
+import Data.Proxy
+    ( Proxy (..)
+    )
+import Data.Text
+    ( Text
+    )
 
-import           Kore.ASTVerifier.AttributesVerifier hiding
-                 ( parseAttributes )
-import           Kore.ASTVerifier.Error
-import           Kore.ASTVerifier.ModuleVerifier
-import           Kore.ASTVerifier.Verifier
+import Kore.ASTVerifier.AttributesVerifier hiding
+    ( parseAttributes
+    )
+import Kore.ASTVerifier.Error
+import Kore.ASTVerifier.ModuleVerifier
+import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Attribute.Parser as Attribute.Parser
+import Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-import           Kore.Syntax.Definition
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 {-|'verifyDefinition' verifies the welformedness of a Kore 'Definition'.

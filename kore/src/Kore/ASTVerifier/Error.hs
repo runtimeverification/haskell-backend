@@ -9,14 +9,15 @@ Portability : POSIX
 -}
 module Kore.ASTVerifier.Error where
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
-import           Kore.Error
-import           Kore.Sort
-import           Kore.Unparser
+import Kore.Error
+import Kore.Sort
+import Kore.Unparser
 
 {-| 'VerifyError' is a tag for verification errors. -}
 newtype VerifyError = VerifyError ()

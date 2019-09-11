@@ -26,50 +26,69 @@ module Kore.Builtin.Map
     , evalElement
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT (MaybeT), fromMaybe, hoistMaybe, runMaybeT )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT (MaybeT)
+    , fromMaybe
+    , hoistMaybe
+    , runMaybeT
+    )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
-import           Kore.Builtin.Attributes
-                 ( isConstructorModulo_ )
+import Kore.Builtin.Attributes
+    ( isConstructorModulo_
+    )
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Builtin.Builtin
-                 ( acceptAnySort )
+import Kore.Builtin.Builtin
+    ( acceptAnySort
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-                 ( pattern App_, pattern Builtin_, InternalVariable, TermLike,
-                 mkApplySymbol, termLikeSort )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern Builtin_
+    , InternalVariable
+    , TermLike
+    , mkApplySymbol
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Sort
-                 ( Sort )
-import           Kore.Step.Simplification.Simplify as Simplifier
-import           Kore.Syntax.Sentence
-                 ( SentenceSort (..) )
-import           Kore.Unification.Unify
-                 ( MonadUnify )
+import Kore.Sort
+    ( Sort
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Syntax.Sentence
+    ( SentenceSort (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Variables.Fresh
+import Kore.Variables.Fresh
 
 {- | Builtin name of the @Map@ sort.
  -}

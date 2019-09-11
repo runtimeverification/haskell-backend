@@ -29,29 +29,38 @@ import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
-import           Numeric.Natural
-                 ( Natural )
+import Numeric.Natural
+    ( Natural
+    )
 
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Step.Result as Result
-                 ( mergeResults )
-import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern, isCoolingRule,
-                 isHeatingRule, isNormalRule )
+    ( mergeResults
+    )
+import Kore.Step.Rule
+    ( RewriteRule (RewriteRule)
+    , RulePattern
+    , isCoolingRule
+    , isHeatingRule
+    , isNormalRule
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplifyAndRemoveTopExists )
-import           Kore.Step.Simplification.Simplify as Simplifier
+    ( simplifyAndRemoveTopExists
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( filterMultiOr )
+    ( filterMultiOr
+    )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.Strategy
+import Kore.Step.Strategy
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
-import           Kore.Syntax.Variable
+import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
+import Kore.Unparser
 
 
 {- | A strategy primitive: a rewrite rule or builtin simplification step.

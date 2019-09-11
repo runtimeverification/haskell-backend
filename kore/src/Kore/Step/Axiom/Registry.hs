@@ -13,38 +13,54 @@ module Kore.Step.Axiom.Registry
     ) where
 
 import qualified Data.Foldable as Foldable
-import           Data.List
-                 ( partition )
-import           Data.Map
-                 ( Map )
+import Data.List
+    ( partition
+    )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe, mapMaybe )
+import Data.Maybe
+    ( fromMaybe
+    , mapMaybe
+    )
 
-import           Kore.Attribute.Axiom
-                 ( Assoc (Assoc), Comm (Comm), Idem (Idem), Unit (Unit) )
+import Kore.Attribute.Axiom
+    ( Assoc (Assoc)
+    , Comm (Comm)
+    , Idem (Idem)
+    , Unit (Unit)
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Overload
-import           Kore.Attribute.Simplification
-                 ( Simplification (..) )
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.IndexedModule
-import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( definitionEvaluation, firstFullEvaluation,
-                 simplificationEvaluation, simplifierWithFallback )
-import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
+import Kore.Attribute.Overload
+import Kore.Attribute.Simplification
+    ( Simplification (..)
+    )
+import Kore.Attribute.Symbol
+import Kore.IndexedModule.IndexedModule
+import Kore.Internal.TermLike
+import Kore.Step.Axiom.EvaluationStrategy
+    ( definitionEvaluation
+    , firstFullEvaluation
+    , simplificationEvaluation
+    , simplifierWithFallback
+    )
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule),
-                 QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
-                 RulePattern (RulePattern) )
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
+    , QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern)
+    , RulePattern (RulePattern)
+    )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Step.Simplification.Simplify
-                 ( BuiltinAndAxiomSimplifier (..) )
-import           Kore.Syntax.Sentence
-                 ( SentenceAxiom (..) )
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifier (..)
+    )
+import Kore.Syntax.Sentence
+    ( SentenceAxiom (..)
+    )
 import qualified Kore.Verified as Verified
 
 {- | Create a mapping from symbol identifiers to their defining axioms.

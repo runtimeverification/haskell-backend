@@ -4,19 +4,28 @@ module Kore.Step.Simplification.Ceil
     ) where
 
 import Kore.Internal.OrPattern
-       ( OrPattern )
+    ( OrPattern
+    )
 import Kore.Internal.OrPredicate
-       ( OrPredicate )
+    ( OrPredicate
+    )
 import Kore.Internal.Pattern
-       ( Pattern )
+    ( Pattern
+    )
 import Kore.Internal.Predicate
-       ( Predicate )
+    ( Predicate
+    )
 import Kore.Internal.TermLike
-       ( TermLike )
+    ( TermLike
+    )
 import Kore.Logger
-       ( LogMessage, WithLog )
+    ( LogMessage
+    , WithLog
+    )
 import Kore.Step.Simplification.Simplify
-       ( MonadSimplify, SimplifierVariable )
+    ( MonadSimplify
+    , SimplifierVariable
+    )
 
 makeEvaluate
     ::  ( SimplifierVariable variable

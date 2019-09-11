@@ -15,13 +15,22 @@ module Kore.Parser.CString
        , oneCharEscapeDict
        ) where
 
-import           Data.Char
-                 ( chr, digitToInt, isHexDigit, isOctDigit, ord, toUpper )
-import           Data.Text
-                 ( Text )
+import Data.Char
+    ( chr
+    , digitToInt
+    , isHexDigit
+    , isOctDigit
+    , ord
+    , toUpper
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           Numeric
-                 ( showHex, showOct )
+import Numeric
+    ( showHex
+    , showOct
+    )
 
 import Kore.Parser.CharSet as CharSet
 

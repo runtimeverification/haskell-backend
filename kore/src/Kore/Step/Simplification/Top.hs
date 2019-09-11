@@ -11,12 +11,13 @@ module Kore.Step.Simplification.Top
     ( simplify
     ) where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Variable
-import           Kore.Sort
-import           Kore.Syntax.Top
+import Kore.Internal.Variable
+import Kore.Sort
+import Kore.Syntax.Top
 
 {-| simplifies a Top pattern, which means returning an always-true or.
 -}

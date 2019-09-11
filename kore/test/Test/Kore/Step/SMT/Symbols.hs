@@ -3,34 +3,58 @@ module Test.Kore.Step.SMT.Symbols where
 import Test.Tasty
 
 import Data.Reflection
-       ( Given )
+    ( Given
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
+    ( Axiom
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+    ( Symbol
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
-                 ( declare )
-import           Kore.Step.SMT.Encoder
-                 ( encodeName )
+    ( declare
+    )
+import Kore.Step.SMT.Encoder
+    ( encodeName
+    )
 import qualified Kore.Step.SMT.Representation.All as Representation
-                 ( build )
+    ( build
+    )
 import qualified SMT
 
-import           Test.Kore.Step.SMT.Builders
-                 ( constructor, emptyModule, functional, indexModule, smtlib,
-                 sortDeclaration, symbolDeclaration )
-import           Test.Kore.Step.SMT.Helpers
-                 ( atom, constructorAxiom, eq, gt, isError, isNotSatisfiable,
-                 isSatisfiable, lt, ofType )
+import Test.Kore.Step.SMT.Builders
+    ( constructor
+    , emptyModule
+    , functional
+    , indexModule
+    , smtlib
+    , sortDeclaration
+    , symbolDeclaration
+    )
+import Test.Kore.Step.SMT.Helpers
+    ( atom
+    , constructorAxiom
+    , eq
+    , gt
+    , isError
+    , isNotSatisfiable
+    , isSatisfiable
+    , lt
+    , ofType
+    )
 import qualified Test.Kore.Step.SMT.Helpers as Helpers
-                 ( testsForModule )
-import           Test.Kore.With
-                 ( with )
+    ( testsForModule
+    )
+import Test.Kore.With
+    ( with
+    )
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =

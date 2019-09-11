@@ -10,66 +10,95 @@ module Kore.Step.SMT.Representation.Sorts
     ( buildRepresentations
     ) where
 
-import           Control.Monad
-                 ( when, zipWithM )
+import Control.Monad
+    ( when
+    , zipWithM
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( mapMaybe )
+import Data.Maybe
+    ( mapMaybe
+    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
+    ( Axiom
+    )
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
-                 ( constructor )
+    ( constructor
+    )
 import qualified Kore.Attribute.Axiom.Constructor as Axiom.Constructor
-import           Kore.Attribute.Hook
-                 ( Hook (Hook) )
+import Kore.Attribute.Hook
+    ( Hook (Hook)
+    )
 import qualified Kore.Attribute.Hook as Hook
-import           Kore.Attribute.Smtlib
-                 ( applySExpr )
-import           Kore.Attribute.Smtlib.Smtlib
-                 ( Smtlib (Smtlib) )
+import Kore.Attribute.Smtlib
+    ( applySExpr
+    )
+import Kore.Attribute.Smtlib.Smtlib
+    ( Smtlib (Smtlib)
+    )
 import qualified Kore.Attribute.Smtlib.Smtlib as Smtlib
 import qualified Kore.Attribute.Sort as Attribute
-                 ( Sort )
+    ( Sort
+    )
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule, recursiveIndexedModuleAxioms,
-                 recursiveIndexedModuleSortDescriptions )
-import           Kore.Internal.TermLike
-import           Kore.Sort
-                 ( Sort (SortActualSort), SortActual (SortActual) )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    , recursiveIndexedModuleAxioms
+    , recursiveIndexedModuleSortDescriptions
+    )
+import Kore.Internal.TermLike
+import Kore.Sort
+    ( Sort (SortActualSort)
+    , SortActual (SortActual)
+    )
 import qualified Kore.Sort as SortActual
-                 ( SortActual (..) )
+    ( SortActual (..)
+    )
 import qualified Kore.Step.SMT.AST as AST
-import           Kore.Syntax.Id
-                 ( Id )
-import           Kore.Syntax.Sentence
-                 ( SentenceAxiom (SentenceAxiom), SentenceSort (SentenceSort) )
+import Kore.Syntax.Id
+    ( Id
+    )
+import Kore.Syntax.Sentence
+    ( SentenceAxiom (SentenceAxiom)
+    , SentenceSort (SentenceSort)
+    )
 import qualified Kore.Syntax.Sentence as SentenceSort
-                 ( SentenceSort (..) )
+    ( SentenceSort (..)
+    )
 import qualified Kore.Syntax.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
-import           Kore.Unparser
-                 ( unparseToString )
+    ( SentenceAxiom (..)
+    )
+import Kore.Unparser
+    ( unparseToString
+    )
 import qualified Kore.Verified as Verified
 import qualified SMT
-                 ( Constructor (Constructor),
-                 ConstructorArgument (ConstructorArgument),
-                 DataTypeDeclaration (DataTypeDeclaration), SExpr (Atom, List),
-                 SortDeclaration (SortDeclaration), nameFromSExpr, showSExpr,
-                 tBool, tInt )
+    ( Constructor (Constructor)
+    , ConstructorArgument (ConstructorArgument)
+    , DataTypeDeclaration (DataTypeDeclaration)
+    , SExpr (Atom, List)
+    , SortDeclaration (SortDeclaration)
+    , nameFromSExpr
+    , showSExpr
+    , tBool
+    , tInt
+    )
 import qualified SMT as SMT.DataTypeDeclaration
-                 ( DataTypeDeclaration (..) )
+    ( DataTypeDeclaration (..)
+    )
 import qualified SMT as SMT.SortDeclaration
-                 ( SortDeclaration (..) )
+    ( SortDeclaration (..)
+    )
 import qualified SMT as SMT.ConstructorArgument
-                 ( ConstructorArgument (..) )
+    ( ConstructorArgument (..)
+    )
 import qualified SMT as SMT.Constructor
-                 ( Constructor (..) )
+    ( Constructor (..)
+    )
 
 
 translateSort

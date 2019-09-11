@@ -7,7 +7,8 @@ import Kore.Attribute.Subsort
 import Kore.Syntax.Pattern
 
 import Test.Kore
-       ( sortActual )
+    ( sortActual
+    )
 import Test.Kore.Attribute.Parser
 
 sub :: Sort

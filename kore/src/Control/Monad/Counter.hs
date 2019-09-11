@@ -26,33 +26,40 @@ module Control.Monad.Counter
     , runCounter, evalCounter
     ) where
 
-import           Control.Applicative
-                 ( Alternative )
-import           Control.Monad
-                 ( MonadPlus )
+import Control.Applicative
+    ( Alternative
+    )
+import Control.Monad
+    ( MonadPlus
+    )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Identity as Monad.Identity
-import           Control.Monad.IO.Class
-                 ( MonadIO (..) )
+import Control.Monad.IO.Class
+    ( MonadIO (..)
+    )
 import qualified Control.Monad.Morph as Morph
-import           Control.Monad.Reader
-                 ( MonadReader )
+import Control.Monad.Reader
+    ( MonadReader
+    )
 import qualified Control.Monad.Reader as Monad.Reader
 import qualified Control.Monad.RWS.Lazy as Monad.RWS.Lazy
 import qualified Control.Monad.RWS.Strict as Monad.RWS.Strict
-import           Control.Monad.State
-                 ( MonadState )
+import Control.Monad.State
+    ( MonadState
+    )
 import qualified Control.Monad.State.Class as Monad.State
 import qualified Control.Monad.State.Lazy as Monad.State.Lazy
 import qualified Control.Monad.State.Strict as Monad.State.Strict
-import           Control.Monad.Trans
-                 ( MonadTrans )
+import Control.Monad.Trans
+    ( MonadTrans
+    )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Maybe
-                 ( MaybeT )
+import Control.Monad.Trans.Maybe
+    ( MaybeT
+    )
 import qualified Control.Monad.Writer.Lazy as Monad.Writer.Lazy
 import qualified Control.Monad.Writer.Strict as Monad.Writer.Strict
-import           Numeric.Natural
+import Numeric.Natural
 
 {- | A computation using a monotonic counter.
  -}

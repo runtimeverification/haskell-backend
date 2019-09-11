@@ -13,10 +13,13 @@ module Kore.Step.SMT.Declaration.Symbols
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations),
-                 KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly),
-                 SmtDeclarations, SmtKoreSymbolDeclaration, SmtSymbol,
-                 Symbol (Symbol) )
+    ( Declarations (Declarations)
+    , KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly)
+    , SmtDeclarations
+    , SmtKoreSymbolDeclaration
+    , SmtSymbol
+    , Symbol (Symbol)
+    )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified SMT
 

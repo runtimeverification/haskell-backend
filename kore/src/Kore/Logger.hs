@@ -24,34 +24,46 @@ module Kore.Logger
     , LoggerT (..)
     ) where
 
-import           Colog
-                 ( LogAction (..) )
+import Colog
+    ( LogAction (..)
+    )
 import qualified Control.Monad.Except as Except
-import           Control.Monad.IO.Class
-import           Control.Monad.Morph
-                 ( MFunctor )
+import Control.Monad.IO.Class
+import Control.Monad.Morph
+    ( MFunctor
+    )
 import qualified Control.Monad.Morph as Monad.Morph
 import qualified Control.Monad.State.Strict as Strict
-import           Control.Monad.Trans
-                 ( MonadTrans )
+import Control.Monad.Trans
+    ( MonadTrans
+    )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Accum
-import           Control.Monad.Trans.Identity
-import           Control.Monad.Trans.Maybe
-import           Control.Monad.Trans.Reader
-import           Data.Functor.Contravariant
-                 ( contramap )
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
-import           GHC.Stack
-                 ( CallStack, HasCallStack, callStack )
-import           Prelude hiding
-                 ( log )
+import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Identity
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Reader
+import Data.Functor.Contravariant
+    ( contramap
+    )
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
+import GHC.Stack
+    ( CallStack
+    , HasCallStack
+    , callStack
+    )
+import Prelude hiding
+    ( log
+    )
 
 import ListT
-       ( ListT, mapListT )
+    ( ListT
+    , mapListT
+    )
 
 -- | Log level used to describe each log message. It is also used to set the
 -- minimum level to be outputted.

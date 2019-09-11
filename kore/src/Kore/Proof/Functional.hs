@@ -15,12 +15,16 @@ module Kore.Proof.Functional
     ) where
 
 import Data.Hashable
-       ( Hashable )
+    ( Hashable
+    )
 import GHC.Generics
-       ( Generic )
+    ( Generic
+    )
 
 import Kore.Internal.TermLike
-       ( Builtin, Symbol )
+    ( Builtin
+    , Symbol
+    )
 import Kore.Sort
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.DomainValue

@@ -10,53 +10,75 @@ module Kore.Repl
     ( runRepl
     ) where
 
-import           Control.Concurrent.MVar
-import           Control.Exception
-                 ( AsyncException (UserInterrupt) )
+import Control.Concurrent.MVar
+import Control.Exception
+    ( AsyncException (UserInterrupt)
+    )
 import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
-import           Control.Monad
-                 ( forever, void, when )
-import           Control.Monad.Catch
-                 ( MonadCatch, catch )
-import           Control.Monad.IO.Class
-                 ( MonadIO, liftIO )
-import           Control.Monad.Reader
-                 ( ReaderT (..) )
-import           Control.Monad.RWS.Strict
-                 ( RWST, execRWST )
-import           Control.Monad.State.Strict
-                 ( MonadState, StateT, evalStateT )
-import           Data.Coerce
-                 ( coerce )
-import           Data.Generics.Product
+    ( makeLenses
+    )
+import Control.Monad
+    ( forever
+    , void
+    , when
+    )
+import Control.Monad.Catch
+    ( MonadCatch
+    , catch
+    )
+import Control.Monad.IO.Class
+    ( MonadIO
+    , liftIO
+    )
+import Control.Monad.Reader
+    ( ReaderT (..)
+    )
+import Control.Monad.RWS.Strict
+    ( RWST
+    , execRWST
+    )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT
+    , evalStateT
+    )
+import Data.Coerce
+    ( coerce
+    )
+import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.List
-                 ( findIndex )
+import Data.List
+    ( findIndex
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
+import Data.Maybe
 import qualified Data.Sequence as Seq
-import           Kore.Attribute.RuleIndex
-import           System.IO
-                 ( hFlush, stdout )
-import           Text.Megaparsec
-                 ( parseMaybe )
+import Kore.Attribute.RuleIndex
+import System.IO
+    ( hFlush
+    , stdout
+    )
+import Text.Megaparsec
+    ( parseMaybe
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Logger as Logger
-import           Kore.Repl.Data
-import           Kore.Repl.Interpreter
-import           Kore.Repl.Parser
-import           Kore.Repl.State
+import Kore.Repl.Data
+import Kore.Repl.Interpreter
+import Kore.Repl.Parser
+import Kore.Repl.State
 import qualified Kore.Step.Rule as Rule
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Strategies.Goal
-import           Kore.Strategies.OnePath.Verification
-import           Kore.Syntax.Variable
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
+import Kore.Strategies.Goal
+import Kore.Strategies.OnePath.Verification
+import Kore.Syntax.Variable
+import Kore.Unification.Procedure
+    ( unificationProcedure
+    )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
 -- that would otherwise be required in the proof and allows for step-by-step

@@ -21,24 +21,33 @@ module Kore.Step.Simplification.Data
     , evalSimplifierBranch
     ) where
 
-import           Control.Monad.Catch
-                 ( MonadCatch, MonadThrow )
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO )
-import           Control.Monad.Reader
+import Control.Monad.Catch
+    ( MonadCatch
+    , MonadThrow
+    )
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO
+    )
+import Control.Monad.Reader
 import qualified GHC.Stack as GHC
 
-import           Branch
+import Branch
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler (profileDuration) )
-import           Kore.Step.Simplification.Simplify
-import           SMT
-                 ( MonadSMT (..), SMT, SmtT (..) )
+    ( Symbol
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Logger
+import Kore.Profiler.Data
+    ( MonadProfiler (profileDuration)
+    )
+import Kore.Step.Simplification.Simplify
+import SMT
+    ( MonadSMT (..)
+    , SMT
+    , SmtT (..)
+    )
 
 -- * Simplifier
 

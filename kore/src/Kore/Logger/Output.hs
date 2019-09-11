@@ -21,50 +21,81 @@ module Kore.Logger.Output
     , runLoggerT
     ) where
 
-import           Colog
-                 ( LogAction (..) )
+import Colog
+    ( LogAction (..)
+    )
 import qualified Colog
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Concurrent.MVar
-import           Control.Monad.Catch
-                 ( MonadMask, bracket )
-import           Control.Monad.IO.Class
-                 ( MonadIO, liftIO )
-import           Control.Monad.Reader
-                 ( runReaderT )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Concurrent.MVar
+import Control.Monad.Catch
+    ( MonadMask
+    , bracket
+    )
+import Control.Monad.IO.Class
+    ( MonadIO
+    , liftIO
+    )
+import Control.Monad.Reader
+    ( runReaderT
+    )
 import qualified Control.Monad.Trans as Trans
-import           Data.Foldable
-                 ( fold )
+import Data.Foldable
+    ( fold
+    )
 import qualified Data.Foldable as Fold
-import           Data.Functor
-                 ( void )
-import           Data.Functor.Contravariant
-                 ( contramap )
-import           Data.List
-                 ( intersperse )
-import           Data.Set
-                 ( Set )
+import Data.Functor
+    ( void
+    )
+import Data.Functor.Contravariant
+    ( contramap
+    )
+import Data.List
+    ( intersperse
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.String
-                 ( IsString, fromString )
-import           Data.Text
-                 ( Text )
+import Data.String
+    ( IsString
+    , fromString
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
-import           Data.Text.Lazy.Builder
-                 ( Builder )
+import Data.Text.Lazy.Builder
+    ( Builder
+    )
 import qualified Data.Text.Lazy.Builder as Builder
-import           Data.Time.Clock
-                 ( getCurrentTime )
-import           Data.Time.Format
-                 ( defaultTimeLocale, formatTime )
-import           Data.Time.LocalTime
-                 ( LocalTime, getCurrentTimeZone, utcToLocalTime )
-import           GHC.Stack
-                 ( CallStack, getCallStack, popCallStack, prettyCallStack )
-import           Options.Applicative
-                 ( Parser, help, long, maybeReader, option )
+import Data.Time.Clock
+    ( getCurrentTime
+    )
+import Data.Time.Format
+    ( defaultTimeLocale
+    , formatTime
+    )
+import Data.Time.LocalTime
+    ( LocalTime
+    , getCurrentTimeZone
+    , utcToLocalTime
+    )
+import GHC.Stack
+    ( CallStack
+    , getCallStack
+    , popCallStack
+    , prettyCallStack
+    )
+import Options.Applicative
+    ( Parser
+    , help
+    , long
+    , maybeReader
+    , option
+    )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 

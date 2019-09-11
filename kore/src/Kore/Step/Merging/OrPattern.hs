@@ -9,22 +9,31 @@ module Kore.Step.Merging.OrPattern
     ) where
 
 import qualified Branch as BranchT
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( mergeAll )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
-import           Kore.Internal.Pattern
-                 ( Conditional, Predicate )
-import           Kore.Logger
-                 ( LogMessage, WithLog )
+    ( mergeAll
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.Pattern
+    ( Conditional
+    , Predicate
+    )
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Simplification.Simplify
-import           Kore.Step.Substitution
-                 ( PredicateMerger )
-import           Kore.TopBottom
-                 ( TopBottom )
+import Kore.Step.Simplification.Simplify
+import Kore.Step.Substitution
+    ( PredicateMerger
+    )
+import Kore.TopBottom
+    ( TopBottom
+    )
 
 {-| 'mergeWithPredicate' ands the given predicate/substitution
 to the given OrPattern.

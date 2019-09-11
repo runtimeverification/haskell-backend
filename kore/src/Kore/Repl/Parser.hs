@@ -11,23 +11,38 @@ module Kore.Repl.Parser
     , scriptParser
     ) where
 
-import           Control.Applicative
-                 ( some, (<|>) )
+import Control.Applicative
+    ( some
+    , (<|>)
+    )
 import qualified Data.Foldable as Foldable
-import           Data.Functor
-                 ( void, ($>) )
-import           Data.List
-                 ( nub )
-import           Prelude hiding
-                 ( log )
-import           Text.Megaparsec
-                 ( Parsec, customFailure, eof, many, manyTill, noneOf, oneOf,
-                 option, optional, try )
+import Data.Functor
+    ( void
+    , ($>)
+    )
+import Data.List
+    ( nub
+    )
+import Prelude hiding
+    ( log
+    )
+import Text.Megaparsec
+    ( Parsec
+    , customFailure
+    , eof
+    , many
+    , manyTill
+    , noneOf
+    , oneOf
+    , option
+    , optional
+    , try
+    )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import qualified Kore.Logger as Logger
-import           Kore.Repl.Data
+import Kore.Repl.Data
 
 type Parser = Parsec String String
 

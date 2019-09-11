@@ -8,22 +8,23 @@ module Kore.Attribute.Pattern.Function
     ( Function (..)
     ) where
 
-import           Control.DeepSeq
+import Control.DeepSeq
 import qualified Data.Foldable as Foldable
-import           Data.Functor.Const
-import           Data.Hashable
-import           Data.Monoid
+import Data.Functor.Const
+import Data.Hashable
+import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Synthetic
-import           Kore.Debug
-import           Kore.Domain.Builtin
+import Kore.Attribute.Synthetic
+import Kore.Debug
+import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Syntax
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Syntax
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {- | A pattern is 'Function' if it matches zero or one elements.
  -}

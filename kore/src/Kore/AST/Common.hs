@@ -18,9 +18,11 @@ module Kore.AST.Common where
 
 import Data.Hashable
 import Data.String
-       ( fromString )
+    ( fromString
+    )
 import GHC.Generics
-       ( Generic )
+    ( Generic
+    )
 
 import Kore.Unparser
 

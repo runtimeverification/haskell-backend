@@ -5,23 +5,32 @@ module Test.Kore.Attribute.Symbol
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( Assertion, assertEqual, assertFailure, testCase )
+    ( Assertion
+    , assertEqual
+    , assertFailure
+    , testCase
+    )
 
 import Data.Default
-       ( def )
+    ( def
+    )
 import Data.Function
-       ( (&) )
+    ( (&)
+    )
 import Data.Generics.Product
 
 import Kore.Attribute.Attributes
-       ( Attributes (..) )
+    ( Attributes (..)
+    )
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser
 import Kore.Attribute.Symbol
 import Kore.Error
-       ( Error )
+    ( Error
+    )
 import Kore.Syntax.Pattern
 
 import Test.Kore.Comparators ()
