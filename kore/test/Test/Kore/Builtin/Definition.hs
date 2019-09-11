@@ -15,6 +15,8 @@ import           Kore.Attribute.Injective
 import           Kore.Attribute.Parser
 import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
+import           Kore.Attribute.Sort.HasDomainValues
+                 ( hasDomainValuesAttribute )
 import qualified Kore.Attribute.Sort.Unit as Sort
 import           Kore.Attribute.SortInjection
 import           Kore.Domain.Builtin
@@ -571,6 +573,16 @@ string2IntStringSymbol =
     builtinSymbol "string2intString" intSort [stringSort]
     & hook "STRING.string2int"
 
+token2StringStringSymbol :: Internal.Symbol
+token2StringStringSymbol =
+    builtinSymbol "token2stringString" stringSort [userTokenSort]
+    & hook "STRING.token2string"
+
+string2TokenStringSymbol :: Internal.Symbol
+string2TokenStringSymbol =
+    builtinSymbol "string2tokenString" userTokenSort [stringSort]
+    & hook "STRING.string2token"
+
 -- * Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
@@ -602,6 +614,25 @@ sortDecl sort =
                 in sortActualName
             , sentenceSortParameters = []
             , sentenceSortAttributes = Attributes []
+            }
+
+sortDeclWithAttributes
+    :: Sort
+    -- ^ declared sort
+    -> [ParsedPattern]
+    -- ^ declaration attributes
+    -> ParsedSentence
+sortDeclWithAttributes sort attributes =
+    asSentence sentence
+  where
+    sentence :: ParsedSentenceSort
+    sentence =
+        SentenceSort
+            { sentenceSortName =
+                let SortActualSort SortActual { sortActualName } = sort
+                in sortActualName
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes attributes
             }
 
 -- | Declare a hooked sort.
@@ -857,12 +888,27 @@ stringSort =
         , sortActualSorts = []
         }
 
+-- | A user defined token sort
+userTokenSort :: Sort
+userTokenSort =
+    SortActualSort SortActual
+        { sortActualName = testId "UserToken"
+        , sortActualSorts = []
+        }
+
 -- | Declare 'stringSort' in a Kore module.
 stringSortDecl :: ParsedSentence
 stringSortDecl =
     hookedSortDecl
         stringSort
         [ hookAttribute "STRING.String" ]
+
+-- | Declare a user defined token sort in a Kore module
+userTokenSortDecl :: ParsedSentence
+userTokenSortDecl =
+    sortDeclWithAttributes
+        userTokenSort
+        [ hasDomainValuesAttribute ]
 
 -- -------------------------------------------------------------
 -- * Modules
@@ -1196,6 +1242,7 @@ stringModule =
             [ importParsedModule boolModuleName
             , importParsedModule intModuleName
             , stringSortDecl
+            , userTokenSortDecl
             , hookedSymbolDecl ltStringSymbol
             , hookedSymbolDecl concatStringSymbol
             , hookedSymbolDecl substrStringSymbol
@@ -1205,6 +1252,8 @@ stringModule =
             , hookedSymbolDecl findStringSymbol
             , hookedSymbolDecl string2BaseStringSymbol
             , hookedSymbolDecl string2IntStringSymbol
+            , hookedSymbolDecl token2StringStringSymbol
+            , hookedSymbolDecl string2TokenStringSymbol
             ]
         }
 

@@ -36,6 +36,8 @@ module Kore.Builtin.Builtin
     , assertSymbolHook
     , assertSymbolResultSort
     , verifySort
+    , verifySortHasDomainValues
+    , expectDomainValue
     , acceptAnySort
     , verifySymbol
     , verifySymbolArguments
@@ -60,10 +62,14 @@ module Kore.Builtin.Builtin
     , isSort
     , toKey
     , getAttemptedAxiom
+    , makeDomainValueTerm
+    , makeDomainValuePattern
       -- * Implementing builtin unification
     , unifyEqualsUnsolved
     ) where
 
+import           Control.Applicative
+                 ( Alternative (..) )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import           Control.Error
                  ( MaybeT (..), fromMaybe )
@@ -90,14 +96,18 @@ import qualified Kore.AST.Error as Kore.Error
 import qualified Kore.ASTVerifier.AttributesVerifier as Verifier.Attributes
 import           Kore.ASTVerifier.Error
                  ( VerifyError )
+import           Kore.Attribute.Attributes
+                 ( Attributes (..) )
 import qualified Kore.Attribute.Axiom as Attribute
                  ( Axiom )
 import           Kore.Attribute.Hook
                  ( Hook (..) )
+import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute.Sort
 import qualified Kore.Attribute.Sort.Element as Attribute.Sort
+import qualified Kore.Attribute.Sort.HasDomainValues as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute
 import           Kore.Builtin.Error
@@ -115,7 +125,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import           Kore.Internal.Pattern as Pattern
-                 ( top )
+                 ( fromTermLike, top )
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeCeilPredicate, makeEqualsPredicate )
@@ -400,6 +410,54 @@ verifySort builtinName =
         Kore.Error.koreFail
             ("unexpected sort variable '"
                 ++ getIdForError getSortVariable ++ "'")
+
+-- Verify a sort by only checking if it has domain values.
+verifySortHasDomainValues :: SortVerifier
+verifySortHasDomainValues = SortVerifier worker
+  where
+    worker
+        :: forall patternType
+        .  (Id -> Either (Error VerifyError) (SentenceSort patternType))
+        -> Sort
+        -> Either (Error VerifyError) ()
+    worker findSort (SortActualSort SortActual { sortActualName }) = do
+        SentenceSort { sentenceSortAttributes } <- findSort sortActualName
+        sortAttr <- parseSortAttributes sentenceSortAttributes
+        let hasDomainValues =
+                Attribute.getHasDomainValues
+                . Attribute.hasDomainValues
+                $ sortAttr
+        Kore.Error.koreFailWhen (not hasDomainValues)
+            ("Sort '" ++ getIdForError sortActualName
+                ++ "' does not have domain values.")
+    worker _ (SortVariableSort SortVariable { getSortVariable }) =
+        Kore.Error.koreFail
+            ("unexpected sort variable '"
+                ++ getIdForError getSortVariable ++ "'")
+    parseSortAttributes
+        :: Attributes
+        -> Either (Error VerifyError) Attribute.Sort
+    parseSortAttributes rawSortAttributes =
+        Attribute.Parser.liftParser
+        $ Attribute.Parser.parseAttributes rawSortAttributes
+
+expectDomainValue
+    :: Monad m
+    => Text
+    -- ^ Context for error message
+    -> TermLike variable
+    -- ^ Operand pattern
+    -> MaybeT m Text
+expectDomainValue ctx =
+    \case
+        DV_ _ child ->
+            case child of
+                StringLiteral_ text ->
+                    return text
+                _ ->
+                    verifierBug
+                    $ Text.unpack ctx ++ ": Domain value is not a string literal"
+        _ -> empty
 
 -- | Wildcard for sort verification on parameterized builtin sorts
 acceptAnySort :: SortVerifier
@@ -907,3 +965,24 @@ unifyEqualsUnsolved SimplificationType.And a b =
         return (pure unified) { predicate }
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top {predicate = makeEqualsPredicate a b}
+
+makeDomainValueTerm
+    :: InternalVariable variable
+    => Sort
+    -> Text
+    -> TermLike variable
+makeDomainValueTerm sort stringLiteral =
+    mkDomainValue
+    $ DomainValue
+          { domainValueSort = sort
+          , domainValueChild = mkStringLiteral stringLiteral
+          }
+
+makeDomainValuePattern
+    :: InternalVariable variable
+    => Sort
+    -> Text
+    -> Pattern variable
+makeDomainValuePattern sort stringLiteral =
+    Pattern.fromTermLike
+    $ makeDomainValueTerm sort stringLiteral
