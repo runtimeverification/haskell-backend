@@ -23,7 +23,10 @@ do
         *) continue ;;
     esac
     $TOP/.build/kore/bin/stylish-haskell $file >$file.tmp
-    if diff -Nau $file $file.tmp
+    # (diff ...) exits with 0 when the files are the same
+    # (! diff ...) means the files are _different_
+    # Maybe it should have been named "same" :-\
+    if ! diff -Nau $file $file.tmp
     then
         changed+=($file)
     fi
