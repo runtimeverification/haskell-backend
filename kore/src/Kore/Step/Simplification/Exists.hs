@@ -17,6 +17,9 @@ import qualified Data.Map.Strict as Map
 import           GHC.Stack
                  ( HasCallStack )
 
+import           Branch
+                 ( BranchT )
+import qualified Branch
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( extractPatterns )
@@ -31,11 +34,9 @@ import           Kore.Sort
                  ( predicateSort )
 import           Kore.Step.Axiom.Matcher
                  ( matchIncremental )
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather, scatter )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import           Kore.Unification.Substitution
@@ -44,7 +45,6 @@ import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Unification.Unify
                  ( runUnifierT )
 import           Kore.Unparser
-import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 
@@ -82,12 +82,7 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
     (pat' and (pred' and (exists x . predX and substX)) and subst')
 -}
 simplify
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Exists Sort variable (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify Exists { existsVariable, existsChild } =
@@ -107,12 +102,7 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -128,17 +118,12 @@ simplifyEvaluated variable simplified
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluate variable original
-  = fmap OrPattern.fromPatterns $ BranchT.gather $ do
+  = fmap OrPattern.fromPatterns $ Branch.gather $ do
     normalized <- Substitution.normalize original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
@@ -162,12 +147,7 @@ makeEvaluate variable original
                     normalized { substitution = boundSubstitution }
 
 matchesToVariableSubstitution
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> Pattern variable
     -> simplifier Bool
@@ -188,10 +168,7 @@ matchesToVariableSubstitution
 matchesToVariableSubstitution _ _ = return False
 
 singleVariableSubstitution
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => ElementVariable variable -> Predicate variable -> Bool
 singleVariableSubstitution
     variable
@@ -226,12 +203,7 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundLeft
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
@@ -253,7 +225,7 @@ makeEvaluateBoundLeft
                         $ Conditional.predicate normalized
                     }
         orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
-        BranchT.scatter (MultiOr.extractPatterns orPattern)
+        Branch.scatter (MultiOr.extractPatterns orPattern)
 
 {- | Existentially quantify a variable in the given 'Pattern'.
 
@@ -266,12 +238,7 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundRight
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
@@ -303,13 +270,7 @@ The result is a pair of:
 
  -}
 splitSubstitution
-    ::  ( FreshVariable variable
-        , HasCallStack
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: (SimplifierVariable variable, HasCallStack)
     => ElementVariable variable
     -> Substitution variable
     ->  ( Either (TermLike variable) (Substitution variable)
@@ -336,11 +297,7 @@ is lowered onto the 'term' or 'predicate' alone, or omitted, if possible.
 
  -}
 quantifyPattern
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => ElementVariable variable
     -> Pattern variable
     -> Pattern variable

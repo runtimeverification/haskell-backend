@@ -14,6 +14,7 @@ module Kore.Internal.Symbol
     , isFunction
     , isTotal
     , isInjective
+    , isMemo
     , symbolHook
     , constructor
     , functional
@@ -149,6 +150,9 @@ isFunction = Attribute.isFunction . symbolAttributes
 
 isTotal :: Symbol -> Bool
 isTotal = Attribute.isTotal . symbolAttributes
+
+isMemo :: Symbol -> Bool
+isMemo = Attribute.isMemo . Attribute.memo . symbolAttributes
 
 symbolHook :: Symbol -> Attribute.Hook
 symbolHook = Attribute.hook . symbolAttributes

@@ -15,22 +15,11 @@ import Kore.Internal.TermLike
        ( TermLike )
 import Kore.Logger
        ( LogMessage, WithLog )
-import Kore.Step.Simplification.Data
-       ( MonadSimplify )
-import Kore.Syntax.Variable
-       ( SortedVariable )
-import Kore.Unparser
-       ( Unparse )
-import Kore.Variables.Fresh
-       ( FreshVariable )
+import Kore.Step.Simplification.Simplify
+       ( MonadSimplify, SimplifierVariable )
 
 makeEvaluate
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -40,10 +29,7 @@ makeEvaluate
 
 makeEvaluateTerm
     ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )

@@ -290,7 +290,7 @@ test_patternVerifier =
     , successTestsForObjectPattern "Application pattern - alias"
         (applicationPatternWithChildren
             objectAliasNameAsSymbol
-            [ simpleExistsParsedPattern
+            [ variableParsedPattern
                 objectVariableName anotherObjectSort2]
         )
         (NamePrefix "dummy")
@@ -364,9 +364,9 @@ test_patternVerifier =
         (ErrorStack ["symbol or alias 'ObjectAlias' (<test data>)"])
         (applicationPatternWithChildren
             objectAliasNameAsSymbol
-            [ simpleExistsParsedPattern
+            [ variableParsedPattern
                 objectVariableName anotherObjectSort2
-            , simpleExistsParsedPattern
+            , variableParsedPattern
                 objectVariableName anotherObjectSort2
             ]
         )
@@ -707,7 +707,7 @@ test_patternVerifier =
         objectAliasSentenceWithArguments
             objectAliasName
             objectSort
-            [ ElementVariable Variable
+            [ ElemVar $ ElementVariable Variable
                 { variableName = testId "x"
                 , variableCounter = mempty
                 , variableSort = anotherObjectSort2
@@ -1179,7 +1179,7 @@ patternsInAllContexts
                                 SortVariableSort <$> aliasParams
                             }
                     , applicationChildren =
-                        [ ElementVariable Variable
+                        [ SetVar $ SetVariable Variable
                             { variableName = testId "x"
                             , variableCounter = mempty
                             , variableSort = symbolAliasSort

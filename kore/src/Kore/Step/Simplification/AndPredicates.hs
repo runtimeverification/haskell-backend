@@ -13,6 +13,9 @@ module Kore.Step.Simplification.AndPredicates
 
 import qualified Data.Foldable as Foldable
 
+import           Branch
+                 ( BranchT )
+import qualified Branch as BranchT
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
 import qualified Kore.Internal.MultiAnd as MultiAnd
@@ -25,22 +28,13 @@ import           Kore.Internal.OrPredicate
                  ( OrPredicate )
 import           Kore.Internal.Pattern
                  ( Predicate )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+import           Kore.Step.Simplification.Simplify
+                 ( MonadSimplify, SimplifierVariable )
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 simplifyEvaluatedMultiPredicate
     :: forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => MultiAnd (OrPredicate variable)
     -> simplifier (OrPredicate variable)
 simplifyEvaluatedMultiPredicate predicates = do
