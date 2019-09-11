@@ -193,7 +193,7 @@ See also: 'asPattern'
  -}
 externalizePattern
     ::  forall variable
-    .   (Ord variable, SortedVariable variable, Unparse variable)
+    .   InternalVariable variable
     =>  TermLike variable
     ->  Syntax.Pattern variable Attribute.Null
 externalizePattern =
@@ -281,7 +281,7 @@ representations are fully normalized.
 
  -}
 internalize
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable

@@ -24,6 +24,9 @@ import           Data.Maybe
 import           Numeric.Natural
                  ( Natural )
 
+import           Branch
+                 ( BranchT )
+import qualified Branch
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
@@ -38,23 +41,16 @@ import qualified Kore.Internal.Predicate as Predicate
                  ( bottom, fromSubstitution )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
                  ( evaluate )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
 import           Kore.TopBottom
 import           Kore.Unification.Procedure
                  ( unificationProcedure )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-| Which configurations are considered for matching?
 
@@ -117,14 +113,8 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable m .
-        ( SortedVariable variable
-        , FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify m
-        )
+    :: forall variable m
+    .  (SimplifierVariable variable, MonadSimplify m)
     => Pattern variable
     -> Pattern variable
     -> MaybeT m (OrPredicate variable)
@@ -139,7 +129,7 @@ matchWith e1 e2 = do
             :: Predicate variable
             -> m (OrPredicate variable)
         mergeAndEvaluate predSubst = do
-            results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
+            results <- Branch.gather $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
             :: Predicate variable

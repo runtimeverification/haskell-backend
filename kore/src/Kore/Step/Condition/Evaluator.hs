@@ -11,31 +11,19 @@ module Kore.Step.Condition.Evaluator
     ( simplify
     ) where
 
+import qualified Branch
 import           Kore.Internal.Predicate
                  ( Predicate )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, simplifyPredicate )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import           Kore.Step.Simplification.Simplify
 
 {- | Attempt to simplify a predicate. -}
 simplify
-    ::  forall variable m .
-        ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify m
-        )
+    :: forall variable m
+    .  (SimplifierVariable variable, MonadSimplify m)
     => Syntax.Predicate variable
     -- ^ The condition to be evaluated.
     -> m (Predicate variable)
@@ -43,7 +31,7 @@ simplify
     -- to predicates. Even better, delete this one and use Predicate.simplify.
 simplify predicate = do
     simplifiedPredicates <-
-        BranchT.gather . simplifyPredicate
+        Branch.gather . simplifyPredicate
         $ Predicate.fromPredicate predicate
     return
         ( Predicate.fromPredicate

@@ -44,9 +44,7 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Profiler.Profile as Profile
                  ( smtDecision )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
-import qualified Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Step.SMT.Translate
                  ( Translator, evalTranslator, translatePredicate )
 import           Kore.Syntax.Variable

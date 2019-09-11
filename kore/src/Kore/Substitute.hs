@@ -5,7 +5,8 @@ License     : NCSA
  -}
 
 module Kore.Substitute
-    ( substitute
+    ( SubstitutionVariable
+    , substitute
     ) where
 
 import           Control.Applicative
@@ -28,11 +29,26 @@ import           Kore.Attribute.Pattern.FreeVariables
                  ( FreeVariables )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import           Kore.Attribute.Synthetic
+import           Kore.Internal.Variable
 import           Kore.Syntax
 import           Kore.Variables.Binding
 import           Kore.Variables.Fresh
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
+
+{- | 'SubstitutionVariable' constrains variable types that can be substituted.
+
+'SubstitutionVariable' is an extension of 'InternalVariable'; we require in
+addition that variables be 'FreshVariable', i.e. that we can refresh bound
+variables to avoid capturing while substituting. In practice, all variable types
+are both 'InternalVariable's and 'FreshVariable's, but we reserve the right to
+make 'SubstitutionVariable' even more restrictive in the future.
+
+ -}
+type SubstitutionVariable variable =
+    ( InternalVariable variable
+    , FreshVariable variable
+    )
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -45,10 +61,7 @@ may appear in the right-hand side of any substitution, but this is not checked.
  -}
 substitute
     ::  forall patternType patternBase attribute variable.
-        ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
+        ( SubstitutionVariable variable
         , Corecursive patternType, Recursive patternType
         , Functor patternBase
         , CofreeF patternBase attribute ~ Base patternType

@@ -39,6 +39,7 @@ import           Kore.Step.Rule
                  ( extractRewriteAxioms )
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
+import           Kore.Step.Simplification.Simplify
 import           Kore.Syntax.Definition hiding
                  ( Symbol )
 import qualified SMT

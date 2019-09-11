@@ -16,6 +16,7 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
+import           Branch
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
@@ -32,10 +33,7 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
-import           Kore.Step.Simplification.Data
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import           Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
@@ -47,12 +45,7 @@ Right now this uses the following:
 
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Not Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify Not { notChild } = simplifyEvaluated notChild
@@ -76,12 +69,7 @@ to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated simplified =
@@ -96,17 +84,13 @@ child.
 See 'simplify' for details.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> OrPattern variable
 makeEvaluate = makeEvaluateNot . Not ()
 
 makeEvaluateNot
-    :: (Ord variable, Show variable, SortedVariable variable, Unparse variable)
+    :: InternalVariable variable
     => Not sort (Pattern variable)
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
@@ -130,11 +114,7 @@ I.e. if we want to simplify @not (predicate and substitution)@, we may pass
 a @not@ on top of that.
 -}
 makeEvaluatePredicate
-    ::  ( Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
 makeEvaluatePredicate
@@ -153,11 +133,7 @@ makeEvaluatePredicate
         }
 
 makeTermNot
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
 -- TODO: maybe other simplifications like
@@ -197,12 +173,7 @@ scatterAnd = scatter . distributeAnd
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
  -}
 mkMultiAndPattern
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => MultiAnd (Pattern variable)
     -> BranchT simplifier (Pattern variable)
 mkMultiAndPattern patterns =

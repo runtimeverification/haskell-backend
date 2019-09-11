@@ -37,6 +37,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplify )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )

@@ -17,17 +17,12 @@ import Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
        ( OrPattern )
 import Kore.Internal.TermLike
-import Kore.Unparser
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
 -}
 simplify
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => DomainValue Sort (OrPattern variable)
     -> OrPattern variable
 simplify builtin =
@@ -36,11 +31,7 @@ simplify builtin =
         return (mkDomainValue <$> child)
 
 simplifyDomainValue
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => DomainValue Sort (OrPattern variable)
     -> MultiOr (Conditional variable (DomainValue Sort (TermLike variable)))
 simplifyDomainValue _ext = do

@@ -18,25 +18,17 @@ import           Kore.Internal.Alias
 import           Kore.Internal.Pattern
                  ( Pattern )
 import           Kore.Internal.TermLike
-                 ( pattern ApplyAlias_, TermLike, Variable, mapVariables,
-                 substitute )
+                 ( pattern ApplyAlias_, SubstitutionVariable, TermLike,
+                 Variable, mapVariables, substitute )
 import qualified Kore.Logger as Logger
 import           Kore.Syntax.Variable
                  ( SortedVariable (..) )
 import           Kore.Unification.Unify
                  ( MonadUnify )
-import           Kore.Unparser
-                 ( Unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 expandAlias
     :: forall variable unifier
-    .  FreshVariable variable
-    => Ord variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
+    .  SubstitutionVariable variable
     => MonadUnify unifier
     => Logger.WithLog Logger.LogMessage unifier
     => (   TermLike variable
@@ -52,9 +44,7 @@ expandAlias recurse t1 t2 = do
         (t1', t2') -> recurse (maybe t1 id t1') (maybe t2 id t2')
 
 expandSingleAlias
-    :: SortedVariable variable
-    => FreshVariable variable
-    => Show variable
+    :: SubstitutionVariable variable
     => TermLike variable
     -> Maybe (TermLike variable)
 expandSingleAlias =
@@ -66,9 +56,7 @@ expandSingleAlias =
 -- with the *bounded* variables in the rhs is empty (because we can't currently
 -- handle things like \mu.
 substituteWorker
-    :: SortedVariable variable
-    => FreshVariable variable
-    => Show variable
+    :: SubstitutionVariable variable
     => Alias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable

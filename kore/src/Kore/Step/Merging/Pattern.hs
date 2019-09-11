@@ -10,6 +10,8 @@ module Kore.Step.Merging.Pattern
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
 
+import           Branch
+                 ( BranchT )
 import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern, Predicate )
 import qualified Kore.Internal.Pattern as Pattern
@@ -17,24 +19,16 @@ import           Kore.Logger
                  ( LogMessage, WithLog )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
-import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Step.Substitution
                  ( PredicateMerger (PredicateMerger),
                  mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {-| 'mergeWithPredicate' ands the given predicate-substitution
 with the given pattern.
 -}
 mergeWithPredicate
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -65,11 +59,7 @@ mergeWithPredicate
         evaluatedCondition
 
 mergeWithEvaluatedCondition
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -96,13 +86,7 @@ Assumes that the initial patterns are simplified, so it does not attempt
 to re-simplify them.
 -}
 mergeWithPredicateAssumesEvaluated
-    ::  ( FreshVariable variable
-        , Monad m
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: (SimplifierVariable variable, Monad m)
     => PredicateMerger variable m
     -> Predicate variable
     -> Conditional variable term

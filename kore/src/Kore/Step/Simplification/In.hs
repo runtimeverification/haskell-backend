@@ -22,9 +22,7 @@ import           Kore.Predicate.Predicate
                  ( makeInPredicate )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluate, simplifyEvaluated )
-import           Kore.Step.Simplification.Data
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+import           Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.
@@ -39,12 +37,7 @@ Right now this uses the following simplifications:
 TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> In Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -66,12 +59,7 @@ carry around.
 -}
 simplifyEvaluatedIn
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> OrPattern variable
     -> OrPattern variable
@@ -88,12 +76,7 @@ simplifyEvaluatedIn predicate first second
                             (makeEvaluateIn predicate <$> first <*> second)
 
 makeEvaluateIn
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Pattern variable
     -> Pattern variable
@@ -105,11 +88,7 @@ makeEvaluateIn predicate first second
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable

@@ -15,6 +15,7 @@ import qualified Data.Set as Set
 import           Data.Text
                  ( Text )
 
+import qualified Branch
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
                  ( Simplification (Simplification) )
@@ -38,9 +39,8 @@ import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.AndTerms
                  ( termAnd, termEquals, termUnification )
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+                 ( Env (..), evalSimplifier )
+import           Kore.Step.Simplification.Simplify
 import           Kore.Syntax.Sentence
                  ( SentenceAlias )
 import qualified Kore.Unification.Substitution as Substitution
@@ -1260,7 +1260,7 @@ simplify
 simplify first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ BranchT.gather
+    $ Branch.gather
     $ termAnd first second
   where
     mockEnv = Mock.env
