@@ -42,10 +42,10 @@ import           Kore.ModelChecker.Simplification
 import qualified Kore.Step.Result as StepResult
 import           Kore.Step.Rule
                  ( RewriteRule (RewriteRule), allPathGlobally )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
 import qualified Kore.Step.Simplification.Pattern as Pattern
                  ( simplifyAndRemoveTopExists )
+import           Kore.Step.Simplification.Simplify
+                 ( MonadSimplify )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
                  ( filterMultiOr )
 import qualified Kore.Step.Step as Step

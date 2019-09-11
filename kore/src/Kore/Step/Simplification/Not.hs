@@ -16,6 +16,7 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
+import           Branch
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.MultiAnd
                  ( MultiAnd )
@@ -32,7 +33,7 @@ import           Kore.Predicate.Predicate
                  ( makeAndPredicate, makeNotPredicate )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.

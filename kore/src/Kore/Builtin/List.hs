@@ -83,7 +83,9 @@ import           Kore.Internal.Pattern
                  ( Conditional (..), Pattern )
 import qualified Kore.Internal.Pattern as Pattern
 import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.SimplificationType
+                 ( SimplificationType )
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Syntax.Sentence
                  ( SentenceSort (..) )
 import           Kore.Unification.Unify

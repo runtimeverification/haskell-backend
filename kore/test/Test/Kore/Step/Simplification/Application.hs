@@ -24,7 +24,8 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
                  ( AxiomIdentifier (..) )
 import           Kore.Step.Simplification.Application
 import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
+import           Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
                  ( AttemptedAxiom (..) )
 import qualified Kore.Unification.Substitution as Substitution
 import           Kore.Variables.UnifiedVariable

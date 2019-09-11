@@ -67,6 +67,7 @@ import           Kore.Step.Rule
 import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import           Kore.Syntax.Definition

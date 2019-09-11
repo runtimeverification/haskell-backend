@@ -18,6 +18,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import           Branch
 import qualified Kore.Internal.Conditional as Conditional
 import           Kore.Internal.Pattern
                  ( Conditional (..), Predicate )
@@ -26,7 +27,7 @@ import qualified Kore.Predicate.Predicate as Syntax
                  ( Predicate, unwrapPredicate )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
                  ( substitute )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 import qualified Kore.TopBottom as TopBottom

@@ -37,7 +37,7 @@ import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike as TermLike
 import           Kore.Predicate.Predicate
                  ( makeTruePredicate )
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
                  ( MonadSimplify, SimplifierVariable )
 import           Kore.Unification.Error
                  ( SubstitutionError (..) )

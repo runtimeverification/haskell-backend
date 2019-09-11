@@ -24,6 +24,9 @@ import           Data.Maybe
 import           Numeric.Natural
                  ( Natural )
 
+import           Branch
+                 ( BranchT )
+import qualified Branch
 import           Data.Limit
                  ( Limit (..) )
 import qualified Data.Limit as Limit
@@ -38,9 +41,7 @@ import qualified Kore.Internal.Predicate as Predicate
                  ( bottom, fromSubstitution )
 import qualified Kore.Step.Condition.Evaluator as Predicate
                  ( simplify )
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
                  ( evaluate )
 import qualified Kore.Step.Strategy as Strategy
@@ -128,7 +129,7 @@ matchWith e1 e2 = do
             :: Predicate variable
             -> m (OrPredicate variable)
         mergeAndEvaluate predSubst = do
-            results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
+            results <- Branch.gather $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
             :: Predicate variable

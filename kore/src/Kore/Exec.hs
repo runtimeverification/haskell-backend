@@ -76,14 +76,16 @@ import           Kore.Step.Search
                  ( searchGraph )
 import qualified Kore.Step.Search as Search
 import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, MonadSimplify,
-                 PredicateSimplifier (..), TermLikeSimplifier, evalSimplifier )
+                 ( evalSimplifier )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
                  ( create )
+import           Kore.Step.Simplification.Simplify
+                 ( BuiltinAndAxiomSimplifierMap, MonadSimplify,
+                 PredicateSimplifier (..), TermLikeSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import           Kore.Strategies.OnePath.Verification

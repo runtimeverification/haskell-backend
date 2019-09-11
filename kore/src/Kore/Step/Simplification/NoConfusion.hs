@@ -27,7 +27,7 @@ import           Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.Data as Simplifier
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Unification.Unify as Unify
 import           Kore.Unparser
 

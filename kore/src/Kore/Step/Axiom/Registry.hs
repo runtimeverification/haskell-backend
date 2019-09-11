@@ -41,7 +41,7 @@ import           Kore.Step.Rule
                  QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern),
                  RulePattern (RulePattern) )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Step.Simplification.Data
+import           Kore.Step.Simplification.Simplify
                  ( BuiltinAndAxiomSimplifier (..) )
 import           Kore.Syntax.Sentence
                  ( SentenceAxiom (..) )

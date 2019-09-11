@@ -54,10 +54,12 @@ import           Kore.Internal.TermLike
                  ( InternalVariable, TermLike )
 import qualified Kore.Internal.TermLike as Internal
 import           Kore.Sort
-import           Kore.Step.Simplification.Data hiding
-                 ( termLikeSimplifier )
+import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import           Kore.Step.Simplification.Simplify
+                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier,
+                 TermLikeSimplifier )
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
                  ( resolve )

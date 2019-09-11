@@ -15,7 +15,7 @@ import Kore.Internal.TermLike
        ( TermLike )
 import Kore.Logger
        ( LogMessage, WithLog )
-import Kore.Step.Simplification.Data
+import Kore.Step.Simplification.Simplify
        ( MonadSimplify, SimplifierVariable )
 
 makeEvaluate

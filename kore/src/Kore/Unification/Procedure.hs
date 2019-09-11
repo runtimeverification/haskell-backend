@@ -16,6 +16,7 @@ import           Control.Applicative
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Branch as BranchT
 import           Kore.Internal.Pattern
                  ( Conditional (..) )
 import qualified Kore.Internal.Pattern as Conditional
@@ -28,7 +29,6 @@ import           Kore.Step.Simplification.AndTerms
                  ( termUnification )
 import qualified Kore.Step.Simplification.Ceil as Ceil
                  ( makeEvaluateTerm )
-import qualified Kore.Step.Simplification.Data as BranchT
 import           Kore.Step.Substitution
                  ( createPredicatesAndSubstitutionsMerger )
 import           Kore.Unification.Unify

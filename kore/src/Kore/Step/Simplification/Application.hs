@@ -12,6 +12,9 @@ module Kore.Step.Simplification.Application
     , Application (..)
     ) where
 
+import           Branch
+                 ( BranchT )
+import qualified Branch as Branch
 import qualified Kore.Internal.MultiOr as MultiOr
                  ( fullCrossProduct, mergeAll )
 import           Kore.Internal.OrPattern
@@ -24,9 +27,7 @@ import           Kore.Internal.Predicate as Predicate
 import           Kore.Internal.TermLike
 import           Kore.Step.Function.Evaluator
                  ( evaluateApplication )
-import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+import           Kore.Step.Simplification.Simplify as Simplifier
 import           Kore.Step.Substitution
                  ( mergePredicatesAndSubstitutions )
 
@@ -80,7 +81,7 @@ makeAndEvaluateSymbolApplications
     -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications predicate symbol children = do
     expandedApplications <-
-        BranchT.gather $ makeExpandedApplication symbol children
+        Branch.gather $ makeExpandedApplication symbol children
     orResults <- traverse
                     (evaluateApplicationFunction predicate)
                     expandedApplications
