@@ -67,12 +67,12 @@ instance (Functor base, Synthetic syn base) => Synthetic syn (Rec1 base) where
     synthetic = synthetic . unRec1
     {-# INLINE synthetic #-}
 
-{- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
+{- | @/resynthesize/@ attribute @b@ bottom-up along a tree @s@.
 
-@synthesize@ is a generalization of 'Data.List.scanr' to trees: Given a tree @s@
-with attributes @inh@ along the nodes, @synthesize@ produces a tree @t@ with
-attributes @syn@ along the nodes using the given @('Base' s)@-algebra from the
-bottom up.
+@resynthesize@ is a generalization of 'Data.List.scanr' to trees: Given a tree
+@s@ with attributes @inh@ along the nodes, @resynthesize@ produces a tree @t@
+with attributes @syn@ along the nodes using the given @('Base' s)@-algebra from
+the bottom up.
 
 See also:
 <https://en.wikipedia.org/wiki/Attribute_grammar#Synthesized_attributes>
