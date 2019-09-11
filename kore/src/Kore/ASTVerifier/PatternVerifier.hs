@@ -68,8 +68,9 @@ import Kore.IndexedModule.Resolvers
 import qualified Kore.Internal.Alias as Internal
 import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Internal.TermLike
-                 ( TermLikeF )
+import Kore.Internal.TermLike
+    ( TermLikeF
+    )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Parser
     ( ParsedPattern

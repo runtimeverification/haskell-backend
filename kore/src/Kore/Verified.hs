@@ -16,9 +16,12 @@ module Kore.Verified
     ) where
 
 import qualified Kore.Internal.Alias as Internal
-                 ( Alias )
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
+    ( Alias
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , Variable
+    )
 import qualified Kore.Syntax.Sentence as Syntax
 
 type Pattern = TermLike Variable
