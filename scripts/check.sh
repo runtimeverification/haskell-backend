@@ -30,6 +30,7 @@ do
     then
         changed+=($file)
     fi
+    rm $file.tmp
 done
 
 if [[ ${#changed[@]} -ne 0 ]]
