@@ -5,12 +5,17 @@ License     : NCSA
 This should be imported @qualified@.
 -}
 module Kore.Profiler.Profile
-    ( axiomEvaluation
+    ( axiomBranching
+    , axiomEvaluation
     , equalitySimplification
     , executionQueueLength
+    , identifierSimplification
+    , initialization
     , mergeSubstitutions
     , resimplification
+    , simplificationBranching
     , smtDecision
+    , timeStrategy
     ) where
 
 import Control.Monad
@@ -31,7 +36,8 @@ import qualified Data.Text.Prettyprint.Doc.Render.String as Doc
 
 import Kore.Profiler.Data
     ( Configuration (Configuration)
-    , MonadProfiler (profileConfiguration, profileDuration)
+    , MonadProfiler (profile, profileConfiguration)
+    , profileValue
     )
 import qualified Kore.Profiler.Data as Profiler.DoNotUse
 import Kore.Step.Axiom.Identifier
@@ -56,39 +62,141 @@ equalitySimplification
     :: (MonadProfiler profiler, Unparse thing)
     => AxiomIdentifier -> thing -> profiler result -> profiler result
 equalitySimplification identifier thing action = do
-    Configuration {dumpIdentifier} <- profileConfiguration
-    let strIdentifier = oneLiner identifier
-    -- TODO(virgil): Move this in the logger.
-    case dumpIdentifier of
-        Just toDump ->
-            when (toDump == strIdentifier)
-                (traceM (unparseToString thing))
-        Nothing -> return ()
-    filteredLogging
-        identifier ["evaluate", strIdentifier, "0", "total"] action
+    Configuration {logEvaluation} <- profileConfiguration
+    if logEvaluation
+        then do
+            Configuration {dumpIdentifier} <- profileConfiguration
+            let strIdentifier = oneLiner identifier
+            -- TODO(virgil): Move this in the logger.
+            case dumpIdentifier of
+                Just toDump ->
+                    when (toDump == strIdentifier)
+                        (traceM (unparseToString thing))
+                Nothing -> return ()
+            filteredLogging
+                identifier ["evaluate", strIdentifier, "0", "total"] action
+        else action
+
+axiomBranching
+    :: (MonadProfiler profiler)
+    => AxiomIdentifier -> Int -> Int -> profiler ()
+axiomBranching identifier axiomBranches reevaluationBranches = do
+    Configuration {logBranching} <- profileConfiguration
+    when (logBranching && (axiomBranches > 1 || reevaluationBranches > 1)) $ do
+        profileValue
+            [ "branching"
+            , "axiom"
+            , oneLiner identifier
+            ]
+            axiomBranches
+        profileValue
+            [ "branching"
+            , "axiom"
+            , "reevaluation"
+            , oneLiner identifier
+            ]
+            reevaluationBranches
+
+simplificationBranching
+    :: (MonadProfiler profiler, Unparse thing)
+    => String -> thing -> Int -> Int -> profiler ()
+simplificationBranching name thing childBranches reevaluationBranches = do
+    Configuration {logBranching} <- profileConfiguration
+    when (logBranching && (childBranches > 1 || reevaluationBranches > 1)) $ do
+        profileValue
+            [ "branching"
+            , "simplification"
+            , "child"
+            , name
+            , unparseToString thing
+            ]
+            childBranches
+        profileValue
+            [ "branching"
+            , "simplification"
+            , "reevaluation"
+            , name
+            , unparseToString thing
+            ]
+            reevaluationBranches
+
+timeStrategy
+    :: (MonadProfiler profiler)
+    => String -> profiler result -> profiler result
+timeStrategy name action = do
+    Configuration {logStrategy} <- profileConfiguration
+    if logStrategy
+        then profile
+            [ "strategy"
+            , name
+            ]
+            action
+        else action
+
+initialization
+    :: (MonadProfiler profiler)
+    => String -> profiler result -> profiler result
+initialization name action = do
+    Configuration {logInitialization} <- profileConfiguration
+    if logInitialization
+        then profile
+            [ "initialization"
+            , name
+            ]
+            action
+        else action
+
+identifierSimplification
+    :: (MonadProfiler profiler)
+    => AxiomIdentifier -> profiler result -> profiler result
+identifierSimplification identifier action = do
+    Configuration {logSimplification} <- profileConfiguration
+    if logSimplification
+        then profile
+            [ "simplification"
+            , oneLiner identifier
+            ]
+            action
+        else action
 
 -- TODO(virgil): Enable this on-demand.
 axiomEvaluation
     :: MonadProfiler profiler
     => AxiomIdentifier -> profiler result -> profiler result
-axiomEvaluation identifier =
-    filteredLogging identifier ["evaluate", oneLiner identifier, "1", "apply"]
+axiomEvaluation identifier action = do
+    Configuration {logEvaluation} <- profileConfiguration
+    if logEvaluation
+        then filteredLogging
+            identifier
+            ["evaluate", oneLiner identifier, "1", "apply"]
+            action
+        else action
 
 -- TODO(virgil): Enable this on-demand.
 resimplification
     :: MonadProfiler profiler
     => AxiomIdentifier -> Int -> profiler result -> profiler result
-resimplification identifier size =
-    filteredLogging
-        identifier
-        ["resimplification", oneLiner identifier, show size]
+resimplification identifier size action = do
+    Configuration {logEvaluation} <- profileConfiguration
+    if logEvaluation
+        then filteredLogging
+            identifier
+            ["resimplification", oneLiner identifier, show size]
+            action
+        else action
 
 -- TODO(virgil): Enable this on-demand.
 mergeSubstitutions
     :: MonadProfiler profiler
     => AxiomIdentifier -> profiler result -> profiler result
-mergeSubstitutions identifier =
-    filteredLogging identifier ["evaluate", oneLiner identifier, "1", "merge"]
+mergeSubstitutions identifier action = do
+    Configuration {logEvaluation} <- profileConfiguration
+    if logEvaluation
+        then filteredLogging
+            identifier
+            ["evaluate", oneLiner identifier, "1", "merge"]
+            action
+        else action
 
 filteredLogging
     :: MonadProfiler profiler
@@ -99,10 +207,10 @@ filteredLogging
 filteredLogging identifier tags action = do
     Configuration {identifierFilter} <- profileConfiguration
     case identifierFilter of
-        Nothing -> profileDuration tags action
+        Nothing -> profile tags action
         Just idFilter
           | isSelected idFilter identifier ->
-            profileDuration tags action
+            profile tags action
           | otherwise -> action
 
 isSelected :: String -> AxiomIdentifier -> Bool
@@ -113,11 +221,17 @@ smtDecision
     => SExpr
     -> profiler result
     -> profiler result
-smtDecision sexpr =
-    profileDuration ["SMT", show $ length $ show sexpr]
+smtDecision sexpr action = do
+    Configuration {logSmt} <- profileConfiguration
+    if logSmt
+        then profile ["SMT", show $ length $ show sexpr] action
+        else action
 
 executionQueueLength
     :: MonadProfiler profiler
     => Int -> profiler result -> profiler result
-executionQueueLength len =
-    profileDuration ["ExecutionQueueLength", show len]
+executionQueueLength len action = do
+    Configuration {logStrategy} <- profileConfiguration
+    when logStrategy
+        (profileValue ["ExecutionQueueLength"] len)
+    action

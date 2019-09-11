@@ -60,7 +60,8 @@ import Kore.Logger
     , WithLog
     )
 import qualified Kore.Profiler.Profile as Profile
-    ( axiomEvaluation
+    ( axiomBranching
+    , axiomEvaluation
     , equalitySimplification
     , mergeSubstitutions
     , resimplification
@@ -285,10 +286,11 @@ maybeEvaluatePattern
                             simplified <-
                                 resimplificationTracing (length orResults)
                                 $ mapM simplifyIfNeeded orResults
+                            let simplifiedResult = MultiOr.flatten simplified
+                            branchTracing orResults simplifiedResult
                             return
                                 (AttemptedAxiom.Applied AttemptedAxiomResults
-                                    { results =
-                                        MultiOr.flatten simplified
+                                    { results = simplifiedResult
                                     , remainders = orRemainders
                                     }
                                 )
@@ -312,6 +314,14 @@ maybeEvaluatePattern
     maybeEvaluator = do
         identifier' <- identifier
         Map.lookup identifier' axiomIdToEvaluator
+
+    branchTracing axiomResult resimplificationResult =
+        case identifier of
+            Nothing -> return ()
+            Just identifier' -> Profile.axiomBranching
+                identifier'
+                (length axiomResult)
+                (length resimplificationResult)
 
     tracing =
         traceNonErrorMonad

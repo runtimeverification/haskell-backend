@@ -25,6 +25,7 @@ import Kore.Logger
     )
 import Kore.Profiler.Data
     ( Configuration (..)
+    , Destination (..)
     , MonadProfiler (..)
     )
 import Kore.Step.Simplification.Data
@@ -420,11 +421,18 @@ instance MonadSMT AllPathIdentity where
     loadFile = undefined
 
 instance MonadProfiler AllPathIdentity where
-    profileDuration _ = id
+    profile _ = id
     profileConfiguration =
         return Configuration
             { identifierFilter = Nothing
             , dumpIdentifier = Nothing
+            , destination = HumanReadable
+            , logBranching = False
+            , logStrategy = False
+            , logSimplification = False
+            , logInitialization = False
+            , logEvaluation = False
+            , logSmt = False
             }
 
 instance MonadSimplify AllPathIdentity where
