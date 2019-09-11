@@ -276,7 +276,7 @@ testEvaluators =
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build testIndexedModule
 
-testEnv :: Env
+testEnv :: Env Simplifier
 testEnv =
     Mock.env
         { metadataTools = testMetadataTools
