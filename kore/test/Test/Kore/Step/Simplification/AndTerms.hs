@@ -12,6 +12,8 @@ import           Data.Default
                  ( Default (..) )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import           Data.Text
+                 ( Text )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import           Kore.Attribute.Simplification
@@ -39,8 +41,12 @@ import           Kore.Step.Simplification.Data
                  ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Data as BranchT
                  ( gather )
+import           Kore.Syntax.Sentence
+                 ( SentenceAlias )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
+import           Kore.Unparser
+                 ( Unparse )
 import           Kore.Variables.UnifiedVariable
                  ( UnifiedVariable (..) )
 import qualified SMT
@@ -933,7 +939,62 @@ test_andTermsSimplification =
                 testSet
             assertEqualWithExplanation "" (Just expected) actual
         ]
+    , testGroup "alias expansion"
+        [ testCase "alias() vs top" $ do
+            let
+                x = mkVariable "x"
+                alias = mkAlias' "alias1" x mkTop_
+                left = applyAlias' alias $ mkTop Mock.testSort
+            actual <- simplifyUnify left mkTop_
+            assertExpectTop actual
+        , testCase "alias1() vs alias2()" $ do
+            let
+                x = mkVariable "x"
+                leftAlias = mkAlias' "leftAlias" x mkTop_
+                left = applyAlias' leftAlias $ mkTop Mock.testSort
+                rightAlias = mkAlias' "rightAlias" x mkTop_
+                right = applyAlias' rightAlias $ mkTop Mock.testSort
+            actual <- simplifyUnify left right
+            assertExpectTop actual
+        , testCase "alias1(alias2()) vs top" $ do
+            let
+                x = mkVariable "x"
+                y = mkVariable "y"
+                alias1 = mkAlias' "alias1" x mkTop_
+                alias1App = applyAlias' alias1 $ mkSetVar (SetVariable y)
+                alias2 = mkAlias' "alias2" x alias1App
+                alias2App = applyAlias' alias2 $ mkTop Mock.testSort
+            actual <- simplifyUnify alias2App mkTop_
+            assertExpectTop actual
+        ]
     ]
+
+mkVariable :: Text -> Variable
+mkVariable ident = Variable (testId ident) Nothing Mock.testSort
+
+mkAlias' :: Text -> Variable -> TermLike Variable -> SentenceAlias (TermLike Variable)
+mkAlias' ident var inner =
+    mkAlias_ (testId ident) Mock.testSort [SetVar $ SetVariable var] inner
+
+applyAlias'
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => SentenceAlias (TermLike Variable)
+    -> TermLike variable
+    -> TermLike variable
+applyAlias' alias arg = applyAlias alias [] [arg]
+
+assertExpectTop :: ([Pattern Variable], Maybe [Pattern Variable]) -> IO ()
+assertExpectTop =
+    assertEqualWithExplanation "" ([expectTop_], Just [expectTop_])
+  where
+    expectTop_ =
+        Conditional
+            { term = mkTop_
+            , predicate = makeTruePredicate
+            , substitution = mempty
+            }
 
 test_equalsTermsSimplification :: [TestTree]
 test_equalsTermsSimplification =
