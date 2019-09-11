@@ -10,13 +10,28 @@ UPSTREAM_BRANCH=FETCH_HEAD
 
 if ! $TOP/scripts/git-assert-clean.sh
 then
-  echo >&2 "Please commit your changes!"
-  exit 1
+    echo >&2 "Please commit your changes!"
+    exit 1
 fi
 
-$TOP/scripts/stylish.sh
-if ! $TOP/scripts/git-assert-clean.sh
+stack install stylish-haskell
+changed=()
+for file in $(git diff --name-only $UPSTREAM_BRANCH)
+do
+    case $file in
+        *.hs|*.hs-boot) ;;
+        *) continue ;;
+    esac
+    $TOP/.build/kore/bin/stylish-haskell/stylish-haskell $file >$file.tmp
+    if diff -Nau $file $file.tmp
+    then
+        changed+=($file)
+    fi
+done
+
+if [[ ${#changed[@]} -ne 0 ]]
 then
-  echo >&2 "Please run ‘scripts/stylish.sh’ to fix style errors!"
-  exit 1
+    echo >&2 "Please run 'stylish-haskell':"
+    echo >&2 "stack exec -- stylish-haskell -i" "${changed[@]}"
+    exit 1
 fi
