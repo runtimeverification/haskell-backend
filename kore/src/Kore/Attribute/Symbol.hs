@@ -51,13 +51,15 @@ module Kore.Attribute.Symbol
     , isInjective
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Lens as Lens
-import           Control.Monad
-                 ( (>=>) )
-import           Data.Default
-import           Data.Generics.Product
+import Control.Monad
+    ( (>=>)
+    )
+import Data.Default
+import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -67,7 +69,8 @@ import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
+    ( ParseAttributes (..)
+    )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection

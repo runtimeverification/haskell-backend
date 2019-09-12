@@ -1,33 +1,43 @@
 module Test.Kore.ASTVerifier.DefinitionVerifier where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( HasCallStack, assertEqual, assertFailure, testCase )
+    ( HasCallStack
+    , assertEqual
+    , assertFailure
+    , testCase
+    )
 
 import Data.Proxy
 import Data.Text
-       ( Text )
+    ( Text
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-import           Kore.ASTVerifier.Error
+import Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Debug
-import           Kore.Error
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Debug
+import Kore.Error
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Sort
-import           Kore.Syntax hiding
-                 ( PatternF (..) )
-import           Kore.Syntax.Definition
+import Kore.Sort
+import Kore.Syntax hiding
+    ( PatternF (..)
+    )
+import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
-import           Kore.Unparser
-                 ( unparseToString )
-import           Kore.Variables.UnifiedVariable
+import Kore.Unparser
+    ( unparseToString
+    )
+import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
 import Test.Kore

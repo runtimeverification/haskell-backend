@@ -1,7 +1,9 @@
 module Test.Kore.Parser.Lexeme (test_koreLexeme) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 
 import Kore.Parser.Lexeme
 import Kore.Syntax.CharLiteral

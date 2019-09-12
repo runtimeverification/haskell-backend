@@ -9,53 +9,74 @@ module Test.Kore.Step.Step
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Default as Default
-                 ( def )
+import Data.Default as Default
+    ( def
+    )
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern as Pattern
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate as Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeFalsePredicate, makeNotPredicate, makeTruePredicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate as Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Step.Result as Result
-                 ( mergeResults )
-import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (..) )
+    ( mergeResults
+    )
+import Kore.Step.Rule
+    ( RewriteRule (..)
+    , RulePattern (..)
+    )
 import qualified Kore.Step.Rule as RulePattern
-import           Kore.Step.Simplification.Data
-import           Kore.Step.Step hiding
-                 ( applyInitialConditions, applyRewriteRulesParallel,
-                 applyRewriteRulesSequence, unifyRule )
+import Kore.Step.Simplification.Data
+import Kore.Step.Step hiding
+    ( applyInitialConditions
+    , applyRewriteRulesParallel
+    , applyRewriteRulesSequence
+    , unifyRule
+    )
 import qualified Kore.Step.Step as Step
-import           Kore.Unification.Error
-                 ( SubstitutionError (..), UnificationOrSubstitutionError (..),
-                 unsupportedPatterns )
+import Kore.Unification.Error
+    ( SubstitutionError (..)
+    , UnificationOrSubstitutionError (..)
+    , unsupportedPatterns
+    )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( UnifierT, runUnifierT )
-import           Kore.Variables.Fresh
-                 ( nextVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unification.Unify
+    ( UnifierT
+    , runUnifierT
+    )
+import Kore.Variables.Fresh
+    ( nextVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 evalUnifier
     :: UnifierT Simplifier a

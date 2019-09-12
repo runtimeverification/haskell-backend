@@ -3,41 +3,55 @@ module Test.Kore.Step.Simplification.Predicate
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
 import qualified Data.Map as Map
 
-import           Branch
+import Branch
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Predicate
-                 ( Conditional (..), Predicate )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Conditional
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( firstFullEvaluation )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( firstFullEvaluation
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+    ( AxiomIdentifier (..)
+    )
+import Kore.Step.Simplification.Data
+    ( Env (..)
+    , evalSimplifier
+    )
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
-                 ( create )
-import           Kore.Step.Simplification.Simplify
+    ( create
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =

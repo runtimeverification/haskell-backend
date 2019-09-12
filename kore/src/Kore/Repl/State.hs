@@ -29,76 +29,113 @@ module Kore.Repl.State
     )
     where
 
-import           Control.Concurrent.MVar
+import Control.Concurrent.MVar
 import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
-import           Control.Monad.Error.Class
-                 ( MonadError )
+    ( makeLenses
+    )
+import Control.Monad.Error.Class
+    ( MonadError
+    )
 import qualified Control.Monad.Error.Class as Monad.Error
-import           Control.Monad.IO.Class
-                 ( MonadIO, liftIO )
-import           Control.Monad.State.Strict
-                 ( MonadState, get, modify )
+import Control.Monad.IO.Class
+    ( MonadIO
+    , liftIO
+    )
+import Control.Monad.State.Strict
+    ( MonadState
+    , get
+    , modify
+    )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Bifunctor as Bifunctor
-import           Data.Bitraversable
-                 ( bisequence, bitraverse )
-import           Data.Coerce
-                 ( Coercible, coerce )
+import Data.Bitraversable
+    ( bisequence
+    , bitraverse
+    )
+import Data.Coerce
+    ( Coercible
+    , coerce
+    )
 import qualified Data.Default as Default
-import           Data.Foldable
-                 ( find )
-import           Data.Generics.Product
+import Data.Foldable
+    ( find
+    )
+import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.List.Extra
-                 ( findIndex, groupSort )
-import           Data.List.NonEmpty
-                 ( NonEmpty (..) )
+import Data.List.Extra
+    ( findIndex
+    , groupSort
+    )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import qualified Data.Map as Map
-import           Data.Map.Strict
-                 ( Map )
-import           Data.Maybe
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
+import Data.Map.Strict
+    ( Map
+    )
+import Data.Maybe
+import Data.Sequence
+    ( Seq
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text, unpack )
-import           GHC.Exts
-                 ( toList )
-import           System.IO
-                 ( Handle, IOMode (AppendMode), hClose, openFile )
+import Data.Text
+    ( Text
+    , unpack
+    )
+import GHC.Exts
+    ( toList
+    )
+import System.IO
+    ( Handle
+    , IOMode (AppendMode)
+    , hClose
+    , openFile
+    )
 
-import           Control.Monad.Reader
-                 ( MonadReader, asks )
+import Control.Monad.Reader
+    ( MonadReader
+    , asks
+    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
-import           Kore.Internal.Pattern
-                 ( toTermLike )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
+import Kore.Internal.Pattern
+    ( toTermLike
+    )
 import qualified Kore.Internal.Predicate as IPredicate
-import           Kore.Internal.TermLike
-                 ( Sort, TermLike )
+import Kore.Internal.TermLike
+    ( Sort
+    , TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
-import           Kore.Predicate.Predicate as Predicate
-import           Kore.Repl.Data
-import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (..) )
-import           Kore.Step.Rule as Rule
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+import Kore.Predicate.Predicate as Predicate
+import Kore.Repl.Data
+import Kore.Step.Rule
+    ( RewriteRule (..)
+    , RulePattern (..)
+    )
+import Kore.Step.Rule as Rule
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Strategies.Goal
-import           Kore.Strategies.OnePath.Verification
-import           Kore.Strategies.ProofState
-                 ( ProofState (Goal),
-                 ProofStateTransformer (ProofStateTransformer), proofState )
+import Kore.Strategies.Goal
+import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.ProofState
+    ( ProofState (Goal)
+    , ProofStateTransformer (ProofStateTransformer)
+    , proofState
+    )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
-import           Kore.Syntax.Variable
-                 ( Variable )
+import Kore.Syntax.Variable
+    ( Variable
+    )
 
 -- | Creates a fresh execution graph for the given claim.
 emptyExecutionGraph

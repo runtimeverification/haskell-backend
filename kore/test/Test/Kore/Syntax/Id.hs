@@ -10,7 +10,8 @@ import Data.Hashable
 import Kore.Syntax.Id
 
 import Test.Kore
-       ( testId )
+    ( testId
+    )
 import Test.Kore.Comparators ()
 import Test.Terse
 

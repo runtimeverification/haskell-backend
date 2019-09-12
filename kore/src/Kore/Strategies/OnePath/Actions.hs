@@ -16,8 +16,10 @@ module Kore.Strategies.OnePath.Actions
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
-import           Data.Coerce
-                 ( Coercible, coerce )
+import Data.Coerce
+    ( Coercible
+    , coerce
+    )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
@@ -26,43 +28,60 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
-import           Kore.Debug
-                 ( Debug )
+import Kore.Debug
+    ( Debug
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-                 ( mkAnd )
+import Kore.Internal.TermLike
+    ( mkAnd
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Result as Result
-import           Kore.Step.Rule
-                 ( OnePathRule (OnePathRule), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern) )
+import Kore.Step.Rule
+    ( OnePathRule (OnePathRule)
+    , RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    )
 import qualified Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, SimplifierVariable )
-import           Kore.Step.Simplification.Pattern
-                 ( simplifyAndRemoveTopExists )
+    ( RulePattern (..)
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    , SimplifierVariable
+    )
+import Kore.Step.Simplification.Pattern
+    ( simplifyAndRemoveTopExists
+    )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.ProofState as Goal
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.TopBottom
-                 ( isBottom )
+import Kore.Syntax.Variable
+    ( SortedVariable
+    )
+import Kore.TopBottom
+    ( isBottom
+    )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-                 ( Unparse, unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (ElemVar), isElemVar )
+import Kore.Unparser
+    ( Unparse
+    , unparse
+    )
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (ElemVar)
+    , isElemVar
+    )
 
 isTrusted :: OnePathRule variable -> Bool
 isTrusted =

@@ -10,25 +10,32 @@ module Kore.Step.Simplification.Rule
     ) where
 
 import Data.Map
-       ( Map )
+    ( Map
+    )
 
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue )
-import           Kore.Step.Rule
+import Kore.Predicate.Predicate
+    ( pattern PredicateTrue
+    )
+import Kore.Step.Rule
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Simplification.Simplify
-                 ( MonadSimplify, SimplifierVariable )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , SimplifierVariable
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Unification.Substitution as Substitution
 

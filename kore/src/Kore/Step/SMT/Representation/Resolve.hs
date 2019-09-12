@@ -11,25 +11,40 @@ module Kore.Step.SMT.Representation.Resolve
     ) where
 
 import qualified Data.Map as Map
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Sort as Kore
-                 ( Sort (SortActualSort), SortActual (SortActual) )
+    ( Sort (SortActualSort)
+    , SortActual (SortActual)
+    )
 import qualified Kore.Sort as SortActual
-                 ( SortActual (..) )
-import           Kore.Step.SMT.AST
-                 ( Declarations (Declarations), Encodable,
-                 IndirectSymbolDeclaration (IndirectSymbolDeclaration),
-                 KoreSortDeclaration (SortDeclarationDataType, SortDeclarationSort, SortDeclaredIndirectly),
-                 KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly),
-                 SmtDeclarations, Sort (Sort), SortReference (SortReference),
-                 Symbol (Symbol), SymbolReference (SymbolReference),
-                 UnresolvedConstructor, UnresolvedConstructorArgument,
-                 UnresolvedDataTypeDeclaration, UnresolvedDeclarations,
-                 UnresolvedFunctionDeclaration, UnresolvedKoreSortDeclaration,
-                 UnresolvedKoreSymbolDeclaration, UnresolvedSort,
-                 UnresolvedSortDeclaration, UnresolvedSymbol, encode )
+    ( SortActual (..)
+    )
+import Kore.Step.SMT.AST
+    ( Declarations (Declarations)
+    , Encodable
+    , IndirectSymbolDeclaration (IndirectSymbolDeclaration)
+    , KoreSortDeclaration (SortDeclarationDataType, SortDeclarationSort, SortDeclaredIndirectly)
+    , KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly)
+    , SmtDeclarations
+    , Sort (Sort)
+    , SortReference (SortReference)
+    , Symbol (Symbol)
+    , SymbolReference (SymbolReference)
+    , UnresolvedConstructor
+    , UnresolvedConstructorArgument
+    , UnresolvedDataTypeDeclaration
+    , UnresolvedDeclarations
+    , UnresolvedFunctionDeclaration
+    , UnresolvedKoreSortDeclaration
+    , UnresolvedKoreSymbolDeclaration
+    , UnresolvedSort
+    , UnresolvedSortDeclaration
+    , UnresolvedSymbol
+    , encode
+    )
 import qualified Kore.Step.SMT.AST as DoNotUse
 import qualified SMT
 

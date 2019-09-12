@@ -13,40 +13,60 @@ module Kore.ModelChecker.Bounded
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.Limit
-                 ( Limit )
+import Data.Limit
+    ( Limit
+    )
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
 
-import           Kore.Internal.Pattern
-                 ( Conditional (Conditional) )
-import           Kore.Internal.Pattern as Conditional
-                 ( Conditional (..) )
+import Kore.Internal.Pattern
+    ( Conditional (Conditional)
+    )
+import Kore.Internal.Pattern as Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
-import           Kore.ModelChecker.Step
-                 ( CommonModalPattern, CommonProofState, ModalPattern (..),
-                 Prim (..), defaultOneStepStrategy )
+import Kore.ModelChecker.Step
+    ( CommonModalPattern
+    , CommonProofState
+    , ModalPattern (..)
+    , Prim (..)
+    , defaultOneStepStrategy
+    )
 import qualified Kore.ModelChecker.Step as ProofState
-                 ( ProofState (..) )
+    ( ProofState (..)
+    )
 import qualified Kore.ModelChecker.Step as ModelChecker
-                 ( Transition, transitionRule )
+    ( Transition
+    , transitionRule
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Rule
-                 ( ImplicationRule (ImplicationRule), RewriteRule,
-                 RulePattern (..) )
-import           Kore.Step.Simplification.Simplify
-                 ( MonadSimplify )
-import           Kore.Step.Strategy
-                 ( ExecutionGraph (..), GraphSearchOrder, Strategy, pickFinal,
-                 runStrategyWithSearchOrder )
-import           Kore.Syntax.Id
-                 ( Id (..) )
-import           Kore.Syntax.Variable
-                 ( Variable )
-import           Numeric.Natural
-                 ( Natural )
+import Kore.Step.Rule
+    ( ImplicationRule (ImplicationRule)
+    , RewriteRule
+    , RulePattern (..)
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
+import Kore.Step.Strategy
+    ( ExecutionGraph (..)
+    , GraphSearchOrder
+    , Strategy
+    , pickFinal
+    , runStrategyWithSearchOrder
+    )
+import Kore.Syntax.Id
+    ( Id (..)
+    )
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Numeric.Natural
+    ( Natural
+    )
 
 data CheckResult patt
     = Proved

@@ -13,24 +13,31 @@ module Kore.Attribute.SourceLocation
     , Location (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Control.Monad
-                 ( (>=>) )
-import           Data.Default
-import           Data.Generics.Product
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty )
+import Control.DeepSeq
+    ( NFData
+    )
+import Control.Monad
+    ( (>=>)
+    )
+import Data.Default
+import Data.Generics.Product
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Location
-       ( LineColumn (..), Location (..) )
+    ( LineColumn (..)
+    , Location (..)
+    )
 import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
+    ( ParseAttributes (..)
+    )
 import Kore.Attribute.Source
-       ( Source (..) )
+    ( Source (..)
+    )
 import Kore.Debug
 
 data SourceLocation = SourceLocation

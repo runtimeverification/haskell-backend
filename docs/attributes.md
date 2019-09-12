@@ -98,8 +98,8 @@ productionID{}("id")
 priority{}("123")
 ```
 
-The priority attribute specifies a number which determines the order of rule 
-application. The attribute's argument is a string literal representing a decimal 
+The priority attribute specifies a number which determines the order of rule
+application. The attribute's argument is a string literal representing a decimal
 integer.
 
 ### Simplification

@@ -42,26 +42,35 @@ module Kore.Builtin.String
     , string2TokenKey
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT )
-import           Data.Char
-                 ( chr, ord )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT
+    )
+import Data.Char
+    ( chr
+    , ord
+    )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.List
-                 ( findIndex )
-import           Data.Map
-                 ( Map )
+import Data.List
+    ( findIndex
+    )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Read as Text
-import           Numeric
-                 ( readOct )
+import Numeric
+    ( readOct
+    )
 import qualified Text.Megaparsec as Parsec
 
 import qualified Kore.Builtin.Bool as Bool
@@ -69,10 +78,11 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike
 
 {- | Builtin name of the @String@ sort.
  -}

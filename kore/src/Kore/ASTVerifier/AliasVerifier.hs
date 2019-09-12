@@ -7,35 +7,42 @@ module Kore.ASTVerifier.AliasVerifier
     ( verifyAliases ) where
 
 import qualified Control.Lens as Lens
-import           Control.Monad.Reader
-                 ( ReaderT, runReaderT )
+import Control.Monad.Reader
+    ( ReaderT
+    , runReaderT
+    )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Class as State
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
-import           Data.Function
+import Data.Function
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Generics.Product
-import           Data.Map
-                 ( Map )
+import Data.Generics.Product
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Maybe
-import           Data.Set
-                 ( Set )
+import Data.Maybe
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
 
-import           Kore.AST.Error
-import           Kore.ASTVerifier.SentenceVerifier
-                 ( SentenceVerifier )
+import Kore.AST.Error
+import Kore.ASTVerifier.SentenceVerifier
+    ( SentenceVerifier
+    )
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
-import           Kore.Attribute.Parser
-                 ( liftParser, parseAttributes )
+import Kore.Attribute.Parser
+    ( liftParser
+    , parseAttributes
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Syntax
-import           Kore.Syntax.Definition
+import Kore.Error
+import Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.Syntax
+import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 {- | Project the 'SentenceAlias'es from the list and verify them.

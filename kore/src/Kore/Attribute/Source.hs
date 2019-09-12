@@ -10,21 +10,26 @@ module Kore.Attribute.Source
     ( Source (..)
     ) where
 
-import           Control.Applicative
-                 ( many )
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Default
-import           Data.Maybe
+import Control.Applicative
+    ( many
+    )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Default
+import Data.Maybe
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           Text.Megaparsec
-                 ( Parsec, noneOf, parseMaybe )
-import           Text.Megaparsec.Char
+import Text.Megaparsec
+    ( Parsec
+    , noneOf
+    , parseMaybe
+    )
+import Text.Megaparsec.Char
 
-import           Kore.Attribute.Parser as AttributeParser
-import           Kore.Debug
+import Kore.Attribute.Parser as AttributeParser
+import Kore.Debug
 import qualified Kore.Error
 
 newtype Source = Source

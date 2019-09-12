@@ -3,18 +3,24 @@ module Main where
 import Criterion.Main
 
 import Data.Proxy
-       ( Proxy (Proxy) )
+    ( Proxy (Proxy)
+    )
 import System.FilePath
-       ( takeFileName )
+    ( takeFileName
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( defaultAttributesVerification, verifyDefinition )
+import Kore.ASTVerifier.DefinitionVerifier
+    ( defaultAttributesVerification
+    , verifyDefinition
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
+import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
 import qualified Kore.Builtin as Builtin
-import           Kore.Parser
-                 ( parseKoreDefinition )
+import Kore.Parser
+    ( parseKoreDefinition
+    )
 
 import qualified Paths
 

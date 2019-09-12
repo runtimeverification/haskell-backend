@@ -12,17 +12,24 @@ module Kore.Step.SMT.Resolvers
     (translateSymbol) where
 
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( Given, given )
+import Data.Reflection
+    ( Given
+    , given
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SmtMetadataTools )
+import Kore.IndexedModule.MetadataTools
+    ( MetadataTools (MetadataTools)
+    , SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (smtData) )
-import           Kore.Internal.Symbol
+    ( MetadataTools (smtData)
+    )
+import Kore.Internal.Symbol
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations), Symbol (Symbol) )
+    ( Declarations (Declarations)
+    , Symbol (Symbol)
+    )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified SMT
 

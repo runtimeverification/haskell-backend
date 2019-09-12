@@ -14,42 +14,59 @@ module Kore.Step.Simplification.Equals
     ) where
 
 import Control.Error
-       ( MaybeT (..) )
+    ( MaybeT (..)
+    )
 import Control.Monad
-       ( foldM )
+    ( foldM
+    )
 import Data.List
-       ( foldl' )
+    ( foldl'
+    )
 import Data.Maybe
-       ( fromMaybe )
+    ( fromMaybe
+    )
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeAndPredicate,
-                 makeEqualsPredicate, makeNotPredicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( pattern PredicateTrue
+    , makeAndPredicate
+    , makeEqualsPredicate
+    , makeNotPredicate
+    )
 import qualified Kore.Step.Simplification.And as And
-                 ( simplifyEvaluated )
+    ( simplifyEvaluated
+    )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
-                 ( termEquals )
+    ( termEquals
+    )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluate, makeEvaluateTerm )
+    ( makeEvaluate
+    , makeEvaluateTerm
+    )
 import qualified Kore.Step.Simplification.Iff as Iff
-                 ( makeEvaluate )
+    ( makeEvaluate
+    )
 import qualified Kore.Step.Simplification.Implies as Implies
-                 ( simplifyEvaluated )
+    ( simplifyEvaluated
+    )
 import qualified Kore.Step.Simplification.Not as Not
-                 ( simplifyEvaluated )
+    ( simplifyEvaluated
+    )
 import qualified Kore.Step.Simplification.Or as Or
-                 ( simplifyEvaluated )
-import           Kore.Step.Simplification.Simplify
+    ( simplifyEvaluated
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.

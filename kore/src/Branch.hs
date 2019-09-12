@@ -16,22 +16,27 @@ module Branch
     , alternate
     ) where
 
-import           Control.Applicative
+import Control.Applicative
 import qualified Control.Monad as Monad
-import           Control.Monad.Reader
-import           Control.Monad.State.Class
-                 ( MonadState )
+import Control.Monad.Reader
+import Control.Monad.State.Class
+    ( MonadState
+    )
 import qualified Data.Foldable as Foldable
-import           Data.Typeable
+import Data.Typeable
 
-import           Kore.Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler (..) )
-import           ListT
-                 ( ListT (..), mapListT )
+import Kore.Logger
+import Kore.Profiler.Data
+    ( MonadProfiler (..)
+    )
+import ListT
+    ( ListT (..)
+    , mapListT
+    )
 import qualified ListT
-import           SMT
-                 ( MonadSMT (..) )
+import SMT
+    ( MonadSMT (..)
+    )
 
 {- | 'BranchT' extends any 'Monad' with disjoint branches.
 

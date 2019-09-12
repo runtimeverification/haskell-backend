@@ -7,29 +7,34 @@ module Kore.Step.Simplification.NoConfusion
     , constructorAndEqualsAssumesDifferentHeads
     )where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT (..)
+    )
 import qualified Control.Error as Error
-import           Control.Exception
-                 ( assert )
+import Control.Exception
+    ( assert
+    )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified GHC.Stack as GHC
-import           Prelude hiding
-                 ( concat )
+import Prelude hiding
+    ( concat
+    )
 
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.Simplify as Simplifier
-import           Kore.Unification.Unify as Unify
-import           Kore.Unparser
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Unification.Unify as Unify
+import Kore.Unparser
 
 {- | Unify two application patterns with equal, injective heads.
 

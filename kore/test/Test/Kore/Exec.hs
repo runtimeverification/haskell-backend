@@ -5,56 +5,71 @@ module Test.Kore.Exec
     ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+    ( assertEqual
+    , testCase
+    )
 
-import           Control.Applicative
-                 ( liftA2 )
-import           Data.Limit
-                 ( Limit (Unlimited) )
+import Control.Applicative
+    ( liftA2
+    )
+import Data.Limit
+    ( Limit (Unlimited)
+    )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
-import           System.Exit
-                 ( ExitCode (..) )
+import Data.Text
+    ( Text
+    )
+import System.Exit
+    ( ExitCode (..)
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes),
-                 verifyAndIndexDefinition )
+import Kore.ASTVerifier.DefinitionVerifier
+    ( AttributesVerification (DoNotVerifyAttributes)
+    , verifyAndIndexDefinition
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Constructor
-import           Kore.Attribute.Functional
-import           Kore.Attribute.Hook
+import Kore.Attribute.Constructor
+import Kore.Attribute.Functional
+import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
-import           Kore.Exec
-import           Kore.IndexedModule.IndexedModule
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Step
-                 ( allRewrites, anyRewrite )
-import           Kore.Step.Rule
-import           Kore.Step.Search
-                 ( SearchType (..) )
+import Kore.Exec
+import Kore.IndexedModule.IndexedModule
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeTruePredicate
+    )
+import Kore.Step
+    ( allRewrites
+    , anyRewrite
+    )
+import Kore.Step.Rule
+import Kore.Step.Search
+    ( SearchType (..)
+    )
 import qualified Kore.Step.Search as Search
-import           Kore.Syntax.Definition hiding
-                 ( Symbol )
+import Kore.Syntax.Definition hiding
+    ( Symbol
+    )
 import qualified Kore.Verified as Verified
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_exec :: TestTree
 test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
