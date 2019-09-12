@@ -1448,8 +1448,8 @@ instance
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
     structFieldsWithNames
-        expected@(Attribute.Pattern _ _ _ _ _)
-        actual@(Attribute.Pattern _ _ _ _ _)
+        expected@(Attribute.Pattern _ _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _ _)
       =
         [ EqWrap
             "patternSort = "
