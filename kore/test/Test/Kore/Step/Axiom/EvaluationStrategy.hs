@@ -41,9 +41,6 @@ import Kore.Step.Rule
     ( EqualityRule (EqualityRule)
     , RulePattern (RulePattern)
     )
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import qualified Kore.Step.Simplification.Predicate as Predicate
     ( create
     )
@@ -57,11 +54,10 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_definitionEvaluation :: [TestTree]
@@ -524,8 +520,7 @@ evaluate
     -> TermLike Variable
     -> IO CommonAttemptedAxiom
 evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    runSimplifier Mock.env
     $ simplifier
         substitutionSimplifier
         patternSimplifier

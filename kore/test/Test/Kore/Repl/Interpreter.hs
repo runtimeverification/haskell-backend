@@ -64,10 +64,7 @@ import Kore.Step.Rule
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
-import Kore.Step.Simplification.Data
-    ( Simplifier
-    , evalSimplifier
-    )
+import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Strategies.Goal
 import Kore.Strategies.OnePath.Verification
     ( verifyClaimStep
@@ -83,9 +80,9 @@ import Kore.Unification.Unify
     )
 import qualified SMT
 
-import Test.Kore
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
+import Test.Kore.Step.Simplification
 
 type Claim = OnePathRule Variable
 type Axiom = Rule (OnePathRule Variable)
@@ -574,12 +571,6 @@ run :: ReplCommand -> [Axiom] -> [Claim] -> Claim -> IO Result
 run command axioms claims claim =
     runWithState command axioms claims claim id
 
-runSimplifier
-    :: Simplifier a
-    -> IO a
-runSimplifier =
-    SMT.runSMT SMT.defaultConfig emptyLogger . evalSimplifier testEnv
-
 runWithState
     :: ReplCommand
     -> [Axiom]
@@ -606,7 +597,7 @@ runWithState command axioms claims claim stateTransformer
   where
     logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
     liftSimplifier logger =
-        SMT.runSMT SMT.defaultConfig logger . evalSimplifier testEnv
+        SMT.runSMT SMT.defaultConfig logger . Kore.runSimplifier testEnv
 
     modifyAuxOutput :: IORef ReplOutput -> String -> IO ()
     modifyAuxOutput ref s = modifyIORef ref (appReplOut . AuxOut $ s)
@@ -709,7 +700,7 @@ formatUnificationError
     -> TermLike Variable
     -> IO ReplOutput
 formatUnificationError info first second = do
-    res <- runSimplifier . runUnifierWithExplanation $ do
+    res <- runSimplifier testEnv . runUnifierWithExplanation $ do
         explainBottom info first second
         empty
     return $ formatUnificationMessage res

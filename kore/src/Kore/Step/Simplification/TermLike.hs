@@ -36,9 +36,6 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
     ( simplify
     )
-import Kore.Step.Simplification.Data
-    ( Simplifier
-    )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
     ( simplify
     )
@@ -101,10 +98,10 @@ import qualified Kore.Step.Simplification.Variable as Variable
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    :: SimplifierVariable variable
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> Predicate variable
-    -> Simplifier (Pattern variable)
+    -> simplifier (Pattern variable)
 simplify patt predicate = do
     orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)

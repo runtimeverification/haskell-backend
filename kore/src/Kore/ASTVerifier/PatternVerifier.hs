@@ -148,8 +148,7 @@ lookupAlias symbolOrAlias = do
     aliasConstructor = symbolOrAliasConstructor symbolOrAlias
     aliasParams = symbolOrAliasParams symbolOrAlias
     leftDefinition def =
-        fmap (foldMapVariable id)
-        . applicationChildren
+        applicationChildren
         . sentenceAliasLeftPattern
         $ def
 
