@@ -1,7 +1,8 @@
 module Test.Kore.Attribute.Smtlib where
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import Test.Tasty

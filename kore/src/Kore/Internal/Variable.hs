@@ -12,12 +12,14 @@ module Kore.Internal.Variable
     ) where
 
 import Kore.Debug
-       ( Debug )
+    ( Debug
+    )
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
 import Kore.Unparser
-       ( Unparse )
+    ( Unparse
+    )
 
 {- | 'InternalVariable' is the basic constraint on variable types.
 

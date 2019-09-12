@@ -2,45 +2,61 @@ module Main where
 
 import Criterion.Main
 
-import           Data.Function
-                 ( (&) )
-import           Data.Limit
-                 ( Limit )
+import Data.Function
+    ( (&)
+    )
+import Data.Limit
+    ( Limit
+    )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import           Numeric.Natural
-                 ( Natural )
+import Numeric.Natural
+    ( Natural
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes),
-                 verifyAndIndexDefinition )
+import Kore.ASTVerifier.DefinitionVerifier
+    ( AttributesVerification (DoNotVerifyAttributes)
+    , verifyAndIndexDefinition
+    )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
+import Kore.Attribute.Symbol
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-                 ( printError )
-import           Kore.Exec
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+import Kore.Error
+    ( printError
+    )
+import Kore.Exec
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
-import           Kore.Logger.Output
-                 ( emptyLogger )
-import           Kore.Parser
-                 ( parseKoreDefinition, parseKorePattern )
-import           Kore.Step
-                 ( anyRewrite )
-import           Kore.Syntax.Module
-                 ( ModuleName (..) )
+import Kore.Internal.TermLike
+    ( TermLike
+    , Variable
+    )
+import Kore.Logger.Output
+    ( emptyLogger
+    )
+import Kore.Parser
+    ( parseKoreDefinition
+    , parseKorePattern
+    )
+import Kore.Step
+    ( anyRewrite
+    )
+import Kore.Syntax.Module
+    ( ModuleName (..)
+    )
 import qualified SMT
 
-import           System.Directory
-                 ( removeFile )
-import           System.FilePath
-                 ( takeFileName, (</>) )
+import System.Directory
+    ( removeFile
+    )
+import System.FilePath
+    ( takeFileName
+    , (</>)
+    )
 import qualified System.Process as Proc
 
 import qualified Paths

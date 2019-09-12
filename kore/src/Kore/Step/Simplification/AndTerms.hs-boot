@@ -3,17 +3,25 @@ module Kore.Step.Simplification.AndTerms where
 import qualified GHC.Stack as GHC
 
 import Branch
-       ( BranchT )
+    ( BranchT
+    )
 import Kore.Internal.Pattern
-       ( Pattern )
+    ( Pattern
+    )
 import Kore.Internal.TermLike
-       ( TermLike )
+    ( TermLike
+    )
 import Kore.Logger
-       ( LogMessage, WithLog )
+    ( LogMessage
+    , WithLog
+    )
 import Kore.Step.Simplification.Simplify
-       ( MonadSimplify )
+    ( MonadSimplify
+    )
 import Kore.Unification.Unify
-       ( MonadUnify, SimplifierVariable )
+    ( MonadUnify
+    , SimplifierVariable
+    )
 
 termAnd
     :: forall variable simplifier

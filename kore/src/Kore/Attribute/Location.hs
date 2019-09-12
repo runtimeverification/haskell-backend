@@ -11,18 +11,21 @@ module Kore.Attribute.Location
     , LineColumn (..)
     ) where
 
-import           Data.Maybe
+import Data.Maybe
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           Text.Megaparsec
-                 ( Parsec, parseMaybe )
-import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer
-                 ( decimal )
+import Text.Megaparsec
+    ( Parsec
+    , parseMaybe
+    )
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer
+    ( decimal
+    )
 
-import           Kore.Attribute.Parser as AttributeParser
-import           Kore.Debug
+import Kore.Attribute.Parser as AttributeParser
+import Kore.Debug
 import qualified Kore.Error
 
 data LineColumn = LineColumn

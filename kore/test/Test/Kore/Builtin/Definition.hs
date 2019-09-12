@@ -2,33 +2,41 @@ module Test.Kore.Builtin.Definition where
 
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
-import           Data.Function
+import Data.Function
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 
-import           Kore.Attribute.Constructor
-import           Kore.Attribute.Functional
-import           Kore.Attribute.Hook
-import           Kore.Attribute.Injective
-import           Kore.Attribute.Parser
+import Kore.Attribute.Constructor
+import Kore.Attribute.Functional
+import Kore.Attribute.Hook
+import Kore.Attribute.Injective
+import Kore.Attribute.Parser
 import qualified Kore.Attribute.Sort.Concat as Sort
 import qualified Kore.Attribute.Sort.Element as Sort
-import           Kore.Attribute.Sort.HasDomainValues
-                 ( hasDomainValuesAttribute )
+import Kore.Attribute.Sort.HasDomainValues
+    ( hasDomainValuesAttribute
+    )
 import qualified Kore.Attribute.Sort.Unit as Sort
-import           Kore.Attribute.SortInjection
-import           Kore.Domain.Builtin
+import Kore.Attribute.SortInjection
+import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.Symbol
-                 ( constructor, function, functional, hook, smthook,
-                 sortInjection )
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.Symbol
+    ( constructor
+    , function
+    , functional
+    , hook
+    , smthook
+    , sortInjection
+    )
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Internal.TermLike hiding
-                 ( Symbol )
-import           Kore.Syntax.Definition as Syntax
+import Kore.Internal.TermLike hiding
+    ( Symbol
+    )
+import Kore.Syntax.Definition as Syntax
 
 import Test.Kore
 

@@ -4,9 +4,11 @@ module Test.Kore.Step.Simplification.Rule
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.Internal.TermLike
-import           Kore.Step.Rule
-                 ( RulePattern, rulePattern )
+import Kore.Internal.TermLike
+import Kore.Step.Rule
+    ( RulePattern
+    , rulePattern
+    )
 import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.Simplification.Rule as Kore
 

@@ -35,22 +35,27 @@ module Kore.Domain.Builtin
     , Domain (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
+import Control.DeepSeq
+    ( NFData (..)
+    )
 import qualified Control.Lens as Lens
-import           Control.Lens.Iso
+import Control.Lens.Iso
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
-import           Data.Hashable
-import           Data.Map
-                 ( Map )
+import Data.Hashable
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Sequence
-                 ( Seq )
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( (<+>) )
+import Data.Sequence
+    ( Seq
+    )
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

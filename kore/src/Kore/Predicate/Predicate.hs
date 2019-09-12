@@ -47,39 +47,52 @@ module Kore.Predicate.Predicate
     , Kore.Predicate.Predicate.substitute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Functor.Foldable
-                 ( Base )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Functor.Foldable
+    ( Base
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Hashable
-import           Data.List
-                 ( foldl', nub )
-import           Data.Map.Strict
-                 ( Map )
-import           Data.Set
-                 ( Set )
+import Data.Hashable
+import Data.List
+    ( foldl'
+    , nub
+    )
+import Data.Map.Strict
+    ( Map
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import           Kore.Attribute.Pattern.FreeVariables
-import           Kore.Debug
-import           Kore.Error
-                 ( Error, koreFail )
-import           Kore.Internal.TermLike hiding
-                 ( freeVariables )
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Debug
+import Kore.Error
+    ( Error
+    , koreFail
+    )
+import Kore.Internal.TermLike hiding
+    ( freeVariables
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which

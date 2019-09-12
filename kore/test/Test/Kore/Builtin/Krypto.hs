@@ -3,18 +3,19 @@ module Test.Kore.Builtin.Krypto where
 import Hedgehog
 import Test.Tasty
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.String as String
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 
-import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.Builtin
+import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
-import           Test.SMT
+import Test.SMT
 
 testKeyRecover :: Text -> Integer -> Text -> Text -> Text -> TestTree
 testKeyRecover messageHash v r s result =

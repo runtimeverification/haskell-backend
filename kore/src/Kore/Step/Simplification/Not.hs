@@ -16,24 +16,30 @@ module Kore.Step.Simplification.Not
 
 import qualified Data.Foldable as Foldable
 
-import           Branch
+import Branch
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike hiding
-                 ( mkAnd )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeNotPredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike hiding
+    ( mkAnd
+    )
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeNotPredicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
-import           Kore.Step.Simplification.Simplify
+import Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.

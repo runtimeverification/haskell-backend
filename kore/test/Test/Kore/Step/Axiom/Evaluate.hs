@@ -7,34 +7,47 @@ import Test.Tasty.HUnit
 
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Generics.Product
-import           Data.Generics.Wrapped
+import Data.Function
+import Data.Generics.Product
+import Data.Generics.Wrapped
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
-import           Kore.Attribute.Axiom.Concrete
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Attribute.Axiom.Concrete
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Logger.Output
-                 ( emptyLogger )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeNotPredicate, makeOrPredicate, makeTruePredicate )
+import Kore.Internal.TermLike
+import Kore.Logger.Output
+    ( emptyLogger
+    )
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeNotPredicate
+    , makeOrPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Axiom.Evaluate as Kore
-import           Kore.Step.Rule
-                 ( EqualityRule (..), RulePattern (..), rulePattern )
-import           Kore.Step.Simplification.Data
-                 ( Env, evalSimplifier )
-import           Kore.Step.Simplification.Simplify
-import           Kore.Unparser
+import Kore.Step.Rule
+    ( EqualityRule (..)
+    , RulePattern (..)
+    , rulePattern
+    )
+import Kore.Step.Simplification.Data
+    ( Env
+    , evalSimplifier
+    )
+import Kore.Step.Simplification.Simplify
+import Kore.Unparser
 import qualified SMT
 
 import qualified Test.Kore.Step.MockSymbols as Mock

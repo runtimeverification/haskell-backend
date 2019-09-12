@@ -20,7 +20,8 @@ module Data.Limit
     ) where
 
 import Prelude hiding
-       ( replicate )
+    ( replicate
+    )
 
 {- | An optionally-limited quantity.
  -}

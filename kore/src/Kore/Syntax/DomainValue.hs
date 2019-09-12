@@ -8,10 +8,11 @@ module Kore.Syntax.DomainValue
     ( DomainValue (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Function
-import           Data.Hashable
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Function
+import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

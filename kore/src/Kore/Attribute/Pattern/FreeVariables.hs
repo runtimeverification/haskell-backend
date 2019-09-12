@@ -14,13 +14,15 @@ module Kore.Attribute.Pattern.FreeVariables
     , getFreeElementVariables
     ) where
 
-import           Control.DeepSeq
-import           Data.Functor.Const
-import           Data.Hashable
-import           Data.Maybe
-                 ( mapMaybe )
-import           Data.Set
-                 ( Set )
+import Control.DeepSeq
+import Data.Functor.Const
+import Data.Hashable
+import Data.Maybe
+    ( mapMaybe
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Data.Traversable as Traversable
 import qualified Generics.SOP as SOP

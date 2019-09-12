@@ -15,33 +15,40 @@ module Kore.IndexedModule.MetadataTools
     , isConstructorOrOverloaded
     ) where
 
-import           Data.Function
-                 ( on )
-import           Data.Graph
-import           Data.Map.Strict
-                 ( Map )
+import Data.Function
+    ( on
+    )
+import Data.Graph
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( mapMaybe )
-import           Data.Set
-                 ( Set )
+import Data.Maybe
+    ( mapMaybe
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
-import           Kore.Attribute.Subsort
+import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.Resolvers
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.Symbol
-                 ( Symbol )
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.Resolvers
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.Symbol
+    ( Symbol
+    )
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Sort
+import Kore.Sort
 import qualified Kore.Step.SMT.AST as SMT.AST
-                 ( SmtDeclarations )
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (..) )
+    ( SmtDeclarations
+    )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.

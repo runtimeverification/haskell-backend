@@ -14,39 +14,49 @@ module Kore.Step.Simplification.Exists
 
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map.Strict as Map
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import           Branch
-                 ( BranchT )
+import Branch
+    ( BranchT
+    )
 import qualified Branch
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+    ( extractPatterns
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike as Pattern
+import Kore.Internal.TermLike as Pattern
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Sort
-                 ( predicateSort )
-import           Kore.Step.Axiom.Matcher
-                 ( matchIncremental )
+import Kore.Sort
+    ( predicateSort
+    )
+import Kore.Step.Axiom.Matcher
+    ( matchIncremental
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
-import           Kore.Step.Simplification.Simplify
+    ( simplify
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( runUnifierT )
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unification.Unify
+    ( runUnifierT
+    )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 
 -- TODO: Move Exists up in the other simplifiers or something similar. Note

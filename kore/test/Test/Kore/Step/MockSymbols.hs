@@ -20,23 +20,25 @@ module Test.Kore.Step.MockSymbols where
    * variables are called x, y, z...
 -}
 
-import           Control.Applicative
+import Control.Applicative
 import qualified Control.Lens as Lens
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Either as Either
-import           Data.Function
-import           Data.Generics.Product
+import Data.Function
+import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified GHC.Stack as GHC
 
-import           Data.Sup
-import           Kore.Attribute.Hook
-                 ( Hook (..) )
+import Data.Sup
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute
 import qualified Kore.Attribute.Sort.Element as Attribute
@@ -45,34 +47,42 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.ApplicationSorts
-                 ( ApplicationSorts )
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
-                 ( InternalVariable, TermLike )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts
+    )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , TermLike
+    )
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Sort
-import           Kore.Step.Simplification.Data
+import Kore.Sort
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Simplification.Simplify
-                 ( BuiltinAndAxiomSimplifierMap, PredicateSimplifier,
-                 TermLikeSimplifier )
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifierMap
+    , PredicateSimplifier
+    , TermLikeSimplifier
+    )
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
-                 ( resolve )
-import           Kore.Syntax.Application
-import           Kore.Syntax.ElementVariable
-import           Kore.Syntax.SetVariable
-import           Kore.Syntax.Variable
-import           Kore.Variables.UnifiedVariable
+    ( resolve
+    )
+import Kore.Syntax.Application
+import Kore.Syntax.ElementVariable
+import Kore.Syntax.SetVariable
+import Kore.Syntax.Variable
+import Kore.Variables.UnifiedVariable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
-import           Test.Kore
-                 ( testId )
+import Test.Kore
+    ( testId
+    )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 
 aId :: Id

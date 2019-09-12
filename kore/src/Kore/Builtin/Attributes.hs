@@ -20,7 +20,7 @@ module Kore.Builtin.Attributes
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.SetSymbols as Set
-import           Kore.Internal.Symbol
+import Kore.Internal.Symbol
 
 -- | Is the symbol a constructor modulo associativity, commutativity and
 -- neutral element?

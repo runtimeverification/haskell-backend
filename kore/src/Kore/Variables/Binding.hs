@@ -15,10 +15,11 @@ module Kore.Variables.Binding
     , nuBinder
     ) where
 
-import           Control.Comonad.Trans.Env
+import Control.Comonad.Trans.Env
 import qualified Control.Lens as Lens
-import           Data.Monoid
-                 ( Any (..) )
+import Data.Monoid
+    ( Any (..)
+    )
 
 import Kore.Syntax.Exists
 import Kore.Syntax.Forall

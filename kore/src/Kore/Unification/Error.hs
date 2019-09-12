@@ -16,18 +16,21 @@ module Kore.Unification.Error
     , unsupportedPatterns
     ) where
 
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty )
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Internal.TermLike
-       ( TermLike )
+    ( TermLike
+    )
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
+    ( UnifiedVariable (..)
+    )
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError

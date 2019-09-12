@@ -55,30 +55,35 @@ module Kore.Syntax.Sentence
     , module Kore.Syntax.Module
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
+import Control.DeepSeq
+    ( NFData (..)
+    )
 import qualified Control.Monad as Monad
-import           Data.Coerce
-import           Data.Generics.Sum.Typed
-                 ( projectTyped )
-import           Data.Hashable
-                 ( Hashable (..) )
+import Data.Coerce
+import Data.Generics.Sum.Typed
+    ( projectTyped
+    )
+import Data.Hashable
+    ( Hashable (..)
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Attributes
+import Kore.Attribute.Attributes
 import qualified Kore.Attribute.Null as Attribute
-                 ( Null (..) )
-import           Kore.Debug
-import           Kore.Sort
-import           Kore.Syntax.Application
-import           Kore.Syntax.Module
-import           Kore.Syntax.Pattern
-                 ( Pattern )
-import           Kore.Syntax.Variable
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
+    ( Null (..)
+    )
+import Kore.Debug
+import Kore.Sort
+import Kore.Syntax.Application
+import Kore.Syntax.Module
+import Kore.Syntax.Pattern
+    ( Pattern
+    )
+import Kore.Syntax.Variable
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
 
 {- | @Symbol@ is the @head-constructor{sort-variable-list}@ part of the
 @symbol-declaration@ syntactic category from the Semantics of K, Section 9.1.6

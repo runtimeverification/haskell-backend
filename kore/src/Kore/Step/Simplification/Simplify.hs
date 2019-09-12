@@ -35,49 +35,64 @@ module Kore.Step.Simplification.Simplify
     , purePatternAxiomEvaluator
     ) where
 
-import           Control.Comonad.Trans.Cofree
-import           Control.DeepSeq
-import           Control.Monad.Morph
-                 ( MFunctor )
+import Control.Comonad.Trans.Cofree
+import Control.DeepSeq
+import Control.Monad.Morph
+    ( MFunctor
+    )
 import qualified Control.Monad.Morph as Monad.Morph
-import           Control.Monad.Reader
+import Control.Monad.Reader
 import qualified Control.Monad.State.Strict as Strict
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Accum
-import           Control.Monad.Trans.Except
-import           Control.Monad.Trans.Identity
-import           Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Except
+import Control.Monad.Trans.Identity
+import Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import qualified GHC.Generics as GHC
 
-import           Branch
+import Branch
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+    ( Symbol
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Pattern, Predicate )
+import Kore.Internal.Pattern
+    ( Pattern
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-                 ( SubstitutionVariable, Symbol, TermLike, TermLikeF (..) )
-import           Kore.Internal.Variable
-import           Kore.Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler (..) )
-import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
-import           Kore.Syntax.Application
-import           ListT
-                 ( ListT (..), mapListT )
-import           SMT
-                 ( MonadSMT (..) )
+import Kore.Internal.TermLike
+    ( SubstitutionVariable
+    , Symbol
+    , TermLike
+    , TermLikeF (..)
+    )
+import Kore.Internal.Variable
+import Kore.Logger
+import Kore.Profiler.Data
+    ( MonadProfiler (..)
+    )
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
+import Kore.Syntax.Application
+import ListT
+    ( ListT (..)
+    , mapListT
+    )
+import SMT
+    ( MonadSMT (..)
+    )
 
 {- | 'SimplifierVariable' constrains variables that are used in the simplifier.
 

@@ -13,20 +13,25 @@ module Kore.Variables.Target
     , isNonTarget
     ) where
 
-import           Data.Hashable
-                 ( Hashable )
+import Data.Hashable
+    ( Hashable
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
-       ( Debug )
+    ( Debug
+    )
 import Kore.Syntax.Variable
-       ( SortedVariable (..) )
+    ( SortedVariable (..)
+    )
 import Kore.Unparser
-       ( Unparse (..) )
+    ( Unparse (..)
+    )
 import Kore.Variables.Fresh
-       ( FreshVariable (..) )
+    ( FreshVariable (..)
+    )
 
 {- | Distinguish variables by their source.
 

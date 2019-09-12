@@ -6,17 +6,21 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Control.Monad
-       ( void )
+    ( void
+    )
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
-import           Kore.Internal.Predicate as Predicate
-                 ( top )
-import           Kore.Internal.TermLike
-import           Kore.Logger.Output
-                 ( emptyLogger )
-import           Kore.Step.Simplification.Data
-import           Kore.Step.Simplification.Simplify
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.Predicate as Predicate
+    ( top
+    )
+import Kore.Internal.TermLike
+import Kore.Logger.Output
+    ( emptyLogger
+    )
+import Kore.Step.Simplification.Data
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified SMT
 
