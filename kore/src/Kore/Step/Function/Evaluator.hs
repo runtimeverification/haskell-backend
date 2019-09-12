@@ -12,6 +12,10 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
+import Control.Error
+    ( ExceptT
+    , exceptT
+    )
 import Control.Exception
     ( assert
     )
@@ -83,7 +87,7 @@ evaluateApplication
     configurationPredicate
     childrenPredicate
     (evaluateSortInjection -> application)
-  = do
+  = finishT $ do
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -126,6 +130,9 @@ evaluateApplication
           | otherwise ->
             return unchanged
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
+  where
+    finishT :: ExceptT r simplifier r -> simplifier r
+    finishT = exceptT return return
 
 {-| Evaluates axioms on patterns.
 -}
