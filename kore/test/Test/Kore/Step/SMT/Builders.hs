@@ -19,51 +19,70 @@ module Test.Kore.Step.SMT.Builders
     ) where
 
 import qualified Data.Map.Strict as Map
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 
-import           Kore.ASTVerifier.AttributesVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes) )
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( verifyAndIndexDefinition )
-import           Kore.ASTVerifier.Error
-                 ( VerifyError )
+import Kore.ASTVerifier.AttributesVerifier
+    ( AttributesVerification (DoNotVerifyAttributes)
+    )
+import Kore.ASTVerifier.DefinitionVerifier
+    ( verifyAndIndexDefinition
+    )
+import Kore.ASTVerifier.Error
+    ( VerifyError
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
+    ( Axiom
+    )
 import qualified Kore.Attribute.Constructor as Constructor
 import qualified Kore.Attribute.Functional as Functional
 import qualified Kore.Attribute.Hook as Hook
 import qualified Kore.Attribute.Smthook as Smthook
 import qualified Kore.Attribute.Smtlib as Smtlib
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-                 ( Error )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.Parser
-                 ( ParsedPattern )
-import           Kore.Sort
-                 ( Sort (SortActualSort), SortActual (SortActual) )
+import Kore.Error
+    ( Error
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.Parser
+    ( ParsedPattern
+    )
+import Kore.Sort
+    ( Sort (SortActualSort)
+    , SortActual (SortActual)
+    )
 import qualified Kore.Sort as SortActual
-                 ( SortActual (..) )
-import           Kore.Syntax.Definition
+    ( SortActual (..)
+    )
+import Kore.Syntax.Definition
 import qualified Kore.Syntax.Definition as Definition
-                 ( Definition (..) )
+    ( Definition (..)
+    )
 import qualified Kore.Syntax.Module as Module
-                 ( Module (..) )
+    ( Module (..)
+    )
 import qualified Kore.Syntax.Sentence as SentenceSort
-                 ( SentenceSort (..) )
+    ( SentenceSort (..)
+    )
 import qualified Kore.Syntax.Sentence as SentenceSymbol
-                 ( SentenceSymbol (..) )
+    ( SentenceSymbol (..)
+    )
 import qualified Kore.Syntax.Sentence as Symbol
-                 ( Symbol (..) )
+    ( Symbol (..)
+    )
 
 import Test.Kore
-       ( testId )
+    ( testId
+    )
 import Test.Kore.With
-       ( Attribute (Attribute) )
+    ( Attribute (Attribute)
+    )
 
 indexModule
     :: ParsedModule

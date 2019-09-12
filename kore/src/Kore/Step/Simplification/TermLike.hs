@@ -9,65 +9,88 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
-import           Data.Functor.Const
+import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Application as Application
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Bottom as Bottom
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Builtin as Builtin
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
-                 ( simplify )
-import           Kore.Step.Simplification.Data
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Equals as Equals
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Exists as Exists
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Floor as Floor
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Forall as Forall
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Iff as Iff
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Implies as Implies
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.In as In
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Mu as Mu
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Next as Next
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Not as Not
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Nu as Nu
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Or as Or
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Rewrites as Rewrites
-                 ( simplify )
+    ( simplify
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Top as Top
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Variable as Variable
-                 ( simplify )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+    ( simplify
+    )
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -75,15 +98,10 @@ import           Kore.Variables.Fresh
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        , FreshVariable variable
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> Predicate variable
-    -> Simplifier (Pattern variable)
+    -> simplifier (Pattern variable)
 simplify patt predicate = do
     orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)
@@ -92,12 +110,7 @@ simplify patt predicate = do
 'OrPattern'.
 -}
 simplifyToOr
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
@@ -109,13 +122,8 @@ simplifyToOr term predicate =
     simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
-    ::  forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> Predicate variable
     -> simplifier (OrPattern variable)

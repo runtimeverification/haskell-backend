@@ -5,11 +5,14 @@ License     : NCSA
 module Kore.AST.ApplicativeKore
     ( completeDefinition ) where
 
-import           Kore.Attribute.Pattern.FreeVariables
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Syntax.Definition
-                 ( Definition (..), Module (..), Sentence (..),
-                 SentenceAxiom (..) )
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Internal.TermLike as TermLike
+import Kore.Syntax.Definition
+    ( Definition (..)
+    , Module (..)
+    , Sentence (..)
+    , SentenceAxiom (..)
+    )
 import qualified Kore.Verified as Verified
 
 completeDefinition

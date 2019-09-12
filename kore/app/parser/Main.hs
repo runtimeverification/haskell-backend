@@ -1,44 +1,72 @@
 module Main (main) where
 
-import           Control.Monad
-                 ( when )
-import           Control.Monad.Trans
-                 ( lift )
-import           Control.Monad.Trans.Reader
-                 ( runReaderT )
+import Control.Monad
+    ( when
+    )
+import Control.Monad.Trans
+    ( lift
+    )
+import Control.Monad.Trans.Reader
+    ( runReaderT
+    )
 import qualified Data.Map as Map
-import           Data.Proxy
-                 ( Proxy (..) )
-import           Data.Semigroup
-                 ( (<>) )
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc.Render.Text
-                 ( putDoc )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, fullDesc, header, help, long,
-                 metavar, progDesc, str, strOption, value )
+import Data.Proxy
+    ( Proxy (..)
+    )
+import Data.Semigroup
+    ( (<>)
+    )
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc.Render.Text
+    ( putDoc
+    )
+import Options.Applicative
+    ( InfoMod
+    , Parser
+    , argument
+    , fullDesc
+    , header
+    , help
+    , long
+    , metavar
+    , progDesc
+    , str
+    , strOption
+    , value
+    )
 
-import           Kore.AST.ApplicativeKore
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes),
-                 defaultAttributesVerification, verifyAndIndexDefinition )
+import Kore.AST.ApplicativeKore
+import Kore.ASTVerifier.DefinitionVerifier
+    ( AttributesVerification (DoNotVerifyAttributes)
+    , defaultAttributesVerification
+    , verifyAndIndexDefinition
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
+import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
 import qualified Kore.Builtin as Builtin
-import           Kore.Debug
-import           Kore.Error
-                 ( printError )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule, toVerifiedDefinition )
-import           Kore.Logger.Output
-                 ( getLoggerT )
+import Kore.Debug
+import Kore.Error
+    ( printError
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    , toVerifiedDefinition
+    )
+import Kore.Logger.Output
+    ( getLoggerT
+    )
 import qualified Kore.Logger.Output as Logger
-import           Kore.Parser
-                 ( ParsedPattern, parseKoreDefinition, parseKorePattern )
-import           Kore.Syntax.Definition
-import           Kore.Unparser as Unparser
+import Kore.Parser
+    ( ParsedPattern
+    , parseKoreDefinition
+    , parseKorePattern
+    )
+import Kore.Syntax.Definition
+import Kore.Unparser as Unparser
 
 import GlobalMain
 

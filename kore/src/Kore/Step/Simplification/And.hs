@@ -16,29 +16,35 @@ module Kore.Step.Simplification.And
     ) where
 
 import Control.Applicative
-       ( Alternative (empty) )
+    ( Alternative (empty)
+    )
 import Control.Monad
-       ( foldM )
+    ( foldM
+    )
 import Data.List
-       ( foldl1', nub )
+    ( foldl1'
+    , nub
+    )
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+import Branch
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
-                 ( termAnd )
-import           Kore.Step.Simplification.Data hiding
-                 ( And )
+    ( termAnd
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.
 
@@ -77,12 +83,7 @@ Also, we have
     the same for two string literals and two chars
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify And { andFirst = first, andSecond = second } =
@@ -106,12 +107,7 @@ to carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -129,12 +125,7 @@ simplifyEvaluated first second
     return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => [OrPattern variable]
     -> simplifier (OrPattern variable)
 simplifyEvaluatedMultiple [] = return OrPattern.top
@@ -146,10 +137,7 @@ simplifyEvaluatedMultiple (pat : patterns) =
 See the comment for 'simplify' to find more details.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , HasCallStack
         , MonadSimplify simplifier
         )
@@ -163,10 +151,7 @@ makeEvaluate first second
   | otherwise = makeEvaluateNonBool first second
 
 makeEvaluateNonBool
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , HasCallStack
         , MonadSimplify simplifier
         )
@@ -187,11 +172,7 @@ makeEvaluateNonBool
         { predicate = applyAndIdempotence <$> Conditional.predicate normalized }
 
 applyAndIdempotence
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
 applyAndIdempotence patt =

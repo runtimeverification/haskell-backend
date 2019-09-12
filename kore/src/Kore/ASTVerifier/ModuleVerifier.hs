@@ -12,38 +12,47 @@ module Kore.ASTVerifier.ModuleVerifier
     , verifyUniqueNames
     ) where
 
-import           Control.Lens
-                 ( (%=) )
+import Control.Lens
+    ( (%=)
+    )
 import qualified Control.Lens as Lens
 import qualified Control.Monad.Reader.Class as Reader
 import qualified Control.Monad.State.Class as State
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Generics.Product
+import Data.Function
+import Data.Generics.Product
 import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Maybe
-import           Data.Text
-                 ( Text )
+import Data.Maybe
+import Data.Text
+    ( Text
+    )
 
-import           Kore.AST.Error
-import           Kore.ASTVerifier.AliasVerifier
-import           Kore.ASTVerifier.Error
-import           Kore.ASTVerifier.SentenceVerifier
-                 ( SentenceVerifier, verifyAxioms, verifyClaims,
-                 verifyHookedSorts, verifyHookedSymbols, verifyNonHooks,
-                 verifySorts, verifySymbols )
+import Kore.AST.Error
+import Kore.ASTVerifier.AliasVerifier
+import Kore.ASTVerifier.Error
+import Kore.ASTVerifier.SentenceVerifier
+    ( SentenceVerifier
+    , verifyAxioms
+    , verifyClaims
+    , verifyHookedSorts
+    , verifyHookedSymbols
+    , verifyNonHooks
+    , verifySorts
+    , verifySymbols
+    )
 import qualified Kore.ASTVerifier.SentenceVerifier as SentenceVerifier
-import           Kore.ASTVerifier.Verifier
-import           Kore.Attribute.Parser
-                 ( ParseAttributes )
+import Kore.ASTVerifier.Verifier
+import Kore.Attribute.Parser
+    ( ParseAttributes
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Unparser
+import Kore.Error
+import Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Unparser
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}

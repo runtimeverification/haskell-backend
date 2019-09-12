@@ -1,51 +1,64 @@
 module Test.Kore.Step.Axiom.EvaluationStrategy where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Data.Default
-                 ( def )
+import Data.Default
+    ( def
+    )
 import qualified Data.Map as Map
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute
-                 ( Concrete (Concrete) )
+    ( Concrete (Concrete)
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-                 ( Conditional (Conditional) )
+import Kore.Internal.Pattern as Pattern
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Pattern as Pattern
-                 ( Conditional (..) )
-import           Kore.Internal.Predicate as Predicate
-                 ( top )
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( Predicate, makeEqualsPredicate, makeNotPredicate,
-                 makeTruePredicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), CommonAttemptedAxiom,
-                 evalSimplifier )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
+    ( Conditional (..)
+    )
+import Kore.Internal.Predicate as Predicate
+    ( top
+    )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( Predicate
+    , makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    )
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
+    , RulePattern (RulePattern)
+    )
 import qualified Kore.Step.Simplification.Predicate as Predicate
-                 ( create )
+    ( create
+    )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
-import qualified SMT
+    ( create
+    )
+import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+    ( AttemptedAxiomResults (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
@@ -507,8 +520,7 @@ evaluate
     -> TermLike Variable
     -> IO CommonAttemptedAxiom
 evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    runSimplifier Mock.env
     $ simplifier
         substitutionSimplifier
         patternSimplifier

@@ -38,16 +38,20 @@ module Kore.Builtin.Bool
     , orElseKey
     ) where
 
-import           Data.Functor
-                 ( ($>) )
+import Data.Functor
+    ( ($>)
+    )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
@@ -55,8 +59,8 @@ import qualified Text.Megaparsec.Char as Parsec
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -148,7 +152,7 @@ parse = (Parsec.<|>) true false
 
  -}
 asInternal
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
@@ -168,7 +172,7 @@ asInternal builtinBoolSort builtinBoolValue =
 
  -}
 asTermLike
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Domain.InternalBool  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
@@ -184,7 +188,7 @@ asTermLike builtin =
       | otherwise = "false"
 
 asPattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Bool  -- ^ builtin value to render
     -> Pattern variable

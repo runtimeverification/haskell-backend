@@ -20,35 +20,48 @@ module Kore.Syntax.Pattern
     , module Control.Comonad
     ) where
 
-import           Control.Comonad
-import           Control.Comonad.Trans.Cofree
-                 ( Cofree, CofreeF (..), ComonadCofree (..) )
+import Control.Comonad
+import Control.Comonad.Trans.Cofree
+    ( Cofree
+    , CofreeF (..)
+    , ComonadCofree (..)
+    )
 import qualified Control.Comonad.Trans.Env as Env
-import           Control.DeepSeq
-                 ( NFData (..) )
+import Control.DeepSeq
+    ( NFData (..)
+    )
 import qualified Data.Bifunctor as Bifunctor
-import           Data.Functor.Compose
-                 ( Compose (..) )
-import           Data.Functor.Foldable
-                 ( Base, Corecursive, Recursive )
+import Data.Functor.Compose
+    ( Compose (..)
+    )
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Functor.Identity
-                 ( Identity (..) )
-import           Data.Hashable
-                 ( Hashable (..) )
-import           Data.Maybe
+import Data.Functor.Identity
+    ( Identity (..)
+    )
+import Data.Hashable
+    ( Hashable (..)
+    )
+import Data.Maybe
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Debug
-import           Kore.Syntax.PatternF
-                 ( Const (..), PatternF (..) )
+import Kore.Debug
+import Kore.Syntax.PatternF
+    ( Const (..)
+    , PatternF (..)
+    )
 import qualified Kore.Syntax.PatternF as PatternF
-import           Kore.Syntax.Variable
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unparser
+import Kore.Syntax.Variable
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unparser
 
 {- | The abstract syntax of Kore.
 

@@ -11,18 +11,26 @@ import Test.Tasty.HUnit
 import qualified Data.Map as Map
 
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
+    ( Axiom
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+    ( Symbol
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations), Sort (Sort), Symbol (Symbol) )
+    ( Declarations (Declarations)
+    , Sort (Sort)
+    , Symbol (Symbol)
+    )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Syntax.Id as Kore
-                 ( Id )
+    ( Id
+    )
 import qualified SMT.AST as AST
-                 ( showSExpr )
+    ( showSExpr
+    )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

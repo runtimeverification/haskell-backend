@@ -4,6 +4,7 @@ License     : NCSA
  -}
 module Kore.Verified
     ( Pattern
+    , Alias
     , Sentence
     , SentenceAlias
     , SentenceAxiom
@@ -14,11 +15,18 @@ module Kore.Verified
     , SentenceSymbol
     ) where
 
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
+import qualified Kore.Internal.Alias as Internal
+    ( Alias
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , Variable
+    )
 import qualified Kore.Syntax.Sentence as Syntax
 
 type Pattern = TermLike Variable
+
+type Alias = Internal.Alias Pattern
 
 type Sentence = Syntax.Sentence Pattern
 

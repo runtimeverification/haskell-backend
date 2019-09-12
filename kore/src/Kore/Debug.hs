@@ -74,46 +74,69 @@ module Kore.Debug
     , debugPrecGeneric
     ) where
 
-import           Control.Comonad.Trans.Cofree
-import           Control.Monad.Trans.Except
-import           Control.Monad.Trans.Maybe
+import Control.Comonad.Trans.Cofree
+import Control.Monad.Trans.Except
+import Control.Monad.Trans.Maybe
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
-import           Data.Functor.Const
-                 ( Const )
-import           Data.Functor.Identity
-                 ( Identity )
-import           Data.List
-                 ( intercalate )
-import           Data.Map
-                 ( Map )
+import Data.Functor.Const
+    ( Const
+    )
+import Data.Functor.Identity
+    ( Identity
+    )
+import Data.List
+    ( intercalate
+    )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Proxy
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
+import Data.Proxy
+import Data.Sequence
+    ( Seq
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc, (<+>) )
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc
+    ( Doc
+    , (<+>)
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.Void
-                 ( Void )
-import           Debug.Trace
-import           Generics.SOP
-                 ( All, All2, Code, ConstructorInfo, DatatypeInfo (..),
-                 FieldInfo (..), Generic, HasDatatypeInfo, I (..), K (..),
-                 NP (..), NS (..), SOP (..) )
+import Data.Void
+    ( Void
+    )
+import Debug.Trace
+import Generics.SOP
+    ( All
+    , All2
+    , Code
+    , ConstructorInfo
+    , DatatypeInfo (..)
+    , FieldInfo (..)
+    , Generic
+    , HasDatatypeInfo
+    , I (..)
+    , K (..)
+    , NP (..)
+    , NS (..)
+    , SOP (..)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Stack as GHC
-import           Numeric.Natural
-                 ( Natural )
+import Numeric.Natural
+    ( Natural
+    )
 
 import Data.Sup
 import SMT.AST
-       ( SExpr )
+    ( SExpr
+    )
 
 {-| Identifiers for places where we're doing debug.
 

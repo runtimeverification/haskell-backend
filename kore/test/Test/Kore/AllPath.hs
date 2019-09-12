@@ -2,33 +2,44 @@ module Test.Kore.AllPath where
 
 import Test.Tasty
 
-import           Control.Applicative
+import Control.Applicative
 import qualified Data.Foldable as Foldable
-import           Data.Function
-                 ( (&) )
-import           Data.Functor.Identity
+import Data.Function
+    ( (&)
+    )
+import Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
 import qualified Data.Maybe as Maybe
-import           Data.Sequence
-                 ( Seq )
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import qualified Kore.Goal as Goal
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Logger
-                 ( LogMessage (..), WithLog (..) )
-import           Kore.Profiler.Data
-                 ( Configuration (..), MonadProfiler (..) )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify (..) )
+import Kore.Logger
+    ( LogMessage (..)
+    , WithLog (..)
+    )
+import Kore.Profiler.Data
+    ( Configuration (..)
+    , MonadProfiler (..)
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify (..)
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.Transition
-                 ( runTransitionT )
+import Kore.Step.Transition
+    ( runTransitionT
+    )
 import qualified Kore.Step.Transition as Transition
-import           SMT
-                 ( MonadSMT (..) )
+import qualified Kore.Strategies.Goal as Goal
+import qualified Kore.Strategies.ProofState as Goal
+import SMT
+    ( MonadSMT (..)
+    )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

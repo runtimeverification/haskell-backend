@@ -5,56 +5,78 @@ import Test.Tasty.HUnit
 
 import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens
-import           Data.Default
-                 ( def )
-import           Data.Function
-import           Data.Generics.Product
+import Data.Default
+    ( def
+    )
+import Data.Function
+import Data.Generics.Product
 import qualified Data.Set as Set
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), SmtMetadataTools )
-import           Kore.Internal.Conditional as Conditional
-                 ( Conditional (Conditional) )
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.IndexedModule.MetadataTools
+    ( MetadataTools (..)
+    , SmtMetadataTools
+    )
+import Kore.Internal.Conditional as Conditional
+    ( Conditional (Conditional)
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.Symbol
-                 ( Symbol (Symbol, symbolConstructor), constructor,
-                 functional )
+import Kore.Internal.Symbol
+    ( Symbol (Symbol, symbolConstructor)
+    , constructor
+    , functional
+    )
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Internal.TermLike
-                 ( TermLike, mkApplySymbol, mkElemVar, mkImplies )
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkApplySymbol
+    , mkElemVar
+    , mkImplies
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeTruePredicate )
+import Kore.Predicate.Predicate
+    ( makeEqualsPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Sort
-                 ( Sort (..), SortActual (SortActual) )
-import           Kore.Step
-import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.Data as Simplification
+    ( Predicate
+    )
+import Kore.Sort
+    ( Sort (..)
+    , SortActual (SortActual)
+    )
+import Kore.Step
+import Kore.Step.Rule
+    ( RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    )
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (symbolOrAliasConstructor) )
-import           Kore.Syntax.ElementVariable
-import           Kore.Syntax.Variable
-                 ( Variable (..) )
-import qualified SMT
+import Kore.Syntax.Application
+    ( SymbolOrAlias (symbolOrAliasConstructor)
+    )
+import Kore.Syntax.ElementVariable
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 {-
     Tests of running a strategy by checking if the expected
@@ -114,8 +136,7 @@ applyStrategy testName start axioms expected =
 takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
@@ -610,8 +631,7 @@ runStep
     -> IO [Pattern Variable]
 runStep configuration axioms =
     (<$>) pickFinal
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runStepMockEnv
@@ -621,8 +641,7 @@ runStepMockEnv
     -> IO [Pattern Variable]
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier Mock.env
+    $ runSimplifier Mock.env
     $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runSteps
@@ -632,6 +651,5 @@ runSteps
     -> IO (Pattern Variable)
 runSteps configuration axioms =
     (<$>) pickLongest
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ runStrategy transitionRule (repeat $ allRewrites axioms) configuration

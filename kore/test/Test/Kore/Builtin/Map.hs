@@ -1,72 +1,95 @@
 module Test.Kore.Builtin.Map where
 
-import           Hedgehog
-                 ( Gen, Property, PropertyT, discard, forAll, (===) )
+import Hedgehog
+    ( Gen
+    , Property
+    , PropertyT
+    , discard
+    , forAll
+    , (===)
+    )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Either as Either
-import           Data.Function
-                 ( (&) )
+import Data.Function
+    ( (&)
+    )
 import qualified Data.List as List
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
 import qualified GHC.Stack as GHC
-import           Prelude hiding
-                 ( concatMap )
+import Prelude hiding
+    ( concatMap
+    )
 
-import           Kore.Attribute.Hook
-                 ( Hook )
+import Kore.Attribute.Hook
+    ( Hook
+    )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.MapSymbols as Map
-import           Kore.Domain.Builtin
-                 ( NormalizedMap (..) )
+import Kore.Domain.Builtin
+    ( NormalizedMap (..)
+    )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.MultiOr
-                 ( MultiOr (..) )
-import           Kore.Internal.Pattern
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.MultiOr
+    ( MultiOr (..)
+    )
+import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike hiding
-                 ( asConcrete )
+import Kore.Internal.TermLike hiding
+    ( asConcrete
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
+import Kore.Predicate.Predicate
+    ( makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Rule
-import           Kore.Step.Simplification.Data
+import Kore.Step.Rule
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           SMT
-                 ( SMT )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
+import SMT
+    ( SMT
+    )
 
-import           Test.Kore
-                 ( elementVariableGen, standaloneGen, testId )
+import Test.Kore
+    ( elementVariableGen
+    , standaloneGen
+    , testId
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
-import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Definition
-import           Test.Kore.Builtin.Int
-                 ( genConcreteIntegerPattern, genInteger, genIntegerPattern )
+import Test.Kore.Builtin.Builtin
+import Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.Int
+    ( genConcreteIntegerPattern
+    , genInteger
+    , genIntegerPattern
+    )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Set as Test.Set
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.SMT
-import           Test.Tasty.HUnit.Extensions
+import Test.SMT
+import Test.Tasty.HUnit.Extensions
 
 genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =

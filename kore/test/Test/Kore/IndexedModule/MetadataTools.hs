@@ -1,25 +1,33 @@
 module Test.Kore.IndexedModule.MetadataTools (test_metadataTools) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( assertBool, assertEqual, testCase )
+    ( assertBool
+    , assertEqual
+    , testCase
+    )
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Subsort
-                 ( subsortAttribute )
-import           Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Subsort
+    ( subsortAttribute
+    )
+import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (..), extractMetadataTools )
-import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.MetadataTools
+    ( MetadataTools (..)
+    , extractMetadataTools
+    )
+import Kore.Internal.TermLike
+import Kore.Syntax.Definition
 
 import Test.Kore
 

@@ -47,30 +47,45 @@ module Kore.Step.Strategy
     , module Kore.Step.Transition
     ) where
 
-import           Control.Applicative
-                 ( Alternative (empty, (<|>)) )
-import           Control.Monad
-                 ( (>=>) )
-import           Control.Monad.State.Strict
-                 ( MonadState, StateT )
+import Control.Applicative
+    ( Alternative (empty, (<|>))
+    )
+import Control.Monad
+    ( (>=>)
+    )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
-import           Data.Graph.Inductive.PatriciaTree
-                 ( Gr )
-import           Data.Hashable
+import Data.Graph.Inductive.PatriciaTree
+    ( Gr
+    )
+import Data.Hashable
 import qualified Data.List as List
-import           Data.Maybe
-import           Data.Sequence
-                 ( Seq )
+import Data.Maybe
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
+import Kore.Profiler.Data
+    ( MonadProfiler
+    )
 import qualified Kore.Profiler.Profile as Profile
-                 ( executionQueueLength )
-import           Prelude hiding
-                 ( all, and, any, or, replicate, seq, sequence )
+    ( executionQueueLength
+    )
+import Prelude hiding
+    ( all
+    , and
+    , any
+    , or
+    , replicate
+    , seq
+    , sequence
+    )
 
 import Kore.Step.Transition
 

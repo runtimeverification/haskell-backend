@@ -20,32 +20,41 @@ module Kore.Internal.Conditional
     , isNormalized
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Hashable
-import           Data.Monoid
-                 ( (<>) )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Hashable
+import Data.Monoid
+    ( (<>)
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
-import           Kore.Debug
-import           Kore.Internal.TermLike
-                 ( TermLike, termLikeSort )
-import           Kore.Predicate.Predicate
-                 ( Predicate )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
+import Kore.Debug
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , TermLike
+    , termLikeSort
+    )
+import Kore.Predicate.Predicate
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Syntax
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 
 {- | @Conditional@ represents a value conditioned on a predicate.
 
@@ -95,23 +104,15 @@ instance
     NFData (Conditional variable child)
 
 instance
-    ( Ord variable
-    , Unparse variable
-    , SortedVariable variable
-    , Semigroup term
-    ) =>
-    Semigroup (Conditional variable term)
+    (InternalVariable variable, Semigroup term)
+    => Semigroup (Conditional variable term)
   where
     (<>) predicated1 predicated2 = (<>) <$> predicated1 <*> predicated2
     {-# INLINE (<>) #-}
 
 instance
-    ( Ord variable
-    , Unparse variable
-    , SortedVariable variable
-    , Monoid term
-    ) =>
-    Monoid (Conditional variable term)
+    (InternalVariable variable, Monoid term)
+    => Monoid (Conditional variable term)
   where
     mempty =
         Conditional
@@ -124,13 +125,7 @@ instance
     mappend = (<>)
     {-# INLINE mappend #-}
 
-instance
-    ( SortedVariable variable
-    , Ord variable
-    , Unparse variable
-    ) =>
-    Applicative (Conditional variable)
-  where
+instance InternalVariable variable => Applicative (Conditional variable) where
     pure term =
         Conditional
             { term
@@ -156,11 +151,10 @@ instance TopBottom term
     isBottom Conditional {term, predicate, substitution} =
         isBottom term || isBottom predicate || isBottom substitution
 
-instance ( SortedVariable variable
-         , Ord variable
-         , Show variable
-         , Unparse variable
-         ) => Unparse (Conditional variable (TermLike variable)) where
+instance
+    InternalVariable variable
+    => Unparse (Conditional variable (TermLike variable))
+  where
     unparse Conditional { term, predicate, substitution } =
         unparseAnd
             (below "/* term: */" (unparse term))
@@ -228,11 +222,7 @@ withCondition term predicated = predicated { term }
 {- | Combine the conditions of both arguments, taking the 'term' of the first.
  -}
 andCondition
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Conditional variable term
     -> Conditional variable ()
     -> Conditional variable term
@@ -256,7 +246,7 @@ The result has a true 'Predicate'.
 
  -}
 fromSubstitution
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Substitution variable
     -> Conditional variable ()
 fromSubstitution substitution =
@@ -272,7 +262,7 @@ The result has a true 'Predicate'.
 
  -}
 fromSingleSubstitution
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> Conditional variable ()
 fromSingleSubstitution pair =
@@ -285,11 +275,7 @@ fromSingleSubstitution pair =
 {- | Combine the predicate with the conditions of the first argument.
  -}
 andPredicate
-    ::  ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Conditional variable term
     -> Predicate variable
     -> Conditional variable term
@@ -324,11 +310,7 @@ See also: 'substitutionToPredicate'.
 
 -}
 toPredicate
-    :: ( SortedVariable variable
-       , Ord variable
-       , Show variable
-       , Unparse variable
-       )
+    :: InternalVariable variable
     => Conditional variable term
     -> Predicate variable
 toPredicate Conditional { predicate, substitution } =

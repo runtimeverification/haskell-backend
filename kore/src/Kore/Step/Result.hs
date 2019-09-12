@@ -19,22 +19,27 @@ module Kore.Step.Result
     , traverseConfigs
     ) where
 
-import           Control.Applicative
-                 ( Alternative ((<|>)) )
+import Control.Applicative
+    ( Alternative ((<|>))
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
-import           Data.Sequence
-                 ( Seq )
+import Data.Sequence
+    ( Seq
+    )
 import qualified GHC.Generics as GHC
 
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Step.Transition
-                 ( TransitionT )
+import Kore.Step.Transition
+    ( TransitionT
+    )
 import qualified Kore.Step.Transition as Transition
-import           Kore.TopBottom
-                 ( TopBottom )
+import Kore.TopBottom
+    ( TopBottom
+    )
 
 -- | The result of applying a single rule.
 data Result rule config =

@@ -7,7 +7,8 @@ License     : NCSA
 module Kore.Attribute.Subsort where
 
 import Data.Hashable
-       ( Hashable )
+    ( Hashable
+    )
 
 import Kore.Attribute.Parser as Parser
 
