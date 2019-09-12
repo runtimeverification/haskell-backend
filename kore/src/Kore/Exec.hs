@@ -88,7 +88,7 @@ import           Kore.Step.Simplification.Simplify
                  PredicateSimplifier (..), TermLikeSimplifier )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
-import           Kore.Strategies.OnePath.Verification
+import           Kore.Strategies.Verification
                  ( Claim, ProofStrategy (..), defaultProofStrategy, verify )
 import           SMT
                  ( MonadSMT, SMT )

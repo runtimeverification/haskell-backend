@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 This should be imported qualified.
 -}
 
-module Kore.Strategies.OnePath.Verification
+module Kore.Strategies.Verification
     ( Claim
     , CommonProofState
     , ProofStrategy (..)

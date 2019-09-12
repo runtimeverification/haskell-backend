@@ -48,9 +48,8 @@ import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
-                 ( AllPathRule, OnePathRule, RewriteRule (..) )
-import           Kore.Step.Rule
-                 ( RulePattern (..) )
+                 ( AllPathRule, OnePathRule, RewriteRule (..),
+                 RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( MonadSimplify, SimplifierVariable )
@@ -61,21 +60,16 @@ import qualified Kore.Step.Step as Step
 import           Kore.Step.Strategy
                  ( Strategy )
 import qualified Kore.Step.Strategy as Strategy
-import qualified Kore.Strategies.OnePath.Actions as OnePath
 import           Kore.Strategies.ProofState
 import qualified Kore.Strategies.ProofState as Goal
 import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.Syntax.Variable
-                 ( Variable )
+                 ( SortedVariable, Variable )
 import           Kore.TopBottom
                  ( isBottom )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( unparse )
-import           Kore.Unparser
-                 ( Unparse )
+                 ( Unparse, unparse )
 import           Kore.Variables.Fresh
                  ( FreshVariable )
 import           Kore.Variables.UnifiedVariable
