@@ -1,79 +1,119 @@
 module Main (main) where
 
-import           Control.Applicative
-                 ( Alternative (..), optional )
-import           Control.Monad.IO.Class
-                 ( MonadIO )
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO )
+import Control.Applicative
+    ( Alternative (..)
+    , optional
+    )
+import Control.Monad.IO.Class
+    ( MonadIO
+    )
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO
+    )
 import qualified Control.Monad.Reader.Class as Reader
-import           Control.Monad.Trans
-                 ( lift )
-import qualified Data.Bifunctor as Bifunctor
+import Control.Monad.Trans
+    ( lift
+    )
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
-import           Data.List
-                 ( intercalate )
-import           Data.Map
-                 ( Map )
-import           Data.Reflection
-import           Data.Semigroup
-                 ( (<>) )
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
-import           Data.Text.Prettyprint.Doc.Render.Text
-                 ( hPutDoc, putDoc )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, auto, fullDesc, header, help,
-                 long, metavar, option, progDesc, readerError, str, strOption,
-                 value )
+import Data.List
+    ( intercalate
+    )
+import Data.Reflection
+import Data.Semigroup
+    ( (<>)
+    )
+import Data.Text.Prettyprint.Doc
+    ( Doc
+    )
+import Data.Text.Prettyprint.Doc.Render.Text
+    ( hPutDoc
+    , putDoc
+    )
+import Options.Applicative
+    ( InfoMod
+    , Parser
+    , argument
+    , auto
+    , fullDesc
+    , header
+    , help
+    , long
+    , metavar
+    , option
+    , progDesc
+    , readerError
+    , str
+    , strOption
+    , value
+    )
 import qualified Options.Applicative as Options
-import           System.Exit
-                 ( ExitCode (..), exitWith )
-import           System.IO
-                 ( IOMode (WriteMode), withFile )
+import System.Exit
+    ( ExitCode (..)
+    , exitWith
+    )
+import System.IO
+    ( IOMode (WriteMode)
+    , withFile
+    )
 
-import           Data.Limit
-                 ( Limit (..) )
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin as Builtin
-import           Kore.Error
-                 ( printError )
-import           Kore.Exec
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.Attribute.Symbol as Attribute
+import Kore.Error
+    ( printError
+    )
+import Kore.Exec
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-                 ( build )
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
-import           Kore.Internal.TermLike
-import           Kore.Logger.Output
-                 ( KoreLogOptions (..), LogMessage, LoggerT (..), WithLog,
-                 parseKoreLogOptions, runLoggerT )
+    ( build
+    )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
+import Kore.Internal.TermLike
+import Kore.Logger.Output
+    ( KoreLogOptions (..)
+    , LogMessage
+    , LoggerT (..)
+    , WithLog
+    , parseKoreLogOptions
+    , runLoggerT
+    )
 import qualified Kore.ModelChecker.Bounded as Bounded
-                 ( CheckResult (..) )
-import           Kore.Parser
-                 ( ParsedPattern, parseKorePattern )
-import           Kore.Predicate.Predicate
-                 ( makePredicate )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
-import           Kore.Step
-import           Kore.Step.Search
-                 ( SearchType (..) )
+    ( CheckResult (..)
+    )
+import Kore.Parser
+    ( ParsedPattern
+    , parseKorePattern
+    )
+import Kore.Predicate.Predicate
+    ( makePredicate
+    )
+import Kore.Profiler.Data
+    ( MonadProfiler
+    )
+import Kore.Step
+import Kore.Step.Search
+    ( SearchType (..)
+    )
 import qualified Kore.Step.Search as Search
-import           Kore.Step.SMT.Lemma
-import           Kore.Syntax.Definition
-                 ( ModuleName (..) )
-import           Kore.Unparser
-                 ( unparse )
-import           SMT
-                 ( MonadSMT )
+import Kore.Step.SMT.Lemma
+import Kore.Syntax.Definition
+    ( ModuleName (..)
+    )
+import Kore.Unparser
+    ( unparse
+    )
+import SMT
+    ( MonadSMT
+    )
 import qualified SMT
 
 import GlobalMain
@@ -317,7 +357,10 @@ mainWithOptions execOptions@KoreExecOptions { koreLogOptions } =
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
-    (mainModule, _) <- loadDefinition execOptions
+    let KoreExecOptions { definitionFileName } = execOptions
+    definition <- loadDefinitions [definitionFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
     let KoreSearchOptions { searchFileName } = searchOptions
     target <- mainParseSearchPattern mainModule searchFileName
     let KoreExecOptions { patternFileName } = execOptions
@@ -334,7 +377,10 @@ koreSearch execOptions searchOptions = do
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
-    (mainModule, _) <- loadDefinition execOptions
+    let KoreExecOptions { definitionFileName } = execOptions
+    definition <- loadDefinitions [definitionFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <- execute execOptions mainModule $ do
@@ -349,8 +395,13 @@ koreRun execOptions = do
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
-    (mainModule, definition) <- loadDefinition execOptions
-    (specModule, _) <- loadSpecification proveOptions definition
+    let KoreExecOptions { definitionFileName } = execOptions
+        KoreProveOptions { specFileName } = proveOptions
+    definition <- loadDefinitions [definitionFileName, specFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
+    let KoreProveOptions { specMainModule } = proveOptions
+    specModule <- loadModule specMainModule definition
     (exitCode, final) <- execute execOptions mainModule $ do
         let KoreExecOptions { stepLimit } = execOptions
             KoreProveOptions { graphSearch, bmc } = proveOptions
@@ -378,41 +429,6 @@ koreProve execOptions proveOptions = do
         ( ExitSuccess
         , mkElemVar $ elemVarS "Unknown" (mkSort $ noLocationId "SortUnknown")
         )
-
-type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
-
-type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
-
-loadDefinition :: KoreExecOptions -> Main (LoadedModule, LoadedDefinition)
-loadDefinition options = do
-    let KoreExecOptions { definitionFileName } = options
-    parsedDefinition <- parseDefinition definitionFileName
-    definition@(indexedModules, _) <-
-        verifyDefinitionWithBase Nothing True parsedDefinition
-    let KoreExecOptions { mainModuleName } = options
-    mainModule <- lookupMainModule mainModuleName indexedModules
-    return (mainModule, definition)
-
-loadSpecification
-    :: KoreProveOptions
-    -> LoadedDefinition
-    -> Main (LoadedModule, LoadedDefinition)
-loadSpecification proveOptions definition = do
-    let base =
-            (Bifunctor.first . fmap . IndexedModule.mapPatterns)
-                Builtin.externalizePattern
-                definition
-    let KoreProveOptions { specFileName } = proveOptions
-    spec <- parseDefinition specFileName
-    specDef@(modules, _) <- verifyDefinitionWithBase (Just base) True spec
-    let KoreProveOptions { specMainModule } = proveOptions
-    specModule <- lookupMainModule specMainModule modules
-    return (specModule, specDef)
-
-loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike Variable)
-loadPattern mainModule (Just fileName) =
-    mainPatternParseAndVerify mainModule fileName
-loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
 
 type MonadExecute exe =
     ( MonadIO exe
@@ -447,6 +463,11 @@ execute options mainModule worker = do
             { SMT.timeOut = smtTimeOut
             , SMT.preludeFile = smtPrelude
             }
+
+loadPattern :: LoadedModule -> Maybe FilePath -> Main (TermLike Variable)
+loadPattern mainModule (Just fileName) =
+    mainPatternParseAndVerify mainModule fileName
+loadPattern _ Nothing = error "Missing: --pattern PATTERN_FILE"
 
 -- | IO action that parses a kore pattern from a filename and prints timing
 -- information.

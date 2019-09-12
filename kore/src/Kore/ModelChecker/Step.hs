@@ -15,48 +15,64 @@ module Kore.ModelChecker.Step
     , defaultOneStepStrategy
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Monad
-                 ( when )
-import           Control.Monad.State.Strict
-                 ( StateT )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Monad
+    ( when
+    )
+import Control.Monad.State.Strict
+    ( StateT
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import           Data.Hashable
-import           Data.Maybe
-                 ( isJust )
-import           Data.Text
-                 ( Text )
+import Data.Hashable
+import Data.Maybe
+    ( isJust
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Generics
+import GHC.Generics
 
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-                 ( TermLike )
-import           Kore.ModelChecker.Simplification
-                 ( checkImplicationIsTop )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
+import Kore.ModelChecker.Simplification
+    ( checkImplicationIsTop
+    )
 import qualified Kore.Step.Result as StepResult
-import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), allPathGlobally )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+import Kore.Step.Rule
+    ( RewriteRule (RewriteRule)
+    , allPathGlobally
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplifyAndRemoveTopExists )
+    ( simplifyAndRemoveTopExists
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( filterMultiOr )
+    ( filterMultiOr
+    )
 import qualified Kore.Step.Step as Step
-import           Kore.Step.Strategy
-                 ( Strategy, TransitionT )
+import Kore.Step.Strategy
+    ( Strategy
+    , TransitionT
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Syntax.Variable
-                 ( Variable )
+import Kore.Syntax.Variable
+    ( Variable
+    )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
+import Kore.Unparser
 
 data Prim patt rewrite =
       CheckProofState

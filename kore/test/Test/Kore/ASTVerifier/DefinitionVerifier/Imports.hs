@@ -3,22 +3,29 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.Imports
     ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.Error
-                 ( noSort )
+import Kore.Error
+import Kore.IndexedModule.Error
+    ( noSort
+    )
 import qualified Kore.Internal.Alias as Internal
-import           Kore.Internal.ApplicationSorts
+import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Internal.TermLike hiding
-                 ( Alias, Symbol )
-import           Kore.Syntax.Definition
+import Kore.Internal.TermLike hiding
+    ( Alias
+    , Symbol
+    )
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -474,7 +481,7 @@ sortVisibilityTests =
                             , symbolOrAliasParams = []
                             }
                     , applicationChildren =
-                        [ ElementVariable Variable
+                        [ ElemVar $ ElementVariable Variable
                             { variableSort = sort
                             , variableCounter = mempty
                             , variableName = testId "x"
@@ -783,6 +790,8 @@ aliasVisibilityTests =
                 { aliasConstructor = testId "alias1"
                 , aliasParams = [ defaultSort ]
                 , aliasSorts = applicationSorts [] defaultSort
+                , aliasLeft = []
+                , aliasRight = mkTop defaultSort
                 }
             []
     aliasDeclaration =
@@ -816,6 +825,8 @@ aliasVisibilityTests =
                 { aliasConstructor = testId "#alias1"
                 , aliasParams = [ charMetaSort ]
                 , aliasSorts = applicationSorts [] charMetaSort
+                , aliasLeft = []
+                , aliasRight = mkTop charMetaSort
                 }
             []
     metaAliasDeclaration =
@@ -896,6 +907,9 @@ aliasVisibilityTests =
                             applicationSorts
                                 [termLikeSort aliasPattern]
                                 defaultSort
+                        , aliasLeft = []
+                        , aliasRight =
+                            mkTop $ termLikeSort aliasPattern
                         }
                     [aliasPattern]
             , sentenceAxiomAttributes = Attributes []
@@ -924,7 +938,7 @@ aliasVisibilityTests =
                                 ]
                             }
                     , applicationChildren =
-                        [ ElementVariable Variable
+                        [ SetVar $ SetVariable Variable
                             { variableName = testId "x"
                             , variableCounter = mempty
                             , variableSort =

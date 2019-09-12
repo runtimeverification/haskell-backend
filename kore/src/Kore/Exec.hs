@@ -19,77 +19,115 @@ module Kore.Exec
     , Equality
     ) where
 
-import           Control.Concurrent.MVar
+import Control.Concurrent.MVar
 import qualified Control.Monad as Monad
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO )
-import           Control.Monad.Trans.Except
-                 ( runExceptT )
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO
+    )
+import Control.Monad.Trans.Except
+    ( runExceptT
+    )
 import qualified Data.Bifunctor as Bifunctor
-import           Data.Coerce
-                 ( Coercible, coerce )
+import Data.Coerce
+    ( Coercible
+    , coerce
+    )
 import qualified Data.Map.Strict as Map
-import           System.Exit
-                 ( ExitCode (..) )
+import System.Exit
+    ( ExitCode (..)
+    )
 
-import           Data.Limit
-                 ( Limit (..) )
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
+import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Goal as Goal
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-                 ( build )
-import           Kore.IndexedModule.Resolvers
-                 ( resolveSymbol )
+    ( build
+    )
+import Kore.IndexedModule.Resolvers
+    ( resolveSymbol
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
-import           Kore.OnePath.Verification
-                 ( Claim, defaultStrategy, verify )
-import           Kore.Predicate.Predicate
-                 ( makeMultipleOrPredicate, unwrapPredicate )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
+import Kore.Predicate.Predicate
+    ( makeMultipleOrPredicate
+    , unwrapPredicate
+    )
+import Kore.Profiler.Data
+    ( MonadProfiler
+    )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
-import           Kore.Step
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
-import           Kore.Step.Axiom.Registry
-                 ( axiomPatternsToEvaluators, extractEqualityAxioms )
-import           Kore.Step.Rule
-                 ( EqualityRule, ImplicationRule (..), OnePathRule (..),
-                 RewriteRule (RewriteRule), RulePattern (RulePattern),
-                 extractImplicationClaims, extractOnePathClaims,
-                 extractRewriteAxioms, getRewriteRule )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Search
-                 ( searchGraph )
+import Kore.Step
+import Kore.Step.Axiom.EvaluationStrategy
+    ( builtinEvaluation
+    , simplifierWithFallback
+    )
+import Kore.Step.Axiom.Registry
+    ( axiomPatternsToEvaluators
+    , extractEqualityAxioms
+    )
+import Kore.Step.Rule
+    ( EqualityRule
+    , ImplicationRule (..)
+    , OnePathRule (..)
+    , RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    , extractImplicationClaims
+    , extractOnePathClaims
+    , extractRewriteAxioms
+    , getRewriteRule
+    )
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    )
+import Kore.Step.Search
+    ( searchGraph
+    )
 import qualified Kore.Step.Search as Search
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, MonadSimplify,
-                 PredicateSimplifier (..), TermLikeSimplifier, evalSimplifier )
+import Kore.Step.Simplification.Data
+    ( evalSimplifier
+    )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-                 ( create )
+    ( create
+    )
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifierMap
+    , MonadSimplify
+    , PredicateSimplifier (..)
+    , TermLikeSimplifier
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           SMT
-                 ( MonadSMT, SMT )
+import qualified Kore.Strategies.Goal as Goal
+import Kore.Strategies.OnePath.Verification
+    ( Claim
+    , defaultStrategy
+    , verify
+    )
+import SMT
+    ( MonadSMT
+    , SMT
+    )
 
 -- | Configuration used in symbolic execution.
 type Config = Pattern Variable

@@ -5,16 +5,21 @@ import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Attribute.Synthetic
-import           Kore.Internal.TermLike
-                 ( Symbol, TermLikeF (..) )
-import           Kore.Syntax hiding
-                 ( PatternF (..) )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Attribute.Synthetic
+import Kore.Internal.TermLike
+    ( Symbol
+    , TermLikeF (..)
+    )
+import Kore.Syntax hiding
+    ( PatternF (..)
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 

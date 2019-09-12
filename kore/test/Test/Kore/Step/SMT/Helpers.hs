@@ -16,52 +16,74 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Control.Exception
-       ( ErrorCall, catch )
+    ( ErrorCall
+    , catch
+    )
 import Data.Reflection
-       ( Given, give )
+    ( Given
+    , give
+    )
 import Data.Sup
-       ( Sup (Element) )
+    ( Sup (Element)
+    )
 import Data.Text
-       ( Text )
+    ( Text
+    )
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 import Numeric.Natural
-       ( Natural )
+    ( Natural
+    )
 
-import           Kore.Attribute.Attributes
+import Kore.Attribute.Attributes
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
+    ( Axiom
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Builtin as Builtin
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-                 ( build )
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
-import           Kore.Syntax.Sentence
-                 ( ParsedSentence, Sentence (..),
-                 SentenceAxiom (SentenceAxiom) )
+    ( build
+    )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
+import Kore.Syntax.Sentence
+    ( ParsedSentence
+    , Sentence (..)
+    , SentenceAxiom (SentenceAxiom)
+    )
 import qualified Kore.Syntax.Sentence as SentenceAxiom
-                 ( SentenceAxiom (..) )
-import           Kore.Syntax.Variable
-                 ( Variable (Variable) )
-import           SMT
-                 ( SMT )
+    ( SentenceAxiom (..)
+    )
+import Kore.Syntax.Variable
+    ( Variable (Variable)
+    )
+import SMT
+    ( SMT
+    )
 import qualified SMT
 
-import           Test.Kore
-                 ( testId )
-import           Test.Kore.Builtin.Builtin
-                 ( runSMT )
+import Test.Kore
+    ( testId
+    )
+import Test.Kore.Builtin.Builtin
+    ( runSMT
+    )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-import           Test.Kore.Step.SMT.Builders
-                 ( noJunk )
-import           Test.Kore.With
-                 ( with )
+import Test.Kore.Step.SMT.Builders
+    ( noJunk
+    )
+import Test.Kore.With
+    ( with
+    )
 
 newtype SmtPrelude = SmtPrelude { getSmtPrelude :: SMT () }
 

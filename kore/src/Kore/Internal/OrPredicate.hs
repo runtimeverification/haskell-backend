@@ -16,19 +16,22 @@ module Kore.Internal.OrPredicate
 
 import qualified Data.Foldable as Foldable
 
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unparser
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 
 
 {-| The disjunction of 'Predicate'.
@@ -68,7 +71,7 @@ bottom = fromPredicates []
 @
 
  -}
-top :: (Ord variable, SortedVariable variable) => OrPredicate variable
+top :: InternalVariable variable => OrPredicate variable
 top = fromPredicate Predicate.top
 
 {-| 'isFalse' checks if the 'OrPredicate' is composed only of bottom items.
@@ -83,11 +86,7 @@ isTrue = isTop
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => MultiOr (Syntax.Predicate variable) -> Syntax.Predicate variable
 toPredicate multiOr =
     Syntax.Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)

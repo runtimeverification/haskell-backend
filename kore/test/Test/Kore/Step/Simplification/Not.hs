@@ -9,31 +9,36 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+import Kore.Step.Simplification.Data
+    ( evalSimplifier
+    )
 import qualified Kore.Step.Simplification.Not as Not
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_simplifyEvaluated :: [TestTree]
@@ -130,4 +135,4 @@ simplifyEvaluated =
     . evalSimplifier mockEnv
     . Not.simplifyEvaluated
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env

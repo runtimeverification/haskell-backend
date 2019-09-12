@@ -47,45 +47,68 @@ module SMT
     , SimpleSMT.forallQ
     ) where
 
-import           Control.Concurrent.MVar
+import Control.Concurrent.MVar
 import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
+    ( makeLenses
+    )
 import qualified Control.Monad as Monad
-import           Control.Monad.Catch
-                 ( MonadCatch, MonadThrow )
+import Control.Monad.Catch
+    ( MonadCatch
+    , MonadThrow
+    )
 import qualified Control.Monad.Counter as Counter
-import           Control.Monad.IO.Class
-                 ( MonadIO, liftIO )
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO (..), UnliftIO (..), withRunInIO,
-                 withUnliftIO )
+import Control.Monad.IO.Class
+    ( MonadIO
+    , liftIO
+    )
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO (..)
+    , UnliftIO (..)
+    , withRunInIO
+    , withUnliftIO
+    )
 import qualified Control.Monad.Morph as Morph
-import           Control.Monad.Reader
-                 ( ReaderT (..), runReaderT )
+import Control.Monad.Reader
+    ( ReaderT (..)
+    , runReaderT
+    )
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.State.Lazy as State.Lazy
 import qualified Control.Monad.State.Strict as State.Strict
 import qualified Control.Monad.Trans as Trans
-import           Control.Monad.Trans.Accum
-import           Control.Monad.Trans.Except
-import           Control.Monad.Trans.Identity
+import Control.Monad.Trans.Accum
+import Control.Monad.Trans.Except
+import Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
-import           Data.Generics.Product
-import           Data.Limit
-import           Data.Text
-                 ( Text )
+import Data.Generics.Product
+import Data.Limit
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Logger as Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler (..), profileDurationEvent )
-import           ListT
-                 ( ListT, mapListT )
-import           SMT.SimpleSMT
-                 ( Constructor (..), ConstructorArgument (..),
-                 DataTypeDeclaration (..), FunctionDeclaration (..), Logger,
-                 Result (..), SExpr (..), SmtDataTypeDeclaration,
-                 SmtFunctionDeclaration, SmtSortDeclaration, Solver,
-                 SortDeclaration (..) )
+import Kore.Profiler.Data
+    ( MonadProfiler (..)
+    , profileDurationStartStop
+    )
+import ListT
+    ( ListT
+    , mapListT
+    )
+import SMT.SimpleSMT
+    ( Constructor (..)
+    , ConstructorArgument (..)
+    , DataTypeDeclaration (..)
+    , FunctionDeclaration (..)
+    , Logger
+    , Result (..)
+    , SExpr (..)
+    , SmtDataTypeDeclaration
+    , SmtFunctionDeclaration
+    , SmtSortDeclaration
+    , Solver
+    , SortDeclaration (..)
+    )
 import qualified SMT.SimpleSMT as SimpleSMT
 
 -- * Interface
@@ -213,7 +236,7 @@ instance MonadSMT NoSMT where
     check = return Unknown
 
 instance MonadProfiler NoSMT where
-    profileDuration = profileDurationEvent
+    profileDuration = profileDurationStartStop
 
 deriving instance MonadUnliftIO NoSMT
 
@@ -318,7 +341,8 @@ instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
 
 instance MonadIO m => MonadProfiler (SmtT m)
   where
-    profileDuration a action = SmtT (profileDurationEvent a (runSmtT action))
+    profileDuration a action =
+        SmtT (profileDurationStartStop a (runSmtT action))
     {-# INLINE profileDuration #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)

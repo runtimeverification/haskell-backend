@@ -1,20 +1,24 @@
 module Test.Kore.Internal.OrPattern where
 
-import           Hedgehog
-                 ( Property, (===) )
+import Hedgehog
+    ( Property
+    , (===)
+    )
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Syntax.Variable
+import Kore.Syntax.Variable
 
 import Test.Kore
 import Test.Kore.Internal.Pattern
-       ( internalPatternGen )
+    ( internalPatternGen
+    )
 
 orPatternGen :: Gen (OrPattern Variable)
 orPatternGen =

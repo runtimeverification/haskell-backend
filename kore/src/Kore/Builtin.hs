@@ -33,25 +33,30 @@ module Kore.Builtin
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Lens as Lens
-import           Data.Function
+import Data.Function
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Generics.Product
+import Data.Generics.Product
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Semigroup
-                 ( (<>) )
-import           Data.Text
-                 ( Text )
+import Data.Semigroup
+    ( (<>)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Hook
-                 ( Hook (..) )
+import Kore.Attribute.Hook
+    ( Hook (..)
+    )
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
+import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
@@ -64,21 +69,26 @@ import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as String
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), VerifiedModule )
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule (..)
+    , VerifiedModule
+    )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.Internal.Alias as Alias
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Internal.TermLike
-import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
+import Kore.Internal.TermLike
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
+    ( AxiomIdentifier (..)
+    )
 import qualified Kore.Syntax.Pattern as Syntax
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+import Kore.Unparser
+import Kore.Variables.Fresh
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -193,7 +203,7 @@ See also: 'asPattern'
  -}
 externalizePattern
     ::  forall variable
-    .   (Ord variable, SortedVariable variable, Unparse variable)
+    .   InternalVariable variable
     =>  TermLike variable
     ->  Syntax.Pattern variable Attribute.Null
 externalizePattern =
@@ -281,7 +291,7 @@ representations are fully normalized.
 
  -}
 internalize
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable

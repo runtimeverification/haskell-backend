@@ -3,29 +3,31 @@ module Test.Kore.IndexedModule.Resolvers where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Default
+import Data.Default
 import qualified Data.List as List
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
 import qualified Data.Ord
 
-import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Null as Attribute
+import Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.Error as Error
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.Resolvers
-import           Kore.Internal.ApplicationSorts
+import Kore.Error
+import Kore.IndexedModule.Error as Error
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.Resolvers
+import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Sort
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Syntax.PatternF
-                 ( groundHead )
+import Kore.Sort
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Syntax.PatternF
+    ( groundHead
+    )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -150,7 +152,7 @@ testDefinition =
             ]
         }
 
-indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null)
+indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
 Right indexedModules =
     verifyAndIndexDefinition
         DoNotVerifyAttributes
@@ -158,7 +160,7 @@ Right indexedModules =
         testDefinition
 
 testIndexedModule, testIndexedObjectModule
-    :: VerifiedModule Attribute.Symbol Attribute.Null
+    :: VerifiedModule Attribute.Symbol Attribute.Axiom
 Just testIndexedModule = Map.lookup testMainModuleName indexedModules
 Just testIndexedObjectModule = Map.lookup testObjectModuleName indexedModules
 

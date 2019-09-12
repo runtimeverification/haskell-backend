@@ -20,10 +20,12 @@ module Kore.AST.Error
     , withSentenceSortContext
     , withSentenceSymbolContext
     , withSentenceContext
+    , withModuleContext
     ) where
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import Kore.AST.AstWithLocation
@@ -84,10 +86,10 @@ withLocationAndContext location message =
 {- | Identify and locate the given symbol declaration in the error context.
  -}
 withSentenceSymbolContext
-    :: MonadError (Error e) m
+    :: MonadError (Error e) error
     => SentenceSymbol patternType
-    -> m a
-    -> m a
+    -> error a
+    -> error a
 withSentenceSymbolContext
     SentenceSymbol { sentenceSymbolSymbol = Symbol { symbolConstructor } }
   =
@@ -97,9 +99,10 @@ withSentenceSymbolContext
 {- | Identify and locate the given alias declaration in the error context.
  -}
 withSentenceAliasContext
-    :: SentenceAlias patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+    :: MonadError (Error e) error
+    => SentenceAlias patternType
+    -> error a
+    -> error a
 withSentenceAliasContext
     SentenceAlias { sentenceAliasAlias = Alias { aliasConstructor } }
   =
@@ -109,37 +112,39 @@ withSentenceAliasContext
 {- | Identify and locate the given axiom declaration in the error context.
  -}
 withSentenceAxiomContext
-    :: SentenceAxiom patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+    :: MonadError (Error e) error
+    => SentenceAxiom patternType
+    -> error a
+    -> error a
 withSentenceAxiomContext _ = withContext "axiom declaration"
 
 {- | Identify and locate the given claim declaration in the error context.
  -}
 withSentenceClaimContext
-    :: SentenceClaim patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+    :: MonadError (Error e) error
+    => SentenceClaim patternType
+    -> error a
+    -> error a
 withSentenceClaimContext _ = withContext "claim declaration"
 
 {- | Identify and locate the given sort declaration in the error context.
  -}
 withSentenceSortContext
-    :: SentenceSort patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
-withSentenceSortContext
-    SentenceSort { sentenceSortName }
-  =
+    :: MonadError (Error e) error
+    => SentenceSort patternType
+    -> error a
+    -> error a
+withSentenceSortContext SentenceSort { sentenceSortName } =
     withLocationAndContext sentenceSortName
         ("sort '" <> getId sentenceSortName <> "' declaration")
 
 {- | Identify and locate the given hooked declaration in the error context.
  -}
 withSentenceHookContext
-    :: SentenceHook patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+    :: MonadError (Error e) error
+    => SentenceHook patternType
+    -> error a
+    -> error a
 withSentenceHookContext =
     \case
         SentenceHookedSort SentenceSort { sentenceSortName } ->
@@ -160,17 +165,19 @@ withSentenceHookContext =
 {- | Locate the given import declaration in the error context.
  -}
 withSentenceImportContext
-    :: SentenceImport patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+    :: MonadError (Error e) error
+    => SentenceImport patternType
+    -> error a
+    -> error a
 withSentenceImportContext _ = id
 
-{- | Identify and  locate the given sentence in the error context.
+{- | Identify and locate the given sentence in the error context.
  -}
 withSentenceContext
-    :: Sentence patternType
-    -> Either (Error e) a
-    -> Either (Error e) a
+    :: MonadError (Error e) error
+    => Sentence patternType
+    -> error a
+    -> error a
 withSentenceContext =
     \case
         SentenceAliasSentence s -> withSentenceAliasContext s
@@ -180,3 +187,13 @@ withSentenceContext =
         SentenceImportSentence s -> withSentenceImportContext s
         SentenceSortSentence s -> withSentenceSortContext s
         SentenceSymbolSentence s -> withSentenceSymbolContext s
+
+{- | Identify the given module in the error context.
+ -}
+withModuleContext
+    :: MonadError (Error e) error
+    => ModuleName
+    -> error a
+    -> error a
+withModuleContext moduleName =
+    withContext ("module '" ++ getModuleNameForError moduleName ++ "'")

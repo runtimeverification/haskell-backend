@@ -10,16 +10,21 @@ module Kore.Step.SMT.Declaration.Sorts
     ( declare
     ) where
 
-import           Data.Either
-                 ( partitionEithers )
+import Data.Either
+    ( partitionEithers
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( mapMaybe )
+import Data.Maybe
+    ( mapMaybe
+    )
 
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations),
-                 KoreSortDeclaration (SortDeclarationDataType, SortDeclarationSort, SortDeclaredIndirectly),
-                 SmtDeclarations, SmtSort, Sort (Sort) )
+    ( Declarations (Declarations)
+    , KoreSortDeclaration (SortDeclarationDataType, SortDeclarationSort, SortDeclaredIndirectly)
+    , SmtDeclarations
+    , SmtSort
+    , Sort (Sort)
+    )
 import qualified Kore.Step.SMT.AST as SMT.AST.DoNotUse
 import qualified SMT
 

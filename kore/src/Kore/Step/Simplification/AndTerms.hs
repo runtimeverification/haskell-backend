@@ -19,14 +19,18 @@ module Kore.Step.Simplification.AndTerms
     , cannotUnifyDistinctDomainValues
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT (..), fromMaybe, mapMaybeT )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT (..)
+    , fromMaybe
+    , mapMaybeT
+    )
 import qualified Control.Error as Error
-import           Control.Exception
-                 ( assert )
-import qualified Control.Monad as Monad
+import Control.Exception
+    ( assert
+    )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
@@ -34,60 +38,77 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
-import           Prelude hiding
-                 ( concat )
+import Prelude hiding
+    ( concat
+    )
 
+import Branch
+    ( BranchT
+    )
+import qualified Branch as BranchT
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateTrue, makeEqualsPredicate,
-                 makeNotPredicate, makeTruePredicate )
-import           Kore.Step.PatternAttributes
-                 ( isConstructorLikeTop )
-import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as SimplificationType
-                 ( SimplificationType (..) )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather, scatter )
-import           Kore.Step.Substitution
-                 ( PredicateMerger,
-                 createLiftedPredicatesAndSubstitutionsMerger,
-                 createPredicatesAndSubstitutionsMergerExcept )
-import           Kore.TopBottom
-import           Kore.Unification.Error
-                 ( unsupportedPatterns )
+import Kore.Predicate.Predicate
+    ( pattern PredicateTrue
+    , makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.PatternAttributes
+    ( isConstructorLikeTop
+    )
+import Kore.Step.Simplification.NoConfusion
+import Kore.Step.Simplification.Overloading
+import Kore.Step.Simplification.SimplificationType
+    ( SimplificationType
+    )
+import qualified Kore.Step.Simplification.SimplificationType as SimplificationType
+    ( SimplificationType (..)
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.Substitution
+    ( PredicateMerger
+    , createLiftedPredicatesAndSubstitutionsMerger
+    , createPredicatesAndSubstitutionsMergerExcept
+    )
+import Kore.TopBottom
+import Kore.Unification.Error
+    ( unsupportedPatterns
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify as Unify
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unification.Unify as Unify
+import Kore.Unparser
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluateTerm )
+    ( makeEvaluateTerm
+    )
 
 data SimplificationTarget = AndT | EqualsT | BothT
-
-type TermSimplifier variable m =
-    TermLike variable -> TermLike variable -> m (Pattern variable)
 
 {- | Simplify an equality relation of two patterns.
 
@@ -101,12 +122,7 @@ See also: 'termAnd'
 
  -}
 termEquals
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -119,13 +135,8 @@ termEquals first second = MaybeT $ do
             MultiOr.make (map Predicate.eraseConditionalTerm results)
 
 termEqualsAnd
-    ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -168,7 +179,7 @@ termEqualsAnd
         scatterResults =
             maybe
                 (return equalsPredicate) -- default if no results
-                (alternate . BranchT.scatter)
+                (BranchT.alternate . BranchT.scatter)
             . sequence
         equalsPredicate =
             Conditional
@@ -178,11 +189,7 @@ termEqualsAnd
                 }
 
 maybeTermEquals
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -211,11 +218,7 @@ the special cases handled by this.
 -- signature.
 termUnification
     ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -261,12 +264,7 @@ See also: 'termUnification'
 -- signature.
 termAnd
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -296,11 +294,7 @@ termAnd p1 p2 =
         andPattern = Pattern.fromTermLike (mkAnd first second)
 
 maybeTermAnd
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -315,11 +309,7 @@ maybeTermAnd = maybeTransformTerm andFunctions
 
 andFunctions
     ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
@@ -336,15 +326,11 @@ andFunctions =
     forAnd
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forAnd f = f SimplificationType.And
+    forAnd f = f Predicate.topTODO SimplificationType.And
 
 equalsFunctions
     ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
@@ -361,40 +347,36 @@ equalsFunctions =
     forEquals
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forEquals f = f SimplificationType.Equals
+    forEquals f = f Predicate.topTODO SimplificationType.Equals
 
 andEqualsFunctions
     ::  forall variable unifier
-    .   ( Eq variable
-        , FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         , GHC.HasCallStack
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \_ _ _ -> bottomTermEquals Predicate.topTODO, "bottomTermEquals")
-    , (EqualsT, \_ _ _ -> termBottomEquals Predicate.topTODO, "termBottomEquals")
-    , (BothT,   \t _ _ -> variableFunctionAndEquals Predicate.topTODO t, "variableFunctionAndEquals")
-    , (BothT,   \t _ _ -> functionVariableAndEquals Predicate.topTODO t, "functionVariableAndEquals")
-    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
-    , (BothT,   \t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
-    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
-    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
+    [ (AndT,    \_ _ _ _ -> boolAnd, "boolAnd")
+    , (BothT,   \_ _ _ _ -> equalAndEquals, "equalAndEquals")
+    , (EqualsT, \p _ _ _ -> bottomTermEquals p, "bottomTermEquals")
+    , (EqualsT, \p _ _ _ -> termBottomEquals p, "termBottomEquals")
+    , (BothT,   \p t _ _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
+    , (BothT,   \p t _ _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
+    , (BothT,   \_ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
+    , (BothT,   \_ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
+    , (BothT,   \_ _ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
+    , (BothT,   \_ t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
+    , (BothT,   \_ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (BothT,   \_ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
+    , (AndT,    \_ _ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
     mapEqualsFunctions (target, termTransform, name) =
@@ -404,7 +386,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
         :: String
         -> TermTransformation variable unifier
         -> TermTransformation variable unifier
-    logTT fnName termTransformation sType pm ts t1 t2 =
+    logTT fnName termTransformation predicate sType pm ts t1 t2 =
         mapMaybeT (\getResult -> do
             mresult <- getResult
             case mresult of
@@ -436,7 +418,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
                             ]
                     return mresult
             )
-            $ termTransformation sType pm ts t1 t2
+            $ termTransformation predicate sType pm ts t1 t2
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -452,7 +434,8 @@ call 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation variable unifier =
-       SimplificationType
+       Predicate variable
+    -> SimplificationType
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -> TermLike variable
@@ -504,7 +487,7 @@ maybeTransformTerm
 -- | Simplify the conjunction of terms where one is a predicate.
 boolAnd
     :: MonadUnify unifier
-    => (Ord variable, SortedVariable variable, Unparse variable)
+    => SimplifierVariable variable
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -521,8 +504,7 @@ boolAnd first second
 
 explainBoolAndBottom
     :: MonadUnify unifier
-    => SortedVariable variable
-    => Unparse variable
+    => SimplifierVariable variable
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier ()
@@ -531,7 +513,7 @@ explainBoolAndBottom term1 term2 =
 
 -- | Unify two identical ('==') patterns.
 equalAndEquals
-    :: (Ord variable, SortedVariable variable)
+    :: SimplifierVariable variable
     => Monad unifier
     => TermLike variable
     -> TermLike variable
@@ -543,10 +525,7 @@ equalAndEquals _ _ = empty
 
 -- | Unify two patterns where the first is @\\bottom@.
 bottomTermEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -587,10 +566,7 @@ See also: 'bottomTermEquals'
 
  -}
 termBottomEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -606,10 +582,7 @@ See also: 'isFunctionPattern'
 
  -}
 variableFunctionAndEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
@@ -668,12 +641,7 @@ See also: 'variableFunctionAndEquals'
 
  -}
 functionVariableAndEquals
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
+    :: (SimplifierVariable variable, MonadUnify unifier)
     => GHC.HasCallStack
     => Predicate variable
     -> SimplificationType
@@ -682,43 +650,6 @@ functionVariableAndEquals
     -> MaybeT unifier (Pattern variable)
 functionVariableAndEquals predicate simplificationType first second =
     variableFunctionAndEquals predicate simplificationType second first
-
-{- | Unify two application patterns with equal, injective heads.
-
-This includes constructors and sort injections.
-
-See also: 'Attribute.isInjective', 'Attribute.isSortInjection',
-'Attribute.isConstructor'
-
- -}
-equalInjectiveHeadsAndEquals
-    ::  ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermSimplifier variable unifier
-    -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-equalInjectiveHeadsAndEquals
-    termMerger
-    (App_ firstHead firstChildren)
-    (App_ secondHead secondChildren)
-  | isFirstInjective && isSecondInjective && firstHead == secondHead =
-    Monad.Trans.lift $ do
-        children <- Monad.zipWithM termMerger firstChildren secondChildren
-        let merged = Foldable.foldMap Pattern.withoutTerm children
-            term = mkApplySymbol firstHead (Pattern.term <$> children)
-        return (Pattern.withCondition term merged)
-  where
-    isFirstInjective = Symbol.isInjective firstHead
-    isSecondInjective = Symbol.isInjective secondHead
-
-equalInjectiveHeadsAndEquals _ _ _ = Error.nothing
 
 {- | Simplify the conjunction of two sort injections.
 
@@ -935,36 +866,6 @@ constructorSortInjectionAndEquals
             (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
 constructorSortInjectionAndEquals _ _ = empty
 
-{-| Unify two constructor application patterns.
-
-Assumes that the two patterns were already tested for equality and were found
-to be different; therefore their conjunction is @\\bottom@.
-
- -}
-constructorAndEqualsAssumesDifferentHeads
-    ::  ( Eq variable
-        , SortedVariable variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier a
-constructorAndEqualsAssumesDifferentHeads
-    first@(App_ firstHead _)
-    second@(App_ secondHead _)
-  | Symbol.isConstructor firstHead
-  , Symbol.isConstructor secondHead =
-    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-        explainBottom
-            "Cannot unify different constructors or incompatible \
-            \sort injections."
-            first
-            second
-        empty
-constructorAndEqualsAssumesDifferentHeads _ _ = empty
-
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
 
@@ -1126,11 +1027,7 @@ The function patterns are unified by creating an @\\equals@ predicate.
 
 -}
 functionAnd
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: SimplifierVariable variable
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable

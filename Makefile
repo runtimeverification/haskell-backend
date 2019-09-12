@@ -1,10 +1,10 @@
 include include.mk
 
-.PHONY: all clean docs haddock jenkins kore k-frontend \
-        test test-kore test-k
+.PHONY: all clean docs haddock jenkins k-frontend \
+        test test-kore test-k \
+        kore-exec kore-repl
 
-kore:
-	$(STACK) $(STACK_BUILD) $(STACK_BUILD_OPTS)
+kore: kore-exec kore-repl
 
 kore-exec: $(KORE_EXEC)
 
@@ -16,6 +16,7 @@ k-frontend:
 	curl --location --output $(K_NIGHTLY) $(K_NIGHTLY_URL)
 	mkdir -p $(K_DIST_DEFAULT)
 	tar --extract --file $(K_NIGHTLY) --strip-components 1 --directory $(K_DIST_DEFAULT)
+	cp src/main/kore/prelude.kore $(K_DIST_DEFAULT)/include/kore
 	$(KRUN) --version
 
 docs: haddock
@@ -51,6 +52,9 @@ coverage_report: test-kore
 
 test-k:
 	$(MAKE) --directory src/main/k/working test-k
+
+test-bmc:
+	$(MAKE) --directory src/main/k/in-progress/bmc/example1 test-bmc
 
 clean:
 	$(STACK) clean --full

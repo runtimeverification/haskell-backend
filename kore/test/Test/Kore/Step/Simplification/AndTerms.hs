@@ -1,54 +1,74 @@
 module Test.Kore.Step.Simplification.AndTerms where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Control.Error
-                 ( MaybeT (..) )
+import Control.Error
+    ( MaybeT (..)
+    )
 import qualified Control.Error as Error
-import           Data.Default
-                 ( Default (..) )
+import Data.Default
+    ( Default (..)
+    )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 
+import qualified Branch
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Simplification
-                 ( Simplification (Simplification) )
+import Kore.Attribute.Simplification
+    ( Simplification (Simplification)
+    )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeTruePredicate )
+    ( extractPatterns
+    )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Axiom.Registry
-                 ( axiomPatternsToEvaluators )
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import Kore.Step.Axiom.Registry
+    ( axiomPatternsToEvaluators
+    )
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
+    , RulePattern (RulePattern)
+    )
 import qualified Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.AndTerms
-                 ( termAnd, termEquals, termUnification )
-import           Kore.Step.Simplification.Data
-                 ( BuiltinAndAxiomSimplifierMap, Env (..), evalSimplifier )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+    ( RulePattern (..)
+    )
+import Kore.Step.Simplification.AndTerms
+    ( termAnd
+    , termEquals
+    , termUnification
+    )
+import Kore.Step.Simplification.Data
+    ( Env (..)
+    , evalSimplifier
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_andTermsSimplification :: [TestTree]
 test_andTermsSimplification =
@@ -1199,7 +1219,7 @@ simplify
 simplify first second =
     SMT.runSMT SMT.defaultConfig emptyLogger
     $ evalSimplifier mockEnv
-    $ BranchT.gather
+    $ Branch.gather
     $ termAnd first second
   where
     mockEnv = Mock.env

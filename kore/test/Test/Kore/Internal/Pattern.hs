@@ -7,26 +7,42 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Data.Text.Prettyprint.Doc
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
-import           Kore.Internal.Pattern as Pattern
-                 ( Conditional (..), mapVariables, toTermLike )
+import Kore.Debug
+    ( Debug
+    )
+import Kore.Internal.Pattern as Pattern
+    ( Conditional (..)
+    , mapVariables
+    , toTermLike
+    )
 import qualified Kore.Internal.Pattern as Internal
-                 ( Pattern )
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Internal.Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( Predicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( Predicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import Test.Kore
-       ( Gen, sortGen )
+    ( Gen
+    , sortGen
+    )
 import Test.Kore.Comparators ()
 import Test.Kore.Internal.TermLike
-       ( termLikeChildGen )
+    ( termLikeChildGen
+    )
 import Test.Tasty.HUnit.Extensions
 
 internalPatternGen :: Gen (Internal.Pattern Variable)
@@ -122,43 +138,47 @@ test_expandedPattern =
     ]
 
 newtype V = V Integer
-    deriving (Show, Eq, Ord)
-newtype W = W String
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, GHC.Generic)
+
+instance SOP.Generic V
+
+instance SOP.HasDatatypeInfo V
+
+instance Debug V
 
 instance Unparse V where
     unparse (V n) = "V" <> pretty n <> ":" <> unparse sortVariable
-    unparse2 = error "Not implemented"
-
-instance Unparse W where
-    unparse (W name) = "W" <> pretty name <> ":" <> unparse sortVariable
-    unparse2 = error "Not implemented"
+    unparse2 = undefined
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVariable
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
-
-instance SumEqualWithExplanation V where
-    sumConstructorPair (V a1) (V a2) =
-        SumConstructorSameWithArguments
-            (EqWrap "V" a1 a2)
+    fromVariable = undefined
+    toVariable = undefined
 
 instance EqualWithExplanation V where
-    compareWithExplanation = sumCompareWithExplanation
+    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
+
+newtype W = W String
+    deriving (Show, Eq, Ord, GHC.Generic)
+
+instance SOP.Generic W
+
+instance SOP.HasDatatypeInfo W
+
+instance Debug W
+
+instance Unparse W where
+    unparse (W name) = "W" <> pretty name <> ":" <> unparse sortVariable
+    unparse2 = undefined
 
 instance SortedVariable W where
     sortedVariableSort _ = sortVariable
-    fromVariable = error "Not implemented"
-    toVariable = error "Not implemented"
-
-instance SumEqualWithExplanation W where
-    sumConstructorPair (W a1) (W a2) =
-        SumConstructorSameWithArguments (EqWrap "W" a1 a2)
+    fromVariable = undefined
+    toVariable = undefined
 
 instance EqualWithExplanation W where
-    compareWithExplanation = sumCompareWithExplanation
+    compareWithExplanation = rawCompareWithExplanation
     printWithExplanation = show
 
 
@@ -178,15 +198,11 @@ makeEq
     -> TermLike var
 makeEq = mkEquals sortVariable
 
-makeAnd
-    :: (SortedVariable var, Ord var, Show var, Unparse var)
-    => TermLike var
-    -> TermLike var
-    -> TermLike var
+makeAnd :: InternalVariable var => TermLike var -> TermLike var -> TermLike var
 makeAnd p1 p2 = mkAnd p1 p2
 
 makeEquals
-    :: (SortedVariable var, Ord var, Show var, Unparse var)
+    :: InternalVariable var
     => TermLike var -> TermLike var -> Predicate var
 makeEquals p1 p2 = makeEqualsPredicate p1 p2
 

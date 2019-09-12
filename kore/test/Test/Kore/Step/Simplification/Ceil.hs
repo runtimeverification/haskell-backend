@@ -3,57 +3,73 @@ module Test.Kore.Step.Simplification.Ceil
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
 import qualified Data.Map as Map
 
 import qualified Data.Sup as Sup
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( top )
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Logger.Output as Logger
-                 ( emptyLogger )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeTruePredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate as Predicate
+    ( top
+    )
+import Kore.Internal.TermLike as TermLike
+import Kore.Logger.Output as Logger
+    ( emptyLogger
+    )
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
+    ( AxiomIdentifier (..)
+    )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluate, simplify )
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier),
-                 BuiltinAndAxiomSimplifierMap, Env (..), MonadSimplify,
-                 PredicateSimplifier, TermLikeSimplifier, evalSimplifier )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+    ( makeEvaluate
+    , simplify
+    )
+import Kore.Step.Simplification.Data
+    ( Env (..)
+    , MonadSimplify
+    , evalSimplifier
+    )
+import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+    ( AttemptedAxiomResults (..)
+    )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore.Builtin.Builtin
-                 ( emptyNormalizedSet )
-import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
-import           Test.Kore.Step.MockSymbols
-                 ( testSort )
+import Test.Kore.Builtin.Builtin
+    ( emptyNormalizedSet
+    )
+import Test.Kore.Comparators ()
+import Test.Kore.Step.MockSymbols
+    ( testSort
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Kore.With
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.With
+import Test.Tasty.HUnit.Extensions
 
 test_ceilSimplification :: [TestTree]
 test_ceilSimplification =
@@ -541,7 +557,7 @@ evaluate ceil =
     $ evalSimplifier mockEnv
     $ Ceil.simplify Predicate.top ceil
   where
-    mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+    mockEnv = Mock.env
 
 makeEvaluate
     :: Pattern Variable
@@ -558,8 +574,4 @@ makeEvaluateWithAxioms axiomIdToSimplifier child =
     $ evalSimplifier mockEnv
     $ Ceil.makeEvaluate Predicate.top child
   where
-    mockEnv =
-        Mock.env
-            { simplifierAxioms = axiomIdToSimplifier
-            , simplifierPredicate = Mock.substitutionSimplifier
-            }
+    mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

@@ -9,67 +9,91 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
-import           Data.Functor.Const
+import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( topTODO )
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Application as Application
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Bottom as Bottom
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Builtin as Builtin
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
-                 ( simplify )
-import           Kore.Step.Simplification.Data
+    ( simplify
+    )
+import Kore.Step.Simplification.Data
+    ( Simplifier
+    )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Equals as Equals
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Exists as Exists
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Floor as Floor
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Forall as Forall
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Iff as Iff
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Implies as Implies
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.In as In
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Mu as Mu
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Next as Next
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Not as Not
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Nu as Nu
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Or as Or
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Rewrites as Rewrites
-                 ( simplify )
+    ( simplify
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Top as Top
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Variable as Variable
-                 ( simplify )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+    ( simplify
+    )
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -77,46 +101,36 @@ import           Kore.Variables.Fresh
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        , FreshVariable variable
-        )
+    :: SimplifierVariable variable
     => TermLike variable
+    -> Predicate variable
     -> Simplifier (Pattern variable)
-simplify patt = do
-    orPatt <- simplifyToOr patt
+simplify patt predicate = do
+    orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)
 
 {-|'simplifyToOr' simplifies a TermLike variable, returning an
 'OrPattern'.
 -}
 simplifyToOr
-    ::  ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
-    => TermLike variable
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => Predicate variable
+    -> TermLike variable
     -> simplifier (OrPattern variable)
-simplifyToOr =
-    localSimplifierTermLike (const simplifier) . simplifyInternal
+simplifyToOr term predicate =
+    localSimplifierTermLike (const simplifier)
+        . simplifyInternal predicate
+        $ term
   where
     simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
-    ::  forall variable simplifier
-    .   ( SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
+    -> Predicate variable
     -> simplifier (OrPattern variable)
-simplifyInternal = simplifyInternalWorker
+simplifyInternal term predicate = simplifyInternalWorker term
   where
     simplifyChildren
         :: Traversable t
@@ -136,11 +150,12 @@ simplifyInternal = simplifyInternalWorker
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
             ApplySymbolF applySymbolF ->
-                Application.simplify Predicate.topTODO =<< simplifyChildren applySymbolF
+                Application.simplify predicate
+                    =<< simplifyChildren applySymbolF
             CeilF ceilF ->
-                Ceil.simplify Predicate.topTODO =<< simplifyChildren ceilF
+                Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->
-                Equals.simplify Predicate.topTODO =<< simplifyChildren equalsF
+                Equals.simplify predicate =<< simplifyChildren equalsF
             ExistsF existsF ->
                 Exists.simplify =<< simplifyChildren existsF
             IffF iffF ->
@@ -148,7 +163,7 @@ simplifyInternal = simplifyInternalWorker
             ImpliesF impliesF ->
                 Implies.simplify =<< simplifyChildren impliesF
             InF inF ->
-                In.simplify =<< simplifyChildren inF
+                In.simplify predicate =<< simplifyChildren inF
             NotF notF ->
                 Not.simplify =<< simplifyChildren notF
             --

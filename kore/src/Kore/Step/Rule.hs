@@ -36,36 +36,45 @@ module Kore.Step.Rule
     ) where
 
 import qualified Data.Default as Default
-import           Data.Map.Strict
-                 ( Map )
-import           Data.Maybe
-import           Data.Text
-                 ( Text )
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty )
+import Data.Map.Strict
+    ( Map
+    )
+import Data.Maybe
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Debug
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( Predicate )
+import Kore.Debug
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Syntax.Definition as Syntax
-import           Kore.Unparser
-                 ( Unparse, unparse, unparse2 )
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable )
+import Kore.Unparser
+    ( Unparse
+    , unparse
+    , unparse2
+    )
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 import qualified Kore.Verified as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
@@ -111,7 +120,7 @@ instance
         RulePattern { left, right, requires, ensures } = rulePattern'
 
 rulePattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> RulePattern variable
@@ -165,10 +174,13 @@ instance
 -}
 newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (ImplicationRule variable)
-deriving instance Ord variable => Ord (ImplicationRule variable)
-deriving instance Show variable => Show (ImplicationRule variable)
+instance SOP.Generic (ImplicationRule variable)
+
+instance SOP.HasDatatypeInfo (ImplicationRule variable)
+
+instance Debug variable => Debug (ImplicationRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -190,7 +202,7 @@ allPathGlobally :: Text
 allPathGlobally = "allPathGlobally"
 
 qualifiedAxiomOpToConstructor
-    :: Alias
+    :: Alias (TermLike Variable)
     -> Maybe (RulePattern variable -> QualifiedAxiomPattern variable)
 qualifiedAxiomOpToConstructor patternHead
     | headName == weakExistsFinally = Just $ OnePathClaimPattern . OnePathRule
@@ -388,7 +400,7 @@ onePathRuleToPattern (OnePathRule rulePatt) =
     sort :: Sort
     sort = termLikeSort . right $ rulePatt
 
-wEF :: Sort -> Alias
+wEF :: Sort -> Alias (TermLike Variable)
 wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
@@ -399,6 +411,8 @@ wEF sort = Alias
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
         }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
     }
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
@@ -544,10 +558,7 @@ to avoid collision with any variables in the given set.
  -}
 refreshRulePattern
     :: forall variable
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    .  SubstitutionVariable variable
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
     -> (Renaming variable, RulePattern variable)
@@ -606,10 +617,7 @@ contain none of the targeted variables.
 
  -}
 substitute
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    :: SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable

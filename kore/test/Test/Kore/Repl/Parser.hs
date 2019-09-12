@@ -4,11 +4,13 @@ module Test.Kore.Repl.Parser
 
 import Numeric.Natural
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 
 import qualified Kore.Logger as Logger
-import           Kore.Repl.Data
-import           Kore.Repl.Parser
+import Kore.Repl.Data
+import Kore.Repl.Parser
 
 import Test.Kore.Parser
 

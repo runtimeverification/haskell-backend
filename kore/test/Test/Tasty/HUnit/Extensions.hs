@@ -1,35 +1,54 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Test.Tasty.HUnit.Extensions where
 
 import Test.Tasty.HUnit
-       ( assertBool, assertFailure )
+    ( assertBool
+    , assertFailure
+    )
 
-import           Control.DeepSeq
-                 ( NFData, force )
-import           Control.Exception
-                 ( SomeException, catch, evaluate )
-import           Control.Monad
-import           Control.Monad.IO.Class
-                 ( MonadIO, liftIO )
-import           Data.CallStack
+import Control.DeepSeq
+    ( NFData
+    , force
+    )
+import Control.Exception
+    ( SomeException
+    , catch
+    , evaluate
+    )
+import Control.Monad
+import Control.Monad.IO.Class
+    ( MonadIO
+    , liftIO
+    )
+import Data.CallStack
 import qualified Data.Foldable as Foldable
-import           Data.Functor.Classes
-import           Data.Functor.Const
-                 ( Const (..) )
-import           Data.Functor.Foldable
-import           Data.List
-                 ( intercalate, isInfixOf )
-import           Data.Map.Strict
-                 ( Map )
+import Data.Functor.Classes
+import Data.Functor.Const
+    ( Const (..)
+    )
+import Data.Functor.Foldable
+import Data.List
+    ( intercalate
+    , isInfixOf
+    )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
+import Data.Sequence
+    ( Seq
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
-import           Data.Void
-                 ( Void )
+import Data.Text
+    ( Text
+    )
+import Data.Void
+    ( Void
+    )
 
 import Data.Sup
 

@@ -13,25 +13,35 @@ module Kore.Profiler.Profile
     , smtDecision
     ) where
 
-import           Control.Monad
-                 ( when )
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty (..) )
+import Control.Monad
+    ( when
+    )
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
+    )
 import qualified Data.Text.Prettyprint.Doc as Doc
-                 ( LayoutOptions (LayoutOptions), PageWidth (Unbounded), group,
-                 layoutSmart )
+    ( LayoutOptions (LayoutOptions)
+    , PageWidth (Unbounded)
+    , group
+    , layoutSmart
+    )
 import qualified Data.Text.Prettyprint.Doc.Render.String as Doc
-                 ( renderString )
+    ( renderString
+    )
 
-import           Kore.Profiler.Data
-                 ( Configuration (Configuration),
-                 MonadProfiler (profileConfiguration, profileDuration) )
+import Kore.Profiler.Data
+    ( Configuration (Configuration)
+    , MonadProfiler (profileConfiguration, profileDuration)
+    )
 import qualified Kore.Profiler.Data as Profiler.DoNotUse
-import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
-import           Kore.Unparser
-                 ( Unparse, unparseToString )
-import           SMT
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
+import Kore.Unparser
+    ( Unparse
+    , unparseToString
+    )
+import SMT
 
 import Debug.Trace
 
@@ -55,14 +65,14 @@ equalitySimplification identifier thing action = do
                 (traceM (unparseToString thing))
         Nothing -> return ()
     filteredLogging
-        identifier ["equalitySimplification", strIdentifier] action
+        identifier ["evaluate", strIdentifier, "0", "total"] action
 
 -- TODO(virgil): Enable this on-demand.
 axiomEvaluation
     :: MonadProfiler profiler
     => AxiomIdentifier -> profiler result -> profiler result
 axiomEvaluation identifier =
-    filteredLogging identifier ["axiomEvaluation", oneLiner identifier]
+    filteredLogging identifier ["evaluate", oneLiner identifier, "1", "apply"]
 
 -- TODO(virgil): Enable this on-demand.
 resimplification
@@ -78,7 +88,7 @@ mergeSubstitutions
     :: MonadProfiler profiler
     => AxiomIdentifier -> profiler result -> profiler result
 mergeSubstitutions identifier =
-    filteredLogging identifier ["mergeSubstitutions", oneLiner identifier]
+    filteredLogging identifier ["evaluate", oneLiner identifier, "1", "merge"]
 
 filteredLogging
     :: MonadProfiler profiler

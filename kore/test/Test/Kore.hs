@@ -32,35 +32,45 @@ module Test.Kore
     , Logger.emptyLogger
     ) where
 
-import           Hedgehog
-                 ( MonadGen )
+import Hedgehog
+    ( MonadGen
+    )
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 
-import           Control.Monad.Reader
-                 ( ReaderT )
+import Control.Monad.Reader
+    ( ReaderT
+    )
 import qualified Control.Monad.Reader as Reader
-import           Data.Functor.Const
-import           Data.Text
-                 ( Text )
+import Data.Functor.Const
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.TermLike as TermLike hiding
-                 ( Alias, Symbol )
+import Kore.Internal.TermLike as TermLike hiding
+    ( Alias
+    , Symbol
+    )
 import qualified Kore.Logger.Output as Logger
-                 ( emptyLogger )
-import           Kore.Parser
-                 ( ParsedPattern, asParsedPattern )
-import           Kore.Parser.Lexeme
+    ( emptyLogger
+    )
+import Kore.Parser
+    ( ParsedPattern
+    , asParsedPattern
+    )
+import Kore.Parser.Lexeme
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Syntax.Definition
+import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {- | @Context@ stores the variables and sort variables in scope.
  -}
@@ -326,7 +336,7 @@ genInternalBool builtinBoolSort =
 genInternalString :: Sort -> Gen Domain.InternalString
 genInternalString internalStringSort =
     Domain.InternalString internalStringSort
-    <$> Gen.text (Range.linear 0 1024) Gen.unicode
+    <$> Gen.text (Range.linear 0 1024) (Reader.lift Gen.unicode)
 
 existsGen :: (Sort -> Gen child) -> Sort -> Gen (Exists Sort Variable child)
 existsGen = existsForallGen Exists
@@ -531,7 +541,7 @@ sentenceAliasGen patGen =
         Reader.local (addSortVariables aliasParams) $ do
             sentenceAliasSorts <- couple sortGen
             sentenceAliasResultSort <- sortGen
-            variables <- traverse elementVariableGen sentenceAliasSorts
+            variables <- traverse unifiedVariableGen sentenceAliasSorts
             let Alias { aliasConstructor } = sentenceAliasAlias
                 sentenceAliasLeftPattern =
                     Application
@@ -544,7 +554,7 @@ sentenceAliasGen patGen =
                         , applicationChildren = variables
                         }
             sentenceAliasRightPattern <-
-                Reader.local (addVariables (ElemVar <$> variables))
+                Reader.local (addVariables variables)
                     (patGen sentenceAliasResultSort)
             sentenceAliasAttributes <- attributesGen
             return SentenceAlias

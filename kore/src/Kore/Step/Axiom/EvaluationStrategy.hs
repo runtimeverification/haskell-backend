@@ -10,64 +10,46 @@ Portability : portable
 module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
+    , simplificationEvaluation
     , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
     ) where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Maybe
-                 ( isJust )
+import Data.Maybe
+    ( isJust
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
-import qualified Kore.Attribute.Axiom.Concrete as Axiom.Concrete
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Internal.Conditional
-                 ( andCondition )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
+    ( extractPatterns
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Pattern )
-import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate
-                 ( Predicate )
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
-import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.Axiom.Matcher
-                 ( matchIncremental )
-import           Kore.Step.Remainder
-                 ( ceilChildOfApplicationOrTop )
-import qualified Kore.Step.Result as Result
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule, getEqualityRule) )
-import qualified Kore.Step.Rule as RulePattern
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom,
-                 AttemptedAxiomResults (AttemptedAxiomResults),
-                 BuiltinAndAxiomSimplifier (..), BuiltinAndAxiomSimplifierMap,
-                 MonadSimplify, PredicateSimplifier, TermLikeSimplifier )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..), hasRemainders, maybeNotApplicable )
-import qualified Kore.Step.Simplification.OrPattern as OrPattern
-                 ( simplifyPredicatesWithSmt )
-import           Kore.Step.Step
-                 ( UnificationProcedure (UnificationProcedure) )
-import qualified Kore.Step.Step as Step
-import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-                 ( Unparse, unparse )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.Step.Axiom.Evaluate
+import Kore.Step.Rule
+    ( EqualityRule
+    )
+import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    , hasRemainders
+    )
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+    ( AttemptedAxiomResults (..)
+    )
+import Kore.Unparser
+    ( unparse
+    )
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -87,8 +69,14 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier
-        (evaluateWithDefinitionAxioms rules)
+    BuiltinAndAxiomSimplifier (\_ _ _ term _ -> evaluateAxioms rules term)
+
+-- | Create an evaluator from a single simplification rule.
+simplificationEvaluation
+    :: EqualityRule Variable
+    -> BuiltinAndAxiomSimplifier
+simplificationEvaluation rule =
+    BuiltinAndAxiomSimplifier (\_ _ _ term _ -> evaluateAxioms [rule] term)
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -106,37 +94,19 @@ totalDefinitionEvaluation rules =
     BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
   where
     totalDefinitionEvaluationWorker
-        ::  forall variable simplifier
-        .   ( FreshVariable variable
-            , SortedVariable variable
-            , Show variable
-            , Unparse variable
-            , MonadSimplify simplifier
-            )
+        :: forall variable simplifier
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
         => PredicateSimplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker
-        predicateSimplifier
-        termSimplifier
-        axiomSimplifiers
-        term
-        predicate
-      = do
-        result <- evaluate term predicate
+    totalDefinitionEvaluationWorker _ _ _ term _ = do
+        result <- evaluateAxioms rules term
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
-      where
-        evaluate =
-            evaluateWithDefinitionAxioms
-                rules
-                predicateSimplifier
-                termSimplifier
-                axiomSimplifiers
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
@@ -174,12 +144,7 @@ builtinEvaluation evaluator =
 
 evaluateBuiltin
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
     -> PredicateSimplifier
     -> TermLikeSimplifier
@@ -220,12 +185,7 @@ evaluateBuiltin
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> PredicateSimplifier
@@ -306,96 +266,3 @@ applyFirstSimplifierThatWorks
                 axiomIdToSimplifier
                 patt
                 predicate
-
-evaluateWithDefinitionAxioms
-    :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => [EqualityRule Variable]
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> TermLike variable
-    -> Predicate variable
-    -> simplifier (AttemptedAxiom variable)
-evaluateWithDefinitionAxioms
-    definitionRules
-    _predicateSimplifier
-    _termSimplifier
-    _axiomSimplifiers
-    patt
-    _predicate
-  | any ruleIsConcrete definitionRules
-  , not (TermLike.isConcrete patt)
-  = return AttemptedAxiom.NotApplicable
-  | otherwise
-  = AttemptedAxiom.maybeNotApplicable $ do
-    let
-        -- TODO (thomas.tuegel): Figure out how to get the initial conditions
-        -- and apply them here, to remove remainder branches sooner.
-        expanded :: Pattern variable
-        expanded = Pattern.fromTermLike patt
-
-    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
-    Monad.guard (any Result.hasResults results)
-    mapM_ rejectNarrowing results
-
-    ceilChild <- ceilChildOfApplicationOrTop patt
-    let
-        result =
-            Result.mergeResults results
-            & Result.mapConfigs
-                keepResultUnchanged
-                ( markRemainderEvaluated
-                . introduceDefinedness ceilChild
-                )
-        keepResultUnchanged = id
-        introduceDefinedness = flip andCondition
-        markRemainderEvaluated = fmap mkEvaluated
-
-    simplifiedResults <-
-        Monad.Trans.lift
-        $ OrPattern.simplifyPredicatesWithSmt (Step.gatherResults result)
-    simplifiedRemainders <-
-        Monad.Trans.lift
-        $ OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
-
-    return $ AttemptedAxiom.Applied AttemptedAxiomResults
-        { results = simplifiedResults
-        , remainders = simplifiedRemainders
-        }
-
-  where
-    ruleIsConcrete =
-        Axiom.Concrete.isConcrete
-        . Attribute.Axiom.concrete
-        . RulePattern.attributes
-        . getEqualityRule
-
-    unwrapEqualityRule (EqualityRule rule) =
-        RulePattern.mapVariables fromVariable rule
-
-    rejectNarrowing (Result.results -> results) =
-        (Monad.guard . not) (Foldable.any Step.isNarrowingResult results)
-
-    applyRules initial rules =
-        Monad.Unify.maybeUnifierT
-        $ Step.applyRulesSequence unificationProcedure initial rules
-
-    ignoreUnificationErrors unification pattern1 pattern2 =
-        Monad.Unify.runUnifierT (unification pattern1 pattern2)
-        >>= either (couldNotMatch pattern1 pattern2) Monad.Unify.scatter
-
-    couldNotMatch pattern1 pattern2 _ =
-        Monad.Unify.explainAndReturnBottom
-            "Could not match patterns"
-            pattern1
-            pattern2
-
-    unificationProcedure =
-        UnificationProcedure (ignoreUnificationErrors matchIncremental)

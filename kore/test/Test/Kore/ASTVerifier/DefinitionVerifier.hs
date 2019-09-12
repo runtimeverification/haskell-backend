@@ -1,33 +1,43 @@
 module Test.Kore.ASTVerifier.DefinitionVerifier where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( HasCallStack, assertEqual, assertFailure, testCase )
+    ( HasCallStack
+    , assertEqual
+    , assertFailure
+    , testCase
+    )
 
 import Data.Proxy
 import Data.Text
-       ( Text )
+    ( Text
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-import           Kore.ASTVerifier.Error
-import qualified Kore.Attribute.Null as Attribute
+import Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.Error
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Debug
-import           Kore.Error
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Debug
+import Kore.Error
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Sort
-import           Kore.Syntax hiding
-                 ( PatternF (..) )
-import           Kore.Syntax.Definition
+import Kore.Sort
+import Kore.Syntax hiding
+    ( PatternF (..)
+    )
+import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
-import           Kore.Unparser
-                 ( unparseToString )
-import           Kore.Variables.UnifiedVariable
+import Kore.Unparser
+    ( unparseToString
+    )
+import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
 import Test.Kore
@@ -129,7 +139,7 @@ expectFailureWithError description expectedError unverifiedDefinition =
         )
 
 attributesVerificationForTests
-    :: AttributesVerification Attribute.Symbol Attribute.Null
+    :: AttributesVerification Attribute.Symbol Attribute.Axiom
 attributesVerificationForTests = defaultAttributesVerification Proxy Proxy
 
 printDefinition :: ParsedDefinition -> String
@@ -385,7 +395,7 @@ sentenceAliasWithSortArgument
                             SortVariableSort <$> parameters
                         }
                 , applicationChildren =
-                    [ ElementVariable Variable
+                    [ ElemVar $ ElementVariable Variable
                         { variableName = testId "x"
                         , variableCounter = mempty
                         , variableSort = sortArgument
@@ -401,7 +411,7 @@ sentenceAliasWithAttributes
     -> [SortVariable]
     -> Sort
     -> [ParsedPattern]
-    -> Application SymbolOrAlias (ElementVariable Variable)
+    -> Application SymbolOrAlias (UnifiedVariable Variable)
     -> ParsedPattern
     -> ParsedSentenceAlias
 sentenceAliasWithAttributes (AliasName name) params sort attributes l r =
@@ -561,7 +571,7 @@ symbolSentenceWithParametersAndArguments
             }
 
 objectAliasSentenceWithArguments
-    :: AliasName -> Sort -> [ElementVariable Variable] -> ParsedSentence
+    :: AliasName -> Sort -> [UnifiedVariable Variable] -> ParsedSentence
 objectAliasSentenceWithArguments a b c =
     aliasSentenceWithArguments
         a
@@ -572,7 +582,7 @@ objectAliasSentenceWithArguments a b c =
 aliasSentenceWithArguments
     :: AliasName
     -> Sort
-    -> [ElementVariable Variable]
+    -> [UnifiedVariable Variable]
     -> patternType
     -> Sentence patternType
 aliasSentenceWithArguments (AliasName name) sort operands r =
@@ -583,7 +593,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
                 , aliasParams = []
                 }
             , sentenceAliasSorts =
-                variableSort . getElementVariable <$> operands
+                foldMapVariable variableSort <$> operands
             , sentenceAliasResultSort = sort
             , sentenceAliasLeftPattern =
                 Application

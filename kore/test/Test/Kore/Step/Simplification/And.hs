@@ -5,31 +5,43 @@ module Test.Kore.Step.Simplification.And
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.Internal.MultiOr
-                 ( MultiOr (MultiOr) )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Branch
+    ( gather
+    )
+import Kore.Internal.MultiOr
+    ( MultiOr (MultiOr)
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeFalsePredicate, makeTruePredicate )
-import           Kore.Step.Simplification.And
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier, gather )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Simplification.And
+import Kore.Step.Simplification.Data
+    ( Env (..)
+    , evalSimplifier
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
-import qualified Test.Kore.Step.MockSimplifiers as Mock
-import           Test.Kore.Step.MockSymbols
-                 ( testSort )
+import Test.Kore
+import Test.Kore.Comparators ()
+import Test.Kore.Step.MockSymbols
+    ( testSort
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
 test_andSimplification =
@@ -426,4 +438,4 @@ evaluatePatterns first second =
     $ gather $ makeEvaluate first second
 
 mockEnv :: Env
-mockEnv = Mock.env { simplifierPredicate = Mock.substitutionSimplifier }
+mockEnv = Mock.env

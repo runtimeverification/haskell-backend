@@ -8,6 +8,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Internal.MultiOr
     ( MultiOr (..)
     , crossProductGeneric
@@ -25,21 +28,26 @@ module Kore.Internal.MultiOr
     , Alternative (..)
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.List
-                 ( foldl' )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.List
+    ( foldl'
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
-import           GHC.Exts
-                 ( IsList )
+import GHC.Exts
+    ( IsList
+    )
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.TopBottom
-       ( TopBottom (..) )
+    ( TopBottom (..)
+    )
 
 {-| 'MultiOr' is a Matching logic or of its children
 

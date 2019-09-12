@@ -3,28 +3,38 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.SortUsage
     ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 import qualified Data.List as List
-import           Data.Maybe
-                 ( mapMaybe )
+import Data.Maybe
+    ( mapMaybe
+    )
 import qualified Data.Text as Text
 
-import           Kore.ASTVerifier.Error
-                 ( noConstructorWithDomainValuesMessage )
+import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.Error
-                 ( noSort )
-import           Kore.Internal.TermLike
-import           Kore.Syntax.Definition
-                 ( AsSentence (..), Attributes (..), ModuleName (..),
-                 ParsedSentence, ParsedSentenceAlias, ParsedSentenceSymbol,
-                 Sentence (SentenceSymbolSentence), SentenceSort (..) )
+import Kore.Error
+import Kore.IndexedModule.Error
+    ( noSort
+    )
+import Kore.Internal.TermLike
+import Kore.Syntax.Definition
+    ( AsSentence (..)
+    , Attributes (..)
+    , ModuleName (..)
+    , ParsedSentence
+    , ParsedSentenceAlias
+    , ParsedSentenceSymbol
+    , Sentence (SentenceSymbolSentence)
+    , SentenceSort (..)
+    )
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
@@ -80,7 +90,7 @@ test_sortUsage =
                 [ "module 'MODULE'"
                 , "symbol 'a' declaration (<test data>)"
                 ]
-            , errorError   = noConstructorWithDomainValuesMessage
+            , errorError   = noConstructorWithDomainValues
                 (testId "a")
                 (simpleSort (SortName "mySort"))
             }

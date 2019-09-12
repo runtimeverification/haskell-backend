@@ -11,20 +11,23 @@ module Kore.Step.Simplification.In
     ( simplify
     ) where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( topTODO )
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeInPredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate as Predicate
+    ( Predicate
+    )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeInPredicate
+    )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-                 ( makeEvaluate, simplifyEvaluated )
-import           Kore.Step.Simplification.Data
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+    ( makeEvaluate
+    , simplifyEvaluated
+    )
+import Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
 children.
@@ -39,16 +42,12 @@ Right now this uses the following simplifications:
 TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => In Sort (OrPattern variable)
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => Predicate variable
+    -> In Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify In { inContainedChild = first, inContainingChild = second } =
-    simplifyEvaluatedIn first second
+simplify predicate In { inContainedChild = first, inContainingChild = second } =
+    simplifyEvaluatedIn predicate first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -65,47 +64,36 @@ carry around.
 -}
 simplifyEvaluatedIn
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => OrPattern variable
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    => Predicate variable
+    -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluatedIn first second
+simplifyEvaluatedIn predicate first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
-  | OrPattern.isTrue first = Ceil.simplifyEvaluated Predicate.topTODO second
-  | OrPattern.isTrue second = Ceil.simplifyEvaluated Predicate.topTODO first
+  | OrPattern.isTrue first = Ceil.simplifyEvaluated predicate second
+  | OrPattern.isTrue second = Ceil.simplifyEvaluated predicate first
 
   | otherwise =
-    OrPattern.flatten <$> sequence (makeEvaluateIn <$> first <*> second)
+    OrPattern.flatten <$> sequence
+                            (makeEvaluateIn predicate <$> first <*> second)
 
 makeEvaluateIn
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
-    => Pattern variable
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => Predicate variable
+    -> Pattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluateIn first second
-  | Pattern.isTop first = Ceil.makeEvaluate Predicate.topTODO second
-  | Pattern.isTop second = Ceil.makeEvaluate Predicate.topTODO first
+makeEvaluateIn predicate first second
+  | Pattern.isTop first = Ceil.makeEvaluate predicate second
+  | Pattern.isTop second = Ceil.makeEvaluate predicate first
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable

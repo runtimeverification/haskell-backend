@@ -18,14 +18,16 @@ module Kore.Syntax.Id
     , prettyPrintAstLocation
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Hashable
-                 ( Hashable )
-import           Data.String
-                 ( IsString (..) )
-import           Data.Text
-                 ( Text )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Hashable
+import Data.String
+    ( IsString (..)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
@@ -54,8 +56,12 @@ instance Ord Id where
 -- | 'Eq' ignores the 'AstLocation'
 instance Eq Id where
     first == second = compare first second == EQ
+    {-# INLINE (==) #-}
 
-instance Hashable Id
+-- | 'Hashable' ignores the 'AstLocation'
+instance Hashable Id where
+    hashWithSalt salt (Id text _) = hashWithSalt salt text
+    {-# INLINE hashWithSalt #-}
 
 instance NFData Id
 

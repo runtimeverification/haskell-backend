@@ -4,6 +4,8 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Attribute.Pattern
     ( Pattern (..)
     , mapVariables
@@ -11,12 +13,14 @@ module Kore.Attribute.Pattern
     , deleteFreeVariable
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Lens as Lens
-import           Data.Generics.Product
-import           Data.Hashable
-                 ( Hashable (..) )
+import Data.Generics.Product
+import Data.Hashable
+    ( Hashable (..)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -27,9 +31,11 @@ import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-       ( Sort )
+    ( Sort
+    )
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
+    ( UnifiedVariable (..)
+    )
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
  -}

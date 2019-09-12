@@ -14,6 +14,7 @@ module Kore.Internal.Symbol
     , isFunction
     , isTotal
     , isInjective
+    , isMemo
     , symbolHook
     , constructor
     , functional
@@ -27,28 +28,31 @@ module Kore.Internal.Symbol
     , module Kore.Internal.ApplicationSorts
     ) where
 
-import           Control.DeepSeq
+import Control.DeepSeq
 import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
+    ( makeLenses
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
-import           Data.Generics.Product
-import           Data.Hashable
-import           Data.Text
-                 ( Text )
+import Data.Generics.Product
+import Data.Hashable
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Attribute.Synthetic
-import           Kore.Debug
-import           Kore.Internal.ApplicationSorts
-import           Kore.Sort
-import           Kore.Syntax.Application
-import           Kore.Unparser
-import           SMT.AST
-                 ( SExpr )
+import Kore.Attribute.Synthetic
+import Kore.Debug
+import Kore.Internal.ApplicationSorts
+import Kore.Sort
+import Kore.Syntax.Application
+import Kore.Unparser
+import SMT.AST
+    ( SExpr
+    )
 
 data Symbol =
     Symbol
@@ -149,6 +153,9 @@ isFunction = Attribute.isFunction . symbolAttributes
 
 isTotal :: Symbol -> Bool
 isTotal = Attribute.isTotal . symbolAttributes
+
+isMemo :: Symbol -> Bool
+isMemo = Attribute.isMemo . Attribute.memo . symbolAttributes
 
 symbolHook :: Symbol -> Attribute.Hook
 symbolHook = Attribute.hook . symbolAttributes

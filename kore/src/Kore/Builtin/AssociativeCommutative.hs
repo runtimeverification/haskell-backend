@@ -15,6 +15,8 @@ builtin modules.
 @
 -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Builtin.AssociativeCommutative
     ( asInternal
     , asInternalConcrete
@@ -35,70 +37,100 @@ module Kore.Builtin.AssociativeCommutative
     , VariableElements (..)
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT, partitionEithers )
-import           Control.Monad
-                 ( (>=>) )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT
+    , partitionEithers
+    )
+import Control.Monad
+    ( (>=>)
+    )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import qualified Data.List as List
 import qualified Data.List
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( Given )
+import Data.Reflection
+    ( Given
+    )
 import qualified Data.Reflection as Reflection
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
-import           GHC.Stack
-                 ( HasCallStack )
+import Data.Text.Prettyprint.Doc
+    ( Doc
+    )
+import GHC.Stack
+    ( HasCallStack
+    )
 
+import Branch
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.MapSymbols as Map
 import qualified Kore.Builtin.SetSymbols as Set
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.Conditional
-                 ( Conditional, andCondition, withCondition )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Conditional
+    ( Conditional
+    , andCondition
+    , withCondition
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.Symbol
-                 ( Symbol )
-import           Kore.Internal.TermLike
-                 ( pattern App_, pattern BuiltinMap_, pattern BuiltinSet_,
-                 Concrete, pattern ElemVar_, TermLike, pattern Var_,
-                 mkApplySymbol, mkBuiltin, mkElemVar, termLikeSort )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
+import Kore.Internal.TermLike
+    ( pattern App_
+    , pattern BuiltinMap_
+    , pattern BuiltinSet_
+    , Concrete
+    , pattern ElemVar_
+    , InternalVariable
+    , TermLike
+    , pattern Var_
+    , mkApplySymbol
+    , mkBuiltin
+    , mkElemVar
+    , termLikeSort
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Sort
-                 ( Sort )
-import           Kore.Step.Simplification.Data as Simplifier
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom, emptyAttemptedAxiom )
-import           Kore.Syntax.ElementVariable
-                 ( ElementVariable (getElementVariable) )
-import           Kore.Syntax.Variable
-                 ( SortedVariable, sortedVariableSort )
-import           Kore.Unification.Unify
-                 ( MonadUnify )
+import Kore.Sort
+    ( Sort
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Syntax.ElementVariable
+    ( ElementVariable (getElementVariable)
+    )
+import Kore.Syntax.Variable
+    ( SortedVariable
+    , sortedVariableSort
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-                 ( Unparse, unparse, unparseToString )
+import Kore.Unparser
+    ( unparse
+    , unparseToString
+    )
 import qualified Kore.Unparser as Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {- | Class for things that can fill the @builtinAcChild@ value of a
 @InternalAc@ struct inside a @Domain.Builtin.Builtin@ value.
@@ -486,8 +518,7 @@ addElementDisjoint (list, existing) (key, value) =
 -}
 returnAc
     ::  ( MonadSimplify m
-        , Ord variable
-        , SortedVariable variable
+        , InternalVariable variable
         , TermWrapper normalized
         )
     => Sort
@@ -504,8 +535,7 @@ as a function result.
 -}
 returnConcreteAc
     ::  ( MonadSimplify m
-        , Ord variable
-        , SortedVariable variable
+        , InternalVariable variable
         , TermWrapper normalized
         )
     => Sort
@@ -529,10 +559,7 @@ pattern.
 
 -}
 asInternal
-    ::  ( Ord variable
-        , SortedVariable variable
-        , TermWrapper normalized
-        )
+    :: (InternalVariable variable, TermWrapper normalized)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> TermNormalizedAc normalized variable
@@ -544,10 +571,7 @@ asInternal tools builtinAcSort builtinAcChild =
 elements.
 -}
 asInternalConcrete
-    ::  ( Ord variable
-        , SortedVariable variable
-        , TermWrapper normalized
-        )
+    :: (InternalVariable variable, TermWrapper normalized)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Map (TermLike Concrete) (Domain.Value normalized (TermLike variable))
@@ -562,11 +586,7 @@ asInternalConcrete tools sort1 concreteAc =
 
 elementListAsInternal
     :: forall normalized variable
-    .   ( Ord variable
-        , SortedVariable variable
-        , TermWrapper normalized
-        , Unparse variable
-        )
+    .  (InternalVariable variable, TermWrapper normalized)
     => SmtMetadataTools Attribute.Symbol
     -> Sort
     -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
@@ -577,11 +597,7 @@ elementListAsInternal tools sort1 terms = do
 
 elementListAsNormalized
     :: forall normalized variable
-    .   ( Ord variable
-        , SortedVariable variable
-        , TermWrapper normalized
-        , Unparse variable
-        )
+    .  (InternalVariable variable, TermWrapper normalized)
     => [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> Maybe
         (Domain.NormalizedAc normalized (TermLike Concrete) (TermLike variable))
@@ -598,7 +614,7 @@ elementListAsNormalized terms = do
 {- | Render a 'NormalizedAc' as an extended domain value pattern.
 -}
 asPattern
-    ::  ( Ord variable, SortedVariable variable
+    ::  ( InternalVariable variable
         , Given (SmtMetadataTools Attribute.Symbol)
         , TermWrapper normalized
         )
@@ -617,8 +633,7 @@ NormalizedOrBottom, providind the result in the form of a function result.
 evalConcatNormalizedOrBottom
     :: forall m normalized variable
     .   ( MonadSimplify m
-        , Ord variable
-        , SortedVariable variable
+        , InternalVariable variable
         , TermWrapper normalized
         )
     => Sort
@@ -670,11 +685,8 @@ reject the definition.
 -}
 unifyEqualsNormalized
     :: forall normalized unifier variable
-    .   ( SortedVariable variable
-        , Unparse variable
-        , Show variable
+    .   ( SimplifierVariable variable
         , Traversable (Domain.Value normalized)
-        , FreshVariable variable
         , TermWrapper normalized
         , MonadUnify unifier
         )
@@ -745,11 +757,8 @@ Currently allows at most one opaque term in the two arguments taken together.
 -}
 unifyEqualsNormalizedAc
     ::  forall normalized variable unifier
-    .   ( SortedVariable variable
-        , Unparse variable
-        , Show variable
+    .   ( SimplifierVariable variable
         , Traversable (Domain.Value normalized)
-        , FreshVariable variable
         , TermWrapper normalized
         , MonadUnify unifier
         )
@@ -937,7 +946,7 @@ unifyEqualsNormalizedAc
         return (terms, predicate)
 
     simplify :: TermLike variable -> unifier (Pattern variable)
-    simplify term = alternate $ simplifyConditionalTerm term Predicate.top
+    simplify term = alternate $ simplifyConditionalTerm Predicate.top term
 
     simplifyPair
         :: (TermLike variable, Domain.Value normalized (TermLike variable))
@@ -976,16 +985,13 @@ unifyEqualsNormalizedAc
       where
         simplifyTermLike :: TermLike variable -> unifier (Pattern variable)
         simplifyTermLike term =
-            alternate $ simplifyConditionalTerm term Predicate.top
+            alternate $ simplifyConditionalTerm Predicate.top term
 
 buildResultFromUnifiers
     :: forall normalized unifier variable
     .   ( Monad unifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
+        , InternalVariable variable
         , TermWrapper normalized
-        , Unparse variable
         )
     => (forall result . Doc () -> unifier result)
     -> [(TermLike Concrete, Domain.Value normalized (TermLike variable))]
@@ -1089,11 +1095,8 @@ unifyCommonElements
     :: forall key normalized unifier variable
     .   ( Domain.AcWrapper normalized
         , MonadUnify unifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
+        , InternalVariable variable
         , Traversable (Domain.Value normalized)
-        , Unparse variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     ->  ( key
@@ -1119,11 +1122,8 @@ unifyWrappedValues
     :: forall normalized unifier variable
     .   ( Domain.AcWrapper normalized
         , MonadUnify unifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
+        , InternalVariable variable
         , Traversable (Domain.Value normalized)
-        , Unparse variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> Domain.Value normalized (TermLike variable)
@@ -1157,13 +1157,10 @@ The keys of the two structures are assumend to be disjoint.
 unifyEqualsElementLists
     ::  forall normalized variable unifier
     .   ( Domain.AcWrapper normalized
-        , FreshVariable variable
+        , SimplifierVariable variable
         , MonadUnify unifier
-        , Show variable
-        , SortedVariable variable
         , TermWrapper normalized
         , Traversable (Domain.Value normalized)
-        , Unparse variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
@@ -1294,10 +1291,8 @@ unifyEqualsElementLists
 
 unifyOpaqueVariable
     ::  ( MonadUnify unifier
-        , Ord variable
-        , SortedVariable variable
         , TermWrapper normalized
-        , Unparse variable
+        , SimplifierVariable variable
         )
     => SmtMetadataTools Attribute.Symbol
     -> (forall a . Doc () -> unifier a)
@@ -1377,11 +1372,8 @@ unification term. Also, tests are easier to write.
 unifyEqualsConcreteOrWithVariable
     ::  ( Domain.AcWrapper normalized
         , MonadUnify unifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
         , Traversable (Domain.Value normalized)
-        , Unparse variable
+        , SimplifierVariable variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> ConcreteOrWithVariable normalized variable
@@ -1416,11 +1408,8 @@ unifyEqualsPair
     :: forall normalized unifier variable
     .   ( Domain.AcWrapper normalized
         , MonadUnify unifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
+        , SimplifierVariable variable
         , Traversable (Domain.Value normalized)
-        , Unparse variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> (TermLike variable, Domain.Value normalized (TermLike variable))
@@ -1463,10 +1452,7 @@ Also returns the non-unified part os the lists (one of the two will be empty).
 unifyEqualsElementPermutations
     ::  ( Alternative unifier
         , Monad unifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
+        , SimplifierVariable variable
         )
     => (a -> b -> unifier (Conditional variable c))
     -> [a]
@@ -1538,8 +1524,7 @@ kPermutationsBacktracking transform firstList secondList =
 nonEmptyRemainderError
     :: forall a normalized variable
     .   ( HasCallStack
-        , SortedVariable variable
-        , Unparse variable
+        , InternalVariable variable
         , Domain.AcWrapper normalized
         )
     => TermLike variable
@@ -1581,7 +1566,7 @@ newtype Opaque variable =
 -}
 asTermLike
     :: forall variable
-    .  (Ord variable, SortedVariable variable, Unparse variable)
+    .  InternalVariable variable
     => UnitSymbol
     -> ConcatSymbol
     -> ConcreteElements variable

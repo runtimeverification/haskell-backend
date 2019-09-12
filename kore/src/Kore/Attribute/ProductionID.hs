@@ -13,8 +13,9 @@ module Kore.Attribute.ProductionID
 
 import qualified Control.Monad as Monad
 import qualified Data.Maybe as Maybe
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

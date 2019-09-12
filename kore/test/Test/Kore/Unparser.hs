@@ -4,14 +4,21 @@ module Test.Kore.Unparser
     , test_unparseGeneric
     ) where
 
-import           Hedgehog
-                 ( Gen, Property, (===) )
+import Hedgehog
+    ( Gen
+    , Property
+    , (===)
+    )
 import qualified Hedgehog
-import           Test.Tasty
-                 ( TestTree, testGroup )
-import           Test.Tasty.Hedgehog
-import           Test.Tasty.HUnit
-                 ( assertEqual, testCase )
+import Test.Tasty
+    ( TestTree
+    , testGroup
+    )
+import Test.Tasty.Hedgehog
+import Test.Tasty.HUnit
+    ( assertEqual
+    , testCase
+    )
 
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -24,8 +31,9 @@ import Kore.Syntax.Definition
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
 
-import           Test.Kore hiding
-                 ( Gen )
+import Test.Kore hiding
+    ( Gen
+    )
 import qualified Test.Terse as Terse
 
 test_unparse :: TestTree

@@ -5,26 +5,32 @@ License     : NCSA
 
  -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Attribute.Synthetic
     ( Synthetic (..)
     , resynthesize, resynthesizeAux
     , synthesize, synthesizeAux
     ) where
 
-import           Control.Comonad.Trans.Cofree
-                 ( CofreeF (..) )
+import Control.Comonad.Trans.Cofree
+    ( CofreeF (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Data.Functor.Const
-import           Data.Functor.Foldable
-                 ( Base, Corecursive, Recursive )
+import Data.Functor.Const
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           GHC.Generics
+import GHC.Generics
 
 import Generically
 
 {- | @Synthetic@ is the class of synthetic attribute types @syn@.
 
-@Synthetic base syn@ allows synthesizing @syn@ given a @'Cofree' base@ tree;
+@Synthetic syn base@ allows synthesizing @syn@ given a @'Cofree' base@ tree;
 that is, a 'Cofree' tree with branching described by a @'Functor' base@.
 
  -}
@@ -61,12 +67,12 @@ instance (Functor base, Synthetic syn base) => Synthetic syn (Rec1 base) where
     synthetic = synthetic . unRec1
     {-# INLINE synthetic #-}
 
-{- | @/synthesize/@ attribute @b@ bottom-up along a tree @s@.
+{- | @/resynthesize/@ attribute @b@ bottom-up along a tree @s@.
 
-@synthesize@ is a generalization of 'Data.List.scanr' to trees: Given a tree @s@
-with attributes @inh@ along the nodes, @synthesize@ produces a tree @t@ with
-attributes @syn@ along the nodes using the given @('Base' s)@-algebra from the
-bottom up.
+@resynthesize@ is a generalization of 'Data.List.scanr' to trees: Given a tree
+@s@ with attributes @inh@ along the nodes, @resynthesize@ produces a tree @t@
+with attributes @syn@ along the nodes using the given @('Base' s)@-algebra from
+the bottom up.
 
 See also:
 <https://en.wikipedia.org/wiki/Attribute_grammar#Synthesized_attributes>

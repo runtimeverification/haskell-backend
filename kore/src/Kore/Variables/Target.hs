@@ -13,18 +13,25 @@ module Kore.Variables.Target
     , isNonTarget
     ) where
 
-import           Data.Hashable
-                 ( Hashable )
+import Data.Hashable
+    ( Hashable
+    )
 import qualified Data.Set as Set
-import           GHC.Generics
-                 ( Generic )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
+    ( Debug
+    )
 import Kore.Syntax.Variable
-       ( SortedVariable (..) )
+    ( SortedVariable (..)
+    )
 import Kore.Unparser
-       ( Unparse (..) )
+    ( Unparse (..)
+    )
 import Kore.Variables.Fresh
-       ( FreshVariable (..) )
+    ( FreshVariable (..)
+    )
 
 {- | Distinguish variables by their source.
 
@@ -36,7 +43,7 @@ instead of 'NonTarget' variables.
 data Target variable
     = Target !variable
     | NonTarget !variable
-    deriving (Eq, Generic, Show)
+    deriving (Eq, GHC.Generic, Show)
 
 instance Ord variable => Ord (Target variable) where
     compare (Target var1) (Target var2) = compare var1 var2
@@ -45,6 +52,12 @@ instance Ord variable => Ord (Target variable) where
     compare (NonTarget _) (Target _) = GT
 
 instance Hashable variable => Hashable (Target variable)
+
+instance SOP.Generic (Target variable)
+
+instance SOP.HasDatatypeInfo (Target variable)
+
+instance Debug variable => Debug (Target variable)
 
 unwrapVariable :: Target variable -> variable
 unwrapVariable (Target variable) = variable

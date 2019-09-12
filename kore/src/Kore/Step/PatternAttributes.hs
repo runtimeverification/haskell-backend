@@ -14,23 +14,28 @@ module Kore.Step.PatternAttributes
     , isConstructorModuloLikePattern
     ) where
 
-import           Data.Either
-                 ( isRight )
-import           Data.Functor.Const
+import Data.Either
+    ( isRight
+    )
+import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Reflection
-                 ( give )
+import Data.Reflection
+    ( give
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Builtin.Attributes
-                 ( isConstructorModulo_ )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.Builtin.Attributes
+    ( isConstructorModulo_
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Internal.TermLike
-import           Kore.Proof.Functional
-import           Kore.Step.PatternAttributesError
-                 ( ConstructorLikeError (..) )
+import Kore.Internal.TermLike
+import Kore.Proof.Functional
+import Kore.Step.PatternAttributesError
+    ( ConstructorLikeError (..)
+    )
 
 {-| Checks whether a pattern is constructor-like or not and, if it is,
     returns a proof certifying that.

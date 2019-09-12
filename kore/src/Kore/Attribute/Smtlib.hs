@@ -14,12 +14,13 @@ module Kore.Attribute.Smtlib
     ) where
 
 import qualified Control.Error as Error
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 import qualified Data.Text as Text
-import           SMT.SimpleSMT
+import SMT.SimpleSMT
 
-import           Kore.Attribute.Smtlib.Smtlib
+import Kore.Attribute.Smtlib.Smtlib
 import qualified Kore.Builtin.Error as Builtin.Error
 
 shortenSExpr :: SExpr -> SExpr

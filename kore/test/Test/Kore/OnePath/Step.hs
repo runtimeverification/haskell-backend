@@ -3,59 +3,85 @@ module Test.Kore.OnePath.Step
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
 import Data.Default
-       ( def )
+    ( def
+    )
 import Data.List
-       ( nub, sort )
+    ( nub
+    , sort
+    )
 import Data.Maybe
-       ( fromMaybe )
+    ( fromMaybe
+    )
 import Numeric.Natural
-       ( Natural )
+    ( Natural
+    )
 
-import           Data.Limit
-                 ( Limit (..) )
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.Limit as Limit
 
-import           Kore.Goal
-import           Kore.Internal.Conditional
-                 ( Conditional (Conditional) )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate,
-                 makeMultipleAndPredicate, makeNotPredicate,
-                 makeTruePredicate )
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeMultipleAndPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (RewriteRule),
-                 RulePattern (RulePattern) )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.Step.Strategy
-                 ( Strategy, pickFinal, runStrategy )
-import           Kore.Step.Strategy
-                 ( ExecutionGraph (..) )
-import           Kore.Syntax.Variable
-                 ( Variable (..) )
+    ( Predicate
+    )
+import Kore.Step.Rule
+    ( OnePathRule (..)
+    , RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    )
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    )
+import Kore.Step.Simplification.Data
+    ( evalSimplifier
+    )
+import Kore.Step.Strategy
+    ( ExecutionGraph (..)
+    , Strategy
+    , pickFinal
+    , runStrategy
+    )
+import Kore.Strategies.Goal
+import Kore.Strategies.OnePath.Actions
+    ( makeRuleFromPatterns
+    )
+import Kore.Strategies.ProofState
+import Kore.Syntax.Variable
+    ( Variable (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 
 makeOnePathRule :: TermLike Variable -> TermLike Variable -> OnePathRule Variable

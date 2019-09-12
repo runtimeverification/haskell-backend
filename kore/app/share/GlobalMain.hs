@@ -16,70 +16,129 @@ module GlobalMain
     , verifyDefinitionWithBase
     , mainParse
     , lookupMainModule
+    , LoadedDefinition
+    , LoadedModule
+    , loadDefinitions
+    , loadModule
     ) where
 
-import           Colog
-                 ( (<&) )
-import           Control.Exception
-                 ( evaluate )
-import           Control.Monad
-                 ( when )
-import           Control.Monad.Trans.Class
-                 ( lift )
-import           Data.Function
-                 ( (&) )
-import           Data.List
-                 ( intercalate )
+import Colog
+    ( (<&)
+    )
+import Control.Exception
+    ( evaluate
+    )
+import Control.Monad
+    ( when
+    )
+import qualified Control.Monad as Monad
+import Control.Monad.Trans.Class
+    ( lift
+    )
+import Data.Function
+    ( (&)
+    )
+import Data.List
+    ( intercalate
+    )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Proxy
-                 ( Proxy (..) )
-import           Data.Semigroup
-                 ( (<>) )
+import Data.Proxy
+    ( Proxy (..)
+    )
+import Data.Semigroup
+    ( (<>)
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text, pack )
-import           Data.Time.Format
-                 ( defaultTimeLocale, formatTime )
-import           Data.Time.LocalTime
-                 ( ZonedTime, getZonedTime )
-import           Data.Version
-                 ( showVersion )
-import           Development.GitRev
-                 ( gitBranch, gitCommitDate, gitHash )
-import           GHC.Stack
-                 ( emptyCallStack )
-import           Options.Applicative
-                 ( InfoMod, Parser, argument, disabled, execParser, flag,
-                 flag', help, helper, hidden, info, internal, long, metavar,
-                 option, readerError, str, strOption, switch, value, (<**>),
-                 (<|>) )
-import           System.Clock
-                 ( Clock (Monotonic), diffTimeSpec, getTime )
+import Data.Text
+    ( Text
+    , pack
+    )
+import Data.Time.Format
+    ( defaultTimeLocale
+    , formatTime
+    )
+import Data.Time.LocalTime
+    ( ZonedTime
+    , getZonedTime
+    )
+import Data.Version
+    ( showVersion
+    )
+import Development.GitRev
+    ( gitBranch
+    , gitCommitDate
+    , gitHash
+    )
+import GHC.Stack
+    ( emptyCallStack
+    )
+import Options.Applicative
+    ( InfoMod
+    , Parser
+    , argument
+    , disabled
+    , execParser
+    , flag
+    , flag'
+    , help
+    , helper
+    , hidden
+    , info
+    , internal
+    , long
+    , metavar
+    , option
+    , readerError
+    , str
+    , strOption
+    , switch
+    , value
+    , (<**>)
+    , (<|>)
+    )
+import System.Clock
+    ( Clock (Monotonic)
+    , diffTimeSpec
+    , getTime
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-                 ( AttributesVerification (DoNotVerifyAttributes),
-                 defaultAttributesVerification,
-                 verifyAndIndexDefinitionWithBase )
-import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import Kore.ASTVerifier.DefinitionVerifier
+    ( AttributesVerification (DoNotVerifyAttributes)
+    , defaultAttributesVerification
+    , verifyAndIndexDefinitionWithBase
+    )
+import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule, VerifiedModule )
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Logger.Output as Logger
-import           Kore.Parser
-                 ( ParsedPattern, parseKoreDefinition )
-import           Kore.Step.Strategy
-                 ( GraphSearchOrder (..) )
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-                 ( ModuleName (..), ParsedDefinition, getModuleNameForError )
+import Kore.Logger.Output as Logger
+import Kore.Parser
+    ( ParsedPattern
+    , parseKoreDefinition
+    )
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
+import Kore.Syntax
+import Kore.Syntax.Definition
+    ( ModuleName (..)
+    , ParsedDefinition
+    , getModuleNameForError
+    )
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
-                 ( version )
+    ( version
+    )
 
 type Main = LoggerT IO
 
@@ -301,7 +360,6 @@ mainPatternVerify verifiedModule patt = do
             { indexedModule =
                 verifiedModule
                 & IndexedModule.eraseAxiomAttributes
-                & IndexedModule.erasePatterns
             , declaredSortVariables = Set.empty
             , declaredVariables = emptyDeclaredVariables
             , builtinDomainValueVerifiers = domainValueVerifiers
@@ -330,12 +388,10 @@ Also prints timing information; see 'mainParse'.
 
  -}
 verifyDefinitionWithBase
-    :: Maybe
-        ( Map.Map ModuleName
-            (KoreIndexedModule Attribute.Symbol Attribute.Axiom)
+    ::  ( Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
-    -- ^ base definition to use for verification
+    -- ^ already verified definition
     -> Bool
     -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
@@ -345,7 +401,11 @@ verifyDefinitionWithBase
             (VerifiedModule Attribute.Symbol Attribute.Axiom)
         , Map.Map Text AstLocation
         )
-verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
+verifyDefinitionWithBase
+    alreadyVerified
+    willChkAttr
+    definition
+  =
     let attributesVerification =
             if willChkAttr
             then defaultAttributesVerification Proxy Proxy
@@ -354,7 +414,7 @@ verifyDefinitionWithBase maybeBaseModule willChkAttr definition =
       verifyResult <-
         clockSomething "Verifying the definition"
             (verifyAndIndexDefinitionWithBase
-                maybeBaseModule
+                alreadyVerified
                 attributesVerification
                 Builtin.koreVerifiers
                 definition
@@ -383,3 +443,15 @@ mainParse parser fileName = do
     case parseResult of
         Left err         -> error err
         Right definition -> return definition
+
+type LoadedModule = VerifiedModule Attribute.Symbol Attribute.Axiom
+
+type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
+
+loadDefinitions :: [FilePath] -> Main LoadedDefinition
+loadDefinitions filePaths =
+    Monad.foldM (\loaded -> verifyDefinitionWithBase loaded True) mempty
+    =<< traverse parseDefinition filePaths
+
+loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
+loadModule moduleName = lookupMainModule moduleName . fst

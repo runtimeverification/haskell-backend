@@ -7,12 +7,15 @@ module Test.Kore.Attribute.Parser
 import Test.Tasty.HUnit
 
 import Data.Either
-       ( isLeft )
+    ( isLeft
+    )
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 import Kore.Attribute.Attributes
-       ( Attributes (..) )
+    ( Attributes (..)
+    )
 import Kore.Attribute.Parser
 
 expectSuccess

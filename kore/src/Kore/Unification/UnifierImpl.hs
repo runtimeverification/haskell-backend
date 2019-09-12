@@ -11,48 +11,61 @@ Portability : portable
 module Kore.Unification.UnifierImpl where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Control.Monad
-                 ( foldM )
-import           Data.Function
-                 ( on )
+import Control.Monad
+    ( foldM
+    )
+import Data.Function
+    ( on
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.List
-                 ( foldl', groupBy, partition, sortBy )
-import           Data.List.NonEmpty
-                 ( NonEmpty (..) )
+import Data.List
+    ( foldl'
+    , groupBy
+    , partition
+    , sortBy
+    )
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate
-                 ( Conditional (..), Predicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Logger
-                 ( LogMessage, WithLog )
+import Kore.Internal.TermLike
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-                 ( isFalse, makeAndPredicate )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+    ( isFalse
+    , makeAndPredicate
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( MonadUnify )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unification.Unify
+    ( MonadUnify
+    , SimplifierVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
-       ( termUnification )
+    ( termUnification
+    )
 import {-# SOURCE #-} Kore.Step.Substitution
-       ( mergePredicatesAndSubstitutionsExcept )
+    ( mergePredicatesAndSubstitutionsExcept
+    )
 
 simplifyAnds
     ::  forall variable unifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -102,10 +115,7 @@ groupSubstitutionByVariable =
 -- x = ((t1 /\ t2) /\ (..)) /\ tn
 -- then recursively reducing that to finally get x = t /\ subst
 solveGroupedSubstitution
-    :: ( Show variable
-       , Unparse variable
-       , SortedVariable variable
-       , FreshVariable variable
+    :: ( SimplifierVariable variable
        , MonadUnify unifier
        , WithLog LogMessage unifier
        )
@@ -131,10 +141,7 @@ solveGroupedSubstitution var patterns = do
 -- stabilizes.
 normalizeSubstitutionDuplication
     :: forall variable unifier
-    .   ( Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
@@ -179,11 +186,7 @@ normalizeSubstitutionDuplication subst
             ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
 
 mergePredicateList
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => [Predicate variable]
     -> Predicate variable
 mergePredicateList [] = Predicate.top

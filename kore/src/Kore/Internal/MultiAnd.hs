@@ -8,6 +8,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : portable
 -}
+
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Internal.MultiAnd
     ( MultiAnd
     , extractPatterns
@@ -15,23 +18,29 @@ module Kore.Internal.MultiAnd
     , toPredicate
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.DeepSeq
-                 ( NFData )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Data.Set as Set
-import           GHC.Exts
-                 ( IsList )
-import           GHC.Generics
-                 ( Generic )
+import GHC.Exts
+    ( IsList
+    )
+import GHC.Generics
+    ( Generic
+    )
 
+import Kore.Internal.Variable
 import Kore.Predicate.Predicate
-       ( Predicate, makeAndPredicate, makeTruePredicate )
-import Kore.Syntax.Variable
+    ( Predicate
+    , makeAndPredicate
+    , makeTruePredicate
+    )
 import Kore.TopBottom
-       ( TopBottom (..) )
-import Kore.Unparser
-       ( Unparse )
+    ( TopBottom (..)
+    )
 
 {-| 'MultiAnd' is a Matching logic and of its children
 
@@ -160,7 +169,7 @@ filterGeneric andFilter (MultiAnd patts) =
             AndUnknown -> go filterAnd' (element:filtered) unfiltered
 
 toPredicate
-    :: (Ord variable, SortedVariable variable, Unparse variable)
+    :: InternalVariable variable
     => MultiAnd (Predicate variable)
     -> Predicate variable
 toPredicate (MultiAnd predicates) =

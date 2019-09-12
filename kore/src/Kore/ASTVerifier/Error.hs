@@ -10,14 +10,14 @@ Portability : POSIX
 module Kore.ASTVerifier.Error where
 
 import Data.Text
-       ( Text )
+    ( Text
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
-import           Kore.Error
-import           Kore.Sort
-                 ( Sort, getSortId )
-import           Kore.Syntax.Id
-                 ( Id (getId), getIdForError )
+import Kore.Error
+import Kore.Sort
+import Kore.Unparser
 
 {-| 'VerifyError' is a tag for verification errors. -}
 newtype VerifyError = VerifyError ()
@@ -30,11 +30,32 @@ newtype VerifySuccess = VerifySuccess ()
 verifySuccess :: MonadError (Error VerifyError) m => m VerifySuccess
 verifySuccess = return (VerifySuccess ())
 
-noConstructorWithDomainValuesMessage :: Id -> Sort -> String
-noConstructorWithDomainValuesMessage symbol resultSort =
-    "Cannot define constructor '" ++ getIdForError symbol
-    ++ "' for sort with domain values '" ++ getIdForError (getSortId resultSort)
-    ++ "'."
+noConstructorWithDomainValues :: Id -> Sort -> String
+noConstructorWithDomainValues symbolId sort =
+    (show . Pretty.hsep)
+        [ "Cannot define constructor"
+        , Pretty.squotes (unparse symbolId)
+        , "for sort"
+        , Pretty.squotes (unparse sort) <> Pretty.colon
+        , "sort has domain values."
+        ]
+
+noConstructorInHookedSort :: Id -> Sort -> String
+noConstructorInHookedSort symbolId sort =
+    (show . Pretty.hsep)
+        [ "Cannot define constructor"
+        , Pretty.squotes (unparse symbolId)
+        , "for hooked sort"
+        , Pretty.squotes (unparse sort) <> Pretty.dot
+        ]
+
+noConstructorWithVariableSort :: Id -> String
+noConstructorWithVariableSort symbolId =
+    (show . Pretty.hsep)
+        [ "Cannot define constructor"
+        , Pretty.squotes (unparse symbolId)
+        , "with variable result sort."
+        ]
 
 sortNeedsDomainValueAttributeMessage :: Text
 sortNeedsDomainValueAttributeMessage =

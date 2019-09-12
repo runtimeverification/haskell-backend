@@ -4,6 +4,8 @@ License     : NCSA
 
 -}
 
+{-# LANGUAGE UndecidableInstances #-}
+
 module Kore.Step.Transition
     ( TransitionT (..)
     , runTransitionT
@@ -15,32 +17,41 @@ module Kore.Step.Transition
     , Seq
     ) where
 
-import           Control.Applicative
-import           Control.Monad.Except
-                 ( MonadError (..) )
+import Control.Applicative
+import Control.Monad.Except
+    ( MonadError (..)
+    )
 import qualified Control.Monad.Morph as Monad.Morph
-import           Control.Monad.Reader
+import Control.Monad.Reader
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Accum
+import Control.Monad.Trans.Accum
 import qualified Control.Monad.Trans.Accum as Accum
 import qualified Data.Foldable as Foldable
-import           Data.Sequence
-                 ( Seq )
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
-import           Data.Typeable
-                 ( Typeable )
+import Data.Typeable
+    ( Typeable
+    )
 
-import           Kore.Logger
-                 ( WithLog (..) )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify (..) )
-import           ListT
-                 ( ListT, mapListT )
+import Kore.Logger
+    ( WithLog (..)
+    )
+import Kore.Profiler.Data
+    ( MonadProfiler
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify (..)
+    )
+import ListT
+    ( ListT
+    , mapListT
+    )
 import qualified ListT
-import           SMT
-                 ( MonadSMT (..) )
+import SMT
+    ( MonadSMT (..)
+    )
 
 {- | @TransitionT@ represents a transition between program states.
 

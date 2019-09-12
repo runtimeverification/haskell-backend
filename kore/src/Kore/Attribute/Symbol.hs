@@ -40,6 +40,9 @@ module Kore.Attribute.Symbol
     , smthookAttribute
     , Smtlib (..)
     , smtlibAttribute
+    -- * Memoized functions
+    , Memo (..)
+    , memoAttribute
     -- * Derived attributes
     , isNonSimplifiable
     , isFunctional
@@ -48,13 +51,15 @@ module Kore.Attribute.Symbol
     , isInjective
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Lens as Lens
-import           Control.Monad
-                 ( (>=>) )
-import           Data.Default
-import           Data.Generics.Product
+import Control.Monad
+    ( (>=>)
+    )
+import Data.Default
+import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -64,11 +69,13 @@ import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import Kore.Attribute.Injective
 import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
+    ( ParseAttributes (..)
+    )
 import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol.Anywhere
+import Kore.Attribute.Symbol.Memo
 import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
@@ -96,6 +103,7 @@ data Symbol =
       -- ^ The builtin sort or symbol hooked to a sort or symbol
     , smtlib        :: !Smtlib
     , smthook       :: !Smthook
+    , memo          :: !Memo
     }
     deriving (Eq, Ord, GHC.Generic, Show)
 
@@ -118,6 +126,7 @@ instance ParseAttributes Symbol where
         >=> typed @Hook (parseAttribute attr)
         >=> typed @Smtlib (parseAttribute attr)
         >=> typed @Smthook (parseAttribute attr)
+        >=> typed @Memo (parseAttribute attr)
 
     toAttributes =
         mconcat . sequence
@@ -130,6 +139,7 @@ instance ParseAttributes Symbol where
             , toAttributes . hook
             , toAttributes . smtlib
             , toAttributes . smthook
+            , toAttributes . memo
             ]
 
 type StepperAttributes = Symbol
@@ -137,15 +147,16 @@ type StepperAttributes = Symbol
 defaultSymbolAttributes :: Symbol
 defaultSymbolAttributes =
     Symbol
-        { function       = def
-        , functional     = def
-        , constructor    = def
-        , injective      = def
-        , sortInjection  = def
-        , anywhere       = def
-        , hook           = def
-        , smtlib         = def
-        , smthook        = def
+        { function      = def
+        , functional    = def
+        , constructor   = def
+        , injective     = def
+        , sortInjection = def
+        , anywhere      = def
+        , hook          = def
+        , smtlib        = def
+        , smthook       = def
+        , memo          = def
         }
 
 -- | See also: 'defaultSymbolAttributes'

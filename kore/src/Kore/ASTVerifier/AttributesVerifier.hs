@@ -18,17 +18,16 @@ module Kore.ASTVerifier.AttributesVerifier
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Proxy
-                 ( Proxy )
+import Data.Proxy
+    ( Proxy
+    )
 
-import           Kore.ASTVerifier.Error
-import           Kore.Attribute.Hook
+import Kore.ASTVerifier.Error
+import Kore.Attribute.Hook
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( KoreIndexedModule )
-import           Kore.Syntax.Definition
-import           Kore.Syntax.Pattern
+import Kore.Error
+import Kore.Syntax.Definition
+import Kore.Syntax.Pattern
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}
@@ -77,16 +76,19 @@ verifyAttributePattern pat =
 
  -}
 verifySortHookAttribute
-    :: KoreIndexedModule declAtts axiomAtts
-    -> AttributesVerification declAtts axiomAtts
+    :: MonadError (Error VerifyError) error
+    => AttributesVerification declAtts axiomAtts
     -> Attributes
-    -> Either (Error VerifyError) Hook
-verifySortHookAttribute _indexedModule =
+    -> error Hook
+verifySortHookAttribute =
     \case
         DoNotVerifyAttributes ->
             \_ -> return emptyHook
-        VerifyAttributes _ _ ->
-            parseAttributes
+        VerifyAttributes _ _ -> \attrs -> do
+            hook <- parseAttributes attrs
+            case getHook hook of
+                Just _  -> return hook
+                Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -96,16 +98,20 @@ verifySortHookAttribute _indexedModule =
 
  -}
 verifySymbolHookAttribute
-    :: AttributesVerification declAtts axiomAtts
+    :: MonadError (Error VerifyError) error
+    => AttributesVerification declAtts axiomAtts
     -> Attributes
-    -> Either (Error VerifyError) Hook
+    -> error Hook
 verifySymbolHookAttribute =
     \case
         DoNotVerifyAttributes ->
             -- Do not attempt to parse, verify, or return the hook attribute.
             \_ -> return emptyHook
-        VerifyAttributes _ _ ->
-            parseAttributes
+        VerifyAttributes _ _ -> \attrs -> do
+            hook <- parseAttributes attrs
+            case getHook hook of
+                Just _  -> return hook
+                Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is not present.
 
@@ -113,16 +119,17 @@ verifySymbolHookAttribute =
 
  -}
 verifyNoHookAttribute
-    :: AttributesVerification declAtts axiomAtts
+    :: MonadError (Error VerifyError) error
+    => AttributesVerification declAtts axiomAtts
     -> Attributes
-    -> Either (Error VerifyError) ()
+    -> error ()
 verifyNoHookAttribute =
     \case
         DoNotVerifyAttributes ->
             -- Do not verify anything.
             \_ -> return ()
         VerifyAttributes _ _ -> \attributes -> do
-            Hook { getHook } <- castError (parseAttributes attributes)
+            Hook { getHook } <- parseAttributes attributes
             case getHook of
                 Nothing ->
                     -- The hook attribute is (correctly) absent.

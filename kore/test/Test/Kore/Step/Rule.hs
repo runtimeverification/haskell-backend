@@ -7,39 +7,46 @@ module Test.Kore.Step.Rule
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Default
+import Data.Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
-import           Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Null as Attribute
+import Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.Internal.TermLike hiding
-                 ( freeVariables )
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.Internal.TermLike hiding
+    ( freeVariables
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Rule hiding
-                 ( freeVariables )
+import Kore.Step.Rule hiding
+    ( freeVariables
+    )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified Kore.Verified as Verified
 
-import           Test.Kore
-                 ( testId )
-import           Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore
+    ( testId
+    )
+import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_axiomPatterns :: [TestTree]
@@ -330,8 +337,8 @@ extractIndexedModule
     :: Text
     -> Either
         (Error a)
-        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Null))
-    -> VerifiedModule Attribute.Symbol Attribute.Null
+        (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
+    -> VerifiedModule Attribute.Symbol Attribute.Axiom
 extractIndexedModule name eModules =
     case eModules of
         Left err -> error (printError err)

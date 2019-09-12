@@ -10,40 +10,48 @@ module Kore.Step.Remainder
     , ceilChildOfApplicationOrTop
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Data.Foldable as Foldable
 
-import           Kore.Internal.Conditional
-                 ( Conditional (Conditional) )
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify (..) )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify (..)
+    , SimplifierVariable
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
-import           Kore.Variables.Target
-                 ( Target )
+import Kore.Variables.Target
+    ( Target
+    )
 import qualified Kore.Variables.Target as Target
-import           Kore.Variables.UnifiedVariable
-                 ( foldMapVariable )
+import Kore.Variables.UnifiedVariable
+    ( foldMapVariable
+    )
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 
@@ -56,11 +64,7 @@ See also: 'remainder\''
 
  -}
 remainder
-    ::  ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => MultiOr (Predicate (Target variable))
     -> Syntax.Predicate variable
 remainder =
@@ -73,11 +77,7 @@ by any applied rule.
 
  -}
 remainder'
-    ::  ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => MultiOr (Predicate (Target variable))
     -> Syntax.Predicate (Target variable)
 remainder' results =
@@ -88,11 +88,7 @@ remainder' results =
 
 -- | Existentially-quantify target (axiom) variables in the 'Predicate'.
 existentiallyQuantifyTarget
-    ::  ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Syntax.Predicate (Target variable)
     -> Syntax.Predicate (Target variable)
 existentiallyQuantifyTarget predicate =
@@ -111,11 +107,7 @@ existentiallyQuantifyTarget predicate =
 
  -}
 mkNotMultiOr
-    ::  ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => MultiOr  (Syntax.Predicate variable)
     -> MultiAnd (Syntax.Predicate variable)
 mkNotMultiOr =
@@ -124,11 +116,7 @@ mkNotMultiOr =
     . Foldable.toList
 
 mkMultiAndPredicate
-    ::  ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => MultiAnd (Syntax.Predicate variable)
     ->           Syntax.Predicate variable
 mkMultiAndPredicate =
@@ -137,11 +125,7 @@ mkMultiAndPredicate =
 {- | Represent the unification solution as a conjunction of predicates.
  -}
 unificationConditions
-    ::  ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Predicate (Target variable)
     -- ^ Unification solution
     -> MultiAnd (Syntax.Predicate (Target variable))
@@ -153,11 +137,7 @@ unificationConditions Conditional { predicate, substitution } =
             substitution
 
 substitutionConditions
-    ::  ( Ord     variable
-        , Show    variable
-        , Unparse variable
-        , SortedVariable variable
-        )
+    :: InternalVariable variable
     => Substitution variable
     -> MultiAnd (Syntax.Predicate variable)
 substitutionConditions subst =
@@ -168,19 +148,15 @@ substitutionConditions subst =
 
 ceilChildOfApplicationOrTop
     :: forall variable m
-    .  ( FreshVariable variable
-       , SortedVariable variable
-       , Show variable
-       , Unparse variable
-       , MonadSimplify m
-       )
-    => TermLike variable
+    .  (SimplifierVariable variable, MonadSimplify m)
+    => Predicate variable
+    -> TermLike variable
     -> m (Predicate variable)
-ceilChildOfApplicationOrTop patt =
+ceilChildOfApplicationOrTop predicate patt =
     case patt of
         App_ _ children -> do
             ceil <-
-                traverse (Ceil.makeEvaluateTerm Predicate.topTODO) children
+                traverse (Ceil.makeEvaluateTerm predicate) children
                 >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
                     . MultiAnd.make
                     )

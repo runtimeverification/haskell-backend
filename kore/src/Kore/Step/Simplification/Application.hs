@@ -12,25 +12,32 @@ module Kore.Step.Simplification.Application
     , Application (..)
     ) where
 
+import Branch
+    ( BranchT
+    )
+import qualified Branch as Branch
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( fullCrossProduct, mergeAll )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+    ( fullCrossProduct
+    , mergeAll
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Step.Function.Evaluator
-                 ( evaluateApplication )
-import           Kore.Step.Simplification.Data as Simplifier
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+import Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
+import Kore.Step.Function.Evaluator
+    ( evaluateApplication
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.Substitution
+    ( mergePredicatesAndSubstitutions
+    )
 
 type ExpandedApplication variable =
     Conditional variable (Application Symbol (TermLike variable))
@@ -46,12 +53,7 @@ predicates ans substitutions, applying functions on the Application(terms),
 then merging everything into an Pattern.
 -}
 simplify
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
@@ -71,61 +73,46 @@ simplify predicate application = do
       = application
 
 makeAndEvaluateApplications
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
-    =>  Predicate variable
-    ->  Symbol
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => Predicate variable
+    -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateApplications predicate symbol children =
-    makeAndEvaluateSymbolApplications predicate symbol children
+makeAndEvaluateApplications =
+    makeAndEvaluateSymbolApplications
 
 makeAndEvaluateSymbolApplications
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications predicate symbol children = do
     expandedApplications <-
-        BranchT.gather $ makeExpandedApplication symbol children
-    orResults <- traverse (evaluateApplicationFunction predicate) expandedApplications
+        Branch.gather $ makeExpandedApplication symbol children
+    orResults <- traverse
+                    (evaluateApplicationFunction predicate)
+                    expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -- ^ The predicate from the configuration
     -> ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplicationFunction configurationPredicate Conditional { term, predicate, substitution } =
+evaluateApplicationFunction
+    configurationPredicate
+    Conditional { term, predicate, substitution }
+  =
     evaluateApplication
         configurationPredicate
         Conditional { term = (), predicate, substitution }
         term
 
 makeExpandedApplication
-    ::  ( Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Symbol
     -> [Pattern variable]
     -> BranchT simplifier (ExpandedApplication variable)

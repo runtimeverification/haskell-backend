@@ -19,44 +19,53 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
-                 ( isTotal )
+    ( isTotal
+    )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
-                 ( make )
+    ( make
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Logger
-                 ( LogMessage, WithLog )
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeTruePredicate )
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Step.Function.Evaluator as Axiom
-                 ( evaluatePattern )
+    ( evaluatePattern
+    )
 import qualified Kore.Step.Simplification.AndPredicates as And
-import           Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
-import           Kore.TopBottom
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.TopBottom
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 
@@ -67,16 +76,15 @@ A ceil(or) is equal to or(ceil). We also take into account that
 * ceil transforms terms into predicates
 -}
 simplify
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate.Predicate variable
     -> Ceil Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify predicate Ceil { ceilChild = child } = simplifyEvaluated predicate child
+simplify
+    predicate
+    Ceil { ceilChild = child }
+  =
+    simplifyEvaluated predicate child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
@@ -95,10 +103,7 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -112,12 +117,7 @@ simplifyEvaluated predicate child =
 for details.
 -}
 makeEvaluate
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -130,11 +130,7 @@ makeEvaluate predicate child
   | otherwise              = makeEvaluateNonBoolCeil predicate child
 
 makeEvaluateNonBoolCeil
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -162,17 +158,17 @@ makeEvaluateNonBoolCeil predicate patt@Conditional {term}
 -- signature.
 makeEvaluateTerm
     ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
     => Predicate.Predicate variable
     -> TermLike variable
     -> simplifier (OrPredicate variable)
-makeEvaluateTerm configurationPredicate term@(Recursive.project -> _ :< projected) =
+makeEvaluateTerm
+    configurationPredicate
+    term@(Recursive.project -> _ :< projected)
+  =
     makeEvaluateTermWorker
   where
     makeEvaluateTermWorker
@@ -185,11 +181,15 @@ makeEvaluateTerm configurationPredicate term@(Recursive.project -> _ :< projecte
       , let headAttributes = symbolAttributes patternHead
       , Attribute.Symbol.isTotal headAttributes = do
             let Application { applicationChildren = children } = app
-            simplifiedChildren <- mapM (makeEvaluateTerm configurationPredicate) children
+            simplifiedChildren <- mapM
+                                    (makeEvaluateTerm configurationPredicate)
+                                    children
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 
-      | BuiltinF child <- projected = makeEvaluateBuiltin configurationPredicate child
+      | BuiltinF child <- projected = makeEvaluateBuiltin
+                                        configurationPredicate
+                                        child
 
       | otherwise = do
             substitutionSimplifier <- Simplifier.askSimplifierPredicate
@@ -229,10 +229,7 @@ makeEvaluateTerm configurationPredicate term@(Recursive.project -> _ :< projecte
 -}
 makeEvaluateBuiltin
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Unparse variable
-        , Show variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -281,13 +278,9 @@ makeEvaluateBuiltin _ (Domain.BuiltinString _) = return OrPredicate.top
 
 makeEvaluateNormalizedAc
     :: forall normalized variable simplifier
-    .   ( FreshVariable variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
         , Traversable (Domain.Value normalized)
-        , Unparse variable
         , Domain.AcWrapper normalized
         )
     =>  Predicate.Predicate variable
@@ -304,7 +297,9 @@ makeEvaluateNormalizedAc
         , opaque = []
         }
   = Just $ do
-    variableKeyConditions <- mapM (makeEvaluateTerm configurationPredicate) variableKeys
+    variableKeyConditions <- mapM
+                                (makeEvaluateTerm configurationPredicate)
+                                variableKeys
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
 
@@ -339,7 +334,10 @@ makeEvaluateNormalizedAc
     evaluateDistinct (variableTerm : variableTerms) concreteTerms = do
         equalities <-
             mapM
-                (flip (Equals.makeEvaluateTermsToPredicate variableTerm) configurationPredicate)
+                (flip
+                    (Equals.makeEvaluateTermsToPredicate variableTerm)
+                    configurationPredicate
+                )
                 -- TODO(virgil): consider eliminating these repeated
                 -- concatenations.
                 (variableTerms ++ concreteTerms)
@@ -387,5 +385,7 @@ makeEvaluateNormalizedAc
         , concreteElements
         , opaque = [opaqueAc]
         }
-  | Map.null concreteElements = Just $ makeEvaluateTerm configurationPredicate opaqueAc
+  | Map.null concreteElements = Just $ makeEvaluateTerm
+                                        configurationPredicate
+                                        opaqueAc
 makeEvaluateNormalizedAc _  _ = Nothing

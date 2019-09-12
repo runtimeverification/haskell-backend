@@ -6,46 +6,63 @@ module Test.Kore.Step.Simplification.Integration
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Data.Default
-                 ( Default (..) )
+import Data.Default
+    ( Default (..)
+    )
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate, makeNotPredicate,
-                 makeTruePredicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    , makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( builtinEvaluation
+    , simplifierWithFallback
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Axiom.Registry
-                 ( axiomPatternsToEvaluators )
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
+    ( AxiomIdentifier (..)
+    )
+import Kore.Step.Axiom.Registry
+    ( axiomPatternsToEvaluators
+    )
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
+    , RulePattern (RulePattern)
+    )
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    )
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+    ( simplify
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =

@@ -60,7 +60,9 @@ import Kore.Syntax.Nu
 import Kore.Syntax.Or
 import Kore.Syntax.Pattern
 import Kore.Syntax.PatternF
-       ( Const (..), PatternF (..) )
+    ( Const (..)
+    , PatternF (..)
+    )
 import Kore.Syntax.Rewrites
 import Kore.Syntax.SetVariable
 import Kore.Syntax.StringLiteral
