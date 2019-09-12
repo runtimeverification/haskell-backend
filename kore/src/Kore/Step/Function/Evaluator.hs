@@ -79,15 +79,18 @@ evaluateApplication
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication configurationPredicate childrenPredicate application = do
+evaluateApplication
+    configurationPredicate
+    childrenPredicate
+    (evaluateSortInjection -> application)
+  = do
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
-        afterInj = evaluateSortInjection application
-        Application { applicationSymbolOrAlias = appHead } = afterInj
-        Symbol { symbolConstructor = symbolId } = appHead
-        termLike = synthesize (ApplySymbolF afterInj)
+        Application { applicationSymbolOrAlias = symbol } = application
+        Symbol { symbolConstructor = symbolId } = symbol
+        termLike = synthesize (ApplySymbolF application)
 
         maybeEvaluatedPattSimplifier =
             maybeEvaluatePattern
@@ -110,7 +113,7 @@ evaluateApplication configurationPredicate childrenPredicate application = do
         unchanged = OrPattern.fromPattern unchangedPatt
 
         getSymbolHook = getHook . Attribute.hook . symbolAttributes
-        getAppHookString = Text.unpack <$> getSymbolHook appHead
+        getAppHookString = Text.unpack <$> getSymbolHook symbol
 
     case maybeEvaluatedPattSimplifier of
         Nothing
