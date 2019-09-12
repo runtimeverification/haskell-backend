@@ -1002,6 +1002,41 @@ test_andTermsSimplification =
                 left = applyAlias' alias $ mkTop Mock.testSort
             actual <- simplifyUnify left $ Mock.injective10 gOfA
             assertEqualWithExplanation "" ([expect], Just [expect]) actual
+        , testGroup "unhandled cases with aliases"
+            [ testCase "top level" $ do
+                let
+                    expect =
+                        (   [ Conditional
+                                { term = mkAnd left plain1OfA
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                        , Nothing
+                        )
+                    x = mkVariable "x"
+                    alias = mkAlias' "alias1" x $ plain0OfA
+                    left = applyAlias' alias $ mkTop Mock.testSort
+                actual <- simplifyUnify left plain1OfA
+                assertEqualWithExplanation "" expect actual
+
+            , testCase "one level deep" $ do
+                let
+                    expect =
+                        (   [ Conditional
+                                { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                        , Nothing
+                        )
+                    x = mkVariable "x"
+                    alias = mkAlias' "alias1" x $ Mock.constr10 plain0OfA
+                    left = applyAlias' alias $ mkTop Mock.testSort
+                actual <- simplifyUnify left $ Mock.constr10 plain1OfA
+                assertEqualWithExplanation "" expect actual
+            ]
         ]
     ]
 
