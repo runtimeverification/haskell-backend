@@ -78,7 +78,6 @@ import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     , rulePattern
     )
-import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
@@ -94,7 +93,6 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
 import Test.Kore
 import qualified Test.Kore.Builtin.Bool as Bool
@@ -109,6 +107,7 @@ import Test.Kore.Step.Axiom.Matcher
     , matches
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_functionIntegration :: [TestTree]
@@ -583,8 +582,7 @@ test_functionIntegration =
         -> TermLike Variable
         -> IO (Pattern Variable)
     evaluate functionIdToEvaluator patt =
-        SMT.runSMT SMT.defaultConfig emptyLogger
-        $ evalSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
+        runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
         $ TermLike.simplify patt Predicate.top
 
 test_Nat :: [TestTree]
@@ -647,8 +645,7 @@ equals comment term results =
 
 simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier testEnv
+    runSimplifier testEnv
     . (TermLike.simplifyToOr Predicate.top)
 
 evaluateWith
@@ -656,8 +653,7 @@ evaluateWith
     -> TermLike Variable
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier testEnv
+    runSimplifier testEnv
     $ runBuiltinAndAxiomSimplifier simplifier Predicate.top patt
 
 -- Applied tests: check that one or more rules applies or not

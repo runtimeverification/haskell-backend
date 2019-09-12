@@ -24,9 +24,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Logger.Output
-    ( emptyLogger
-    )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
@@ -42,15 +39,11 @@ import Kore.Step.Rule
     , RulePattern (..)
     , rulePattern
     )
-import Kore.Step.Simplification.Data
-    ( Env
-    , evalSimplifier
-    )
 import Kore.Step.Simplification.Simplify
 import Kore.Unparser
-import qualified SMT
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 
 test_evaluateAxioms :: [TestTree]
 test_evaluateAxioms =
@@ -215,7 +208,5 @@ evaluateAxioms
     :: [EqualityRule Variable]
     -> TermLike Variable
     -> IO (AttemptedAxiom Variable)
-evaluateAxioms axioms termLike = do
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier testEnv
-    $ Kore.evaluateAxioms axioms termLike
+evaluateAxioms axioms termLike =
+    runSimplifier testEnv $ Kore.evaluateAxioms axioms termLike

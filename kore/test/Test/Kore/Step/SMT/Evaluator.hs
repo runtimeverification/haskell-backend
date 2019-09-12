@@ -29,7 +29,6 @@ import Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
-import Kore.Step.Simplification.Data
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Syntax.Variable
     ( Variable
@@ -38,7 +37,7 @@ import Kore.Syntax.Variable
 import Test.Kore.Comparators ()
 import Test.Kore.Predicate.Predicate ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.SMT
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 contradictoryPredicate :: Syntax.Predicate Variable
@@ -152,11 +151,10 @@ evaluateMultiOr
     :: MultiOr (Conditional Variable (TermLike Variable))
     -> IO (MultiOr (Conditional Variable (TermLike Variable)))
 evaluateMultiOr =
-    Test.SMT.runSMT . evalSimplifier Mock.env . SMT.Evaluator.filterMultiOr
+    runSimplifier Mock.env . SMT.Evaluator.filterMultiOr
 
 evaluate
     :: SMT.Evaluator.Evaluable thing
     => thing
     -> IO (Maybe Bool)
-evaluate = Test.SMT.runSMT . evalSimplifier Mock.env . SMT.Evaluator.evaluate
-
+evaluate = runSimplifier Mock.env . SMT.Evaluator.evaluate

@@ -11,7 +11,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
-import Branch
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.OrPredicate
@@ -34,10 +33,6 @@ import Kore.Step.Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    , evalSimplifier
-    )
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
     ( create
     )
@@ -46,11 +41,10 @@ import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Extensions
 
 test_predicateSimplification :: [TestTree]
@@ -284,12 +278,10 @@ runSimplifier
     -> IO (OrPredicate Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier env
-    $ gather
+    $ Test.runSimplifierBranch env
     $ simplifier predicate
   where
-    env = Mock.env { simplifierAxioms = patternSimplifierMap }
+    env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
     PredicateSimplifier simplifier = PSSimplifier.create
 
 simplificationEvaluator

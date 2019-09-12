@@ -9,14 +9,13 @@ import Kore.Step.Rule
     ( RulePattern
     , rulePattern
     )
-import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.Simplification.Rule as Kore
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Test.Int
-import qualified Test.SMT
+import Test.Kore.Step.Simplification
 
 test_simplifyRulePattern :: [TestTree]
 test_simplifyRulePattern =
@@ -63,7 +62,4 @@ notSimplifies testName origin =
     withSimplified testName (assertEqual "" origin) origin
 
 simplifyRulePattern :: RulePattern Variable -> IO (RulePattern Variable)
-simplifyRulePattern =
-    Test.SMT.runSMT
-    . Kore.evalSimplifier Builtin.testEnv
-    . Kore.simplifyRulePattern
+simplifyRulePattern = runSimplifier Builtin.testEnv . Kore.simplifyRulePattern

@@ -36,7 +36,7 @@ import qualified Kore.Predicate.Predicate as Syntax
     )
 import Kore.Step.Simplification.Data
     ( Env (..)
-    , evalSimplifier
+    , runSimplifier
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
@@ -183,7 +183,7 @@ andSimplifySuccess term1 term2 results = do
     let expect = map unificationResult results
     Right subst' <-
         runSMT
-        $ evalSimplifier testEnv
+        $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqualWithExplanation message expect subst'
@@ -207,7 +207,7 @@ andSimplifyFailure term1 term2 err = do
         expect = Left (UnificationError err)
     actual <-
         runSMT
-        $ evalSimplifier testEnv
+        $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
@@ -224,7 +224,7 @@ andSimplifyException message term1 term2 exceptionMessage =
     where
         test = do
             assignment <-
-                runSMT $ evalSimplifier testEnv
+                runSMT $ runSimplifier testEnv
                 $ Monad.Unify.runUnifierT
                 $ simplifyAnds (unificationProblem term1 term2 :| [])
             _ <- evaluate assignment
@@ -253,7 +253,7 @@ unificationProcedureSuccessWithSimplifiers
         let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
         Right results <-
             runSMT
-            $ evalSimplifier mockEnv
+            $ runSimplifier mockEnv
             $ Monad.Unify.runUnifierT
             $ unificationProcedure term1 term2
         let
@@ -717,7 +717,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm -> IO UnificationTerm
 simplifyPattern (UnificationTerm term) = do
-    Conditional { term = term' } <- runSMT $ evalSimplifier testEnv simplifier
+    Conditional { term = term' } <- runSMT $ runSimplifier testEnv simplifier
     return $ UnificationTerm term'
   where
     simplifier = do
