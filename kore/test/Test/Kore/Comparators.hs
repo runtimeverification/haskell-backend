@@ -1632,12 +1632,13 @@ instance EqualWithExplanation Attribute.Axiom where
 instance StructEqualWithExplanation Attribute.Axiom where
     structConstructorName _ = "Axiom"
     structFieldsWithNames
-        expect@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
-        actual@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+        expect@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+        actual@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
       =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "heatCool = "       ) Attribute.heatCool
             , Function.on (EqWrap "productionID = "   ) Attribute.productionID
+            , Function.on (EqWrap "priority = "       ) Attribute.priority
             , Function.on (EqWrap "assoc = "          ) Attribute.assoc
             , Function.on (EqWrap "comm = "           ) Attribute.comm
             , Function.on (EqWrap "unit = "           ) Attribute.unit
@@ -1676,6 +1677,16 @@ instance WrapperEqualWithExplanation Attribute.ProductionID where
     wrapperConstructorName _ = "ProductionID"
     wrapperField =
         Function.on (EqWrap "getProductionID = ") Attribute.getProductionID
+
+instance EqualWithExplanation Attribute.Priority where
+    compareWithExplanation a@(Attribute.Priority _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Priority where
+    wrapperConstructorName _ = "Priority"
+    wrapperField =
+        Function.on (EqWrap "getPriority = ") Attribute.getPriority
 
 instance EqualWithExplanation Attribute.Assoc where
     compareWithExplanation a@(Attribute.Assoc _) =
