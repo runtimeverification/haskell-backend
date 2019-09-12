@@ -374,7 +374,7 @@ runVerification stepLimit axioms claims =
     $ evalSimplifier mockEnv
     $ runExceptT
     $ OnePath.verify
-        (OnePath.defaultStrategy claims axioms)
+        (OnePath.defaultProofStrategy OnePathStrategy claims axioms)
         (map applyStepLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env
