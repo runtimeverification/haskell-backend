@@ -48,7 +48,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
-                 ( AllPathRule, OnePathRule, RewriteRule (..),
+                 ( AllPathRule (..), OnePathRule (..), RewriteRule (..),
                  RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
@@ -111,6 +111,11 @@ data Prim rule
 -- rule application function called
 class Goal goal where
     data Rule goal
+
+    proofStrategy
+        :: [goal]
+        -> [Rule goal]
+        -> [Strategy (Prim (Rule goal))]
 
     -- | Remove the destination of the goal.
     removeDestination
@@ -294,6 +299,12 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
         Rule { unRule :: RewriteRule variable }
         deriving (GHC.Generic, Show, Unparse)
 
+    proofStrategy goals rules =
+        makeProofStrategy OnePathStrategy coinductiveRewrites rewrites
+      where
+        coinductiveRewrites = fmap (Rule . RewriteRule . getOnePathRule) goals
+        rewrites = rules
+
 instance SOP.Generic (Rule (OnePathRule variable))
 
 instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
@@ -304,6 +315,12 @@ instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
     newtype Rule (AllPathRule variable) =
         ARule { unRule :: RewriteRule variable }
         deriving (GHC.Generic, Show, Unparse)
+
+    proofStrategy goals rules =
+        makeProofStrategy AllPathStrategy coinductiveRewrites rewrites
+      where
+        coinductiveRewrites = fmap (ARule . RewriteRule . getAllPathRule) goals
+        rewrites = rules
 
 instance SOP.Generic (Rule (AllPathRule variable))
 
