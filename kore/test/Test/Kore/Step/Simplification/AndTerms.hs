@@ -989,6 +989,19 @@ test_andTermsSimplification =
                 alias2App = applyAlias' alias2 $ mkTop Mock.testSort
             actual <- simplifyUnify alias2App mkTop_
             assertExpectTop actual
+        , testCase "alias1() vs injHead" $ do
+            let
+                expect =
+                    Conditional
+                        { term = Mock.injective10 fOfA
+                        , predicate = makeEqualsPredicate fOfA gOfA
+                        , substitution = mempty
+                        }
+                x = mkVariable "x"
+                alias = mkAlias' "alias1" x $ Mock.injective10 fOfA
+                left = applyAlias' alias $ mkTop Mock.testSort
+            actual <- simplifyUnify left $ Mock.injective10 gOfA
+            assertEqualWithExplanation "" ([expect], Just [expect]) actual
         ]
     ]
 
