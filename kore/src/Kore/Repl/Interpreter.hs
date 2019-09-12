@@ -842,7 +842,8 @@ tryAxiomClaimWorker mode ref = do
                     ProofStateTransformer
                         { provenValue        = putStrLn' "Cannot unify bottom"
                         , goalTransformer    = runUnifier' first . term
-                        , goalRemTransformer = runUnifier' first . term
+                        , goalRemainderTransformer = runUnifier' first . term
+                        , goalRewrittenTransformer = runUnifier' first . term
                         }
                     second
 
@@ -1131,9 +1132,11 @@ unparseStrategy
 unparseStrategy omitList =
     proofState ProofStateTransformer
         { goalTransformer = makeKoreReplOutput . unparseToString . fmap hide
-        , goalRemTransformer = \pat ->
+        , goalRemainderTransformer = \pat ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+        , goalRewrittenTransformer =
+            makeKoreReplOutput . unparseToString . fmap hide
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where

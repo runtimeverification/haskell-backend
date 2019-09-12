@@ -1937,13 +1937,24 @@ instance
     (EqualWithExplanation goal, Show goal)
     => SumEqualWithExplanation (ProofState goal)
   where
-    sumConstructorPair Proven          Proven          =
+    sumConstructorPair Proven                 Proven          =
         SumConstructorSameNoArguments
-    sumConstructorPair (Goal goal1)    (Goal goal2)    =
+    sumConstructorPair expect@Proven          actual          =
+        SumConstructorDifferent (show expect) (show actual)
+
+    sumConstructorPair (Goal goal1)           (Goal goal2)    =
         SumConstructorSameWithArguments (EqWrap "Goal" goal1 goal2)
-    sumConstructorPair (GoalRem goal1) (GoalRem goal2) =
-        SumConstructorSameWithArguments (EqWrap "GoalRem" goal1 goal2)
-    sumConstructorPair expect           actual           =
+    sumConstructorPair expect@(Goal _)        actual          =
+        SumConstructorDifferent (show expect) (show actual)
+
+    sumConstructorPair (GoalRemainder goal1)        (GoalRemainder goal2) =
+        SumConstructorSameWithArguments (EqWrap "GoalRemainder" goal1 goal2)
+    sumConstructorPair expect@(GoalRemainder _)     actual                =
+        SumConstructorDifferent (show expect) (show actual)
+
+    sumConstructorPair (GoalRewritten goal1)        (GoalRewritten goal2) =
+        SumConstructorSameWithArguments (EqWrap "GoalRewritten" goal1 goal2)
+    sumConstructorPair expect@(GoalRewritten _)     actual                =
         SumConstructorDifferent (show expect) (show actual)
 
 -- SMT.AST

@@ -57,8 +57,10 @@ proven = Foldable.null . unprovenNodes
 data Prim rule
     = CheckProven
     -- ^ End execution on this branch if the state is 'Proven'.
-    | CheckGoalRem
-    -- ^ End execution on this branch if the state is 'GoalRem'.
+    | CheckGoalRemainder
+    -- ^ End execution on this branch if the state is 'GoalRemainder'.
+    | ResetGoal
+    -- ^ Mark all goals rewritten previously as new goals.
     | Simplify
     | RemoveDestination
     | TriviallyValid
@@ -106,25 +108,39 @@ transitionRule
 transitionRule = transitionRuleWorker
   where
     transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRem (GoalRem _) = empty
+    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
+
+    transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
     transitionRuleWorker Simplify (Goal g) =
         Goal <$> simplify g
-    transitionRuleWorker Simplify (GoalRem g) =
-        GoalRem <$> simplify g
+    transitionRuleWorker Simplify (GoalRemainder g) =
+        GoalRemainder <$> simplify g
 
     transitionRuleWorker RemoveDestination (Goal g) =
-        GoalRem <$> removeDestination g
+        Goal <$> removeDestination g
+    transitionRuleWorker RemoveDestination (GoalRemainder g) =
+        GoalRemainder <$> removeDestination g
 
     transitionRuleWorker TriviallyValid (Goal g)
       | isTriviallyValid g = return Proven
-    transitionRuleWorker TriviallyValid (GoalRem g)
+    transitionRuleWorker TriviallyValid (GoalRemainder g)
+      | isTriviallyValid g = return Proven
+    transitionRuleWorker TriviallyValid (GoalRewritten g)
       | isTriviallyValid g = return Proven
 
-    transitionRuleWorker (DerivePar rules) (GoalRem g) =
+    transitionRuleWorker (DerivePar rules) (Goal g) =
+        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
+        derivePar rules g
+    transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
+        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         derivePar rules g
 
-    transitionRuleWorker (DeriveSeq rules) (GoalRem g) =
+    transitionRuleWorker (DeriveSeq rules) (Goal g) =
+        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
+        deriveSeq rules g
+    transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
+        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         deriveSeq rules g
 
     transitionRuleWorker _ state = return state
@@ -141,7 +157,8 @@ allPathStrategy claims axioms =
     firstStep =
         (Strategy.sequence . map Strategy.apply)
             [ CheckProven
-            , CheckGoalRem
+            , CheckGoalRemainder
+            , ResetGoal
             , RemoveDestination
             , TriviallyValid
             , DerivePar axioms
@@ -150,10 +167,13 @@ allPathStrategy claims axioms =
     nextStep =
         (Strategy.sequence . map Strategy.apply)
             [ CheckProven
-            , CheckGoalRem
+            , CheckGoalRemainder
+            , ResetGoal
             , RemoveDestination
             , TriviallyValid
             , DeriveSeq claims
+            , RemoveDestination
+            , Simplify
             , DerivePar axioms
             , TriviallyValid
             ]
@@ -162,13 +182,15 @@ onePathFirstStep :: [rule] -> Strategy (Prim rule)
 onePathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
-        , CheckGoalRem
+        , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
+        , RemoveDestination
+        , ResetGoal
         , Simplify
         , TriviallyValid
         ]
@@ -177,14 +199,15 @@ onePathFollowupStep :: [rule] -> [rule] -> Strategy (Prim rule)
 onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
-        , CheckGoalRem
-        , Simplify
+        , CheckGoalRemainder
         , TriviallyValid
+        , DeriveSeq claims
         , RemoveDestination
         , Simplify
         , TriviallyValid
-        , DeriveSeq claims
         , DeriveSeq axioms
+        , RemoveDestination
+        , ResetGoal
         , Simplify
         , TriviallyValid
         ]

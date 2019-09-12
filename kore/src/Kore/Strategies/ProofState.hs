@@ -18,8 +18,10 @@ import GHC.Generics as GHC
 data ProofState goal
     = Goal goal
     -- ^ The indicated goal is being proven.
-    | GoalRem goal
+    | GoalRemainder goal
     -- ^ The indicated goal remains after rewriting.
+    | GoalRewritten goal
+    -- ^ We already rewrote the goal this step.
     | Proven
     -- ^ The parent goal was proven.
     deriving (Eq, Show, Ord, Functor, Generic)
@@ -33,17 +35,19 @@ Returns 'Nothing' if there is no remaining unproven goal.
  -}
 extractUnproven :: ProofState goal -> Maybe goal
 extractUnproven (Goal t)    = Just t
-extractUnproven (GoalRem t) = Just t
+extractUnproven (GoalRewritten t) = Just t
+extractUnproven (GoalRemainder t) = Just t
 extractUnproven Proven      = Nothing
 
 extractGoalRem :: ProofState goal -> Maybe goal
-extractGoalRem (GoalRem t) = Just t
+extractGoalRem (GoalRemainder t) = Just t
 extractGoalRem _           = Nothing
 
 data ProofStateTransformer goal a =
     ProofStateTransformer
         { goalTransformer :: goal -> a
-        , goalRemTransformer :: goal -> a
+        , goalRemainderTransformer :: goal -> a
+        , goalRewrittenTransformer :: goal -> a
         , provenValue :: a
         }
 
@@ -55,9 +59,14 @@ proofState
     -> a
 proofState
     ProofStateTransformer
-        {goalTransformer, goalRemTransformer, provenValue}
+        { goalTransformer
+        , goalRemainderTransformer
+        , goalRewrittenTransformer
+        , provenValue
+        }
   =
     \case
         Goal goal -> goalTransformer goal
-        GoalRem goal -> goalRemTransformer goal
+        GoalRemainder goal -> goalRemainderTransformer goal
+        GoalRewritten goal -> goalRewrittenTransformer goal
         Proven -> provenValue
