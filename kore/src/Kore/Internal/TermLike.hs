@@ -161,6 +161,9 @@ import           Control.Comonad.Trans.Cofree
 import qualified Control.Comonad.Trans.Env as Env
 import           Control.DeepSeq
                  ( NFData (..) )
+import qualified Control.Lens as Lens
+import           Control.Lens.Combinators
+                 ( coerced )
 import           Control.Monad.Reader
                  ( Reader )
 import qualified Control.Monad.Reader as Reader
@@ -176,6 +179,7 @@ import           Data.Functor.Foldable
 import qualified Data.Functor.Foldable as Recursive
 import           Data.Functor.Identity
                  ( Identity (..) )
+import           Data.Generics.Product
 import           Data.Hashable
 import           Data.Map.Strict
                  ( Map )
@@ -194,6 +198,7 @@ import qualified GHC.Stack as GHC
 
 import           Generically
 import qualified Kore.Attribute.Pattern as Attribute
+import           Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import           Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
@@ -1022,6 +1027,24 @@ getRigidSort pattern' =
           | sort == predicateSort -> Nothing
           | otherwise -> Just sort
 
+updateCallStack
+    :: forall variable
+    .  GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+updateCallStack = Lens.set created callstack
+  where
+    created = coerced . _extract . field @"created"
+    callstack = Created . Just . GHC.popCallStack $ GHC.callStack
+
+    _extract
+        :: Functor f
+        => (a -> f a)
+        -> Cofree g a
+        -> f (Cofree g a)
+    _extract f (CofreeT (Identity (a :< as)))
+        = CofreeT . Identity . (:< as) <$> f a
+
 {- | Construct an 'And' pattern.
  -}
 mkAnd
@@ -1033,7 +1056,7 @@ mkAnd
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkAnd = makeSortsAgree mkAndWorker
+mkAnd t1 = updateCallStack . makeSortsAgree mkAndWorker t1
   where
     mkAndWorker andFirst andSecond andSort =
         synthesize (AndF And { andSort, andFirst, andSecond })
@@ -1086,7 +1109,7 @@ mkApplyAlias
     -- ^ Application arguments
     -> TermLike variable
 mkApplyAlias alias children =
-    synthesize (ApplyAliasF application)
+    updateCallStack $ synthesize (ApplyAliasF application)
   where
     application =
         Application
@@ -1113,7 +1136,7 @@ mkApplySymbol
     -- ^ Application arguments
     -> TermLike variable
 mkApplySymbol symbol children =
-    synthesize (ApplySymbolF application)
+    updateCallStack $ synthesize (ApplySymbolF application)
   where
     application =
         Application
@@ -1140,7 +1163,7 @@ applyAlias
     -- ^ 'Application' arguments
     -> TermLike variable
 applyAlias sentence params children =
-    mkApplyAlias internal children'
+    updateCallStack $ mkApplyAlias internal children'
   where
     SentenceAlias { sentenceAliasAlias = external } = sentence
     Syntax.Alias { aliasConstructor } = external
@@ -1252,7 +1275,7 @@ See also: 'mkBottom_'
 
  -}
 mkBottom :: (Ord variable, SortedVariable variable) => Sort -> TermLike variable
-mkBottom bottomSort = synthesize (BottomF Bottom { bottomSort })
+mkBottom bottomSort = updateCallStack $ synthesize (BottomF Bottom { bottomSort })
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
 
@@ -1276,7 +1299,7 @@ mkCeil
     -> TermLike variable
     -> TermLike variable
 mkCeil ceilResultSort ceilChild =
-    synthesize (CeilF Ceil { ceilOperandSort, ceilResultSort, ceilChild })
+    updateCallStack $ synthesize (CeilF Ceil { ceilOperandSort, ceilResultSort, ceilChild })
   where
     ceilOperandSort = termLikeSort ceilChild
 
@@ -1300,7 +1323,7 @@ mkBuiltin
     :: (Ord variable, SortedVariable variable)
     => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltin = synthesize . BuiltinF
+mkBuiltin = updateCallStack . synthesize . BuiltinF
 
 {- | Construct a builtin list pattern.
  -}
@@ -1308,7 +1331,7 @@ mkBuiltinList
     :: (Ord variable, SortedVariable variable)
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
-mkBuiltinList = synthesize . BuiltinF . Domain.BuiltinList
+mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
 
 {- | Construct a builtin map pattern.
  -}
@@ -1316,7 +1339,7 @@ mkBuiltinMap
     :: (Ord variable, SortedVariable variable)
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltinMap = synthesize . BuiltinF . Domain.BuiltinMap
+mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
 
 {- | Construct a builtin set pattern.
  -}
@@ -1324,7 +1347,7 @@ mkBuiltinSet
     :: (Ord variable, SortedVariable variable)
     => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
-mkBuiltinSet = synthesize . BuiltinF . Domain.BuiltinSet
+mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
 
 {- | Construct a 'DomainValue' pattern.
  -}
@@ -1332,7 +1355,7 @@ mkDomainValue
     :: (Ord variable, SortedVariable variable)
     => DomainValue Sort (TermLike variable)
     -> TermLike variable
-mkDomainValue = synthesize . DomainValueF
+mkDomainValue = updateCallStack . synthesize . DomainValueF
 
 {- | Construct an 'Equals' pattern in the given sort.
 
@@ -1346,8 +1369,8 @@ mkEquals
     -> TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkEquals equalsResultSort =
-    makeSortsAgree mkEqualsWorker
+mkEquals equalsResultSort t1 =
+    updateCallStack . makeSortsAgree mkEqualsWorker t1
   where
     mkEqualsWorker equalsFirst equalsSecond equalsOperandSort =
         synthesize (EqualsF equals)
@@ -1387,7 +1410,7 @@ mkExists
     -> TermLike variable
     -> TermLike variable
 mkExists existsVariable existsChild =
-    synthesize (ExistsF Exists { existsSort, existsVariable, existsChild })
+    updateCallStack $ synthesize (ExistsF Exists { existsSort, existsVariable, existsChild })
   where
     existsSort = termLikeSort existsChild
 
@@ -1412,7 +1435,7 @@ mkFloor
     -> TermLike variable
     -> TermLike variable
 mkFloor floorResultSort floorChild =
-    synthesize (FloorF Floor { floorOperandSort, floorResultSort, floorChild })
+    updateCallStack $ synthesize (FloorF Floor { floorOperandSort, floorResultSort, floorChild })
   where
     floorOperandSort = termLikeSort floorChild
 
@@ -1437,7 +1460,7 @@ mkForall
     -> TermLike variable
     -> TermLike variable
 mkForall forallVariable forallChild =
-    synthesize (ForallF Forall { forallSort, forallVariable, forallChild })
+    updateCallStack $ synthesize (ForallF Forall { forallSort, forallVariable, forallChild })
   where
     forallSort = termLikeSort forallChild
 
@@ -1459,7 +1482,7 @@ mkIff
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkIff = makeSortsAgree mkIffWorker
+mkIff t1 = updateCallStack . makeSortsAgree mkIffWorker t1
   where
     mkIffWorker iffFirst iffSecond iffSort =
         synthesize (IffF Iff { iffSort, iffFirst, iffSecond })
@@ -1472,7 +1495,7 @@ mkImplies
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkImplies = makeSortsAgree mkImpliesWorker
+mkImplies t1 = updateCallStack . makeSortsAgree mkImpliesWorker t1
   where
     mkImpliesWorker impliesFirst impliesSecond impliesSort =
         synthesize (ImpliesF implies')
@@ -1491,7 +1514,7 @@ mkIn
     -> TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkIn inResultSort = makeSortsAgree mkInWorker
+mkIn inResultSort t1 = updateCallStack . makeSortsAgree mkInWorker t1
   where
     mkInWorker inContainedChild inContainingChild inOperandSort =
         synthesize (InF in')
@@ -1529,7 +1552,7 @@ mkMu
     => SetVariable variable
     -> TermLike variable
     -> TermLike variable
-mkMu muVar = makeSortsAgree mkMuWorker (mkSetVar muVar)
+mkMu muVar = updateCallStack . makeSortsAgree mkMuWorker (mkSetVar muVar)
   where
     mkMuWorker (SetVar_ muVar') muChild _ =
         synthesize (MuF Mu { muVariable = muVar', muChild })
@@ -1542,7 +1565,7 @@ mkNext
     => TermLike variable
     -> TermLike variable
 mkNext nextChild =
-    synthesize (NextF Next { nextSort, nextChild })
+    updateCallStack $ synthesize (NextF Next { nextSort, nextChild })
   where
     nextSort = termLikeSort nextChild
 
@@ -1553,7 +1576,7 @@ mkNot
     => TermLike variable
     -> TermLike variable
 mkNot notChild =
-    synthesize (NotF Not { notSort, notChild })
+    updateCallStack $ synthesize (NotF Not { notSort, notChild })
   where
     notSort = termLikeSort notChild
 
@@ -1566,7 +1589,7 @@ mkNu
     => SetVariable variable
     -> TermLike variable
     -> TermLike variable
-mkNu nuVar = makeSortsAgree mkNuWorker (mkSetVar nuVar)
+mkNu nuVar = updateCallStack . makeSortsAgree mkNuWorker (mkSetVar nuVar)
   where
     mkNuWorker (SetVar_ nuVar') nuChild _ =
         synthesize (NuF Nu { nuVariable = nuVar', nuChild })
@@ -1580,7 +1603,7 @@ mkOr
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkOr = makeSortsAgree mkOrWorker
+mkOr t1 = updateCallStack . makeSortsAgree mkOrWorker t1
   where
     mkOrWorker orFirst orSecond orSort =
         synthesize (OrF Or { orSort, orFirst, orSecond })
@@ -1593,7 +1616,7 @@ mkRewrites
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkRewrites = makeSortsAgree mkRewritesWorker
+mkRewrites t1 = updateCallStack . makeSortsAgree mkRewritesWorker t1
   where
     mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
         synthesize (RewritesF rewrites')
@@ -1606,7 +1629,7 @@ See also: 'mkTop_'
 
  -}
 mkTop :: (Ord variable, SortedVariable variable) => Sort -> TermLike variable
-mkTop topSort = synthesize (TopF Top { topSort })
+mkTop topSort = updateCallStack $ synthesize (TopF Top { topSort })
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
 
@@ -1625,7 +1648,7 @@ mkVar
     :: Ord variable
     => SortedVariable variable
     => UnifiedVariable variable -> TermLike variable
-mkVar = synthesize . VariableF . Const
+mkVar = updateCallStack . synthesize . VariableF . Const
 
 {- | Construct an element variable pattern.
  -}
@@ -1641,7 +1664,7 @@ mkSetVar
     :: Ord variable
     => SortedVariable variable
     => SetVariable variable -> TermLike variable
-mkSetVar = mkVar . SetVar
+mkSetVar = updateCallStack . mkVar . SetVar
 
 {- | Construct a 'StringLiteral' pattern.
  -}
@@ -1649,7 +1672,7 @@ mkStringLiteral
     :: (Ord variable, SortedVariable variable)
     => Text
     -> TermLike variable
-mkStringLiteral = synthesize . StringLiteralF . Const . StringLiteral
+mkStringLiteral = updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
 
 {- | Construct a 'CharLiteral' pattern.
  -}
@@ -1657,19 +1680,19 @@ mkCharLiteral
     :: (Ord variable, SortedVariable variable)
     => Char
     -> TermLike variable
-mkCharLiteral = synthesize . CharLiteralF . Const . CharLiteral
+mkCharLiteral = updateCallStack . synthesize . CharLiteralF . Const . CharLiteral
 
 mkInhabitant
     :: (Ord variable, SortedVariable variable)
     => Sort
     -> TermLike variable
-mkInhabitant = synthesize . InhabitantF . Inhabitant
+mkInhabitant = updateCallStack . synthesize . InhabitantF . Inhabitant
 
 mkEvaluated
     :: (Ord variable, SortedVariable variable)
     => TermLike variable
     -> TermLike variable
-mkEvaluated = synthesize . EvaluatedF . Evaluated
+mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
 
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
