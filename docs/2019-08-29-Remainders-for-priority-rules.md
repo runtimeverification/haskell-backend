@@ -2,112 +2,69 @@
 
 ## Problem
 
-Consider two rules to be applied in priority order,
+Consider all the `n` rules 
 
 ```
-L₁(X) ⇒ R₁(X)  // Rule 1
-
-¬ (∃ X₁. L₁(X₁)) ∧ L₂(X) ⇒ R₂(X).  // Rule 2(a)
+Lᵢ(X) ⇒ Rᵢ(X)  // Rule strongᵢ
 ```
 
-Applying `Rule 1` to a configuration `ψ₀` yields the result `ψ₁`,
+Having higher priority than a rule
 
 ```
-∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉ ∧ R₁(X₁)
+L(X) ⇒ R(X)  // Rule weak
 ```
 
-and the remainder `ψ₀'`,
+Then the priority encoding of `Rule weak` is:
 
 ```
-¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ψ₀.
+¬ (∃ X₁. L₁(X₁)) ∧ ... ∧  ¬ (∃ Xₙ. Lₙ(Xₙ)) ∧ L(X) ⇒ R(X).  // Rule weak (a)
 ```
 
-We would like to show that the result of applying the simplified rule
+Attempting to apply all rules `Rule strongᵢ` to a configuration `ψ₀` yields a
+remainder `ψ₀'`
 
 ```
-L₂(X) ⇒ R₂(X)  // Rule 2(b)
+¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧  ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉) ∧ ψ₀.
 ```
 
-to the remainder `ψ₀'` is equivalent to applying the `Rule 2(a)` to the original configuration `ψ₀`,
+We would like to show that the result of applying the simplified `Rule weak`
+to the remainder `ψ₀'` is equivalent to applying the `Rule weak(a)`
+to the original configuration `ψ₀`.
+
+
+## Assumptions
+
+We will make the standard assumptions about configurations and rewrite rules, i.e.,
+
+1. `ψ₀ === ψ₀ₜ(X) ∧ ψ₀ₚ(X)` where `ψ₀ₚ(X)` is a predicate,
+   and `ψ₀ₜ(X)` is a function-like term.
+1. `Lᵢ(Xᵢ) === Lᵢₜ(Xᵢ) ∧ Lᵢₚ(Xᵢ)` where `Lᵢₜ(Xᵢ)` is a functional term,
+   composed out of constructor-like symbols and variables
+   and `Lᵢₚ(Xᵢ)` is a predicate (so `Lᵢ(Xᵢ)` is function-like).
+ 
+## Justification
+
+We need to show that:
 
 ```
-∃ X₂. ⌈¬(∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ψ₀ ∧ L₂(X₂)⌉ ∧ R₂(X₂)
+∃ X₂. ⌈¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧  ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉) ∧ ψ₀ ∧ L(X)⌉ ∧ R(X)
 ===
-∃ X₂. ⌈¬(∃ X₁. L₁(X₁)) ∧ ψ₀ ∧ L₂(X₂)⌉ ∧ R₂(X₂)
+∃ X₂. ⌈ψ₀ ∧ ¬ (∃ X₁. L₁(X₁)) ∧ ... ∧  ¬ (∃ Xₙ. Lₙ(Xₙ)) ∧ L(X)⌉ ∧ R(X)
 ```
 
-i.e. that,
+It suffices to show
 
 ```
-¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ψ₀
+ψ₀ ∧ ¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧  ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉)
 ===
-¬ (∃ X₁. L₁(X₁)) ∧ ψ₀.
+ψ₀ ∧ ¬ (∃ X₁. L₁(X₁)) ∧ ... ∧  ¬ (∃ Xₙ. Lₙ(Xₙ))
 ```
 
-## Solution
-
-For brevity, we denote `∃L₁ = ∃ X₁. L₁(X₁)`.
-
-We move the quantifier in the first equation inside `⌈_⌉`,
+From [Configuration Splitting Simplification](2018-11-08-Configuration-Splitting-Simplification.md) we know that 
 
 ```
-¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ψ₀
-===
-¬ ⌈ψ₀ ∧ ∃ X₁. L₁(X₁)⌉ ∧ ψ₀
-===
-¬ ⌈ψ₀ ∧ ∃L₁⌉ ∧ ψ₀.
+ψ₀ ∧ ¬ (∃ Xᵢ. Lᵢ(Xᵢ)) === ψ₀ ∧ ¬ (∃ Xᵢ. ⌈ψ₀ ∧ Lᵢ(Xᵢ)⌉)
 ```
 
-Our objective is to show
+which we can iterate to prove the identity above.
 
-```
-¬⌈ψ₀ ∧ ∃L₁⌉ ∧ ψ₀ = ¬∃L₁ ∧ ψ₀.
-```
-
-We choose to solve the equivalent problem,
-
-```
-∀ x. x ∈ (¬⌈ψ₀ ∧ ∃L₁⌉ ∧ ψ₀) = x ∈ (¬∃L₁ ∧ ψ₀).
-```
-
-```
-∀ x. x ∈ (¬⌈ψ₀ ∧ ∃L₁⌉ ∧ ψ₀) = x ∈ (¬∃L₁ ∧ ψ₀)
-===
-// x ∈ (A ∧ B) = (x ∈ A) ∧ (x ∈ B)
-∀ x. (x ∈ ¬⌈ψ₀ ∧ ∃L₁⌉) ∧ (x ∈ ψ₀) = (x ∈ ¬∃L₁) ∧ (x ∈ ψ₀)
-===
-// for predicate P, x ∈ P = P
-∀ x. ¬⌈ψ₀ ∧ ∃L₁⌉ ∧ (x ∈ ψ₀) = (x ∈ ¬∃L₁) ∧ (x ∈ ψ₀)
-===
-// for predicate P, (P ∧ φ₁ = P ∧ φ₂) = P ∧ (φ₁ = φ₂) ∨ ¬P
-∀ x. (x ∈ ψ₀) ∧ (¬⌈ψ₀ ∧ ∃L₁⌉ = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// ¬ ⌈φ₁ ∧ φ₂⌉ = ∀ y. ⌊ ¬(y ∈ φ₁) ∨ ¬(y ∈ φ₂) ⌋
-∀ x. (x ∈ ψ₀) ∧ ((∀ y. ⌊ ¬(y ∈ ψ₀) ∨ ¬(y ∈ ∃L₁) ⌋) = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// instantiate ∀ y. at x
-∀ x. (x ∈ ψ₀) ∧ (⌊ ¬(x ∈ ψ₀) ∨ ¬(x ∈ ∃L₁) ⌋ = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// for predicate P, ⌊ P ⌋ = P
-∀ x. (x ∈ ψ₀) ∧ ((¬(x ∈ ψ₀) ∨ ¬(x ∈ ∃L₁)) = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// for predicate P, P ∧ (φ₁ = φ₂) = P ∧ ( (P ∧ φ₁) = φ₂ )
-∀ x. (x ∈ ψ₀) ∧ ((x ∈ ψ₀) ∧ (¬(x ∈ ψ₀) ∨ (x ∈ ψ₀) ∧ ¬(x ∈ ∃L₁)) = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// A ∧ ¬A = ⊥
-∀ x. (x ∈ ψ₀) ∧ ((x ∈ ψ₀) ∧ ¬(x ∈ ∃L₁)) = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// for predicate P, P ∧ (φ₁ = φ₂) = P ∧ ( (P ∧ φ₁) = φ₂ )
-∀ x. (x ∈ ψ₀) ∧ (¬(x ∈ ∃L₁) = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// ¬(x ∈ φ) = x ∈ ¬φ
-∀ x. (x ∈ ψ₀) ∧ (x ∈ ¬∃L₁ = x ∈ ¬∃L₁) ∨ ¬(x ∈ ψ₀)
-===
-// (A = A) = ⊤
-∀ x. (x ∈ ψ₀) ∨ ¬(x ∈ ψ₀)
-===
-// A ∨ ¬A = ⊤
-∀ x. ⊤
-===
-⊤
-```
