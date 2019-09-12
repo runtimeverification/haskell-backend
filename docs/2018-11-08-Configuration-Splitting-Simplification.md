@@ -13,7 +13,7 @@ under the conditions that
    and `φt(X)` is a function-like term. It may or may not unify with `α(Z)`.
 1. `α(Z) = αt(Z) ∧ αp(Z)` where `αt(Z)` is a functional term,
    composed out of constructor-like symbols and variables
-   and `αp(x)` is a predicate (so `α(Z)` is function-like).
+   and `αp(Z)` is a predicate (so `α(Z)` is function-like).
    
 ### Implementation concerns
 
