@@ -8,11 +8,12 @@ module Kore.Attribute.Pattern.Created
     ( Created (..)
     ) where
 
-import           Control.DeepSeq
+import Control.DeepSeq
 import qualified Generics.SOP as SOP
-import           GHC.Generics
-import           GHC.Stack
-                 ( CallStack )
+import GHC.Generics
+import GHC.Stack
+    ( CallStack
+    )
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
