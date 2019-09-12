@@ -84,7 +84,7 @@ newtype AxiomPatternError = AxiomPatternError ()
  -}
 data RulePattern variable = RulePattern
     { left  :: !(TermLike variable)
-    , antiLeft :: !(Maybe (TermLike variable))  -- new field, name needs work
+    , antiLeft :: !(Maybe (TermLike variable))
     , right :: !(TermLike variable)
     , requires :: !(Predicate variable)
     , ensures :: !(Predicate variable)
