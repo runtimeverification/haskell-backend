@@ -15,11 +15,13 @@ module Kore.Step.Function.Evaluator
 import Control.Error
     ( ExceptT
     , exceptT
+    , throwE
     )
 import Control.Exception
     ( assert
     )
 import qualified Control.Monad.Trans as Trans
+import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Map as Map
 import Data.Maybe
@@ -66,6 +68,7 @@ import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -75,6 +78,7 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
+import Kore.TopBottom
 import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
@@ -94,6 +98,7 @@ evaluateApplication
     childrenPredicate
     (evaluateSortInjection -> application)
   = finishT $ do
+    Foldable.for_ canMemoize recallOrPattern
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
@@ -120,7 +125,9 @@ evaluateApplication
                 unevaluated
                 configurationPredicate
 
-    maybeEvaluatedSimplifier & maybe unevaluatedSimplifier Trans.lift
+    results <- maybeEvaluatedSimplifier & maybe unevaluatedSimplifier Trans.lift
+    Foldable.for_ canMemoize (recordOrPattern results)
+    return results
   where
     finishT :: ExceptT r simplifier r -> simplifier r
     finishT = exceptT return return
@@ -131,6 +138,31 @@ evaluateApplication
     termLike = synthesize (ApplySymbolF application)
     unevaluated =
         OrPattern.fromPattern $ Pattern.withCondition termLike childrenPredicate
+
+    canMemoize
+      | Symbol.isMemo symbol
+      , isTop childrenPredicate
+      , isTop configurationPredicate
+      = traverse asConcrete application
+      | otherwise
+      = Nothing
+
+    recallOrPattern key = do
+        Memo.Self { recall } <- askMemo
+        maybeTermLike <- recall key
+        let maybeOrPattern =
+                OrPattern.fromTermLike . fromConcrete <$> maybeTermLike
+        Foldable.for_ maybeOrPattern throwE
+
+    recordOrPattern orPattern key
+      | [result] <- OrPattern.toPatterns orPattern
+      , isTop (Pattern.predicate result)
+      = do
+        Memo.Self { record } <- askMemo
+        let term = Pattern.term result
+        Foldable.for_ (asConcrete term) (record key)
+      | otherwise
+      = return ()
 
 {-| Evaluates axioms on patterns.
 -}
