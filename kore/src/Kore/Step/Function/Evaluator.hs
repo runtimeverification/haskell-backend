@@ -94,7 +94,6 @@ evaluateApplication
     let
         Application { applicationSymbolOrAlias = symbol } = application
         Symbol { symbolConstructor = symbolId } = symbol
-        termLike = synthesize (ApplySymbolF application)
 
         maybeEvaluatedPattSimplifier =
             maybeEvaluatePattern
@@ -103,18 +102,8 @@ evaluateApplication
                 axiomIdToEvaluator
                 childrenPredicate
                 termLike
-                unchanged
+                unevaluated
                 configurationPredicate
-        unchangedPatt =
-            Conditional
-                { term         = termLike
-                , predicate    = predicate
-                , substitution = substitution
-                }
-          where
-            Conditional { term = (), predicate, substitution } =
-                childrenPredicate
-        unchanged = OrPattern.fromPattern unchangedPatt
 
         getSymbolHook = getHook . Attribute.hook . symbolAttributes
         getAppHookString = Text.unpack <$> getSymbolHook symbol
@@ -128,11 +117,15 @@ evaluateApplication
                 ++  hook ++ ".\nSymbol: " ++ getIdForError symbolId
                 )
           | otherwise ->
-            return unchanged
+            return unevaluated
         Just evaluatedPattSimplifier -> evaluatedPattSimplifier
   where
     finishT :: ExceptT r simplifier r -> simplifier r
     finishT = exceptT return return
+
+    termLike = synthesize (ApplySymbolF application)
+    unevaluated =
+        OrPattern.fromPattern $ Pattern.withCondition termLike childrenPredicate
 
 {-| Evaluates axioms on patterns.
 -}
