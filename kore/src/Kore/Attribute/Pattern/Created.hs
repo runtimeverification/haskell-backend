@@ -29,9 +29,7 @@ instance SOP.HasDatatypeInfo Created
 
 instance NFData Created
 
-instance Debug Created where
-    debug _ = undefined
-    debugPrec _ _ = undefined
+instance Debug Created
 
 instance Functor pat => Synthetic Created pat where
     synthetic = const (Created Nothing)

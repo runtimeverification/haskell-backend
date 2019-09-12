@@ -1035,7 +1035,8 @@ updateCallStack
 updateCallStack = Lens.set created callstack
   where
     created = coerced . _extract . field @"created"
-    callstack = Created . Just . GHC.popCallStack $ GHC.callStack
+    callstack =
+        Created . Just . GHC.popCallStack . GHC.popCallStack $ GHC.callStack
 
     _extract
         :: Functor f
@@ -1048,11 +1049,10 @@ updateCallStack = Lens.set created callstack
 {- | Construct an 'And' pattern.
  -}
 mkAnd
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        , GHC.HasCallStack
-        )
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1070,8 +1070,10 @@ See also: 'forceSort'
 
  -}
 forceSorts
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => [Sort]
     -> [TermLike variable]
     -> [TermLike variable]
@@ -1100,9 +1102,10 @@ See also: 'applyAlias', 'applySymbol'
 
  -}
 mkApplyAlias
-    :: forall variable
-    .  (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => Alias (TermLike Variable)
     -- ^ Application symbol or alias
     -> [TermLike variable]
@@ -1128,8 +1131,10 @@ See also: 'applyAlias', 'applySymbol'
 
  -}
 mkApplySymbol
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => Symbol
     -- ^ Application symbol or alias
     -> [TermLike variable]
@@ -1153,8 +1158,10 @@ See also: 'mkApplyAlias', 'applyAlias_', 'applySymbol', 'mkAlias'
 
  -}
 applyAlias
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => SentenceAlias (TermLike Variable)
     -- ^ 'Alias' declaration
     -> [Sort]
@@ -1212,15 +1219,14 @@ See also: 'mkApp', 'applyAlias'
 
  -}
 applyAlias_
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        , GHC.HasCallStack
-        )
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => SentenceAlias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable
-applyAlias_ sentence = applyAlias sentence []
+applyAlias_ sentence = updateCallStack . applyAlias sentence []
 
 {- | Construct an 'Application' pattern from a 'Symbol' declaration.
 
@@ -1230,8 +1236,10 @@ See also: 'mkApp', 'applySymbol_', 'mkSymbol'
 
  -}
 applySymbol
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => SentenceSymbol pattern''
     -- ^ 'Symbol' declaration
     -> [Sort]
@@ -1240,7 +1248,7 @@ applySymbol
     -- ^ 'Application' arguments
     -> TermLike variable
 applySymbol sentence params children =
-    mkApplySymbol internal children
+    updateCallStack $ mkApplySymbol internal children
   where
     SentenceSymbol { sentenceSymbolSymbol = external } = sentence
     Syntax.Symbol { symbolConstructor } = external
@@ -1262,19 +1270,26 @@ See also: 'mkApplySymbol', 'applySymbol'
 
  -}
 applySymbol_
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => SentenceSymbol pattern''
     -> [TermLike variable]
     -> TermLike variable
-applySymbol_ sentence = applySymbol sentence []
+applySymbol_ sentence = updateCallStack . applySymbol sentence []
 
 {- | Construct a 'Bottom' pattern in the given sort.
 
 See also: 'mkBottom_'
 
  -}
-mkBottom :: (Ord variable, SortedVariable variable) => Sort -> TermLike variable
+mkBottom
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Sort
+    -> TermLike variable
 mkBottom bottomSort = updateCallStack $ synthesize (BottomF Bottom { bottomSort })
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
@@ -1285,8 +1300,12 @@ This should not be used outside "Kore.Predicate.Predicate"; please use
 See also: 'mkBottom'
 
  -}
-mkBottom_ :: (Ord variable, SortedVariable variable) => TermLike variable
-mkBottom_ = mkBottom predicateSort
+mkBottom_
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => TermLike variable
+mkBottom_ = updateCallStack $ mkBottom predicateSort
 
 {- | Construct a 'Ceil' pattern in the given sort.
 
@@ -1294,12 +1313,15 @@ See also: 'mkCeil_'
 
  -}
 mkCeil
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Sort
     -> TermLike variable
     -> TermLike variable
 mkCeil ceilResultSort ceilChild =
-    updateCallStack $ synthesize (CeilF Ceil { ceilOperandSort, ceilResultSort, ceilChild })
+    updateCallStack
+        $ synthesize (CeilF Ceil { ceilOperandSort, ceilResultSort, ceilChild })
   where
     ceilOperandSort = termLikeSort ceilChild
 
@@ -1312,15 +1334,19 @@ See also: 'mkCeil'
 
  -}
 mkCeil_
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => TermLike variable
     -> TermLike variable
-mkCeil_ = mkCeil predicateSort
+mkCeil_ = updateCallStack . mkCeil predicateSort
 
 {- | Construct a builtin pattern.
  -}
 mkBuiltin
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Domain.Builtin (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltin = updateCallStack . synthesize . BuiltinF
@@ -1328,7 +1354,9 @@ mkBuiltin = updateCallStack . synthesize . BuiltinF
 {- | Construct a builtin list pattern.
  -}
 mkBuiltinList
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Domain.InternalList (TermLike variable)
     -> TermLike variable
 mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
@@ -1336,7 +1364,9 @@ mkBuiltinList = updateCallStack . synthesize . BuiltinF . Domain.BuiltinList
 {- | Construct a builtin map pattern.
  -}
 mkBuiltinMap
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Domain.InternalMap (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
@@ -1344,7 +1374,9 @@ mkBuiltinMap = updateCallStack . synthesize . BuiltinF . Domain.BuiltinMap
 {- | Construct a builtin set pattern.
  -}
 mkBuiltinSet
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Domain.InternalSet (TermLike Concrete) (TermLike variable)
     -> TermLike variable
 mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
@@ -1352,7 +1384,9 @@ mkBuiltinSet = updateCallStack . synthesize . BuiltinF . Domain.BuiltinSet
 {- | Construct a 'DomainValue' pattern.
  -}
 mkDomainValue
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => DomainValue Sort (TermLike variable)
     -> TermLike variable
 mkDomainValue = updateCallStack . synthesize . DomainValueF
@@ -1363,8 +1397,10 @@ See also: 'mkEquals_'
 
  -}
 mkEquals
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -1392,37 +1428,41 @@ See also: 'mkEquals'
 
  -}
 mkEquals_
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Unparse variable
-        , GHC.HasCallStack
-        )
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkEquals_ = mkEquals predicateSort
+mkEquals_ t1 = updateCallStack . mkEquals predicateSort t1
 
 {- | Construct an 'Exists' pattern.
  -}
 mkExists
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => ElementVariable variable
     -> TermLike variable
     -> TermLike variable
 mkExists existsVariable existsChild =
-    updateCallStack $ synthesize (ExistsF Exists { existsSort, existsVariable, existsChild })
+    updateCallStack
+        $ synthesize (ExistsF Exists { existsSort, existsVariable, existsChild })
   where
     existsSort = termLikeSort existsChild
 
 {- | Construct a sequence of 'Exists' patterns over several variables.
  -}
 mkExistsN
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Foldable foldable
     => foldable (ElementVariable variable)
     -> TermLike variable
     -> TermLike variable
-mkExistsN = appEndo . foldMap (Endo . mkExists)
+mkExistsN = (updateCallStack .) . appEndo . foldMap (Endo . mkExists)
 
 {- | Construct a 'Floor' pattern in the given sort.
 
@@ -1430,12 +1470,15 @@ See also: 'mkFloor_'
 
  -}
 mkFloor
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Sort
     -> TermLike variable
     -> TermLike variable
 mkFloor floorResultSort floorChild =
-    updateCallStack $ synthesize (FloorF Floor { floorOperandSort, floorResultSort, floorChild })
+    updateCallStack
+        $ synthesize (FloorF Floor { floorOperandSort, floorResultSort, floorChild })
   where
     floorOperandSort = termLikeSort floorChild
 
@@ -1448,36 +1491,47 @@ See also: 'mkFloor'
 
  -}
 mkFloor_
-    :: (Ord variable, SortedVariable variable)
-    => TermLike variable -> TermLike variable
-mkFloor_ = mkFloor predicateSort
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => TermLike variable
+    -> TermLike variable
+mkFloor_ = updateCallStack . mkFloor predicateSort
 
 {- | Construct a 'Forall' pattern.
  -}
 mkForall
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => ElementVariable variable
     -> TermLike variable
     -> TermLike variable
 mkForall forallVariable forallChild =
-    updateCallStack $ synthesize (ForallF Forall { forallSort, forallVariable, forallChild })
+    updateCallStack
+        $ synthesize (ForallF Forall { forallSort, forallVariable, forallChild })
   where
     forallSort = termLikeSort forallChild
 
 {- | Construct a sequence of 'Forall' patterns over several variables.
  -}
 mkForallN
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Foldable foldable
     => foldable (ElementVariable variable)
     -> TermLike variable
     -> TermLike variable
-mkForallN = appEndo . foldMap (Endo . mkForall)
+mkForallN = (updateCallStack .) . appEndo . foldMap (Endo . mkForall)
 
 {- | Construct an 'Iff' pattern.
  -}
 mkIff
-    :: (Ord variable, SortedVariable variable, Unparse variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -1490,7 +1544,10 @@ mkIff t1 = updateCallStack . makeSortsAgree mkIffWorker t1
 {- | Construct an 'Implies' pattern.
  -}
 mkImplies
-    :: (Ord variable, SortedVariable variable, Unparse variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -1508,8 +1565,10 @@ See also: 'mkIn_'
 
  -}
 mkIn
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => Sort
     -> TermLike variable
     -> TermLike variable
@@ -1536,17 +1595,20 @@ See also: 'mkIn'
 
  -}
 mkIn_
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkIn_ = mkIn predicateSort
+mkIn_ t1 = updateCallStack . mkIn predicateSort t1
 
 {- | Construct a 'Mu' pattern.
  -}
 mkMu
-    :: Ord variable
+    :: GHC.HasCallStack
+    => Ord variable
     => SortedVariable variable
     => Unparse variable
     => SetVariable variable
@@ -1561,7 +1623,9 @@ mkMu muVar = updateCallStack . makeSortsAgree mkMuWorker (mkSetVar muVar)
 {- | Construct a 'Next' pattern.
  -}
 mkNext
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => TermLike variable
     -> TermLike variable
 mkNext nextChild =
@@ -1572,7 +1636,9 @@ mkNext nextChild =
 {- | Construct a 'Not' pattern.
  -}
 mkNot
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => TermLike variable
     -> TermLike variable
 mkNot notChild =
@@ -1583,7 +1649,8 @@ mkNot notChild =
 {- | Construct a 'Nu' pattern.
  -}
 mkNu
-    :: Ord variable
+    :: GHC.HasCallStack
+    => Ord variable
     => SortedVariable variable
     => Unparse variable
     => SetVariable variable
@@ -1598,8 +1665,10 @@ mkNu nuVar = updateCallStack . makeSortsAgree mkNuWorker (mkSetVar nuVar)
 {- | Construct an 'Or' pattern.
  -}
 mkOr
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1611,8 +1680,10 @@ mkOr t1 = updateCallStack . makeSortsAgree mkOrWorker t1
 {- | Construct a 'Rewrites' pattern.
  -}
 mkRewrites
-    :: (Ord variable, SortedVariable variable, Unparse variable)
-    => GHC.HasCallStack
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
@@ -1628,7 +1699,12 @@ mkRewrites t1 = updateCallStack . makeSortsAgree mkRewritesWorker t1
 See also: 'mkTop_'
 
  -}
-mkTop :: (Ord variable, SortedVariable variable) => Sort -> TermLike variable
+mkTop
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Sort
+    -> TermLike variable
 mkTop topSort = updateCallStack $ synthesize (TopF Top { topSort })
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
@@ -1639,57 +1715,77 @@ This should not be used outside "Kore.Predicate.Predicate"; please use
 See also: 'mkTop'
 
  -}
-mkTop_ :: (Ord variable, SortedVariable variable) => TermLike variable
-mkTop_ = mkTop predicateSort
+mkTop_
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => TermLike variable
+mkTop_ = updateCallStack $ mkTop predicateSort
 
 {- | Construct a variable pattern.
  -}
 mkVar
-    :: Ord variable
+    :: GHC.HasCallStack
+    => Ord variable
     => SortedVariable variable
-    => UnifiedVariable variable -> TermLike variable
+    => UnifiedVariable variable
+    -> TermLike variable
 mkVar = updateCallStack . synthesize . VariableF . Const
 
 {- | Construct an element variable pattern.
  -}
 mkElemVar
-    :: Ord variable
+    :: GHC.HasCallStack
+    => Ord variable
     => SortedVariable variable
-    => ElementVariable variable -> TermLike variable
-mkElemVar = mkVar . ElemVar
+    => ElementVariable variable
+    -> TermLike variable
+mkElemVar = updateCallStack . mkVar . ElemVar
 
 {- | Construct a set variable pattern.
  -}
 mkSetVar
-    :: Ord variable
+    :: GHC.HasCallStack
+    => Ord variable
     => SortedVariable variable
-    => SetVariable variable -> TermLike variable
+    => SetVariable variable
+    -> TermLike variable
 mkSetVar = updateCallStack . mkVar . SetVar
 
 {- | Construct a 'StringLiteral' pattern.
  -}
 mkStringLiteral
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Text
     -> TermLike variable
-mkStringLiteral = updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
+mkStringLiteral =
+    updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
 
 {- | Construct a 'CharLiteral' pattern.
  -}
 mkCharLiteral
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Char
     -> TermLike variable
-mkCharLiteral = updateCallStack . synthesize . CharLiteralF . Const . CharLiteral
+mkCharLiteral =
+    updateCallStack . synthesize . CharLiteralF . Const . CharLiteral
 
 mkInhabitant
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => Sort
     -> TermLike variable
 mkInhabitant = updateCallStack . synthesize . InhabitantF . Inhabitant
 
 mkEvaluated
-    :: (Ord variable, SortedVariable variable)
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
     => TermLike variable
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
