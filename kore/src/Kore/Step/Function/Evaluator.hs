@@ -19,11 +19,16 @@ import Control.Error
 import Control.Exception
     ( assert
     )
+import qualified Control.Monad.Trans as Trans
+import Data.Function
 import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
-import qualified Data.Text as Text
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import Kore.Attribute.Hook
@@ -70,6 +75,7 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
+import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
 -}
@@ -92,10 +98,19 @@ evaluateApplication
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
-        Application { applicationSymbolOrAlias = symbol } = application
-        Symbol { symbolConstructor = symbolId } = symbol
+        unevaluatedSimplifier
+          | Just hook <- getHook (Attribute.hook symbolAttributes)
+            -- TODO (thomas.tuegel): (not . null) is a nasty hack to avoid
+            -- making the function evaluator a replaceable component.
+          , (not . null) axiomIdToEvaluator
+          =
+            (error . show . Pretty.vsep)
+                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
+                , "for symbol:" <+> unparse symbol
+                ]
+          | otherwise = return unevaluated
 
-        maybeEvaluatedPattSimplifier =
+        maybeEvaluatedSimplifier =
             maybeEvaluatePattern
                 substitutionSimplifier
                 simplifier
@@ -105,23 +120,13 @@ evaluateApplication
                 unevaluated
                 configurationPredicate
 
-        getSymbolHook = getHook . Attribute.hook . symbolAttributes
-        getAppHookString = Text.unpack <$> getSymbolHook symbol
-
-    case maybeEvaluatedPattSimplifier of
-        Nothing
-          | Just hook <- getAppHookString
-          , not(null axiomIdToEvaluator) ->
-            error
-                (   "Attempting to evaluate unimplemented hooked operation "
-                ++  hook ++ ".\nSymbol: " ++ getIdForError symbolId
-                )
-          | otherwise ->
-            return unevaluated
-        Just evaluatedPattSimplifier -> evaluatedPattSimplifier
+    maybeEvaluatedSimplifier & maybe unevaluatedSimplifier Trans.lift
   where
     finishT :: ExceptT r simplifier r -> simplifier r
     finishT = exceptT return return
+
+    Application { applicationSymbolOrAlias = symbol } = application
+    Symbol { symbolAttributes } = symbol
 
     termLike = synthesize (ApplySymbolF application)
     unevaluated =
