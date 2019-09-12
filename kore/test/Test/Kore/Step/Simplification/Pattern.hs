@@ -6,24 +6,28 @@ module Test.Kore.Step.Simplification.Pattern
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Logger.Output
-                 ( emptyLogger )
+import Kore.Internal.TermLike
+import Kore.Logger.Output
+    ( emptyLogger
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
+import Kore.Step.Simplification.Data
+    ( evalSimplifier
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified SMT
 
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_Pattern_simplify :: [TestTree]
 test_Pattern_simplify =

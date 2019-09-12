@@ -10,8 +10,9 @@ module Kore.Attribute.Symbol.Memo
     ) where
 
 import qualified Control.Monad as Monad
-import           Data.Monoid
-                 ( Any (..) )
+import Data.Monoid
+    ( Any (..)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

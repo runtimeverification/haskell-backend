@@ -40,56 +40,74 @@ module Kore.Builtin.List
     , expectConcreteBuiltinList
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT )
-import           Control.Monad
-                 ( join )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT
+    )
+import Control.Monad
+    ( join
+    )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe
-                 ( mapMaybeT )
+    ( mapMaybeT
+    )
 import qualified Data.Function as Function
-import           Data.Functor
-                 ( (<$) )
+import Data.Functor
+    ( (<$)
+    )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
-                 ( Given )
+import Data.Reflection
+    ( Given
+    )
 import qualified Data.Reflection as Reflection
-import           Data.Sequence
-                 ( Seq )
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Builtin.Builtin
-                 ( acceptAnySort )
+import Kore.Builtin.Builtin
+    ( acceptAnySort
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.SimplificationType
-                 ( SimplificationType )
-import           Kore.Step.Simplification.Simplify as Simplifier
-import           Kore.Syntax.Sentence
-                 ( SentenceSort (..) )
-import           Kore.Unification.Unify
-                 ( MonadUnify )
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.SimplificationType
+    ( SimplificationType
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Syntax.Sentence
+    ( SentenceSort (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
 
 {- | Builtin variable name of the @List@ sort.

@@ -12,10 +12,12 @@ module Kore.Attribute.Sort.Concat
     ) where
 
 import Control.DeepSeq
-       ( NFData )
+    ( NFData
+    )
 import Data.Default
 import GHC.Generics
-       ( Generic )
+    ( Generic
+    )
 
 import Kore.Attribute.Parser
 

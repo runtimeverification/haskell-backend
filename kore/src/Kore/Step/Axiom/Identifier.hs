@@ -24,21 +24,29 @@ module Kore.Step.Axiom.Identifier
     , matchAxiomIdentifier
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty (..) )
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
+    )
 import qualified Data.Text.Prettyprint.Doc as Doc
-                 ( parens, (<+>) )
+    ( parens
+    , (<+>)
+    )
 
-import           Kore.Internal.TermLike
-                 ( CofreeF (..), TermLike )
+import Kore.Internal.TermLike
+    ( CofreeF (..)
+    , TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Syntax.Id
-                 ( Id (..) )
-import           Kore.Unparser
-                 ( unparse )
+import Kore.Syntax.Id
+    ( Id (..)
+    )
+import Kore.Unparser
+    ( unparse
+    )
 
 {-| Identifer for the left-hand-side of axioms and for the terms with which
 these can be identified.

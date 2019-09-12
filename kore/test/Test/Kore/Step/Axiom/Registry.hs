@@ -1,52 +1,67 @@
 module Test.Kore.Step.Axiom.Registry (test_functionRegistry) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( assertEqual, assertFailure, testCase )
+    ( assertEqual
+    , assertFailure
+    , testCase
+    )
 
 import qualified Data.Default as Default
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
-import           Data.Proxy
-                 ( Proxy (..) )
-import           Data.Text
-                 ( Text )
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Proxy
+    ( Proxy (..)
+    )
+import Data.Text
+    ( Text
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Simplification
-                 ( simplificationSymbol )
+import Kore.Attribute.Simplification
+    ( simplificationSymbol
+    )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-                 ( printError )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.Error
+    ( printError
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-                 ( build )
+    ( build
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Axiom.Registry
-import           Kore.Step.Rule
-                 ( extractRewriteAxioms )
-import           Kore.Step.Simplification.Data
+    ( AxiomIdentifier (..)
+    )
+import Kore.Step.Axiom.Registry
+import Kore.Step.Rule
+    ( extractRewriteAxioms
+    )
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Step.Simplification.Simplify
-import           Kore.Syntax.Definition hiding
-                 ( Symbol )
+import Kore.Step.Simplification.Simplify
+import Kore.Syntax.Definition hiding
+    ( Symbol
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.ASTVerifier.DefinitionVerifier
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType

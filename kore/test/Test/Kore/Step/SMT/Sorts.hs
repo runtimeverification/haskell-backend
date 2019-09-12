@@ -3,32 +3,55 @@ module Test.Kore.Step.SMT.Sorts where
 import Test.Tasty
 
 import Data.Text
-       ( Text )
+    ( Text
+    )
 
 import qualified Kore.Builtin.Int as Int
-import           Kore.Parser
-                 ( ParsedPattern )
+import Kore.Parser
+    ( ParsedPattern
+    )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
-                 ( declare )
-import           Kore.Step.SMT.Encoder
-                 ( encodeName )
+    ( declare
+    )
+import Kore.Step.SMT.Encoder
+    ( encodeName
+    )
 import qualified Kore.Step.SMT.Representation.All as Representation
-                 ( build )
-import           Kore.Syntax.Definition
+    ( build
+    )
+import Kore.Syntax.Definition
 import qualified Kore.Syntax.Sentence as SentenceImport
-                 ( SentenceImport (..) )
+    ( SentenceImport (..)
+    )
 import qualified SMT
 
-import           Test.Kore.Step.SMT.Builders
-                 ( constructor, emptyModule, functional, hook, indexModule,
-                 indexModules, sortDeclaration, symbolDeclaration )
-import           Test.Kore.Step.SMT.Helpers
-                 ( atom, constructorAxiom, eq, gt, isNotSatisfiable,
-                 isSatisfiable, list, lt, ofType )
+import Test.Kore.Step.SMT.Builders
+    ( constructor
+    , emptyModule
+    , functional
+    , hook
+    , indexModule
+    , indexModules
+    , sortDeclaration
+    , symbolDeclaration
+    )
+import Test.Kore.Step.SMT.Helpers
+    ( atom
+    , constructorAxiom
+    , eq
+    , gt
+    , isNotSatisfiable
+    , isSatisfiable
+    , list
+    , lt
+    , ofType
+    )
 import qualified Test.Kore.Step.SMT.Helpers as Helpers
-                 ( testsForModule )
-import           Test.Kore.With
-                 ( with )
+    ( testsForModule
+    )
+import Test.Kore.With
+    ( with
+    )
 
 test_sortDeclaration :: [TestTree]
 test_sortDeclaration =

@@ -30,21 +30,28 @@ module Kore.Internal.Pattern
     ) where
 
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables, getFreeElementVariables )
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , getFreeElementVariables
+    )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.Predicate
-                 ( Predicate )
-import           Kore.Internal.TermLike as TermLike
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.TopBottom
-                 ( TopBottom (..) )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
 
 {- | The conjunction of a pattern, predicate, and substitution.

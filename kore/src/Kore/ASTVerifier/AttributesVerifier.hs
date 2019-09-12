@@ -18,15 +18,16 @@ module Kore.ASTVerifier.AttributesVerifier
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Proxy
-                 ( Proxy )
+import Data.Proxy
+    ( Proxy
+    )
 
-import           Kore.ASTVerifier.Error
-import           Kore.Attribute.Hook
+import Kore.ASTVerifier.Error
+import Kore.Attribute.Hook
 import qualified Kore.Attribute.Parser as Attribute.Parser
-import           Kore.Error
-import           Kore.Syntax.Definition
-import           Kore.Syntax.Pattern
+import Kore.Error
+import Kore.Syntax.Definition
+import Kore.Syntax.Pattern
 
 {-| Whether we should verify attributes and, when verifying, the module with
 declarations visible in these atributes. -}

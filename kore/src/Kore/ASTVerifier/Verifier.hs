@@ -20,24 +20,29 @@ module Kore.ASTVerifier.Verifier
 
 import qualified Control.Lens as Lens
 import qualified Control.Monad.Reader as Reader
-import           Control.Monad.RWS.Strict
-                 ( MonadReader, MonadState, RWST, runRWST )
+import Control.Monad.RWS.Strict
+    ( MonadReader
+    , MonadState
+    , RWST
+    , runRWST
+    )
 import qualified Control.Monad.State.Strict as State
-import           Data.Generics.Product
-import           Data.Map
-                 ( Map )
+import Data.Generics.Product
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
 import qualified GHC.Generics as GHC
 
-import           Kore.AST.Error
-import           Kore.ASTVerifier.AttributesVerifier
-import           Kore.ASTVerifier.Error
+import Kore.AST.Error
+import Kore.ASTVerifier.AttributesVerifier
+import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.Syntax.Definition
+import Kore.Error
+import Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 type ImplicitModule =

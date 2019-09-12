@@ -12,17 +12,28 @@ Helper tools for parsing Kore. Meant for internal use only.
 -}
 module Kore.Parser.ParserUtils where
 
-import           Control.Applicative
-                 ( (<|>) )
-import           Control.Monad
-                 ( void )
-import           Data.Functor
-                 ( ($>) )
-import           Text.Megaparsec
-                 ( Parsec, anySingle, eof, lookAhead, parse, takeWhileP )
+import Control.Applicative
+    ( (<|>)
+    )
+import Control.Monad
+    ( void
+    )
+import Data.Functor
+    ( ($>)
+    )
+import Text.Megaparsec
+    ( Parsec
+    , anySingle
+    , eof
+    , lookAhead
+    , parse
+    , takeWhileP
+    )
 import qualified Text.Megaparsec.Char as Parser
-import           Text.Megaparsec.Error
-                 ( ShowErrorComponent (..), errorBundlePretty )
+import Text.Megaparsec.Error
+    ( ShowErrorComponent (..)
+    , errorBundlePretty
+    )
 
 type Parser = Parsec String String
 

@@ -3,23 +3,29 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.Imports
     ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.Error
-                 ( noSort )
+import Kore.Error
+import Kore.IndexedModule.Error
+    ( noSort
+    )
 import qualified Kore.Internal.Alias as Internal
-import           Kore.Internal.ApplicationSorts
+import Kore.Internal.ApplicationSorts
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Internal.TermLike hiding
-                 ( Alias, Symbol )
-import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
+import Kore.Internal.TermLike hiding
+    ( Alias
+    , Symbol
+    )
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier

@@ -12,11 +12,13 @@ module Kore.Attribute.HeatCool
     , coolId, coolSymbol, coolAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Control.Monad
-                 ( (>=>) )
-import           Data.Default
+import Control.DeepSeq
+    ( NFData
+    )
+import Control.Monad
+    ( (>=>)
+    )
+import Data.Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

@@ -12,18 +12,21 @@ module Kore.Attribute.Sort
     ) where
 
 import qualified Control.Monad as Monad
-import           Data.Generics.Product
-import           Prelude hiding
-                 ( concat )
+import Data.Generics.Product
+import Prelude hiding
+    ( concat
+    )
 
 import Kore.Attribute.Hook
 import Kore.Attribute.Parser hiding
-       ( Sort )
+    ( Sort
+    )
 import Kore.Attribute.Smtlib.Smtlib
 import Kore.Attribute.Sort.Concat
 import Kore.Attribute.Sort.Element
 import Kore.Attribute.Sort.HasDomainValues
-       ( HasDomainValues )
+    ( HasDomainValues
+    )
 import Kore.Attribute.Sort.Unit
 
 data Sort =

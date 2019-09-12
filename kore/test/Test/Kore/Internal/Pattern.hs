@@ -6,31 +6,43 @@ module Test.Kore.Internal.Pattern
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import           Kore.Debug
-                 ( Debug )
-import           Kore.Internal.Pattern as Pattern
-                 ( Conditional (..), mapVariables, toTermLike )
+import Kore.Debug
+    ( Debug
+    )
+import Kore.Internal.Pattern as Pattern
+    ( Conditional (..)
+    , mapVariables
+    , toTermLike
+    )
 import qualified Kore.Internal.Pattern as Internal
-                 ( Pattern )
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Internal.Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( Predicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeTruePredicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( Predicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import Test.Kore
-       ( Gen, sortGen )
+    ( Gen
+    , sortGen
+    )
 import Test.Kore.Comparators ()
 import Test.Kore.Internal.TermLike
-       ( termLikeChildGen )
+    ( termLikeChildGen
+    )
 import Test.Tasty.HUnit.Extensions
 
 internalPatternGen :: Gen (Internal.Pattern Variable)

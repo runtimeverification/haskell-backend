@@ -43,7 +43,7 @@ steps:
       # - none: Do not perform any alignment.
       #
       # Default: global.
-      align: group
+      align: none
 
       # The following options affect only import list alignment.
       #
@@ -108,7 +108,7 @@ steps:
       #   >     )
       #
       # Default: inline
-      long_list_align: new_line
+      long_list_align: multiline
 
       # Align empty list (importing instances)
       #
@@ -130,7 +130,7 @@ steps:
       #
       # - module_name: align under start of module name.
       #   Useful for 'file' and 'group' align settings.
-      list_padding: module_name
+      list_padding: 4
 
       # Separate lists option affects formatting of import list for type
       # or class. The only difference is single space between type and list

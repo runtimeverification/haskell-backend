@@ -8,9 +8,10 @@ module Kore.Attribute.RuleIndex
     ( RuleIndex (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Default
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

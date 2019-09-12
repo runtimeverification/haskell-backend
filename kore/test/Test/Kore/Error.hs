@@ -8,9 +8,14 @@ import Test.Tasty
 import Test.Terse
 
 import Data.Void
-       ( Void )
+    ( Void
+    )
 import Kore.Error
-       ( Error, assertRight, koreError, printError )
+    ( Error
+    , assertRight
+    , koreError
+    , printError
+    )
 
 {-
    Considerable code uses an `Either (Error a) b` type.

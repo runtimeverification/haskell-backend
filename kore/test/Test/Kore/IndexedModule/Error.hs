@@ -7,7 +7,8 @@ module Test.Kore.IndexedModule.Error where
 -- import Test.Kore.Builtin.Definition
 --        ( builtinSymbol )
 import Test.Kore
-       ( testId )
+    ( testId
+    )
 import Test.Tasty
 import Test.Terse
 

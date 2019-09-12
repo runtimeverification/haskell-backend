@@ -1,18 +1,26 @@
 module Kore.Step.Substitution where
 
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
-import           Kore.Internal.Pattern
-                 ( Predicate )
-import           Kore.Logger
-                 ( LogMessage, WithLog )
+import Kore.Internal.Pattern
+    ( Predicate
+    )
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Unification.Substitution
-                 ( Substitution )
-import           Kore.Unification.Unify
-                 ( MonadUnify, SimplifierVariable )
+    ( Predicate
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    , SimplifierVariable
+    )
 
 mergePredicatesAndSubstitutionsExcept
     ::  ( SimplifierVariable variable

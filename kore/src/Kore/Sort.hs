@@ -44,21 +44,27 @@ module Kore.Sort
     , module Kore.Syntax.Id
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Control.Exception
-                 ( Exception (..), throw )
-import           Data.Align
+import Control.DeepSeq
+    ( NFData
+    )
+import Control.Exception
+    ( Exception (..)
+    , throw
+    )
+import Data.Align
 import qualified Data.Foldable as Foldable
-import           Data.Hashable
-                 ( Hashable )
+import Data.Hashable
+    ( Hashable
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.These
-import           Data.Typeable
-                 ( Typeable )
+import Data.These
+import Data.Typeable
+    ( Typeable
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

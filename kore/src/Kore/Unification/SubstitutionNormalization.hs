@@ -13,37 +13,51 @@ module Kore.Unification.SubstitutionNormalization
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Control.Monad.Except
-                 ( ExceptT (..), lift, throwError )
-import           Data.Functor.Const
-import           Data.Functor.Foldable
-                 ( Base )
+import Control.Monad.Except
+    ( ExceptT (..)
+    , lift
+    , throwError
+    )
+import Data.Functor.Const
+import Data.Functor.Foldable
+    ( Base
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( mapMaybe )
-import           Data.Set
-                 ( Set )
+import Data.Maybe
+    ( mapMaybe
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 
-import           Data.Graph.TopologicalSort
+import Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Internal.Predicate
-                 ( Conditional (..), Predicate )
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeTruePredicate )
-import           Kore.Step.Simplification.Simplify
-                 ( MonadSimplify, SimplifierVariable )
-import           Kore.Unification.Error
-                 ( SubstitutionError (..) )
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( makeTruePredicate
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , SimplifierVariable
+    )
+import Kore.Unification.Error
+    ( SubstitutionError (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 
 data TopologicalSortResult variable

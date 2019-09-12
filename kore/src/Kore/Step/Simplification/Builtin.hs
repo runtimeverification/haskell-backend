@@ -8,23 +8,28 @@ module Kore.Step.Simplification.Builtin
     ) where
 
 import qualified Control.Lens as Lens
-import           Data.Functor.Compose
-import           Data.Generics.Product
-import           Data.Maybe
+import Data.Functor.Compose
+import Data.Generics.Product
+import Data.Maybe
 
 import qualified Kore.Builtin.AssociativeCommutative as Builtin
-import           Kore.Domain.Builtin
-                 ( InternalMap, InternalSet )
+import Kore.Domain.Builtin
+    ( InternalMap
+    , InternalSet
+    )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.Conditional
-                 ( Conditional )
+import Kore.Internal.Conditional
+    ( Conditional
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeFalsePredicate )
+import Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeFalsePredicate
+    )
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.

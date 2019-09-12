@@ -9,16 +9,21 @@ module Kore.Syntax.Module
     , Module (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Hashable
-                 ( Hashable (..) )
-import           Data.Maybe
-                 ( catMaybes )
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Hashable
+    ( Hashable (..)
+    )
+import Data.Maybe
+    ( catMaybes
+    )
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP

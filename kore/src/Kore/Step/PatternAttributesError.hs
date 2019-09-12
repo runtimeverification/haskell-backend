@@ -16,7 +16,8 @@ module Kore.Step.PatternAttributesError
     ) where
 
 import Kore.Internal.Symbol
-       ( Symbol )
+    ( Symbol
+    )
 
 {-| An error explaining why a pattern is not composed of function heads and
 things like StringLiteral, DomainValue and variables.

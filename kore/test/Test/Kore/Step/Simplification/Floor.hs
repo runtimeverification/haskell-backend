@@ -3,35 +3,50 @@ module Test.Kore.Step.Simplification.Floor
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
 import qualified Data.Default as Default
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-                 ( bottom, top )
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFloorPredicate,
-                 makeTruePredicate )
-import           Kore.Step.Simplification.Floor
-                 ( makeEvaluateFloor, simplify )
+    ( bottom
+    , top
+    )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeFloorPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Simplification.Floor
+    ( makeEvaluateFloor
+    , simplify
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 import Test.Kore
-       ( testId )
+    ( testId
+    )
 import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
-       ( testSort )
+    ( testSort
+    )
 import Test.Tasty.HUnit.Extensions
 
 test_floorSimplification :: [TestTree]

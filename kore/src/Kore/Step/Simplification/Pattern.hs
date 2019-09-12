@@ -11,24 +11,35 @@ module Kore.Step.Simplification.Pattern
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
 
-import           Branch
+import Branch
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-                 ( pattern Exists_ )
-import           Kore.Logger
-                 ( LogMessage, WithLog )
+import Kore.Internal.TermLike
+    ( pattern Exists_
+    )
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
 import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( simplify )
+    ( simplify
+    )
 import qualified Kore.Step.Merging.Pattern as Pattern
-import           Kore.Step.Simplification.Simplify
-                 ( MonadSimplify, SimplifierVariable, simplifyTerm )
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , SimplifierVariable
+    , simplifyTerm
+    )
+import Kore.Step.Substitution
+    ( mergePredicatesAndSubstitutions
+    )
 
 simplifyAndRemoveTopExists
     ::  ( SimplifierVariable variable
