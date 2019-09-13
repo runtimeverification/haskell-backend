@@ -984,7 +984,7 @@ doesn'tMatch = withMatch (assertBool "" . isUnsupportedPatterns)
   where
     isUnsupportedPatterns =
         \case
-            Left (UnificationError (UnsupportedPatterns !_ !_ !_)) -> True
+            Left (UnificationError (UnsupportedPatterns !_)) -> True
             _ -> False
 
 matches
