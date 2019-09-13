@@ -130,10 +130,6 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Double constructor is bottom with variables"
         -- [x=constructor(y)] + [x=constructor(constructor(y))]  === bottom?
         $ do
-            let expect = Left $ UnificationError $ unsupportedPatterns
-                    "Unknown unification case."
-                    (mkElemVar Mock.y)
-                    (Mock.constr10 (mkElemVar Mock.y))
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -144,7 +140,10 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 (mkElemVar Mock.y))
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+
+            case actual of
+                Left (UnificationError (UnsupportedPatterns _)) -> pure ()
+                _ -> assertFailure ""
             assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of function"
@@ -221,10 +220,6 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Constructor circular dependency?"
         -- [x=y] + [y=constructor(x)]  === error
         $ do
-            let expect = Left $ UnificationError $ unsupportedPatterns
-                    "Unknown unification case."
-                    (mkElemVar Mock.y)
-                    (Mock.constr10 (mkElemVar Mock.x))
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -235,7 +230,9 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkElemVar Mock.x)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            case actual of
+                Left (UnificationError (UnsupportedPatterns _)) -> pure ()
+                _ -> assertFailure ""
             assertNormalizedPredicates actual
 
     , testCase "Non-ctor circular dependency"

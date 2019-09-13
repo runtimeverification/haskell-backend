@@ -217,9 +217,8 @@ andSimplifyException
     => String
     -> UnificationTerm
     -> UnificationTerm
-    -> String
     -> TestTree
-andSimplifyException message term1 term2 exceptionMessage =
+andSimplifyException message term1 term2 =
     testCase message (catch test handler)
     where
         test = do
@@ -229,7 +228,7 @@ andSimplifyException message term1 term2 exceptionMessage =
                 $ simplifyAnds (unificationProblem term1 term2 :| [])
             _ <- evaluate assignment
             assertFailure "This evaluation should fail"
-        handler (ErrorCall s) = assertEqual "" exceptionMessage s
+        handler (ErrorCall _) = pure ()
 
 unificationProcedureSuccessWithSimplifiers
     :: HasCallStack
@@ -421,13 +420,9 @@ test_unification =
     , andSimplifyException "Unmatching constructor constant + domain value"
         (UnificationTerm a)
         (UnificationTerm dv2)
-        "Cannot handle Constructor and DomainValue:\n\
-        \a{}()\n\\dv{testSort{}}(\"dv2\")\n"
     , andSimplifyException "Unmatching domain value + constructor constant"
         (UnificationTerm dv1)
         (UnificationTerm a)
-        "Cannot handle DomainValue and Constructor:\n\
-        \\\dv{testSort{}}(\"dv1\")\na{}()\n"
     , testCase "Unmatching domain value + nonconstructor constant" $
         andSimplifySuccess
             (UnificationTerm dv1)
