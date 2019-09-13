@@ -17,28 +17,51 @@ module Kore.Step.Simplification.Data
     , SimplifierT, runSimplifierT
     , Env (..)
     , runSimplifier
+    , runSimplifierBranch
     , evalSimplifier
-    , evalSimplifierBranch
     ) where
 
-import           Control.Monad.Catch
-                 ( MonadCatch, MonadThrow )
-import           Control.Monad.IO.Unlift
-                 ( MonadUnliftIO )
-import           Control.Monad.Reader
+import Control.Monad.Catch
+    ( MonadCatch
+    , MonadThrow
+    )
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO
+    )
+import Control.Monad.Reader
+import qualified Data.Map.Strict as Map
 import qualified GHC.Stack as GHC
 
-import           Branch
+import Branch
+import qualified Kore.Attribute.Axiom as Attribute
+    ( Axiom
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Logger
-import           Kore.Profiler.Data
-                 ( MonadProfiler (profileDuration) )
-import           Kore.Step.Simplification.Simplify
-import           SMT
-                 ( MonadSMT (..), SMT, SmtT (..) )
+    ( Symbol
+    )
+import qualified Kore.Builtin as Builtin
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+import Kore.Logger
+import Kore.Profiler.Data
+    ( MonadProfiler (profileDuration)
+    )
+import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
+import qualified Kore.Step.Axiom.Registry as Axiom.Registry
+import qualified Kore.Step.Simplification.Predicate as Predicate
+import qualified Kore.Step.Simplification.Rule as Rule
+import qualified Kore.Step.Simplification.Simplifier as Simplifier
+import Kore.Step.Simplification.Simplify
+import SMT
+    ( MonadSMT (..)
+    , SmtT (..)
+    )
 
 -- * Simplifier
 
@@ -114,12 +137,13 @@ instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
 
 {- | Run a simplification, returning the results along all branches.
  -}
-evalSimplifierBranch
-    :: Env
-    -> BranchT Simplifier a
+runSimplifierBranch
+    :: Monad smt
+    => Env
+    -> BranchT (SimplifierT smt) a
     -- ^ simplifier computation
-    -> SMT [a]
-evalSimplifierBranch env = evalSimplifier env . gather
+    -> smt [a]
+runSimplifierBranch env = runSimplifier env . gather
 
 {- | Run a simplification, returning the result of only one branch.
 
@@ -131,10 +155,9 @@ that may branch.
 runSimplifier
     :: GHC.HasCallStack
     => Env
-    -> Simplifier a
-    -- ^ simplifier computation
-    -> SMT a
-runSimplifier env = evalSimplifier env
+    -> SimplifierT smt a
+    -> smt a
+runSimplifier env simplifier = runReaderT (runSimplifierT simplifier) env
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
 
@@ -144,8 +167,60 @@ that may branch.
 
   -}
 evalSimplifier
-    :: GHC.HasCallStack
-    => Env
+    :: forall smt a
+    .  GHC.HasCallStack
+    => WithLog LogMessage smt
+    => (MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
+    => VerifiedModule Attribute.Symbol Attribute.Axiom
     -> SimplifierT smt a
     -> smt a
-evalSimplifier env = flip runReaderT env . runSimplifierT
+evalSimplifier verifiedModule simplifier = do
+    env <- runSimplifier earlyEnv initialize
+    runReaderT (runSimplifierT simplifier) env
+  where
+    earlyEnv =
+        Env
+            { metadataTools = earlyMetadataTools
+            , simplifierTermLike
+            , simplifierPredicate
+            , simplifierAxioms = earlySimplifierAxioms
+            }
+    -- It's safe to build the MetadataTools using the external
+    -- IndexedModule because MetadataTools doesn't retain any
+    -- knowledge of the patterns which are internalized.
+    earlyMetadataTools = MetadataTools.build verifiedModule
+    simplifierTermLike = Simplifier.create
+    simplifierPredicate = Predicate.create
+    -- Initialize without any builtin or axiom simplifiers.
+    earlySimplifierAxioms = Map.empty
+
+    verifiedModule' =
+        IndexedModule.mapPatterns
+            (Builtin.internalize earlyMetadataTools)
+            verifiedModule
+    metadataTools = MetadataTools.build verifiedModule'
+
+    initialize :: SimplifierT smt Env
+    initialize = do
+        let equalityAxioms =
+                Axiom.Registry.extractEqualityAxioms verifiedModule'
+        functionAxioms <- Rule.simplifyFunctionAxioms equalityAxioms
+        let
+            builtinEvaluators, userEvaluators, simplifierAxioms
+                :: BuiltinAndAxiomSimplifierMap
+            builtinEvaluators =
+                Axiom.EvaluationStrategy.builtinEvaluation
+                <$> Builtin.koreEvaluators verifiedModule'
+            userEvaluators =
+                Axiom.Registry.axiomPatternsToEvaluators functionAxioms
+            simplifierAxioms =
+                Map.unionWith
+                    Axiom.EvaluationStrategy.simplifierWithFallback
+                    builtinEvaluators
+                    userEvaluators
+        return Env
+            { metadataTools
+            , simplifierTermLike
+            , simplifierPredicate
+            , simplifierAxioms
+            }

@@ -3,41 +3,49 @@ module Test.Kore.Step.Simplification.Predicate
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
 import qualified Data.Map as Map
 
-import           Branch
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Predicate
-                 ( Conditional (..), Predicate )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Conditional
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( firstFullEvaluation )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( firstFullEvaluation
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+    ( AxiomIdentifier (..)
+    )
 import qualified Kore.Step.Simplification.Predicate as PSSimplifier
-                 ( create )
-import           Kore.Step.Simplification.Simplify
+    ( create
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import qualified Test.Kore.Step.Simplification as Test
+import Test.Tasty.HUnit.Extensions
 
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =
@@ -270,12 +278,10 @@ runSimplifier
     -> IO (OrPredicate Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier env
-    $ gather
+    $ Test.runSimplifierBranch env
     $ simplifier predicate
   where
-    env = Mock.env { simplifierAxioms = patternSimplifierMap }
+    env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
     PredicateSimplifier simplifier = PSSimplifier.create
 
 simplificationEvaluator

@@ -5,12 +5,13 @@ import Test.Tasty
 import Test.Tasty.Hedgehog
 import Test.Tasty.HUnit
 
-import           Control.Monad.IO.Class
+import Control.Monad.IO.Class
 import qualified Control.Monad.Morph as Morph
 import qualified GHC.Stack as GHC
 
-import           SMT
-                 ( SMT )
+import SMT
+    ( SMT
+    )
 import qualified SMT
 
 testPropertyWithSolver

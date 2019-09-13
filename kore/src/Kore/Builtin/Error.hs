@@ -16,7 +16,8 @@ module Kore.Builtin.Error
     ) where
 
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 {- | Abort due to an internal error that should be prevented by the verifier.
 

@@ -3,43 +3,54 @@ module Test.Kore.Strategies.OnePath.Verification
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
 import Control.Monad.Trans.Except
-       ( runExceptT )
+    ( runExceptT
+    )
 import Data.Default
-       ( def )
+    ( def
+    )
 import Data.Limit
-       ( Limit (..) )
+    ( Limit (..)
+    )
 import Numeric.Natural
-       ( Natural )
+    ( Natural
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Internal.Pattern
-                 ( Conditional (Conditional) )
-import           Kore.Internal.Pattern as Conditional
-                 ( Conditional (..) )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeNotPredicate, makeTruePredicate )
-import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (..),
-                 RulePattern (RulePattern) )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.Strategies.Goal
+import Kore.Internal.Pattern
+    ( Conditional (Conditional)
+    )
+import Kore.Internal.Pattern as Conditional
+    ( Conditional (..)
+    )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Rule
+    ( OnePathRule (..)
+    , RewriteRule (..)
+    , RulePattern (RulePattern)
+    )
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    )
+import Kore.Strategies.Goal
 import qualified Kore.Strategies.OnePath.Verification as OnePath
-import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_onePathVerification :: [TestTree]
 test_onePathVerification =
@@ -370,8 +381,7 @@ runVerification
     -> [claim]
     -> IO (Either (Pattern Variable) ())
 runVerification stepLimit axioms claims =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ runExceptT
     $ OnePath.verify
         (OnePath.defaultStrategy claims axioms)

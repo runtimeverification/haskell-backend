@@ -5,15 +5,20 @@ module Test.Kore.Contains
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
 
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations), Sort, Symbol )
+    ( Declarations (Declarations)
+    , Sort
+    , Symbol
+    )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified Kore.Syntax.Id as Kore
-                 ( Id )
+    ( Id
+    )
 
 import Test.Tasty.HUnit.Extensions
 

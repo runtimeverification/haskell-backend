@@ -155,92 +155,105 @@ module Kore.Internal.TermLike
     ) where
 
 
-import           Control.Applicative
-import           Control.Comonad
-import           Control.Comonad.Trans.Cofree
+import Control.Applicative
+import Control.Comonad
+import Control.Comonad.Trans.Cofree
 import qualified Control.Comonad.Trans.Env as Env
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Control.Monad.Reader
-                 ( Reader )
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Control.Monad.Reader
+    ( Reader
+    )
 import qualified Control.Monad.Reader as Reader
-import           Data.Align
+import Data.Align
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Functor.Compose
-                 ( Compose (..) )
-import           Data.Functor.Foldable
-                 ( Base, Corecursive, Recursive )
+import Data.Function
+import Data.Functor.Compose
+    ( Compose (..)
+    )
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Functor.Identity
-                 ( Identity (..) )
-import           Data.Hashable
-import           Data.Map.Strict
-                 ( Map )
+import Data.Functor.Identity
+    ( Identity (..)
+    )
+import Data.Hashable
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-import           Data.Monoid
-                 ( Endo (..) )
+import Data.Maybe
+import Data.Monoid
+    ( Endo (..)
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           Data.These
+import Data.These
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
-import           Generically
+import Generically
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Pattern.Defined as Pattern
-import           Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
-import           Kore.Attribute.Synthetic
-import           Kore.Debug
+import Kore.Attribute.Synthetic
+import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Error
-import           Kore.Internal.Alias
-import           Kore.Internal.Symbol
-import           Kore.Internal.Variable
-import           Kore.Sort
+import Kore.Error
+import Kore.Internal.Alias
+import Kore.Internal.Symbol
+import Kore.Internal.Variable
+import Kore.Sort
 import qualified Kore.Substitute as Substitute
-import           Kore.Syntax.And
-import           Kore.Syntax.Application
-import           Kore.Syntax.Bottom
-import           Kore.Syntax.Ceil
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.Definition hiding
-                 ( Alias, Symbol )
+import Kore.Syntax.And
+import Kore.Syntax.Application
+import Kore.Syntax.Bottom
+import Kore.Syntax.Ceil
+import Kore.Syntax.CharLiteral
+import Kore.Syntax.Definition hiding
+    ( Alias
+    , Symbol
+    )
 import qualified Kore.Syntax.Definition as Syntax
-import           Kore.Syntax.DomainValue
-import           Kore.Syntax.Equals
-import           Kore.Syntax.Exists
-import           Kore.Syntax.Floor
-import           Kore.Syntax.Forall
-import           Kore.Syntax.Id
-import           Kore.Syntax.Iff
-import           Kore.Syntax.Implies
-import           Kore.Syntax.In
-import           Kore.Syntax.Inhabitant
-import           Kore.Syntax.Mu
-import           Kore.Syntax.Next
-import           Kore.Syntax.Not
-import           Kore.Syntax.Nu
-import           Kore.Syntax.Or
-import           Kore.Syntax.Rewrites
-import           Kore.Syntax.StringLiteral
-import           Kore.Syntax.Top
-import           Kore.Syntax.Variable as Variable
-import           Kore.TopBottom
-import           Kore.Unparser
-                 ( Unparse (..) )
+import Kore.Syntax.DomainValue
+import Kore.Syntax.Equals
+import Kore.Syntax.Exists
+import Kore.Syntax.Floor
+import Kore.Syntax.Forall
+import Kore.Syntax.Id
+import Kore.Syntax.Iff
+import Kore.Syntax.Implies
+import Kore.Syntax.In
+import Kore.Syntax.Inhabitant
+import Kore.Syntax.Mu
+import Kore.Syntax.Next
+import Kore.Syntax.Not
+import Kore.Syntax.Nu
+import Kore.Syntax.Or
+import Kore.Syntax.Rewrites
+import Kore.Syntax.StringLiteral
+import Kore.Syntax.Top
+import Kore.Syntax.Variable as Variable
+import Kore.TopBottom
+import Kore.Unparser
+    ( Unparse (..)
+    )
 import qualified Kore.Unparser as Unparser
-import           Kore.Variables.Binding
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
+import Kore.Variables.Binding
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
 
@@ -1148,8 +1161,7 @@ applyAlias sentence params children =
                 symbolOrAliasSorts params sentence
                 & assertRight
             , aliasLeft =
-                fmap (foldMapVariable id)
-                . applicationChildren
+                applicationChildren
                 . sentenceAliasLeftPattern
                 $ sentence
             , aliasRight = sentenceAliasRightPattern sentence

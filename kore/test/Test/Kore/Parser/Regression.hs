@@ -9,29 +9,39 @@ module Test.Kore.Parser.Regression
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.Golden
-       ( findByExtension, goldenVsString )
+    ( findByExtension
+    , goldenVsString
+    )
 
-import           Control.Exception
-                 ( bracket )
-import           Data.Bifunctor
-import           Data.ByteString.Lazy
-                 ( ByteString )
+import Control.Exception
+    ( bracket
+    )
+import Data.Bifunctor
+import Data.ByteString.Lazy
+    ( ByteString
+    )
 import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy.Char8
-import           Data.Function
-import           Data.Proxy
-import           System.Directory
-                 ( getCurrentDirectory, setCurrentDirectory )
-import           System.FilePath
-                 ( addExtension, splitFileName, (</>) )
+import Data.Function
+import Data.Proxy
+import System.Directory
+    ( getCurrentDirectory
+    , setCurrentDirectory
+    )
+import System.FilePath
+    ( addExtension
+    , splitFileName
+    , (</>)
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.Parser
+import Kore.Error
+import Kore.Parser
 
 import qualified Paths
 

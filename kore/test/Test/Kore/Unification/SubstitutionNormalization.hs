@@ -9,24 +9,25 @@ import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 
 import qualified Kore.Internal.Pattern as Conditional
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.TopBottom
-                 ( isBottom )
-import           Kore.Unification.Error
-                 ( SubstitutionError (..) )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
+import Kore.TopBottom
+    ( isBottom
+    )
+import Kore.Unification.Error
+    ( SubstitutionError (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.SubstitutionNormalization
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unification.SubstitutionNormalization
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import qualified Test.SMT
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 data NormalizationResult
   = Substitution ![(UnifiedVariable Variable, TermLike Variable)]
@@ -230,8 +231,8 @@ runNormalizeSubstitution
     :: [(UnifiedVariable Variable, TermLike Variable)]
     -> IO NormalizationResult
 runNormalizeSubstitution substitution = do
-    normalizedSubstitution <- Test.SMT.runSMT
-        $ evalSimplifier Mock.env
+    normalizedSubstitution <-
+        runSimplifier Mock.env
         $ Except.runExceptT
         $ normalizeSubstitution (Map.fromList substitution)
     case normalizedSubstitution of

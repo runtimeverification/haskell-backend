@@ -4,32 +4,35 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
 
-import           Data.Function
+import Data.Function
 import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.AstWithLocation
-import           Kore.ASTVerifier.Error
-                 ( sortNeedsDomainValueAttributeMessage )
-import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import Kore.AST.AstWithLocation
+import Kore.ASTVerifier.Error
+    ( sortNeedsDomainValueAttributeMessage
+    )
+import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.Error
-                 ( noSort )
+import Kore.Error
+import Kore.IndexedModule.Error
+    ( noSort
+    )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
 
-import           Test.Kore
-import           Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
+import Test.Kore
+import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 

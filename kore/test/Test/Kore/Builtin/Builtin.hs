@@ -18,72 +18,95 @@ module Test.Kore.Builtin.Builtin
     ) where
 
 import qualified Hedgehog
-import           Test.Tasty
-                 ( TestTree )
-import           Test.Tasty.HUnit
-                 ( assertEqual, testCase )
+import Test.Tasty
+    ( TestTree
+    )
+import Test.Tasty.HUnit
+    ( assertEqual
+    , testCase
+    )
 
 import qualified Control.Monad.Trans as Trans
-import           Data.Function
-                 ( (&) )
-import           Data.Map
-                 ( Map )
+import Data.Function
+    ( (&)
+    )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.Proxy
-import           GHC.Stack
-                 ( HasCallStack )
+import Data.Proxy
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import           Kore.ASTVerifier.DefinitionVerifier
-import           Kore.ASTVerifier.Error
-                 ( VerifyError )
+import Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.Error
+    ( VerifyError
+    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
-import           Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Domain.Builtin
-                 ( NormalizedAc, NormalizedSet, emptyNormalizedAc )
+import Kore.Domain.Builtin
+    ( NormalizedAc
+    , NormalizedSet
+    , emptyNormalizedAc
+    )
 import qualified Kore.Error
-import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
+import Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
-                 ( build )
+    ( build
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
-import           Kore.Internal.Pattern
-                 ( Pattern )
-import           Kore.Internal.Predicate as Predicate
-                 ( top )
+    ( extractPatterns
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import Kore.Internal.Predicate as Predicate
+    ( top
+    )
 import qualified Kore.Internal.Symbol as Internal
-import           Kore.Internal.TermLike
-import           Kore.Parser
-                 ( parseKorePattern )
+import Kore.Internal.TermLike
+import Kore.Parser
+    ( parseKorePattern
+    )
 import qualified Kore.Step.Result as Result
-                 ( mergeResults )
-import           Kore.Step.Rule
-                 ( RewriteRule )
-import           Kore.Step.Simplification.Data
+    ( mergeResults
+    )
+import Kore.Step.Rule
+    ( RewriteRule
+    )
+import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
-import           Kore.Step.Simplification.Simplify
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
-import           Kore.Syntax.Definition
-                 ( ModuleName, ParsedDefinition )
-import           Kore.Unification.Error
-                 ( UnificationOrSubstitutionError )
+import Kore.Syntax.Definition
+    ( ModuleName
+    , ParsedDefinition
+    )
+import Kore.Unification.Error
+    ( UnificationOrSubstitutionError
+    )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-                 ( unparseToString )
-import           SMT
-                 ( SMT )
-import qualified SMT
+import Kore.Unparser
+    ( unparseToString
+    )
+import SMT
+    ( SMT
+    )
 
-import Test.Kore
 import Test.Kore.Builtin.Definition
+import Test.SMT
 
 emptyNormalizedSet :: NormalizedAc NormalizedSet key child
 emptyNormalizedSet = emptyNormalizedAc
@@ -170,7 +193,7 @@ testEnv =
         }
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
-evaluate = evalSimplifier testEnv . (`TermLike.simplify` Predicate.top)
+evaluate = runSimplifier testEnv . (`TermLike.simplify` Predicate.top)
 
 evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
@@ -178,11 +201,8 @@ evaluateT = Trans.lift . evaluate
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
-    . evalSimplifier testEnv
+    . runSimplifier testEnv
     . TermLike.simplifyToOr Predicate.top
-
-runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
 
 runStep
     :: Pattern Variable
@@ -202,7 +222,7 @@ runStepResult
     -> SMT (Either UnificationOrSubstitutionError (Step.Results Variable))
 runStepResult configuration axiom = do
     results <-
-        evalSimplifier testEnv
+        runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesParallel
             (Step.UnificationProcedure Unification.unificationProcedure)

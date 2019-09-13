@@ -1,9 +1,12 @@
 module Test.Kore.Parser.CharSet (test_charSet) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( assertBool, testCase )
+    ( assertBool
+    , testCase
+    )
 
 import Kore.Parser.CharSet as CharSet
 

@@ -9,14 +9,19 @@ module Kore.Step.Simplification.OrPattern
 
 import qualified Branch as BranchT
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplifyPredicate )
-import           Kore.Step.Simplification.Simplify
-                 ( MonadSimplify, SimplifierVariable )
+    ( simplifyPredicate
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , SimplifierVariable
+    )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( filterMultiOr )
+    ( filterMultiOr
+    )
 
 simplifyPredicatesWithSmt
     :: (MonadSimplify simplifier, SimplifierVariable variable)

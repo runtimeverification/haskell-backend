@@ -2,34 +2,46 @@
 
 module Test.Kore.Builtin.Int where
 
-import           Hedgehog hiding
-                 ( Concrete )
+import Hedgehog hiding
+    ( Concrete
+    )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import           Test.Tasty
+import Test.Tasty
 
-import           Data.Bits
-                 ( complement, shift, xor, (.&.), (.|.) )
+import Data.Bits
+    ( complement
+    , shift
+    , xor
+    , (.&.)
+    , (.|.)
+    )
 import qualified Data.Text as Text
-import           GHC.Integer
-                 ( smallInteger )
-import           GHC.Integer.GMP.Internals
-                 ( powModInteger, recipModInteger )
-import           GHC.Integer.Logarithms
-                 ( integerLog2# )
+import GHC.Integer
+    ( smallInteger
+    )
+import GHC.Integer.GMP.Internals
+    ( powModInteger
+    , recipModInteger
+    )
+import GHC.Integer.Logarithms
+    ( integerLog2#
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
-import           Kore.Internal.Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
+import Kore.Internal.Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
 
-import           Test.Kore
-                 ( elementVariableGen, standaloneGen )
+import Test.Kore
+    ( elementVariableGen
+    , standaloneGen
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
-import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Definition
-import           Test.SMT
+import Test.Kore.Builtin.Builtin
+import Test.Kore.Builtin.Definition
+import Test.SMT
 
 genInteger :: Gen Integer
 genInteger = Gen.integral (Range.linear (-1024) 1024)

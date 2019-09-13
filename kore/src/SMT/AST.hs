@@ -27,34 +27,46 @@ module SMT.AST
     , SmtFunctionDeclaration
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.DeepSeq
-                 ( NFData )
-import           Control.Monad.Fail
-                 ( MonadFail )
-import           Data.Char
-                 ( isSpace )
-import           Data.Maybe
-                 ( fromMaybe )
-import           Data.String
-                 ( IsString (..) )
-import           Data.Text
-                 ( Text )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.DeepSeq
+    ( NFData
+    )
+import Control.Monad.Fail
+    ( MonadFail
+    )
+import Data.Char
+    ( isSpace
+    )
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.String
+    ( IsString (..)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           Data.Text.Internal.Builder
-                 ( Builder )
+import Data.Text.Internal.Builder
+    ( Builder
+    )
 import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.IO as Text
 import qualified Data.Text.Lazy as Text.Lazy
-import           Data.Void
-                 ( Void )
+import Data.Void
+    ( Void
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           System.IO
-                 ( Handle, hPutChar )
-import           Text.Megaparsec
-                 ( Parsec )
+import System.IO
+    ( Handle
+    , hPutChar
+    )
+import Text.Megaparsec
+    ( Parsec
+    )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as Lexer

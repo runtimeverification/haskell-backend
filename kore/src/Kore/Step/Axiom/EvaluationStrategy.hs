@@ -18,30 +18,38 @@ module Kore.Step.Axiom.EvaluationStrategy
 
 import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
-import           Data.Maybe
-                 ( isJust )
+import Data.Maybe
+    ( isJust
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
+    ( extractPatterns
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Predicate
-                 ( Predicate )
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
-import           Kore.Step.Axiom.Evaluate
-import           Kore.Step.Rule
-                 ( EqualityRule )
-import           Kore.Step.Simplification.Simplify
+import Kore.Step.Axiom.Evaluate
+import Kore.Step.Rule
+    ( EqualityRule
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
-                 ( AttemptedAxiom (..), hasRemainders )
+    ( AttemptedAxiom (..)
+    , hasRemainders
+    )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
-import           Kore.Unparser
-                 ( unparse )
+    ( AttemptedAxiomResults (..)
+    )
+import Kore.Unparser
+    ( unparse
+    )
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}

@@ -25,29 +25,35 @@ module Kore.Builtin.KEqual
 
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Bool as Bool
-import           Kore.Builtin.Builtin
-                 ( acceptAnySort )
+import Kore.Builtin.Builtin
+    ( acceptAnySort
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..) )
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    )
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Or as Or
-import           Kore.Step.Simplification.Simplify
-import           Kore.Syntax.Definition
-                 ( SentenceSymbol (..) )
+import Kore.Step.Simplification.Simplify
+import Kore.Syntax.Definition
+    ( SentenceSymbol (..)
+    )
 
 {- | Verify that hooked symbol declarations are well-formed.
 

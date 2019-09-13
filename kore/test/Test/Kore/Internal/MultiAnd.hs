@@ -1,15 +1,20 @@
 module Test.Kore.Internal.MultiAnd where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+    ( assertEqual
+    , testCase
+    )
 
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import           Kore.TopBottom
-                 ( TopBottom (..) )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 
 
 import Test.Kore.Comparators ()

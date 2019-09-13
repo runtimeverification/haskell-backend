@@ -18,36 +18,49 @@ module Kore.Step.Substitution
     , normalizeExcept
     ) where
 
-import           Control.Monad.Except
-                 ( withExceptT )
+import Control.Monad.Except
+    ( withExceptT
+    )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import           Branch
-import           Kore.Internal.Predicate
-                 ( Conditional (..), Predicate )
+import Branch
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Logger
-                 ( LogMessage, WithLog )
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Error
-                 ( substitutionToUnifyOrSubError )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Unification.Error
+    ( substitutionToUnifyOrSubError
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.SubstitutionNormalization
-                 ( normalizeSubstitution )
-import           Kore.Unification.UnifierImpl
-                 ( normalizeSubstitutionDuplication )
-import           Kore.Unification.Unify
-                 ( MonadUnify, SimplifierVariable )
+import Kore.Unification.SubstitutionNormalization
+    ( normalizeSubstitution
+    )
+import Kore.Unification.UnifierImpl
+    ( normalizeSubstitutionDuplication
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    , SimplifierVariable
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
 
 newtype PredicateMerger variable m =

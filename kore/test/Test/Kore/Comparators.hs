@@ -14,15 +14,20 @@ Portability : portable
 
 module Test.Kore.Comparators where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Comonad.Trans.Cofree
-                 ( CofreeF (..), CofreeT (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Comonad.Trans.Cofree
+    ( CofreeF (..)
+    , CofreeT (..)
+    )
 import qualified Data.Function as Function
-import           Data.Functor.Identity
-                 ( Identity (..) )
-import           Numeric.Natural
-                 ( Natural )
+import Data.Functor.Identity
+    ( Identity (..)
+    )
+import Numeric.Natural
+    ( Natural
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Location as Attribute
@@ -33,68 +38,96 @@ import qualified Kore.Attribute.Pattern.FreeVariables as Attribute
 import qualified Kore.Attribute.Pattern.Function as Attribute.Pattern
 import qualified Kore.Attribute.Pattern.Functional as Attribute.Pattern
 import qualified Kore.Attribute.Source as Attribute
-import           Kore.Domain.Builtin as Domain
-import           Kore.Error
-import           Kore.Internal.MultiOr
-import           Kore.Internal.Pattern
-                 ( Conditional (..) )
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-import           Kore.Proof.Functional
-import           Kore.Step.Axiom.Identifier
-                 ( AxiomIdentifier )
+import Kore.Domain.Builtin as Domain
+import Kore.Error
+import Kore.Internal.MultiOr
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    )
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+import Kore.Proof.Functional
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
-import           Kore.Step.Rule
-                 ( OnePathRule (..), RulePattern (..) )
-import           Kore.Step.Simplification.Simplify as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
-import           Kore.Step.Simplification.Simplify as AttemptedAxiomResults
-                 ( AttemptedAxiomResults (..) )
+import Kore.Step.Rule
+    ( OnePathRule (..)
+    , RulePattern (..)
+    )
+import Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    )
+import Kore.Step.Simplification.Simplify as AttemptedAxiomResults
+    ( AttemptedAxiomResults (..)
+    )
 import qualified Kore.Step.SMT.AST as SMT
-                 ( Declarations (Declarations), Encodable,
-                 IndirectSymbolDeclaration (IndirectSymbolDeclaration),
-                 KoreSortDeclaration (..), KoreSymbolDeclaration (..),
-                 Sort (Sort), SortReference (SortReference), Symbol (Symbol),
-                 SymbolReference (SymbolReference) )
+    ( Declarations (Declarations)
+    , Encodable
+    , IndirectSymbolDeclaration (IndirectSymbolDeclaration)
+    , KoreSortDeclaration (..)
+    , KoreSymbolDeclaration (..)
+    , Sort (Sort)
+    , SortReference (SortReference)
+    , Symbol (Symbol)
+    , SymbolReference (SymbolReference)
+    )
 import qualified Kore.Step.SMT.AST as SMT.Declarations
-                 ( Declarations (..) )
+    ( Declarations (..)
+    )
 import qualified Kore.Step.SMT.AST as SMT.Symbol
-                 ( Symbol (..) )
+    ( Symbol (..)
+    )
 import qualified Kore.Step.SMT.AST as SMT.Sort
-                 ( Sort (..) )
+    ( Sort (..)
+    )
 import qualified Kore.Step.SMT.AST as SMT.SortReference
-                 ( SortReference (..) )
+    ( SortReference (..)
+    )
 import qualified Kore.Step.SMT.AST as SMT.SymbolReference
-                 ( SymbolReference (..) )
+    ( SymbolReference (..)
+    )
 import qualified Kore.Step.SMT.AST as SMT.IndirectSymbolDeclaration
-                 ( IndirectSymbolDeclaration (..) )
-import           Kore.Strategies.ProofState
-import           Kore.Syntax as Syntax
-import           Kore.Syntax.Sentence as Syntax
-import           Kore.Unification.Error
-import           Kore.Unification.Substitution
-                 ( Substitution )
+    ( IndirectSymbolDeclaration (..)
+    )
+import Kore.Strategies.ProofState
+import Kore.Syntax as Syntax
+import Kore.Syntax.Sentence as Syntax
+import Kore.Unification.Error
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.Target
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..), foldMapVariable )
+import Kore.Variables.Target
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    , foldMapVariable
+    )
 import qualified SMT.AST as SMT
-                 ( Constructor (Constructor),
-                 ConstructorArgument (ConstructorArgument),
-                 DataTypeDeclaration (DataTypeDeclaration),
-                 FunctionDeclaration (FunctionDeclaration), SExpr,
-                 SortDeclaration (SortDeclaration), showSExpr )
+    ( Constructor (Constructor)
+    , ConstructorArgument (ConstructorArgument)
+    , DataTypeDeclaration (DataTypeDeclaration)
+    , FunctionDeclaration (FunctionDeclaration)
+    , SExpr
+    , SortDeclaration (SortDeclaration)
+    , showSExpr
+    )
 import qualified SMT.AST as SMT.SortDeclaration
-                 ( SortDeclaration (..) )
+    ( SortDeclaration (..)
+    )
 import qualified SMT.AST as SMT.FunctionDeclaration
-                 ( FunctionDeclaration (..) )
+    ( FunctionDeclaration (..)
+    )
 import qualified SMT.AST as SMT.DataTypeDeclaration
-                 ( DataTypeDeclaration (..) )
+    ( DataTypeDeclaration (..)
+    )
 import qualified SMT.AST as SMT.Constructor
-                 ( Constructor (..) )
+    ( Constructor (..)
+    )
 import qualified SMT.AST as SMT.ConstructorArgument
-                 ( ConstructorArgument (..) )
+    ( ConstructorArgument (..)
+    )
 
 import Test.Tasty.HUnit.Extensions
 
@@ -1599,12 +1632,13 @@ instance EqualWithExplanation Attribute.Axiom where
 instance StructEqualWithExplanation Attribute.Axiom where
     structConstructorName _ = "Axiom"
     structFieldsWithNames
-        expect@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
-        actual@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+        expect@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
+        actual@(Attribute.Axiom _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _)
       =
         map (\f -> f expect actual)
             [ Function.on (EqWrap "heatCool = "       ) Attribute.heatCool
             , Function.on (EqWrap "productionID = "   ) Attribute.productionID
+            , Function.on (EqWrap "priority = "       ) Attribute.priority
             , Function.on (EqWrap "assoc = "          ) Attribute.assoc
             , Function.on (EqWrap "comm = "           ) Attribute.comm
             , Function.on (EqWrap "unit = "           ) Attribute.unit
@@ -1643,6 +1677,16 @@ instance WrapperEqualWithExplanation Attribute.ProductionID where
     wrapperConstructorName _ = "ProductionID"
     wrapperField =
         Function.on (EqWrap "getProductionID = ") Attribute.getProductionID
+
+instance EqualWithExplanation Attribute.Priority where
+    compareWithExplanation a@(Attribute.Priority _) =
+        wrapperCompareWithExplanation a
+    printWithExplanation = show
+
+instance WrapperEqualWithExplanation Attribute.Priority where
+    wrapperConstructorName _ = "Priority"
+    wrapperField =
+        Function.on (EqWrap "getPriority = ") Attribute.getPriority
 
 instance EqualWithExplanation Attribute.Assoc where
     compareWithExplanation a@(Attribute.Assoc _) =

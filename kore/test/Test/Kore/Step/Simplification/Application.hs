@@ -8,34 +8,41 @@ import Test.Tasty.HUnit
 import qualified Data.List as List
 import qualified Data.Map as Map
 
-import           Data.Sup
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Data.Sup
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( top )
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( firstFullEvaluation )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate as Predicate
+    ( top
+    )
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( firstFullEvaluation
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Simplification.Application
-import           Kore.Step.Simplification.Data
-import           Kore.Step.Simplification.Simplify
+    ( AxiomIdentifier (..)
+    )
+import Kore.Step.Simplification.Application
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+    ( AttemptedAxiom (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_applicationSimplification :: [TestTree]
 test_applicationSimplification =
@@ -291,9 +298,6 @@ evaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Application Symbol (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluate axiomIdToEvaluator application =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ simplify Predicate.top application
+evaluate simplifierAxioms = runSimplifier mockEnv . simplify Predicate.top
   where
-    mockEnv = Mock.env { simplifierAxioms = axiomIdToEvaluator }
+    mockEnv = Mock.env { simplifierAxioms }

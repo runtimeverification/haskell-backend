@@ -3,20 +3,25 @@ module Test.Kore.Step.Simplification.DomainValue
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.DomainValue
-                 ( simplify )
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.DomainValue
+    ( simplify
+    )
 
 import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
-       ( testSort )
+    ( testSort
+    )
 import Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]

@@ -3,16 +3,20 @@ module Test.Kore.Step.Simplification.CharLiteral
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.TermLike
-import           Kore.Step.Simplification.CharLiteral
-                 ( simplify )
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.CharLiteral
+    ( simplify
+    )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions

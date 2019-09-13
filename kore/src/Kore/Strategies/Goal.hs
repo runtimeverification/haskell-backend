@@ -4,27 +4,35 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Data.Foldable as Foldable
-import           Data.Maybe
-                 ( mapMaybe )
+import Data.Maybe
+    ( mapMaybe
+    )
 import qualified Generics.SOP as SOP
-import           GHC.Generics as GHC
+import GHC.Generics as GHC
 
-import           Kore.Debug
+import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Step.Rule
-                 ( OnePathRule (..), RewriteRule (..) )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, SimplifierVariable )
-import           Kore.Step.Strategy
-                 ( Strategy )
+import Kore.Step.Rule
+    ( OnePathRule (..)
+    , RewriteRule (..)
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    , SimplifierVariable
+    )
+import Kore.Step.Strategy
+    ( Strategy
+    )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.OnePath.Actions as OnePath
-import           Kore.Strategies.ProofState
-import           Kore.Unparser
-                 ( Unparse )
+import Kore.Strategies.ProofState
+import Kore.Unparser
+    ( Unparse
+    )
 
 {- | The final nodes of an execution graph which were not proven.
 

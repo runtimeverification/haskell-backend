@@ -11,6 +11,7 @@ module Kore.Attribute.Axiom
     ( Axiom (..)
     , HeatCool (..)
     , ProductionID (..)
+    , Priority (..)
     , Assoc (..)
     , Comm (..)
     , Unit (..)
@@ -26,12 +27,14 @@ module Kore.Attribute.Axiom
     , RuleIndex (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Monad as Monad
-import           Data.Default
-                 ( Default (..) )
-import           Data.Generics.Product
+import Data.Default
+    ( Default (..)
+    )
+import Data.Generics.Product
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -45,7 +48,9 @@ import Kore.Attribute.Idem
 import Kore.Attribute.Label
 import Kore.Attribute.Overload
 import Kore.Attribute.Parser
-       ( ParseAttributes (..) )
+    ( ParseAttributes (..)
+    )
+import Kore.Attribute.Priority
 import Kore.Attribute.ProductionID
 import Kore.Attribute.RuleIndex
 import Kore.Attribute.Simplification
@@ -62,6 +67,9 @@ data Axiom =
     -- ^ An axiom may be denoted as a heating or cooling rule.
     , productionID :: !ProductionID
     -- ^ The identifier from the front-end identifying a rule or group of rules.
+    , priority :: !Priority
+    -- ^ A number associated to each rule,
+    -- which specifies the order of application
     , assoc :: !Assoc
     -- ^ The axiom is an associativity axiom.
     , comm :: !Comm
@@ -105,6 +113,7 @@ instance Default Axiom where
         Axiom
             { heatCool = def
             , productionID = def
+            , priority = def
             , assoc = def
             , comm = def
             , unit = def
@@ -124,6 +133,7 @@ instance ParseAttributes Axiom where
     parseAttribute attr =
         typed @HeatCool (parseAttribute attr)
         Monad.>=> typed @ProductionID (parseAttribute attr)
+        Monad.>=> typed @Priority (parseAttribute attr)
         Monad.>=> typed @Assoc (parseAttribute attr)
         Monad.>=> typed @Comm (parseAttribute attr)
         Monad.>=> typed @Unit (parseAttribute attr)
@@ -141,6 +151,7 @@ instance ParseAttributes Axiom where
         mconcat . sequence
             [ toAttributes . heatCool
             , toAttributes . productionID
+            , toAttributes . priority
             , toAttributes . assoc
             , toAttributes . comm
             , toAttributes . unit

@@ -11,18 +11,24 @@ module Kore.Step.SMT.Representation.All
     ) where
 
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
+    ( Axiom
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+    ( Symbol
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.Step.SMT.AST as AST
-import           Kore.Step.SMT.Representation.Resolve
-                 ( resolve )
+import Kore.Step.SMT.Representation.Resolve
+    ( resolve
+    )
 import qualified Kore.Step.SMT.Representation.Sorts as Sorts
-                 ( buildRepresentations )
+    ( buildRepresentations
+    )
 import qualified Kore.Step.SMT.Representation.Symbols as Symbols
-                 ( buildRepresentations )
+    ( buildRepresentations
+    )
 
 {-| Builds a consistent representation of the sorts and symbols in the given
 module and its submodules.

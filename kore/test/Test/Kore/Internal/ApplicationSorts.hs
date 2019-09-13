@@ -3,9 +3,12 @@ module Test.Kore.Internal.ApplicationSorts
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+    ( assertEqual
+    , testCase
+    )
 
 import Kore.Error
 import Kore.Internal.ApplicationSorts

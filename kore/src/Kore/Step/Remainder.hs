@@ -10,37 +10,48 @@ module Kore.Step.Remainder
     , ceilChildOfApplicationOrTop
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Data.Foldable as Foldable
 
-import           Kore.Internal.Conditional
-                 ( Conditional (Conditional) )
-import           Kore.Internal.MultiAnd
-                 ( MultiAnd )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
+import Kore.Internal.MultiAnd
+    ( MultiAnd
+    )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
-import           Kore.Step.Simplification.Simplify
-                 ( MonadSimplify (..), SimplifierVariable )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify (..)
+    , SimplifierVariable
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.Target
-                 ( Target )
+import Kore.Variables.Target
+    ( Target
+    )
 import qualified Kore.Variables.Target as Target
-import           Kore.Variables.UnifiedVariable
-                 ( foldMapVariable )
+import Kore.Variables.UnifiedVariable
+    ( foldMapVariable
+    )
 
 {- | Negate the disjunction of unification solutions to form the /remainder/.
 

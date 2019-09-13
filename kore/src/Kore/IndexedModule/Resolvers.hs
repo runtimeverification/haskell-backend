@@ -27,29 +27,42 @@ module Kore.IndexedModule.Resolvers
 
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import           Kore.AST.Error
-                 ( koreFailWithLocations )
+import Kore.AST.Error
+    ( koreFailWithLocations
+    )
 import qualified Kore.Attribute.Sort as Attribute
-import           Kore.Error
-import           Kore.IndexedModule.Error
-                 ( noAliasText, noHead, noSort, noSortText, noSymbol,
-                 noSymbolText )
-import           Kore.IndexedModule.IndexedModule
-                 ( IndexedModule (..), getIndexedSentence,
-                 indexedModulesInScope )
-import           Kore.Internal.ApplicationSorts
-import           Kore.Syntax
-import           Kore.Syntax.Definition hiding
-                 ( Alias (..), Symbol (..) )
+import Kore.Error
+import Kore.IndexedModule.Error
+    ( noAliasText
+    , noHead
+    , noSort
+    , noSortText
+    , noSymbol
+    , noSymbolText
+    )
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule (..)
+    , getIndexedSentence
+    , indexedModulesInScope
+    )
+import Kore.Internal.ApplicationSorts
+import Kore.Syntax
+import Kore.Syntax.Definition hiding
+    ( Alias (..)
+    , Symbol (..)
+    )
 
 symbolSentencesMap
     :: IndexedModule patternType declAtts axiomAtts

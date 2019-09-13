@@ -44,49 +44,65 @@ import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Internal.Conditional
-                 ( Conditional (Conditional) )
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Logger
-                 ( LogMessage, WithLog )
+import Kore.Internal.TermLike as TermLike
+import Kore.Logger
+    ( LogMessage
+    , WithLog
+    )
 import qualified Kore.Logger as Log
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
-import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (RulePattern) )
+import Kore.Step.Rule
+    ( RewriteRule (..)
+    , RulePattern (RulePattern)
+    )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( MonadUnify, SimplifierVariable )
+import Kore.Unification.Unify
+    ( MonadUnify
+    , SimplifierVariable
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-                 ( gather, scatter )
-import           Kore.Unparser
-import           Kore.Variables.Target
-                 ( Target )
+    ( gather
+    , scatter
+    )
+import Kore.Unparser
+import Kore.Variables.Target
+    ( Target
+    )
 import qualified Kore.Variables.Target as Target
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable, foldMapVariable )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    , foldMapVariable
+    )
 
 -- | Wraps functions such as 'unificationProcedure' and
 -- 'Kore.Step.Axiom.Matcher.matchAsUnification' to be used in

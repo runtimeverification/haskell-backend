@@ -7,28 +7,35 @@ import Test.Tasty.HUnit
 import qualified Data.Map.Strict as Map
 import qualified GHC.Stack as GHC
 
-import           Kore.Attribute.Synthetic
-                 ( synthesize )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Predicate
-                 ( Predicate )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-                 ( Application, Symbol, TermLike, Variable )
+import Kore.Internal.TermLike
+    ( Application
+    , Symbol
+    , TermLike
+    , Variable
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as Kore
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Evaluator as Kore
 import qualified Kore.Step.Rule as RulePattern
-import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.Simplification.Simplify as Kore
-import           Kore.Syntax.Application
-                 ( Application (..) )
+import Kore.Syntax.Application
+    ( Application (..)
+    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
-import qualified Test.SMT as Test
+import qualified Test.Kore.Step.Simplification as Test
 
 test_evaluateApplication :: [TestTree]
 test_evaluateApplication =
@@ -81,15 +88,13 @@ evaluateApplication
     :: Predicate Variable
     -> Application Symbol (TermLike Variable)
     -> IO (OrPattern Variable)
-evaluateApplication predicate application =
-    Test.runSMT
-    $ Kore.evalSimplifier env
-    $ Kore.evaluateApplication Predicate.top predicate application
+evaluateApplication predicate =
+    Test.runSimplifier env . Kore.evaluateApplication Predicate.top predicate
 
 simplifierAxioms :: Kore.BuiltinAndAxiomSimplifierMap
 simplifierAxioms = Map.fromList [ (fId, fEvaluator) ]
   where
     fId = Axiom.Identifier.Application (TermLike.symbolConstructor fSymbol)
 
-env :: Kore.Env
-env = Mock.env { Kore.simplifierAxioms = simplifierAxioms }
+env :: Test.Env
+env = Mock.env { Test.simplifierAxioms = simplifierAxioms }

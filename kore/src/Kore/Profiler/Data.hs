@@ -10,34 +10,49 @@ module Kore.Profiler.Data
     , Configuration (..)
     ) where
 
-import           Control.Monad.IO.Class
-                 ( MonadIO (liftIO) )
-import           Control.Monad.Morph
-                 ( MFunctor (..) )
-import           Control.Monad.Reader
-                 ( ReaderT )
+import Control.Monad.IO.Class
+    ( MonadIO (liftIO)
+    )
+import Control.Monad.Morph
+    ( MFunctor (..)
+    )
+import Control.Monad.Reader
+    ( ReaderT
+    )
 import qualified Control.Monad.State.Strict as Strict
-import           Control.Monad.Trans.Accum
-                 ( AccumT (AccumT), runAccumT )
-import           Control.Monad.Trans.Except
-                 ( ExceptT )
-import           Control.Monad.Trans.Identity
-                 ( IdentityT )
-import           Control.Monad.Trans.Maybe
-                 ( MaybeT )
-import           Data.Functor.Identity
-                 ( Identity )
+import Control.Monad.Trans.Accum
+    ( AccumT (AccumT)
+    , runAccumT
+    )
+import Control.Monad.Trans.Except
+    ( ExceptT
+    )
+import Control.Monad.Trans.Identity
+    ( IdentityT
+    )
+import Control.Monad.Trans.Maybe
+    ( MaybeT
+    )
+import Data.Functor.Identity
+    ( Identity
+    )
 import qualified Data.List as List
-import           Debug.Trace.String
-                 ( traceEventIO )
-import           System.Clock
-                 ( Clock (Monotonic), TimeSpec (TimeSpec), getTime )
+import Debug.Trace.String
+    ( traceEventIO
+    )
+import System.Clock
+    ( Clock (Monotonic)
+    , TimeSpec (TimeSpec)
+    , getTime
+    )
 import qualified System.Clock as Clock.DoNotUse
 
-import           ListT
-                 ( ListT (..) )
+import ListT
+    ( ListT (..)
+    )
 import qualified ListT
-                 ( mapListT )
+    ( mapListT
+    )
 
 {- Monad that can also handle profiling events.
 -}

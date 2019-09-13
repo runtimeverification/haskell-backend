@@ -9,32 +9,39 @@ module Kore.Substitute
     , substitute
     ) where
 
-import           Control.Applicative
+import Control.Applicative
 import qualified Data.Foldable as Foldable
-import           Data.Function
-                 ( (&) )
-import           Data.Functor.Foldable
-                 ( Corecursive, Recursive )
+import Data.Function
+    ( (&)
+    )
+import Data.Functor.Foldable
+    ( Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Functor.Identity
-import           Data.Map.Strict
-                 ( Map )
+import Data.Functor.Identity
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-import           Data.Set
-                 ( Set )
+import Data.Maybe
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Attribute.Synthetic
-import           Kore.Internal.Variable
-import           Kore.Syntax
-import           Kore.Variables.Binding
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Attribute.Synthetic
+import Kore.Internal.Variable
+import Kore.Syntax
+import Kore.Variables.Binding
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {- | 'SubstitutionVariable' constrains variable types that can be substituted.
 

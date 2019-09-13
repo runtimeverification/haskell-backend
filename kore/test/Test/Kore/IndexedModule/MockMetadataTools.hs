@@ -9,31 +9,40 @@ module Test.Kore.IndexedModule.MockMetadataTools
     , sortInjectionAttributes
     ) where
 
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 import qualified Data.Set as Set
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import           Kore.Attribute.Constructor
-import           Kore.Attribute.Function
-import           Kore.Attribute.Functional
-import           Kore.Attribute.Injective
+import Kore.Attribute.Constructor
+import Kore.Attribute.Function
+import Kore.Attribute.Functional
+import Kore.Attribute.Injective
 import qualified Kore.Attribute.Sort as Attribute
-import           Kore.Attribute.SortInjection
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SmtMetadataTools )
+import Kore.Attribute.SortInjection
+import Kore.Attribute.Symbol
+import Kore.IndexedModule.MetadataTools
+    ( MetadataTools (MetadataTools)
+    , SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (..) )
-import           Kore.Internal.ApplicationSorts
-                 ( ApplicationSorts )
-import           Kore.Sort
-                 ( Sort )
+    ( MetadataTools (..)
+    )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts
+    )
+import Kore.Sort
+    ( Sort
+    )
 import qualified Kore.Step.SMT.AST as SMT.AST
-                 ( SmtDeclarations )
-import           Kore.Syntax.Application
-                 ( SymbolOrAlias (..) )
+    ( SmtDeclarations
+    )
+import Kore.Syntax.Application
+    ( SymbolOrAlias (..)
+    )
 
 makeMetadataTools
     :: HasCallStack

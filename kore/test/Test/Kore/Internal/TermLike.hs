@@ -2,10 +2,10 @@ module Test.Kore.Internal.TermLike where
 
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
-import           Control.Monad.Reader as Reader
+import Control.Monad.Reader as Reader
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
@@ -13,16 +13,18 @@ import Data.Sup
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
+    ( UnifiedVariable (..)
+    )
 
-import           Kore.Internal.ApplicationSorts
-import           Test.Kore hiding
-                 ( symbolGen )
-import           Test.Kore.Comparators ()
-import           Test.Kore.Internal.Symbol
+import Kore.Internal.ApplicationSorts
+import Test.Kore hiding
+    ( symbolGen
+    )
+import Test.Kore.Comparators ()
+import Test.Kore.Internal.Symbol
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
-import           Test.Terse
+import Test.Tasty.HUnit.Extensions
+import Test.Terse
 
 termLikeGen :: Hedgehog.Gen (TermLike Variable)
 termLikeGen = standaloneGen (termLikeChildGen =<< sortGen)

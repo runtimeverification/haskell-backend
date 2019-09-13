@@ -5,45 +5,59 @@ module Test.Kore.Unification.Unifier
     ) where
 
 import Test.Tasty
-       ( TestName, TestTree, testGroup )
+    ( TestName
+    , TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
 import Test.Tasty.HUnit.Extensions
 
-import           Control.Exception
-                 ( ErrorCall (ErrorCall), catch, evaluate )
+import Control.Exception
+    ( ErrorCall (ErrorCall)
+    , catch
+    , evaluate
+    )
 import qualified Data.Bifunctor as Bifunctor
-import           Data.List.NonEmpty
-                 ( NonEmpty ((:|)) )
+import Data.List.NonEmpty
+    ( NonEmpty ((:|))
+    )
 import qualified Data.Map as Map
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
+    ( Predicate
+    )
+import Kore.Step.Simplification.Data
+    ( Env (..)
+    , runSimplifier
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import           Kore.Step.Simplification.Simplify
-                 ( BuiltinAndAxiomSimplifierMap )
-import           Kore.Unification.Error
-import           Kore.Unification.Procedure
+import Kore.Step.Simplification.Simplify
+    ( BuiltinAndAxiomSimplifierMap
+    )
+import Kore.Unification.Error
+import Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.UnifierImpl
+import Kore.Unification.UnifierImpl
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           SMT
-                 ( SMT )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
+import SMT
+    ( SMT
+    )
 import qualified SMT
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 var :: Text -> Sort -> ElementVariable Variable
@@ -169,7 +183,7 @@ andSimplifySuccess term1 term2 results = do
     let expect = map unificationResult results
     Right subst' <-
         runSMT
-        $ evalSimplifier testEnv
+        $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqualWithExplanation message expect subst'
@@ -193,7 +207,7 @@ andSimplifyFailure term1 term2 err = do
         expect = Left (UnificationError err)
     actual <-
         runSMT
-        $ evalSimplifier testEnv
+        $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
     assertEqual "" (show expect) (show actual)
@@ -210,7 +224,7 @@ andSimplifyException message term1 term2 exceptionMessage =
     where
         test = do
             assignment <-
-                runSMT $ evalSimplifier testEnv
+                runSMT $ runSimplifier testEnv
                 $ Monad.Unify.runUnifierT
                 $ simplifyAnds (unificationProblem term1 term2 :| [])
             _ <- evaluate assignment
@@ -239,7 +253,7 @@ unificationProcedureSuccessWithSimplifiers
         let mockEnv = testEnv { simplifierAxioms = axiomIdToSimplifier }
         Right results <-
             runSMT
-            $ evalSimplifier mockEnv
+            $ runSimplifier mockEnv
             $ Monad.Unify.runUnifierT
             $ unificationProcedure term1 term2
         let
@@ -703,7 +717,7 @@ injUnificationTests =
 
 simplifyPattern :: UnificationTerm -> IO UnificationTerm
 simplifyPattern (UnificationTerm term) = do
-    Conditional { term = term' } <- runSMT $ evalSimplifier testEnv simplifier
+    Conditional { term = term' } <- runSMT $ runSimplifier testEnv simplifier
     return $ UnificationTerm term'
   where
     simplifier = do

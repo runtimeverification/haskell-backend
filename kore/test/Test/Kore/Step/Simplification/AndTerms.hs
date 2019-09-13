@@ -1,54 +1,78 @@
 module Test.Kore.Step.Simplification.AndTerms where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Control.Error
-                 ( MaybeT (..) )
+import Control.Error
+    ( MaybeT (..)
+    )
 import qualified Control.Error as Error
-import           Data.Default
-                 ( Default (..) )
+import Data.Default
+    ( Default (..)
+    )
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import Data.Text
+    ( Text
+    )
 
-import qualified Branch
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.Simplification
-                 ( Simplification (Simplification) )
+import Kore.Attribute.Simplification
+    ( Simplification (Simplification)
+    )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeTruePredicate )
+    ( extractPatterns
+    )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Axiom.Registry
-                 ( axiomPatternsToEvaluators )
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
+import Kore.Step.Axiom.Registry
+    ( axiomPatternsToEvaluators
+    )
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
+    , RulePattern (RulePattern)
+    )
 import qualified Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.AndTerms
-                 ( termAnd, termEquals, termUnification )
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
-import           Kore.Step.Simplification.Simplify
+    ( RulePattern (..)
+    )
+import Kore.Step.Simplification.AndTerms
+    ( termAnd
+    , termEquals
+    , termUnification
+    )
+import Kore.Step.Simplification.Simplify
+import Kore.Syntax.Sentence
+    ( SentenceAlias
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Unparser
+    ( Unparse
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_andTermsSimplification :: [TestTree]
 test_andTermsSimplification =
@@ -933,7 +957,103 @@ test_andTermsSimplification =
                 testSet
             assertEqualWithExplanation "" (Just expected) actual
         ]
+    , testGroup "alias expansion"
+        [ testCase "alias() vs top" $ do
+            let
+                x = mkVariable "x"
+                alias = mkAlias' "alias1" x mkTop_
+                left = applyAlias' alias $ mkTop Mock.testSort
+            actual <- simplifyUnify left mkTop_
+            assertExpectTop actual
+        , testCase "alias1() vs alias2()" $ do
+            let
+                x = mkVariable "x"
+                leftAlias = mkAlias' "leftAlias" x mkTop_
+                left = applyAlias' leftAlias $ mkTop Mock.testSort
+                rightAlias = mkAlias' "rightAlias" x mkTop_
+                right = applyAlias' rightAlias $ mkTop Mock.testSort
+            actual <- simplifyUnify left right
+            assertExpectTop actual
+        , testCase "alias1(alias2()) vs top" $ do
+            let
+                x = mkVariable "x"
+                y = mkVariable "y"
+                alias1 = mkAlias' "alias1" x mkTop_
+                alias1App = applyAlias' alias1 $ mkSetVar (SetVariable y)
+                alias2 = mkAlias' "alias2" x alias1App
+                alias2App = applyAlias' alias2 $ mkTop Mock.testSort
+            actual <- simplifyUnify alias2App mkTop_
+            assertExpectTop actual
+        , testCase "alias1() vs injHead" $ do
+            let
+                expect =
+                    Conditional
+                        { term = Mock.injective10 fOfA
+                        , predicate = makeEqualsPredicate fOfA gOfA
+                        , substitution = mempty
+                        }
+                x = mkVariable "x"
+                alias = mkAlias' "alias1" x $ Mock.injective10 fOfA
+                left = applyAlias' alias $ mkTop Mock.testSort
+            actual <- simplifyUnify left $ Mock.injective10 gOfA
+            assertEqualWithExplanation "" ([expect], Just [expect]) actual
+        , testGroup "unhandled cases with aliases"
+            [ testCase "top level" $ do
+                let
+                    expect =
+                        (   [ Conditional
+                                { term = mkAnd left plain1OfA
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                        , Nothing
+                        )
+                    x = mkVariable "x"
+                    alias = mkAlias' "alias1" x $ plain0OfA
+                    left = applyAlias' alias $ mkTop Mock.testSort
+                actual <- simplifyUnify left plain1OfA
+                assertEqualWithExplanation "" expect actual
+
+            , testCase "one level deep" $ do
+                let
+                    expect =
+                        (   [ Conditional
+                                { term = Mock.constr10 (mkAnd plain0OfA plain1OfA)
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                        , Nothing
+                        )
+                    x = mkVariable "x"
+                    alias = mkAlias' "alias1" x $ Mock.constr10 plain0OfA
+                    left = applyAlias' alias $ mkTop Mock.testSort
+                actual <- simplifyUnify left $ Mock.constr10 plain1OfA
+                assertEqualWithExplanation "" expect actual
+            ]
+        ]
     ]
+
+mkVariable :: Text -> Variable
+mkVariable ident = Variable (testId ident) Nothing Mock.testSort
+
+mkAlias' :: Text -> Variable -> TermLike Variable -> SentenceAlias (TermLike Variable)
+mkAlias' ident var inner =
+    mkAlias_ (testId ident) Mock.testSort [SetVar $ SetVariable var] inner
+
+applyAlias'
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => SentenceAlias (TermLike Variable)
+    -> TermLike variable
+    -> TermLike variable
+applyAlias' alias arg = applyAlias alias [] [arg]
+
+assertExpectTop :: ([Pattern Variable], Maybe [Pattern Variable]) -> IO ()
+assertExpectTop =
+    assertEqualWithExplanation "" ([Pattern.top], Just [Pattern.top])
 
 test_equalsTermsSimplification :: [TestTree]
 test_equalsTermsSimplification =
@@ -1180,9 +1300,7 @@ unify
     -> TermLike Variable
     -> IO (Maybe [Pattern Variable])
 unify first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ runMaybeT unification
+    runSimplifier mockEnv $ runMaybeT unification
   where
     mockEnv = Mock.env
     unification =
@@ -1197,10 +1315,7 @@ simplify
     -> TermLike Variable
     -> IO [Pattern Variable]
 simplify first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Branch.gather
-    $ termAnd first second
+    runSimplifierBranch mockEnv $ termAnd first second
   where
     mockEnv = Mock.env
 
@@ -1209,10 +1324,9 @@ simplifyEquals
     -> TermLike Variable
     -> TermLike Variable
     -> IO (Maybe [Predicate Variable])
-simplifyEquals axiomIdToSimplifier first second =
+simplifyEquals simplifierAxioms first second =
     (fmap . fmap) MultiOr.extractPatterns
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ runMaybeT $ termEquals first second
   where
-    mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }
+    mockEnv = Mock.env { simplifierAxioms }
