@@ -131,16 +131,26 @@ transitionRule = transitionRuleWorker
 
     transitionRuleWorker (DerivePar rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
+        --
+        -- Note that in most transitions it is obvious what is being transformed
+        -- into what, e.g. that a `ResetGoal` transition transforms
+        -- `GoalRewritten` into `Goal`. However, here we're taking a `Goal`
+        -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
+        -- opaque way. I think that there's no good reason for wrapping the
+        -- results in `derivePar` as opposed to here.
         derivePar rules g
     transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
+        -- See above for an explanation.
         derivePar rules g
 
     transitionRuleWorker (DeriveSeq rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
+        -- See above for an explanation.
         deriveSeq rules g
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
+        -- See above for an explanation.
         deriveSeq rules g
 
     transitionRuleWorker _ state = return state
