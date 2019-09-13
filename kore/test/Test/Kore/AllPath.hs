@@ -133,7 +133,7 @@ test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
     [ unmodified Goal.Proven
     , unmodified (Goal.GoalRemainder (A, B))
-    , Goal.Goal (B, B) `becomes` (Goal.GoalRemainder (Bot, B), mempty)
+    , Goal.Goal (B, B) `becomes` (Goal.Goal (Bot, B), mempty)
     ]
   where
     run = runTransitionRule Goal.RemoveDestination
@@ -158,7 +158,7 @@ test_transitionRule_TriviallyValid =
 test_transitionRule_DerivePar :: [TestTree]
 test_transitionRule_DerivePar =
     [ unmodified Goal.Proven
-    , unmodified (Goal.Goal    (A, B))
+    , unmodified (Goal.GoalRewritten (A, B))
     , [Rule (A, C)]
         `derives`
         [ (Goal.Goal    (C,   C), Seq.singleton $ Rule (A, C))
