@@ -55,6 +55,8 @@ data Pattern variable =
 
 instance NFData variable => NFData (Pattern variable)
 
+instance Hashable variable => Hashable (Pattern variable)
+
 instance SOP.Generic (Pattern variable)
 
 instance SOP.HasDatatypeInfo (Pattern variable)
