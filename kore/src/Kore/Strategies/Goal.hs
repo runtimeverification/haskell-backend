@@ -168,23 +168,30 @@ allPathStrategy claims axioms =
         (Strategy.sequence . map Strategy.apply)
             [ CheckProven
             , CheckGoalRemainder
-            , ResetGoal
             , RemoveDestination
             , TriviallyValid
             , DerivePar axioms
+            , RemoveDestination
+            , Simplify
+            , TriviallyValid
+            , ResetGoal
             , TriviallyValid
             ]
     nextStep =
         (Strategy.sequence . map Strategy.apply)
             [ CheckProven
             , CheckGoalRemainder
-            , ResetGoal
             , RemoveDestination
             , TriviallyValid
             , DeriveSeq claims
             , RemoveDestination
             , Simplify
+            , TriviallyValid
             , DerivePar axioms
+            , RemoveDestination
+            , Simplify
+            , TriviallyValid
+            , ResetGoal
             , TriviallyValid
             ]
 
@@ -200,6 +207,8 @@ onePathFirstStep axioms =
         , TriviallyValid
         , DeriveSeq axioms
         , RemoveDestination
+        , Simplify
+        , TriviallyValid
         , ResetGoal
         , Simplify
         , TriviallyValid
@@ -210,6 +219,10 @@ onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalRemainder
+        , Simplify
+        , TriviallyValid
+        , RemoveDestination
+        , Simplify
         , TriviallyValid
         , DeriveSeq claims
         , RemoveDestination
@@ -217,6 +230,8 @@ onePathFollowupStep claims axioms =
         , TriviallyValid
         , DeriveSeq axioms
         , RemoveDestination
+        , Simplify
+        , TriviallyValid
         , ResetGoal
         , Simplify
         , TriviallyValid

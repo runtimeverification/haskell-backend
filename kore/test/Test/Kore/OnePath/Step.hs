@@ -278,7 +278,7 @@ test_onePathStrategy =
         assertEqualWithExplanation ""
             expected
             actual
-    , testCase "zzzStuck pattern" $ do
+    , testCase "Stuck pattern" $ do
         -- Target: constr11(a)
         -- Coinductive axiom: constr11(b) => f(b)
         -- Normal axiom: constr11(c) => f(c)
@@ -328,8 +328,8 @@ test_onePathStrategy =
                     { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
                     , predicate =
                         makeMultipleAndPredicate
-                            [ makeNotPredicate equalsXB
-                            , makeNotPredicate equalsXA
+                            [ makeNotPredicate equalsXA
+                            , makeNotPredicate equalsXB
                             , makeNotPredicate equalsXC
                             ]
                     , substitution = mempty
