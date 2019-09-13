@@ -33,7 +33,7 @@ import           Kore.Step.Rule as RulePattern
 import           Kore.Step.Simplification.Data
                  ( evalSimplifier )
 import           Kore.Strategies.Goal
-import qualified Kore.Strategies.Verification as OnePath
+import qualified Kore.Strategies.OnePath.Verification as OnePath
 import qualified SMT
 
 import           Test.Kore

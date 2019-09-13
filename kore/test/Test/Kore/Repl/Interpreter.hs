@@ -46,7 +46,7 @@ import           Kore.Step.Simplification.AndTerms
 import           Kore.Step.Simplification.Data
                  ( Simplifier, evalSimplifier )
 import           Kore.Strategies.Goal
-import           Kore.Strategies.Verification
+import           Kore.Strategies.OnePath.Verification
                  ( verifyOnePathClaimStep )
 import           Kore.Syntax.Variable
                  ( Variable )

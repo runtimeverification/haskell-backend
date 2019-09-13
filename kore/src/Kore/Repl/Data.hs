@@ -72,7 +72,7 @@ import           Kore.Step.Simplification.Data
                  ( MonadSimplify )
 import qualified Kore.Step.Strategy as Strategy
 import           Kore.Strategies.Goal
-import           Kore.Strategies.Verification
+import           Kore.Strategies.OnePath.Verification
                  ( CommonProofState )
 import           Kore.Syntax.Variable
                  ( Variable )
