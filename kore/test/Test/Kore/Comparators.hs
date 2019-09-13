@@ -990,13 +990,18 @@ instance EqualWithExplanation SymbolOrAlias where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance SumEqualWithExplanation UnificationError where
-    sumConstructorPair (UnsupportedPatterns a1) (UnsupportedPatterns a2) =
-        SumConstructorSameWithArguments
-        $ EqWrap "UnsupportedPatterns" a1 a2
+instance StructEqualWithExplanation UnificationError where
+    structConstructorName _ = "UnsupportedPatterns"
+    structFieldsWithNames
+        (UnsupportedPatterns {message = m1, first = f1, second = s1})
+        (UnsupportedPatterns {message = m2, first = f2, second = s2}) =
+        [ EqWrap "message = " m1 m2
+        , EqWrap "first = " f1 f2
+        , EqWrap "second = " s1 s2
+        ]
 
 instance EqualWithExplanation UnificationError where
-    compareWithExplanation = sumCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance SumEqualWithExplanation SubstitutionError where
