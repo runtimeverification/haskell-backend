@@ -21,6 +21,10 @@ import GHC.Stack
 import Kore.Attribute.Synthetic
 import Kore.Debug
 
+-- | 'Created' is used for debugging patterns, specifically for finding out
+-- where a pattern was created. This is a field in the attributes of a pattern,
+-- and it will default to 'Nothing'. This field is populated via the smart
+-- constructors in 'Kore.Internal.TermLike'.
 newtype Created = Created { getCreated :: Maybe CallStack }
     deriving (Generic, Show)
 

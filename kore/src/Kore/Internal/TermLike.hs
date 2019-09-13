@@ -1065,7 +1065,7 @@ mkAnd
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkAnd t1 = updateCallStack . makeSortsAgree mkAndWorker t1
+mkAnd t1 t2 = updateCallStack $ makeSortsAgree mkAndWorker t1 t2
   where
     mkAndWorker andFirst andSecond andSort =
         synthesize (AndF And { andSort, andFirst, andSecond })
@@ -1443,7 +1443,7 @@ mkEquals_
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkEquals_ t1 = updateCallStack . mkEquals predicateSort t1
+mkEquals_ t1 t2 = updateCallStack $ mkEquals predicateSort t1 t2
 
 {- | Construct an 'Exists' pattern.
  -}
@@ -1544,7 +1544,7 @@ mkIff
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkIff t1 = updateCallStack . makeSortsAgree mkIffWorker t1
+mkIff t1 t2 = updateCallStack $ makeSortsAgree mkIffWorker t1 t2
   where
     mkIffWorker iffFirst iffSecond iffSort =
         synthesize (IffF Iff { iffSort, iffFirst, iffSecond })
@@ -1560,7 +1560,7 @@ mkImplies
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkImplies t1 = updateCallStack . makeSortsAgree mkImpliesWorker t1
+mkImplies t1 t2 = updateCallStack $ makeSortsAgree mkImpliesWorker t1 t2
   where
     mkImpliesWorker impliesFirst impliesSecond impliesSort =
         synthesize (ImpliesF implies')
@@ -1581,7 +1581,7 @@ mkIn
     -> TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkIn inResultSort t1 = updateCallStack . makeSortsAgree mkInWorker t1
+mkIn inResultSort t1 t2 = updateCallStack $ makeSortsAgree mkInWorker t1 t2
   where
     mkInWorker inContainedChild inContainingChild inOperandSort =
         synthesize (InF in')
@@ -1610,7 +1610,7 @@ mkIn_
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkIn_ t1 = updateCallStack . mkIn predicateSort t1
+mkIn_ t1 t2 = updateCallStack $ mkIn predicateSort t1 t2
 
 {- | Construct a 'Mu' pattern.
  -}
@@ -1680,7 +1680,7 @@ mkOr
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkOr t1 = updateCallStack . makeSortsAgree mkOrWorker t1
+mkOr t1 t2 = updateCallStack $ makeSortsAgree mkOrWorker t1 t2
   where
     mkOrWorker orFirst orSecond orSort =
         synthesize (OrF Or { orSort, orFirst, orSecond })
@@ -1695,7 +1695,7 @@ mkRewrites
     => TermLike variable
     -> TermLike variable
     -> TermLike variable
-mkRewrites t1 = updateCallStack . makeSortsAgree mkRewritesWorker t1
+mkRewrites t1 t2 = updateCallStack $ makeSortsAgree mkRewritesWorker t1 t2
   where
     mkRewritesWorker rewritesFirst rewritesSecond rewritesSort =
         synthesize (RewritesF rewrites')
