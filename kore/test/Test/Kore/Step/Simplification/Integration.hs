@@ -48,7 +48,6 @@ import Kore.Step.Rule
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
-import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
     )
@@ -57,11 +56,11 @@ import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
 import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_simplificationIntegration :: [TestTree]
@@ -487,14 +486,11 @@ evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> IO (OrPattern Variable)
-evaluateWithAxioms axioms =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier env
-    . Pattern.simplify
+evaluateWithAxioms axioms = runSimplifier env . Pattern.simplify
   where
-    env = Mock.env { simplifierAxioms = axiomIdToSimplifier }
-    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
-    axiomIdToSimplifier =
+    env = Mock.env { simplifierAxioms }
+    simplifierAxioms :: BuiltinAndAxiomSimplifierMap
+    simplifierAxioms =
         Map.unionWith
             simplifierWithFallback
             builtinAxioms

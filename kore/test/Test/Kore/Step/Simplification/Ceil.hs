@@ -23,9 +23,6 @@ import Kore.Internal.Predicate as Predicate
     ( top
     )
 import Kore.Internal.TermLike as TermLike
-import Kore.Logger.Output as Logger
-    ( emptyLogger
-    )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
@@ -38,11 +35,6 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
     , simplify
-    )
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    , MonadSimplify
-    , evalSimplifier
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
@@ -58,7 +50,6 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
 import Test.Kore.Builtin.Builtin
     ( emptyNormalizedSet
@@ -68,6 +59,7 @@ import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Kore.With
 import Test.Tasty.HUnit.Extensions
 
@@ -553,8 +545,7 @@ evaluate
     :: Ceil Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluate ceil =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ Ceil.simplify Predicate.top ceil
   where
     mockEnv = Mock.env
@@ -570,8 +561,7 @@ makeEvaluateWithAxioms
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluateWithAxioms axiomIdToSimplifier child =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ Ceil.makeEvaluate Predicate.top child
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

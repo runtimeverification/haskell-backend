@@ -104,10 +104,9 @@ import Kore.Unparser
 import SMT
     ( SMT
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Builtin.Definition
+import Test.SMT
 
 emptyNormalizedSet :: NormalizedAc NormalizedSet key child
 emptyNormalizedSet = emptyNormalizedAc
@@ -194,7 +193,7 @@ testEnv =
         }
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
-evaluate = evalSimplifier testEnv . (`TermLike.simplify` Predicate.top)
+evaluate = runSimplifier testEnv . (`TermLike.simplify` Predicate.top)
 
 evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
@@ -202,11 +201,8 @@ evaluateT = Trans.lift . evaluate
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
-    . evalSimplifier testEnv
+    . runSimplifier testEnv
     . TermLike.simplifyToOr Predicate.top
-
-runSMT :: SMT a -> IO a
-runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
 
 runStep
     :: Pattern Variable
@@ -226,7 +222,7 @@ runStepResult
     -> SMT (Either UnificationOrSubstitutionError (Step.Results Variable))
 runStepResult configuration axiom = do
     results <-
-        evalSimplifier testEnv
+        runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesParallel
             (Step.UnificationProcedure Unification.unificationProcedure)
