@@ -165,10 +165,7 @@ import Control.DeepSeq
 import qualified Control.Lens as Lens
 import Control.Lens.Combinators
     ( coerced
-    , ix
-    , to
     )
-import Control.Lens.Prism
 import Control.Monad.Reader
     ( Reader
     )
@@ -467,28 +464,11 @@ instance NFData variable => NFData (TermLike variable) where
 instance SortedVariable variable => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project freshVarTerm of
-          (attrs :< pat) ->
-              Pretty.vsep
-                  [ showCreated attrs
-                  , unparse pat
-                  ]
+          (_ :< pat) -> unparse pat
       where
         freshVarTerm =
             externalizeFreshVariables
             $ mapVariables toVariable term
-        showCreated attr =
-            case attr Lens.^? getCallStackHead of
-                Just (name, loc) ->
-                    Pretty.hsep
-                      [ "// "
-                      , Pretty.pretty name
-                      , Pretty.pretty $ GHC.prettySrcLoc loc
-                      ]
-                Nothing -> mempty
-
-        getCallStackHead  =
-            field @"created" . coerced . _Just . to GHC.getCallStack . ix 0
-
 
     unparse2 term =
         case Recursive.project freshVarTerm of
