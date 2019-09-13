@@ -95,6 +95,11 @@ import Kore.Strategies.ProofState
 import Kore.Syntax as Syntax
 import Kore.Syntax.Sentence as Syntax
 import Kore.Unification.Error
+    ( SubstitutionError (..)
+    , UnificationError (UnsupportedPatterns)
+    , UnificationOrSubstitutionError (..)
+    )
+import qualified Kore.Unification.Error as Error
 import Kore.Unification.Substitution
     ( Substitution
     )
@@ -993,11 +998,11 @@ instance EqualWithExplanation SymbolOrAlias where
 instance StructEqualWithExplanation UnificationError where
     structConstructorName _ = "UnsupportedPatterns"
     structFieldsWithNames
-        (UnsupportedPatterns {message = m1, first = f1, second = s1})
-        (UnsupportedPatterns {message = m2, first = f2, second = s2}) =
-        [ EqWrap "message = " m1 m2
-        , EqWrap "first = " f1 f2
-        , EqWrap "second = " s1 s2
+        t1@(UnsupportedPatterns _ _ _)
+        t2@(UnsupportedPatterns _ _ _) =
+        [ EqWrap "message = " (Error.message t1) (Error.message t2)
+        , EqWrap "first = " (Error.first t1) (Error.first t2)
+        , EqWrap "second = " (Error.second t1) (Error.second t2)
         ]
 
 instance EqualWithExplanation UnificationError where
