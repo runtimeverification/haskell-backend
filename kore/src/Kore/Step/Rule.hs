@@ -56,6 +56,9 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Priority
+    ( getPriority
+    )
 import Kore.Debug
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
@@ -426,7 +429,23 @@ patternToAxiomPattern
     :: Attribute.Axiom
     -> TermLike Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-patternToAxiomPattern attributes pat =
+patternToAxiomPattern attributes pat
+  | isJust . getPriority . Attribute.priority $ attributes =
+    case pat of
+        Rewrites_ _
+            (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
+            (And_ _ ensures rhs) ->
+                        pure $ RewriteAxiomPattern $ RewriteRule RulePattern
+                            { left = lhs
+                            , antiLeft = Just antiLeft
+                            , right = rhs
+                            , requires = Predicate.wrapPredicate requires
+                            , ensures = Predicate.wrapPredicate ensures
+                            , attributes
+                            }
+        _ -> koreFail $ "rule is ill-formed with respect \
+                        \ to the priority attribute."
+  | otherwise =
     case pat of
         -- normal rewrite axioms
         -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
