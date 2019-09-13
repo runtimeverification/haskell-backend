@@ -47,7 +47,7 @@ import           Kore.Step.Simplification.Data
                  ( Simplifier, evalSimplifier )
 import           Kore.Strategies.Goal
 import           Kore.Strategies.OnePath.Verification
-                 ( verifyOnePathClaimStep )
+                 ( verifyClaimStep )
 import           Kore.Syntax.Variable
                  ( Variable )
 import           Kore.Unification.Procedure
@@ -673,14 +673,8 @@ mkConfig logger =
         -> ExecutionGraph Axiom
         -> ReplNode
         -> Simplifier (ExecutionGraph Axiom)
-    stepper0
-        claim'
-        claims'
-        axioms'
-        graph
-        (ReplNode node)
-      =
-        verifyOnePathClaimStep claim' claims' axioms' graph node
+    stepper0 claim' claims' axioms' graph (ReplNode node) =
+        verifyClaimStep claim' claims' axioms' graph node
 
 formatUnificationError
     :: Pretty.Doc ()

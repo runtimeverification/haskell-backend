@@ -5,14 +5,14 @@ License     : NCSA
 
 module Kore.Strategies.OnePath.Actions
     ( derivePar
-   -- , deriveSeq
-   -- , getConfiguration
-   -- , getDestination
-   -- , isTriviallyValid
-   -- , isTrusted
-   -- , makeRuleFromPatterns
-   -- , removeDestination
-   -- , simplify
+    , deriveSeq
+    , getConfiguration
+    , getDestination
+    , isTriviallyValid
+    , isTrusted
+    , makeRuleFromPatterns
+    , removeDestination
+    , simplify
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans

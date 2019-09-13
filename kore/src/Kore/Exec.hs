@@ -89,7 +89,7 @@ import           Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import           Kore.Strategies.OnePath.Verification
-                 ( Claim, ProofStrategy (..), defaultProofStrategy, verify )
+                 ( Claim, defaultStrategy, verify )
 import           SMT
                  ( MonadSMT, SMT )
 
@@ -265,11 +265,7 @@ prove limit definitionModule specModule =
         result <-
             runExceptT
             $ verify
-                ( defaultProofStrategy
-                    OnePathStrategy
-                    claims
-                    axioms
-                )
+                (defaultStrategy claims axioms)
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where

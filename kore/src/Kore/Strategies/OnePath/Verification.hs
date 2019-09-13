@@ -11,10 +11,9 @@ This should be imported qualified.
 module Kore.Strategies.OnePath.Verification
     ( Claim
     , CommonProofState
-    , ProofStrategy (..)
-    , defaultProofStrategy
+    , defaultStrategy
     , verify
-    , verifyOnePathClaimStep
+    , verifyClaimStep
     , toRulePattern
     , toRule
     ) where
@@ -42,6 +41,8 @@ import           Kore.Step.Transition
                  ( runTransitionT )
 import qualified Kore.Step.Transition as Transition
 import           Kore.Strategies.Goal
+import           Kore.Strategies.OnePath.Actions
+                 ( getConfiguration, getDestination, makeRuleFromPatterns )
 import           Kore.Strategies.ProofState
                  ( ProofState (Goal) )
 import           Kore.Syntax.Variable
@@ -142,19 +143,23 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-defaultProofStrategy
+defaultStrategy
     :: forall claim
     .  Claim claim
-    => ProofStrategy
-    -> [claim]
+    => [claim]
     -- The claims that we want to prove
     -> [Rule claim]
     -> [Strategy (Prim (Rule claim))]
-defaultProofStrategy proofStrategy claims axioms =
-    makeProofStrategy
-        proofStrategy
-        coinductiveRewrites
-        rewrites
+defaultStrategy
+    claims
+    axioms
+  =
+    onePathFirstStep rewrites
+    : repeat
+        (onePathFollowupStep
+            coinductiveRewrites
+            rewrites
+        )
   where
     rewrites :: [Rule claim]
     rewrites = axioms
@@ -204,8 +209,7 @@ verifyClaimStep
     :: forall claim m
     .  MonadSimplify m
     => Claim claim
-    => ProofStrategy
-    -> claim
+    => claim
     -- ^ claim that is being proven
     -> [claim]
     -- ^ list of claims in the spec module
@@ -217,7 +221,6 @@ verifyClaimStep
     -- ^ selected node in the graph
     -> m (ExecutionGraph CommonProofState (Rule claim))
 verifyClaimStep
-    proofStrategy
     target
     claims
     axioms
@@ -233,39 +236,18 @@ verifyClaimStep
   where
     strategy' :: Strategy (Prim (Rule claim))
     strategy'
-      | isRoot =
-          firstStepStrategy proofStrategy rewrites
-      | otherwise =
-          nextStepStrategy
-            proofStrategy
-            coinductiveRewrites
-            rewrites
+        | isRoot =
+            onePathFirstStep rewrites
+        | otherwise =
+            onePathFollowupStep
+                (coerce . toRulePattern <$> claims)
+                rewrites
 
     rewrites :: [Rule claim]
     rewrites = axioms
 
-    coinductiveRewrites :: [Rule claim]
-    coinductiveRewrites = coerce . toRulePattern <$> claims
-
     isRoot :: Bool
     isRoot = node == root
-
-verifyOnePathClaimStep
-    :: forall claim m
-    .  MonadSimplify m
-    => Claim claim
-    => claim
-    -- ^ claim that is being proven
-    -> [claim]
-    -- ^ list of claims in the spec module
-    -> [Rule claim]
-    -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonProofState (Rule claim)
-    -- ^ current execution graph
-    -> Graph.Node
-    -- ^ selected node in the graph
-    -> m (ExecutionGraph CommonProofState (Rule claim))
-verifyOnePathClaimStep = verifyClaimStep OnePathStrategy
 
 transitionRule'
     :: forall claim m

@@ -6,17 +6,12 @@ module Kore.Strategies.Goal
     ( Goal (..)
     , Rule (..)
     , Prim (..)
-    , ProofStrategy (..)
+    , onePathFirstStep
+    , onePathFollowupStep
     , unprovenNodes
     , transitionRule
     , allPathStrategy
     , proven
-    , getConfiguration
-    , getDestination
-    , makeRuleFromPatterns
-    , makeProofStrategy
-    , firstStepStrategy
-    , nextStepStrategy
     ) where
 
 import           Control.Applicative
@@ -48,7 +43,7 @@ import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Result as Result
 import           Kore.Step.Rule
-                 ( AllPathRule, OnePathRule, RewriteRule (..) )
+                 ( AllPathRule (..), OnePathRule (..), RewriteRule (..) )
 import           Kore.Step.Rule
                  ( RulePattern (..) )
 import qualified Kore.Step.Rule as RulePattern
@@ -73,7 +68,7 @@ import           Kore.TopBottom
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import           Kore.Unparser
-                 ( unparse )
+                 ( Unparse, unparse )
 import           Kore.Unparser
                  ( Unparse )
 import           Kore.Variables.Fresh
@@ -113,8 +108,6 @@ data Prim rule
     | DeriveSeq [rule]
     deriving (Show)
 
--- TODO: default derivePar and deriveSeq are identical except for the
--- rule application function called
 class Goal goal where
     data Rule goal
 
@@ -228,13 +221,13 @@ class Goal goal where
                         Result.traverseConfigs
                             (pure . Goal)
                             removeDestSimplifyRemainder
-                let ruleResults =
+                let onePathResults =
                         Result.mapConfigs
                             (`makeRuleFromPatterns` destination)
                             (`makeRuleFromPatterns` destination)
                             (Result.mergeResults results)
                 results' <-
-                    traverseConfigs (mapRules ruleResults)
+                    traverseConfigs (mapRules onePathResults)
                 Result.transitionResults results'
 
     -- | Apply 'Rule's to the goal in sequence.
@@ -286,36 +279,15 @@ class Goal goal where
                         Result.traverseConfigs
                             (pure . Goal.Goal)
                             removeDestSimplifyRemainder
-                let ruleResults =
+                let onePathResults =
                         Result.mapConfigs
                             (`makeRuleFromPatterns` destination)
                             (`makeRuleFromPatterns` destination)
                             (Result.mergeResults results)
                 results' <-
-                    traverseConfigs (mapRules ruleResults)
+                    traverseConfigs (mapRules onePathResults)
                 Result.transitionResults results'
 
-instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
-    newtype Rule (OnePathRule variable) =
-        Rule { unRule :: RewriteRule variable }
-        deriving (GHC.Generic, Show, Unparse)
-
-instance SOP.Generic (Rule (OnePathRule variable))
-
-instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
-
-instance Debug variable => Debug (Rule (OnePathRule variable))
-
-instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
-    newtype Rule (AllPathRule variable) =
-        ARule { unRule :: RewriteRule variable }
-        deriving (GHC.Generic, Show, Unparse)
-
-instance SOP.Generic (Rule (AllPathRule variable))
-
-instance SOP.HasDatatypeInfo (Rule (AllPathRule variable))
-
-instance Debug variable => Debug (Rule (AllPathRule variable))
 
 transitionRule
     :: (MonadSimplify m, Goal goal)
@@ -348,27 +320,37 @@ transitionRule = transitionRuleWorker
 
     transitionRuleWorker _ state = return state
 
-data ProofStrategy = OnePathStrategy | AllPathStrategy
-
-makeProofStrategy
-    :: ProofStrategy
-    -> [rule]
+allPathStrategy
+    :: [rule]
     -- ^ Claims
     -> [rule]
     -- ^ Axioms
     -> [Strategy (Prim rule)]
-makeProofStrategy proofStrategy claims axioms =
+allPathStrategy claims axioms =
     firstStep : repeat nextStep
   where
-    firstStep = firstStepStrategy proofStrategy axioms
-    nextStep = nextStepStrategy proofStrategy claims axioms
+    firstStep =
+        (Strategy.sequence . map Strategy.apply)
+            [ CheckProven
+            , CheckGoalRem
+            , RemoveDestination
+            , TriviallyValid
+            , DerivePar axioms
+            , TriviallyValid
+            ]
+    nextStep =
+        (Strategy.sequence . map Strategy.apply)
+            [ CheckProven
+            , CheckGoalRem
+            , RemoveDestination
+            , TriviallyValid
+            , DeriveSeq claims
+            , DerivePar axioms
+            , TriviallyValid
+            ]
 
-firstStepStrategy
-    :: ProofStrategy
-    -> [rule]
-    -- ^ Axioms
-    -> Strategy (Prim rule)
-firstStepStrategy proofStrategy axioms =
+onePathFirstStep :: [rule] -> Strategy (Prim rule)
+onePathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalRem
@@ -377,19 +359,13 @@ firstStepStrategy proofStrategy axioms =
         , RemoveDestination
         , Simplify
         , TriviallyValid
-        , deriveSeqOrPar proofStrategy axioms
+        , DeriveSeq axioms
         , Simplify
         , TriviallyValid
         ]
 
-nextStepStrategy
-    :: ProofStrategy
-    -> [rule]
-    -- ^ Claims
-    -> [rule]
-    -- ^ Axioms
-    -> Strategy (Prim rule)
-nextStepStrategy proofStrategy claims axioms =
+onePathFollowupStep :: [rule] -> [rule] -> Strategy (Prim rule)
+onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
         , CheckGoalRem
@@ -399,34 +375,34 @@ nextStepStrategy proofStrategy claims axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
-        , deriveSeqOrPar proofStrategy axioms
+        , DeriveSeq axioms
         , Simplify
         , TriviallyValid
         ]
 
-deriveSeqOrPar :: ProofStrategy -> [rule] -> Prim rule
-deriveSeqOrPar proofStrategy rules =
-    case proofStrategy of
-        OnePathStrategy -> DeriveSeq rules
-        AllPathStrategy -> DerivePar rules
+instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
 
-allPathStrategy
-    :: [rule]
-    -- ^ Claims
-    -> [rule]
-    -- ^ Axioms
-    -> [Strategy (Prim rule)]
-allPathStrategy =
-    makeProofStrategy AllPathStrategy
+    newtype Rule (OnePathRule variable) =
+        Rule { unRule :: RewriteRule variable }
+        deriving (GHC.Generic, Show, Unparse)
 
-onePathStrategy
-    :: [rule]
-    -- ^ Claims
-    -> [rule]
-    -- ^ Axioms
-    -> [Strategy (Prim rule)]
-onePathStrategy =
-    makeProofStrategy AllPathStrategy
+    isTrusted = OnePath.isTrusted
+
+    removeDestination = OnePath.removeDestination
+
+    simplify = OnePath.simplify
+
+    isTriviallyValid = OnePath.isTriviallyValid
+
+    derivePar = OnePath.derivePar
+
+    deriveSeq = OnePath.deriveSeq
+
+instance SOP.Generic (Rule (OnePathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+
+instance Debug variable => Debug (Rule (OnePathRule variable))
 
 getConfiguration
     :: forall rule variable

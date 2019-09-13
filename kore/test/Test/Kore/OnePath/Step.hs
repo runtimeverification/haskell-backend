@@ -43,6 +43,8 @@ import           Kore.Step.Simplification.Data
 import           Kore.Step.Strategy
                  ( ExecutionGraph (..), Strategy, pickFinal, runStrategy )
 import           Kore.Strategies.Goal
+import           Kore.Strategies.OnePath.Actions
+                 ( makeRuleFromPatterns )
 import           Kore.Strategies.ProofState
 import           Kore.Syntax.Variable
                  ( Variable (..) )
@@ -571,10 +573,9 @@ runOnePathSteps
         goal
         (Limit.takeWithin
             stepLimit
-            ( firstStepStrategy OnePathStrategy rewrites
+            ( onePathFirstStep rewrites
             : repeat
-                (nextStepStrategy
-                    OnePathStrategy
+                (onePathFollowupStep
                     coinductiveRewrites
                     rewrites
                 )

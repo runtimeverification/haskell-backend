@@ -206,7 +206,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
                 catchInterruptWithDefault graph
-                $ verifyOnePathClaimStep claim claims axioms graph node
+                $ verifyClaimStep claim claims axioms graph node
             else pure graph
 
     catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
