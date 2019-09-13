@@ -20,20 +20,15 @@ import Kore.Predicate.Predicate
     , makeTruePredicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    , evalSimplifier
-    )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]
@@ -317,19 +312,14 @@ testSort = Mock.testSort
 simplify
     :: Exists Sort Variable (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify exists =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Exists.simplify exists
+simplify = runSimplifier mockEnv . Exists.simplify
 
 makeEvaluate
     :: ElementVariable Variable
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate variable child =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Exists.makeEvaluate variable child
+    runSimplifier mockEnv $ Exists.makeEvaluate variable child
 
 mockEnv :: Env
 mockEnv = Mock.env

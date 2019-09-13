@@ -44,16 +44,12 @@ import Kore.Step.Rule
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import Kore.Strategies.Goal
 import qualified Kore.Strategies.OnePath.Verification as OnePath
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_onePathVerification :: [TestTree]
@@ -387,8 +383,7 @@ runVerification
     -> [claim]
     -> IO (Either (Pattern Variable) ())
 runVerification stepLimit axioms claims =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ runExceptT
     $ OnePath.verify
         (OnePath.defaultStrategy claims axioms)

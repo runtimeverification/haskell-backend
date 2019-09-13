@@ -32,7 +32,6 @@ import Data.Coerce
     ( Coercible
     , coerce
     )
-import qualified Data.Map.Strict as Map
 import System.Exit
     ( ExitCode (..)
     )
@@ -75,14 +74,6 @@ import Kore.Profiler.Data
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
-import Kore.Step.Axiom.EvaluationStrategy
-    ( builtinEvaluation
-    , simplifierWithFallback
-    )
-import Kore.Step.Axiom.Registry
-    ( axiomPatternsToEvaluators
-    , extractEqualityAxioms
-    )
 import Kore.Step.Rule
     ( EqualityRule
     , ImplicationRule (..)
@@ -106,11 +97,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Data as Simplifier
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Rule as Rule
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-    ( create
-    )
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
     , MonadSimplify
@@ -141,13 +128,7 @@ type Equality = EqualityRule Variable
 type ExecutionGraph = Strategy.ExecutionGraph Config (RewriteRule Variable)
 
 -- | A collection of rules and simplifiers used during execution.
-data Initialized =
-    Initialized
-        { rewriteRules :: ![Rewrite]
-        , simplifier :: !TermLikeSimplifier
-        , substitutionSimplifier :: !PredicateSimplifier
-        , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
-        }
+data Initialized = Initialized { rewriteRules :: ![Rewrite] }
 
 -- | The products of execution: an execution graph, and assorted simplifiers.
 data Execution =
@@ -172,9 +153,9 @@ exec
     -> TermLike Variable
     -- ^ The input pattern
     -> smt (TermLike Variable)
-exec indexedModule strategy initialTerm =
-    evalSimplifier env $ do
-        execution <- execute indexedModule' strategy initialTerm
+exec verifiedModule strategy initialTerm =
+    evalSimplifier verifiedModule' $ do
+        execution <- execute verifiedModule' strategy initialTerm
         let
             Execution { executionGraph } = execution
             finalConfig = pickLongest executionGraph
@@ -183,31 +164,16 @@ exec indexedModule strategy initialTerm =
                 $ Pattern.toTermLike finalConfig
         return finalTerm
   where
-    indexedModule' =
+    verifiedModule' =
         IndexedModule.mapPatterns
+            -- TODO (thomas.tuegel): Move this into Kore.Builtin
             (Builtin.internalize metadataTools)
-            indexedModule
+            verifiedModule
     -- It's safe to build the MetadataTools using the external IndexedModule
     -- because MetadataTools doesn't retain any knowledge of the patterns which
     -- are internalized.
-    metadataTools = MetadataTools.build indexedModule
-    env =
-        Simplifier.Env
-            { metadataTools
-            , simplifierTermLike = emptyTermLikeSimplifier
-            , simplifierPredicate = emptyPredicateSimplifier
-            , simplifierAxioms = emptyAxiomSimplifiers
-            }
+    metadataTools = MetadataTools.build verifiedModule
     patternSort = termLikeSort initialTerm
-
-emptyAxiomSimplifiers :: BuiltinAndAxiomSimplifierMap
-emptyAxiomSimplifiers = Map.empty
-
-emptyTermLikeSimplifier :: TermLikeSimplifier
-emptyTermLikeSimplifier = Simplifier.create
-
-emptyPredicateSimplifier :: PredicateSimplifier
-emptyPredicateSimplifier = Predicate.create
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
@@ -252,7 +218,7 @@ search
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike Variable)
 search verifiedModule strategy termLike searchPattern searchConfig =
-    evalSimplifier env $ do
+    evalSimplifier verifiedModule $ do
         execution <- execute verifiedModule strategy termLike
         let
             Execution { executionGraph } = execution
@@ -265,14 +231,6 @@ search verifiedModule strategy termLike searchPattern searchConfig =
                 makeMultipleOrPredicate (Predicate.toPredicate <$> solutions)
         return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
-    metadataTools = MetadataTools.build verifiedModule
-    env =
-        Simplifier.Env
-            { metadataTools
-            , simplifierTermLike = emptyTermLikeSimplifier
-            , simplifierPredicate = emptyPredicateSimplifier
-            , simplifierAxioms = emptyAxiomSimplifiers
-            }
     patternSort = termLikeSort termLike
 
 
@@ -290,7 +248,7 @@ prove
     -- ^ The spec module
     -> smt (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
-    evalSimplifier env $ initialize definitionModule $ \initialized -> do
+    evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
@@ -305,14 +263,6 @@ prove limit definitionModule specModule =
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
-    metadataTools = MetadataTools.build definitionModule
-    env =
-        Simplifier.Env
-            { metadataTools
-            , simplifierTermLike = emptyTermLikeSimplifier
-            , simplifierPredicate = emptyPredicateSimplifier
-            , simplifierAxioms = emptyAxiomSimplifiers
-            }
     extractUntrustedClaims' :: [OnePathRule Variable] -> [OnePathRule Variable]
     extractUntrustedClaims' =
         filter (not . Goal.isTrusted)
@@ -333,7 +283,7 @@ proveWithRepl
     -- ^ Optional Output file
     -> SMT ()
 proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
-    evalSimplifier env $ initialize definitionModule $ \initialized -> do
+    evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
         specAxioms <- traverse simplifyRuleOnSecond specClaims
@@ -342,15 +292,6 @@ proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
             axioms = Goal.Rule <$> rewriteRules
             claims = fmap makeClaim specAxioms
         Repl.runRepl axioms claims mvar replScript replMode outputFile
-  where
-    metadataTools = MetadataTools.build definitionModule
-    env =
-        Simplifier.Env
-            { metadataTools
-            , simplifierTermLike = emptyTermLikeSimplifier
-            , simplifierPredicate = emptyPredicateSimplifier
-            , simplifierAxioms = emptyAxiomSimplifiers
-            }
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
@@ -367,7 +308,7 @@ boundedModelCheck
     -> Strategy.GraphSearchOrder
     -> smt (Bounded.CheckResult (TermLike Variable))
 boundedModelCheck limit definitionModule specModule searchOrder =
-    evalSimplifier env $ initialize definitionModule $ \initialized -> do
+    evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
@@ -380,15 +321,6 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             (Bounded.bmcStrategy axioms)
             searchOrder
             (head claims, limit)
-  where
-    metadataTools = MetadataTools.build definitionModule
-    env =
-        Simplifier.Env
-            { metadataTools
-            , simplifierTermLike = emptyTermLikeSimplifier
-            , simplifierPredicate = emptyPredicateSimplifier
-            , simplifierAxioms = emptyAxiomSimplifiers
-            }
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =
@@ -436,11 +368,10 @@ execute
 execute verifiedModule strategy inputPattern =
     Log.withLogScope "setUpConcreteExecution"
     $ initialize verifiedModule $ \initialized -> do
-        let
-            Initialized { rewriteRules } = initialized
-            Initialized { simplifier } = initialized
-            Initialized { substitutionSimplifier } = initialized
-            Initialized { axiomIdToSimplifier } = initialized
+        let Initialized { rewriteRules } = initialized
+        simplifier <- Simplifier.askSimplifierTermLike
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         simplifiedPatterns <-
             Pattern.simplify (Pattern.fromTermLike inputPattern)
         let
@@ -466,35 +397,7 @@ initialize
     -> (Initialized -> simplifier a)
     -> simplifier a
 initialize verifiedModule within = do
-    functionAxioms <-
-        Rule.simplifyFunctionAxioms (extractEqualityAxioms verifiedModule)
     rewriteRules <-
         mapM Rule.simplifyRewriteRule (extractRewriteAxioms verifiedModule)
-    let
-        functionEvaluators :: BuiltinAndAxiomSimplifierMap
-        functionEvaluators =
-            axiomPatternsToEvaluators functionAxioms
-        axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
-        axiomIdToSimplifier =
-            Map.unionWith
-                simplifierWithFallback
-                -- builtin functions
-                (Map.map builtinEvaluation
-                    (Builtin.koreEvaluators verifiedModule)
-                )
-                -- user-defined functions
-                functionEvaluators
-        simplifier = Simplifier.create
-        substitutionSimplifier = Predicate.create
-        initialized =
-            Initialized
-                { rewriteRules
-                , simplifier
-                , substitutionSimplifier
-                , axiomIdToSimplifier
-                }
-        locally =
-            Simplifier.localSimplifierTermLike (const simplifier)
-            . Simplifier.localSimplifierPredicate (const substitutionSimplifier)
-            . Simplifier.localSimplifierAxioms (const axiomIdToSimplifier)
-    locally (within initialized)
+    let initialized = Initialized { rewriteRules }
+    within initialized

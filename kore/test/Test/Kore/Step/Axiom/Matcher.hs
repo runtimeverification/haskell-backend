@@ -48,7 +48,6 @@ import Kore.Predicate.Predicate
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
-import Kore.Step.Simplification.Data
 import Kore.Unification.Error
     ( UnificationError (..)
     , UnificationOrSubstitutionError (..)
@@ -59,11 +58,9 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
-import qualified SMT
 
 import Test.Kore
-    ( emptyLogger
-    , testId
+    ( testId
     )
 import qualified Test.Kore.Builtin.Builtin as Test
 import qualified Test.Kore.Builtin.Definition as Test
@@ -73,6 +70,7 @@ import qualified Test.Kore.Builtin.Map as Test.Map
 import qualified Test.Kore.Builtin.Set as Test.Set
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_matcherEqualHeads :: [TestTree]
@@ -956,8 +954,7 @@ match
     -> TermLike Variable
     -> IO MatchResult
 match first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env matchResult
+    runSimplifier Mock.env matchResult
   where
     matchResult :: Simplifier MatchResult
     matchResult =

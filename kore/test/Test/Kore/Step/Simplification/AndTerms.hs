@@ -21,7 +21,6 @@ import Data.Text
     ( Text
     )
 
-import qualified Branch
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Simplification
     ( Simplification (Simplification)
@@ -56,10 +55,6 @@ import Kore.Step.Simplification.AndTerms
     , termEquals
     , termUnification
     )
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    , evalSimplifier
-    )
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Sentence
     ( SentenceAlias
@@ -72,11 +67,11 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
 import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_andTermsSimplification :: [TestTree]
@@ -1308,9 +1303,7 @@ unify
     -> TermLike Variable
     -> IO (Maybe [Pattern Variable])
 unify first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ runMaybeT unification
+    runSimplifier mockEnv $ runMaybeT unification
   where
     mockEnv = Mock.env
     unification =
@@ -1325,10 +1318,7 @@ simplify
     -> TermLike Variable
     -> IO [Pattern Variable]
 simplify first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Branch.gather
-    $ termAnd first second
+    runSimplifierBranch mockEnv $ termAnd first second
   where
     mockEnv = Mock.env
 
@@ -1337,10 +1327,9 @@ simplifyEquals
     -> TermLike Variable
     -> TermLike Variable
     -> IO (Maybe [Predicate Variable])
-simplifyEquals axiomIdToSimplifier first second =
+simplifyEquals simplifierAxioms first second =
     (fmap . fmap) MultiOr.extractPatterns
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ runMaybeT $ termEquals first second
   where
-    mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }
+    mockEnv = Mock.env { simplifierAxioms }

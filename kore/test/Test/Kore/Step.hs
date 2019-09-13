@@ -63,7 +63,6 @@ import Kore.Step.Rule
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
-import Kore.Step.Simplification.Data as Simplification
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Syntax.Application
     ( SymbolOrAlias (symbolOrAliasConstructor)
@@ -72,11 +71,11 @@ import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
     ( Variable (..)
     )
-import qualified SMT
 
 import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 {-
@@ -137,8 +136,7 @@ applyStrategy testName start axioms expected =
 takeSteps :: (Start, [Axiom]) -> IO Actual
 takeSteps (Start start, wrappedAxioms) =
     (<$>) pickLongest
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ makeExecutionGraph start (unAxiom <$> wrappedAxioms)
   where
     makeExecutionGraph configuration axioms =
@@ -644,8 +642,7 @@ runStep
     -> IO [Pattern Variable]
 runStep configuration axioms =
     (<$>) pickFinal
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runStepMockEnv
@@ -655,8 +652,7 @@ runStepMockEnv
     -> IO [Pattern Variable]
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier Mock.env
+    $ runSimplifier Mock.env
     $ runStrategy transitionRule [allRewrites axioms] configuration
 
 runSteps
@@ -666,6 +662,5 @@ runSteps
     -> IO (Pattern Variable)
 runSteps configuration axioms =
     (<$>) pickLongest
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ Simplification.evalSimplifier mockEnv
+    $ runSimplifier mockEnv
     $ runStrategy transitionRule (repeat $ allRewrites axioms) configuration

@@ -39,9 +39,6 @@ import Kore.Predicate.Predicate
     , makeOrPredicate
     , makeTruePredicate
     )
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate
@@ -52,11 +49,10 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_equalsSimplification_Or_Pattern :: [TestTree]
@@ -923,10 +919,8 @@ testSort2 =
 evaluateOr
     :: Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluateOr equals =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ simplify Predicate.top equals
+evaluateOr =
+    runSimplifier mockEnv . simplify Predicate.top
   where
     mockEnv = Mock.env
 
@@ -935,8 +929,7 @@ evaluate
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluate first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ makeEvaluate first second Predicate.top
   where
     mockEnv = Mock.env
@@ -946,8 +939,7 @@ evaluateTermsGeneric
     -> TermLike Variable
     -> IO (OrPredicate Variable)
 evaluateTermsGeneric first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ makeEvaluateTermsToPredicate first second Predicate.top
   where
     mockEnv = Mock.env
