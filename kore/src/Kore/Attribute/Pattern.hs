@@ -19,7 +19,7 @@ import Control.DeepSeq
 import qualified Control.Lens as Lens
 import Data.Generics.Product
 import Data.Hashable
-    ( Hashable (..)
+    ( Hashable
     )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -54,9 +54,6 @@ data Pattern variable =
     deriving (Eq, GHC.Generic, Show)
 
 instance NFData variable => NFData (Pattern variable)
-
-instance Hashable variable => Hashable (Pattern variable) where
-    hashWithSalt _ _ = 0
 
 instance SOP.Generic (Pattern variable)
 

@@ -9,6 +9,9 @@ module Kore.Attribute.Pattern.Created
     ) where
 
 import Control.DeepSeq
+import Data.Hashable
+    ( Hashable (hashWithSalt)
+    )
 import qualified Generics.SOP as SOP
 import GHC.Generics
 import GHC.Stack
@@ -29,6 +32,9 @@ instance SOP.Generic Created
 instance SOP.HasDatatypeInfo Created
 
 instance NFData Created
+
+instance Hashable Created where
+    hashWithSalt _ _ = 0
 
 instance Debug Created
 
