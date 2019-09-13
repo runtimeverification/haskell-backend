@@ -15,18 +15,12 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import Kore.Logger.Output
-    ( emptyLogger
-    )
 import qualified Kore.Predicate.Predicate as Predicate
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified SMT
 
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_Pattern_simplify :: [TestTree]
@@ -76,13 +70,8 @@ bottomLike =
     (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
 
 simplify :: Pattern Variable -> IO (OrPattern Variable)
-simplify =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier Mock.env
-    . Pattern.simplify
+simplify = runSimplifier Mock.env . Pattern.simplify
 
 simplifyAndRemoveTopExists :: Pattern Variable -> IO (OrPattern Variable)
 simplifyAndRemoveTopExists =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier Mock.env
-    . Pattern.simplifyAndRemoveTopExists
+    runSimplifier Mock.env . Pattern.simplifyAndRemoveTopExists

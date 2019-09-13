@@ -34,6 +34,7 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
 import Test.Kore.Predicate.Predicate ()
+import qualified Test.Kore.Step.Simplification as Test
 import Test.SMT
 
 test_andNegation :: TestTree
@@ -59,7 +60,7 @@ test_andNegation =
 evaluate
     :: Syntax.Predicate Variable
     -> PropertyT SMT (Maybe Bool)
-evaluate = Trans.lift . evalSimplifier testEnv . SMT.Evaluator.evaluate
+evaluate = Trans.lift . runSimplifier testEnv . SMT.Evaluator.evaluate
 
 noSimplification :: [(TermLike Variable, [Pattern Variable])]
 noSimplification = []
@@ -85,9 +86,7 @@ q = vBool (testId "q")
 assertRefuted :: Syntax.Predicate Variable -> Assertion
 assertRefuted prop = do
     let expect = Just False
-    actual <-
-        Test.SMT.runSMT $ evalSimplifier testEnv
-        $ SMT.Evaluator.decidePredicate prop
+    actual <- Test.runSimplifier testEnv $ SMT.Evaluator.decidePredicate prop
     assertEqual "" expect actual
 
 unit_1 :: Assertion

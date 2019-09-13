@@ -46,7 +46,6 @@ import Kore.Step.Rule
     , RulePattern (..)
     )
 import qualified Kore.Step.Rule as RulePattern
-import Kore.Step.Simplification.Data
 import Kore.Step.Step hiding
     ( applyInitialConditions
     , applyRewriteRulesParallel
@@ -71,20 +70,16 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 evalUnifier
     :: UnifierT Simplifier a
     -> IO (Either UnificationOrSubstitutionError [a])
-evalUnifier =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier Mock.env
-    . runUnifierT
+evalUnifier = runSimplifier Mock.env . runUnifierT
 
 applyInitialConditions
     :: Predicate Variable
@@ -672,8 +667,7 @@ applyRewriteRulesParallel
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ runSimplifier Mock.env
     $ runUnifierT
     $ Step.applyRewriteRulesParallel unificationProcedure rules initial
   where
@@ -1050,8 +1044,7 @@ applyRewriteRulesSequence
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
 applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ runSimplifier Mock.env
     $ runUnifierT
     $ Step.applyRewriteRulesSequence unificationProcedure initial rules
   where

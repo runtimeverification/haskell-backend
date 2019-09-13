@@ -21,9 +21,6 @@ import Kore.Predicate.Predicate
     , makeIffPredicate
     , makeTruePredicate
     )
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
     , simplify
@@ -32,11 +29,10 @@ import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 import qualified Test.Terse as Terse
 
@@ -205,10 +201,7 @@ makeIff first second =
 simplify
     :: Iff Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify iff0 =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Iff.simplify iff0
+simplify = runSimplifier mockEnv . Iff.simplify
   where
     mockEnv = Mock.env
 

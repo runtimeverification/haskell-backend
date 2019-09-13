@@ -5,9 +5,6 @@ module Test.Kore.Step.Simplification.And
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Branch
-    ( gather
-    )
 import Kore.Internal.MultiOr
     ( MultiOr (MultiOr)
     )
@@ -25,22 +22,17 @@ import Kore.Predicate.Predicate
     , makeTruePredicate
     )
 import Kore.Step.Simplification.And
-import Kore.Step.Simplification.Data
-    ( Env (..)
-    , evalSimplifier
-    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
-import qualified SMT
 
-import Test.Kore
 import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
 test_andSimplification :: [TestTree]
@@ -422,10 +414,9 @@ findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
-evaluate patt =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ simplify patt
+evaluate =
+    runSimplifier mockEnv
+    . simplify
 
 evaluatePatterns
     :: Pattern Variable
@@ -433,9 +424,8 @@ evaluatePatterns
     -> IO (OrPattern Variable)
 evaluatePatterns first second =
     fmap OrPattern.fromPatterns
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ gather $ makeEvaluate first second
+    $ runSimplifierBranch mockEnv
+    $ makeEvaluate first second
 
 mockEnv :: Env
 mockEnv = Mock.env

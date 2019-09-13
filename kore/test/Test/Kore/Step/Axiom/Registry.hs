@@ -51,18 +51,17 @@ import Kore.Step.Axiom.Registry
 import Kore.Step.Rule
     ( extractRewriteAxioms
     )
-import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition hiding
     ( Symbol
     )
-import qualified SMT
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 
 updateAttributes :: Attributes -> Sentence patternType -> Sentence patternType
 updateAttributes attrs = updateAttrs
@@ -325,8 +324,7 @@ test_functionRegistry =
     , testCase "Checking that evaluator simplifies correctly" $ do
         let expect = mkApplySymbol sHead []
         simplified <-
-            SMT.runSMT SMT.defaultConfig emptyLogger
-            $ evalSimplifier testEnv
+            runSimplifier testEnv
             $ Pattern.simplify $ makePattern $ mkApplySymbol gHead []
         let actual =
                 Pattern.term $ head

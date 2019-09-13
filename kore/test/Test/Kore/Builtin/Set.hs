@@ -64,9 +64,6 @@ import Kore.Step.Rule as RulePattern
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
-import Kore.Step.Simplification.Data
-    ( evalSimplifier
-    )
 import Kore.Syntax.Id
     ( Id
     )
@@ -105,6 +102,7 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Kore.With
 import Test.SMT hiding
     ( runSMT
@@ -1680,8 +1678,7 @@ unifiedBy
 unifiedBy (termLike1, termLike2) substitution testName =
     testCase testName $ do
         Right actual <-
-            runSMT
-            $ evalSimplifier testEnv
+            runSimplifier testEnv
             $ runUnifierT
             $ termUnification termLike1 termLike2
         Trans.liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
