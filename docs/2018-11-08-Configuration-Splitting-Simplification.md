@@ -4,19 +4,20 @@ Configuration Splitting Simplification
 Summary
 -------
 
+If `φ(X)` and `α(Z)` are function-like formulae, then
+
 ```
 φ(X) ∧ (¬ ∃ Z. α(Z)) =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
 ```
-
-under the conditions that 
-1. `φ(X) = φt(X) ∧ φp(X)` where `φp(X)` is a predicate,
-   and `φt(X)` is a function-like term. It may or may not unify with `α(Z)`.
-1. `α(Z) = αt(Z) ∧ αp(Z)` where `αt(Z)` is a functional term,
-   composed out of constructor-like symbols and variables
-   and `αp(Z)` is a predicate (so `α(Z)` is function-like).
-   
+  
 ### Implementation concerns
 
+We assume that
+1. `φ(X) = φt(X) ∧ φp(X)` where `φt(X)` is a function-like __term__
+   and `φp(X)` is a predicate
+1. `α(Z) = αt(Z) ∧ αp(Z)` where `αt(Z)` is a function-like __term__,
+   and `αp(Z)` is a predicate
+ 
 If `φt(X)` and `αt(Z)` don't unify then 
 
 ```
@@ -84,73 +85,85 @@ We want to rewrite `φ(X) ∧ (¬ ∃ Z. α(Z))` part of the pattern above
 to something more manageable, preferably something that does not use `not`
 and `exists`, except in cases where it can be handled by an SMT solver.
 
-
-### Assumptions
-
-1. There exist `φt(X)` and `φp(X)` such that
-
-   - `φ(X)` is `φt(X) ∧ φp(X)`
-   - `φt(X)` is a function-like term
-   - `φp(X)` is a predicate
-
-1. `Z`, `t(Z)` and `p(Z)` such that
-
-   - `α(Z) =  αt(Z) ∧ αp(Z)`
-   - `αt(Z)` is a functional term made of constructor-like symbols and variables
-   - `αp(Z)` is a predicate
-
-__Note:__ The proposed solution should not return a broken result when these
-assumptions do not hold, but it is not forced to fully simplify the given term.
+We assume that `φ(X)` and `α(Z)` are function-like formulae.
 
 ### Justification
 
 ```
 φ(X) ∧ (¬ ∃ Z. α(Z))
-    =  φt(X) ∧ φp(X) ∧ (¬ ∃ Z. α(Z))
-    =  φt(X) ∧ φp(X) ∧ ⌈φt(X) ∧ (¬ ∃ Z. α(Z))⌉ -- since φt(x) is function-like
-    =  φ(X) ∧ ⌈φt(X) ∧ (∀ Z. ¬α(Z))⌉  -- ¬ ∃ = ∀ ¬
-    =  φ(X) ∧ ⌈∀ Z. (φt(X) ∧ ¬α(Z))⌉  -- since φt(x) does not depend on Z
-    =  φ(X) ∧ (∀ Z. ⌈φt(X) ∧ ¬α(Z)⌉)  -- ⌈∀⌉ = ∀⌈⌉
-    =  ∀ Z. φ(X) ∧ ⌈φt(X) ∧ ¬α(Z)⌉  -- FOL
-    =  ∀ Z. φ(X) ∧ ⌈φt(X) ∧ ¬(αt(Z) ∧ αp(Z))⌉ 
-    =  ∀ Z. φ(X) ∧ ⌈φt(X) ∧ (¬αt(Z) ∨ ¬αp(Z))⌉ 
-    =  ∀ Z. φ(X) ∧ ⌈(φt(X) ∧ ¬αt(Z)) ∨ (φt(X) ∧ ¬αp(Z))⌉ 
-    =  ∀ Z. φ(X) ∧ (⌈φt(X) ∧ ¬αt(Z)⌉ ∨ ⌈φt(X) ∧ ¬αp(Z)⌉)
-    =  ∀ Z. (φ(X) ∧ ⌈φt(X) ∧ ¬αt(Z)⌉) ∨ (φ(X) ∧ ⌈φt(X) ∧ ¬αp(Z)⌉)
-    =  ∀ Z. (φ(X) ∧ ⌈φt(X) ∧ ¬αt(Z)⌉) ∨ (φt(X) ∧ φp(X) ∧ ⌈φt(X)⌉ ∧ ¬αp(Z))
-    =  ∀ Z. (φ(X) ∧ ⌈φt(X) ∧ ¬αt(Z)⌉) ∨ (φ(X) ∧ ¬αp(Z))
-    (1)
-```
-
-Note that, since `φt(X)` and `αt(Z)` is function-like, it is
-easy to check semantically that:
-
-```
-⌈φt(X) ∧ ¬αt(Z)⌉ = ⌈φt(X)⌉ ∧ ¬⌈φt(X) ∧ αt(Z)⌉ (2)
-```
-
-So then we have
-```
-φ(X) ∧ (¬ ∃ Z. α(Z))
-    =  ∀ Z. (φ(X) ∧ ⌈φt(X) ∧ ¬αt(Z)⌉) ∨ (φ(X) ∧ ¬αp(Z))   -- as per (1)
-    =  ∀ Z. (φt(X) ∧ φp(X) ∧ ⌈φt(X)⌉ ∧ ¬⌈φt(X) ∧ αt(Z)⌉) ∨ (φ(X) ∧ ¬αp(Z)) -- from (2)
-    =  ∀ Z. (φ(X) ∧ ¬⌈φt(X) ∧ αt(Z)⌉) ∨ (φ(X) ∧ ¬αp(Z))
-    =  ∀ Z. (φ(X) ∧ ¬⌈φt(X) ∧ αt(Z)⌉) ∨ (φ(X) ∧ ¬αp(Z)) ∨ (φt(X) ∧ φp(X) ∧ ¬φp(X))
-    =  ∀ Z. φ(X) ∧ (¬⌈φt(X) ∧ αt(Z)⌉ ∨ ¬αp(Z) ∨ ¬φp(X))
-    =  ∀ Z. φ(X) ∧ ¬(⌈φt(X) ∧ αt(Z)⌉ ∧ αp(Z) ∧ φp(X))
-    =  ∀ Z. φ(X) ∧ ¬⌈φt(X) ∧ αt(Z) ∧ αp(Z) ∧ φp(X)⌉
-    =  ∀ Z. φ(X) ∧ ¬⌈φ(X) ∧ α(Z)⌉
+    =  φ(X) ∧ (¬ ∃ Z. α(Z))
+    =  φ(X) ∧ ⌈φ(X) ∧ (¬ ∃ Z. α(Z))⌉ -- since φ(x) is function-like
+    =  φ(X) ∧ ⌈φ(X) ∧ (∀ Z. ¬α(Z))⌉  -- ¬ ∃ = ∀ ¬
+    =  φ(X) ∧ ⌈∀ Z. (φ(X) ∧ ¬α(Z))⌉  -- since φt(x) does not depend on Z
+    =  φ(X) ∧ (∀ Z. ⌈φ(X) ∧ ¬α(Z)⌉)  -- proven below
+    =  ∀ Z. φ(X) ∧ ⌈φ(X) ∧ ¬α(Z)⌉  -- FOL
+    =  ∀ Z. (φ(X) ∧ ⌈φ(X)⌉ ∧ ¬⌈φ(X) ∧ α(Z)⌉) -- proven below
+    =  ∀ Z. (φ(X) ∧ ¬⌈φ(X) ∧ α(Z)⌉)
     =  φ(X) ∧ (∀ Z. ¬⌈φ(X) ∧ α(Z)⌉)
     =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
 ```
+
+
+### Missing details
+
+
+#### `⌈φ ∧  ∀ Z.α(Z)⌉ = ∀ Z. ⌈φ ∧ α(Z)⌉`
+
+for any function-like formula `φ` and for any ML formula `α(Z)`.
+
+__Proof:__
+```
+⌈φ ∧  ∀ Z.α(Z)⌉
+    = ∃ x. x ∈  (φ ∧  ∀ Z.α(Z))
+    = ∃ x. x ∈  φ ∧ x ∈  (∀ Z.α(Z)) // distributivity of ∧ 
+    = ∃ x. x = φ ∧ x ∈  (∀ Z.α(Z))  // φ is function-like
+    = ∃ x. x = φ ∧ ∀ Z.x ∈  α(Z)  // properties of membership
+    = ∃ x. x = φ ∧ ∀ Z.φ ∈  α(Z) // substitution
+    = ⌈φ⌉ ∧ ∀ Z.φ ∈  α(Z) // properties of ⌈_⌉
+    = ∀ Z.⌈φ⌉ ∧ φ ∈  α(Z) 
+    = ∀ Z.(∃ x. x = φ) ∧ φ ∈  α(Z)  // properties of ⌈_⌉
+    = ∀ Z.∃ x. (x = φ ∧ x ∈  α(Z)) // reverse substitution 
+    = ∀ Z.∃ x. (x ∈  φ ∧ x ∈  α(Z)) 
+    = ∀ Z.∃ x. x ∈  (φ ∧ α(Z)) 
+    = ∀ Z.⌈φ ∧ α(Z)⌉ 
+```
+
+#### `⌈φ ∧ ¬α⌉ = ⌈φ⌉ ∧ ¬⌈φ ∧ α⌉`
+
+for any function-like formula `φ` and for any ML formula `α`.
+
+__Proof:__
+```
+⌈φ ∧ ¬α⌉
+    = ∃ x. x∈ (φ ∧ ¬α)
+    = ∃ x. x∈ φ ∧ x∈ ¬α
+    = ∃ x. x∈ φ ∧ ¬x∈ α 
+    = ∃ x. x = φ ∧ ¬x∈ α  //φ is function-like
+    = ∃ x. x = φ ∧ ¬φ∈ α  //substitution
+    = (∃ x. x = φ) ∧ ¬φ∈ α
+    = ⌈φ⌉ ∧ ¬φ∈ α  // properties of ⌈_⌉
+    = ⌈φ⌉ ∧ ¬⌈φ ∧ α⌉  // definition of ∈ 
+```
+
 
 ### Implementation concerns
 
 We have shown above that
 
 ```
-φ(X) ∧ (¬ ∃ Z. α(Z))
-    =  φ(X) ∧ (¬ ∃ Z. ⌈φt(X) ∧ αt(Z) ∧ φp(X) ∧ αp(Z)⌉)
+φ(X) ∧ (¬ ∃ Z. α(Z)) =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+```
+
+Now, if
+1. `φ(X) = φt(X) ∧ φp(X)` where `φt(X)` is a function-like __term__
+   and `φp(X)` is a predicate
+1. `α(Z) = αt(Z) ∧ αp(Z)` where `αt(Z)` is a function-like __term__,
+   and `αp(Z)` is a predicate
+ 
+Then we can further expand the above as:
+```
+φ(X) ∧ (¬ ∃ Z. α(Z)) =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+    =  φ(X) ∧ (¬ ∃ Z. ⌈φt(X) ∧ φp(X) ∧ αt(Z) ∧ αp(Z)⌉)
     =  φ(X) ∧ (¬ ∃ Z. (⌈φt(X) ∧ αt(Z)⌉ ∧ φp(X) ∧ αp(Z)))
 ```
 

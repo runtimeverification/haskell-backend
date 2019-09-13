@@ -35,12 +35,7 @@ to the original configuration `ψ₀`.
 ## Assumptions
 
 We will make the standard assumptions about configurations and rewrite rules, i.e.,
-
-1. `ψ₀ === ψ₀ₜ(X) ∧ ψ₀ₚ(X)` where `ψ₀ₚ(X)` is a predicate,
-   and `ψ₀ₜ(X)` is a function-like term.
-1. `Lᵢ(Xᵢ) === Lᵢₜ(Xᵢ) ∧ Lᵢₚ(Xᵢ)` where `Lᵢₜ(Xᵢ)` is a functional term,
-   composed out of constructor-like symbols and variables
-   and `Lᵢₚ(Xᵢ)` is a predicate (so `Lᵢ(Xᵢ)` is function-like).
+`ψ₀`, `L(X)`, and `Lᵢ(Xᵢ)` (for each `i`) are function-like.
  
 ## Justification
 
