@@ -469,12 +469,12 @@ instance NFData variable => NFData (TermLike variable) where
 instance SortedVariable variable => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project freshVarTerm of
-          (attrs :< pat) ->
-              Pretty.vsep
-                  $ catMaybes
-                    [ attrs Lens.^? getCallStackHead
-                    , Just $ unparse pat
-                    ]
+            (attrs :< pat) ->
+                Pretty.vsep
+                    $ catMaybes
+                        [ attrs Lens.^? getCallStackHead
+                        , Just $ unparse pat
+                        ]
       where
         freshVarTerm =
             externalizeFreshVariables
@@ -486,7 +486,6 @@ instance SortedVariable variable => Unparse (TermLike variable) where
                 , "at"
                 , Pretty.pretty $ GHC.prettySrcLoc loc
                 ]
-
         getCallStackHead =
             field @"created"
                 . coerced
