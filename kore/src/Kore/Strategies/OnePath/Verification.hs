@@ -11,7 +11,6 @@ This should be imported qualified.
 module Kore.Strategies.OnePath.Verification
     ( Claim
     , CommonProofState
-    , defaultStrategy
     , verify
     , verifyClaimStep
     , toRulePattern
@@ -105,6 +104,7 @@ type Claim claim =
     , Unparse (Rule claim)
     , Goal claim
     , Prim claim ~ ProofState.Prim (Rule claim)
+    , ProofState claim claim ~ ProofState.ProofState claim
     )
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.

@@ -108,7 +108,6 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.OnePath.Verification
     ( Claim
-    , defaultStrategy
     , verify
     )
 import SMT
@@ -254,12 +253,12 @@ prove limit definitionModule specModule =
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = Goal.Rule <$> rewriteRules
+            axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = makeClaim <$> specAxioms
         result <-
             runExceptT
             $ verify
-                (defaultStrategy claims axioms)
+                (Goal.strategy claims axioms)
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
@@ -289,7 +288,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = Goal.Rule <$> rewriteRules
+            axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = fmap makeClaim specAxioms
         Repl.runRepl axioms claims mvar replScript replMode outputFile
 
