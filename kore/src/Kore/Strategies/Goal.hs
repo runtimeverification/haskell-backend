@@ -142,7 +142,7 @@ class Goal goal where
     strategy
         :: [goal]
         -> [Rule goal]
-        -> [ProofState.Prim (Rule goal)]
+        -> [Strategy (Prim goal)]
 
 instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
 
@@ -158,7 +158,20 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
 
     transitionRule = transitionRule0
 
-    strategy = undefined
+    strategy goals rules =
+        onePathFirstStep rewrites
+        : repeat
+            ( onePathFollowupStep
+                coinductiveRewrites
+                rewrites
+            )
+      where
+        rewrites = rules
+        coinductiveRewrites =
+            OnePathRewriteRule
+            . RewriteRule
+            . getOnePathRule
+            <$> goals
 
 transitionRule0
     :: forall m goal variable
@@ -259,7 +272,10 @@ allPathStrategy claims axioms =
             , TriviallyValid
             ]
 
-onePathFirstStep :: [rule] -> Strategy (Prim rule)
+onePathFirstStep
+    :: goal ~ OnePathRule variable
+    => [Rule goal]
+    -> Strategy (Prim goal)
 onePathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -278,7 +294,11 @@ onePathFirstStep axioms =
         , TriviallyValid
         ]
 
-onePathFollowupStep :: [rule] -> [rule] -> Strategy (Prim rule)
+onePathFollowupStep
+    :: goal ~ OnePathRule variable
+    => [Rule goal]
+    -> [Rule goal]
+    -> Strategy (Prim goal)
 onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -406,15 +426,15 @@ derivePar rules goal = do
                     . Step.withoutUnification
                 traverseConfigs =
                     Result.traverseConfigs
-                        (pure . Goal)
-                        removeDestSimplifyRemainder
-            let ruleResults =
+                        (pure . GoalRewritten)
+                        (pure . GoalRemainder)
+            let onePathResults =
                     Result.mapConfigs
                         (`makeRuleFromPatterns` destination)
                         (`makeRuleFromPatterns` destination)
                         (Result.mergeResults results)
             results' <-
-                traverseConfigs (mapRules ruleResults)
+                traverseConfigs (mapRules onePathResults)
             Result.transitionResults results'
 
 -- | Apply 'Rule's to the goal in sequence.
@@ -461,15 +481,15 @@ deriveSeq rules goal = do
                     . Step.withoutUnification
                 traverseConfigs =
                     Result.traverseConfigs
-                        (pure . ProofState.Goal)
-                        removeDestSimplifyRemainder
-            let ruleResults =
+                        (pure . GoalRewritten)
+                        (pure . GoalRemainder)
+            let onePathResults =
                     Result.mapConfigs
                         (`makeRuleFromPatterns` destination)
                         (`makeRuleFromPatterns` destination)
                         (Result.mergeResults results)
             results' <-
-                traverseConfigs (mapRules ruleResults)
+                traverseConfigs (mapRules onePathResults)
             Result.transitionResults results'
 
 makeRuleFromPatterns
