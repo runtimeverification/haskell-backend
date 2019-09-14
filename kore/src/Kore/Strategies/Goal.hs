@@ -274,8 +274,11 @@ allPathStrategy claims axioms =
             , TriviallyValid
             ]
 
+-- TODO(Ana): make less general
 onePathFirstStep
-    :: goal ~ OnePathRule variable
+    :: Goal goal
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
     => [Rule goal]
     -> Strategy (Prim goal)
 onePathFirstStep axioms =
@@ -296,8 +299,11 @@ onePathFirstStep axioms =
         , TriviallyValid
         ]
 
+-- TODO(Ana): make less general
 onePathFollowupStep
-    :: goal ~ OnePathRule variable
+    :: Goal goal
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
     => [Rule goal]
     -> [Rule goal]
     -> Strategy (Prim goal)

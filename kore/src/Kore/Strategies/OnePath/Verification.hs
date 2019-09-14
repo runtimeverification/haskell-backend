@@ -189,6 +189,8 @@ verifyClaim
             $ transitionRule' destination prim proofState'
         Transition.scatter transitions
 
+-- TODO(Ana): allow running with all-path strategy steps
+-- when the REPL will be connected to all-path
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
@@ -213,29 +215,28 @@ verifyClaimStep
     axioms
     eg@ExecutionGraph { root }
     node
-  = undefined
---  = do
---      let destination = getDestination target
---      executionHistoryStep
---        (transitionRule' destination)
---        strategy'
---        eg
---        node
---  where
---    strategy' :: Strategy (Prim (Rule claim))
---    strategy'
---        | isRoot =
---            onePathFirstStep rewrites
---        | otherwise =
---            onePathFollowupStep
---                (coerce . toRulePattern <$> claims)
---                rewrites
---
---    rewrites :: [Rule claim]
---    rewrites = axioms
---
---    isRoot :: Bool
---    isRoot = node == root
+  = do
+      let destination = getDestination target
+      executionHistoryStep
+        (transitionRule' destination)
+        strategy'
+        eg
+        node
+  where
+    strategy' :: Strategy (Prim claim)
+    strategy'
+        | isRoot =
+            onePathFirstStep rewrites
+        | otherwise =
+            onePathFollowupStep
+                (coerce . toRulePattern <$> claims)
+                rewrites
+
+    rewrites :: [Rule claim]
+    rewrites = axioms
+
+    isRoot :: Bool
+    isRoot = node == root
 
 transitionRule'
     :: forall claim m
