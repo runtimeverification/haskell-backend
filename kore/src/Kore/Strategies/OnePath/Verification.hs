@@ -39,7 +39,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+    ( OnePathRule
+    , RulePattern (..)
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -48,14 +49,7 @@ import Kore.Step.Transition
     )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Actions
-    ( getConfiguration
-    , getDestination
-    , makeRuleFromPatterns
-    )
-import Kore.Strategies.ProofState
-    ( ProofState (Goal)
-    )
+import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -98,7 +92,7 @@ decision is subject to change without notice.
 
  -}
 
-type CommonProofState = ProofState (Pattern Variable)
+type CommonProofState = ProofState (OnePathRule Variable) (Pattern Variable)
 
 {- | Class type for claim-like rules
 -}
@@ -110,6 +104,7 @@ type Claim claim =
     , Unparse claim
     , Unparse (Rule claim)
     , Goal claim
+    , Prim claim ~ ProofState.Prim (Rule claim)
     )
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
@@ -133,18 +128,19 @@ If the verification succeeds, it returns ().
 verify
     :: forall claim m
     .  Claim claim
+    => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => Show (Rule claim)
     => MonadSimplify m
-    => [Strategy (Prim (Rule claim))]
+    => [Strategy (Prim claim)]
     -- ^ Creates a one-step strategy from a target pattern. See
     -- 'defaultStrategy'.
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify strategy =
-    mapM_ (verifyClaim strategy)
+verify strategy' =
+    mapM_ (verifyClaim strategy')
 
 {- | Default implementation for a one-path strategy. You can apply it to the
 first two arguments and pass the resulting function to 'verify'.
@@ -156,49 +152,27 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-defaultStrategy
-    :: forall claim
-    .  Claim claim
-    => [claim]
-    -- The claims that we want to prove
-    -> [Rule claim]
-    -> [Strategy (Prim (Rule claim))]
-defaultStrategy
-    claims
-    axioms
-  =
-    onePathFirstStep rewrites
-    : repeat
-        (onePathFollowupStep
-            coinductiveRewrites
-            rewrites
-        )
-  where
-    rewrites :: [Rule claim]
-    rewrites = axioms
-    coinductiveRewrites :: [Rule claim]
-    coinductiveRewrites = map (toRule . toRulePattern) claims
-
 verifyClaim
     :: forall claim m
     .  MonadSimplify m
+    => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
     => Show (Rule claim)
-    => [Strategy (Prim (Rule claim))]
+    => [Strategy (Prim claim)]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
-    strategy
+    strategy'
     (goal, stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = Goal $ getConfiguration goal
+        startPattern = ProofState.Goal $ getConfiguration goal
         destination = getDestination goal
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
-                strategy
+                strategy'
     executionGraph <-
         runStrategy (modifiedTransitionRule destination) limitedStrategy startPattern
     -- Throw the first unproven configuration as an error.
@@ -206,7 +180,7 @@ verifyClaim
   where
     modifiedTransitionRule
         :: Pattern Variable
-        -> Prim (Rule claim)
+        -> Prim claim
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
     modifiedTransitionRule destination prim proofState' = do
@@ -239,35 +213,36 @@ verifyClaimStep
     axioms
     eg@ExecutionGraph { root }
     node
-  = do
-      let destination = getDestination target
-      executionHistoryStep
-        (transitionRule' destination)
-        strategy'
-        eg
-        node
-  where
-    strategy' :: Strategy (Prim (Rule claim))
-    strategy'
-        | isRoot =
-            onePathFirstStep rewrites
-        | otherwise =
-            onePathFollowupStep
-                (coerce . toRulePattern <$> claims)
-                rewrites
-
-    rewrites :: [Rule claim]
-    rewrites = axioms
-
-    isRoot :: Bool
-    isRoot = node == root
+  = undefined
+--  = do
+--      let destination = getDestination target
+--      executionHistoryStep
+--        (transitionRule' destination)
+--        strategy'
+--        eg
+--        node
+--  where
+--    strategy' :: Strategy (Prim (Rule claim))
+--    strategy'
+--        | isRoot =
+--            onePathFirstStep rewrites
+--        | otherwise =
+--            onePathFollowupStep
+--                (coerce . toRulePattern <$> claims)
+--                rewrites
+--
+--    rewrites :: [Rule claim]
+--    rewrites = axioms
+--
+--    isRoot :: Bool
+--    isRoot = node == root
 
 transitionRule'
     :: forall claim m
     .  MonadSimplify m
     => Claim claim
     => Pattern Variable
-    -> Prim (Rule claim)
+    -> Prim claim
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' destination prim state = do

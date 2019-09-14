@@ -109,10 +109,11 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
 
  -}
 unprovenNodes
-    :: Goal goal
-    => ProofState.ProofState goal ~ ProofState goal goal
-    => Strategy.ExecutionGraph (ProofState goal goal) (Rule goal)
-    -> MultiOr.MultiOr goal
+    :: forall goal a
+    .  Goal goal
+    => ProofState.ProofState a ~ ProofState goal a
+    => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
+    -> MultiOr.MultiOr a
 unprovenNodes executionGraph =
     MultiOr.MultiOr
     $ mapMaybe extractUnproven
@@ -121,9 +122,10 @@ unprovenNodes executionGraph =
 {- | Does the 'Strategy.ExecutionGraph' indicate a successful proof?
  -}
 proven
-    :: Goal goal
-    => ProofState.ProofState goal ~ ProofState goal goal
-    => Strategy.ExecutionGraph (ProofState goal goal) (Rule goal)
+    :: forall goal a
+    .  Goal goal
+    => ProofState.ProofState a ~ ProofState goal a
+    => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
 
@@ -237,7 +239,7 @@ allPathStrategy
     -- ^ Claims
     -> [rule]
     -- ^ Axioms
-    -> [Strategy (Prim rule)]
+    -> [Strategy (ProofState.Prim rule)]
 allPathStrategy claims axioms =
     firstStep : repeat nextStep
   where
