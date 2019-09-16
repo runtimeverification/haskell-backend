@@ -154,6 +154,7 @@ goTranslatePredicate
     :: forall variable m.
         ( Ord variable
         , Unparse variable
+        , SortedVariable variable
         , MonadSimplify m
         )
     => SmtMetadataTools Attribute.Symbol

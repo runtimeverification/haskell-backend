@@ -144,7 +144,7 @@ data IndirectSymbolDeclaration sort name =
     deriving (Eq, Ord, Show)
 
 {-| Holds things that we declare to an SMT. When encountered in its
-SmtDeclarations instatiation, we usually assume that all dependencies between
+SmtDeclarations instantiation, we usually assume that all dependencies between
 the various declarations can be resolved.
 -}
 data Declarations sort symbol name =
