@@ -2,7 +2,7 @@
 
 ## Problem
 
-Consider all the `n` rules 
+Consider all the `n` rules (`1 ≤ i ≤ n`)
 
 ```
 Lᵢ(X) ⇒ Rᵢ(X)  // Rule strongᵢ
@@ -17,14 +17,14 @@ L(X) ⇒ R(X)  // Rule weak
 Then the priority encoding of `Rule weak` is:
 
 ```
-¬ (∃ X₁. L₁(X₁)) ∧ ... ∧  ¬ (∃ Xₙ. Lₙ(Xₙ)) ∧ L(X) ⇒ R(X).  // Rule weak (a)
+¬ (∃ X₁. L₁(X₁)) ∧ ... ∧ ¬ (∃ Xₙ. Lₙ(Xₙ)) ∧ L(X) ⇒ R(X).  // Rule weak (a)
 ```
 
 Attempting to apply all rules `Rule strongᵢ` to a configuration `ψ₀` yields a
 remainder `ψ₀'`
 
 ```
-¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧  ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉) ∧ ψ₀.
+¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧ ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉) ∧ ψ₀.
 ```
 
 We would like to show that the result of applying the simplified `Rule weak`
@@ -42,17 +42,17 @@ We will make the standard assumptions about configurations and rewrite rules, i.
 We need to show that:
 
 ```
-∃ X₂. ⌈¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧  ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉) ∧ ψ₀ ∧ L(X)⌉ ∧ R(X)
+∃ X₂. ⌈¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧ ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉) ∧ ψ₀ ∧ L(X)⌉ ∧ R(X)
 ===
-∃ X₂. ⌈ψ₀ ∧ ¬ (∃ X₁. L₁(X₁)) ∧ ... ∧  ¬ (∃ Xₙ. Lₙ(Xₙ)) ∧ L(X)⌉ ∧ R(X)
+∃ X₂. ⌈ψ₀ ∧ ¬ (∃ X₁. L₁(X₁)) ∧ ... ∧ ¬ (∃ Xₙ. Lₙ(Xₙ)) ∧ L(X)⌉ ∧ R(X)
 ```
 
 It suffices to show
 
 ```
-ψ₀ ∧ ¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧  ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉)
+ψ₀ ∧ ¬ (∃ X₁. ⌈ψ₀ ∧ L₁(X₁)⌉) ∧ ... ∧ ¬ (∃ Xₙ. ⌈ψ₀ ∧ Lₙ(Xₙ)⌉)
 ===
-ψ₀ ∧ ¬ (∃ X₁. L₁(X₁)) ∧ ... ∧  ¬ (∃ Xₙ. Lₙ(Xₙ))
+ψ₀ ∧ ¬ (∃ X₁. L₁(X₁)) ∧ ... ∧ ¬ (∃ Xₙ. Lₙ(Xₙ))
 ```
 
 From [Configuration Splitting Simplification](2018-11-08-Configuration-Splitting-Simplification.md) we know that 

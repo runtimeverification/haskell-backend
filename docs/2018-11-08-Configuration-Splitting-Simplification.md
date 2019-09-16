@@ -7,9 +7,9 @@ Summary
 If `φ(X)` and `α(Z)` are function-like formulae, then
 
 ```
-φ(X) ∧ (¬ ∃ Z. α(Z)) =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
 ```
-  
+
 ### Implementation concerns
 
 We assume that
@@ -54,13 +54,13 @@ As documented in [One path reachability proofs](2018-11-08-One-Path-Reachability
 ```
 where `φ` and `ψ` are function-like patterns, is equivalent to proving
 ```
-∀ X . φ(X) →  ∃ Y . ψ(X, Y) ∨ •◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) → ∃ Y . ψ(X, Y) ∨ •◆ ∃ Y . ψ(X, Y)`
 ```
 
 We can now move `∃ Y . ψ(X, Y)` to the left of the implication,
 and (assuming law of excluded middle) we obtain the equivalent:
 ```
-∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) →  •◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) → •◆ ∃ Y . ψ(X, Y)`
 ```
 
 ### Obtaining And-Not-Exists patterns from applying one step
@@ -107,24 +107,22 @@ We assume that `φ(X)` and `α(Z)` are function-like formulae.
 ### Missing details
 
 
-#### `⌈φ ∧  ∀ Z.α(Z)⌉ = ∀ Z. ⌈φ ∧ α(Z)⌉`
+#### `⌈φ ∧ ∀ Z.α(Z)⌉ = ∀ Z. ⌈φ ∧ α(Z)⌉`
 
 for any function-like formula `φ` and for any ML formula `α(Z)`.
 
 __Proof:__
 ```
-⌈φ ∧  ∀ Z.α(Z)⌉
-    = ∃ x. x ∈  (φ ∧  ∀ Z.α(Z))
-    = ∃ x. x ∈  φ ∧ x ∈  (∀ Z.α(Z)) // distributivity of ∧ 
-    = ∃ x. x = φ ∧ x ∈  (∀ Z.α(Z))  // φ is function-like
-    = ∃ x. x = φ ∧ ∀ Z.x ∈  α(Z)  // properties of membership
-    = ∃ x. x = φ ∧ ∀ Z.φ ∈  α(Z) // substitution
-    = ⌈φ⌉ ∧ ∀ Z.φ ∈  α(Z) // properties of ⌈_⌉
-    = ∀ Z.⌈φ⌉ ∧ φ ∈  α(Z) 
-    = ∀ Z.(∃ x. x = φ) ∧ φ ∈  α(Z)  // properties of ⌈_⌉
-    = ∀ Z.∃ x. (x = φ ∧ x ∈  α(Z)) // reverse substitution 
-    = ∀ Z.∃ x. (x ∈  φ ∧ x ∈  α(Z)) 
-    = ∀ Z.∃ x. x ∈  (φ ∧ α(Z)) 
+⌈φ ∧ ∀ Z.α(Z)⌉
+    = ∃ x. x ∈ (φ ∧ ∀ Z.α(Z))
+    = ∃ x. x ∈ φ ∧ x ∈ (∀ Z.α(Z)) // distributivity of ∧ 
+    = ∃ x. x = φ ∧ x ∈ (∀ Z.α(Z))  // φ is function-like
+    = ∃ x. x = φ ∧ ∀ Z.x ∈ α(Z)  // properties of membership
+    = (∃ x. x = φ) ∧ ∀ Z.φ ∈ α(Z) // substitution
+    = ∀ Z.(∃ x. x = φ) ∧ φ ∈ α(Z)  // FOL
+    = ∀ Z.∃ x. (x = φ ∧ x ∈ α(Z)) // reverse substitution 
+    = ∀ Z.∃ x. (x ∈ φ ∧ x ∈ α(Z)) 
+    = ∀ Z.∃ x. x ∈ (φ ∧ α(Z)) 
     = ∀ Z.⌈φ ∧ α(Z)⌉ 
 ```
 
@@ -151,7 +149,7 @@ __Proof:__
 We have shown above that
 
 ```
-φ(X) ∧ (¬ ∃ Z. α(Z)) =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
 ```
 
 Now, if
@@ -162,7 +160,7 @@ Now, if
  
 Then we can further expand the above as:
 ```
-φ(X) ∧ (¬ ∃ Z. α(Z)) =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
     =  φ(X) ∧ (¬ ∃ Z. ⌈φt(X) ∧ φp(X) ∧ αt(Z) ∧ αp(Z)⌉)
     =  φ(X) ∧ (¬ ∃ Z. (⌈φt(X) ∧ αt(Z)⌉ ∧ φp(X) ∧ αp(Z)))
 ```
