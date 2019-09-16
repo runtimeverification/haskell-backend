@@ -130,7 +130,7 @@ dv2 =
         , domainValueChild = mkStringLiteral "dv2"
         }
 
-testEnv :: Env
+testEnv :: Applicative simplifier => Env simplifier
 testEnv = Mock.env
 
 unificationProblem

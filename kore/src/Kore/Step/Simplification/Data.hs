@@ -54,6 +54,7 @@ import Kore.Profiler.Data
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Registry as Axiom.Registry
+import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -65,12 +66,13 @@ import SMT
 
 -- * Simplifier
 
-data Env =
+data Env simplifier =
     Env
         { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
         , simplifierTermLike  :: !TermLikeSimplifier
         , simplifierPredicate :: !PredicateSimplifier
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
+        , memo                :: !(Memo.Self simplifier)
         }
 
 {- | @Simplifier@ represents a simplification action.
@@ -80,14 +82,18 @@ A @Simplifier@ can send constraints to the SMT solver through 'MonadSMT'.
 A @Simplifier@ can write to the log through 'HasLog'.
 
  -}
-newtype SimplifierT m a = SimplifierT
-    { runSimplifierT :: ReaderT Env m a
+newtype SimplifierT smt a = SimplifierT
+    { runSimplifierT :: ReaderT (Env (SimplifierT smt)) smt a
     }
     deriving (Functor, Applicative, Monad, MonadSMT)
-    deriving (MonadIO, MonadCatch, MonadThrow, MonadTrans)
-    deriving (MonadReader Env)
+    deriving (MonadIO, MonadCatch, MonadThrow)
+    deriving (MonadReader (Env (SimplifierT smt)))
 
 type Simplifier = SimplifierT (SmtT IO)
+
+instance MonadTrans SimplifierT where
+    lift smt = SimplifierT (lift smt)
+    {-# INLINE lift #-}
 
 instance (MonadUnliftIO m, WithLog LogMessage m)
     => WithLog LogMessage (SimplifierT m)
@@ -135,11 +141,14 @@ instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
             env { simplifierAxioms = locally simplifierAxioms }
     {-# INLINE localSimplifierAxioms #-}
 
+    askMemo = asks memo
+    {-# INLINE askMemo #-}
+
 {- | Run a simplification, returning the results along all branches.
  -}
 runSimplifierBranch
     :: Monad smt
-    => Env
+    => Env (SimplifierT smt)
     -> BranchT (SimplifierT smt) a
     -- ^ simplifier computation
     -> smt [a]
@@ -154,7 +163,7 @@ that may branch.
  -}
 runSimplifier
     :: GHC.HasCallStack
-    => Env
+    => Env (SimplifierT smt)
     -> SimplifierT smt a
     -> smt a
 runSimplifier env simplifier = runReaderT (runSimplifierT simplifier) env
@@ -184,6 +193,7 @@ evalSimplifier verifiedModule simplifier = do
             , simplifierTermLike
             , simplifierPredicate
             , simplifierAxioms = earlySimplifierAxioms
+            , memo = Memo.forgetful
             }
     -- It's safe to build the MetadataTools using the external
     -- IndexedModule because MetadataTools doesn't retain any
@@ -200,7 +210,7 @@ evalSimplifier verifiedModule simplifier = do
             verifiedModule
     metadataTools = MetadataTools.build verifiedModule'
 
-    initialize :: SimplifierT smt Env
+    initialize :: SimplifierT smt (Env (SimplifierT smt))
     initialize = do
         let equalityAxioms =
                 Axiom.Registry.extractEqualityAxioms verifiedModule'
@@ -218,9 +228,11 @@ evalSimplifier verifiedModule simplifier = do
                     Axiom.EvaluationStrategy.simplifierWithFallback
                     builtinEvaluators
                     userEvaluators
+        memo <- Memo.new
         return Env
             { metadataTools
             , simplifierTermLike
             , simplifierPredicate
             , simplifierAxioms
+            , memo
             }

@@ -96,5 +96,5 @@ simplifierAxioms = Map.fromList [ (fId, fEvaluator) ]
   where
     fId = Axiom.Identifier.Application (TermLike.symbolConstructor fSymbol)
 
-env :: Test.Env
+env :: Test.Env Test.Simplifier
 env = Mock.env { Test.simplifierAxioms = simplifierAxioms }

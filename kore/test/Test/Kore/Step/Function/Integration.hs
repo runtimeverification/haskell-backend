@@ -71,6 +71,7 @@ import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Rule
     ( EqualityRule (..)
     )
@@ -1196,7 +1197,7 @@ testEvaluators = Builtin.koreEvaluators verifiedModule
 testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create
 
-testEnv :: Env
+testEnv :: Env Simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools
@@ -1209,4 +1210,5 @@ testEnv =
                 , listSimplifiers
                 , mapSimplifiers
                 ]
+        , memo = Memo.forgetful
         }
