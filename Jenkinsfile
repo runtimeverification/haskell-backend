@@ -31,7 +31,7 @@ pipeline {
         '''
       }
     }
-    stage('Build') {
+    stage('Stages') {
       failFast true
       parallel {
         stage('Documentation') {
@@ -93,6 +93,13 @@ pipeline {
       steps {
         build job: 'rv-devops/master', parameters: [string(name: 'PR_REVIEWER', value: 'ttuegel'), booleanParam(name: 'UPDATE_DEPS_K_HASKELL', value: true)], propagate: true, wait: true
       }
+    }
+  }
+  post {
+    unsuccessful {
+      slackSend color: '#cb2431'                                            \
+              , channel: '#haskell-backend'                                 \
+              , message: "Build failure: ${env.BUILD_URL}"
     }
   }
 }
