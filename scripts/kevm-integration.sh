@@ -19,7 +19,7 @@ git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $EV
 cd $EVM_SEMANTICS
 
 # Display the HEAD commit on evm-semantics for the log.
-git show HEAD
+git show -s HEAD
 
 # Use the K Nightly build from the Kore integration tests.
 rm -rf deps/k/k-distribution/target/release/k
