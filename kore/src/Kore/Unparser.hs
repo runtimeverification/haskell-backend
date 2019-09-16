@@ -9,6 +9,7 @@ Portability : portable
 -}
 module Kore.Unparser
     ( Unparse (..)
+    , SomeUnparse (..)
     , unparseGeneric
     , unparse2Generic
     , unparseToText
@@ -82,10 +83,15 @@ instance Unparse a => Unparse (Const a child) where
     unparse (Const a) = unparse a
     unparse2 (Const a) = unparse2 a
 
-
 instance Unparse Void where
     unparse = \case {}
     unparse2 = \case {}
+
+data SomeUnparse = forall a. Unparse a => SomeUnparse a
+
+instance Unparse SomeUnparse where
+    unparse (SomeUnparse a) = unparse a
+    unparse2 (SomeUnparse a) = unparse2 a
 
 {- | Unparse a 'Generic' type with 'unparse'.
 
