@@ -77,6 +77,9 @@ module Kore.Debug
 import Control.Comonad.Trans.Cofree
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
+import Data.ByteString
+    ( ByteString
+    )
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import Data.Functor.Const
@@ -631,6 +634,9 @@ instance {-# OVERLAPS #-} Debug String where
     debugPrec p a = Pretty.pretty (showsPrec p a "")
 
 instance Debug Text where
+    debugPrec p a = Pretty.pretty (showsPrec p a "")
+
+instance Debug ByteString where
     debugPrec p a = Pretty.pretty (showsPrec p a "")
 
 instance Debug Void
