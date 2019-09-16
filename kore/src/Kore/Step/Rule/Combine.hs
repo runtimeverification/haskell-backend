@@ -7,11 +7,21 @@ module Kore.Step.Rule.Combine
     ( mergeRulesPredicate
     ) where
 
-import Data.Set (Set)
-import qualified Data.Set as Set
-import qualified Data.Map as Map
 import qualified Data.List as List
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (FreeVariables)
+    )
+import Kore.Internal.TermLike
+    ( mkAnd
+    )
+import Kore.Internal.Variable
+    ( InternalVariable
+    )
 import Kore.Predicate.Predicate
     ( makeCeilPredicate
     , makeMultipleAndPredicate
@@ -20,15 +30,20 @@ import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
 import Kore.Step.Rule
-    ( RewriteRule (RewriteRule), RulePattern (RulePattern), refreshRulePattern
+    ( RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    , refreshRulePattern
     )
-import qualified Kore.Step.Rule as Rule (freeVariables)
+import qualified Kore.Step.Rule as Rule
+    ( freeVariables
+    )
 import qualified Kore.Step.Rule as Rule.DoNotUse
-import Kore.Internal.TermLike (mkAnd)
-import Kore.Internal.Variable (InternalVariable)
-import Kore.Attribute.Pattern.FreeVariables (FreeVariables(FreeVariables))
-import Kore.Variables.UnifiedVariable (UnifiedVariable)
-import Kore.Substitute (SubstitutionVariable)
+import Kore.Substitute
+    ( SubstitutionVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 
 {-
 Given a list of rules
@@ -94,11 +109,12 @@ renameRuleVariable
   where
     newUsedVariables =
         usedVariables
-        `Set.union` Map.keysSet renaming
-        `Set.union` Set.fromList (Map.elems renaming)
         `Set.union` ruleVariables
+        `Set.union` newRuleVariables
 
     (FreeVariables ruleVariables) = Rule.freeVariables rulePattern
 
-    (renaming, newRulePattern) =
+    (FreeVariables newRuleVariables) = Rule.freeVariables rulePattern
+
+    (_, newRulePattern) =
         refreshRulePattern (FreeVariables usedVariables) rulePattern
