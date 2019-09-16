@@ -3,6 +3,9 @@ module Test.Kore.AllPath where
 import Test.Tasty
 
 import Control.Applicative
+import Control.Monad
+    ( void
+    )
 import qualified Data.Foldable as Foldable
 import Data.Function
     ( (&)
@@ -98,7 +101,7 @@ test_unprovenNodes =
 
     subgoal
         :: Gr.Node
-        -> (Gr.Node, Goal.ProofState Integer)
+        -> (Gr.Node, Goal.ProofState Goal Integer)
         -> ExecutionGraph -> ExecutionGraph
     subgoal parent node@(child, _) =
         insEdge (parent, child) . insNode node
@@ -244,13 +247,13 @@ test_runStrategy =
 
 -- * Definitions
 
-type ExecutionGraph = Strategy.ExecutionGraph (Goal.ProofState Integer) ()
+type ExecutionGraph = Strategy.ExecutionGraph (Goal.ProofState Goal Integer) (Goal.Rule Goal)
 
-emptyExecutionGraph :: Goal.ProofState Integer -> ExecutionGraph
+emptyExecutionGraph :: Goal.ProofState Goal Integer -> ExecutionGraph
 emptyExecutionGraph = Strategy.emptyExecutionGraph
 
 insNode
-    :: (Gr.Node, Goal.ProofState Integer)
+    :: (Gr.Node, Goal.ProofState Goal Integer)
     -> ExecutionGraph
     -> ExecutionGraph
 insNode = Strategy.insNode
@@ -283,9 +286,9 @@ instance EqualWithExplanation K where
 
 type Goal = (K, K)
 
-type ProofState = Goal.ProofState Goal
+type ProofState = Goal.ProofState Goal Goal
 
-type Prim = Goal.Prim (Goal.Rule Goal)
+type Prim = Goal.Prim Goal
 
 instance Goal.Goal Goal where
 
@@ -293,31 +296,95 @@ instance Goal.Goal Goal where
         Rule { unRule :: (K, K) }
         deriving (Eq, Show, EqualWithExplanation)
 
-    -- | The destination-removal rule for our unit test goal.
-    removeDestination (src, dst) =
-        return (difference src dst, dst)
+    type Prim Goal = ProofState.Prim (Goal.Rule Goal)
 
-    -- | The goal is trivially valid when the members are equal.
-    isTriviallyValid (src, _) = src == Bot
+    type ProofState Goal a = ProofState.ProofState a
 
-    derivePar rules (src, dst) =
-        goals <|> goalRemainder
+    strategy goals rules =
+        firstStep : repeat nextStep
       where
-        goal rule@(Rule (_, to)) = do
-            Transition.addRule rule
-            (pure . ProofState.Goal) (to, dst)
-        goalRemainder = do
-            let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-            (pure . ProofState.GoalRemainder) (r, dst)
-        applyRule rule@(Rule (from, _))
-          | from `matches` src = Just rule
-          | otherwise = Nothing
-        applied = Maybe.mapMaybe applyRule rules
-        goals = Foldable.asum (goal <$> applied)
+        firstStep =
+            (Strategy.sequence . map Strategy.apply)
+                [ ProofState.CheckProven
+                , ProofState.CheckGoalRemainder
+                , ProofState.RemoveDestination
+                , ProofState.TriviallyValid
+                , ProofState.DerivePar axioms
+                , ProofState.RemoveDestination
+                , ProofState.Simplify
+                , ProofState.TriviallyValid
+                , ProofState.ResetGoalRewritten
+                , ProofState.TriviallyValid
+                ]
+        nextStep =
+            (Strategy.sequence . map Strategy.apply)
+                [ ProofState.CheckProven
+                , ProofState.CheckGoalRemainder
+                , ProofState.RemoveDestination
+                , ProofState.TriviallyValid
+                , ProofState.DeriveSeq claims
+                , ProofState.RemoveDestination
+                , ProofState.Simplify
+                , ProofState.TriviallyValid
+                , ProofState.DerivePar axioms
+                , ProofState.RemoveDestination
+                , ProofState.Simplify
+                , ProofState.TriviallyValid
+                , ProofState.ResetGoalRewritten
+                , ProofState.TriviallyValid
+                ]
+        axioms = rules
+        claims = Rule <$> goals
 
-    simplify = return
-    isTrusted = undefined
-    deriveSeq = derivePar
+    transitionRule = Goal.transitionRule0
+
+-- | The destination-removal rule for our unit test goal.
+removeDestination
+    :: MonadSimplify m
+    => Goal
+    -> Strategy.TransitionT (Goal.Rule Goal) m Goal
+removeDestination (src, dst) =
+    return (difference src dst, dst)
+
+-- | The goal is trivially valid when the members are equal.
+isTriviallyValid :: Goal -> Bool
+isTriviallyValid (src, _) = src == Bot
+
+derivePar
+    :: MonadSimplify m
+    => [Goal.Rule Goal]
+    -> Goal
+    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
+derivePar rules (src, dst) =
+    goals <|> goalRemainder
+  where
+    goal rule@(Rule (_, to)) = do
+        Transition.addRule rule
+        (pure . ProofState.Goal) (to, dst)
+    goalRemainder = do
+        let r = Foldable.foldl' difference src (fst . unRule <$> applied)
+        (pure . ProofState.GoalRemainder) (r, dst)
+    applyRule rule@(Rule (from, _))
+      | from `matches` src = Just rule
+      | otherwise = Nothing
+    applied = Maybe.mapMaybe applyRule rules
+    goals = Foldable.asum (goal <$> applied)
+
+simplify
+    :: MonadSimplify m
+    => Goal
+    -> Strategy.TransitionT (Goal.Rule Goal) m Goal
+simplify = return
+
+isTrusted :: Goal -> Bool
+isTrusted = undefined
+
+deriveSeq
+    :: MonadSimplify m
+    => [Goal.Rule Goal]
+    -> Goal
+    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
+deriveSeq = derivePar
 
 runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq (Goal.Rule Goal))]
 runTransitionRule prim state =
