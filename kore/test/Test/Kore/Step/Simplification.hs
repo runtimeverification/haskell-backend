@@ -15,8 +15,8 @@ import qualified Kore.Step.Simplification.Data as Kore
 
 import qualified Test.SMT as Test
 
-runSimplifier :: Env -> Simplifier a -> IO a
+runSimplifier :: Env Simplifier -> Simplifier a -> IO a
 runSimplifier env = Test.runSMT . Kore.runSimplifier env
 
-runSimplifierBranch :: Env -> BranchT Simplifier a -> IO [a]
+runSimplifierBranch :: Env Simplifier -> BranchT Simplifier a -> IO [a]
 runSimplifierBranch env = Test.runSMT . Kore.runSimplifierBranch env

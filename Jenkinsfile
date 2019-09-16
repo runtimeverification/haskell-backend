@@ -78,7 +78,7 @@ pipeline {
 
         stage('KEVM Integration') {
           options {
-            timeout(time: 48, unit: 'MINUTES')
+            timeout(time: 24, unit: 'MINUTES')
           }
           steps {
             sh '''

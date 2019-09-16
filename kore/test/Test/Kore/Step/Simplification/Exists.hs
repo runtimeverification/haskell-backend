@@ -312,14 +312,11 @@ testSort = Mock.testSort
 simplify
     :: Exists Sort Variable (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify = runSimplifier mockEnv . Exists.simplify
+simplify = runSimplifier Mock.env . Exists.simplify
 
 makeEvaluate
     :: ElementVariable Variable
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate variable child =
-    runSimplifier mockEnv $ Exists.makeEvaluate variable child
-
-mockEnv :: Env
-mockEnv = Mock.env
+    runSimplifier Mock.env $ Exists.makeEvaluate variable child
