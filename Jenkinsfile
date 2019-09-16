@@ -20,7 +20,6 @@ pipeline {
       steps {
         sh '''
           ./scripts/check.sh
-          exit 1
         '''
       }
     }
