@@ -96,10 +96,11 @@ pipeline {
     }
   }
   post {
+    when { branch 'master' }
     unsuccessful {
-      slackSend color: '#cb2431'                                            \
-              , channel: '#haskell-backend'                                 \
-              , message: "Build failure: ${env.BUILD_URL}"
+        slackSend color: '#cb2431'                                            \
+                  , channel: '#haskell-backend'                                 \
+                  , message: "Build failure: ${env.BUILD_URL}"
     }
   }
 }
