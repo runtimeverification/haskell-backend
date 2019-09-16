@@ -128,6 +128,7 @@ import Generics.SOP
     , SOP (..)
     )
 import qualified Generics.SOP as SOP
+import qualified GHC.Stack as GHC
 import Numeric.Natural
     ( Natural
     )
@@ -538,6 +539,10 @@ class Debug a where
         -> a
         -> Doc ann
     debugPrec = debugPrecGeneric
+
+instance Debug GHC.CallStack
+
+instance Debug GHC.SrcLoc
 
 debugPrecGeneric
     :: forall a ann
