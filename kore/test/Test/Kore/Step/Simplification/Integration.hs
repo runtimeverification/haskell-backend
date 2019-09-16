@@ -5,17 +5,13 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
+import qualified Data.Map.Strict as Map
 import Test.Tasty
     ( TestTree
     )
 import Test.Tasty.HUnit
     ( testCase
     )
-
-import Data.Default
-    ( Default (..)
-    )
-import qualified Data.Map.Strict as Map
 
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
@@ -42,11 +38,10 @@ import Kore.Step.Axiom.Registry
     ( axiomPatternsToEvaluators
     )
 import Kore.Step.Rule
-    ( EqualityRule (EqualityRule)
-    , RulePattern (RulePattern)
+    ( rulePattern
     )
-import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -183,23 +178,18 @@ test_simplificationIntegration =
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ EqualityRule RulePattern
-                                    { left =
-                                        Mock.function20MapTest
-                                            (Mock.concatMap
-                                                (Mock.elementMap
-                                                    (mkElemVar Mock.x)
-                                                    (mkElemVar Mock.y)
-                                                )
-                                                (mkElemVar Mock.m)
+                            ,   [ EqualityRule $ rulePattern
+                                    (Mock.function20MapTest
+                                        (Mock.concatMap
+                                            (Mock.elementMap
+                                                (mkElemVar Mock.x)
+                                                (mkElemVar Mock.y)
                                             )
-                                            (mkElemVar Mock.x)
-                                    , antiLeft = Nothing
-                                    , right = mkElemVar Mock.y
-                                    , requires = makeTruePredicate
-                                    , ensures = makeTruePredicate
-                                    , attributes = def
-                                    }
+                                            (mkElemVar Mock.m)
+                                        )
+                                        (mkElemVar Mock.x)
+                                    )
+                                    (mkElemVar Mock.y)
                                 ]
                             )
                         ]
@@ -230,34 +220,25 @@ test_simplificationIntegration =
                 ( axiomPatternsToEvaluators
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.fIntId
-                          , [ EqualityRule RulePattern
-                                { left = Mock.fInt (mkElemVar Mock.xInt)
-                                , antiLeft = Nothing
-                                , right = mkElemVar Mock.xInt
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+                          , [ EqualityRule $ rulePattern
+                                (Mock.fInt (mkElemVar Mock.xInt))
+                                (mkElemVar Mock.xInt)
                             ]
                           )
                         , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
-                          , [ EqualityRule RulePattern
-                                { left =
-                                    mkCeil testSortVariable
+                          , [ EqualityRule $ rulePattern
+                                (mkCeil testSortVariable
                                     $ Mock.tdivInt
                                         (mkElemVar Mock.xInt)
                                         (mkElemVar Mock.yInt)
-                                , antiLeft = Nothing
-                                , right =
-                                    mkCeil testSortVariable
+                                )
+                                (mkCeil testSortVariable
                                     . mkNot
                                     $ mkEquals testSortVariable
                                         (mkElemVar Mock.yInt)
                                         (Mock.builtinInt 0)
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+
+                                )
                             ]
 
                           )
@@ -331,14 +312,9 @@ test_simplificationIntegration =
             evaluateWithAxioms
                 (axiomPatternsToEvaluators $ Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cfId
-                        ,   [ EqualityRule RulePattern
-                                { left = Mock.cf
-                                , antiLeft = Nothing
-                                , right = Mock.f (mkElemVar Mock.x)
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+                        ,   [ EqualityRule $ rulePattern
+                                Mock.cf
+                                (Mock.f (mkElemVar Mock.x))
                             ]
                         )
                     ]

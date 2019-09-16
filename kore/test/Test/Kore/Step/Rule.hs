@@ -123,14 +123,9 @@ axiomPatternsUnitTests =
             let term = applyLeqAInt varI1 varI2
                 sortR = mkSortVariable (testId "R")
             assertEqual ""
-                (Right $ FunctionAxiomPattern $ EqualityRule RulePattern
-                    { left = mkCeil sortR term
-                    , antiLeft = Nothing
-                    , right = mkTop sortR
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = Predicate.makeTruePredicate
-                    , attributes = def
-                    }
+                (Right $ FunctionAxiomPattern $ EqualityRule $ rulePattern
+                    (mkCeil sortR term)
+                    (mkTop sortR)
                 )
                 (Rule.fromSentence $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"

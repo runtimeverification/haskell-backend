@@ -43,6 +43,7 @@ import Kore.Step.Rule
     )
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
+    , rulePattern
     )
 import Kore.Strategies.Goal
 import qualified Kore.Strategies.OnePath.Verification as OnePath
@@ -364,15 +365,7 @@ simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
     -> RewriteRule Variable
-simpleRewrite left right =
-    RewriteRule RulePattern
-        { left = left
-        , antiLeft = Nothing
-        , right = right
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
+simpleRewrite = (RewriteRule .) . rulePattern
 
 runVerification
     :: OnePath.Claim claim
