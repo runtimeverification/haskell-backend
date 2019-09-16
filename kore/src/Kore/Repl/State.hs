@@ -507,7 +507,8 @@ getNodeState graph node =
         fmap (\nodeState -> (nodeState, node))
         . proofState ProofStateTransformer
             { goalTransformer = const . Just $ UnevaluatedNode
-            , goalRemTransformer = const . Just $ StuckNode
+            , goalRemainderTransformer = const . Just $ StuckNode
+            , goalRewrittenTransformer = const . Just $ UnevaluatedNode
             , provenValue = Nothing
             }
         . Graph.lab'
@@ -521,7 +522,8 @@ nodeToPattern
 nodeToPattern graph node =
     proofState ProofStateTransformer
         { goalTransformer = Just . toTermLike
-        , goalRemTransformer = Just . toTermLike
+        , goalRemainderTransformer = Just . toTermLike
+        , goalRewrittenTransformer = Just . toTermLike
         , provenValue = Nothing
         }
     . Graph.lab'
