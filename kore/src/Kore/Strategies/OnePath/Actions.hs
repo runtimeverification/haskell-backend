@@ -175,8 +175,8 @@ derivePar rules goal = do
                     . Step.withoutUnification
                 traverseConfigs =
                     Result.traverseConfigs
-                        (pure . Goal.Goal)
-                        removeDestSimplifyRemainder
+                        (pure . Goal.GoalRewritten)
+                        (pure . Goal.GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
                         (`makeRuleFromPatterns` destination)
@@ -232,8 +232,8 @@ deriveSeq rules goal = do
                     . Step.withoutUnification
                 traverseConfigs =
                     Result.traverseConfigs
-                        (pure . Goal.Goal)
-                        removeDestSimplifyRemainder
+                        (pure . Goal.GoalRewritten)
+                        (pure . Goal.GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
                         (`makeRuleFromPatterns` destination)
@@ -312,22 +312,3 @@ getDestination
     -> Pattern variable
 getDestination (coerce -> RulePattern { right, ensures }) =
     Pattern.withCondition right (Conditional.fromPredicate ensures)
-
-removeDestSimplifyRemainder
-    :: forall variable m rule
-    .  MonadSimplify m
-    => SortedVariable variable
-    => Debug variable
-    => Unparse variable
-    => Show variable
-    => FreshVariable variable
-    => OnePathRule variable
-    -> Strategy.TransitionT
-        rule
-        m
-        (Goal.ProofState (OnePathRule variable))
-removeDestSimplifyRemainder remainder = do
-    result <- removeDestination remainder >>= simplify
-    if isTriviallyValid result
-       then pure Goal.Proven
-       else pure . Goal.GoalRem $ result
