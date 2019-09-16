@@ -95,6 +95,11 @@ import Kore.Strategies.ProofState
 import Kore.Syntax as Syntax
 import Kore.Syntax.Sentence as Syntax
 import Kore.Unification.Error
+    ( SubstitutionError (..)
+    , UnificationError (UnsupportedPatterns)
+    , UnificationOrSubstitutionError (..)
+    )
+import qualified Kore.Unification.Error as Error
 import Kore.Unification.Substitution
     ( Substitution
     )
@@ -990,13 +995,18 @@ instance EqualWithExplanation SymbolOrAlias where
     compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
-instance SumEqualWithExplanation UnificationError where
-    sumConstructorPair (UnsupportedPatterns a1) (UnsupportedPatterns a2) =
-        SumConstructorSameWithArguments
-        $ EqWrap "UnsupportedPatterns" a1 a2
+instance StructEqualWithExplanation UnificationError where
+    structConstructorName _ = "UnsupportedPatterns"
+    structFieldsWithNames
+        t1@(UnsupportedPatterns _ _ _)
+        t2@(UnsupportedPatterns _ _ _) =
+        [ EqWrap "message = " (Error.message t1) (Error.message t2)
+        , EqWrap "first = " (Error.first t1) (Error.first t2)
+        , EqWrap "second = " (Error.second t1) (Error.second t2)
+        ]
 
 instance EqualWithExplanation UnificationError where
-    compareWithExplanation = sumCompareWithExplanation
+    compareWithExplanation = structCompareWithExplanation
     printWithExplanation = show
 
 instance SumEqualWithExplanation SubstitutionError where
@@ -1481,8 +1491,8 @@ instance
     ) => StructEqualWithExplanation (Attribute.Pattern variable)
   where
     structFieldsWithNames
-        expected@(Attribute.Pattern _ _ _ _ _)
-        actual@(Attribute.Pattern _ _ _ _ _)
+        expected@(Attribute.Pattern _ _ _ _ _ _)
+        actual@(Attribute.Pattern _ _ _ _ _ _)
       =
         [ EqWrap
             "patternSort = "
@@ -1937,13 +1947,24 @@ instance
     (EqualWithExplanation goal, Show goal)
     => SumEqualWithExplanation (ProofState goal)
   where
-    sumConstructorPair Proven          Proven          =
+    sumConstructorPair Proven                 Proven          =
         SumConstructorSameNoArguments
-    sumConstructorPair (Goal goal1)    (Goal goal2)    =
+    sumConstructorPair expect@Proven          actual          =
+        SumConstructorDifferent (show expect) (show actual)
+
+    sumConstructorPair (Goal goal1)           (Goal goal2)    =
         SumConstructorSameWithArguments (EqWrap "Goal" goal1 goal2)
-    sumConstructorPair (GoalRem goal1) (GoalRem goal2) =
-        SumConstructorSameWithArguments (EqWrap "GoalRem" goal1 goal2)
-    sumConstructorPair expect           actual           =
+    sumConstructorPair expect@(Goal _)        actual          =
+        SumConstructorDifferent (show expect) (show actual)
+
+    sumConstructorPair (GoalRemainder goal1)        (GoalRemainder goal2) =
+        SumConstructorSameWithArguments (EqWrap "GoalRemainder" goal1 goal2)
+    sumConstructorPair expect@(GoalRemainder _)     actual                =
+        SumConstructorDifferent (show expect) (show actual)
+
+    sumConstructorPair (GoalRewritten goal1)        (GoalRewritten goal2) =
+        SumConstructorSameWithArguments (EqWrap "GoalRewritten" goal1 goal2)
+    sumConstructorPair expect@(GoalRewritten _)     actual                =
         SumConstructorDifferent (show expect) (show actual)
 
 -- SMT.AST
