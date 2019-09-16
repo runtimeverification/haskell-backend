@@ -110,8 +110,13 @@ evaluateApplication
     let
         unevaluatedSimplifier
           | Just hook <- getHook (Attribute.hook symbolAttributes)
-            -- TODO (thomas.tuegel): (not . null) is a nasty hack to avoid
-            -- making the function evaluator a replaceable component.
+          -- TODO (thomas.tuegel): Factor out a second function evaluator and
+          -- remove this check. At startup, the definition's rules are
+          -- simplified using Matching Logic only (no function
+          -- evaluation). During this stage, all the hooks are expected to be
+          -- missing, so that is not an error. If any function evaluators are
+          -- present, we assume that startup is finished, but we should really
+          -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
           =
             (error . show . Pretty.vsep)
