@@ -158,7 +158,14 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
     type ProofState (OnePathRule variable) a =
         ProofState.ProofState a
 
-    transitionRule = transitionRule0
+    transitionRule =
+        transitionRule0
+            simplify
+            removeDestination
+            isTriviallyValid
+            isTrusted
+            derivePar
+            deriveSeq
 
     strategy goals rules =
         onePathFirstStep rewrites
@@ -179,17 +186,37 @@ transitionRule0
     :: forall m goal variable
     .  MonadSimplify m
     => Goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
-    => Coercible (RulePattern variable) goal
-    => Coercible (Rule goal) (RulePattern variable)
-    => Coercible (RulePattern variable) (Rule goal)
+--    => SimplifierVariable variable
+--    => Coercible goal (RulePattern variable)
+--    => Coercible (RulePattern variable) goal
+--    => Coercible (Rule goal) (RulePattern variable)
+--    => Coercible (RulePattern variable) (Rule goal)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => Prim goal
+    => (goal -> Strategy.TransitionT (Rule goal) m goal)
+    -- ^ simplify
+    -> (goal -> Strategy.TransitionT (Rule goal) m goal)
+    -- ^ removeDestination
+    -> (goal -> Bool)
+    -- ^ isTriviallyValid
+    -> (goal -> Bool)
+    -- ^ isTrusted
+    -> ([Rule goal] -> goal -> Strategy.TransitionT (Rule goal) m (ProofState goal goal))
+    -- derivePar
+    -> ([Rule goal] -> goal -> Strategy.TransitionT (Rule goal) m (ProofState goal goal))
+    -- ^ deriveSeq
+    -> Prim goal
     -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-transitionRule0 = transitionRuleWorker
+transitionRule0
+  simplify
+  removeDestination
+  isTriviallyValid
+  isTrusted
+  derivePar
+  deriveSeq
+  =
+    transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim goal

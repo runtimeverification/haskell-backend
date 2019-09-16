@@ -3,9 +3,6 @@ module Test.Kore.AllPath where
 import Test.Tasty
 
 import Control.Applicative
-import Control.Monad
-    ( void
-    )
 import qualified Data.Foldable as Foldable
 import Data.Function
     ( (&)
@@ -215,7 +212,7 @@ test_runStrategy =
         runIdentity
         . unAllPathIdentity
         $ Strategy.runStrategy
-            transitionRule
+            Goal.transitionRule
             (Goal.allPathStrategy [goal] axioms)
             (ProofState.Goal . unRule $ goal)
     disproves
@@ -336,7 +333,14 @@ instance Goal.Goal Goal where
         axioms = rules
         claims = Rule <$> goals
 
-    transitionRule = Goal.transitionRule0
+    transitionRule =
+        Goal.transitionRule0
+            simplify
+            removeDestination
+            isTriviallyValid
+            isTrusted
+            derivePar
+            deriveSeq
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination
@@ -389,7 +393,7 @@ deriveSeq = derivePar
 runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq (Goal.Rule Goal))]
 runTransitionRule prim state =
     (runIdentity . unAllPathIdentity . runTransitionT)
-        (transitionRule prim state)
+        (Goal.transitionRule prim state)
 
 newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
     deriving (Functor, Applicative, Monad)
@@ -426,14 +430,6 @@ instance MonadSimplify AllPathIdentity where
     localSimplifierPredicate = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
-
--- | 'Goal.transitionRule' instantiated with our unit test rules.
-transitionRule
-    :: Prim
-    -> ProofState
-    -> Strategy.TransitionT (Goal.Rule Goal) AllPathIdentity ProofState
-transitionRule =
-    Goal.transitionRule
 
 differentLengthPaths :: [Goal.Rule Goal]
 differentLengthPaths =
