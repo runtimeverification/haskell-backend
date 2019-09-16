@@ -359,6 +359,7 @@ instance MonadSimplify AllPathIdentity where
     localSimplifierPredicate = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
+    askMemo = undefined
 
 -- | 'Goal.transitionRule' instantiated with our unit test rules.
 transitionRule

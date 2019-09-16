@@ -77,6 +77,7 @@ import Kore.Internal.TermLike
 import Kore.Parser
     ( parseKorePattern
     )
+import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
@@ -183,13 +184,14 @@ testEvaluators = Builtin.koreEvaluators verifiedModule
 testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create
 
-testEnv :: Env
+testEnv :: Applicative simplifier => Env simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
         , simplifierPredicate = testSubstitutionSimplifier
         , simplifierAxioms = testEvaluators
+        , memo = Memo.forgetful
         }
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
