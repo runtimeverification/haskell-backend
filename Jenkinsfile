@@ -32,7 +32,7 @@ pipeline {
         '''
       }
     }
-    stage('Stages') {
+    stage('Build') {
       failFast true
       parallel {
         stage('Documentation') {
