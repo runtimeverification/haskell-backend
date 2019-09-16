@@ -83,6 +83,11 @@ import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
 -}
+-- TODO (thomas.tuegel): Factor out a "function evaluator" object.
+-- See also: Kore.Step.Function.Memo.Self
+-- Then add a function,
+--   memoize :: Evaluator.Self state -> Memo.Self state -> Evaluator.Self state
+-- to add memoization to a function evaluator.
 evaluateApplication
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
