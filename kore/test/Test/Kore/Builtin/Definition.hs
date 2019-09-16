@@ -591,7 +591,7 @@ string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
     & hook "STRING.string2token"
 
--- * Krypto
+-- ** Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
 ecdsaRecoverSymbol =
@@ -605,6 +605,48 @@ keccakSymbol :: Internal.Symbol
 keccakSymbol =
     builtinSymbol "keccak256Krypto" stringSort [stringSort]
     & hook "KRYPTO.keccak256"
+
+-- ** Bytes
+
+string2bytesSymbol :: Internal.Symbol
+string2bytesSymbol =
+    builtinSymbol "string2bytes" bytesSort [stringSort]
+    & hook "BYTES.string2bytes"
+
+updateBytesSymbol :: Internal.Symbol
+updateBytesSymbol =
+    builtinSymbol "updateBytes" bytesSort [bytesSort, intSort, intSort]
+    & hook "BYTES.update"
+
+substrBytesSymbol :: Internal.Symbol
+substrBytesSymbol =
+    builtinSymbol "substrBytes" bytesSort [bytesSort, intSort, intSort]
+    & hook "BYTES.substr"
+
+replaceAtBytesSymbol :: Internal.Symbol
+replaceAtBytesSymbol =
+    builtinSymbol "replaceAtBytes" bytesSort [bytesSort, intSort, bytesSort]
+    & hook "BYTES.replaceAt"
+
+padRightBytesSymbol :: Internal.Symbol
+padRightBytesSymbol =
+    builtinSymbol "padRightBytes" bytesSort [bytesSort, intSort, intSort]
+    & hook "BYTES.padRight"
+
+padLeftBytesSymbol :: Internal.Symbol
+padLeftBytesSymbol =
+    builtinSymbol "padLeftBytes" bytesSort [bytesSort, intSort, intSort]
+    & hook "BYTES.padLeft"
+
+reverseBytesSymbol :: Internal.Symbol
+reverseBytesSymbol =
+    builtinSymbol "reverseBytes" bytesSort [bytesSort]
+    & hook "BYTES.reverse"
+
+concatBytesSymbol :: Internal.Symbol
+concatBytesSymbol =
+    builtinSymbol "concatBytes" bytesSort [bytesSort, bytesSort]
+    & hook "BYTES.concat"
 
 -- -------------------------------------------------------------
 -- * Sorts
@@ -917,6 +959,20 @@ userTokenSortDecl =
     sortDeclWithAttributes
         userTokenSort
         [ hasDomainValuesAttribute ]
+
+-- ** Bytes
+
+-- | A sort to hook to the builtin @BYTES.Bytes@.
+bytesSort :: Sort
+bytesSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Bytes"
+        , sortActualSorts = []
+        }
+
+-- | Declare 'boolSort' in a Kore module.
+bytesSortDecl :: ParsedSentence
+bytesSortDecl = hookedSortDecl bytesSort [ hookAttribute "BYTES.Bytes" ]
 
 -- -------------------------------------------------------------
 -- * Modules
