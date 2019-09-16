@@ -310,7 +310,7 @@ instance Goal.Goal Goal where
                 , ProofState.RemoveDestination
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
-                , ProofState.ResetGoalRewritten
+                , ProofState.ResetGoal
                 , ProofState.TriviallyValid
                 ]
         nextStep =
@@ -327,7 +327,7 @@ instance Goal.Goal Goal where
                 , ProofState.RemoveDestination
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
-                , ProofState.ResetGoalRewritten
+                , ProofState.ResetGoal
                 , ProofState.TriviallyValid
                 ]
         axioms = rules

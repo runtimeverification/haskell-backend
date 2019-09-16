@@ -232,50 +232,45 @@ test_onePathStrategy =
             ]
         let expected =
                 [ ProofState.Goal $ makeRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.b
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                ( Conditional
+                    { term = Mock.f Mock.b
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                    }
+                )
+                (fromTermLike $ Mock.functionalConstr11 Mock.a)
                 , ProofState.Goal $ makeRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.c
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                ( Conditional
+                    { term = Mock.f Mock.c
+                    , predicate = makeTruePredicate
+                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
+                    }
+                )
+                (fromTermLike $ Mock.functionalConstr11 Mock.a)
                 , ProofState.Goal $ makeRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.h (TermLike.mkElemVar Mock.x)
-                        , predicate =  -- TODO(virgil): Better and simplification.
-                            makeAndPredicate
-                                (makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (TermLike.mkElemVar Mock.x) Mock.a
-                                        )
-                                    )
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (TermLike.mkElemVar Mock.x) Mock.b
-                                        )
+                ( Conditional
+                    { term = Mock.h (TermLike.mkElemVar Mock.x)
+                    , predicate =  -- TODO(virgil): Better and simplification.
+                        makeAndPredicate
+                            (makeAndPredicate
+                                (makeNotPredicate
+                                    (makeEqualsPredicate
+                                        (TermLike.mkElemVar Mock.x) Mock.a
                                     )
                                 )
                                 (makeNotPredicate
                                     (makeEqualsPredicate
-                                        (TermLike.mkElemVar Mock.x)
-                                        Mock.c
+                                        (TermLike.mkElemVar Mock.x) Mock.b
                                     )
                                 )
-                        , substitution = mempty
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                            )
+                            (makeNotPredicate
+                                (makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c)
+                            )
+                    , substitution = mempty
+                    }
+                )
+                (fromTermLike $ Mock.functionalConstr11 Mock.a)
                 ]
         assertEqualWithExplanation ""
             expected

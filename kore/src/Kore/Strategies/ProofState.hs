@@ -22,7 +22,7 @@ data Prim rule
     -- ^ End execution on this branch if the state is 'Proven'.
     | CheckGoalRemainder
     -- ^ End execution on this branch if the state is 'GoalRemainder'.
-    | ResetGoalRewritten
+    | ResetGoal
     -- ^ Mark all goals rewritten previously as new goals.
     | Simplify
     | RemoveDestination
