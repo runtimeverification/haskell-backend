@@ -20,10 +20,8 @@ import Data.Coerce
     , coerce
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Step.Rule
     ( OnePathRule (..)
@@ -73,30 +71,18 @@ import Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
-import Kore.Step.Simplification.Data
-    ( MonadSimplify
-    , SimplifierVariable
-    )
 import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Syntax.Variable
-    ( SortedVariable
-    )
 import Kore.TopBottom
     ( isBottom
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser
-    ( Unparse
-    , unparse
-    )
-import Kore.Variables.Fresh
-    ( FreshVariable
+    ( unparse
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar)
@@ -128,7 +114,6 @@ proven
     => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
-
 
 class Goal goal where
     data Rule goal
@@ -163,7 +148,6 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
             simplify
             removeDestination
             isTriviallyValid
-            isTrusted
             derivePar
             deriveSeq
 
@@ -183,14 +167,9 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
             <$> goals
 
 transitionRule0
-    :: forall m goal variable
+    :: forall m goal
     .  MonadSimplify m
     => Goal goal
---    => SimplifierVariable variable
---    => Coercible goal (RulePattern variable)
---    => Coercible (RulePattern variable) goal
---    => Coercible (Rule goal) (RulePattern variable)
---    => Coercible (RulePattern variable) (Rule goal)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => (goal -> Strategy.TransitionT (Rule goal) m goal)
@@ -199,22 +178,25 @@ transitionRule0
     -- ^ removeDestination
     -> (goal -> Bool)
     -- ^ isTriviallyValid
-    -> (goal -> Bool)
-    -- ^ isTrusted
-    -> ([Rule goal] -> goal -> Strategy.TransitionT (Rule goal) m (ProofState goal goal))
-    -- derivePar
-    -> ([Rule goal] -> goal -> Strategy.TransitionT (Rule goal) m (ProofState goal goal))
+    -> ( [Rule goal]
+            -> goal
+            -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+       )
+    -- ^ derivePar
+    -> ( [Rule goal]
+            -> goal
+            -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+       )
     -- ^ deriveSeq
     -> Prim goal
     -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 transitionRule0
-  simplify
-  removeDestination
-  isTriviallyValid
-  isTrusted
-  derivePar
-  deriveSeq
+    simplify'
+    removeDestination'
+    isTriviallyValid'
+    derivePar'
+    deriveSeq'
   =
     transitionRuleWorker
   where
@@ -229,35 +211,35 @@ transitionRule0
         return (Goal goal)
 
     transitionRuleWorker Simplify (Goal g) =
-        Goal <$> simplify g
+        Goal <$> simplify' g
     transitionRuleWorker Simplify (GoalRemainder g) =
-        GoalRemainder <$> simplify g
+        GoalRemainder <$> simplify' g
 
     transitionRuleWorker RemoveDestination (Goal g) =
-        Goal <$> removeDestination g
+        Goal <$> removeDestination' g
     transitionRuleWorker RemoveDestination (GoalRemainder g) =
-        GoalRemainder <$> removeDestination g
+        GoalRemainder <$> removeDestination' g
 
     transitionRuleWorker TriviallyValid (Goal g)
-      | isTriviallyValid g = return Proven
+      | isTriviallyValid' g = return Proven
     transitionRuleWorker TriviallyValid (GoalRemainder g)
-      | isTriviallyValid g = return Proven
+      | isTriviallyValid' g = return Proven
     transitionRuleWorker TriviallyValid (GoalRewritten g)
-      | isTriviallyValid g = return Proven
+      | isTriviallyValid' g = return Proven
 
     transitionRuleWorker (DerivePar rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        derivePar rules g
+        derivePar' rules g
     transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        derivePar rules g
+        derivePar' rules g
 
     transitionRuleWorker (DeriveSeq rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        deriveSeq rules g
+        deriveSeq' rules g
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        deriveSeq rules g
+        deriveSeq' rules g
 
     transitionRuleWorker _ state = return state
 

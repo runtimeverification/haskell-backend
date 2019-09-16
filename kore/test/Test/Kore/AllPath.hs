@@ -338,7 +338,6 @@ instance Goal.Goal Goal where
             simplify
             removeDestination
             isTriviallyValid
-            isTrusted
             derivePar
             deriveSeq
 
