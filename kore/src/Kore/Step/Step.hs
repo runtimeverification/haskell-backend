@@ -82,7 +82,6 @@ import Kore.Step.Rule
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -278,15 +277,10 @@ applyInitialConditions initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
-        Monad.liftM MultiOr.make
-        $ Monad.Unify.gather
+        Monad.liftM MultiOr.make . Monad.Unify.gather
         $ Substitution.normalizeExcept (initial <> unification)
-    evaluated <- SMT.Evaluator.filterMultiOr applied
-    -- If 'applied' is \bottom, the rule is considered to not apply and
-    -- no result is returned. If the result is \bottom after this check,
-    -- then the rule is considered to apply with a \bottom result.
-    TopBottom.guardAgainstBottom evaluated
-    return evaluated
+    TopBottom.guardAgainstBottom applied
+    return applied
 
 {- | Produce the final configurations of an applied rule.
 
