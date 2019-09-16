@@ -88,6 +88,9 @@ simplifyRulePattern rule = do
           | PredicateTrue <- predicate -> do
             let subst = Substitution.toMap substitution
                 left' = TermLike.substitute subst term
+                antiLeft' = TermLike.substitute subst <$> antiLeft
+                  where
+                    RulePattern { antiLeft } = rule
                 right' = TermLike.substitute subst right
                   where
                     RulePattern { right } = rule
@@ -100,7 +103,7 @@ simplifyRulePattern rule = do
                 RulePattern { attributes } = rule
             return RulePattern
                 { left = left'
-                , antiLeft = Nothing
+                , antiLeft = antiLeft'
                 , right = right'
                 , requires = requires'
                 , ensures = ensures'

@@ -629,13 +629,13 @@ mapVariables
 mapVariables mapping rule1 =
     rule1
         { left = TermLike.mapVariables mapping left
-        , antiLeft = Nothing
+        , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
         , right = TermLike.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rule1
+    RulePattern { left, antiLeft, right, requires, ensures } = rule1
 
 
 {- | Traverse the predicate from the top down and apply substitutions.
