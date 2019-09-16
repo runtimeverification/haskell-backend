@@ -65,10 +65,18 @@ parser in "Kore.Parser.Parser".
 
  -}
 class Unparse p where
+    {-# MINIMAL unparse, unparse2 | unparseVia #-}
+
     -- | Render a type from abstract to concrete Kore syntax.
     unparse :: p -> Doc ann
+    unparse = unparseVia unparse
+
     -- | Render a type from abstract to concrete Applicative Kore syntax.
     unparse2 :: p -> Doc ann
+    unparse2 = unparseVia unparse2
+
+    unparseVia :: (forall q. Unparse q => q -> Doc ann) -> p -> Doc ann
+    unparseVia go = go
 
 instance Unparse a => Unparse (Const a child) where
     unparse (Const a) = unparse a
