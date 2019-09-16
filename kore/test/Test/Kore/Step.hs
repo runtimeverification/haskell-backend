@@ -529,7 +529,7 @@ mockMetadataTools = MetadataTools
     , smtData = undefined
     }
 
-mockEnv :: Env
+mockEnv :: Env Simplifier
 mockEnv = Mock.env { metadataTools = mockMetadataTools }
 
 sigmaSymbol :: Symbol

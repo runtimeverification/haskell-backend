@@ -414,9 +414,7 @@ findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
 evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
-evaluate =
-    runSimplifier mockEnv
-    . simplify
+evaluate = runSimplifier Mock.env . simplify
 
 evaluatePatterns
     :: Pattern Variable
@@ -424,8 +422,5 @@ evaluatePatterns
     -> IO (OrPattern Variable)
 evaluatePatterns first second =
     fmap OrPattern.fromPatterns
-    $ runSimplifierBranch mockEnv
+    $ runSimplifierBranch Mock.env
     $ makeEvaluate first second
-
-mockEnv :: Env
-mockEnv = Mock.env

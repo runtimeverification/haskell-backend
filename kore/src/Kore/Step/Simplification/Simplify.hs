@@ -85,6 +85,7 @@ import Kore.Profiler.Data
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
+import qualified Kore.Step.Function.Memo as Memo
 import Kore.Syntax.Application
 import ListT
     ( ListT (..)
@@ -167,6 +168,13 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     localSimplifierAxioms locally =
         Monad.Morph.hoist (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
+
+    askMemo :: m (Memo.Self m)
+    default askMemo
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => m (Memo.Self m)
+    askMemo = Memo.liftSelf Monad.Trans.lift <$> Monad.Trans.lift askMemo
+    {-# INLINE askMemo #-}
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)
