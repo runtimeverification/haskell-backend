@@ -62,10 +62,7 @@ import Kore.Step.Strategy
     , runStrategy
     )
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Actions
-    ( makeRuleFromPatterns
-    )
-import Kore.Strategies.ProofState
+import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
     ( Variable (..)
     )
@@ -104,7 +101,7 @@ test_onePathStrategy =
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (Goal $ makeOnePathRule Mock.a Mock.a)
+            (ProofState.Goal $ makeOnePathRule Mock.a Mock.a)
             actual
     , testCase "Axiom priority, first step" $ do
         -- Target: a
@@ -117,7 +114,7 @@ test_onePathStrategy =
             (makeOnePathRule Mock.a Mock.a)
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation "" Proven _actual
+        assertEqualWithExplanation "" ProofState.Proven _actual
 
         -- Target: d
         -- Coinductive axiom: a => b
@@ -131,7 +128,7 @@ test_onePathStrategy =
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation ""
-            (Goal $ makeOnePathRule Mock.c Mock.d)
+            (ProofState.Goal $ makeOnePathRule Mock.c Mock.d)
             _actual
     , testCase "Axiom priority, second step" $ do
         -- Target: b
@@ -151,7 +148,7 @@ test_onePathStrategy =
             , simpleRewrite Mock.a Mock.b
             ]
         assertEqualWithExplanation ""
-            Proven
+            ProofState.Proven
             _actual
 
         -- Target: e
@@ -169,7 +166,7 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ Goal $ makeOnePathRule Mock.c Mock.e
+                [ ProofState.Goal $ makeOnePathRule Mock.c Mock.e
                 ]
             )
             (sort
@@ -192,7 +189,7 @@ test_onePathStrategy =
             ]
         assertEqualWithExplanation ""
             (sort
-                [ Goal $ makeOnePathRule Mock.d Mock.e
+                [ ProofState.Goal $ makeOnePathRule Mock.d Mock.e
                 ]
             )
             (sort
@@ -234,7 +231,7 @@ test_onePathStrategy =
                 (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
             ]
         let expected =
-                [ Goal $ makeRuleFromPatterns
+                [ ProofState.Goal $ makeRuleFromPatterns
                     ( Conditional
                         { term = Mock.f Mock.b
                         , predicate = makeTruePredicate
@@ -243,7 +240,7 @@ test_onePathStrategy =
                         }
                     )
                     (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , Goal $ makeRuleFromPatterns
+                , ProofState.Goal $ makeRuleFromPatterns
                     ( Conditional
                         { term = Mock.f Mock.c
                         , predicate = makeTruePredicate
@@ -252,7 +249,7 @@ test_onePathStrategy =
                         }
                     )
                     (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , Goal $ makeRuleFromPatterns
+                , ProofState.Goal $ makeRuleFromPatterns
                     ( Conditional
                         { term = Mock.h (TermLike.mkElemVar Mock.x)
                         , predicate =  -- TODO(virgil): Better and simplification.
@@ -312,7 +309,7 @@ test_onePathStrategy =
             equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
             equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
         assertEqualWithExplanation ""
-            [ Goal $ makeRuleFromPatterns
+            [ ProofState.Goal $ makeRuleFromPatterns
                 Conditional
                     { term = Mock.f Mock.b
                     , predicate = makeTruePredicate
@@ -320,7 +317,7 @@ test_onePathStrategy =
                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                     }
                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-            , Goal $ makeRuleFromPatterns
+            , ProofState.Goal $ makeRuleFromPatterns
                 Conditional
                     { term = Mock.f Mock.c
                     , predicate = makeTruePredicate
@@ -328,7 +325,7 @@ test_onePathStrategy =
                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
                     }
                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-            , GoalRemainder $ makeRuleFromPatterns
+            , ProofState.GoalRemainder $ makeRuleFromPatterns
                 Conditional
                     { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
                     , predicate =
@@ -366,7 +363,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqualWithExplanation ""
-            [ GoalRemainder $ makeRuleFromPatterns
+            [ ProofState.GoalRemainder $ makeRuleFromPatterns
                 ( Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate =
@@ -378,7 +375,7 @@ test_onePathStrategy =
                     }
                 )
                 (fromTermLike Mock.a)
-            , Proven
+            , ProofState.Proven
             ]
             [ _actual1
             , _actual2
@@ -407,7 +404,7 @@ test_onePathStrategy =
                     )
                 ]
         assertEqualWithExplanation ""
-            Proven
+            ProofState.Proven
             _actual
     , testCase "Configuration with SMT pruning" $ do
         -- Target: a
@@ -455,7 +452,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqualWithExplanation ""
-            [ Goal $ makeRuleFromPatterns
+            [ ProofState.Goal $ makeRuleFromPatterns
                 ( Conditional
                     { term = Mock.a
                     , predicate =
@@ -469,7 +466,7 @@ test_onePathStrategy =
                     }
                 )
                 (fromTermLike Mock.a)
-            , Proven ]
+            , ProofState.Proven ]
             [ _actual1, _actual2 ]
     , testCase "SMT pruning in the first step" $ do
         -- Target: a
@@ -506,7 +503,7 @@ test_onePathStrategy =
                 )
             ]
         assertEqualWithExplanation ""
-            [ Goal $ makeRuleFromPatterns
+            [ ProofState.Goal $ makeRuleFromPatterns
                 ( Conditional
                     { term = Mock.a
                     , predicate =
@@ -520,7 +517,7 @@ test_onePathStrategy =
                     }
                 )
                 (Pattern.fromTermLike Mock.a)
-            , Proven
+            , ProofState.Proven
             ]
             [ _actual1, _actual2 ]
     ]
@@ -530,7 +527,7 @@ simpleRewrite
     -> TermLike Variable
     -> Rule (OnePathRule Variable)
 simpleRewrite left right =
-    Rule
+    OnePathRewriteRule
     $ RewriteRule RulePattern
         { left = left
         , right = right
@@ -545,7 +542,7 @@ rewriteWithPredicate
     -> Syntax.Predicate Variable
     -> Rule (OnePathRule Variable)
 rewriteWithPredicate left right predicate =
-    Rule
+    OnePathRewriteRule
     $ RewriteRule RulePattern
         { left = left
         , right = right
@@ -556,20 +553,20 @@ rewriteWithPredicate left right predicate =
 
 runSteps
     :: ( ExecutionGraph
-            (ProofState (OnePathRule Variable))
+            (ProofState (OnePathRule Variable) (OnePathRule Variable))
             (Rule (OnePathRule Variable))
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)
     -> OnePathRule Variable
     -- ^left-hand-side of unification
-    -> [Strategy (Prim (Rule (OnePathRule Variable)))]
+    -> [Strategy (Prim (OnePathRule Variable))]
     -> IO a
-runSteps graphFilter picker configuration strategy =
+runSteps graphFilter picker configuration strategy' =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
-    <$> runStrategy transitionRule strategy (Goal configuration)
+    <$> runStrategy transitionRule strategy' (ProofState.Goal configuration)
   where
     mockEnv = Mock.env
 
@@ -579,7 +576,7 @@ runOnePathSteps
     -- ^left-hand-side of unification
     -> [Rule (OnePathRule Variable)]
     -> [Rule (OnePathRule Variable)]
-    -> IO [ProofState (OnePathRule Variable)]
+    -> IO [ProofState (OnePathRule Variable) (OnePathRule Variable)]
 runOnePathSteps
     stepLimit
     goal

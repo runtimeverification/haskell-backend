@@ -335,7 +335,7 @@ simpleAxiom
     -> TermLike Variable
     -> Rule (OnePathRule Variable)
 simpleAxiom left right =
-    Rule $ simpleRewrite left right
+    OnePathRewriteRule $ simpleRewrite left right
 
 simpleClaim
     :: TermLike Variable
@@ -374,6 +374,7 @@ simpleRewrite left right =
 
 runVerification
     :: OnePath.Claim claim
+    => ProofState claim (Pattern Variable) ~ OnePath.CommonProofState
     => Show claim
     => Show (Rule claim)
     => Limit Natural
@@ -384,7 +385,7 @@ runVerification stepLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ OnePath.verify
-        (OnePath.defaultStrategy claims axioms)
+        (strategy claims axioms)
         (map applyStepLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env
