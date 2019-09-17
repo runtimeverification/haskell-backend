@@ -1,4 +1,4 @@
-module Test.Kore.AllPath where
+module Test.Kore.Strategies.AllPath.AllPath where
 
 import Test.Tasty
 
