@@ -610,6 +610,7 @@ createOnePathClaim (claim, cpattern) =
     Rule.OnePathRule
     $ Rule.RulePattern
         { left = cpattern
+        , antiLeft = Nothing
         , right = Rule.right . coerce $ claim
         , requires = Predicate.makeTruePredicate
         , ensures = Rule.ensures . coerce $ claim
