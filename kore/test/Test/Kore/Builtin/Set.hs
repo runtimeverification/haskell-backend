@@ -1597,6 +1597,7 @@ test_concretizeKeysAxiom =
     axiom =
         RewriteRule RulePattern
             { left = mkPair intSort setSort x symbolicSet
+            , antiLeft = Nothing
             , right = x
             , requires = Predicate.makeTruePredicate
             , ensures = Predicate.makeTruePredicate
