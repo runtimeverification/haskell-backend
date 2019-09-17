@@ -3,19 +3,32 @@ module Test.Kore.Step.Rule.Combine where
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Data.Default (def)
+import Data.Default
+    ( def
+    )
 
-import Kore.Internal.TermLike (TermLike, mkAnd, mkElemVar)
-import Kore.Step.Rule (RulePattern (RulePattern), RewriteRule (RewriteRule))
-import qualified Kore.Step.Rule as Rule.DoNotUse
-import Kore.Syntax.Variable (Variable)
-import Kore.Step.Rule.Combine
-import qualified Kore.Predicate.Predicate as Syntax(Predicate)
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkAnd
+    , mkElemVar
+    )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeMultipleAndPredicate
     , makeTruePredicate
+    )
+import qualified Kore.Predicate.Predicate as Syntax
+    ( Predicate
+    )
+import Kore.Step.Rule
+    ( RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    )
+import qualified Kore.Step.Rule as Rule.DoNotUse
+import Kore.Step.Rule.Combine
+import Kore.Syntax.Variable
+    ( Variable
     )
 
 import Test.Kore.Comparators ()
@@ -34,6 +47,7 @@ instance RewriteRuleBase Pair where
             , right = t2
             , requires = p1
             , ensures = p2
+            , antiLeft = Nothing
             , attributes = def
             }
 

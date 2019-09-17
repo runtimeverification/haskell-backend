@@ -66,7 +66,7 @@ mergeRulesPredicate
     -> Syntax.Predicate variable
 mergeRulesPredicate rules =
     makeMultipleAndPredicate
-    $ map mergeRulePair
+    $ map mergeRulePairPredicate
     $ makeConsecutivePairs
     $ renameRulesVariables rules
 
@@ -75,11 +75,11 @@ makeConsecutivePairs [] = []
 makeConsecutivePairs [_] = []
 makeConsecutivePairs (a1 : a2 : as) = (a1, a2) : makeConsecutivePairs (a2 : as)
 
-mergeRulePair
+mergeRulePairPredicate
     :: InternalVariable variable
     => (RewriteRule variable, RewriteRule variable)
     -> Syntax.Predicate variable
-mergeRulePair
+mergeRulePairPredicate
     ( RewriteRule RulePattern {right = right1, ensures = ensures1}
     , RewriteRule RulePattern {left = left2, requires = requires2}
     )
