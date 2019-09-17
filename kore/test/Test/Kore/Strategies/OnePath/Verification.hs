@@ -45,7 +45,7 @@ import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
 import Kore.Strategies.Goal
-import qualified Kore.Strategies.OnePath.Verification as OnePath
+import qualified Kore.Strategies.Verification as OnePath
 
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock

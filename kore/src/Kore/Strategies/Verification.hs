@@ -1,6 +1,6 @@
 {-|
-Module      : Kore.OnePath.Verification
-Description : One-path verification
+Module      : Kore.Strategies.Verification
+Description : Verification
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -8,7 +8,7 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 This should be imported qualified.
 -}
 
-module Kore.Strategies.OnePath.Verification
+module Kore.Strategies.Verification
     ( Claim
     , CommonProofState
     , verify

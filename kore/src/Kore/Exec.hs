@@ -106,7 +106,7 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
-import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.Verification
     ( Claim
     , verify
     )

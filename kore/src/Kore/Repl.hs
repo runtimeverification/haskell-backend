@@ -74,7 +74,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.Verification
 import Kore.Syntax.Variable
 import Kore.Unification.Procedure
     ( unificationProcedure

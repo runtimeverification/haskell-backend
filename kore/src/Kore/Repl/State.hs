@@ -126,13 +126,13 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
 import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
+import Kore.Strategies.Verification
 import Kore.Syntax.Variable
     ( Variable
     )
