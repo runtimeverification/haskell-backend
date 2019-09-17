@@ -552,6 +552,7 @@ simpleRewrite left right =
     Rule
     $ RewriteRule RulePattern
         { left = left
+        , antiLeft = Nothing
         , right = right
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -567,6 +568,7 @@ rewriteWithPredicate left right predicate =
     Rule
     $ RewriteRule RulePattern
         { left = left
+        , antiLeft = Nothing
         , right = right
         , requires = predicate
         , ensures = makeTruePredicate
