@@ -216,6 +216,12 @@ instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
             . getAllPathRule
             <$> goals
 
+instance SOP.Generic (Rule (AllPathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (AllPathRule variable))
+
+instance Debug variable => Debug (Rule (AllPathRule variable))
+
 transitionRule0
     :: forall m goal
     .  MonadSimplify m

@@ -239,6 +239,13 @@ deriving instance Eq variable => Eq (AllPathRule variable)
 deriving instance Ord variable => Ord (AllPathRule variable)
 deriving instance Show variable => Show (AllPathRule variable)
 
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (AllPathRule variable)
+  where
+    unparse = unparse . allPathRuleToPattern
+    unparse2 = unparse2 . allPathRuleToPattern
+
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
@@ -414,6 +421,30 @@ wEF sort = Alias
     , aliasLeft = []
     , aliasRight = mkTop sort
     }
+
+-- TODO: this shouldn't use wEF
+allPathRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => AllPathRule variable
+    -> TermLike variable
+allPathRuleToPattern (AllPathRule rulePatt) =
+    mkImplies
+        ( mkAnd
+            (Predicate.unwrapPredicate . requires $ rulePatt)
+            (left rulePatt)
+        )
+       ( mkApplyAlias
+            (wEF sort)
+            [mkAnd
+                (Predicate.unwrapPredicate . ensures $ rulePatt)
+                (right rulePatt)
+            ]
+       )
+  where
+    sort :: Sort
+    sort = termLikeSort . right $ rulePatt
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
