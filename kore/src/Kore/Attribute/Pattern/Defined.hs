@@ -17,7 +17,9 @@ import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Generically
 import Kore.Attribute.Synthetic
+import qualified Kore.Builtin.Bytes.Bytes as Bytes
 import Kore.Debug
 import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
@@ -194,4 +196,44 @@ instance Synthetic Defined Inhabitant where
 instance Synthetic Defined (Const (UnifiedVariable variable)) where
     synthetic (Const (ElemVar _))= Defined True
     synthetic (Const (SetVar _))= Defined False
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined (Const Bytes.Internal) where
+    synthetic = const (Defined True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.String2Bytes where
+    synthetic = const (Defined False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.Update where
+    synthetic = const (Defined False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.Substr where
+    synthetic = const (Defined False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.ReplaceAt where
+    synthetic = const (Defined False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.PadRight where
+    synthetic = const (Defined False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.PadLeft where
+    synthetic = const (Defined False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.Reverse where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.Concat where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Defined Bytes.Bytes where
+    synthetic = synthetic . Generically1
     {-# INLINE synthetic #-}

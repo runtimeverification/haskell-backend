@@ -67,6 +67,10 @@ instance (Functor base, Synthetic syn base) => Synthetic syn (Rec1 base) where
     synthetic = synthetic . unRec1
     {-# INLINE synthetic #-}
 
+instance Synthetic syn Par1 where
+    synthetic = unPar1
+    {-# INLINE synthetic #-}
+
 {- | @/resynthesize/@ attribute @b@ bottom-up along a tree @s@.
 
 @resynthesize@ is a generalization of 'Data.List.scanr' to trees: Given a tree

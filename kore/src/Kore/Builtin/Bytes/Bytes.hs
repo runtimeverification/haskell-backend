@@ -40,12 +40,20 @@ module Kore.Builtin.Bytes.Bytes
     , concatInternal
     ) where
 
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Monad as Monad
 import Data.ByteString
     ( ByteString
     )
 import qualified Data.ByteString as ByteString
 import qualified Data.Char as Char
+import qualified Data.Foldable as Foldable
+import Data.Functor.Const
+import Data.Hashable
+    ( Hashable (..)
+    )
 import Data.Sequence
     ( Seq
     )
@@ -57,11 +65,18 @@ import Data.Word
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Generically
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
+import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
     ( Symbol (..)
+    , applicationSortsResult
     )
+import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.DomainValue
 import Kore.Syntax.StringLiteral
@@ -70,7 +85,7 @@ import Kore.Unparser
 {- | @Bytes@ represents the builtin sort @BYTES.Bytes@.
  -}
 data Bytes term
-    = BytesInternal     !Internal
+    = BytesInternal     !(Const Internal term)
     | BytesString2Bytes !(String2Bytes term)
     | BytesUpdate       !(Update term)
     | BytesSubstr       !(Substr term)
@@ -80,7 +95,13 @@ data Bytes term
     | BytesReverse      !(Reverse term)
     | BytesConcat       !(Concat term)
     | BytesTerm         !term
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (Bytes term)
+
+instance NFData term => NFData (Bytes term)
 
 instance SOP.Generic (Bytes term)
 
@@ -92,6 +113,16 @@ instance Unparse term => Unparse (Bytes term) where
     unparse = unparseGeneric
     unparse2 = unparse2Generic
 
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) Bytes where
+    synthetic = synthetic . Generically1
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort Bytes where
+    synthetic = synthetic . Generically1
+    {-# INLINE synthetic #-}
+
 {- | The internal representation of a concrete byte array.
  -}
 data Internal =
@@ -101,11 +132,16 @@ data Internal =
         , bytes :: !ByteString
         -- ^ The concrete array of bytes.
         }
-    deriving (Eq, GHC.Generic, Show)
+    deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
 
 instance Semigroup Internal where
     (<>) Internal { symbol, bytes = bytes1 } Internal { bytes = bytes2 } =
         Internal { symbol, bytes = bytes1 <> bytes2 }
+
+instance Hashable Internal
+
+instance NFData Internal
 
 instance SOP.Generic Internal
 
@@ -129,6 +165,17 @@ instance Unparse Internal where
         [domainValueSort] = applicationSortsOperands symbolSorts
         literal =
             Text.pack $ map (Char.chr . fromEnum) $ ByteString.unpack bytes
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) (Const Internal) where
+    synthetic = const mempty
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort (Const Internal) where
+    synthetic (Const Internal { symbol = Symbol { symbolSorts } }) =
+        applicationSortsResult symbolSorts
+    {-# INLINE synthetic #-}
 
 {- | The length of a concrete byte array.
  -}
@@ -158,7 +205,13 @@ data String2Bytes string =
         , string :: !string
         -- ^ The @STRING.String@ pattern representing the @BYTES.Bytes@.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable string => Hashable (String2Bytes string)
+
+instance NFData string => NFData (String2Bytes string)
 
 instance SOP.Generic (String2Bytes string)
 
@@ -169,6 +222,16 @@ instance Debug string => Debug (String2Bytes string)
 instance Unparse string => Unparse (String2Bytes string) where
     unparseVia go String2Bytes { symbol, string } =
         go (Application symbol [string])
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) String2Bytes where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort String2Bytes where
+    synthetic String2Bytes { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
 
 {- | Decode a 'Char' to a byte.
  -}
@@ -199,7 +262,13 @@ data Update term =
         , byte :: !term
         -- ^ The @INT.Int@ of the new byte to place at @offset@.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (Update term)
+
+instance NFData term => NFData (Update term)
 
 instance SOP.Generic (Update term)
 
@@ -214,6 +283,16 @@ instance Unparse term => Unparse (Update term) where
             , applicationChildren =
                 [SomeUnparse bytes, SomeUnparse offset, SomeUnparse byte]
             }
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) Update where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort Update where
+    synthetic Update { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
 
 {- | Internal implementation of @BYTES.update@.
  -}
@@ -238,7 +317,13 @@ data Substr term =
         , len    :: !term
         -- ^ The @INT.Int@ length of the result.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (Substr term)
+
+instance NFData term => NFData (Substr term)
 
 instance SOP.Generic (Substr term)
 
@@ -253,6 +338,17 @@ instance Unparse term => Unparse (Substr term) where
             , applicationChildren =
                 [SomeUnparse bytes, SomeUnparse offset, SomeUnparse len]
             }
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) Substr where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort Substr where
+    synthetic Substr { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
+    {-# INLINE synthetic #-}
 
 {- | Internal implementation of @BYTES.substr@.
  -}
@@ -289,7 +385,13 @@ data ReplaceAt term =
         , replace :: !(Bytes term)
         -- ^ The replacement byte array.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (ReplaceAt term)
+
+instance NFData term => NFData (ReplaceAt term)
 
 instance SOP.Generic (ReplaceAt term)
 
@@ -304,6 +406,17 @@ instance Unparse term => Unparse (ReplaceAt term) where
             , applicationChildren =
                 [SomeUnparse original, SomeUnparse offset, SomeUnparse replace]
             }
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) ReplaceAt where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort ReplaceAt where
+    synthetic ReplaceAt { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
+    {-# INLINE synthetic #-}
 
 {- | Internal implementation of @BYTES.replaceAt@.
  -}
@@ -329,7 +442,13 @@ data PadRight term =
         , byte   :: !term
         -- ^ The @INT.Int@ byte to pad with.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (PadRight term)
+
+instance NFData term => NFData (PadRight term)
 
 instance SOP.Generic (PadRight term)
 
@@ -344,6 +463,17 @@ instance Unparse term => Unparse (PadRight term) where
             , applicationChildren =
                 [SomeUnparse bytes, SomeUnparse len, SomeUnparse byte]
             }
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) PadRight where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort PadRight where
+    synthetic PadRight { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
+    {-# INLINE synthetic #-}
 
 {- | Internal implementation of @BYTES.padRight@.
  -}
@@ -365,7 +495,13 @@ data PadLeft term =
         , byte  :: !term
         -- ^ The @INT.Int@ byte to pad with.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (PadLeft term)
+
+instance NFData term => NFData (PadLeft term)
 
 instance SOP.Generic (PadLeft term)
 
@@ -380,6 +516,17 @@ instance Unparse term => Unparse (PadLeft term) where
             , applicationChildren =
                 [SomeUnparse bytes, SomeUnparse len, SomeUnparse byte]
             }
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) PadLeft where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort PadLeft where
+    synthetic PadLeft { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
+    {-# INLINE synthetic #-}
 
 {- | Internal implementation of @BYTES.padLeft@.
  -}
@@ -397,7 +544,13 @@ data Reverse term =
         , bytes :: !(Bytes term)
         -- ^ The original byte array.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (Reverse term)
+
+instance NFData term => NFData (Reverse term)
 
 instance SOP.Generic (Reverse term)
 
@@ -411,6 +564,17 @@ instance Unparse term => Unparse (Reverse term) where
             { applicationSymbolOrAlias = symbol
             , applicationChildren = [SomeUnparse bytes]
             }
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) Reverse where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort Reverse where
+    synthetic Reverse { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
+    {-# INLINE synthetic #-}
 
 {- | Internal implementation of @BYTES.reverse@.
  -}
@@ -434,7 +598,20 @@ data Concat term =
         , concatN :: !(Bytes term)
         -- ^ The last byte array in the concatenation.
         }
-    deriving (Functor, GHC.Generic)
+    deriving (Eq, Ord, Show)
+    deriving (Functor, Foldable, Traversable)
+    deriving (GHC.Generic, GHC.Generic1)
+
+instance Hashable term => Hashable (Concat term) where
+    hashWithSalt salt Concat { symbol, concat1, concatI, concatN } =
+        salt
+        `hashWithSalt` symbol
+        `hashWithSalt` concat1
+        `hashWithSalt` Foldable.toList concatI
+        `hashWithSalt` concatN
+    {-# INLINE hashWithSalt #-}
+
+instance NFData term => NFData (Concat term)
 
 instance SOP.Generic (Concat term)
 
@@ -461,6 +638,17 @@ instance Unparse term => Unparse (Concat term) where
                         , concatI = concatI'
                         , concatN
                         }
+
+instance
+    Ord variable
+    => Synthetic (FreeVariables variable) Concat where
+    synthetic = Foldable.fold
+    {-# INLINE synthetic #-}
+
+instance Synthetic Sort Concat where
+    synthetic Concat { symbol = Symbol { symbolSorts } } =
+        applicationSortsResult symbolSorts
+    {-# INLINE synthetic #-}
 
 {- | Internal implementation of @BYTES.concat@.
  -}
