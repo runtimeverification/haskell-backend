@@ -52,6 +52,9 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
+import Debug.Trace
+import Kore.Unparser
+
 test_onePathVerification :: [TestTree]
 test_onePathVerification =
     [ testCase "Runs zero steps" $ do
@@ -328,6 +331,21 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
+    , testCase "Provable using one-path; not provable using all-path" $ do
+        -- Axioms:
+        --     a => b
+        --     a => c
+        -- Claim: a => b
+        -- Expected: success
+        actual <- runVerification
+            (Limit 5)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.a Mock.c
+            ]
+            [ simpleClaim Mock.a Mock.b ]
+        assertEqualWithExplanation ""
+            (Right ())
+            actual
     ]
 
 simpleAxiom
@@ -359,6 +377,7 @@ simpleTrustedClaim left right =
                 { Attribute.trusted = Attribute.Trusted True }
             }
 
+-- TODO: use rulePattern
 simpleRewrite
     :: TermLike Variable
     -> TermLike Variable
