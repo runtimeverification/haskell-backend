@@ -45,11 +45,24 @@ import Control.Monad.Trans.Reader
 import Data.Functor.Contravariant
     ( contramap
     )
+import Data.Maybe
+    ( fromJust
+    )
+import Data.Set
+    ( Set
+    )
 import Data.String
     ( IsString
     )
 import Data.Text
     ( Text
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
+    ( Typeable
+    )
+import qualified Data.Typeable as Data.Typeable
+    ( cast
     )
 import GHC.Stack
     ( CallStack
@@ -237,8 +250,38 @@ withLogScope newScope = localLogAction (contramap appendScope)
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
+class Typeable entry => Entry entry where
+    toEntry :: entry -> SomeEntry
+    toEntry = SomeEntry
+
+    fromEntry :: SomeEntry -> Maybe entry
+    fromEntry (SomeEntry entry) = Data.Typeable.cast entry
+
+    severity :: entry -> Severity
+
+    -- Would this work as a 'Pretty' constraint on 'entry'?
+    displayEntry :: entry -> Pretty.Doc ann
+
+    inScope :: Set String -> entry -> Bool
+
+data SomeEntry where
+    SomeEntry :: Entry entry => entry -> SomeEntry
+
+
+instance Entry LogMessage where
+    severity LogMessage { severity } = severity
+
+
+class Monad m => MonadLog m where
+    logM :: Entry entry => entry -> m ()
+    scope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
+
+instance Monad m => MonadLog (LoggerT m) where
+    logM _ = pure ()
+    scope _ = id
+
 newtype LoggerT m a =
-    LoggerT { getLoggerT :: ReaderT (LogAction m LogMessage) m a }
+    LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO)
 
@@ -247,7 +290,7 @@ instance MonadTrans LoggerT where
     {-# INLINE lift #-}
 
 instance Monad m => WithLog LogMessage (LoggerT m) where
-    askLogAction = LoggerT . fmap liftLogAction $ ask
+    askLogAction = fmap (contramap toEntry) $ ask
     {-# INLINE askLogAction #-}
 
     localLogAction locally = LoggerT . local locally . getLoggerT
