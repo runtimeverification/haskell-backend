@@ -9,6 +9,8 @@ module Kore.Strategies.Goal
     , proven
     , onePathFirstStep
     , onePathFollowupStep
+    , allPathFirstStep
+    , allPathFollowupStep
     , makeRuleFromPatterns
     , getConfiguration
     , getDestination
@@ -56,7 +58,8 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
-    ( OnePathRule (..)
+    ( AllPathRule (..)
+    , OnePathRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     )
@@ -170,6 +173,47 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
             OnePathRewriteRule
             . RewriteRule
             . getOnePathRule
+            <$> goals
+
+instance SOP.Generic (Rule (OnePathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+
+instance Debug variable => Debug (Rule (OnePathRule variable))
+
+instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
+
+    newtype Rule (AllPathRule variable) =
+        AllPathRewriteRule { unRule :: RewriteRule variable }
+        deriving (GHC.Generic, Show, Unparse)
+
+    type Prim (AllPathRule variable) =
+        ProofState.Prim (Rule (AllPathRule variable))
+
+    type ProofState (AllPathRule variable) a =
+        ProofState.ProofState a
+
+    transitionRule =
+        transitionRule0
+            simplify
+            removeDestination
+            isTriviallyValid
+            derivePar
+            deriveSeq
+
+    strategy goals rules =
+        allPathFirstStep rewrites
+        : repeat
+            ( allPathFollowupStep
+                coinductiveRewrites
+                rewrites
+            )
+      where
+        rewrites = rules
+        coinductiveRewrites =
+            AllPathRewriteRule
+            . RewriteRule
+            . getAllPathRule
             <$> goals
 
 transitionRule0
@@ -313,11 +357,52 @@ onePathFollowupStep claims axioms =
         , TriviallyValid
         ]
 
-instance SOP.Generic (Rule (OnePathRule variable))
+allPathFirstStep
+    :: [Rule (AllPathRule variable)]
+    -> Strategy (Prim (AllPathRule variable))
+allPathFirstStep axioms =
+    (Strategy.sequence . map Strategy.apply)
+        [ CheckProven
+        , CheckGoalRemainder
+        , Simplify
+        , TriviallyValid
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , DerivePar axioms
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , ResetGoal
+        , Simplify
+        , TriviallyValid
+        ]
 
-instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
-
-instance Debug variable => Debug (Rule (OnePathRule variable))
+allPathFollowupStep
+    :: [Rule (AllPathRule variable)]
+    -> [Rule (AllPathRule variable)]
+    -> Strategy (Prim (AllPathRule variable))
+allPathFollowupStep claims axioms =
+    (Strategy.sequence . map Strategy.apply)
+        [ CheckProven
+        , CheckGoalRemainder
+        , Simplify
+        , TriviallyValid
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , DeriveSeq claims
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , DerivePar axioms
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , ResetGoal
+        , Simplify
+        , TriviallyValid
+        ]
 
 -- | Remove the destination of the goal.
 removeDestination
