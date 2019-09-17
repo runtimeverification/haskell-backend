@@ -49,7 +49,7 @@ instance Debug Created
 
 instance Pretty Created where
     pretty (Created maybeCallStack) =
-        maybe "/**/" go getCallStackAtHead
+        maybe "" go getCallStackAtHead
       where
         go (name, loc) =
             Pretty.hsep
