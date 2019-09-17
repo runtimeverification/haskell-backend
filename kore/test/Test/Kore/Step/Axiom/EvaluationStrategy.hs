@@ -285,13 +285,22 @@ test_firstFullEvaluation =
                 )
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
         assertEqualWithExplanation "" expect actual
-    , testCase "Error when not fully rewriting" $ do
+    , testCase "Skip when remainder" $ do
+        let expect =
+                AttemptedAxiom.Applied
+                    AttemptedAxiomResults
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
+                                { term = Mock.g Mock.b
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                        , remainders = OrPattern.fromPatterns []
+                        }
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
-        assertErrorIO
-            (assertSubstring ""
-                "Unexpected simplification result with remainder"
-            )
-            (evaluate
+        actual <-
+            evaluate
                 (firstFullEvaluation
                     [ definitionEvaluation
                         [ axiom
@@ -299,10 +308,13 @@ test_firstFullEvaluation =
                             (Mock.g Mock.a)
                             requirement
                         ]
+                    , axiomEvaluator
+                        (Mock.functionalConstr10 Mock.a)
+                        (Mock.g Mock.b)
                     ]
                 )
                 (Mock.functionalConstr10 Mock.a)
-            )
+        assertEqualWithExplanation "" expect actual
     , testCase "Error with multiple results" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         assertErrorIO
