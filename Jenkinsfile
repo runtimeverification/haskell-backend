@@ -78,7 +78,7 @@ pipeline {
 
         stage('KEVM Integration') {
           options {
-            timeout(time: 48, unit: 'MINUTES')
+            timeout(time: 24, unit: 'MINUTES')
           }
           steps {
             sh '''
@@ -92,6 +92,17 @@ pipeline {
       when { branch 'master' }
       steps {
         build job: 'rv-devops/master', parameters: [string(name: 'PR_REVIEWER', value: 'ttuegel'), booleanParam(name: 'UPDATE_DEPS_K_HASKELL', value: true)], propagate: true, wait: true
+      }
+    }
+  }
+  post {
+    unsuccessful {
+      script {
+        if (env.BRANCH_NAME == 'master') {
+          slackSend color: '#cb2431'                             \
+                    , channel: '#haskell-backend'                \
+                    , message: "Build failure: ${env.BUILD_URL}"
+        }
       }
     }
   }
