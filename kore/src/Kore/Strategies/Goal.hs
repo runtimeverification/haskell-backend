@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Strategies.Goal
     ( Goal (..)
     , Rule (..)
+    , TransitionRuleTemplate (..)
     , unprovenNodes
     , proven
     , onePathFirstStep
@@ -12,7 +13,7 @@ module Kore.Strategies.Goal
     , makeRuleFromPatterns
     , getConfiguration
     , getDestination
-    , transitionRule0
+    , transitionRuleTemplate
     , isTrusted
     ) where
 
@@ -137,6 +138,48 @@ class Goal goal where
         -> [Rule goal]
         -> [Strategy (Prim goal)]
 
+{- NOTE: Non-deterministic semantics
+
+The current implementation of one-path verification assumes that the proof goal
+is deterministic, that is: the proof goal would not be discharged during at a
+non-confluent state in the execution of a non-deterministic semantics. (Often
+this means that the definition is simply deterministic.) As a result, given the
+non-deterministic definition
+
+> module ABC
+>   import DOMAINS
+>   syntax S ::= "a" | "b" | "c"
+>   rule [ab]: a => b
+>   rule [ac]: a => c
+> endmodule
+
+this claim would be provable,
+
+> rule a => b [claim]
+
+but this claim would **not** be provable,
+
+> rule a => c [claim]
+
+because the algorithm would first apply semantic rule [ab], which prevents rule
+[ac] from being used.
+
+We decided to assume that the definition is deterministic because one-path
+verification is mainly used only for deterministic semantics and the assumption
+simplifies the implementation. However, this assumption is not an essential
+feature of the algorithm. You should not rely on this assumption elsewhere. This
+decision is subject to change without notice.
+
+This instance contains the default implementation for a one-path strategy. You can apply it to the
+first two arguments and pass the resulting function to 'Kore.Strategies.Verification.verify'.
+
+Things to note when implementing your own:
+
+1. The first step does not use the reachability claims
+
+2. You can return an infinite list.
+-}
+
 instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
 
     newtype Rule (OnePathRule variable) =
@@ -150,12 +193,19 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
         ProofState.ProofState a
 
     transitionRule =
-        transitionRule0
-            simplify
-            removeDestination
-            isTriviallyValid
-            derivePar
-            deriveSeq
+        transitionRuleTemplate
+            TransitionRuleTemplate
+                { simplifyTemplate =
+                    simplify
+                , removeDestinationTemplate =
+                    removeDestination
+                , isTriviallyValidTemplate =
+                    isTriviallyValid
+                , deriveParTemplate =
+                    derivePar
+                , deriveSeqTemplate =
+                    deriveSeq
+                }
 
     strategy goals rules =
         onePathFirstStep rewrites
@@ -172,37 +222,47 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
             . getOnePathRule
             <$> goals
 
-transitionRule0
+instance SOP.Generic (Rule (OnePathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+
+instance Debug variable => Debug (Rule (OnePathRule variable))
+
+data TransitionRuleTemplate monad goal =
+    TransitionRuleTemplate
+    { simplifyTemplate
+        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+    , removeDestinationTemplate
+        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+    , isTriviallyValidTemplate :: goal -> Bool
+    , deriveParTemplate
+        :: [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+    , deriveSeqTemplate
+        :: [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+    }
+
+transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
     => Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => (goal -> Strategy.TransitionT (Rule goal) m goal)
-    -- ^ simplify
-    -> (goal -> Strategy.TransitionT (Rule goal) m goal)
-    -- ^ removeDestination
-    -> (goal -> Bool)
-    -- ^ isTriviallyValid
-    -> ( [Rule goal]
-            -> goal
-            -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-       )
-    -- ^ derivePar
-    -> ( [Rule goal]
-            -> goal
-            -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-       )
-    -- ^ deriveSeq
+    => TransitionRuleTemplate m goal
     -> Prim goal
     -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-transitionRule0
-    simplify'
-    removeDestination'
-    isTriviallyValid'
-    derivePar'
-    deriveSeq'
+transitionRuleTemplate
+    TransitionRuleTemplate
+        { simplifyTemplate
+        , removeDestinationTemplate
+        , isTriviallyValidTemplate
+        , deriveParTemplate
+        , deriveSeqTemplate
+        }
   =
     transitionRuleWorker
   where
@@ -216,21 +276,21 @@ transitionRule0
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
     transitionRuleWorker Simplify (Goal g) =
-        Goal <$> simplify' g
+        Goal <$> simplifyTemplate g
     transitionRuleWorker Simplify (GoalRemainder g) =
-        GoalRemainder <$> simplify' g
+        GoalRemainder <$> simplifyTemplate g
 
     transitionRuleWorker RemoveDestination (Goal g) =
-        Goal <$> removeDestination' g
+        Goal <$> removeDestinationTemplate g
     transitionRuleWorker RemoveDestination (GoalRemainder g) =
-        GoalRemainder <$> removeDestination' g
+        GoalRemainder <$> removeDestinationTemplate g
 
     transitionRuleWorker TriviallyValid (Goal g)
-      | isTriviallyValid' g = return Proven
+      | isTriviallyValidTemplate g = return Proven
     transitionRuleWorker TriviallyValid (GoalRemainder g)
-      | isTriviallyValid' g = return Proven
+      | isTriviallyValidTemplate g = return Proven
     transitionRuleWorker TriviallyValid (GoalRewritten g)
-      | isTriviallyValid' g = return Proven
+      | isTriviallyValidTemplate g = return Proven
 
     transitionRuleWorker (DerivePar rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
@@ -241,20 +301,20 @@ transitionRule0
         -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
-        derivePar' rules g
+        deriveParTemplate rules g
     transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        derivePar' rules g
+        deriveParTemplate rules g
 
     transitionRuleWorker (DeriveSeq rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeq' rules g
+        deriveSeqTemplate rules g
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeq' rules g
+        deriveSeqTemplate rules g
 
     transitionRuleWorker _ state = return state
 
@@ -312,12 +372,6 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         ]
-
-instance SOP.Generic (Rule (OnePathRule variable))
-
-instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
-
-instance Debug variable => Debug (Rule (OnePathRule variable))
 
 -- | Remove the destination of the goal.
 removeDestination
