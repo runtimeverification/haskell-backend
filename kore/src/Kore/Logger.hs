@@ -259,39 +259,41 @@ class Typeable entry => Entry entry where
 
     severity :: entry -> Severity
 
-    -- Would this work as a 'Pretty' constraint on 'entry'?
+    -- TODO: Would this work as a 'Pretty' constraint on 'entry'?
     displayEntry :: entry -> Pretty.Doc ann
 
+    -- TODO: This is different from the original idea, please double check it makes sense
     inScope :: Set String -> entry -> Bool
 
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
-
 instance Entry LogMessage where
     severity LogMessage { severity } = severity
-
+    inScope _ _ = True
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
     scope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
-
-instance Monad m => MonadLog (LoggerT m) where
-    logM _ = pure ()
-    scope _ = id
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO)
 
-instance MonadTrans LoggerT where
-    lift = LoggerT . Monad.Trans.lift
-    {-# INLINE lift #-}
+instance Monad m => MonadLog (LoggerT m) where
+    logM _ = pure ()
+    scope _ = id
 
-instance Monad m => WithLog LogMessage (LoggerT m) where
+instance MonadLog m => WithLog LogMessage (LoggerT m) where
+    -- TODO: Stuck here. I can't see how to write this instance with `MonadLog`
+    -- but maybe I'm not seeing it
     askLogAction = fmap (contramap toEntry) $ ask
     {-# INLINE askLogAction #-}
 
     localLogAction locally = LoggerT . local locally . getLoggerT
     {-# INLINE localLogAction #-}
+
+instance MonadTrans LoggerT where
+    lift = LoggerT . Monad.Trans.lift
+    {-# INLINE lift #-}
