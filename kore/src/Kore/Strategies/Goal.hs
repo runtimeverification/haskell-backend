@@ -2,7 +2,19 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Kore.Strategies.Goal where
+module Kore.Strategies.Goal
+    ( Goal (..)
+    , Rule (..)
+    , unprovenNodes
+    , proven
+    , onePathFirstStep
+    , onePathFollowupStep
+    , makeRuleFromPatterns
+    , getConfiguration
+    , getDestination
+    , transitionRule0
+    , isTrusted
+    ) where
 
 import Control.Applicative
     ( Alternative (..)
@@ -22,27 +34,6 @@ import Data.Coerce
 import qualified Data.Default as Default
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Step.Rule
-    ( OnePathRule (..)
-    , RewriteRule (..)
-    )
-import Kore.Step.Simplification.Data
-    ( MonadSimplify
-    , SimplifierVariable
-    )
-import Kore.Step.Strategy
-    ( Strategy
-    )
-import qualified Kore.Step.Strategy as Strategy
-import Kore.Strategies.ProofState hiding
-    ( Prim
-    , ProofState
-    )
-import qualified Kore.Strategies.ProofState as ProofState
-import Kore.Unparser
-    ( Unparse
-    )
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
@@ -51,6 +42,7 @@ import Kore.Debug
     ( Debug
     )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -64,25 +56,39 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
-    ( OnePathRule (OnePathRule)
-    , RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
+    ( OnePathRule (..)
+    , RewriteRule (..)
+    , RulePattern (..)
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    , SimplifierVariable
     )
 import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
+import Kore.Step.Strategy
+    ( Strategy
+    )
+import qualified Kore.Step.Strategy as Strategy
+import Kore.Strategies.ProofState hiding
+    ( Prim
+    , ProofState
+    )
+import qualified Kore.Strategies.ProofState as ProofState
 import Kore.TopBottom
     ( isBottom
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser
-    ( unparse
+    ( Unparse
+    , unparse
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar)
@@ -252,47 +258,7 @@ transitionRule0
 
     transitionRuleWorker _ state = return state
 
-allPathStrategy
-    :: [rule]
-    -- ^ Claims
-    -> [rule]
-    -- ^ Axioms
-    -> [Strategy (ProofState.Prim rule)]
-allPathStrategy claims axioms =
-    firstStep : repeat nextStep
-  where
-    firstStep =
-        (Strategy.sequence . map Strategy.apply)
-            [ CheckProven
-            , CheckGoalRemainder
-            , RemoveDestination
-            , TriviallyValid
-            , DerivePar axioms
-            , RemoveDestination
-            , Simplify
-            , TriviallyValid
-            , ResetGoal
-            , TriviallyValid
-            ]
-    nextStep =
-        (Strategy.sequence . map Strategy.apply)
-            [ CheckProven
-            , CheckGoalRemainder
-            , RemoveDestination
-            , TriviallyValid
-            , DeriveSeq claims
-            , RemoveDestination
-            , Simplify
-            , TriviallyValid
-            , DerivePar axioms
-            , RemoveDestination
-            , Simplify
-            , TriviallyValid
-            , ResetGoal
-            , TriviallyValid
-            ]
-
--- TODO(Ana): make less general
+-- TODO(Ana): could be less general when all-path will be connected to repl
 onePathFirstStep
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
@@ -317,7 +283,7 @@ onePathFirstStep axioms =
         , TriviallyValid
         ]
 
--- TODO(Ana): make less general
+-- TODO(Ana): could be less general when all-path will be connected to repl
 onePathFollowupStep
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
