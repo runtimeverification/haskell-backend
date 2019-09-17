@@ -340,6 +340,7 @@ makeClaim (attributes, rule) =
     coerce RulePattern
         { attributes = attributes
         , left = left . coerce $ rule
+        , antiLeft = antiLeft . coerce $ rule
         , right = right . coerce $ rule
         , requires = requires . coerce $ rule
         , ensures = ensures . coerce $ rule
