@@ -164,7 +164,6 @@ import Control.DeepSeq
     )
 import qualified Control.Lens as Lens
 import qualified Control.Lens.Combinators as Lens.Combinators
-import qualified Control.Lens.Prism as Lens.Prism
 import Control.Monad.Reader
     ( Reader
     )
