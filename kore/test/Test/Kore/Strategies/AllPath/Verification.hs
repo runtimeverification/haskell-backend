@@ -52,9 +52,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
-import Debug.Trace
-import Kore.Unparser
-
 test_allPathVerification :: [TestTree]
 test_allPathVerification =
     [ testCase "Provable using one-path; not provable using all-path" $ do

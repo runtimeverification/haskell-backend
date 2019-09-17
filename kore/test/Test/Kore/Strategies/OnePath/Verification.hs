@@ -52,9 +52,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Extensions
 
-import Debug.Trace
-import Kore.Unparser
-
 test_onePathVerification :: [TestTree]
 test_onePathVerification =
     [ testCase "Runs zero steps" $ do
