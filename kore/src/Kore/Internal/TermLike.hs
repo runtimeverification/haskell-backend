@@ -163,14 +163,8 @@ import Control.DeepSeq
     ( NFData (..)
     )
 import qualified Control.Lens as Lens
-import Control.Lens.Combinators
-    ( coerced
-    , to
-    , _head
-    )
-import Control.Lens.Prism
-    ( _Just
-    )
+import qualified Control.Lens.Combinators as Lens.Combinators
+import qualified Control.Lens.Prism as Lens.Prism
 import Control.Monad.Reader
     ( Reader
     )
@@ -192,7 +186,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
     ( Identity (..)
     )
-import Data.Generics.Product
+import qualified Data.Generics.Product as Lens.Product
 import Data.Hashable
 import Data.Map.Strict
     ( Map
@@ -470,29 +464,12 @@ instance SortedVariable variable => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project freshVarTerm of
             (attrs :< pat) ->
-                Pretty.vsep
-                    $ catMaybes
-                        [ attrs Lens.^? getCallStackHead
-                        , Just $ unparse pat
-                        ]
+                Pretty.pretty (getCreated attrs) <> unparse pat
       where
         freshVarTerm =
             externalizeFreshVariables
             $ mapVariables toVariable term
-        showCreated (name, loc) =
-            Pretty.hsep
-                [ "// Created by"
-                , Pretty.angles $ Pretty.pretty name
-                , "at"
-                , Pretty.pretty $ GHC.prettySrcLoc loc
-                ]
-        getCallStackHead =
-            field @"created"
-                . coerced
-                . _Just
-                . to GHC.getCallStack
-                . _head
-                . to showCreated
+        getCreated = (Lens.^. Lens.Product.field @"created")
 
     unparse2 term =
         case Recursive.project freshVarTerm of
@@ -1067,7 +1044,7 @@ updateCallStack
     -> TermLike variable
 updateCallStack = Lens.set created callstack
   where
-    created = coerced . _extract . field @"created"
+    created = Lens.Combinators.coerced . _extract . Lens.Product.field @"created"
     callstack =
         Created . Just . GHC.popCallStack . GHC.popCallStack $ GHC.callStack
 
