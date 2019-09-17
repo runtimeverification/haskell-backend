@@ -1252,52 +1252,14 @@ smtUnresolvedDeclarations = SMT.Declarations
         , (boolSortId, builtinZeroarySmtSort SMT.tBool)
         ]
     , symbols = Map.fromList
-        [ (aId, smtConstructor aId [] testSort)
-        , ( aSort0Id, smtConstructor aSort0Id [] testSort1)
+        [ ( aSort0Id, smtConstructor aSort0Id [] testSort1)
         , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
         , ( aSubsortId, smtConstructor aSubsortId [] subSort)
         , ( aSubOthersortId, smtConstructor aSubOthersortId [] subSubsort)
         , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
         , ( aTopSortId, smtConstructor aTopSortId [] topSort)
         , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
-        , ( bId, smtConstructor bId [] testSort)
         , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
-        , ( cId, smtConstructor cId [] testSort)
-        , ( dId, smtConstructor dId [] testSort)
-        , ( eId, smtConstructor eId [] testSort)
-        , ( constr00Id, smtConstructor constr00Id [] testSort)
-        , ( constr10Id, smtConstructor constr10Id [testSort] testSort)
-        , ( constr11Id, smtConstructor constr11Id [testSort] testSort)
-        , ( constr20Id, smtConstructor constr20Id [testSort, testSort] testSort)
-        ,   ( functionalConstr10Id
-            , smtConstructor functionalConstr10Id [testSort] testSort
-            )
-        ,   ( functionalConstr11Id
-            , smtConstructor functionalConstr11Id [testSort] testSort
-            )
-        ,   ( functionalConstr12Id
-            , smtConstructor functionalConstr12Id [testSort] testSort
-            )
-        ,   ( functionalConstr20Id
-            , smtConstructor functionalConstr20Id [testSort, testSort] testSort
-            )
-        ,   ( functionalConstr21Id
-            , smtConstructor functionalConstr21Id [testSort, testSort] testSort
-            )
-        ,   ( functionalConstr30Id
-            , smtConstructor
-                functionalConstr30Id
-                [testSort, testSort, testSort]
-                testSort
-            )
-        ,   ( functionalTopConstr20Id
-            , smtConstructor
-                functionalTopConstr21Id [testSort, testSort] testSort
-            )
-        ,   ( functionalTopConstr21Id
-            , smtConstructor
-                functionalTopConstr21Id [testSort, testSort] testSort
-            )
         , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
         , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
