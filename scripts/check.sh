@@ -16,7 +16,7 @@ fi
 
 stack install stylish-haskell
 changed=()
-for file in $(git diff --name-only $UPSTREAM_BRANCH)
+for file in $(git diff --name-only --diff-filter=d $UPSTREAM_BRANCH)
 do
     case $file in
         *.hs|*.hs-boot) ;;
