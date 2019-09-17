@@ -349,7 +349,9 @@ extractIndexedModule name eModules =
 test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
-        let expect = FreeVariables . Set.fromList $ ElemVar <$> [Mock.x, Mock.z]
+        let expect =
+                FreeVariables . Set.fromList
+                $ ElemVar <$> [Mock.x, Mock.z, Mock.t]
             actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
@@ -383,6 +385,6 @@ testRulePattern =
             -- Include a binder to ensure that we respect them.
             mkExists Mock.y (mkElemVar Mock.y)
         , requires = Predicate.makeCeilPredicate (mkElemVar Mock.z)
-        , ensures = Predicate.makeTruePredicate
+        , ensures = Predicate.makeCeilPredicate (mkElemVar Mock.t)
         , attributes = def
         }

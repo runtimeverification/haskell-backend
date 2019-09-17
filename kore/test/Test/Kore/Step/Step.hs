@@ -518,8 +518,8 @@ test_applyRewriteRule_ =
 
     -- x => x ensures g(x)=f(x)
     -- vs
-    -- a
-    -- Expected: a and g(a)=f(a)
+    -- y
+    -- Expected: y and g(y)=f(y)
     , testCase "conjoin rule ensures" $ do
         let
             ensures =
@@ -529,19 +529,17 @@ test_applyRewriteRule_ =
             expect :: Either
                 UnificationOrSubstitutionError [OrPattern Variable]
             expect = Right
-                [ OrPattern.fromTermLike
-                    (mkExists
-                        Mock.x
-                        (mkAnd
-                            (mkElemVar Mock.x)
-                            (mkEquals_
-                                (Mock.functional11 (mkElemVar Mock.x))
-                                (Mock.functional10 (mkElemVar Mock.x))
-                            )
-                        )
-                    )
+                [ OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkElemVar Mock.y
+                        , predicate = makeEqualsPredicate
+                            (Mock.functional11 (mkElemVar Mock.y))
+                            (Mock.functional10 (mkElemVar Mock.y))
+                        , substitution = mempty
+                        }
+                    ]
                 ]
-            initial = Pattern.fromTermLike (mkElemVar Mock.x)
+            initial = Pattern.fromTermLike (mkElemVar Mock.y)
             axiom = RewriteRule ruleId { ensures }
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual

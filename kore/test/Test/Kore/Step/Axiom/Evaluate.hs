@@ -201,12 +201,9 @@ doesn'tApply =
 
 -- * Test environment
 
-testEnv :: Env
-testEnv = Mock.env
-
 evaluateAxioms
     :: [EqualityRule Variable]
     -> TermLike Variable
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms termLike =
-    runSimplifier testEnv $ Kore.evaluateAxioms axioms termLike
+    runSimplifier Mock.env $ Kore.evaluateAxioms axioms termLike

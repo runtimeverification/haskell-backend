@@ -12,14 +12,25 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
+import Control.Error
+    ( ExceptT
+    , exceptT
+    , throwE
+    )
 import Control.Exception
     ( assert
     )
+import qualified Control.Monad.Trans as Trans
+import qualified Data.Foldable as Foldable
+import Data.Function
 import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
-import qualified Data.Text as Text
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import Kore.Attribute.Hook
@@ -57,6 +68,7 @@ import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Merging.OrPattern as OrPattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -66,9 +78,16 @@ import Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
+import Kore.TopBottom
+import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
 -}
+-- TODO (thomas.tuegel): Factor out a "function evaluator" object.
+-- See also: Kore.Step.Function.Memo.Self
+-- Then add a function,
+--   memoize :: Evaluator.Self state -> Memo.Self state -> Evaluator.Self state
+-- to add memoization to a function evaluator.
 evaluateApplication
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
@@ -79,50 +98,91 @@ evaluateApplication
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
-evaluateApplication configurationPredicate childrenPredicate application = do
+evaluateApplication
+    configurationPredicate
+    childrenPredicate
+    (evaluateSortInjection -> application)
+  = finishT $ do
+    Foldable.for_ canMemoize recallOrPattern
     substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
-        afterInj = evaluateSortInjection application
-        Application { applicationSymbolOrAlias = appHead } = afterInj
-        Symbol { symbolConstructor = symbolId } = appHead
-        termLike = synthesize (ApplySymbolF afterInj)
+        unevaluatedSimplifier
+          | Just hook <- getHook (Attribute.hook symbolAttributes)
+          -- TODO (thomas.tuegel): Factor out a second function evaluator and
+          -- remove this check. At startup, the definition's rules are
+          -- simplified using Matching Logic only (no function
+          -- evaluation). During this stage, all the hooks are expected to be
+          -- missing, so that is not an error. If any function evaluators are
+          -- present, we assume that startup is finished, but we should really
+          -- have a separate evaluator for startup.
+          , (not . null) axiomIdToEvaluator
+          =
+            (error . show . Pretty.vsep)
+                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
+                , "for symbol:" <+> unparse symbol
+                ]
+          | otherwise = return unevaluated
 
-        maybeEvaluatedPattSimplifier =
+        maybeEvaluatedSimplifier =
             maybeEvaluatePattern
                 substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
                 childrenPredicate
                 termLike
-                unchanged
+                unevaluated
                 configurationPredicate
-        unchangedPatt =
-            Conditional
-                { term         = termLike
-                , predicate    = predicate
-                , substitution = substitution
-                }
-          where
-            Conditional { term = (), predicate, substitution } =
-                childrenPredicate
-        unchanged = OrPattern.fromPattern unchangedPatt
 
-        getSymbolHook = getHook . Attribute.hook . symbolAttributes
-        getAppHookString = Text.unpack <$> getSymbolHook appHead
+    results <- maybeEvaluatedSimplifier & maybe unevaluatedSimplifier Trans.lift
+    Foldable.for_ canMemoize (recordOrPattern results)
+    return results
+  where
+    finishT :: ExceptT r simplifier r -> simplifier r
+    finishT = exceptT return return
 
-    case maybeEvaluatedPattSimplifier of
-        Nothing
-          | Just hook <- getAppHookString
-          , not(null axiomIdToEvaluator) ->
-            error
-                (   "Attempting to evaluate unimplemented hooked operation "
-                ++  hook ++ ".\nSymbol: " ++ getIdForError symbolId
-                )
-          | otherwise ->
-            return unchanged
-        Just evaluatedPattSimplifier -> evaluatedPattSimplifier
+    Application { applicationSymbolOrAlias = symbol } = application
+    Symbol { symbolAttributes } = symbol
+
+    termLike = synthesize (ApplySymbolF application)
+    unevaluated =
+        OrPattern.fromPattern $ Pattern.withCondition termLike childrenPredicate
+
+    canMemoize
+      | Symbol.isMemo symbol
+      , isTop childrenPredicate
+      , isTop configurationPredicate
+      = traverse asConcrete application
+      | otherwise
+      = Nothing
+
+    recallOrPattern key = do
+        Memo.Self { recall } <- askMemo
+        maybeTermLike <- recall key
+        let maybeOrPattern =
+                OrPattern.fromTermLike . fromConcrete <$> maybeTermLike
+        Foldable.for_ maybeOrPattern throwE
+
+    recordOrPattern orPattern key
+      | [result] <- OrPattern.toPatterns orPattern
+      , Just term <- asConcrete (Pattern.term result)
+      -- If the pattern and predicate are concrete, then we expect the predicate
+      -- to be fully-evaluated, so it must be Top. It may not be fully-evaluated
+      -- due to some uninterpreted function or an unsolved unification problem;
+      -- these are not errors, but they are unusual enough that we don't want to
+      -- deal with them here.
+      , isTop (Pattern.predicate result)
+      -- We already checked that childrenPredicate has no substitutions, so we
+      -- don't expect the result to have any substitutions either. As with the
+      -- predicate, it might be possible to have a substitution in some cases,
+      -- but they are unusual enough that we don't need to deal with them here.
+      , isTop (Pattern.substitution result)
+      = do
+        Memo.Self { record } <- askMemo
+        record key term
+      | otherwise
+      = return ()
 
 {-| Evaluates axioms on patterns.
 -}
