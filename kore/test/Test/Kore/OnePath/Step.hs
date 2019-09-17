@@ -19,15 +19,22 @@ import Data.List
 import Data.Maybe
     ( fromMaybe
     )
+import Data.Reflection
+    ( give
+    )
 import Numeric.Natural
     ( Natural
     )
+
 
 import Data.Limit
     ( Limit (..)
     )
 import qualified Data.Limit as Limit
 
+import Kore.IndexedModule.IndexedModule
+    ( indexedModuleWithDefaultImports
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -55,6 +62,9 @@ import Kore.Step.Rule
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
+import Kore.Step.SMT.Lemma
+    ( declareSMTLemmas
+    )
 import Kore.Step.Strategy
     ( ExecutionGraph (..)
     , Strategy
@@ -66,6 +76,9 @@ import Kore.Strategies.OnePath.Actions
     ( makeRuleFromPatterns
     )
 import Kore.Strategies.ProofState
+import Kore.Syntax.Module
+    ( ModuleName (ModuleName)
+    )
 import Kore.Syntax.Variable
     ( Variable (..)
     )
@@ -215,65 +228,71 @@ test_onePathStrategy =
         --   or (h(x) and x!=a and x!=b and x!=c )
         actual <-
             runOnePathSteps
-            (Limit 2)
-            (makeOnePathRule
-                (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
-                (Mock.functionalConstr11 Mock.a)
-            )
-            [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-            , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
-            ]
-            [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-            , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
-            , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
-            , simpleRewrite
-                (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-                (Mock.h (TermLike.mkElemVar Mock.y))
-            , simpleRewrite
-                (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
-                (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-            ]
+                (Limit 2)
+                (makeOnePathRule
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
+                    (Mock.functionalConstr11 Mock.a)
+                )
+                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                ]
+                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
+                , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
+                , simpleRewrite
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                    (Mock.h (TermLike.mkElemVar Mock.y))
+                , simpleRewrite
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                ]
         let expected =
                 [ Goal $ makeRuleFromPatterns
-                ( Conditional
-                    { term = Mock.f Mock.b
-                    , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-                    }
-                )
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , Goal $ makeRuleFromPatterns
-                ( Conditional
-                    { term = Mock.f Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-                    }
-                )
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , Goal $ makeRuleFromPatterns
-                ( Conditional
-                    { term = Mock.h (TermLike.mkElemVar Mock.x)
-                    , predicate =  -- TODO(virgil): Better and simplification.
-                        makeAndPredicate
-                            (makeAndPredicate
-                                (makeNotPredicate
-                                    (makeEqualsPredicate
-                                        (TermLike.mkElemVar Mock.x) Mock.a
+                    ( Conditional
+                        { term = Mock.f Mock.b
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                    , Goal $ makeRuleFromPatterns
+                    ( Conditional
+                        { term = Mock.f Mock.c
+                        , predicate = makeTruePredicate
+                        , substitution =
+                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                    , Goal $ makeRuleFromPatterns
+                    ( Conditional
+                        { term = Mock.h (TermLike.mkElemVar Mock.x)
+                        , predicate =
+                            -- TODO(virgil): Better and simplification.
+                            makeAndPredicate
+                                (makeAndPredicate
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate
+                                            (TermLike.mkElemVar Mock.x) Mock.a
+                                        )
+                                    )
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate
+                                            (TermLike.mkElemVar Mock.x) Mock.b
+                                        )
                                     )
                                 )
                                 (makeNotPredicate
                                     (makeEqualsPredicate
-                                        (TermLike.mkElemVar Mock.x) Mock.b
+                                        (TermLike.mkElemVar Mock.x)
+                                        Mock.c
                                     )
                                 )
-                            )
-                            (makeNotPredicate
-                                (makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c)
-                            )
-                    , substitution = mempty
-                    }
-                )
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                        , substitution = mempty
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
                 ]
         assertEqualWithExplanation ""
             expected
@@ -533,6 +552,7 @@ simpleRewrite left right =
     Rule
     $ RewriteRule RulePattern
         { left = left
+        , antiLeft = Nothing
         , right = right
         , requires = makeTruePredicate
         , ensures = makeTruePredicate
@@ -548,6 +568,7 @@ rewriteWithPredicate left right predicate =
     Rule
     $ RewriteRule RulePattern
         { left = left
+        , antiLeft = Nothing
         , right = right
         , requires = predicate
         , ensures = makeTruePredicate
@@ -569,9 +590,14 @@ runSteps graphFilter picker configuration strategy =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
-    <$> runStrategy transitionRule strategy (Goal configuration)
+    <$> do
+        give metadataTools
+            $ declareSMTLemmas
+            $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
+        runStrategy transitionRule strategy (Goal configuration)
   where
     mockEnv = Mock.env
+    Env {metadataTools} = mockEnv
 
 runOnePathSteps
     :: Limit Natural

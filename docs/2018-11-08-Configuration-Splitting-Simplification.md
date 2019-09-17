@@ -126,21 +126,21 @@ __Proof:__
     = ∀ Z.⌈φ ∧ α(Z)⌉ 
 ```
 
-#### `⌈φ ∧ ¬α⌉ = ⌈φ⌉ ∧ ¬⌈φ ∧ α⌉`
+#### `⌈φ ∧ ¬β⌉ = ⌈φ⌉ ∧ ¬⌈φ ∧ β⌉`
 
-for any function-like formula `φ` and for any ML formula `α`.
+for any function-like formula `φ` and for any ML formula `β`.
 
 __Proof:__
 ```
-⌈φ ∧ ¬α⌉
-    = ∃ x. x∈ (φ ∧ ¬α)
-    = ∃ x. x∈ φ ∧ x∈ ¬α
-    = ∃ x. x∈ φ ∧ ¬x∈ α 
-    = ∃ x. x = φ ∧ ¬x∈ α  //φ is function-like
-    = ∃ x. x = φ ∧ ¬φ∈ α  //substitution
-    = (∃ x. x = φ) ∧ ¬φ∈ α
-    = ⌈φ⌉ ∧ ¬φ∈ α  // properties of ⌈_⌉
-    = ⌈φ⌉ ∧ ¬⌈φ ∧ α⌉  // definition of ∈ 
+⌈φ ∧ ¬β⌉
+    = ∃ x. x∈ (φ ∧ ¬β)
+    = ∃ x. x∈ φ ∧ x∈ ¬β
+    = ∃ x. x∈ φ ∧ ¬x∈ β 
+    = ∃ x. x = φ ∧ ¬x∈ β  //φ is function-like
+    = ∃ x. x = φ ∧ ¬φ∈ β  //substitution
+    = (∃ x. x = φ) ∧ ¬φ∈ β
+    = ⌈φ⌉ ∧ ¬φ∈ β  // properties of ⌈_⌉
+    = ⌈φ⌉ ∧ ¬⌈φ ∧ β⌉  // definition of ∈ 
 ```
 
 
