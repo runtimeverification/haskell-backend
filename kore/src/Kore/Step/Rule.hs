@@ -568,15 +568,17 @@ refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
         left' = TermLike.substitute subst left
         right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires
+        ensures' = Predicate.substitute subst ensures
         rule2 =
             rule1
                 { left = left'
                 , right = right'
                 , requires = requires'
+                , ensures = ensures'
                 }
     in (rename, rule2)
   where
-    RulePattern { left, right, requires } = rule1
+    RulePattern { left, right, requires, ensures } = rule1
     originalFreeVariables =
         FreeVariables.getFreeVariables
         $ Kore.Step.Rule.freeVariables rule1
@@ -587,10 +589,11 @@ freeVariables
     :: Ord variable
     => RulePattern variable
     -> FreeVariables variable
-freeVariables RulePattern { left, right, requires } =
+freeVariables RulePattern { left, right, requires, ensures } =
     TermLike.freeVariables left
     <> TermLike.freeVariables right
     <> Predicate.freeVariables requires
+    <> Predicate.freeVariables ensures
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}

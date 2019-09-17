@@ -60,6 +60,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
+import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
@@ -536,6 +537,8 @@ setY :: SetVariable Variable
 setY = SetVariable $ Variable (testId "@y") mempty testSort
 z :: ElementVariable Variable
 z = ElementVariable $ Variable (testId "z") mempty testSort
+t :: ElementVariable Variable
+t = ElementVariable $ Variable (testId "t") mempty testSort
 m :: ElementVariable Variable
 m = ElementVariable $ Variable (testId "m") mempty mapSort
 xSet :: ElementVariable Variable
@@ -1533,11 +1536,12 @@ axiomSimplifiers = Map.empty
 predicateSimplifier :: PredicateSimplifier
 predicateSimplifier = Simplifier.Predicate.create
 
-env :: Env
+env :: Applicative simplifier => Env simplifier
 env =
     Env
         { metadataTools = Test.Kore.Step.MockSymbols.metadataTools
         , simplifierTermLike = termLikeSimplifier
         , simplifierPredicate = predicateSimplifier
         , simplifierAxioms = axiomSimplifiers
+        , memo = Memo.forgetful
         }
