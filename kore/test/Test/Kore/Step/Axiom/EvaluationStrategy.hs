@@ -171,6 +171,7 @@ test_definitionEvaluation =
             evaluator = definitionEvaluation
                 [ EqualityRule RulePattern
                     { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , antiLeft = Nothing
                     , right = Mock.g (mkElemVar Mock.x)
                     , requires = makeTruePredicate
                     , ensures = makeTruePredicate
@@ -521,6 +522,7 @@ axiom
 axiom left right predicate =
     EqualityRule RulePattern
         { left
+        , antiLeft = Nothing
         , right
         , requires = predicate
         , ensures = makeTruePredicate

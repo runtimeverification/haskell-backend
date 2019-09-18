@@ -56,6 +56,9 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Priority
+    ( getPriority
+    )
 import Kore.Debug
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
@@ -84,6 +87,7 @@ newtype AxiomPatternError = AxiomPatternError ()
  -}
 data RulePattern variable = RulePattern
     { left  :: !(TermLike variable)
+    , antiLeft :: !(Maybe (TermLike variable))
     , right :: !(TermLike variable)
     , requires :: !(Predicate variable)
     , ensures :: !(Predicate variable)
@@ -105,7 +109,7 @@ instance
     (SortedVariable variable, Unparse variable) =>
     Pretty (RulePattern variable)
   where
-    pretty rulePattern'@(RulePattern _ _ _ _ _) =
+    pretty rulePattern'@(RulePattern _ _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -127,6 +131,7 @@ rulePattern
 rulePattern left right =
     RulePattern
         { left
+        , antiLeft = Nothing
         , right
         , requires = Predicate.makeTruePredicate
         , ensures  = Predicate.makeTruePredicate
@@ -424,7 +429,23 @@ patternToAxiomPattern
     :: Attribute.Axiom
     -> TermLike Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-patternToAxiomPattern attributes pat =
+patternToAxiomPattern attributes pat
+  | isJust . getPriority . Attribute.priority $ attributes =
+    case pat of
+        Rewrites_ _
+            (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
+            (And_ _ ensures rhs) ->
+                        pure $ RewriteAxiomPattern $ RewriteRule RulePattern
+                            { left = lhs
+                            , antiLeft = Just antiLeft
+                            , right = rhs
+                            , requires = Predicate.wrapPredicate requires
+                            , ensures = Predicate.wrapPredicate ensures
+                            , attributes
+                            }
+        _ -> koreFail $ "rule is ill-formed with respect \
+                        \ to the priority attribute."
+  | otherwise =
     case pat of
         -- normal rewrite axioms
         -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
@@ -432,6 +453,7 @@ patternToAxiomPattern attributes pat =
         Rewrites_ _ (And_ _ requires lhs) (And_ _ ensures rhs) ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.wrapPredicate ensures
@@ -442,6 +464,7 @@ patternToAxiomPattern attributes pat =
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
             pure $ constructor RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.wrapPredicate ensures
@@ -452,6 +475,7 @@ patternToAxiomPattern attributes pat =
             -- TODO (traiansf): ensure that _ensures is \top
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.makeTruePredicate
@@ -461,6 +485,7 @@ patternToAxiomPattern attributes pat =
         Equals_ _ _ lhs rhs ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.makeTruePredicate
                 , ensures = Predicate.makeTruePredicate
@@ -470,6 +495,7 @@ patternToAxiomPattern attributes pat =
         ceil@(Ceil_ _ resultSort _) ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = ceil
+                , antiLeft = Nothing
                 , right = mkTop resultSort
                 , requires = Predicate.makeTruePredicate
                 , ensures = Predicate.makeTruePredicate
@@ -482,6 +508,7 @@ patternToAxiomPattern attributes pat =
             | isModalSymbol op ->
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
+                    , antiLeft = Nothing
                     , right = rhs
                     , requires = Predicate.makeTruePredicate
                     , ensures = Predicate.makeTruePredicate
@@ -605,12 +632,13 @@ mapVariables
 mapVariables mapping rule1 =
     rule1
         { left = TermLike.mapVariables mapping left
+        , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
         , right = TermLike.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rule1
+    RulePattern { left, antiLeft, right, requires, ensures } = rule1
 
 
 {- | Traverse the predicate from the top down and apply substitutions.
