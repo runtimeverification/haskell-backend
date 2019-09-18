@@ -9,17 +9,11 @@ import Test.Tasty.HUnit
     ( testCase
     )
 
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
 import Data.Default
     ( def
     )
 import Data.Limit
     ( Limit (..)
-    )
-import Numeric.Natural
-    ( Natural
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
@@ -39,17 +33,13 @@ import Kore.Predicate.Predicate
 import Kore.Step.Rule
     ( OnePathRule (..)
     , RewriteRule (..)
-    , RulePattern (RulePattern)
-    )
-import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+    , RulePattern (..)
     )
 import Kore.Strategies.Goal
-import qualified Kore.Strategies.Verification as OnePath
 
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
+import Test.Kore.Strategies.Common
 import Test.Tasty.HUnit.Extensions
 
 test_onePathVerification :: [TestTree]
@@ -373,37 +363,3 @@ simpleTrustedClaim left right =
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }
-
--- TODO: use rulePattern
-simpleRewrite
-    :: TermLike Variable
-    -> TermLike Variable
-    -> RewriteRule Variable
-simpleRewrite left right =
-    RewriteRule RulePattern
-        { left = left
-        , right = right
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-
-runVerification
-    :: OnePath.Claim claim
-    => ProofState claim (Pattern Variable) ~ OnePath.CommonProofState
-    => Show claim
-    => Show (Rule claim)
-    => Limit Natural
-    -> [Rule claim]
-    -> [claim]
-    -> IO (Either (Pattern Variable) ())
-runVerification stepLimit axioms claims =
-    runSimplifier mockEnv
-    $ runExceptT
-    $ OnePath.verify
-        (strategy claims axioms)
-        (map applyStepLimit . selectUntrusted $ claims)
-  where
-    mockEnv = Mock.env
-    applyStepLimit claim = (claim, stepLimit)
-    selectUntrusted = filter (not . isTrusted)
