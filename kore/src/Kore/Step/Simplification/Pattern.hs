@@ -9,6 +9,7 @@ module Kore.Step.Simplification.Pattern
     ) where
 
 import Branch
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -17,7 +18,6 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern Exists_
     )
@@ -29,7 +29,7 @@ import qualified Kore.Step.Merging.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
-    , simplifyTerm
+    , simplifyConditionalTermToOr
     )
 
 simplifyAndRemoveTopExists
@@ -57,11 +57,14 @@ simplify
         )
     => Pattern variable
     -> simplifier (OrPattern variable)
-simplify pattern'@Conditional { term } = do
-    simplifiedTerm <- simplifyTerm term
+simplify pattern' = do
+    simplifiedTerm <-
+        simplifyConditionalTermToOr predicate term
     orPatterns <-
         Branch.gather
         $ traverse
-            (Pattern.mergeWithPredicate $ Pattern.withoutTerm pattern')
+            (Pattern.mergeWithPredicate predicate)
             simplifiedTerm
     return (MultiOr.mergeAll orPatterns)
+  where
+    (term, predicate) = Conditional.splitTerm pattern'
