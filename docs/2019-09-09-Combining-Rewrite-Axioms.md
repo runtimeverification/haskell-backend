@@ -180,6 +180,47 @@ By applying this iteratively, we get
 (⌈β₁(X₁)∧α₂(X₂)⌉ ∧ ⌈β₂(X₂)∧α₃(X₃)⌉ ∧ ... ⌈βₙ₋₁(Xₙ₋₁)∧αₙ(Xₙ)⌉ ∧ α₁(X₁))→••…•βₙ(Xₙ)
 ```
 
+### Removing Substitutions
+
+Let us say that our axioms are `α₁(X₁)⇒β₁(X₁)` … `αₙ(Xₙ)⇒βₙ(Xₙ)` and
+`P(X₁, …, Xₙ)` is the merge predicate, and that the merged rule is
+`α₁(X₁) ∧ P(X₁, …, Xₙ) ⇒ βₙ(Xₙ)`.
+
+Let us further assume that there is some predicate `Q(X₁, …, Xₙ)` and
+a substitution `S(Y)` such that `P(X₁, …, Xₙ) = Q(X₁, …, Xₙ) ∧ S(Y)` and
+the substituted variables do not occur on the right hand side of any
+substitution.
+
+Then we can apply the substitution to `α₁`, `βₙ` and `Q`, getting `α'`, `β'` and
+`Q'` such that the variables in `Y` do not occur free in them.
+
+Then the rule becomes
+```
+α₁(X₁) ∧ Q(X₁, …, Xₙ) ∧ S(Y) ⇒ βₙ(Xₙ)
+α₁(X₁) ∧ Q(X₁, …, Xₙ) ∧ S(Y) ⇒ βₙ(Xₙ) ∧ S(Y)  // a ∧ c → b iff a ∧ c → b ∧ c
+α' ∧ Q' ∧ S(Y) ⇒ β' ∧ S(Y)  // applying the substitution
+α' ∧ Q' ∧ S(Y) ⇒ β'  // a ∧ c → b iff a ∧ c → b ∧ c
+∀ Y . α' ∧ Q' ∧ S(Y) ⇒ β'  // Explicit quantification
+α' ∧ Q' ∧ (∃ Y . S(Y)) ⇒ β'  // ∀ x . (φ(x) -> ζ)  ==  (∃ x . φ(x)) -> ζ
+α' ∧ Q' ⇒ β'  // (∃ x . x=φ) is always top
+```
+
+### Distributing over predicate disjunction
+
+If the merge rule is `α₁(X₁) ∧ (P(X₁, …, Xₙ) ∨ Q(X₁, …, Xₙ)) ⇒ βₙ(Xₙ)` then we
+may have substitutions inside `P` and `Q`, but we may not be able to apply them
+directly to get a simplified rule. But we can do this:
+
+```
+α₁(X₁) ∧ (P(X₁, …, Xₙ) ∨ Q(X₁, …, Xₙ)) ⇒ βₙ(Xₙ)
+(α₁(X₁) ∧ P(X₁, …, Xₙ)) ∨ (α₁(X₁) ∧ Q(X₁, …, Xₙ)) ⇒ βₙ(Xₙ)
+(α₁(X₁) ∧ P(X₁, …, Xₙ) ⇒ βₙ(Xₙ)) ∧ (α₁(X₁) ∧ Q(X₁, …, Xₙ) ⇒ βₙ(Xₙ))
+    // (a ∨ b) -> c iff (a -> c) ∧ (b -> c)
+```
+
+so we can get two rules with an `and` between them, which means that we
+actually get two separate rules.
+
 Applying rules to some initial configuration
 --------------------------------------------
 
