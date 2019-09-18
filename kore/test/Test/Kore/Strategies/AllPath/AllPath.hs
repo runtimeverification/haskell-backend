@@ -335,18 +335,13 @@ instance Goal.Goal Goal where
 
     transitionRule =
         Goal.transitionRuleTemplate
-            Goal.TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+
+instance Goal.TransitionRule Goal where
+    simplify = simplify
+    removeDestination = removeDestination
+    isTriviallyValid = isTriviallyValid
+    derivePar = derivePar
+    deriveSeq = deriveSeq
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination

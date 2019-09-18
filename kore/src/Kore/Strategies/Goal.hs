@@ -5,7 +5,7 @@ License     : NCSA
 module Kore.Strategies.Goal
     ( Goal (..)
     , Rule (..)
-    , TransitionRuleTemplate (..)
+    , TransitionRule (..)
     , unprovenNodes
     , proven
     , onePathFirstStep
@@ -192,20 +192,7 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
     type ProofState (OnePathRule variable) a =
         ProofState.ProofState a
 
-    transitionRule =
-        transitionRuleTemplate
-            TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+    transitionRule = transitionRuleTemplate
 
     strategy goals rules =
         onePathFirstStep rewrites
@@ -228,43 +215,34 @@ instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
 
 instance Debug variable => Debug (Rule (OnePathRule variable))
 
-data TransitionRuleTemplate monad goal =
-    TransitionRuleTemplate
-    { simplifyTemplate
-        :: goal -> Strategy.TransitionT (Rule goal) monad goal
-    , removeDestinationTemplate
-        :: goal -> Strategy.TransitionT (Rule goal) monad goal
-    , isTriviallyValidTemplate :: goal -> Bool
-    , deriveParTemplate
-        :: [Rule goal]
+class TransitionRule goal where
+    simplify
+        :: MonadSimplify m => goal -> Strategy.TransitionT (Rule goal) m goal
+    removeDestination
+        :: MonadSimplify m => goal -> Strategy.TransitionT (Rule goal) m goal
+    isTriviallyValid :: goal -> Bool
+    derivePar
+        :: MonadSimplify m
+        => [Rule goal]
         -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
-    , deriveSeqTemplate
-        :: [Rule goal]
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+    deriveSeq
+        :: MonadSimplify m
+        => [Rule goal]
         -> goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
-    }
+        -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
     => Goal goal
+    => TransitionRule goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => TransitionRuleTemplate m goal
-    -> Prim goal
+    => Prim goal
     -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-transitionRuleTemplate
-    TransitionRuleTemplate
-        { simplifyTemplate
-        , removeDestinationTemplate
-        , isTriviallyValidTemplate
-        , deriveParTemplate
-        , deriveSeqTemplate
-        }
-  =
-    transitionRuleWorker
+transitionRuleTemplate = transitionRuleWorker
   where
     transitionRuleWorker
         :: Prim goal
@@ -276,21 +254,21 @@ transitionRuleTemplate
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
     transitionRuleWorker Simplify (Goal g) =
-        Goal <$> simplifyTemplate g
+        Goal <$> simplify g
     transitionRuleWorker Simplify (GoalRemainder g) =
-        GoalRemainder <$> simplifyTemplate g
+        GoalRemainder <$> simplify g
 
     transitionRuleWorker RemoveDestination (Goal g) =
-        Goal <$> removeDestinationTemplate g
+        Goal <$> removeDestination g
     transitionRuleWorker RemoveDestination (GoalRemainder g) =
-        GoalRemainder <$> removeDestinationTemplate g
+        GoalRemainder <$> removeDestination g
 
     transitionRuleWorker TriviallyValid (Goal g)
-      | isTriviallyValidTemplate g = return Proven
+      | isTriviallyValid g = return Proven
     transitionRuleWorker TriviallyValid (GoalRemainder g)
-      | isTriviallyValidTemplate g = return Proven
+      | isTriviallyValid g = return Proven
     transitionRuleWorker TriviallyValid (GoalRewritten g)
-      | isTriviallyValidTemplate g = return Proven
+      | isTriviallyValid g = return Proven
 
     transitionRuleWorker (DerivePar rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
@@ -301,20 +279,20 @@ transitionRuleTemplate
         -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
-        deriveParTemplate rules g
+        derivePar rules g
     transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveParTemplate rules g
+        derivePar rules g
 
     transitionRuleWorker (DeriveSeq rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeqTemplate rules g
+        deriveSeq rules g
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeqTemplate rules g
+        deriveSeq rules g
 
     transitionRuleWorker _ state = return state
 
@@ -373,29 +351,36 @@ onePathFollowupStep claims axioms =
         , TriviallyValid
         ]
 
+instance (SimplifierVariable variable) => TransitionRule (OnePathRule variable) where
+    removeDestination = removeDestinationTemplate
+    simplify = simplifyTemplate
+    isTriviallyValid = isTriviallyValidTemplate
+    derivePar = deriveParTemplate
+    deriveSeq = deriveSeqTemplate
+
 -- | Remove the destination of the goal.
-removeDestination
+removeDestinationTemplate
     :: MonadSimplify m
     => Goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal = do
+removeDestinationTemplate goal = do
     let destination = getDestination goal
         configuration = getConfiguration goal
         removal = removalPredicate destination configuration
         result = Conditional.andPredicate configuration removal
     pure $ makeRuleFromPatterns result destination
 
-simplify
+simplifyTemplate
     :: MonadSimplify m
     => Goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = do
+simplifyTemplate goal = do
     let destination = getDestination goal
         configuration = getConfiguration goal
     configs <-
@@ -409,12 +394,12 @@ simplify goal = do
                     fmap (`makeRuleFromPatterns` destination) filteredConfigs
             Foldable.asum (pure <$> simplifiedRules)
 
-isTriviallyValid
+isTriviallyValidTemplate
     :: SimplifierVariable variable
     => Goal goal
     => Coercible goal (RulePattern variable)
     => goal -> Bool
-isTriviallyValid = isBottom . RulePattern.left . coerce
+isTriviallyValidTemplate = isBottom . RulePattern.left . coerce
 
 isTrusted
     :: SimplifierVariable variable
@@ -428,7 +413,7 @@ isTrusted =
     . coerce
 
 -- | Apply 'Rule's to the goal in parallel.
-derivePar
+deriveParTemplate
     :: forall m goal variable
     .  MonadSimplify m
     => Goal goal
@@ -441,7 +426,7 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = do
+deriveParTemplate rules goal = do
     let destination = getDestination goal
         configuration :: Pattern variable
         configuration = getConfiguration goal
@@ -484,7 +469,7 @@ derivePar rules goal = do
             Result.transitionResults results'
 
 -- | Apply 'Rule's to the goal in sequence.
-deriveSeq
+deriveSeqTemplate
     :: forall m goal variable
     .  MonadSimplify m
     => Goal goal
@@ -497,7 +482,7 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = do
+deriveSeqTemplate rules goal = do
     let destination = getDestination goal
         configuration = getConfiguration goal
         rewrites = coerce <$> rules
