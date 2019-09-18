@@ -14,8 +14,7 @@ test: $(diffs)
 %.diff: %.actual
 	diff -u $*.golden $< >$@
 
-sum-to-n-spec.kprove.actual: KPROVE_OPTS = -m VERIFICATION --depth 1
-sum-to-n-spec.kprove.actual: PARTIAL = || true
+sum-to-n-spec.kprove.actual: KPROVE_OPTS = -m VERIFICATION
 
 %.kprove.actual: %.k
 	$${KEVM_DIR:?}/kevm prove --backend haskell $< $(KPROVE_OPTS) >$@ $(PARTIAL)
