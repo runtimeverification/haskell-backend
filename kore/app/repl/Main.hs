@@ -14,6 +14,7 @@ import Control.Monad.Trans.Reader
     ( runReaderT
     )
 import Data.Maybe
+import Data.Reflection
 import Data.Semigroup
     ( (<>)
     )
@@ -46,12 +47,16 @@ import Data.Limit
 import Kore.Exec
     ( proveWithRepl
     )
+import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+    ( build
+    )
 import Kore.Logger.Output
     ( emptyLogger
     , getLoggerT
     , swappableLogger
     )
 import Kore.Repl.Data
+import Kore.Step.SMT.Lemma
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
@@ -212,13 +217,15 @@ mainWithOptions
             else
                 lift
                 $ SMT.runSMT smtConfig (swappableLogger mLogger)
-                   $ proveWithRepl
-                        indexedModule
-                        specDefIndexedModule
-                        mLogger
-                        replScript
-                        replMode
-                        outputFile
+                   $ do
+                        give (MetadataTools.build indexedModule) (declareSMTLemmas indexedModule)
+                        proveWithRepl
+                            indexedModule
+                            specDefIndexedModule
+                            mLogger
+                            replScript
+                            replMode
+                            outputFile
 
   where
     mainModuleName :: ModuleName
