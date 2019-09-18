@@ -422,7 +422,6 @@ wEF sort = Alias
     , aliasRight = mkTop sort
     }
 
--- TODO: this shouldn't use wEF
 allPathRuleToPattern
     :: Ord variable
     => SortedVariable variable
@@ -436,7 +435,7 @@ allPathRuleToPattern (AllPathRule rulePatt) =
             (left rulePatt)
         )
        ( mkApplyAlias
-            (wEF sort)
+            (wAF sort)
             [mkAnd
                 (Predicate.unwrapPredicate . ensures $ rulePatt)
                 (right rulePatt)
@@ -445,6 +444,21 @@ allPathRuleToPattern (AllPathRule rulePatt) =
   where
     sort :: Sort
     sort = termLikeSort . right $ rulePatt
+
+wAF :: Sort -> Alias (TermLike Variable)
+wAF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakAlwaysFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = []
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
