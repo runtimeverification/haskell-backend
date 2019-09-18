@@ -519,6 +519,8 @@ anywhereSymbol =
         (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
+var_x_0 :: ElementVariable Variable
+var_x_0 = ElementVariable $ Variable (testId "x") (Just (Element 0)) testSort
 var_x_1 :: ElementVariable Variable
 var_x_1 = ElementVariable $ Variable (testId "x") (Just (Element 1)) testSort
 var_y_1 :: ElementVariable Variable
