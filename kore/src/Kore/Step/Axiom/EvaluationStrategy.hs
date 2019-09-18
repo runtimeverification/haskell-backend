@@ -16,13 +16,13 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import Data.Maybe
     ( isJust
     )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -50,6 +50,8 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
 import Kore.Unparser
     ( unparse
     )
+
+import qualified Kore.Logger as Logger
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -218,51 +220,46 @@ applyFirstSimplifierThatWorks
         AttemptedAxiom.Applied AttemptedAxiomResults
             { results = orResults
             , remainders = orRemainders
-            } -> do
-                Monad.when
-                    (length (MultiOr.extractPatterns orResults) > 1
-                    && not (acceptsMultipleResults multipleResults)
-                    )
-                    -- We should only allow multiple simplification results
-                    -- when they are created by unification splitting the
-                    -- configuration.
-                    -- However, right now, we shouldn't be able to get more
-                    -- than one result, so we throw an error.
-                    (error
-                        (  "Unexpected simplification result with more "
-                        ++ "than one configuration: "
-                        ++ show applicationResult
-                        )
-                    )
-                Monad.when
-                    (not (OrPattern.isFalse orRemainders)
-                    && not (acceptsMultipleResults multipleResults)
-                    )
-                    -- It's not obvious that we should accept simplifications
-                    -- that change only a part of the configuration, since
-                    -- that will probably make things more complicated.
-                    --
-                    -- Until we have a clear example that this can actually
-                    -- happen, we throw an error.
-                    ((error . show . Pretty.vsep)
-                        [ "Unexpected simplification result with remainder:"
-                        , Pretty.indent 2 "input:"
-                        , Pretty.indent 4 (unparse patt)
-                        , Pretty.indent 2 "results:"
-                        , (Pretty.indent 4 . Pretty.vsep)
-                            (unparse <$> Foldable.toList orResults)
-                        , Pretty.indent 2 "remainders:"
-                        , (Pretty.indent 4 . Pretty.vsep)
-                            (unparse <$> Foldable.toList orRemainders)
-                        ]
-                    )
-                return applicationResult
-        AttemptedAxiom.NotApplicable ->
-            applyFirstSimplifierThatWorks
-                evaluators
-                multipleResults
-                substitutionSimplifier
-                simplifier
-                axiomIdToSimplifier
-                patt
-                predicate
+            }
+          | acceptsMultipleResults multipleResults -> return applicationResult
+          -- below this point multiple results are not accepted
+          | length (MultiOr.extractPatterns orResults) > 1 ->
+              -- We should only allow multiple simplification results
+              -- when they are created by unification splitting the
+              -- configuration.
+              -- However, right now, we shouldn't be able to get more
+              -- than one result, so we throw an error.
+              error
+                  (  "Unexpected simplification result with more "
+                  ++ "than one configuration: "
+                  ++ show applicationResult
+                  )
+          | not (OrPattern.isFalse orRemainders) ->  do
+              Logger.logDebug
+                  . Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep
+                  $ [ "Simplification result with remainder:"
+                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 4 (unparse patt)
+                    , Pretty.indent 2 "results:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> Foldable.toList orResults)
+                    , Pretty.indent 2 "remainders:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> Foldable.toList orRemainders)
+                    , "Rule will be skipped."
+                    ]
+              -- TODO (traiansf): this might generate too much output
+              --    replace log with a logOnce when that becomes available
+              tryNextSimplifier
+          | otherwise -> return applicationResult
+        AttemptedAxiom.NotApplicable -> tryNextSimplifier
+  where
+    tryNextSimplifier =
+        applyFirstSimplifierThatWorks
+            evaluators
+            multipleResults
+            substitutionSimplifier
+            simplifier
+            axiomIdToSimplifier
+            patt
+            predicate
