@@ -24,6 +24,8 @@ instance SOP.HasDatatypeInfo A
 
 instance Debug A
 
+instance Diff A
+
 -- A simple type with one constructor
 data B = B deriving GHC.Generic
 
@@ -32,6 +34,8 @@ instance SOP.Generic B
 instance SOP.HasDatatypeInfo B
 
 instance Debug B
+
+instance Diff B
 
 -- A record type
 data R = R { rA :: A, rB :: B }
@@ -43,6 +47,8 @@ instance SOP.HasDatatypeInfo R
 
 instance Debug R
 
+instance Diff R
+
 -- A sum type with unary constructors
 data S = SA A | SB B deriving GHC.Generic
 
@@ -51,6 +57,8 @@ instance SOP.Generic S
 instance SOP.HasDatatypeInfo S
 
 instance Debug S
+
+instance Diff S
 
 -- A product type with one constructor
 data P = P A B deriving GHC.Generic
@@ -61,6 +69,8 @@ instance SOP.HasDatatypeInfo P
 
 instance Debug P
 
+instance Diff P
+
 -- A complex algebraic data type
 data D = D S P deriving GHC.Generic
 
@@ -69,6 +79,8 @@ instance SOP.Generic D
 instance SOP.HasDatatypeInfo D
 
 instance Debug D
+
+instance Diff D
 
 -- A product type with an infix constructor
 data I = S ::: S deriving GHC.Generic
@@ -81,6 +93,8 @@ instance SOP.HasDatatypeInfo I
 
 instance Debug I
 
+instance Diff I
+
 -- A product type with a prefix constructor and an auxiliary fixity declaration
 data I' = (::::) S S deriving GHC.Generic
 
@@ -92,23 +106,29 @@ instance SOP.HasDatatypeInfo I'
 
 instance Debug I'
 
+instance Diff I'
+
 -- A newtype
-newtype N = N B deriving GHC.Generic
+newtype N a = N a deriving GHC.Generic
 
-instance SOP.Generic N
+instance SOP.Generic (N a)
 
-instance SOP.HasDatatypeInfo N
+instance SOP.HasDatatypeInfo (N a)
 
-instance Debug N
+instance Debug a => Debug (N a)
+
+instance Diff a => Diff (N a)
 
 -- A record newtype
-newtype Rn = Rn { unRn :: A } deriving GHC.Generic
+newtype Rn a = Rn { unRn :: a } deriving GHC.Generic
 
-instance SOP.Generic Rn
+instance SOP.Generic (Rn a)
 
-instance SOP.HasDatatypeInfo Rn
+instance SOP.HasDatatypeInfo (Rn a)
 
-instance Debug Rn
+instance Debug a => Debug (Rn a)
+
+instance Diff a => Diff (Rn a)
 
 test_debug :: [TestTree]
 test_debug =
@@ -208,3 +228,25 @@ test_Debug =
     ]
   where
     yields input = Terse.equals (show $ debug input)
+
+test_diff :: [TestTree]
+test_diff =
+    [ test (SA A, SA A)            $ Nothing
+    , test (SA A, SB B)            $ Just "{- was: SA A -} SB B"
+    , test (N (SA A), N (SB B))    $ Just "N {- was: (SA A) -} (SB B)"
+    , test (Rn { unRn = SA A }, Rn { unRn = SB B })
+        $ Just "Rn { unRn = {- was: SA A -} SB B }"
+    , test ("A" :: String, "B")    $ Just "{- was: \"A\" -} \"B\""
+    , test ('A', 'B')              $ Just "{- was: 'A' -} 'B'"
+    , test (0 :: Integer, 1)       $ Just "{- was: 0 -} 1"
+    , test (True, False)           $ Just "{- was: True -} False"
+    , test ([True], [])            $ Just "{- was: [ True ] -} []"
+    , test ([], [True])            $ Just "{- was: [] -} [ True ]"
+    , test ([True], [True, False]) $ Just "_ : {- was: [] -} [ False ]"
+    ]
+  where
+    test (a, b) = Terse.equals_ (render <$> diff a b)
+    render = Pretty.renderString . layout
+    layout =
+        Pretty.layoutSmart
+            Pretty.LayoutOptions { layoutPageWidth = Pretty.Unbounded }

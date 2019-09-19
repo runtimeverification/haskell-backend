@@ -72,6 +72,8 @@ module Kore.Debug
     , DebugResult (..)
     , Debug (..)
     , debugPrecGeneric
+    , Diff (..)
+    , diffPrecEq
     ) where
 
 import Control.Comonad.Trans.Cofree
@@ -92,6 +94,10 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    , isJust
+    )
 import Data.Proxy
 import Data.Sequence
     ( Seq
@@ -540,10 +546,6 @@ class Debug a where
         -> Doc ann
     debugPrec = debugPrecGeneric
 
-instance Debug GHC.CallStack
-
-instance Debug GHC.SrcLoc
-
 debugPrecGeneric
     :: forall a ann
     .  (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
@@ -608,12 +610,12 @@ debugConstr (SOP.Record name fields) args =
   where
     args' = SOP.hcollapse $ SOP.hzipWith debugField fields args
 
-debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
-debugField (FieldInfo fieldName) (K arg) =
-    K $ Pretty.nest 4 $ Pretty.sep
-        [ Pretty.pretty fieldName Pretty.<+> "="
-        , arg 0
-        ]
+    debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
+    debugField (FieldInfo fieldName) (K arg) =
+        K $ Pretty.nest 4 $ Pretty.sep
+            [ Pretty.pretty fieldName Pretty.<+> "="
+            , arg 0
+            ]
 
 debugSOP
     :: forall xss ann
@@ -621,8 +623,7 @@ debugSOP
     => SOP I xss
     -> SOP (K (Int -> Doc ann)) xss
 debugSOP (SOP sop) =
-    SOP
-    $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrec)) sop
+    SOP $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrec)) sop
   where
     pDebug = Proxy :: Proxy Debug
     pAllDebug = Proxy :: Proxy (All Debug)
@@ -707,8 +708,162 @@ instance Debug a => Debug (Seq a) where
         parens (precOut >= 10)
         $ "Data.Sequence.fromList" <+> debug (Foldable.toList as)
 
-instance Debug Bool
-
 instance Debug a => Debug (Const a b)
 
+instance Debug Bool
+
 instance Debug SExpr
+
+instance Debug GHC.CallStack
+
+instance Debug GHC.SrcLoc
+
+{- | 'Diff' displays the difference between values for debugging.
+
+@diff@ and @diffPrec@ should generally display the /minimal/ difference between
+two values, as far as it is practical to do so. Like 'debug', @diff@ and
+@diffPrec@ should produce valid Haskell source syntax to facilitate
+debugging. To elide the identical parts of two values, use holes (@_@).
+
+ -}
+class Debug a => Diff a where
+    diff :: a -> a -> Maybe (Doc ann)
+    diff a b = ($ 0) <$> diffPrec a b
+
+    {- | Display the difference of two values.
+
+    If the values are different, the difference is displayed given the
+    surrounding precedence.
+
+     -}
+    diffPrec :: a -> a -> Maybe (Int -> Doc ann)
+    default diffPrec
+        :: (Generic a, HasDatatypeInfo a, All2 Diff (Code a))
+        => a
+        -> a
+        -> Maybe (Int -> Doc ann)
+    diffPrec = diffPrecGeneric
+
+{- | Default implementation of 'diffPrec' for instances of 'Eq'.
+
+For any type which is 'Eq' and 'Debug', @diffPrecEq@ provides a default
+implementation of 'diffPrec'. If the values differ, the entirety of both values
+is displayed using 'Debug'; this is most suitable for atomic types, like
+'Integer', or short strings.
+
+ -}
+diffPrecEq
+    :: (Debug a, Eq a)
+    => a -> a -> Maybe (Int -> Doc ann)
+diffPrecEq a b
+  | a == b    = Nothing
+  | otherwise =
+    Just $ \p ->
+        Pretty.sep
+            [ "{- was:"
+            , debugPrec a p
+            , "-}"
+            , debugPrec b p
+            ]
+
+{- | Default implementation of 'diffPrec' for instances of 'Generic'.
+
+@diffPrecGeneric@ uses the 'DatatypeInfo' of a 'Generic' type to print the
+difference between two values. The arguments must also be instances of 'Debug',
+which is used to print the values when they have different constructors. If they
+have the same constructor, 'Generic' is used to examine its fields and minimize
+the difference.
+
+ -}
+diffPrecGeneric
+    :: forall a ann
+    .  (Debug a, Generic a, HasDatatypeInfo a, All2 Diff (Code a))
+    => a
+    -> a
+    -> Maybe (Int -> Doc ann)
+diffPrecGeneric a b =
+    diffNS constrs aNS bNS
+  where
+    constrs :: NP ConstructorInfo (Code a)
+    constrs =
+        case SOP.datatypeInfo (Proxy @a) of
+            SOP.ADT     _ _ cs -> cs
+            SOP.Newtype _ _ c  -> c :* Nil
+
+    SOP aNS = SOP.from a
+    SOP bNS = SOP.from b
+
+    diffNS
+        :: forall xss
+        .  All2 Diff xss
+        => NP ConstructorInfo xss
+        -> NS (NP I) xss
+        -> NS (NP I) xss
+        -> Maybe (Int -> Doc ann)
+    diffNS (c :* _) (Z aNP) (Z bNP) = diffNP c aNP bNP
+    diffNS (_ :* cs) (S aNS') (S bNS') = diffNS cs aNS' bNS'
+    diffNS _ _ _ =
+        Just $ \precOut ->
+            Pretty.sep
+                [ "{- was:"
+                , debugPrec a precOut
+                , "-}"
+                , debugPrec b precOut
+                ]
+
+    diffNP
+        :: forall xs
+        .  All Diff xs
+        => ConstructorInfo xs
+        -> NP I xs
+        -> NP I xs
+        -> Maybe (Int -> Doc ann)
+    diffNP c aNP bNP
+      | anyNP (isJust . SOP.unK) cNP =
+        Just $ SOP.unK $ debugConstr c (SOP.hmap (SOP.mapKK maybeHole) cNP)
+      | otherwise =
+        Nothing
+      where
+        cNP = diffNP' aNP bNP
+        maybeHole = fromMaybe (const "_")
+
+    anyNP :: forall f xs. (forall x. f x -> Bool) -> NP f xs -> Bool
+    anyNP query (fx :* fxs) = query fx || anyNP query fxs
+    anyNP _ Nil = False
+
+    diffNP'
+        :: forall xs
+        .  All Diff xs
+        => NP I xs
+        -> NP I xs
+        -> NP (K (Maybe (Int -> Doc ann))) xs
+    diffNP' = SOP.hczipWith (Proxy @Diff) (SOP.mapIIK diffPrec)
+
+instance Diff Bool where
+    diffPrec = diffPrecEq
+
+instance Diff a => Diff [a]
+
+instance {-# OVERLAPS #-} Diff String where
+    diffPrec = diffPrecEq
+
+instance Diff Text where
+    diffPrec = diffPrecEq
+
+instance Diff Void where
+    diffPrec = diffPrecEq
+
+instance Diff () where
+    diffPrec = diffPrecEq
+
+instance Diff Natural where
+    diffPrec = diffPrecEq
+
+instance Diff Integer where
+    diffPrec = diffPrecEq
+
+instance Diff Int where
+    diffPrec = diffPrecEq
+
+instance Diff Char where
+    diffPrec = diffPrecEq
