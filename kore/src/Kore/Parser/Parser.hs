@@ -32,24 +32,32 @@ Conventions used:
 -}
 module Kore.Parser.Parser where
 
-import           Control.Arrow
-                 ( (&&&) )
+import Control.Applicative
+    ( (<|>)
+    )
+import Control.Arrow
+    ( (&&&)
+    )
 import qualified Control.Monad as Monad
-import           Text.Megaparsec
-                 ( some )
+import Text.Megaparsec
+    ( some
+    )
 import qualified Text.Megaparsec.Char as Parser
-                 ( char )
+    ( char
+    )
 
-import           Kore.AST.Common
-import           Kore.Parser.Lexeme
-import           Kore.Parser.ParserUtils
-                 ( Parser )
+import Kore.AST.Common
+import Kore.Parser.Lexeme
+import Kore.Parser.ParserUtils
+    ( Parser
+    )
 import qualified Kore.Parser.ParserUtils as ParserUtils
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Unparser
-                 ( unparseToString )
-import           Kore.Variables.UnifiedVariable
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Unparser
+    ( unparseToString
+    )
+import Kore.Variables.UnifiedVariable
 
 asParsedPattern :: (PatternF Variable) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
@@ -404,6 +412,12 @@ setVariableParser = do
     c <- ParserUtils.peekChar'
     if c == '@' then SetVariable <$> variableParser
     else fail "Expecting set variable token"
+
+unifiedVariableParser :: Parser (UnifiedVariable Variable)
+unifiedVariableParser =
+    (<|>)
+        (ElemVar <$> singletonVariableParser)
+        (SetVar  <$> setVariableParser)
 
 {-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
 application pattern), using an open recursion scheme for its children.
@@ -880,7 +894,7 @@ aliasSentenceRemainderParser = do
     resultSort <- objectSortParser
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- applicationParser singletonVariableParser
+    leftPattern <- applicationParser unifiedVariableParser
     mlLexemeParser ":="
     rightPattern <- korePatternParser
     attributes <- attributesParser

@@ -11,36 +11,43 @@ module Kore.Step.SMT.Lemma
     ( declareSMTLemmas
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Control.Error
-                 ( runMaybeT )
+import Control.Error
+    ( runMaybeT
+    )
 import qualified Control.Monad.Counter as Counter
-import           Control.Monad.Except
-import           Control.Monad.IO.Class
-                 ( MonadIO )
+import Control.Monad.Except
+import Control.Monad.IO.Class
+    ( MonadIO
+    )
 import qualified Control.Monad.State as State
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
+import Data.Reflection
 import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Axiom as Attribute
-import           Kore.Attribute.SmtLemma
-import           Kore.Attribute.Symbol
-import           Kore.IndexedModule.IndexedModule
-import           Kore.IndexedModule.MetadataTools
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
+import Kore.Attribute.SmtLemma
+import Kore.Attribute.Symbol
+import Kore.IndexedModule.IndexedModule
+import Kore.IndexedModule.MetadataTools
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
-                 ( declare )
-import           Kore.Step.SMT.Translate
-import           Kore.Syntax.Sentence
-                 ( SentenceAxiom (..) )
-import           Kore.Unparser
-import           SMT
-                 ( MonadSMT (..), SExpr (..) )
+    ( declare
+    )
+import Kore.Step.SMT.Translate
+import Kore.Syntax.Sentence
+    ( SentenceAxiom (..)
+    )
+import Kore.Unparser
+import SMT
+    ( MonadSMT (..)
+    , SExpr (..)
+    )
 
 -- | Given an indexed module, `declareSMTLemmas` translates all
 -- rewrite rules marked with the smt-lemma attribute into the

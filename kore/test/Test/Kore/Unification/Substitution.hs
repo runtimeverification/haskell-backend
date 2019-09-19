@@ -3,27 +3,37 @@ module Test.Kore.Unification.Substitution
     ) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+    ( assertEqual
+    , testCase
+    )
 import Test.Terse
-       ( gives_ )
+    ( gives_
+    )
 
 import qualified Data.Set as Set
-import           Prelude hiding
-                 ( null )
+import Prelude hiding
+    ( null
+    )
 
 import Kore.Internal.TermLike hiding
-       ( mapVariables )
+    ( mapVariables
+    )
 import Kore.TopBottom
-       ( isBottom, isTop )
+    ( isBottom
+    , isTop
+    )
 import Kore.Unification.Substitution
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_substitution :: [TestTree]
 test_substitution =

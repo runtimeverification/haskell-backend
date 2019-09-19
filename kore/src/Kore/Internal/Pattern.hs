@@ -30,23 +30,29 @@ module Kore.Internal.Pattern
     ) where
 
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables, getFreeElementVariables )
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , getFreeElementVariables
+    )
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.Predicate
-                 ( Predicate )
-import           Kore.Internal.TermLike as TermLike
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import           Kore.TopBottom
-                 ( TopBottom (..) )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
 
 {- | The conjunction of a pattern, predicate, and substitution.
 
@@ -110,13 +116,8 @@ important.
 
  -}
 toTermLike
-    ::  forall variable.
-        ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , HasCallStack
-        )
+    ::  forall variable
+    .  (InternalVariable variable, HasCallStack)
     => Pattern variable -> TermLike variable
 toTermLike Conditional { term, predicate, substitution } =
     simpleAnd
@@ -141,7 +142,7 @@ toTermLike Conditional { term, predicate, substitution } =
 {-|'bottom' is an expanded pattern that has a bottom condition and that
 should become Bottom when transformed to a ML pattern.
 -}
-bottom :: (Ord variable, SortedVariable variable) => Pattern variable
+bottom :: InternalVariable variable => Pattern variable
 bottom =
     Conditional
         { term      = mkBottom_
@@ -154,7 +155,7 @@ bottom =
 The 'predicate' is set to 'makeFalsePredicate'.
 
  -}
-bottomOf :: (Ord variable, SortedVariable variable) => Sort -> Pattern variable
+bottomOf :: InternalVariable variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
@@ -165,7 +166,7 @@ bottomOf resultSort =
 {-|'top' is an expanded pattern that has a top condition and that
 should become Top when transformed to a ML pattern.
 -}
-top :: (Ord variable, SortedVariable variable) => Pattern variable
+top :: InternalVariable variable => Pattern variable
 top =
     Conditional
         { term      = mkTop_
@@ -175,7 +176,7 @@ top =
 
 {- | An 'Pattern' where the 'term' is 'Top' of the given 'Sort'.
  -}
-topOf :: (Ord variable, SortedVariable variable) => Sort -> Pattern variable
+topOf :: InternalVariable variable => Sort -> Pattern variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
@@ -192,7 +193,7 @@ See also: 'makeTruePredicate', 'pure'
 
  -}
 fromTermLike
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => TermLike variable
     -> Pattern variable
 fromTermLike term
@@ -205,11 +206,7 @@ fromTermLike term
         }
 
 toPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate

@@ -11,12 +11,12 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Unparser
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
@@ -25,11 +25,7 @@ Right now this does not do any actual simplification.
 TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Rewrites Sort (OrPattern variable)
     -> OrPattern variable
 simplify
@@ -54,11 +50,7 @@ will make it even more useful to carry around.
 
 -}
 simplifyEvaluatedRewrites
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => OrPattern variable
     -> OrPattern variable
     -> OrPattern variable
@@ -68,11 +60,7 @@ simplifyEvaluatedRewrites first second =
         (OrPattern.toPattern second)
 
 makeEvaluateRewrites
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable

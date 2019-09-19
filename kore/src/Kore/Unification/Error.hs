@@ -16,18 +16,25 @@ module Kore.Unification.Error
     , unsupportedPatterns
     ) where
 
-import           Data.Text.Prettyprint.Doc
-                 ( Pretty )
+import Data.Function
+    ( on
+    )
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Internal.TermLike
-       ( TermLike )
+    ( TermLike
+    , mapVariables
+    )
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
+    ( UnifiedVariable (..)
+    )
 
 -- | Hack sum-type to wrap unification and substitution errors
 data UnificationOrSubstitutionError
@@ -41,24 +48,29 @@ instance Pretty UnificationOrSubstitutionError where
 
 -- |'UnificationError' specifies various error cases encountered during
 -- unification
-newtype UnificationError = UnsupportedPatterns String
-    deriving (Eq, Show)
+data UnificationError = UnsupportedPatterns
+    { message :: String
+    , first :: TermLike Variable
+    , second :: TermLike Variable
+    } deriving (Eq, Show)
 
 unsupportedPatterns
     ::  ( SortedVariable variable
         , Unparse variable
         )
     => String -> TermLike variable -> TermLike variable -> UnificationError
-unsupportedPatterns message first second =
-    UnsupportedPatterns $ unlines
-        [ message
-        , "first=" ++ unparseToString first
-        , "second=" ++ unparseToString second
-        ]
+unsupportedPatterns message =
+    UnsupportedPatterns message `on` mapVariables toVariable
 
 instance Pretty UnificationError where
-    pretty (UnsupportedPatterns err) =
-        "Unsupported patterns: " <> Pretty.pretty err
+    pretty (UnsupportedPatterns {message, first, second}) =
+        Pretty.vsep
+            [ "Unsupported patterns: " <> Pretty.pretty message
+            , "first = "
+            , Pretty.indent 4 . Pretty.pretty . unparseToString $ first
+            , "second = "
+            , Pretty.indent 4 . Pretty.pretty . unparseToString $ second
+            ]
 
 -- |@ClashReason@ describes the head of a pattern involved in a clash.
 data ClashReason

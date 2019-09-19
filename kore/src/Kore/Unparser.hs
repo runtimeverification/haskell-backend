@@ -35,21 +35,26 @@ module Kore.Unparser
     ) where
 
 import qualified Data.Char as Char
-import           Data.Functor.Const
-import           Data.Map.Strict
-                 ( Map )
+import Data.Functor.Const
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           Data.Text.Prettyprint.Doc hiding
-                 ( list )
-import           Data.Text.Prettyprint.Doc.Render.String
-                 ( renderString )
-import           Data.Text.Prettyprint.Doc.Render.Text
-                 ( renderStrict )
-import           Data.Void
-import           Generics.SOP
+import Data.Text.Prettyprint.Doc hiding
+    ( list
+    )
+import Data.Text.Prettyprint.Doc.Render.String
+    ( renderString
+    )
+import Data.Text.Prettyprint.Doc.Render.Text
+    ( renderStrict
+    )
+import Data.Void
+import Generics.SOP
 import qualified Numeric
 
 {- | Class of types that can be rendered in concrete Kore syntax.

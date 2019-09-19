@@ -12,49 +12,64 @@ module Kore.Step.Search
     , matchWith
     ) where
 
-import           Control.Error
-                 ( MaybeT (..), nothing )
-import           Control.Error.Util
-                 ( hush )
+import Control.Error
+    ( MaybeT (..)
+    , nothing
+    )
+import Control.Error.Util
+    ( hush
+    )
 import qualified Control.Monad.Trans as Monad.Trans
-import           Control.Monad.Trans.Class
-                 ( lift )
-import           Data.Maybe
-                 ( catMaybes )
-import           Numeric.Natural
-                 ( Natural )
+import Control.Monad.Trans.Class
+    ( lift
+    )
+import Data.Maybe
+    ( catMaybes
+    )
+import Numeric.Natural
+    ( Natural
+    )
 
-import           Data.Limit
-                 ( Limit (..) )
+import Branch
+    ( BranchT
+    )
+import qualified Branch
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.Limit as Limit
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( make, mergeAll )
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern
-                 ( Pattern, Predicate )
+    ( make
+    , mergeAll
+    )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    , Predicate
+    )
 import qualified Kore.Internal.Pattern as Conditional
 import qualified Kore.Internal.Predicate as Predicate
-                 ( bottom, fromSubstitution )
+    ( bottom
+    , fromSubstitution
+    )
 import qualified Kore.Step.Condition.Evaluator as Predicate
-                 ( simplify )
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+    ( simplify
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( evaluate )
+    ( evaluate
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.TopBottom
-import           Kore.Unification.Procedure
-                 ( unificationProcedure )
+import Kore.Step.Substitution
+    ( mergePredicatesAndSubstitutions
+    )
+import Kore.TopBottom
+import Kore.Unification.Procedure
+    ( unificationProcedure
+    )
 import qualified Kore.Unification.Unify as Monad.Unify
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
 
 {-| Which configurations are considered for matching?
 
@@ -117,14 +132,8 @@ searchGraph Config { searchType, bound } match executionGraph = do
             FINAL -> Strategy.pickFinal
 
 matchWith
-    :: forall variable m .
-        ( SortedVariable variable
-        , FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , MonadSimplify m
-        )
+    :: forall variable m
+    .  (SimplifierVariable variable, MonadSimplify m)
     => Pattern variable
     -> Pattern variable
     -> MaybeT m (OrPredicate variable)
@@ -139,7 +148,7 @@ matchWith e1 e2 = do
             :: Predicate variable
             -> m (OrPredicate variable)
         mergeAndEvaluate predSubst = do
-            results <- BranchT.gather $ mergeAndEvaluateBranches predSubst
+            results <- Branch.gather $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
             :: Predicate variable

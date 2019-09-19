@@ -13,49 +13,64 @@ module Kore.Step.SMT.Evaluator
     )
     where
 
-import           Control.Applicative
-                 ( (<|>) )
+import Control.Applicative
+    ( (<|>)
+    )
 import qualified Control.Applicative as Applicative
-import           Control.Error
-                 ( MaybeT, runMaybeT )
+import Control.Error
+    ( MaybeT
+    , runMaybeT
+    )
 import qualified Control.Exception as Exception
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-                 ( catMaybes )
-import           Data.Reflection
+import Data.Maybe
+    ( catMaybes
+    )
+import Data.Reflection
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Control.Monad.Counter as Counter
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.Conditional
-                 ( Conditional )
+    ( Symbol
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Conditional
+    ( Conditional
+    )
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Logger
+import Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate )
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Profiler.Profile as Profile
-                 ( smtDecision )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
-import qualified Kore.Step.Simplification.Data as Simplifier
-import           Kore.Step.SMT.Translate
-                 ( Translator, evalTranslator, translatePredicate )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.TopBottom
-                 ( TopBottom )
-import           Kore.Unparser
-import           SMT
-                 ( Result (..), SExpr (..) )
+    ( smtDecision
+    )
+import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.SMT.Translate
+    ( Translator
+    , evalTranslator
+    , translatePredicate
+    )
+import Kore.Syntax.Variable
+    ( SortedVariable
+    )
+import Kore.TopBottom
+    ( TopBottom
+    )
+import Kore.Unparser
+import SMT
+    ( Result (..)
+    , SExpr (..)
+    )
 import qualified SMT
 
 {- | Class for things that can be evaluated with an SMT solver,

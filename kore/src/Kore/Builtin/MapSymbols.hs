@@ -41,19 +41,25 @@ module Kore.Builtin.MapSymbols
     , sizeKey
     ) where
 
-import           Data.String
-                 ( IsString )
+import Data.String
+    ( IsString
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error as Kore
-                 ( Error )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.Internal.Symbol
-                 ( Symbol )
-import           Kore.Sort
-                 ( Sort )
+    ( Error
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.Internal.Symbol
+    ( Symbol
+    )
+import Kore.Sort
+    ( Sort
+    )
 
 concatKey :: IsString s => s
 concatKey = "MAP.concat"

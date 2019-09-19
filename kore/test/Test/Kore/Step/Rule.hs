@@ -7,39 +7,46 @@ module Test.Kore.Step.Rule
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Default
+import Data.Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( fromMaybe )
+import Data.Maybe
+    ( fromMaybe
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
-import           Kore.ASTVerifier.DefinitionVerifier
+import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
-import           Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.Internal.TermLike hiding
-                 ( freeVariables )
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.Internal.TermLike hiding
+    ( freeVariables
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Rule hiding
-                 ( freeVariables )
+import Kore.Step.Rule hiding
+    ( freeVariables
+    )
 import qualified Kore.Step.Rule as Rule
-import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 import qualified Kore.Verified as Verified
 
-import           Test.Kore
-                 ( testId )
-import           Test.Kore.ASTVerifier.DefinitionVerifier
+import Test.Kore
+    ( testId
+    )
+import Test.Kore.ASTVerifier.DefinitionVerifier
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_axiomPatterns :: [TestTree]
@@ -56,6 +63,7 @@ axiomPatternsUnitTests =
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
+                    , antiLeft = Nothing
                     , right = varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
                     , ensures = Predicate.wrapPredicate (mkTop sortAInt)
@@ -101,6 +109,7 @@ axiomPatternsUnitTests =
                 $ assertEqual ""
                     [ RewriteRule RulePattern
                         { left = varI1
+                        , antiLeft = Nothing
                         , right = varI2
                         , requires = Predicate.wrapPredicate (mkTop sortAInt)
                         , ensures = Predicate.wrapPredicate (mkTop sortAInt)
@@ -114,13 +123,9 @@ axiomPatternsUnitTests =
             let term = applyLeqAInt varI1 varI2
                 sortR = mkSortVariable (testId "R")
             assertEqual ""
-                (Right $ FunctionAxiomPattern $ EqualityRule RulePattern
-                    { left = mkCeil sortR term
-                    , right = mkTop sortR
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = Predicate.makeTruePredicate
-                    , attributes = def
-                    }
+                (Right $ FunctionAxiomPattern $ EqualityRule $ rulePattern
+                    (mkCeil sortR term)
+                    (mkTop sortR)
                 )
                 (Rule.fromSentence $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
@@ -181,6 +186,7 @@ axiomPatternsIntegrationTests =
     rule =
         RulePattern
             { left
+            , antiLeft = Nothing
             , right
             , requires = Predicate.wrapPredicate (mkTop sortTCell)
             , ensures = Predicate.wrapPredicate (mkTop sortTCell)
@@ -342,7 +348,9 @@ extractIndexedModule name eModules =
 test_freeVariables :: TestTree
 test_freeVariables =
     testCase "Extract free variables" $ do
-        let expect = FreeVariables . Set.fromList $ ElemVar <$> [Mock.x, Mock.z]
+        let expect =
+                FreeVariables . Set.fromList
+                $ ElemVar <$> [Mock.x, Mock.z, Mock.t]
             actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
@@ -372,10 +380,11 @@ testRulePattern =
         { left =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
+        , antiLeft = Nothing
         , right =
             -- Include a binder to ensure that we respect them.
             mkExists Mock.y (mkElemVar Mock.y)
         , requires = Predicate.makeCeilPredicate (mkElemVar Mock.z)
-        , ensures = Predicate.makeTruePredicate
+        , ensures = Predicate.makeCeilPredicate (mkElemVar Mock.t)
         , attributes = def
         }

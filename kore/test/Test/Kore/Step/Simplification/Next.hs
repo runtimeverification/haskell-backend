@@ -3,23 +3,29 @@ module Test.Kore.Step.Simplification.Next
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( testCase )
+    ( testCase
+    )
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Simplification.Next
-                 ( simplify )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Simplification.Next
+    ( simplify
+    )
 
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 test_nextSimplification :: [TestTree]
 test_nextSimplification =

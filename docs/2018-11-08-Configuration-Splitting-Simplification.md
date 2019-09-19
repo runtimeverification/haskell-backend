@@ -1,6 +1,36 @@
 Configuration Splitting Simplification
 ======================================
 
+Summary
+-------
+
+If `φ(X)` and `α(Z)` are function-like formulae, then
+
+```
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+```
+
+### Implementation concerns
+
+We assume that
+1. `φ(X) = φt(X) ∧ φp(X)` where `φt(X)` is a function-like __term__
+   and `φp(X)` is a predicate
+1. `α(Z) = αt(Z) ∧ αp(Z)` where `αt(Z)` is a function-like __term__,
+   and `αp(Z)` is a predicate
+ 
+If `φt(X)` and `αt(Z)` don't unify then 
+
+```
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X)
+```
+
+If `φt(X)` and `αt(Z)` unify with substitution `θ` binding all variables from `Z`
+and with the unification predicate `θp(X)`, then
+
+```
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ ¬(θp(X) ∧ θ(αp(Z)))
+```
+
 Background
 ----------
 
@@ -24,13 +54,13 @@ As documented in [One path reachability proofs](2018-11-08-One-Path-Reachability
 ```
 where `φ` and `ψ` are function-like patterns, is equivalent to proving
 ```
-∀ X . φ(X) →  ∃ Y . ψ(X, Y) ∨ •◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) → ∃ Y . ψ(X, Y) ∨ •◆ ∃ Y . ψ(X, Y)`
 ```
 
 We can now move `∃ Y . ψ(X, Y)` to the left of the implication,
 and (assuming law of excluded middle) we obtain the equivalent:
 ```
-∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) →  •◆ ∃ Y . ψ(X, Y)`
+∀ X . φ(X) ∧ ¬∃ Y . ψ(X, Y) → •◆ ∃ Y . ψ(X, Y)`
 ```
 
 ### Obtaining And-Not-Exists patterns from applying one step
@@ -55,101 +85,104 @@ We want to rewrite `φ(X) ∧ (¬ ∃ Z. α(Z))` part of the pattern above
 to something more manageable, preferably something that does not use `not`
 and `exists`, except in cases where it can be handled by an SMT solver.
 
-We will assume it is provable that
-1. `φ(X) = t(X) ∧ p(X)` where `p(X)` is a predicate,
-   and `t(X)` is a function-like term. It may or may not unify with `α(Z)`.
-1. `α(Z) =  s(Z) ∧ q(Z)` where `s(Z)` is a functional term,
-   composed out of constructor-like symbols and variables
-   and `q(x)` is a predicate (so `α(Z)` is function-like).
+We assume that `φ(X)` and `α(Z)` are function-like formulae.
 
-The proposed solution should not return a broken result when these assumptions
-do not hold, but it is not forced to fully simplify the given term.
-
-Algorithm
----------
-
-Input:
-
-1. `t(X)` and `p(X)` such that
-
-   - `φ(X)` is `t(X) ∧ p(X)`
-   - `t(X)` is a function-like term
-   - `p(X)` is a predicate
-
-1. `Z`, `s(Z)` and `q(Z)` such that
-
-   - `α(Z) =  s(Z) ∧ q(Z)`
-   - `s(Z)` is a functional term made of constructor-like symbols and variables
-   - `q(Z)` is a predicate
-
-
-Output: `t'(X)` and `p'(X)` such that
-
-   - `φ(X) ∧ (¬ ∃ Z. α(Z)) = t'(X) ∧ p'(X)` is provable
-   - `t(X)` is a function-like term
-   - `p(X)` is a predicate
-
+### Justification
 
 ```
-φ(X) ∧ (¬ ∃ Z. α(Z)) =  t(X) ∧ p(X) ∧ (¬ ∃ Z. α(Z))
-```
-We will examine only the `t(X) ∧ (¬ ∃ Z. α(Z))` term next.
-```
-t(X) ∧ (¬ ∃ Z. α(Z))
-    =  t(X) ∧ ⌈t(X) ∧ (¬ ∃ Z. α(Z))⌉ -- since t(x) is function-like
-    =  t(X) ∧ ⌈t(X) ∧ (∀ Z. ¬α(Z))⌉  -- ¬ ∃ = ∀ ¬
-    =  t(X) ∧ ⌈∀ Z. (t(X) ∧ ¬α(Z))⌉  -- since t(x) does not depend on Z
-    =  t(X) ∧ (∀ Z. ⌈t(X) ∧ ¬α(Z)⌉)  -- ⌈∀⌉ = ∀⌈⌉
-    (1)
-```
-
-We will try to simplify `⌈t(X) ∧ ¬α(Z)⌉`.
-First, let us note that, if `t(X)` and `α(Z)` are functional, then
-```
-⌈t(X) ∧ ¬α(Z)⌉
-    =  ¬(t(X) = α(Z))  -- easily checked semantically
-    =  ¬⌈t(X) ∧ α(Z)⌉  -- for functional patterns, `∧` means equality.
-    (2)
+φ(X) ∧ (¬ ∃ Z. α(Z))
+    =  φ(X) ∧ (¬ ∃ Z. α(Z))
+    =  φ(X) ∧ ⌈φ(X) ∧ (¬ ∃ Z. α(Z))⌉ -- since φ(x) is function-like
+    =  φ(X) ∧ ⌈φ(X) ∧ (∀ Z. ¬α(Z))⌉  -- ¬ ∃ = ∀ ¬
+    =  φ(X) ∧ ⌈∀ Z. (φ(X) ∧ ¬α(Z))⌉  -- since φt(x) does not depend on Z
+    =  φ(X) ∧ (∀ Z. ⌈φ(X) ∧ ¬α(Z)⌉)  -- proven below
+    =  ∀ Z. φ(X) ∧ ⌈φ(X) ∧ ¬α(Z)⌉  -- FOL
+    =  ∀ Z. (φ(X) ∧ ⌈φ(X)⌉ ∧ ¬⌈φ(X) ∧ α(Z)⌉) -- proven below
+    =  ∀ Z. (φ(X) ∧ ¬⌈φ(X) ∧ α(Z)⌉)
+    =  φ(X) ∧ (∀ Z. ¬⌈φ(X) ∧ α(Z)⌉)
+    =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
 ```
 
-If `t(X)` is `⊥`, then `⌈t(X) ∧ ¬α(Z)⌉ = ⊥`, while `¬⌈t(X) ∧ α(Z)⌉ = ⊤`, so if
-we write it as `⌈t(X) ∧ ¬α(Z)⌉ =  ⌈t(X)⌉ ∧ ¬⌈t(X) ∧ α(Z)⌉` we should also catch
-that case.
 
-So then we have
-```
-⌈t(X) ∧ ¬α(Z)⌉
-    = ¬⌈t(X) ∧ α(Z)⌉           -- as mentioned above (2)
-    = ⌈t(X)⌉ ∧ ¬⌈t(X) ∧ α(Z)⌉  -- since ⌈t(X) ∧ ¬α(Z)⌉ = ⌈t(X)⌉ ∧ ⌈t(X) ∧ ¬α(Z)⌉
-    (3)
-```
+### Missing details
 
-If `α(Z)` is `⊥`, then `⌈t(X) ∧ ¬α(Z)⌉ = ⌈t(X)⌉`,
-and `⌈t(X)⌉ ∧ ¬⌈t(X) ∧ α(Z)⌉ = ⌈t(X)⌉`, which is fine.
 
-So then we have
+#### `⌈φ ∧ ∀ Z.α(Z)⌉ = ∀ Z. ⌈φ ∧ α(Z)⌉`
+
+for any function-like formula `φ` and for any ML formula `α(Z)`.
+
+__Proof:__
 ```
-t(X) ∧ (¬ ∃ Z. α(Z))
-    = t(X) ∧ (∀ Z. ⌈t(X) ∧ ¬α(Z)⌉)  -- as mentioned above (1)
-    = t(X) ∧ (∀ Z. ⌈t(X)⌉ ∧ ¬⌈t(X) ∧ α(Z)⌉)  -- using (3)
-    = t(X) ∧ ⌈t(X)⌉ ∧ (∀ Z. ¬⌈t(X) ∧ α(Z)⌉)  -- t(X) does not depend on Z
-    = t(X) ∧ (∀ Z. ¬⌈t(X) ∧ α(Z)⌉)           -- kind of obvious
-    = t(X) ∧ (¬∃Z . ⌈t(X) ∧ α(Z)⌉)           -- ¬ ∃ = ∀ ¬
-    = t(X) ∧ (¬∃Z . ⌈t(X) ∧ s(Z) ∧ q(Z)⌉)    -- expanding α
-    = t(X) ∧ (¬∃Z . (⌈t(X) ∧ s(Z)⌉ ∧ q(Z)))  -- q is a predicate
+⌈φ ∧ ∀ Z.α(Z)⌉
+    = ∃ x. x ∈ (φ ∧ ∀ Z.α(Z))
+    = ∃ x. x ∈ φ ∧ x ∈ (∀ Z.α(Z)) // distributivity of ∧ 
+    = ∃ x. x = φ ∧ x ∈ (∀ Z.α(Z))  // φ is function-like
+    = ∃ x. x = φ ∧ ∀ Z.x ∈ α(Z)  // properties of membership
+    = (∃ x. x = φ) ∧ ∀ Z.φ ∈ α(Z) // substitution
+    = ∀ Z.(∃ x. x = φ) ∧ φ ∈ α(Z)  // FOL
+    = ∀ Z.∃ x. (x = φ ∧ x ∈ α(Z)) // reverse substitution 
+    = ∀ Z.∃ x. (x ∈ φ ∧ x ∈ α(Z)) 
+    = ∀ Z.∃ x. x ∈ (φ ∧ α(Z)) 
+    = ∀ Z.⌈φ ∧ α(Z)⌉ 
 ```
 
-Now we need to do a case analysis on whether `t(X)` and `s(X)` are unifiable.
-If they are not, then `⌈t(X) ∧ s(Z)⌉` is `⊥`,
-hence `t(X) ∧ (¬ ∃ Z. α(Z)) = t(X)`, leading to:
+#### `⌈φ ∧ ¬β⌉ = ⌈φ⌉ ∧ ¬⌈φ ∧ β⌉`
+
+for any function-like formula `φ` and for any ML formula `β`.
+
+__Proof:__
 ```
-φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X)
+⌈φ ∧ ¬β⌉
+    = ∃ x. x∈ (φ ∧ ¬β)
+    = ∃ x. x∈ φ ∧ x∈ ¬β
+    = ∃ x. x∈ φ ∧ ¬x∈ β 
+    = ∃ x. x = φ ∧ ¬x∈ β  //φ is function-like
+    = ∃ x. x = φ ∧ ¬φ∈ β  //substitution
+    = (∃ x. x = φ) ∧ ¬φ∈ β
+    = ⌈φ⌉ ∧ ¬φ∈ β  // properties of ⌈_⌉
+    = ⌈φ⌉ ∧ ¬⌈φ ∧ β⌉  // definition of ∈ 
 ```
-If they are then, assuming that we managed to substitute all `Z` variables,
-and if `u(X)` is the predicate from the substitution together with `q`
-(not depending on `Z` anymore, then
-`∃Z . ⌈t(X) ∧ s(Z)⌉ ∧ q(Z) = u(X)`, so `t(X) ∧ (¬ ∃ Z. α(Z)) = t(X) ∧ ¬u(X)`,
-leading to:
+
+
+### Implementation concerns
+
+We have shown above that
+
 ```
-φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ ¬u(X)
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+```
+
+Now, if
+1. `φ(X) = φt(X) ∧ φp(X)` where `φt(X)` is a function-like __term__
+   and `φp(X)` is a predicate
+1. `α(Z) = αt(Z) ∧ αp(Z)` where `αt(Z)` is a function-like __term__,
+   and `αp(Z)` is a predicate
+ 
+Then we can further expand the above as:
+```
+φ(X) ∧ (¬ ∃ Z. α(Z)) = φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+    =  φ(X) ∧ (¬ ∃ Z. ⌈φt(X) ∧ φp(X) ∧ αt(Z) ∧ αp(Z)⌉)
+    =  φ(X) ∧ (¬ ∃ Z. (⌈φt(X) ∧ αt(Z)⌉ ∧ φp(X) ∧ αp(Z)))
+```
+
+Now we need to do a case analysis on whether `φt(X)` and `αt(Z)` are unifiable.
+If they are not, then `⌈φt(X) ∧ αt(Z)⌉` is `⊥`, hence 
+
+```
+φ(X) ∧ (¬ ∃ Z. (⌈φt(X) ∧ αt(Z)⌉ ∧ φp(X) ∧ αp(Z))) = φ(X)
+```
+
+If `φt(X)` and `αt(Z)` unify with substitution `θ` binding all variables from `Z`
+and with the unification predicate `θp(X)`, then we can apply the substitution
+and remove the quantification, obtaining
+
+```
+φ(X) ∧ (¬ ∃ Z. α(Z))
+    =  φ(X) ∧ (¬ ∃ Z. (⌈φt(X) ∧ αt(Z)⌉ ∧ φp(X) ∧ αp(Z)))
+    =  φ(X) ∧ ¬ (θp(X) ∧ φp(X) ∧ θ(αp(Z)) ∧ (∃ Z. θ))
+    =  φ(X) ∧ ¬ (θp(X) ∧ φp(X) ∧ θ(αp(Z)))
+    =  φ(X) ∧ (¬ (θp(X) ∧ θ(αp(Z))) ∨ ¬ φp(X))
+    =  (φ(X) ∧ ¬ (θp(X) ∧ θ(αp(Z))) ∨ (φ(X) ∧ ¬ φp(X))
+    =  (φ(X) ∧ ¬ (θp(X) ∧ θ(αp(Z)))) ∨ (φt(X) ∧ φp(X) ∧ ¬ φp(X))
+    =  φ(X) ∧ ¬ (θp(X) ∧ θ(αp(Z)))
 ```

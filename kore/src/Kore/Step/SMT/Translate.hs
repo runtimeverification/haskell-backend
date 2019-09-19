@@ -16,38 +16,49 @@ module Kore.Step.SMT.Translate
     , runTranslator
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Control.Error
-                 ( MaybeT )
-import           Control.Monad.Counter
-                 ( CounterT, evalCounterT )
-import           Control.Monad.Except
-import           Control.Monad.Morph as Morph
-import           Control.Monad.State.Strict
-                 ( StateT, evalStateT )
+import Control.Error
+    ( MaybeT
+    , hoistMaybe
+    )
+import Control.Monad.Counter
+    ( CounterT
+    , evalCounterT
+    )
+import Control.Monad.Except
+import Control.Monad.Morph as Morph
+import Control.Monad.State.Strict
+    ( StateT
+    , evalStateT
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Reflection
+import Data.Reflection
 
-import           Kore.Attribute.Hook
-import           Kore.Attribute.Smtlib
+import Kore.Attribute.Hook
+import Kore.Attribute.Smtlib
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
-import           Kore.IndexedModule.MetadataTools
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-import           Kore.Step.SMT.Resolvers
-                 ( translateSymbol )
-import           Kore.Unparser
-import           SMT
-                 ( SExpr (..) )
+import Kore.IndexedModule.MetadataTools
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+import Kore.Step.SMT.Resolvers
+    ( translateSort
+    , translateSymbol
+    )
+import Kore.Unparser
+import SMT
+    ( SExpr (..)
+    )
 import qualified SMT
 
 -- ----------------------------------------------------------------
@@ -242,6 +253,9 @@ translatePredicate translateUninterpreted predicate =
               | builtinSort == Builtin.Bool.sort -> translateBool pat
               | builtinSort == Builtin.Int.sort -> translateInt pat
             _ -> case Cofree.tailF $ Recursive.project pat of
+                    VariableF _ -> do
+                        smtSort <- hoistMaybe $ translateSort sort
+                        translateUninterpreted smtSort pat
                     ApplySymbolF app -> translateApplication app
                     _ -> empty
       where

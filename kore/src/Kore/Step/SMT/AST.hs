@@ -37,18 +37,23 @@ module Kore.Step.SMT.AST
     , mergePreferFirst
     ) where
 
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 
 import qualified Kore.Sort as Kore
-                 ( Sort )
-import           Kore.Step.SMT.Encoder
-                 ( encodeName )
+    ( Sort
+    )
+import Kore.Step.SMT.Encoder
+    ( encodeName
+    )
 import qualified Kore.Syntax.Id as Kore
-                 ( Id (Id, getId) )
+    ( Id (Id, getId)
+    )
 import qualified SMT.AST as AST
 
 {-| A representation of the Kore Sort type together with its related
@@ -144,7 +149,7 @@ data IndirectSymbolDeclaration sort name =
     deriving (Eq, Ord, Show)
 
 {-| Holds things that we declare to an SMT. When encountered in its
-SmtDeclarations instatiation, we usually assume that all dependencies between
+SmtDeclarations instantiation, we usually assume that all dependencies between
 the various declarations can be resolved.
 -}
 data Declarations sort symbol name =
@@ -183,7 +188,7 @@ type SmtKoreSymbolDeclaration = KoreSymbolDeclaration AST.SExpr Text
 type SmtSort = Sort AST.SExpr Text Text
 type SmtSymbol = Symbol AST.SExpr Text
 
--- Type instantiations with unresolved dependencies, produced direclty from the
+-- Type instantiations with unresolved dependencies, produced directly from the
 -- input module.
 type UnresolvedConstructorArgument =
     AST.ConstructorArgument SortReference Encodable

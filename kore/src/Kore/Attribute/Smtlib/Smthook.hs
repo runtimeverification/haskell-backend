@@ -11,14 +11,17 @@ module Kore.Attribute.Smtlib.Smthook
     , smthookId, smthookSymbol, smthookAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Monad as Monad
-import           Data.Default
-                 ( Default (..) )
+import Data.Default
+    ( Default (..)
+    )
 import qualified Data.Maybe as Maybe
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -26,9 +29,12 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Parser
 import Kore.Debug
 import Kore.Syntax.Id
-       ( Id )
+    ( Id
+    )
 import SMT.SimpleSMT
-       ( SExpr (..), showSExpr )
+    ( SExpr (..)
+    , showSExpr
+    )
 
 {- | The @smthook@ attribute for symbols.
 

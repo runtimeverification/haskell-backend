@@ -2,21 +2,27 @@
 
 set -exuo pipefail
 
-TOP=${TOP:-$(git rev-parse --show-toplevel)}
-EVM_SEMANTICS=$TOP/evm-semantics
+# Configuration
 OPAM_SETUP_SKIP="${OPAM_SETUP_SKIP:-true}"
+
+TOP=${TOP:-$(git rev-parse --show-toplevel)}
+KEVM_DIR=$TOP/evm-semantics
+export KEVM_DIR
 
 # Prefer to use Kore master
 PATH="$TOP/.build/kore/bin${PATH:+:}$PATH"
 export PATH
 rm -f .build/k/bin/kore-*
 
-mkdir -p $(dirname $EVM_SEMANTICS)
+mkdir -p $(dirname $KEVM_DIR)
 
-rm -rf $EVM_SEMANTICS
-git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $EVM_SEMANTICS --branch 'master'
+rm -rf $KEVM_DIR
+git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $KEVM_DIR --branch 'master'
 
-cd $EVM_SEMANTICS
+cd $KEVM_DIR
+
+# Display the HEAD commit on evm-semantics for the log.
+git show -s HEAD
 
 # Use the K Nightly build from the Kore integration tests.
 rm -rf deps/k/k-distribution/target/release/k
@@ -28,3 +34,5 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 make build-haskell -B
 
 make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-run test-interactive-search
+
+make -j8 -C "$TOP/src/main/k/evm-semantics" test

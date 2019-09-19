@@ -5,47 +5,58 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
-import Test.Tasty
-       ( TestTree )
-import Test.Tasty.HUnit
-       ( testCase )
-
-import           Data.Default
-                 ( Default (..) )
 import qualified Data.Map.Strict as Map
+import Test.Tasty
+    ( TestTree
+    )
+import Test.Tasty.HUnit
+    ( testCase
+    )
 
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeCeilPredicate, makeEqualsPredicate, makeNotPredicate,
-                 makeTruePredicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( builtinEvaluation, simplifierWithFallback )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    , makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( builtinEvaluation
+    , simplifierWithFallback
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Axiom.Registry
-                 ( axiomPatternsToEvaluators )
-import           Kore.Step.Rule
-                 ( EqualityRule (EqualityRule), RulePattern (RulePattern) )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.Data
+    ( AxiomIdentifier (..)
+    )
+import Kore.Step.Axiom.Registry
+    ( axiomPatternsToEvaluators
+    )
+import Kore.Step.Rule
+    ( rulePattern
+    )
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplify )
+    ( simplify
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =
@@ -167,22 +178,18 @@ test_simplificationIntegration =
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ EqualityRule RulePattern
-                                    { left =
-                                        Mock.function20MapTest
-                                            (Mock.concatMap
-                                                (Mock.elementMap
-                                                    (mkElemVar Mock.x)
-                                                    (mkElemVar Mock.y)
-                                                )
-                                                (mkElemVar Mock.m)
+                            ,   [ EqualityRule $ rulePattern
+                                    (Mock.function20MapTest
+                                        (Mock.concatMap
+                                            (Mock.elementMap
+                                                (mkElemVar Mock.x)
+                                                (mkElemVar Mock.y)
                                             )
-                                            (mkElemVar Mock.x)
-                                    , right = mkElemVar Mock.y
-                                    , requires = makeTruePredicate
-                                    , ensures = makeTruePredicate
-                                    , attributes = def
-                                    }
+                                            (mkElemVar Mock.m)
+                                        )
+                                        (mkElemVar Mock.x)
+                                    )
+                                    (mkElemVar Mock.y)
                                 ]
                             )
                         ]
@@ -213,32 +220,25 @@ test_simplificationIntegration =
                 ( axiomPatternsToEvaluators
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.fIntId
-                          , [ EqualityRule RulePattern
-                                { left = Mock.fInt (mkElemVar Mock.xInt)
-                                , right = mkElemVar Mock.xInt
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+                          , [ EqualityRule $ rulePattern
+                                (Mock.fInt (mkElemVar Mock.xInt))
+                                (mkElemVar Mock.xInt)
                             ]
                           )
                         , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
-                          , [ EqualityRule RulePattern
-                                { left =
-                                    mkCeil testSortVariable
+                          , [ EqualityRule $ rulePattern
+                                (mkCeil testSortVariable
                                     $ Mock.tdivInt
                                         (mkElemVar Mock.xInt)
                                         (mkElemVar Mock.yInt)
-                                , right =
-                                    mkCeil testSortVariable
+                                )
+                                (mkCeil testSortVariable
                                     . mkNot
                                     $ mkEquals testSortVariable
                                         (mkElemVar Mock.yInt)
                                         (Mock.builtinInt 0)
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+
+                                )
                             ]
 
                           )
@@ -312,13 +312,9 @@ test_simplificationIntegration =
             evaluateWithAxioms
                 (axiomPatternsToEvaluators $ Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cfId
-                        ,   [ EqualityRule RulePattern
-                                { left = Mock.cf
-                                , right = Mock.f (mkElemVar Mock.x)
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+                        ,   [ EqualityRule $ rulePattern
+                                Mock.cf
+                                (Mock.f (mkElemVar Mock.x))
                             ]
                         )
                     ]
@@ -466,14 +462,11 @@ evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> IO (OrPattern Variable)
-evaluateWithAxioms axioms =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier env
-    . Pattern.simplify
+evaluateWithAxioms axioms = runSimplifier env . Pattern.simplify
   where
-    env = Mock.env { simplifierAxioms = axiomIdToSimplifier }
-    axiomIdToSimplifier :: BuiltinAndAxiomSimplifierMap
-    axiomIdToSimplifier =
+    env = Mock.env { simplifierAxioms }
+    simplifierAxioms :: BuiltinAndAxiomSimplifierMap
+    simplifierAxioms =
         Map.unionWith
             simplifierWithFallback
             builtinAxioms

@@ -8,14 +8,16 @@ module Kore.Syntax.Inhabitant
     ( Inhabitant (..)
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Hashable
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
-       ( FreeVariables )
+    ( FreeVariables
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort

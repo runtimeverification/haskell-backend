@@ -5,23 +5,29 @@ import Test.Tasty.HUnit
 
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
-import           Data.Proxy
+import Data.Proxy
 
-import           Kore.ASTVerifier.DefinitionVerifier
-import           Kore.Attribute.Overload
+import Kore.ASTVerifier.DefinitionVerifier
+import Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
-import           Kore.Internal.Symbol
-                 ( applicationSorts, toSymbolOrAlias )
-import           Kore.Internal.TermLike
+import Kore.Internal.Symbol
+    ( applicationSorts
+    , toSymbolOrAlias
+    )
+import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import           Kore.Step.Axiom.Registry
-import           Kore.Syntax.Definition hiding
-                 ( Alias, Symbol )
+import Kore.Step.Axiom.Registry
+import Kore.Syntax.Definition hiding
+    ( Alias
+    , Symbol
+    )
 
-import           Test.Kore
-import           Test.Kore.Attribute.Parser
-import           Test.Kore.Builtin.Definition
-                 ( sortDecl, symbolDecl )
+import Test.Kore
+import Test.Kore.Attribute.Parser
+import Test.Kore.Builtin.Definition
+    ( sortDecl
+    , symbolDecl
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 
 parseOverload :: Attributes -> Parser Overload

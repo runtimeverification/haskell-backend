@@ -8,20 +8,16 @@ module Kore.Step.Simplification.Mu
     ) where
 
 import Kore.Internal.OrPattern
-       ( OrPattern )
+    ( OrPattern
+    )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import Kore.Unparser
 
 {-|'simplify' simplifies a 'Mu' pattern with an 'OrPattern'
 child.
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Mu variable (OrPattern variable)
     -> OrPattern variable
 simplify
@@ -33,11 +29,7 @@ simplify
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => SetVariable variable
     -> Pattern variable
     -> Pattern variable

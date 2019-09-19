@@ -5,34 +5,57 @@ License     : NCSA
  -}
 
 module Kore.Substitute
-    ( substitute
+    ( SubstitutionVariable
+    , substitute
     ) where
 
-import           Control.Applicative
+import Control.Applicative
 import qualified Data.Foldable as Foldable
-import           Data.Function
-                 ( (&) )
-import           Data.Functor.Foldable
-                 ( Corecursive, Recursive )
+import Data.Function
+    ( (&)
+    )
+import Data.Functor.Foldable
+    ( Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Functor.Identity
-import           Data.Map.Strict
-                 ( Map )
+import Data.Functor.Identity
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-import           Data.Set
-                 ( Set )
+import Data.Maybe
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 
-import           Kore.Attribute.Pattern.FreeVariables
-                 ( FreeVariables )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Attribute.Synthetic
-import           Kore.Syntax
-import           Kore.Variables.Binding
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Attribute.Synthetic
+import Kore.Internal.Variable
+import Kore.Syntax
+import Kore.Variables.Binding
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
+
+{- | 'SubstitutionVariable' constrains variable types that can be substituted.
+
+'SubstitutionVariable' is an extension of 'InternalVariable'; we require in
+addition that variables be 'FreshVariable', i.e. that we can refresh bound
+variables to avoid capturing while substituting. In practice, all variable types
+are both 'InternalVariable's and 'FreshVariable's, but we reserve the right to
+make 'SubstitutionVariable' even more restrictive in the future.
+
+ -}
+type SubstitutionVariable variable =
+    ( InternalVariable variable
+    , FreshVariable variable
+    )
 
 {- | Traverse the pattern from the top down and apply substitutions.
 
@@ -45,10 +68,7 @@ may appear in the right-hand side of any substitution, but this is not checked.
  -}
 substitute
     ::  forall patternType patternBase attribute variable.
-        ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
+        ( SubstitutionVariable variable
         , Corecursive patternType, Recursive patternType
         , Functor patternBase
         , CofreeF patternBase attribute ~ Base patternType

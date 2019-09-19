@@ -61,35 +61,49 @@ module Kore.Builtin.Int
     , log2Key
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
-import           Control.Error
-                 ( MaybeT )
-import           Data.Bits
-                 ( complement, shift, xor, (.&.), (.|.) )
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT
+    )
+import Data.Bits
+    ( complement
+    , shift
+    , xor
+    , (.&.)
+    , (.|.)
+    )
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.String
-                 ( IsString )
-import           Data.Text
-                 ( Text )
+import Data.String
+    ( IsString
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           GHC.Integer
-                 ( smallInteger )
-import           GHC.Integer.GMP.Internals
-                 ( powModInteger, recipModInteger )
-import           GHC.Integer.Logarithms
-                 ( integerLog2# )
+import GHC.Integer
+    ( smallInteger
+    )
+import GHC.Integer.GMP.Internals
+    ( powModInteger
+    , recipModInteger
+    )
+import GHC.Integer.Logarithms
+    ( integerLog2#
+    )
 import qualified Text.Megaparsec.Char.Lexer as Parsec
 
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike as TermLike
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike as TermLike
 
 {- | Builtin name of the @Int@ sort.
  -}
@@ -267,14 +281,14 @@ asTermLike builtin =
     Domain.InternalInt { builtinIntValue = int } = builtin
 
 asPattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Integer  -- ^ builtin value to render
     -> Pattern variable
 asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 asPartialPattern
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Sort  -- ^ resulting sort
     -> Maybe Integer  -- ^ builtin value to render
     -> Pattern variable

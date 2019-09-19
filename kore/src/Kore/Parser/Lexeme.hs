@@ -49,32 +49,40 @@ module Kore.Parser.Lexeme
     ) where
 
 import qualified Control.Monad as Monad
-import           Control.Monad.Combinators
-                 ( (<|>) )
+import Control.Monad.Combinators
+    ( (<|>)
+    )
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
-import           Data.HashSet
-                 ( HashSet )
+import Data.HashSet
+    ( HashSet
+    )
 import qualified Data.HashSet as HashSet
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
+import Data.Maybe
 import qualified Data.Text as Text
-import           Text.Megaparsec
-                 ( SourcePos (..), anySingle, getSourcePos, unPos, (<?>) )
+import Text.Megaparsec
+    ( SourcePos (..)
+    , anySingle
+    , getSourcePos
+    , unPos
+    , (<?>)
+    )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import qualified Kore.Parser.CharDict as CharDict
-import           Kore.Parser.CharSet as CharSet
-import           Kore.Parser.ParserUtils as ParserUtils
-import           Kore.Sort
-import           Kore.Syntax.CharLiteral
-import           Kore.Syntax.Definition
-import           Kore.Syntax.StringLiteral
+import Kore.Parser.CharSet as CharSet
+import Kore.Parser.ParserUtils as ParserUtils
+import Kore.Sort
+import Kore.Syntax.CharLiteral
+import Kore.Syntax.Definition
+import Kore.Syntax.StringLiteral
 
 sourcePosToFileLocation :: SourcePos -> FileLocation
 sourcePosToFileLocation

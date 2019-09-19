@@ -27,40 +27,55 @@ module Kore.Unification.Substitution
     , reverseIfRhsIsVar
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
-import           Data.Hashable
+import Data.Hashable
 import qualified Data.List as List
-import           Data.Map.Strict
-                 ( Map )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           GHC.Stack
-                 ( HasCallStack )
-import           Prelude hiding
-                 ( null )
+import GHC.Stack
+    ( HasCallStack
+    )
+import Prelude hiding
+    ( null
+    )
 
-import           Kore.Attribute.Pattern.FreeVariables
-import           Kore.Debug
-import           Kore.Internal.TermLike
-                 ( TermLike, pattern Var_, mkVar )
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Debug
+import Kore.Internal.TermLike
+    ( InternalVariable
+    , TermLike
+    , pattern Var_
+    , mkVar
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unparser
-                 ( Unparse, unparseToString )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Syntax.Variable
+    ( SortedVariable
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unparser
+    ( Unparse
+    , unparseToString
+    )
+import Kore.Variables.Fresh
+    ( FreshVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -255,11 +270,8 @@ renormalizes, if needed.
 -}
 reverseIfRhsIsVar
     :: forall variable
-    .   ( Eq variable
+    .   ( InternalVariable variable
         , FreshVariable variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
         )
     => UnifiedVariable variable
     -> Substitution variable

@@ -9,61 +9,78 @@ module Test.Kore.Step.Step
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Data.Default as Default
-                 ( def )
+import Data.Default as Default
+    ( def
+    )
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.MultiOr
-                 ( MultiOr )
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern as Pattern
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate as Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeFalsePredicate, makeNotPredicate, makeTruePredicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate as Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Step.Result as Result
-                 ( mergeResults )
-import           Kore.Step.Rule
-                 ( RewriteRule (..), RulePattern (..) )
+    ( mergeResults
+    )
+import Kore.Step.Rule
+    ( RewriteRule (..)
+    , RulePattern (..)
+    , rulePattern
+    )
 import qualified Kore.Step.Rule as RulePattern
-import           Kore.Step.Simplification.Data
-import           Kore.Step.Step hiding
-                 ( applyInitialConditions, applyRewriteRulesParallel,
-                 applyRewriteRulesSequence, unifyRule )
+import Kore.Step.Step hiding
+    ( applyInitialConditions
+    , applyRewriteRulesParallel
+    , applyRewriteRulesSequence
+    , unifyRule
+    )
 import qualified Kore.Step.Step as Step
-import           Kore.Unification.Error
-                 ( SubstitutionError (..), UnificationOrSubstitutionError (..),
-                 unsupportedPatterns )
+import Kore.Unification.Error
+    ( SubstitutionError (..)
+    , UnificationOrSubstitutionError (..)
+    , unsupportedPatterns
+    )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( UnifierT, runUnifierT )
-import           Kore.Variables.Fresh
-                 ( nextVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Unification.Unify
+    ( UnifierT
+    , runUnifierT
+    )
+import Kore.Variables.Fresh
+    ( nextVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 evalUnifier
     :: UnifierT Simplifier a
     -> IO (Either UnificationOrSubstitutionError [a])
-evalUnifier =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    . evalSimplifier Mock.env
-    . runUnifierT
+evalUnifier = runSimplifier Mock.env . runUnifierT
 
 applyInitialConditions
     :: Predicate Variable
@@ -144,6 +161,7 @@ test_unifyRule =
             axiom =
                 RulePattern
                     { left = Mock.f (mkElemVar Mock.x)
+                    , antiLeft = Nothing
                     , right = Mock.g (mkElemVar Mock.x)
                     , requires =
                         Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
@@ -161,6 +179,7 @@ test_unifyRule =
             axiom =
                 RulePattern
                     { left = Mock.functionalConstr10 (mkElemVar Mock.x)
+                    , antiLeft = Nothing
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
                     , ensures = makeTruePredicate
@@ -178,6 +197,7 @@ test_unifyRule =
             axiom =
                 RulePattern
                     { left = Mock.functionalConstr11 (mkElemVar Mock.x)
+                    , antiLeft = Nothing
                     , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate
                     , ensures = makeTruePredicate
@@ -262,13 +282,9 @@ test_applyRewriteRule_ =
             final = mkExists (nextVariable <$> Mock.y) (mkElemVar Mock.y)
             initial = pure (mkElemVar Mock.y)
             axiom =
-                RewriteRule RulePattern
-                    { left = mkElemVar Mock.x
-                    , right = mkExists Mock.y (mkElemVar Mock.x)
-                    , requires = makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = def
-                    }
+                RewriteRule $ rulePattern
+                    (mkElemVar Mock.x)
+                    (mkExists Mock.y (mkElemVar Mock.x))
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
 
@@ -435,13 +451,9 @@ test_applyRewriteRule_ =
         let expect = Right mempty
             initial = pure (mkStringLiteral "sl2")
             axiom =
-                RewriteRule RulePattern
-                    { left = mkStringLiteral "sl1"
-                    , right = mkElemVar Mock.x
-                    , requires = makeTruePredicate
-                    , ensures = makeTruePredicate
-                    , attributes = def
-                    }
+                RewriteRule $ rulePattern
+                    (mkStringLiteral "sl1")
+                    (mkElemVar Mock.x)
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
 
@@ -502,8 +514,8 @@ test_applyRewriteRule_ =
 
     -- x => x ensures g(x)=f(x)
     -- vs
-    -- a
-    -- Expected: a and g(a)=f(a)
+    -- y
+    -- Expected: y and g(y)=f(y)
     , testCase "conjoin rule ensures" $ do
         let
             ensures =
@@ -513,19 +525,17 @@ test_applyRewriteRule_ =
             expect :: Either
                 UnificationOrSubstitutionError [OrPattern Variable]
             expect = Right
-                [ OrPattern.fromTermLike
-                    (mkExists
-                        Mock.x
-                        (mkAnd
-                            (mkElemVar Mock.x)
-                            (mkEquals_
-                                (Mock.functional11 (mkElemVar Mock.x))
-                                (Mock.functional10 (mkElemVar Mock.x))
-                            )
-                        )
-                    )
+                [ OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkElemVar Mock.y
+                        , predicate = makeEqualsPredicate
+                            (Mock.functional11 (mkElemVar Mock.y))
+                            (Mock.functional10 (mkElemVar Mock.y))
+                        , substitution = mempty
+                        }
+                    ]
                 ]
-            initial = Pattern.fromTermLike (mkElemVar Mock.x)
+            initial = Pattern.fromTermLike (mkElemVar Mock.y)
             axiom = RewriteRule ruleId { ensures }
         actual <- applyRewriteRule_ initial axiom
         assertEqualWithExplanation "" expect actual
@@ -573,18 +583,15 @@ test_applyRewriteRule_ =
     ]
   where
     ruleId =
-        RulePattern
-            { left = mkElemVar Mock.x
-            , right = mkElemVar Mock.x
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
+        rulePattern
+            (mkElemVar Mock.x)
+            (mkElemVar Mock.x)
     axiomId = RewriteRule ruleId
 
     axiomBottom =
         RewriteRule RulePattern
             { left = Mock.a
+            , antiLeft = Nothing
             , right = mkBottom Mock.testSort
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
@@ -594,6 +601,7 @@ test_applyRewriteRule_ =
     axiomEnsuresBottom =
         RewriteRule RulePattern
             { left = Mock.a
+            , antiLeft = Nothing
             , right = Mock.b
             , requires = makeTruePredicate
             , ensures = makeFalsePredicate
@@ -603,6 +611,7 @@ test_applyRewriteRule_ =
     axiomRequiresBottom =
         RewriteRule RulePattern
             { left = Mock.a
+            , antiLeft = Nothing
             , right = Mock.b
             , requires = makeFalsePredicate
             , ensures = makeTruePredicate
@@ -610,37 +619,25 @@ test_applyRewriteRule_ =
             }
 
     axiomSigmaId =
-        RewriteRule RulePattern
-            { left = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x)
-            , right = mkElemVar Mock.x
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
+        RewriteRule $ rulePattern
+            (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
+            (mkElemVar Mock.x)
 
     axiomSigmaXXYY =
-        RewriteRule RulePattern
-            { left =
-                Mock.sigma
+        RewriteRule $ rulePattern
+            (Mock.sigma
                     (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
                     (Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y))
-            , right = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
+            )
+            (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y))
 
     axiomSigmaXXY =
-        RewriteRule RulePattern
-            { left =
-                Mock.sigma
+        RewriteRule $ rulePattern
+            (Mock.sigma
                     (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
                     (mkElemVar Mock.y)
-            , right = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-            }
+            )
+            (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y))
 
 -- | Apply the 'RewriteRule's to the configuration.
 applyRewriteRulesParallel
@@ -651,8 +648,7 @@ applyRewriteRulesParallel
     -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
 applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ runSimplifier Mock.env
     $ runUnifierT
     $ Step.applyRewriteRulesParallel unificationProcedure rules initial
   where
@@ -958,6 +954,7 @@ test_applyRewriteRulesParallel =
         Right actual <- applyRewriteRulesParallel initial
             [ RewriteRule RulePattern
                 { left = Mock.a
+                , antiLeft = Nothing
                 , right = mkElemVar Mock.x
                 , requires = makeTruePredicate
                 , ensures = makeTruePredicate
@@ -970,18 +967,15 @@ test_applyRewriteRulesParallel =
 
 axiomIfThen :: RewriteRule Variable
 axiomIfThen =
-    RewriteRule RulePattern
-        { left = Mock.functionalConstr20 Mock.a (mkElemVar Mock.y)
-        , right = mkElemVar Mock.y
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
+    RewriteRule $ rulePattern
+        (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
+        (mkElemVar Mock.y)
 
 axiomSignum :: RewriteRule Variable
 axiomSignum =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (mkElemVar Mock.y)
+        , antiLeft = Nothing
         , right = Mock.a
         , requires = makeEqualsPredicate (Mock.f (mkElemVar Mock.y)) Mock.b
         , ensures = makeTruePredicate
@@ -990,31 +984,23 @@ axiomSignum =
 
 axiomCaseA :: RewriteRule Variable
 axiomCaseA =
-    RewriteRule RulePattern
-        { left =
-            Mock.functionalConstr30
+    RewriteRule $ rulePattern
+        (Mock.functionalConstr30
                 Mock.a
                 (mkElemVar Mock.y)
                 (mkElemVar Mock.z)
-        , right = mkElemVar Mock.y
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
+        )
+        (mkElemVar Mock.y)
 
 axiomCaseB :: RewriteRule Variable
 axiomCaseB =
-    RewriteRule RulePattern
-        { left =
-            Mock.functionalConstr30
+    RewriteRule $ rulePattern
+        (Mock.functionalConstr30
                 Mock.b
                 (mkElemVar Mock.y)
                 (mkElemVar Mock.z)
-        , right = mkElemVar Mock.z
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
+        )
+        (mkElemVar Mock.z)
 
 axiomsCase :: [RewriteRule Variable]
 axiomsCase = [axiomCaseA, axiomCaseB]
@@ -1029,8 +1015,7 @@ applyRewriteRulesSequence
     -> IO (Either UnificationOrSubstitutionError (Results Variable))
 applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
-    $ SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier Mock.env
+    $ runSimplifier Mock.env
     $ runUnifierT
     $ Step.applyRewriteRulesSequence unificationProcedure initial rules
   where
@@ -1120,13 +1105,9 @@ test_applyRewriteRulesSequence =
             initialTerm = Mock.a
             initial = Pattern.fromTermLike initialTerm
         Right actual <- applyRewriteRulesSequence initial
-            [ RewriteRule RulePattern
-                { left = Mock.a
-                , right = mkElemVar Mock.x
-                , requires = makeTruePredicate
-                , ensures = makeTruePredicate
-                , attributes = def
-                }
+            [ RewriteRule $ rulePattern
+                Mock.a
+                (mkElemVar Mock.x)
             ]
         checkResults results actual
         checkRemainders remainders actual

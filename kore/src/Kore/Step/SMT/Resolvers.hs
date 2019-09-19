@@ -9,20 +9,34 @@ Portability : portable
 -}
 
 module Kore.Step.SMT.Resolvers
-    (translateSymbol) where
+    ( translateSort
+    , translateSymbol
+    ) where
 
 import qualified Data.Map as Map
-import           Data.Reflection
-                 ( Given, given )
+import Data.Reflection
+    ( Given
+    , given
+    )
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.IndexedModule.MetadataTools
-                 ( MetadataTools (MetadataTools), SmtMetadataTools )
+import Kore.IndexedModule.MetadataTools
+    ( MetadataTools (MetadataTools)
+    , SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
-                 ( MetadataTools (smtData) )
-import           Kore.Internal.Symbol
+    ( MetadataTools (smtData)
+    )
+import Kore.Internal.Symbol
+import Kore.Sort
+    ( Sort (SortActualSort, SortVariableSort)
+    , SortActual (SortActual, sortActualName, sortActualSorts)
+    )
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations (Declarations), Symbol (Symbol) )
+    ( Declarations (Declarations)
+    , Sort (Sort)
+    , Symbol (Symbol)
+    )
 import qualified Kore.Step.SMT.AST as AST.DoNotUse
 import qualified SMT
 
@@ -41,3 +55,19 @@ translateSymbol Symbol { symbolConstructor, symbolParams } = do
 
     tools :: SmtMetadataTools Attribute.Symbol
     tools = given
+
+translateSort
+    :: Given (SmtMetadataTools Attribute.Symbol)
+    => Sort
+    -> Maybe SMT.SExpr
+translateSort
+    (SortActualSort SortActual {sortActualName, sortActualSorts})
+  = do
+    AST.Sort { smtFromSortArgs } <- Map.lookup sortActualName sorts
+    smtFromSortArgs sorts sortActualSorts
+  where
+    MetadataTools {smtData = AST.Declarations {sorts}} = tools
+
+    tools :: SmtMetadataTools Attribute.Symbol
+    tools = given
+translateSort (SortVariableSort _) = Nothing

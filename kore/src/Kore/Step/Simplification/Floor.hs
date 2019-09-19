@@ -13,15 +13,18 @@ module Kore.Step.Simplification.Floor
     ) where
 
 import qualified Kore.Internal.MultiOr as MultiOr
-                 ( extractPatterns )
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+    ( extractPatterns
+    )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeFloorPredicate )
-import           Kore.Unparser
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeFloorPredicate
+    )
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
 
@@ -35,11 +38,7 @@ However, we don't take into account things like
 floor(a and b) = floor(a) and floor(b).
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Unparse variable
-        , Show variable
-        , Ord variable
-        )
+    :: InternalVariable variable
     => Floor Sort (OrPattern variable)
     -> OrPattern variable
 simplify Floor { floorChild = child } =
@@ -59,30 +58,20 @@ to carry around.
 
 -}
 simplifyEvaluatedFloor
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => OrPattern variable
     -> OrPattern variable
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
-        _ ->
-            makeEvaluateFloor
-                (OrPattern.toPattern child)
+        _ -> makeEvaluateFloor (OrPattern.toPattern child)
 
 {-| 'makeEvaluateFloor' simplifies a 'Floor' of 'Pattern'.
 
 See 'simplify' for details.
 -}
 makeEvaluateFloor
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> OrPattern variable
 makeEvaluateFloor child
@@ -91,11 +80,7 @@ makeEvaluateFloor child
   | otherwise              = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
-    ::  ( SortedVariable variable
-        , Show variable
-        , Ord variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Pattern variable
     -> OrPattern variable
 makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =

@@ -1,20 +1,28 @@
 module Main where
 
 import Data.Semigroup
-       ( (<>) )
+    ( (<>)
+    )
 import Data.Text.Prettyprint.Doc
-       ( LayoutOptions (..), PageWidth (..), defaultLayoutOptions,
-       layoutPretty )
+    ( LayoutOptions (..)
+    , PageWidth (..)
+    , defaultLayoutOptions
+    , layoutPretty
+    )
 import Data.Text.Prettyprint.Doc.Render.Text
-       ( renderIO )
+    ( renderIO
+    )
 import Options.Applicative
 import System.IO
-       ( stdout )
+    ( stdout
+    )
 
 import Kore.Parser
-       ( parseKoreDefinition )
+    ( parseKoreDefinition
+    )
 import Kore.Syntax.Definition
-       ( ParsedDefinition )
+    ( ParsedDefinition
+    )
 import Kore.Unparser
 
 import GlobalMain

@@ -19,34 +19,69 @@ cat log.out | kore-profiler --filter <event-substring> > profiler.out
 
 module Main (main) where
 
-import           Control.Monad
-                 ( when )
+import Control.Monad
+    ( when
+    )
 import qualified Data.List as List
-                 ( foldl', intersperse, isInfixOf, isPrefixOf, sort )
-import           Data.Map.Strict
-                 ( Map )
+    ( foldl'
+    , intersperse
+    , isInfixOf
+    , isPrefixOf
+    , sort
+    )
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Ratio
-                 ( (%) )
-import           Data.Text
-                 ( Text )
+import Data.Ratio
+    ( (%)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-                 ( concat, drop, dropWhile, isPrefixOf, pack, stripStart,
-                 unpack )
+    ( concat
+    , drop
+    , dropWhile
+    , isPrefixOf
+    , pack
+    , stripStart
+    , unpack
+    )
 import qualified Data.Text.IO as Text
-                 ( getLine, putStr )
-import           Options.Applicative
-                 ( InfoMod, Parser, execParser, fullDesc, header, help, helper,
-                 info, long, progDesc, strOption, value, (<**>) )
-import           System.IO
-                 ( hFlush, isEOF, stdout )
-import           Text.Read
-                 ( readMaybe )
+    ( getLine
+    , putStr
+    )
+import Options.Applicative
+    ( InfoMod
+    , Parser
+    , execParser
+    , fullDesc
+    , header
+    , help
+    , helper
+    , info
+    , long
+    , progDesc
+    , strOption
+    , value
+    , (<**>)
+    )
+import System.IO
+    ( hFlush
+    , isEOF
+    , stdout
+    )
+import Text.Read
+    ( readMaybe
+    )
 
-import           Kore.Profiler.Data
-                 ( ProfileEvent (ProfileEvent) )
+import Kore.Profiler.Data
+    ( ProfileEvent (ProfileEvent)
+    )
 import qualified Kore.Profiler.Data as ProfileEvent
-                 ( ProfileEvent (..) )
+    ( ProfileEvent (..)
+    )
 
 main :: IO ()
 main = do
