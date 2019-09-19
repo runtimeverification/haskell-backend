@@ -11,8 +11,6 @@ module Kore.Repl.Parser
     , scriptParser
     ) where
 
-import Debug.Trace
-
 import Control.Applicative
     ( some
     , (<|>)
