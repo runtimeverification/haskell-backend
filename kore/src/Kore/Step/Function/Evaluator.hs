@@ -267,7 +267,7 @@ maybeEvaluatePattern
         Nothing -> Nothing
         Just (BuiltinAndAxiomSimplifier evaluator) ->
             Just . tracing $ do
-                result <- axiomEvaluationTracing $
+                result <- Profile.axiomEvaluation identifier $
                     evaluator
                         substitutionSimplifier
                         simplifier
@@ -284,10 +284,14 @@ maybeEvaluatePattern
                         , remainders = orRemainders
                         } -> do
                             simplified <-
-                                resimplificationTracing (length orResults)
+                                Profile.resimplification
+                                    identifier (length orResults)
                                 $ mapM simplifyIfNeeded orResults
                             let simplifiedResult = MultiOr.flatten simplified
-                            branchTracing orResults simplifiedResult
+                            Profile.axiomBranching
+                                identifier
+                                (length orResults)
+                                (length simplifiedResult)
                             return
                                 (AttemptedAxiom.Applied AttemptedAxiomResults
                                     { results = simplifiedResult
@@ -295,7 +299,7 @@ maybeEvaluatePattern
                                     }
                                 )
                 merged <-
-                    mergeTracing
+                    Profile.mergeSubstitutions identifier
                     $ mergeWithConditionAndSubstitution
                         childrenPredicate
                         flattened
@@ -315,32 +319,11 @@ maybeEvaluatePattern
         identifier' <- identifier
         Map.lookup identifier' axiomIdToEvaluator
 
-    branchTracing axiomResult resimplificationResult =
-        case identifier of
-            Nothing -> return ()
-            Just identifier' -> Profile.axiomBranching
-                identifier'
-                (length axiomResult)
-                (length resimplificationResult)
-
     tracing =
         traceNonErrorMonad
             D_Function_evaluatePattern
             [ debugArg "axiomIdentifier" identifier ]
-        . case identifier of
-            Nothing -> id
-            Just identifier' ->
-                Profile.equalitySimplification identifier' patt
-
-    axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
-    resimplificationTracing resultCount =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.resimplification identifier' resultCount
-    mergeTracing =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.mergeSubstitutions identifier'
+        . Profile.equalitySimplification identifier patt
 
     unchangedPatt =
         Conditional

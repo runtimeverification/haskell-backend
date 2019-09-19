@@ -41,9 +41,6 @@ import Data.List
     ( intercalate
     )
 import qualified Data.List as List
-import Data.Ratio
-    ( (%)
-    )
 import Debug.Trace
     ( traceIO
     , traceM
@@ -53,10 +50,11 @@ import Debug.Trace.String
     )
 import System.Clock
     ( Clock (Monotonic)
-    , TimeSpec (TimeSpec)
+    , TimeSpec
+    , diffTimeSpec
     , getTime
+    , toNanoSecs
     )
-import qualified System.Clock as Clock.DoNotUse
 
 import ListT
     ( ListT (..)
@@ -157,46 +155,42 @@ data Configuration =
 {- A profiler event.
 
 The profiler generates two @ProfileEvent@s for each actual event:
-one at the start, with @endPico=Nothing@, and one at the end with an @Just@
-value for @endPico@
+one at the start, with @duration=Nothing@, and one at the end with an @Just@
+value for @end@
 -}
 data ProfileEvent
     = ProfileEvent
-        { startPico :: !Integer
-        -- The start CPU time, in picoseconds.
-        , endPico :: !(Maybe Integer)
-        -- The end CPU time, in picoseconds. Nothing if this is a start event.
+        { start :: !TimeSpec
+        -- ^ The start CPU time.
+        , end :: !(Maybe TimeSpec)
+        -- ^ The cpu time at the end of the event.
+        -- Nothing if this is a start event.
         , tags :: ![String]
-        -- Tags for the event. If @tags=[t1, t2, t3]@ then this event will be
+        -- ^ Tags for the event. If @tags=[t1, t2, t3]@ then this event will be
         -- counted as part of @t1@, @t1-t2@ and @t1-t2-t3@.
         }
     deriving (Show, Read)
 
-getTimePicos :: IO Integer
-getTimePicos = timeSpecToPicos <$> getTime Monotonic
-  where
-    timeSpecToPicos TimeSpec {sec, nsec} =
-         ((toInteger sec * 1000 * 1000 * 1000) + toInteger nsec) * 1000
+nanosToSeconds :: Integer -> Double
+nanosToSeconds nanos =
+    fromInteger nanos / (1000 * 1000 * 1000)
 
 traceStderr
     :: ProfileEvent -> IO ()
 traceStderr
-    ProfileEvent { endPico = Nothing, tags }
+    ProfileEvent { end = Nothing, tags }
   =
     traceIO (intercalate "-" tags ++ " {")
 traceStderr
-    ProfileEvent { startPico, endPico = Just end, tags }
+    ProfileEvent { start, end = Just endTime, tags }
   =
     traceIO
         (  "} "
         ++ intercalate "-" tags
         ++ " "
-        ++ show
-            ( fromInteger (end - startPico)
-            / 1000 / 1000 / 1000 / 1000
-            :: Double
-            )
-        ++ "s")
+        ++ show (nanosToSeconds (toNanoSecs (diffTimeSpec endTime start)))
+        ++ "s"
+        )
 
 profileEvent
     :: (MonadIO profiler)
@@ -215,21 +209,18 @@ profileHumanReadable
     :: MonadIO profiler
     => [String] -> profiler a -> profiler a
 profileHumanReadable tags action = do
-    startTime <- liftIO getTimePicos
+    startTime <- liftIO (getTime Monotonic)
     let event = ProfileEvent
-            { startPico = startTime
-            , endPico = Nothing
+            { start = startTime
+            , end = Nothing
             , tags
             }
     liftIO $ traceStderr event
     a <- action
     endTime <- liftIO (getTime Monotonic)
     liftIO $ traceStderr
-        event {endPico = Just (timeSpecToPicos endTime)}
+        event {end = Just endTime}
     return a
-  where
-    timeSpecToPicos TimeSpec {sec, nsec} =
-         ((toInteger sec * 1000 * 1000 * 1000) + toInteger nsec) * 1000
 
 {- Times an action in the format required by @ghc-events-analyze@.
 -}

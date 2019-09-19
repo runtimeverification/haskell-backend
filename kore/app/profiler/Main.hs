@@ -67,6 +67,12 @@ import Options.Applicative
     , value
     , (<**>)
     )
+import System.Clock
+    ( TimeSpec
+    , diffTimeSpec
+    , fromNanoSecs
+    , toNanoSecs
+    )
 import System.IO
     ( hFlush
     , isEOF
@@ -162,7 +168,7 @@ updateContext :: ProfileOptions -> Context -> ProfileEvent -> Context
 updateContext
     profileOptions
     context
-    ProfileEvent { tags, endPico = Nothing }
+    ProfileEvent { tags, end = Nothing }
   =
     withTags (withEnabled context)
   where
@@ -200,7 +206,7 @@ updateContext
 updateContext
     _
     context
-    ProfileEvent { tags, endPico = Just _ }
+    ProfileEvent { tags, end = Just _ }
   =
     withoutEnabled (withoutTags context)
   where
@@ -251,7 +257,7 @@ data Context
 
 data EventSummary
     = EventSummary
-        { durationPico :: !Integer
+        { duration :: !TimeSpec
         , count :: !Integer
         }
     deriving Show
@@ -259,22 +265,23 @@ data EventSummary
 instance Semigroup EventSummary where
     (<>)
         EventSummary
-            { durationPico = durationPico1
+            { duration = duration1
             , count = count1
             }
         EventSummary
-            { durationPico = durationPico2
+            { duration = duration2
             , count = count2
             }
       =
         EventSummary
-            { durationPico = durationPico1 + durationPico2
+            { duration =
+                fromNanoSecs (toNanoSecs duration1 + toNanoSecs duration2)
             , count = count1 + count2
             }
 
 instance Monoid EventSummary where
     mempty = EventSummary
-        { durationPico = 0
+        { duration = fromNanoSecs 0
         , count = 0
         }
 
@@ -329,15 +336,18 @@ addProfileEvent
     -> Map String EventSummary
 addProfileEvent
     context
-    ProfileEvent { startPico, endPico = Just end, tags }
+    ProfileEvent { start, end = Just endTime, tags }
     report
   = foldr
-        (addEventEndLine context (end - startPico))
+        (addEventEndLine
+            context
+            (diffTimeSpec endTime start)
+        )
         report
         tags
 addProfileEvent
     _
-    ProfileEvent { endPico = Nothing, tags }
+    ProfileEvent { end = Nothing, tags }
     report
   = foldr addEventStartLine report tags
 
@@ -350,28 +360,28 @@ addEventStartLine name =
     addEvent
         (startPrefix ++ name)
         EventSummary
-            { durationPico = 0
+            { duration = fromNanoSecs 0
             , count = 1
             }
 
 addEventEndLine
     :: Context
-    -> Integer
+    -> TimeSpec
     -> String
     -> Map String EventSummary
     -> Map String EventSummary
 addEventEndLine
     Context {openedTagsToMultiplicity}
-    durationPico
+    duration
     name
   =
     addEvent
         name
         EventSummary
-            { durationPico =
+            { duration =
                 if Map.member name openedTagsToMultiplicity
-                then 0
-                else durationPico
+                then fromNanoSecs 0
+                else duration
             , count = 1
             }
 
@@ -423,11 +433,13 @@ writeReport =
     . Map.toList
 
 writeReportLineWithKey :: (String, EventSummary) -> (Integer, Text)
-writeReportLineWithKey (tag, EventSummary { durationPico, count }) =
-    ( -durationPico
+writeReportLineWithKey (tag, EventSummary { duration, count }) =
+    ( -durationNanos
     , Text.pack $ tag
         ++ "    "
-        ++ show (fromRational (durationPico % 1000000000000) :: Double)
+        ++ show (fromRational (durationNanos % 1000000000) :: Double)
         ++ "s    #"
         ++ show count
     )
+  where
+    durationNanos = toNanoSecs duration

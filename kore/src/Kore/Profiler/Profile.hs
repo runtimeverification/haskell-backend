@@ -60,8 +60,8 @@ oneLiner =
 
 equalitySimplification
     :: (MonadProfiler profiler, Unparse thing)
-    => AxiomIdentifier -> thing -> profiler result -> profiler result
-equalitySimplification identifier thing action = do
+    => Maybe AxiomIdentifier -> thing -> profiler result -> profiler result
+equalitySimplification (Just identifier) thing action = do
     Configuration {logEvaluation} <- profileConfiguration
     if logEvaluation
         then do
@@ -76,11 +76,12 @@ equalitySimplification identifier thing action = do
             filteredLogging
                 identifier ["evaluate", strIdentifier, "0", "total"] action
         else action
+equalitySimplification Nothing _ action = action
 
 axiomBranching
     :: (MonadProfiler profiler)
-    => AxiomIdentifier -> Int -> Int -> profiler ()
-axiomBranching identifier axiomBranches reevaluationBranches = do
+    => Maybe AxiomIdentifier -> Int -> Int -> profiler ()
+axiomBranching (Just identifier) axiomBranches reevaluationBranches = do
     Configuration {logBranching} <- profileConfiguration
     when (logBranching && (axiomBranches > 1 || reevaluationBranches > 1)) $ do
         profileValue
@@ -96,6 +97,7 @@ axiomBranching identifier axiomBranches reevaluationBranches = do
             , oneLiner identifier
             ]
             reevaluationBranches
+axiomBranching Nothing _ _ = return ()
 
 simplificationBranching
     :: (MonadProfiler profiler, Unparse thing)
@@ -162,8 +164,8 @@ identifierSimplification identifier action = do
 -- TODO(virgil): Enable this on-demand.
 axiomEvaluation
     :: MonadProfiler profiler
-    => AxiomIdentifier -> profiler result -> profiler result
-axiomEvaluation identifier action = do
+    => Maybe AxiomIdentifier -> profiler result -> profiler result
+axiomEvaluation (Just identifier) action = do
     Configuration {logEvaluation} <- profileConfiguration
     if logEvaluation
         then filteredLogging
@@ -171,12 +173,13 @@ axiomEvaluation identifier action = do
             ["evaluate", oneLiner identifier, "1", "apply"]
             action
         else action
+axiomEvaluation Nothing action = action
 
 -- TODO(virgil): Enable this on-demand.
 resimplification
     :: MonadProfiler profiler
-    => AxiomIdentifier -> Int -> profiler result -> profiler result
-resimplification identifier size action = do
+    => Maybe AxiomIdentifier -> Int -> profiler result -> profiler result
+resimplification (Just identifier) size action = do
     Configuration {logEvaluation} <- profileConfiguration
     if logEvaluation
         then filteredLogging
@@ -184,12 +187,13 @@ resimplification identifier size action = do
             ["resimplification", oneLiner identifier, show size]
             action
         else action
+resimplification Nothing _ action = action
 
 -- TODO(virgil): Enable this on-demand.
 mergeSubstitutions
     :: MonadProfiler profiler
-    => AxiomIdentifier -> profiler result -> profiler result
-mergeSubstitutions identifier action = do
+    => Maybe AxiomIdentifier -> profiler result -> profiler result
+mergeSubstitutions (Just identifier) action = do
     Configuration {logEvaluation} <- profileConfiguration
     if logEvaluation
         then filteredLogging
@@ -197,6 +201,7 @@ mergeSubstitutions identifier action = do
             ["evaluate", oneLiner identifier, "1", "merge"]
             action
         else action
+mergeSubstitutions Nothing action = action
 
 filteredLogging
     :: MonadProfiler profiler
