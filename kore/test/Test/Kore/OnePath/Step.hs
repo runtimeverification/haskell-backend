@@ -103,10 +103,9 @@ makeOnePathRule term dest =
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
     [ testCase "Runs zero steps" $ do
-        -- Target: a
+        -- Goal: a => a
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
-        -- Start pattern: a
         -- Expected: a
         [ actual ] <- runOnePathSteps
             (Limit 0)
@@ -120,10 +119,9 @@ test_onePathStrategy =
             (Goal $ makeOnePathRule Mock.a Mock.a)
             actual
     , testCase "Axiom priority, first step" $ do
-        -- Target: a
+        -- Goal: a => a
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
-        -- Start pattern: a
         -- Expected: bottom, since a becomes bottom after removing the target.
         [ _actual ] <- runOnePathSteps
             (Limit 1)
@@ -132,10 +130,9 @@ test_onePathStrategy =
             [simpleRewrite Mock.a Mock.c]
         assertEqualWithExplanation "" Proven _actual
 
-        -- Target: d
+        -- Goal: a => d
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
-        -- Start pattern: a
         -- Expected: c, since coinductive axioms are applied only at the second
         -- step
         [ _actual ] <- runOnePathSteps
@@ -147,11 +144,10 @@ test_onePathStrategy =
             (Goal $ makeOnePathRule Mock.c Mock.d)
             _actual
     , testCase "Axiom priority, second step" $ do
-        -- Target: b
+        -- Goal: a => b
         -- Coinductive axiom: b => c
         -- Normal axiom: b => d
         -- Normal axiom: a => b
-        -- Start pattern: a
         -- Expected: bottom, since a->b = target
         [ _actual ] <- runOnePathSteps
             (Limit 2)
@@ -167,11 +163,10 @@ test_onePathStrategy =
             Proven
             _actual
 
-        -- Target: e
+        -- Goal: a => e
         -- Coinductive axiom: b => c
         -- Normal axiom: b => d
         -- Normal axiom: a => b
-        -- Start pattern: a
         -- Expected: c, since a->b->c and b->d is ignored
         [ _actual1 ] <- runOnePathSteps
             (Limit 2)
@@ -190,11 +185,10 @@ test_onePathStrategy =
                 ]
             )
 
-        -- Target: e
+        -- Goal: a => e
         -- Coinductive axiom: e => c
         -- Normal axiom: b => d
         -- Normal axiom: a => b
-        -- Start pattern: a
         -- Expected: d, since a->b->d
         [ _actual ] <- runOnePathSteps
             (Limit 2)
@@ -213,7 +207,7 @@ test_onePathStrategy =
                 ]
             )
     , testCase "Differentiated axioms" $ do
-        -- Target: constr11(a)
+        -- Goal: constr10(x) => constr11(a)
         -- Coinductive axiom: constr11(a) => g(a)
         -- Coinductive axiom: constr11(b) => f(b)
         -- Normal axiom: constr11(a) => g(a)
@@ -221,7 +215,6 @@ test_onePathStrategy =
         -- Normal axiom: constr11(c) => f(c)
         -- Normal axiom: constr11(x) => h(x)
         -- Normal axiom: constr10(x) => constr11(x)
-        -- Start pattern: constr10(x)
         -- Expected:
         --   (f(b) and x=b)
         --   or (f(c) and x=c)
@@ -298,11 +291,10 @@ test_onePathStrategy =
             expected
             actual
     , testCase "Stuck pattern" $ do
-        -- Target: constr11(a)
+        -- Goal: constr10(x) => constr11(a)
         -- Coinductive axiom: constr11(b) => f(b)
         -- Normal axiom: constr11(c) => f(c)
         -- Normal axiom: constr10(x) => constr11(x)
-        -- Start pattern: constr10(x)
         -- Expected:
         --   Bottom
         --   or (f(b) and x=b)
@@ -360,10 +352,9 @@ test_onePathStrategy =
             , _actual3
             ]
     , testCase "Axiom with requires" $ do
-        -- Target: a
+        -- Goal:  constr10(b) => a
         -- Coinductive axiom: n/a
         -- Normal axiom: constr10(b) => a | f(b) == c
-        -- Start pattern: constr10(b)
         -- Expected: a | f(b) == c
         [ _actual1, _actual2 ] <- runOnePathSteps
             (Limit 2)
@@ -398,10 +389,9 @@ test_onePathStrategy =
             , _actual2
             ]
     , testCase "Stuck pattern simplification" $ do
-        -- Target: 1
+        -- Goal: 0 => 1
         -- Coinductive axioms: none
         -- Normal axiom: x => 1 if x<2
-        -- Start pattern: 0
         [ _actual ] <-
             runOnePathSteps
                 (Limit 2)
@@ -424,11 +414,10 @@ test_onePathStrategy =
             Proven
             _actual
     , testCase "Configuration with SMT pruning" $ do
-        -- Target: a
+        -- Goal: constr10(b) | f(b) < 0  =>  a
         -- Coinductive axiom: n/a
         -- Normal axiom: constr10(b) => c | f(b) >= 0
         -- Normal axiom: constr10(b) => a | f(b) < 0
-        -- Start pattern: constr10(b) | f(b) < 0
         -- Expected: a | f(b) < 0
         [ _actual1, _actual2 ] <- runOnePathSteps
             (Limit 1)
@@ -489,10 +478,9 @@ test_onePathStrategy =
             , _actual2
             ]
     , testCase "Stuck with SMT pruning" $ do
-        -- Target: a
+        -- Goal: constr10(b) | f(b) < 0  =>  a
         -- Coinductive axiom: n/a
         -- Normal axiom: constr10(b) => a | f(b) < 0
-        -- Start pattern: constr10(b) | f(b) < 0
         -- Expected: a | f(b) < 0
         [ _actual1, _actual2 ] <- runOnePathSteps
             (Limit 1)
