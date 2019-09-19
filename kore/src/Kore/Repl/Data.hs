@@ -340,9 +340,15 @@ helpText =
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
     \proof-status                          shows status for each claim\n\
-    \log <severity> <type>                 configures the logging outout\n\
-                                           \<severity> can be debug, info,\
+    \log <severity> [<scope>] <type>       configures the logging outout\n\
+    \                                      <severity> can be debug, info,\
                                            \ warning, error, or critical\n\
+    \                                      [<scope>] is the list of scopes\
+                                           \ separated by white spaces or\
+                                           \ commas, e.g. '[scope1, scope2]';\n\
+    \                                      these scopes are used for filtering\
+                                           \ the logged information, for example,\
+                                           \ '[]' will log all scopes\n\
     \                                      <type> can be NoLogging,\
                                            \ LogToStdOut,\
                                            \ or LogToFile filename\n\
