@@ -541,6 +541,8 @@ z :: ElementVariable Variable
 z = ElementVariable $ Variable (testId "z") mempty testSort
 t :: ElementVariable Variable
 t = ElementVariable $ Variable (testId "t") mempty testSort
+u :: ElementVariable Variable
+u = ElementVariable $ Variable (testId "u") mempty testSort
 m :: ElementVariable Variable
 m = ElementVariable $ Variable (testId "m") mempty mapSort
 xSet :: ElementVariable Variable

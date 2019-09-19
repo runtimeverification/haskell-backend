@@ -350,7 +350,7 @@ test_freeVariables =
     testCase "Extract free variables" $ do
         let expect =
                 FreeVariables . Set.fromList
-                $ ElemVar <$> [Mock.x, Mock.z, Mock.t]
+                $ ElemVar <$> [Mock.x, Mock.z, Mock.t, Mock.u]
             actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
@@ -380,7 +380,7 @@ testRulePattern =
         { left =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
-        , antiLeft = Nothing
+        , antiLeft = Just $ mkElemVar Mock.u
         , right =
             -- Include a binder to ensure that we respect them.
             mkExists Mock.y (mkElemVar Mock.y)
