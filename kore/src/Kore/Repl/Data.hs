@@ -340,7 +340,7 @@ helpText =
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
     \proof-status                          shows status for each claim\n\
-    \log <severity> [<scope>] <type>       configures the logging outout\n\
+    \log <severity> [<scope>] <type>       configures the logging output\n\
     \                                      <severity> can be debug, info,\
                                            \ warning, error, or critical\n\
     \                                      [<scope>] is the list of scopes\
@@ -433,7 +433,7 @@ data ReplState claim = ReplState
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
     , logging :: (Logger.Severity, LogScope, LogType)
-    -- ^ The log level and log type decide what gets logged and where.
+    -- ^ The log level, log scopes and log type decide what gets logged and where.
     }
     deriving (GHC.Generic)
 
