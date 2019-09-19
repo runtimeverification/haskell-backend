@@ -18,16 +18,18 @@ module Kore.Syntax.Variable
     , Concrete
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
-import           Data.Hashable
-import           Data.Maybe
-                 ( isNothing )
+import Control.DeepSeq
+    ( NFData (..)
+    )
+import Data.Hashable
+import Data.Maybe
+    ( isNothing
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           Numeric.Natural
+import Numeric.Natural
 
 import Data.Sup
 import Kore.Debug

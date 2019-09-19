@@ -21,49 +21,59 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyAliasSentence
     ) where
 
-import           Control.Applicative
-                 ( Alternative (..) )
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Lens as Lens
-import           Control.Monad
-                 ( foldM )
+import Control.Monad
+    ( foldM
+    )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Reader as Reader
-import           Control.Monad.State.Strict
-                 ( StateT, runStateT )
+import Control.Monad.State.Strict
+    ( StateT
+    , runStateT
+    )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Generics.Product.Fields
+import Data.Function
+import Data.Generics.Product.Fields
 import qualified Data.Map as Map
-import           Data.Maybe
-                 ( isJust, mapMaybe )
-import           Data.Set
-                 ( Set )
+import Data.Maybe
+    ( isJust
+    , mapMaybe
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 
-import           Kore.AST.Error
-import           Kore.ASTVerifier.AttributesVerifier
-import           Kore.ASTVerifier.Error
-import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
-import           Kore.ASTVerifier.SortVerifier
-import           Kore.ASTVerifier.Verifier
+import Kore.AST.Error
+import Kore.ASTVerifier.AttributesVerifier
+import Kore.ASTVerifier.Error
+import Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import Kore.ASTVerifier.SortVerifier
+import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Hook as Attribute
-import           Kore.Attribute.Parser
-                 ( ParseAttributes )
+import Kore.Attribute.Parser
+    ( ParseAttributes
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort as Attribute
-                 ( Sort )
+    ( Sort
+    )
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.IndexedModule as IndexedModule
-import           Kore.IndexedModule.Resolvers as Resolvers
-import           Kore.Sort
-import           Kore.Syntax.Definition
+import Kore.Error
+import Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.Resolvers as Resolvers
+import Kore.Sort
+import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 {-|'verifyUniqueNames' verifies that names defined in a list of sentences are
@@ -146,7 +156,6 @@ askPatternContext variables = do
             Builtin.domainValueVerifiers builtinVerifiers
         , indexedModule =
             verifiedModule
-            & IndexedModule.erasePatterns
             & IndexedModule.eraseAxiomAttributes
         , declaredSortVariables = variables
         , declaredVariables = emptyDeclaredVariables

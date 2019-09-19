@@ -7,30 +7,24 @@ module Kore.Step.Simplification.OrPattern
     ( simplifyPredicatesWithSmt
     ) where
 
+import qualified Branch as BranchT
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplifyPredicate )
+    ( simplifyPredicate
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , SimplifierVariable
+    )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( filterMultiOr )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
+    ( filterMultiOr
+    )
 
 simplifyPredicatesWithSmt
-    ::  ( FreshVariable variable
-        , MonadSimplify simplifier
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: (MonadSimplify simplifier, SimplifierVariable variable)
     => OrPattern variable -> simplifier (OrPattern variable)
 simplifyPredicatesWithSmt unsimplified = do
     simplifiedOrs <- traverse

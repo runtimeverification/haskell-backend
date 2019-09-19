@@ -2,19 +2,22 @@ module Test.Kore.Step.Remainder where
 
 import Test.Tasty
 
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( Predicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( Predicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
-import           Kore.Syntax.Variable
-                 ( Variable )
-import           Kore.Variables.Target
-                 ( Target (..) )
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Kore.Variables.Target
+    ( Target (..)
+    )
 
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Terse
+import Test.Terse
 
 test_existentiallyQuantifyTarget :: [TestTree]
 test_existentiallyQuantifyTarget =

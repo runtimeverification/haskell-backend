@@ -7,12 +7,16 @@ import qualified Hedgehog.Gen as Gen
 import qualified Data.Default as Default
 
 import qualified Kore.Attribute.Symbol as Attribute
-import           Kore.Internal.ApplicationSorts
-import           Kore.Internal.Symbol
-import           Kore.Sort
+import Kore.Internal.ApplicationSorts
+import Kore.Internal.Symbol
+import Kore.Sort
 
 import Test.Kore
-       ( Gen, couple, idGen, sortGen )
+    ( Gen
+    , couple
+    , idGen
+    , sortGen
+    )
 
 symbolGen :: Sort -> Gen Symbol
 symbolGen resultSort =
@@ -40,6 +44,7 @@ symbolAttributeGen =
         <*> hookAttributeGen
         <*> smtlibAttributeGen
         <*> smthookAttributeGen
+        <*> memoAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -67,3 +72,6 @@ smtlibAttributeGen = pure Default.def
 
 smthookAttributeGen :: Gen Attribute.Smthook
 smthookAttributeGen = pure Default.def
+
+memoAttributeGen :: Gen Attribute.Memo
+memoAttributeGen = Attribute.Memo <$> Gen.bool

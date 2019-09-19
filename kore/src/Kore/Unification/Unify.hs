@@ -4,7 +4,7 @@ License     : NCSA
 -}
 
 module Kore.Unification.Unify
-    ( MonadUnify (..)
+    ( MonadUnify (..), SimplifierVariable
     , UnifierT (..)
     , throwUnificationOrSubstitutionError
     , lowerExceptT
@@ -12,32 +12,48 @@ module Kore.Unification.Unify
     , maybeUnifierT
     ) where
 
-import           Control.Applicative
-                 ( Alternative, empty )
-import           Control.Error
-import           Control.Monad
-                 ( MonadPlus )
+import Control.Applicative
+    ( Alternative
+    , empty
+    )
+import Control.Error
+import Control.Monad
+    ( MonadPlus
+    )
 import qualified Control.Monad.Except as Error
-import           Control.Monad.Trans.Class
-                 ( MonadTrans (..) )
-import           Data.Text.Prettyprint.Doc
-                 ( Doc )
+import Control.Monad.Trans.Class
+    ( MonadTrans (..)
+    )
+import Data.Text.Prettyprint.Doc
+    ( Doc
+    )
 
-import           Kore.Internal.TermLike
-                 ( SortedVariable, TermLike )
-import           Kore.Logger
-                 ( LogMessage, WithLog (..) )
-import           Kore.Profiler.Data
-                 ( MonadProfiler )
-import           Kore.Step.Simplification.Data
-                 ( BranchT, MonadSimplify (..) )
-import qualified Kore.Step.Simplification.Data as BranchT
-                 ( gather, scatter )
-import           Kore.Unification.Error
-import           Kore.Unparser
-                 ( Unparse )
-import           SMT
-                 ( MonadSMT (..) )
+import Branch
+    ( BranchT
+    )
+import qualified Branch as BranchT
+import Kore.Internal.TermLike
+    ( SortedVariable
+    , TermLike
+    )
+import Kore.Logger
+    ( LogMessage
+    , WithLog (..)
+    )
+import Kore.Profiler.Data
+    ( MonadProfiler
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify (..)
+    , SimplifierVariable
+    )
+import Kore.Unification.Error
+import Kore.Unparser
+    ( Unparse
+    )
+import SMT
+    ( MonadSMT (..)
+    )
 
 -- | @MonadUnify@ is used throughout the step and unification modules. Its main
 -- goal is to abstract over an 'ExceptT' over a 'UnificationOrSubstitutionError'

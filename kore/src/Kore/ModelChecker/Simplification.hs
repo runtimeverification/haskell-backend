@@ -12,22 +12,28 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
-                 ( simplifyAndRemoveTopExists )
+    ( simplifyAndRemoveTopExists
+    )
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-                 ( filterMultiOr )
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+    ( filterMultiOr
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unparser
+import Kore.Variables.Fresh
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 checkImplicationIsTop
     :: MonadSimplify m

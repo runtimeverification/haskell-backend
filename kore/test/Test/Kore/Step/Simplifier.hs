@@ -3,24 +3,26 @@ module Test.Kore.Step.Simplifier
     , mockPredicateSimplifier
     ) where
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Pattern )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( wrapPredicate )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify, TermLikeSimplifier, termLikeSimplifier )
-import           Kore.Syntax.Variable
-                 ( SortedVariable (..) )
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( wrapPredicate
+    )
+import Kore.Step.Simplification.Simplify
+import Kore.Syntax.Variable
+    ( SortedVariable (..)
+    )
 
 mockSimplifier
-    :: (Ord variable, SortedVariable variable)
+    :: SimplifierVariable variable
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockSimplifier values =
@@ -28,7 +30,7 @@ mockSimplifier values =
         $ const $ mockSimplifierHelper Pattern.fromTermLike values
 
 mockPredicateSimplifier
-    :: (Ord variable, SortedVariable variable)
+    :: SimplifierVariable variable
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockPredicateSimplifier values =
@@ -44,10 +46,8 @@ mockPredicateSimplifier values =
         )
 
 mockSimplifierHelper
-    ::  ( FreshVariable variable0
-        , Ord variable
-        , SortedVariable variable
-        , SortedVariable variable0
+    ::  ( SimplifierVariable variable0
+        , SimplifierVariable variable
         , MonadSimplify m
         )
     => (TermLike variable -> Pattern variable)

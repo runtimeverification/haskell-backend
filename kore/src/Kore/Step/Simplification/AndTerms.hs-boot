@@ -2,30 +2,30 @@ module Kore.Step.Simplification.AndTerms where
 
 import qualified GHC.Stack as GHC
 
+import Branch
+    ( BranchT
+    )
 import Kore.Internal.Pattern
-       ( Pattern )
+    ( Pattern
+    )
 import Kore.Internal.TermLike
-       ( TermLike )
+    ( TermLike
+    )
 import Kore.Logger
-       ( LogMessage, WithLog )
-import Kore.Step.Simplification.Data
-       ( BranchT, MonadSimplify )
-import Kore.Syntax.Variable
-       ( SortedVariable )
+    ( LogMessage
+    , WithLog
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
 import Kore.Unification.Unify
-       ( MonadUnify )
-import Kore.Unparser
-import Kore.Variables.Fresh
-       ( FreshVariable )
+    ( MonadUnify
+    , SimplifierVariable
+    )
 
 termAnd
     :: forall variable simplifier
-    .   ( FreshVariable variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
@@ -33,11 +33,7 @@ termAnd
 
 termUnification
     ::  forall variable unifier
-    .   ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )

@@ -13,15 +13,18 @@ module Kore.Attribute.Pattern
     , deleteFreeVariable
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
+import Control.DeepSeq
+    ( NFData
+    )
 import qualified Control.Lens as Lens
-import           Data.Generics.Product
-import           Data.Hashable
-                 ( Hashable (..) )
+import Data.Generics.Product
+import Data.Hashable
+    ( Hashable
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
@@ -29,9 +32,11 @@ import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
-       ( Sort )
+    ( Sort
+    )
 import Kore.Variables.UnifiedVariable
-       ( UnifiedVariable (..) )
+    ( UnifiedVariable (..)
+    )
 
 {- | @Pattern@ are the attributes of a pattern collected during verification.
  -}
@@ -44,6 +49,7 @@ data Pattern variable =
         , functional :: !Functional
         , function :: !Function
         , defined :: !Defined
+        , created :: !Created
         }
     deriving (Eq, GHC.Generic, Show)
 
@@ -73,6 +79,7 @@ instance
             , functional = synthetic (functional <$> base)
             , function = synthetic (function <$> base)
             , defined = synthetic (defined <$> base)
+            , created = synthetic (created <$> base)
             }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.

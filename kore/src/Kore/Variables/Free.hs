@@ -19,8 +19,9 @@ import qualified Control.Monad.Extra as Monad
 import qualified Control.Monad.RWS.Strict as Monad.RWS
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 
 import Kore.Syntax

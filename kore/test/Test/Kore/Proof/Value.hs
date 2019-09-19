@@ -9,16 +9,24 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.Symbol
-                 ( applicationSorts, toSymbolOrAlias )
-import           Kore.Internal.TermLike
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.Symbol
+    ( applicationSorts
+    , toSymbolOrAlias
+    )
+import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 
-import           Test.Kore
-import           Test.Kore.Builtin.Definition
-                 ( boolSort, builtinList, builtinMap, builtinSet, intSort )
+import Test.Kore
+import Test.Kore.Builtin.Definition
+    ( boolSort
+    , builtinList
+    , builtinMap
+    , builtinSet
+    , intSort
+    )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import qualified Test.Kore.Step.MockSymbols as Mock
 

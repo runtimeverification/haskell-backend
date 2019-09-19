@@ -47,41 +47,52 @@ module Kore.Predicate.Predicate
     , Kore.Predicate.Predicate.substitute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Functor.Foldable
-                 ( Base )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Functor.Foldable
+    ( Base
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Hashable
-import           Data.List
-                 ( foldl', nub )
-import           Data.Map.Strict
-                 ( Map )
-import           Data.Set
-                 ( Set )
+import Data.Hashable
+import Data.List
+    ( foldl'
+    , nub
+    )
+import Data.Map.Strict
+    ( Map
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import           Kore.Attribute.Pattern.FreeVariables
-import           Kore.Debug
-import           Kore.Error
-                 ( Error, koreFail )
-import           Kore.Internal.TermLike hiding
-                 ( freeVariables )
+import Kore.Attribute.Pattern.FreeVariables
+import Kore.Debug
+import Kore.Error
+    ( Error
+    , koreFail
+    )
+import Kore.Internal.TermLike hiding
+    ( freeVariables
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.TopBottom
-                 ( TopBottom (..) )
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 {-| 'GenericPredicate' is a wrapper for predicates used for type safety.
 Should not be exported, and should be treated as an opaque entity which
@@ -178,11 +189,7 @@ isFalse = isBottom
 doing some simplification.
 -}
 makeMultipleAndPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => [Predicate variable]
     -> Predicate variable
 makeMultipleAndPredicate =
@@ -194,11 +201,7 @@ makeMultipleAndPredicate =
 doing some simplification.
 -}
 makeMultipleOrPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => [Predicate variable]
     -> Predicate variable
 makeMultipleOrPredicate =
@@ -210,10 +213,7 @@ makeMultipleOrPredicate =
 simplification.
 -}
 makeAndPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
@@ -230,11 +230,7 @@ makeAndPredicate p@(GenericPredicate first) (GenericPredicate second)
 some simplification.
 -}
 makeOrPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
@@ -251,11 +247,7 @@ makeOrPredicate p@(GenericPredicate first) (GenericPredicate second)
 implication, doing some simplification.
 -}
 makeImpliesPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
@@ -270,11 +262,7 @@ makeImpliesPredicate (GenericPredicate first) (GenericPredicate second) =
 some simplification.
 -}
 makeIffPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
     -> Predicate variable
@@ -289,11 +277,7 @@ makeIffPredicate (GenericPredicate first) (GenericPredicate second) =
 simplification.
 -}
 makeNotPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Predicate variable
     -> Predicate variable
 makeNotPredicate PredicateFalse = makeTruePredicate
@@ -305,11 +289,7 @@ makeNotPredicate (GenericPredicate predicate) =
 predicate.
 -}
 makeEqualsPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> Predicate variable
@@ -320,11 +300,7 @@ makeEqualsPredicate first second =
 predicate.
 -}
 makeInPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
     -> Predicate variable
@@ -335,11 +311,7 @@ makeInPredicate first second =
 predicate.
 -}
 makeCeilPredicate
-    ::  ( Ord variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => TermLike variable
     -> Predicate variable
 makeCeilPredicate patt =
@@ -349,11 +321,7 @@ makeCeilPredicate patt =
 predicate.
 -}
 makeFloorPredicate
-    ::  ( Ord variable
-        , Show variable
-        , SortedVariable variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => TermLike variable
     -> Predicate variable
 makeFloorPredicate patt =
@@ -362,11 +330,7 @@ makeFloorPredicate patt =
 {-| Existential quantification for the given variable in the given predicate.
 -}
 makeExistsPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
@@ -378,12 +342,7 @@ makeExistsPredicate v (GenericPredicate p) =
 {- | Existentially-quantify the given variables over the predicate.
  -}
 makeMultipleExists
-    ::  ( Foldable f
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: (Foldable f, InternalVariable variable)
     => f (ElementVariable variable)
     -> Predicate variable
     -> Predicate variable
@@ -393,11 +352,7 @@ makeMultipleExists vars phi =
 {-| Universal quantification for the given variable in the given predicate.
 -}
 makeForallPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => ElementVariable variable
     -> Predicate variable
     -> Predicate variable
@@ -409,11 +364,7 @@ makeForallPredicate v (GenericPredicate p) =
 {-| Mu quantification for the given variable in the given predicate.
 -}
 makeMuPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => SetVariable variable
     -> Predicate variable
     -> Predicate variable
@@ -425,11 +376,7 @@ makeMuPredicate v (GenericPredicate p) =
 {-| Nu quantification for the given variable in the given predicate.
 -}
 makeNuPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => SetVariable variable
     -> Predicate variable
     -> Predicate variable
@@ -440,23 +387,17 @@ makeNuPredicate v (GenericPredicate p) =
 
 {-| 'makeTruePredicate' produces a predicate wrapping a 'top'.
 -}
-makeTruePredicate
-    :: (Ord variable, SortedVariable variable) => Predicate variable
+makeTruePredicate :: InternalVariable variable => Predicate variable
 makeTruePredicate = GenericPredicate TermLike.mkTop_
 
 {-| 'makeFalsePredicate' produces a predicate wrapping a 'bottom'.
 -}
-makeFalsePredicate
-    :: (Ord variable, SortedVariable variable) => Predicate variable
+makeFalsePredicate :: InternalVariable variable => Predicate variable
 makeFalsePredicate = GenericPredicate TermLike.mkBottom_
 
 makePredicate
-    :: forall variable e.
-        ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: forall variable e
+    .  InternalVariable variable
     => TermLike variable
     -> Either (Error e) (Predicate variable)
 makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
@@ -544,11 +485,7 @@ returns a conjunction of variable/substitution equalities.
 
 -}
 substitutionToPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Substitution variable
     -> Predicate variable
 substitutionToPredicate =
@@ -557,11 +494,7 @@ substitutionToPredicate =
     . Substitution.unwrap
 
 singleSubstitutionToPredicate
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
@@ -574,11 +507,7 @@ returns a conjunction of variable-substitution equalities.
 
 -}
 fromSubstitution
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => Substitution variable
     -> Predicate variable
 fromSubstitution = substitutionToPredicate
@@ -590,10 +519,7 @@ contain none of the targeted variables.
 
  -}
 substitute
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        )
+    :: SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> Predicate variable
     -> Predicate variable

@@ -23,31 +23,42 @@ module Kore.Builtin.Krypto
 
 
 import Control.Exception.Base
-       ( assert )
+    ( assert
+    )
 import GHC.Stack
-       ( HasCallStack )
+    ( HasCallStack
+    )
 
 import Crypto.Hash
-       ( Digest, Keccak_256, hash )
+    ( Digest
+    , Keccak_256
+    , hash
+    )
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.ECC.Types
 
-import           Data.Bits
-import           Data.ByteString
-                 ( ByteString )
+import Data.Bits
+import Data.ByteString
+    ( ByteString
+    )
 import qualified Data.ByteString as ByteString
-import           Data.Char
+import Data.Char
 import qualified Data.HashMap.Strict as HashMap
-import           Data.Map
-                 ( Map )
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map as Map
-import           Data.String
-                 ( IsString, fromString )
-import           Data.Text
-                 ( Text )
+import Data.String
+    ( IsString
+    , fromString
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
-import           Data.Word
-                 ( Word8 )
+import Data.Word
+    ( Word8
+    )
 
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int

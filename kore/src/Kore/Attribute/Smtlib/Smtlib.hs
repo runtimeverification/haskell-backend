@@ -13,23 +13,29 @@ module Kore.Attribute.Smtlib.Smtlib
     , smtlibAttribute
     ) where
 
-import           Control.DeepSeq
-                 ( NFData )
-import           Data.Default
-                 ( Default (..) )
-import           Data.Text
-                 ( Text )
+import Control.DeepSeq
+    ( NFData
+    )
+import Data.Default
+    ( Default (..)
+    )
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Attributes
 import Kore.Debug
 import Kore.Syntax.Application
-       ( SymbolOrAlias (..) )
+    ( SymbolOrAlias (..)
+    )
 import Kore.Syntax.Id
-       ( Id )
+    ( Id
+    )
 import SMT.SimpleSMT
-       ( SExpr )
+    ( SExpr
+    )
 
 {- | The @smtlib@ attribute for symbols.
 

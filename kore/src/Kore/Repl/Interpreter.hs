@@ -23,108 +23,181 @@ module Kore.Repl.Interpreter
     , showCurrentClaimIndex
     ) where
 
-import           Control.Comonad.Trans.Cofree
-                 ( CofreeF (..) )
-import           Control.Lens
-                 ( (%=), (.=) )
+import Control.Comonad.Trans.Cofree
+    ( CofreeF (..)
+    )
+import Control.Lens
+    ( (%=)
+    , (.=)
+    )
 import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
-import           Control.Monad
-                 ( foldM, void )
-import           Control.Monad.Extra
-                 ( ifM, loop, loopM )
-import           Control.Monad.IO.Class
-                 ( MonadIO, liftIO )
-import           Control.Monad.Reader
-                 ( MonadReader, ReaderT (..) )
+    ( makeLenses
+    )
+import Control.Monad
+    ( foldM
+    , void
+    )
+import Control.Monad.Extra
+    ( ifM
+    , loop
+    , loopM
+    )
+import Control.Monad.IO.Class
+    ( MonadIO
+    , liftIO
+    )
+import Control.Monad.Reader
+    ( MonadReader
+    , ReaderT (..)
+    )
 import qualified Control.Monad.Reader as Reader
-                 ( ask )
-import           Control.Monad.RWS.Strict
-                 ( MonadWriter, RWST, ask, asks, lift, runRWST, tell )
-import           Control.Monad.State.Class
-                 ( get, put )
-import           Control.Monad.State.Strict
-                 ( MonadState, StateT (..), execStateT )
+    ( ask
+    )
+import Control.Monad.RWS.Strict
+    ( MonadWriter
+    , RWST
+    , ask
+    , asks
+    , lift
+    , runRWST
+    , tell
+    )
+import Control.Monad.State.Class
+    ( get
+    , put
+    )
+import Control.Monad.State.Strict
+    ( MonadState
+    , StateT (..)
+    , execStateT
+    )
 import qualified Control.Monad.Trans.Class as Monad.Trans
-import           Control.Monad.Trans.Except
-                 ( runExceptT )
-import           Data.Coerce
-                 ( Coercible, coerce )
+import Control.Monad.Trans.Except
+    ( runExceptT
+    )
+import Data.Coerce
+    ( Coercible
+    , coerce
+    )
 import qualified Data.Foldable as Foldable
-import           Data.Functor
-                 ( ($>) )
+import Data.Functor
+    ( ($>)
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Generics.Product
+import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
-import           Data.IORef
-                 ( IORef, modifyIORef, newIORef, readIORef )
+import Data.IORef
+    ( IORef
+    , modifyIORef
+    , newIORef
+    , readIORef
+    )
 import qualified Data.List as List
-import           Data.List.NonEmpty
-                 ( NonEmpty )
+import Data.List.NonEmpty
+    ( NonEmpty
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Maybe
-import           Data.Sequence
-                 ( Seq )
-import           Data.Set
-                 ( Set )
+import Data.Maybe
+import Data.Sequence
+    ( Seq
+    )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import           GHC.Exts
-                 ( toList )
-import           GHC.IO.Handle
-                 ( hGetContents, hPutStr )
-import           System.Exit
+import GHC.Exts
+    ( toList
+    )
+import GHC.IO.Handle
+    ( hGetContents
+    , hPutStr
+    )
+import System.Exit
 
-import           Kore.Attribute.Axiom
-                 ( SourceLocation (..) )
+import Kore.Attribute.Axiom
+    ( SourceLocation (..)
+    )
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom (..), RuleIndex (..), sourceLocation )
+    ( Axiom (..)
+    , RuleIndex (..)
+    , sourceLocation
+    )
 import qualified Kore.Attribute.Label as AttrLabel
-import           Kore.Attribute.RuleIndex
-import           Kore.Goal
-import           Kore.Internal.Conditional
-                 ( Conditional (..) )
+import Kore.Attribute.RuleIndex
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate
-                 ( Predicate )
-import           Kore.Internal.TermLike
-                 ( TermLike )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
-import           Kore.OnePath.Verification
-                 ( Claim, CommonProofState )
-import           Kore.Repl.Data
-import           Kore.Repl.Parser
-import           Kore.Repl.State
-import           Kore.Step.Rule
-                 ( RulePattern (..) )
+import Kore.Repl.Data
+import Kore.Repl.Parser
+import Kore.Repl.State
+import Kore.Step.Rule
+    ( RulePattern (..)
+    )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
-                 ( attributes )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify )
+    ( attributes
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Syntax.Application
+import Kore.Strategies.Goal
+import Kore.Strategies.OnePath.Verification
+    ( Claim
+    , CommonProofState
+    )
+import Kore.Strategies.ProofState
+    ( ProofStateTransformer (ProofStateTransformer)
+    , proofState
+    )
+import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
+import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
-                 ( Id (..) )
-import           Kore.Syntax.Variable
-                 ( Variable )
-import           Kore.Unparser
-                 ( Unparse, unparse, unparseToString )
-import           Numeric.Natural
-import           System.Directory
-                 ( doesDirectoryExist, doesFileExist, findExecutable )
-import           System.FilePath.Posix
-                 ( splitFileName )
-import           System.Process
-                 ( StdStream (CreatePipe), createProcess, proc, std_in,
-                 std_out )
-import           Text.Megaparsec
-                 ( ParseErrorBundle (..), errorBundlePretty, parseMaybe,
-                 runParser )
+    ( Id (..)
+    )
+import Kore.Syntax.Variable
+    ( Variable
+    )
+import Kore.Unparser
+    ( Unparse
+    , unparse
+    , unparseToString
+    )
+import Numeric.Natural
+import System.Directory
+    ( doesDirectoryExist
+    , doesFileExist
+    , findExecutable
+    )
+import System.FilePath.Posix
+    ( splitFileName
+    )
+import System.Process
+    ( StdStream (CreatePipe)
+    , createProcess
+    , proc
+    , std_in
+    , std_out
+    )
+import Text.Megaparsec
+    ( ParseErrorBundle (..)
+    , errorBundlePretty
+    , parseMaybe
+    , runParser
+    )
 
 -- | Warning: you should never use WriterT or RWST. It is used here with
 -- _great care_ of evaluating the RWST to a StateT immediatly, and thus getting
@@ -769,7 +842,8 @@ tryAxiomClaimWorker mode ref = do
                     ProofStateTransformer
                         { provenValue        = putStrLn' "Cannot unify bottom"
                         , goalTransformer    = runUnifier' first . term
-                        , goalRemTransformer = runUnifier' first . term
+                        , goalRemainderTransformer = runUnifier' first . term
+                        , goalRewrittenTransformer = runUnifier' first . term
                         }
                     second
 
@@ -1058,9 +1132,11 @@ unparseStrategy
 unparseStrategy omitList =
     proofState ProofStateTransformer
         { goalTransformer = makeKoreReplOutput . unparseToString . fmap hide
-        , goalRemTransformer = \pat ->
+        , goalRemainderTransformer = \pat ->
             makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseToString $ fmap hide pat)
+        , goalRewrittenTransformer =
+            makeKoreReplOutput . unparseToString . fmap hide
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where

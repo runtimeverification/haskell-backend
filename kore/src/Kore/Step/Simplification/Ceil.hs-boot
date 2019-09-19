@@ -4,33 +4,31 @@ module Kore.Step.Simplification.Ceil
     ) where
 
 import Kore.Internal.OrPattern
-       ( OrPattern )
+    ( OrPattern
+    )
 import Kore.Internal.OrPredicate
-       ( OrPredicate )
+    ( OrPredicate
+    )
 import Kore.Internal.Pattern
-       ( Pattern )
+    ( Pattern
+    )
 import Kore.Internal.Predicate
-       ( Predicate )
+    ( Predicate
+    )
 import Kore.Internal.TermLike
-       ( TermLike )
+    ( TermLike
+    )
 import Kore.Logger
-       ( LogMessage, WithLog )
-import Kore.Step.Simplification.Data
-       ( MonadSimplify )
-import Kore.Syntax.Variable
-       ( SortedVariable )
-import Kore.Unparser
-       ( Unparse )
-import Kore.Variables.Fresh
-       ( FreshVariable )
+    ( LogMessage
+    , WithLog
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , SimplifierVariable
+    )
 
 makeEvaluate
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
+    ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
@@ -40,10 +38,7 @@ makeEvaluate
 
 makeEvaluateTerm
     ::  forall variable simplifier
-    .   ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
+    .   ( SimplifierVariable variable
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )

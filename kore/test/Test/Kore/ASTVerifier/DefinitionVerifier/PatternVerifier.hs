@@ -4,32 +4,35 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.PatternVerifier
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
 
-import           Data.Function
+import Data.Function
 import qualified Data.List as List
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
-import           Kore.AST.AstWithLocation
-import           Kore.ASTVerifier.Error
-                 ( sortNeedsDomainValueAttributeMessage )
-import           Kore.ASTVerifier.PatternVerifier as PatternVerifier
+import Kore.AST.AstWithLocation
+import Kore.ASTVerifier.Error
+    ( sortNeedsDomainValueAttributeMessage
+    )
+import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Hook as Attribute.Hook
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import qualified Kore.Builtin as Builtin
-import           Kore.Error
-import           Kore.IndexedModule.Error
-                 ( noSort )
+import Kore.Error
+import Kore.IndexedModule.Error
+    ( noSort
+    )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
 
-import           Test.Kore
-import           Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
+import Test.Kore
+import Test.Kore.ASTVerifier.DefinitionVerifier as Helpers
 import qualified Test.Kore.Builtin.Builtin as Builtin
 import qualified Test.Kore.Builtin.Definition as Builtin
 
@@ -290,7 +293,7 @@ test_patternVerifier =
     , successTestsForObjectPattern "Application pattern - alias"
         (applicationPatternWithChildren
             objectAliasNameAsSymbol
-            [ simpleExistsParsedPattern
+            [ variableParsedPattern
                 objectVariableName anotherObjectSort2]
         )
         (NamePrefix "dummy")
@@ -364,9 +367,9 @@ test_patternVerifier =
         (ErrorStack ["symbol or alias 'ObjectAlias' (<test data>)"])
         (applicationPatternWithChildren
             objectAliasNameAsSymbol
-            [ simpleExistsParsedPattern
+            [ variableParsedPattern
                 objectVariableName anotherObjectSort2
-            , simpleExistsParsedPattern
+            , variableParsedPattern
                 objectVariableName anotherObjectSort2
             ]
         )
@@ -707,7 +710,7 @@ test_patternVerifier =
         objectAliasSentenceWithArguments
             objectAliasName
             objectSort
-            [ ElementVariable Variable
+            [ ElemVar $ ElementVariable Variable
                 { variableName = testId "x"
                 , variableCounter = mempty
                 , variableSort = anotherObjectSort2
@@ -785,8 +788,8 @@ test_verifyBinder =
             { declaredVariables = PatternVerifier.emptyDeclaredVariables
             , declaredSortVariables = Set.empty
             , indexedModule =
-                Builtin.indexedModule
-                & IndexedModule.erasePatterns
+                Builtin.verifiedModule
+                & IndexedModule.eraseAxiomAttributes
             , builtinDomainValueVerifiers = mempty
             }
     testVerifyBinder name expect =
@@ -1179,7 +1182,7 @@ patternsInAllContexts
                                 SortVariableSort <$> aliasParams
                             }
                     , applicationChildren =
-                        [ ElementVariable Variable
+                        [ SetVar $ SetVariable Variable
                             { variableName = testId "x"
                             , variableCounter = mempty
                             , variableSort = symbolAliasSort

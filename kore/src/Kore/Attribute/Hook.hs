@@ -13,11 +13,13 @@ module Kore.Attribute.Hook
     ) where
 
 import qualified Control.Monad as Monad
-import           Data.Hashable
-                 ( Hashable )
+import Data.Hashable
+    ( Hashable
+    )
 import qualified Data.Maybe as Maybe
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

@@ -2,9 +2,12 @@ module Test.Data.Graph.TopologicalSort
     (test_topologicalSort) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 import Test.Tasty.HUnit
-       ( assertEqual, testCase )
+    ( assertEqual
+    , testCase
+    )
 
 import qualified Data.Map as Map
 

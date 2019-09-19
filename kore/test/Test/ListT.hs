@@ -1,17 +1,18 @@
 module Test.ListT where
 
-import           Hedgehog
+import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
-import           Control.Monad.Reader
-                 ( Reader )
+import Control.Monad.Reader
+    ( Reader
+    )
 import qualified Control.Monad.Reader as Reader
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
-import           Data.Functor.Identity
+import Data.Functor.Identity
 
 import ListT
 

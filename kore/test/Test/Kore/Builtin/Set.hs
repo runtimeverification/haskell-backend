@@ -1,11 +1,14 @@
 module Test.Kore.Builtin.Set where
 
-import           Hedgehog hiding
-                 ( Concrete, opaque, property )
+import Hedgehog hiding
+    ( Concrete
+    , opaque
+    , property
+    )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Test.Tasty
+import Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Trans
@@ -16,69 +19,95 @@ import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           GHC.Stack as GHC
-                 ( HasCallStack )
+import GHC.Stack as GHC
+    ( HasCallStack
+    )
 
-import           Kore.Attribute.Hook
-                 ( Hook )
+import Kore.Attribute.Hook
+    ( Hook
+    )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.SetSymbols as Set
-import           Kore.Domain.Builtin
-                 ( NormalizedAc (NormalizedAc), NormalizedSet )
+import Kore.Domain.Builtin
+    ( NormalizedAc (NormalizedAc)
+    , NormalizedSet
+    )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools )
-import           Kore.Internal.MultiOr
-                 ( MultiOr (..) )
-import           Kore.Internal.Pattern as Pattern
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
+import Kore.Internal.MultiOr
+    ( MultiOr (..)
+    )
+import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate as Predicate hiding
-                 ( fromSubstitution )
-import           Kore.Sort
-                 ( Sort )
-import           Kore.Step.Rule
-                 ( RewriteRule (RewriteRule), RulePattern (RulePattern) )
-import           Kore.Step.Rule as RulePattern
-                 ( RulePattern (..) )
-import           Kore.Step.Simplification.AndTerms
-                 ( termUnification )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.Syntax.Id
-                 ( Id )
-import           Kore.Syntax.Variable
-                 ( Concrete, Variable (Variable, variableName) )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate as Predicate hiding
+    ( fromSubstitution
+    )
+import Kore.Sort
+    ( Sort
+    )
+import Kore.Step.Rule
+    ( RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    )
+import Kore.Step.Rule as RulePattern
+    ( RulePattern (..)
+    )
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
+    )
+import Kore.Syntax.Id
+    ( Id
+    )
+import Kore.Syntax.Variable
+    ( Concrete
+    , Variable (Variable, variableName)
+    )
 import qualified Kore.Syntax.Variable as DoNotUse
-                 ( Variable (..) )
+    ( Variable (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unification.Unify
-                 ( runUnifierT )
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import           SMT
-                 ( SMT )
+import Kore.Unification.Unify
+    ( runUnifierT
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
+import SMT
+    ( SMT
+    )
 
-import           Test.Kore
-                 ( elementVariableGen, standaloneGen, testId )
+import Test.Kore
+    ( elementVariableGen
+    , standaloneGen
+    , testId
+    )
 import qualified Test.Kore.Builtin.Bool as Test.Bool
-import           Test.Kore.Builtin.Builtin
-import           Test.Kore.Builtin.Definition
-import           Test.Kore.Builtin.Int
-                 ( genConcreteIntegerPattern, genInteger, genIntegerPattern )
+import Test.Kore.Builtin.Builtin
+import Test.Kore.Builtin.Definition
+import Test.Kore.Builtin.Int
+    ( genConcreteIntegerPattern
+    , genInteger
+    , genIntegerPattern
+    )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Kore.With
-import           Test.SMT hiding
-                 ( runSMT )
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Kore.With
+import Test.SMT hiding
+    ( runSMT
+    )
+import Test.Tasty.HUnit.Extensions
 
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
@@ -1568,6 +1597,7 @@ test_concretizeKeysAxiom =
     axiom =
         RewriteRule RulePattern
             { left = mkPair intSort setSort x symbolicSet
+            , antiLeft = Nothing
             , right = x
             , requires = Predicate.makeTruePredicate
             , ensures = Predicate.makeTruePredicate
@@ -1649,8 +1679,7 @@ unifiedBy
 unifiedBy (termLike1, termLike2) substitution testName =
     testCase testName $ do
         Right actual <-
-            runSMT
-            $ evalSimplifier testEnv
+            runSimplifier testEnv
             $ runUnifierT
             $ termUnification termLike1 termLike2
         Trans.liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)

@@ -15,32 +15,43 @@ module Kore.Proof.Value
     , asTermLike
     ) where
 
-import           Control.Comonad.Trans.Cofree
-                 ( Cofree, CofreeF (..) )
+import Control.Comonad.Trans.Cofree
+    ( Cofree
+    , CofreeF (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import           Data.Functor.Compose
-import           Data.Functor.Const
-import           Data.Functor.Foldable
-                 ( Base, Corecursive, Recursive )
+import Data.Functor.Compose
+import Data.Functor.Const
+import Data.Functor.Foldable
+    ( Base
+    , Corecursive
+    , Recursive
+    )
 import qualified Data.Functor.Foldable as Recursive
-import           Data.Functor.Identity
-import           GHC.Generics
-                 ( Generic )
+import Data.Functor.Identity
+import GHC.Generics
+    ( Generic
+    )
 
 import qualified Kore.Attribute.Pattern as Attribute
-                 ( Pattern (..) )
+    ( Pattern (..)
+    )
 import qualified Kore.Domain.Builtin as Domain
-import           Kore.Internal.Symbol
-import           Kore.Internal.TermLike
-                 ( TermLike, TermLikeF (..) )
-import           Kore.Sort
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
+    ( TermLike
+    , TermLikeF (..)
+    )
+import Kore.Sort
 import qualified Kore.Syntax.Application as Syntax
-import           Kore.Syntax.CharLiteral
-                 ( CharLiteral )
+import Kore.Syntax.CharLiteral
+    ( CharLiteral
+    )
 import qualified Kore.Syntax.DomainValue as Syntax
-import           Kore.Syntax.StringLiteral
-                 ( StringLiteral )
-import           Kore.Syntax.Variable
+import Kore.Syntax.StringLiteral
+    ( StringLiteral
+    )
+import Kore.Syntax.Variable
 
 {- | Proof (by construction) that a pattern is a normalized value.
 

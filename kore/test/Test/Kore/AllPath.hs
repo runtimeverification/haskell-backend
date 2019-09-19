@@ -2,33 +2,44 @@ module Test.Kore.AllPath where
 
 import Test.Tasty
 
-import           Control.Applicative
+import Control.Applicative
 import qualified Data.Foldable as Foldable
-import           Data.Function
-                 ( (&) )
-import           Data.Functor.Identity
+import Data.Function
+    ( (&)
+    )
+import Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
 import qualified Data.Maybe as Maybe
-import           Data.Sequence
-                 ( Seq )
+import Data.Sequence
+    ( Seq
+    )
 import qualified Data.Sequence as Seq
-import           GHC.Stack
-                 ( HasCallStack )
+import GHC.Stack
+    ( HasCallStack
+    )
 
-import qualified Kore.Goal as Goal
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Logger
-                 ( LogMessage (..), WithLog (..) )
-import           Kore.Profiler.Data
-                 ( Configuration (..), MonadProfiler (..) )
-import           Kore.Step.Simplification.Data
-                 ( MonadSimplify (..) )
+import Kore.Logger
+    ( LogMessage (..)
+    , WithLog (..)
+    )
+import Kore.Profiler.Data
+    ( Configuration (..)
+    , MonadProfiler (..)
+    )
+import Kore.Step.Simplification.Data
+    ( MonadSimplify (..)
+    )
 import qualified Kore.Step.Strategy as Strategy
-import           Kore.Step.Transition
-                 ( runTransitionT )
+import Kore.Step.Transition
+    ( runTransitionT
+    )
 import qualified Kore.Step.Transition as Transition
-import           SMT
-                 ( MonadSMT (..) )
+import qualified Kore.Strategies.Goal as Goal
+import qualified Kore.Strategies.ProofState as Goal
+import SMT
+    ( MonadSMT (..)
+    )
 
 import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Extensions
@@ -75,7 +86,7 @@ test_unprovenNodes =
         MultiOr.MultiOr []
     , Goal.unprovenNodes
         (goal 0
-            & subgoal 0 (1, Goal.GoalRem 1)
+            & subgoal 0 (1, Goal.GoalRemainder 1)
             & subgoal 0 (2, Goal.Proven)
         )
         `equals_`
@@ -96,7 +107,7 @@ test_transitionRule_CheckProven :: [TestTree]
 test_transitionRule_CheckProven =
     [ done Goal.Proven
     , unmodified (Goal.Goal    (A, B))
-    , unmodified (Goal.GoalRem (A, B))
+    , unmodified (Goal.GoalRemainder (A, B))
     ]
   where
     run = runTransitionRule Goal.CheckProven
@@ -109,10 +120,10 @@ test_transitionRule_CheckGoalRem :: [TestTree]
 test_transitionRule_CheckGoalRem =
     [ unmodified Goal.Proven
     , unmodified (Goal.Goal    (A, B))
-    , done       (Goal.GoalRem undefined)
+    , done       (Goal.GoalRemainder undefined)
     ]
   where
-    run = runTransitionRule Goal.CheckGoalRem
+    run = runTransitionRule Goal.CheckGoalRemainder
     unmodified :: HasCallStack => ProofState -> TestTree
     unmodified state = run state `equals_` [(state, mempty)]
     done :: HasCallStack => ProofState -> TestTree
@@ -121,8 +132,8 @@ test_transitionRule_CheckGoalRem =
 test_transitionRule_RemoveDestination :: [TestTree]
 test_transitionRule_RemoveDestination =
     [ unmodified Goal.Proven
-    , unmodified (Goal.GoalRem (A, B))
-    , Goal.Goal (B, B) `becomes` (Goal.GoalRem (Bot, B), mempty)
+    , unmodified (Goal.GoalRemainder (A, B))
+    , Goal.Goal (B, B) `becomes` (Goal.Goal (Bot, B), mempty)
     ]
   where
     run = runTransitionRule Goal.RemoveDestination
@@ -134,8 +145,8 @@ test_transitionRule_TriviallyValid :: [TestTree]
 test_transitionRule_TriviallyValid =
     [ unmodified    Goal.Proven
     , unmodified    (Goal.Goal    (A, B))
-    , unmodified    (Goal.GoalRem (A, B))
-    , becomesProven (Goal.GoalRem (Bot, B))
+    , unmodified    (Goal.GoalRemainder (A, B))
+    , becomesProven (Goal.GoalRemainder (Bot, B))
     ]
   where
     run = runTransitionRule Goal.TriviallyValid
@@ -147,16 +158,16 @@ test_transitionRule_TriviallyValid =
 test_transitionRule_DerivePar :: [TestTree]
 test_transitionRule_DerivePar =
     [ unmodified Goal.Proven
-    , unmodified (Goal.Goal    (A, B))
+    , unmodified (Goal.GoalRewritten (A, B))
     , [Rule (A, C)]
         `derives`
         [ (Goal.Goal    (C,   C), Seq.singleton $ Rule (A, C))
-        , (Goal.GoalRem (Bot, C), mempty)
+        , (Goal.GoalRemainder (Bot, C), mempty)
         ]
     , fmap Rule [(A, B), (B, C)]
         `derives`
         [ (Goal.Goal    (B  , C), Seq.singleton $ Rule (A, B))
-        , (Goal.GoalRem (Bot, C), mempty)
+        , (Goal.GoalRemainder (Bot, C), mempty)
         ]
     ]
   where
@@ -170,7 +181,7 @@ test_transitionRule_DerivePar =
         -> [(ProofState, Seq (Goal.Rule Goal))]
         -- ^ transitions
         -> TestTree
-    derives rules = equals_ (run rules $ Goal.GoalRem (A, C))
+    derives rules = equals_ (run rules $ Goal.GoalRemainder (A, C))
 
 test_runStrategy :: [TestTree]
 test_runStrategy =
@@ -290,27 +301,28 @@ instance Goal.Goal Goal where
     isTriviallyValid (src, _) = src == Bot
 
     derivePar rules (src, dst) =
-        goals <|> goalRem
+        goals <|> goalRemainder
       where
         goal rule@(Rule (_, to)) = do
             Transition.addRule rule
             (pure . Goal.Goal) (to, dst)
-        goalRem = do
+        goalRemainder = do
             let r = Foldable.foldl' difference src (fst . unRule <$> applied)
-            (pure . Goal.GoalRem) (r, dst)
+            (pure . Goal.GoalRemainder) (r, dst)
         applyRule rule@(Rule (from, _))
           | from `matches` src = Just rule
           | otherwise = Nothing
         applied = Maybe.mapMaybe applyRule rules
         goals = Foldable.asum (goal <$> applied)
 
-    simplify = undefined
+    simplify = return
     isTrusted = undefined
     deriveSeq = Goal.derivePar
 
 runTransitionRule :: Prim -> ProofState -> [(ProofState, Seq (Goal.Rule Goal))]
 runTransitionRule prim state =
-    (runIdentity . unAllPathIdentity . runTransitionT) (transitionRule prim state)
+    (runIdentity . unAllPathIdentity . runTransitionT)
+        (transitionRule prim state)
 
 newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
     deriving (Functor, Applicative, Monad)
@@ -347,6 +359,7 @@ instance MonadSimplify AllPathIdentity where
     localSimplifierPredicate = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
+    askMemo = undefined
 
 -- | 'Goal.transitionRule' instantiated with our unit test rules.
 transitionRule

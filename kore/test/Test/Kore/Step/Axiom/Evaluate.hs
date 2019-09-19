@@ -7,36 +7,43 @@ import Test.Tasty.HUnit
 
 import qualified Control.Lens as Lens
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Generics.Product
-import           Data.Generics.Wrapped
+import Data.Function
+import Data.Generics.Product
+import Data.Generics.Wrapped
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
-import           Kore.Attribute.Axiom.Concrete
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Attribute.Axiom.Concrete
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Logger.Output
-                 ( emptyLogger )
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeFalsePredicate,
-                 makeNotPredicate, makeOrPredicate, makeTruePredicate )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeFalsePredicate
+    , makeNotPredicate
+    , makeOrPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Step.Axiom.Evaluate as Kore
-import           Kore.Step.Rule
-                 ( EqualityRule (..), RulePattern (..), rulePattern )
-import           Kore.Step.Simplification.Data
-                 ( AttemptedAxiom (..), Env, evalSimplifier, isNotApplicable )
-import           Kore.Unparser
-import qualified SMT
+import Kore.Step.Rule
+    ( EqualityRule (..)
+    , RulePattern (..)
+    , rulePattern
+    )
+import Kore.Step.Simplification.Simplify
+import Kore.Unparser
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 
 test_evaluateAxioms :: [TestTree]
 test_evaluateAxioms =
@@ -194,14 +201,9 @@ doesn'tApply =
 
 -- * Test environment
 
-testEnv :: Env
-testEnv = Mock.env
-
 evaluateAxioms
     :: [EqualityRule Variable]
     -> TermLike Variable
     -> IO (AttemptedAxiom Variable)
-evaluateAxioms axioms termLike = do
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier testEnv
-    $ Kore.evaluateAxioms axioms termLike
+evaluateAxioms axioms termLike =
+    runSimplifier Mock.env $ Kore.evaluateAxioms axioms termLike

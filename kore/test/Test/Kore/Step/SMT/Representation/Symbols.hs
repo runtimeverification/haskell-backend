@@ -4,38 +4,63 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
+    ( Axiom
+    )
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
+    ( Symbol
+    )
 import qualified Kore.Builtin.Int as Int
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
 import qualified Kore.Step.SMT.AST as AST
-                 ( Declarations, Encodable, SortReference, Symbol,
-                 SymbolReference )
-import           Kore.Step.SMT.Representation.Symbols
+    ( Declarations
+    , Encodable
+    , SortReference
+    , Symbol
+    , SymbolReference
+    )
+import Kore.Step.SMT.Representation.Symbols
 import qualified Kore.Syntax.Id as Kore
-                 ( Id )
+    ( Id
+    )
 
-import           Test.Kore
-                 ( testId )
-import           Test.Kore.Contains
-import           Test.Kore.Step.SMT.Builders
-                 ( constructor, emptyModule, functional, hook, indexModule,
-                 koreSort, smthook, smtlib, sortDeclaration,
-                 symbolDeclaration )
-import           Test.Kore.Step.SMT.Helpers
-                 ( constructorAxiom )
-import           Test.Kore.Step.SMT.Representation.Builders
-                 ( emptyDeclarations, unresolvedConstructorSymbolMap,
-                 unresolvedSmthookSymbolMap, unresolvedSmtlibSymbolMap )
-import           Test.Kore.Step.SMT.Representation.Helpers
-                 ( declarationsAre, smtForSymbolIs )
+import Test.Kore
+    ( testId
+    )
+import Test.Kore.Contains
+import Test.Kore.Step.SMT.Builders
+    ( constructor
+    , emptyModule
+    , functional
+    , hook
+    , indexModule
+    , koreSort
+    , smthook
+    , smtlib
+    , sortDeclaration
+    , symbolDeclaration
+    )
+import Test.Kore.Step.SMT.Helpers
+    ( constructorAxiom
+    )
+import Test.Kore.Step.SMT.Representation.Builders
+    ( emptyDeclarations
+    , unresolvedConstructorSymbolMap
+    , unresolvedSmthookSymbolMap
+    , unresolvedSmtlibSymbolMap
+    )
+import Test.Kore.Step.SMT.Representation.Helpers
+    ( declarationsAre
+    , smtForSymbolIs
+    )
 import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers
-                 ( testsForModule )
-import           Test.Kore.With
-                 ( with )
-import           Test.Tasty.HUnit.Extensions
+    ( testsForModule
+    )
+import Test.Kore.With
+    ( with
+    )
+import Test.Tasty.HUnit.Extensions
 
 test_symbolParsing :: [TestTree]
 test_symbolParsing =

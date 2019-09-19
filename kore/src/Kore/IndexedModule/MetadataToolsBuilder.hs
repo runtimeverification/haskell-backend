@@ -12,15 +12,21 @@ module Kore.IndexedModule.MetadataToolsBuilder
     ) where
 
 import qualified Kore.Attribute.Axiom as Attribute
-                 ( Axiom )
-import           Kore.Attribute.Symbol
-                 ( StepperAttributes )
-import           Kore.IndexedModule.IndexedModule
-                 ( VerifiedModule )
-import           Kore.IndexedModule.MetadataTools
-                 ( SmtMetadataTools, extractMetadataTools )
+    ( Axiom
+    )
+import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    , extractMetadataTools
+    )
 import qualified Kore.Step.SMT.Representation.All as SMT.Representation
-                 ( build )
+    ( build
+    )
 
 
 -- |Creates a set of 'MetadataTools' from a 'KoreIndexedModule'.

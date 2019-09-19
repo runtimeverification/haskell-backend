@@ -1,20 +1,25 @@
 module Test.Kore.Parser.Parser (test_koreParser) where
 
 import Test.Tasty
-       ( TestTree, testGroup )
+    ( TestTree
+    , testGroup
+    )
 
 import Data.Text
-       ( Text )
+    ( Text
+    )
 
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Internal.TermLike as Internal
-import           Kore.Parser.Parser
-import           Kore.Syntax
-import           Kore.Syntax.Definition
-import           Kore.Variables.UnifiedVariable
+import Kore.Parser.Parser
+import Kore.Syntax
+import Kore.Syntax.Definition
+import Kore.Variables.UnifiedVariable
 
 import Test.Kore hiding
-       ( sortVariable, sortVariableSort )
+    ( sortVariable
+    , sortVariableSort
+    )
 import Test.Kore.Parser
 
 test_koreParser :: [TestTree]
@@ -780,7 +785,7 @@ sentenceAliasParserTests =
                                     [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
-                            [ ElementVariable Variable
+                            [ ElemVar $ ElementVariable Variable
                                 { variableName = testId "X" :: Id
                                 , variableSort = sortVariableSort "s2"
                                 , variableCounter = mempty
@@ -830,12 +835,12 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ ElementVariable Variable
+                                [ ElemVar $ ElementVariable Variable
                                     { variableName = testId "X" :: Id
                                     , variableSort = sortVariableSort "s3"
                                     , variableCounter = mempty
                                     }
-                                , ElementVariable Variable
+                                , ElemVar $ ElementVariable Variable
                                     { variableName = testId "Y" :: Id
                                     , variableSort = sortVariableSort "s4"
                                     , variableCounter = mempty
@@ -977,7 +982,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias = aliasHead
-                            , applicationChildren = [varA, varB]
+                            , applicationChildren = ElemVar <$> [varA, varB]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalizePattern
@@ -1015,7 +1020,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias  = aliasHead
-                            , applicationChildren = [var]
+                            , applicationChildren = [ElemVar var]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalizePattern $ Internal.mkNext arg

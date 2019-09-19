@@ -6,27 +6,30 @@ module Test.Kore.Step.Simplification.Exists
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeCeilPredicate, makeEqualsPredicate,
-                 makeExistsPredicate, makeTruePredicate )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeExistsPredicate
+    , makeTruePredicate
+    )
 import qualified Kore.Predicate.Predicate as Predicate
-import           Kore.Step.Simplification.Data
-                 ( Env (..), evalSimplifier )
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -309,19 +312,11 @@ testSort = Mock.testSort
 simplify
     :: Exists Sort Variable (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify exists =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Exists.simplify exists
+simplify = runSimplifier Mock.env . Exists.simplify
 
 makeEvaluate
     :: ElementVariable Variable
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate variable child =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ Exists.makeEvaluate variable child
-
-mockEnv :: Env
-mockEnv = Mock.env
+    runSimplifier Mock.env $ Exists.makeEvaluate variable child

@@ -18,26 +18,30 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import Branch
 import qualified Kore.Internal.Conditional as Conditional
-import           Kore.Internal.Pattern
-                 ( Conditional (..), Predicate )
+import Kore.Internal.Pattern
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Predicate.Predicate as Syntax
-                 ( Predicate, unwrapPredicate )
+    ( Predicate
+    , unwrapPredicate
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-                 ( substitute )
-import           Kore.Step.Simplification.Data
-import           Kore.Step.Substitution
-                 ( mergePredicatesAndSubstitutions )
-import           Kore.Syntax.Variable
-                 ( SortedVariable )
+    ( substitute
+    )
+import Kore.Step.Simplification.Simplify
+import Kore.Step.Substitution
+    ( mergePredicatesAndSubstitutions
+    )
 import qualified Kore.TopBottom as TopBottom
-import           Kore.Unification.Substitution
-                 ( Substitution )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.Fresh
-                 ( FreshVariable )
+import Kore.Unparser
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
@@ -51,13 +55,7 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    ::  ( SortedVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , FreshVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Int
     -> Predicate variable
     -> BranchT simplifier (Predicate variable)
@@ -130,13 +128,7 @@ See also: 'simplify'
 
 -}
 simplifyPartial
-    ::  ( FreshVariable variable
-        , Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
-        , MonadSimplify simplifier
-        )
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Syntax.Predicate variable
     -> BranchT simplifier (Predicate variable)
 simplifyPartial

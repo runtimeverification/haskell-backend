@@ -6,14 +6,16 @@ import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
-import           Kore.Internal.TermLike
-                 ( TermLike, Variable )
+import Kore.Internal.TermLike
+    ( TermLike
+    , Variable
+    )
 import qualified Kore.Internal.TermLike as TermLike
-import           Kore.Step.Axiom.Identifier
+import Kore.Step.Axiom.Identifier
 
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Extensions
 
 
 test_matchAxiomIdentifier :: [TestTree]

@@ -3,7 +3,8 @@ module Test.Kore.ASTVerifier.DefinitionVerifier.UniqueNames
     ) where
 
 import Test.Tasty
-       ( TestTree )
+    ( TestTree
+    )
 
 import Kore.Error
 import Kore.Syntax

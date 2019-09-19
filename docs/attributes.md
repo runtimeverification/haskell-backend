@@ -92,6 +92,16 @@ axiom{R} \equals{SortSet{}, R} (
 productionID{}("id")
 ```
 
+### Priority
+
+```
+priority{}("123")
+```
+
+The priority attribute specifies a number which determines the order of rule
+application. The attribute's argument is a string literal representing a decimal
+integer.
+
 ### Simplification
 
 ```
@@ -180,6 +190,15 @@ injective{}()
 
 A symbol is injective if it is given the `injective` attribute, the
 `constructor` attribute, or the `sortInjection` attribute.
+
+### Memo
+
+```
+memo{}()
+```
+
+The `memo` attribute signals that the backend may cache, or memoize, the result
+of a symbol application (usually a `function`).
 
 ### Smtlib
 

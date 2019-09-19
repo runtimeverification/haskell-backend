@@ -10,37 +10,50 @@ import Test.Tasty.HUnit
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.OrPredicate
-                 ( OrPredicate )
-import           Kore.Internal.Pattern
-                 ( Pattern )
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Conditional
-import           Kore.Internal.Predicate
-                 ( Conditional (..), Predicate )
+import Kore.Internal.Predicate
+    ( Conditional (..)
+    , Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import           Kore.Internal.TermLike
-import           Kore.Predicate.Predicate
-                 ( pattern PredicateFalse, makeAndPredicate, makeCeilPredicate,
-                 makeEqualsPredicate, makeIffPredicate, makeImpliesPredicate,
-                 makeMultipleAndPredicate, makeNotPredicate, makeOrPredicate,
-                 makeTruePredicate )
-import           Kore.Step.Simplification.Data
-                 ( evalSimplifier )
-import           Kore.Step.Simplification.Equals
-                 ( makeEvaluate, makeEvaluateTermsToPredicate, simplify )
+import Kore.Internal.TermLike
+import Kore.Predicate.Predicate
+    ( pattern PredicateFalse
+    , makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeIffPredicate
+    , makeImpliesPredicate
+    , makeMultipleAndPredicate
+    , makeNotPredicate
+    , makeOrPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Simplification.Equals
+    ( makeEvaluate
+    , makeEvaluateTermsToPredicate
+    , simplify
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_equalsSimplification_Or_Pattern :: [TestTree]
 test_equalsSimplification_Or_Pattern =
@@ -906,10 +919,8 @@ testSort2 =
 evaluateOr
     :: Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluateOr equals =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ simplify Predicate.top equals
+evaluateOr =
+    runSimplifier mockEnv . simplify Predicate.top
   where
     mockEnv = Mock.env
 
@@ -918,8 +929,7 @@ evaluate
     -> Pattern Variable
     -> IO (OrPattern Variable)
 evaluate first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ makeEvaluate first second Predicate.top
   where
     mockEnv = Mock.env
@@ -929,8 +939,7 @@ evaluateTermsGeneric
     -> TermLike Variable
     -> IO (OrPredicate Variable)
 evaluateTermsGeneric first second =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
+    runSimplifier mockEnv
     $ makeEvaluateTermsToPredicate first second Predicate.top
   where
     mockEnv = Mock.env

@@ -8,36 +8,41 @@ import Test.Tasty.HUnit
 import qualified Data.List as List
 import qualified Data.Map as Map
 
-import           Data.Sup
-import           Kore.Internal.OrPattern
-                 ( OrPattern )
+import Data.Sup
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import           Kore.Internal.Pattern as Pattern
-import           Kore.Internal.Predicate as Predicate
-                 ( top )
-import           Kore.Internal.TermLike as TermLike
-import           Kore.Predicate.Predicate
-                 ( makeAndPredicate, makeEqualsPredicate, makeTruePredicate )
-import           Kore.Step.Axiom.EvaluationStrategy
-                 ( firstFullEvaluation )
+import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate as Predicate
+    ( top
+    )
+import Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Step.Axiom.EvaluationStrategy
+    ( firstFullEvaluation
+    )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-                 ( AxiomIdentifier (..) )
-import           Kore.Step.Simplification.Application
-import           Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Data as AttemptedAxiom
-                 ( AttemptedAxiom (..) )
+    ( AxiomIdentifier (..)
+    )
+import Kore.Step.Simplification.Application
+import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
+    ( AttemptedAxiom (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
-import           Kore.Unparser
-                 ( Unparse )
-import           Kore.Variables.Fresh
-import           Kore.Variables.UnifiedVariable
-                 ( UnifiedVariable (..) )
-import qualified SMT
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
-import           Test.Kore
-import           Test.Kore.Comparators ()
+import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import           Test.Tasty.HUnit.Extensions
+import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Extensions
 
 test_applicationSimplification :: [TestTree]
 test_applicationSimplification =
@@ -188,20 +193,12 @@ test_applicationSimplification =
                 let
                     zvar
                         :: forall variable
-                        .   ( FreshVariable variable
-                            , Ord variable
-                            , SortedVariable variable
-                            )
+                        .  InternalVariable variable
                         => ElementVariable variable
                     zvar = fromVariable <$> z'
                     result
                         :: forall variable
-                        .   ( FreshVariable variable
-                            , Ord variable
-                            , Show variable
-                            , SortedVariable variable
-                            , Unparse variable
-                            )
+                        .  SimplifierVariable variable
                         => AttemptedAxiom variable
                     result = AttemptedAxiom.Applied AttemptedAxiomResults
                         { results = OrPattern.fromPatterns
@@ -246,9 +243,7 @@ test_applicationSimplification =
         ]
     ]
   where
-    fOfA, fOfB, gOfA, gOfB
-        :: (Ord variable, SortedVariable variable, Unparse variable)
-        => TermLike variable
+    fOfA, fOfB, gOfA, gOfB :: InternalVariable variable => TermLike variable
     fOfA = Mock.f Mock.a
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
@@ -275,9 +270,7 @@ test_applicationSimplification =
         , substitution = mempty
         }
 
-    gOfAExpanded
-        :: (Ord variable, SortedVariable variable, Unparse variable)
-        => Pattern variable
+    gOfAExpanded :: InternalVariable variable => Pattern variable
     gOfAExpanded = Conditional
         { term = gOfA
         , predicate = makeTruePredicate
@@ -305,9 +298,6 @@ evaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Application Symbol (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluate axiomIdToEvaluator application =
-    SMT.runSMT SMT.defaultConfig emptyLogger
-    $ evalSimplifier mockEnv
-    $ simplify Predicate.top application
+evaluate simplifierAxioms = runSimplifier mockEnv . simplify Predicate.top
   where
-    mockEnv = Mock.env { simplifierAxioms = axiomIdToEvaluator }
+    mockEnv = Mock.env { simplifierAxioms }

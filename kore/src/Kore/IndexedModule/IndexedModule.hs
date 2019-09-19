@@ -50,41 +50,52 @@ module Kore.IndexedModule.IndexedModule
     , implicitModules
     ) where
 
-import           Control.DeepSeq
-                 ( NFData (..) )
+import Control.DeepSeq
+    ( NFData (..)
+    )
 import qualified Control.Lens as Lens hiding
-                 ( makeLenses )
-import           Control.Monad.Extra
-                 ( unlessM )
-import           Control.Monad.State.Strict
-                 ( execState )
+    ( makeLenses
+    )
+import Control.Monad.Extra
+    ( unlessM
+    )
+import Control.Monad.State.Strict
+    ( execState
+    )
 import qualified Control.Monad.State.Strict as Monad.State
-import           Data.Default as Default
+import Data.Default as Default
 import qualified Data.Foldable as Foldable
-import           Data.Function
-import           Data.Map.Strict
-                 ( Map )
+import Data.Function
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
-import           Data.Set
-                 ( Set )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
-import           Data.Text
-                 ( Text )
-import           GHC.Generics
-                 ( Generic )
+import Data.Text
+    ( Text
+    )
+import GHC.Generics
+    ( Generic
+    )
 
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Sort as Attribute
-                 ( Sort )
-import           Kore.Attribute.Subsort
+    ( Sort
+    )
+import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
-                 ( Symbol )
-import           Kore.Error
-import           Kore.Parser
-                 ( ParsedPattern )
-import           Kore.Syntax
-import           Kore.Syntax.Definition
+    ( Symbol
+    )
+import Kore.Error
+import Kore.Parser
+    ( ParsedPattern
+    )
+import Kore.Syntax
+import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 
 type SortDescription = SentenceSort (Pattern Variable Attribute.Null)
@@ -101,8 +112,7 @@ in the current module are included.
 It also contains the imported modules as 'IndexedModule's and all the other
 module data in raw-ish form.
 
-All 'IndexedModule' instances should either be returned by
-'indexedModuleWithMetaSorts' or they should start from an instance created by
+All 'IndexedModule' instances should be returned by
 'indexedModuleWithDefaultImports'.
 -}
 -- TODO (thomas.tuegel): Consider splitting IndexedModule into separate sort,

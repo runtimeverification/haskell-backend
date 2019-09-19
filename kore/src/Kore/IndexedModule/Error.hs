@@ -13,8 +13,9 @@ module Kore.IndexedModule.Error
     , noSymbolText
     ) where
 
-import           Data.Text
-                 ( Text )
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 
 import Kore.Syntax
