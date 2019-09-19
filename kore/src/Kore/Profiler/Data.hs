@@ -192,7 +192,7 @@ traceStderr
         ++ intercalate "-" tags
         ++ " "
         ++ show
-            ( fromRational ((end - startPico) % 1)
+            ( fromInteger (end - startPico)
             / 1000 / 1000 / 1000 / 1000
             :: Double
             )
