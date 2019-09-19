@@ -40,6 +40,7 @@ import Data.Map.Strict
     ( Map
     )
 import Data.Maybe
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -53,7 +54,7 @@ import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
+    ( FreeVariables (FreeVariables)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Priority
@@ -589,23 +590,28 @@ refreshRulePattern
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
     -> (Renaming variable, RulePattern variable)
-refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
+refreshRulePattern
+    (FreeVariables.getFreeVariables -> avoid)
+    rule1@(RulePattern _ _ _ _ _ _)
+  =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
         left' = TermLike.substitute subst left
+        antiLeft' = TermLike.substitute subst <$> antiLeft
         right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires
         ensures' = Predicate.substitute subst ensures
         rule2 =
             rule1
                 { left = left'
+                , antiLeft = antiLeft'
                 , right = right'
                 , requires = requires'
                 , ensures = ensures'
                 }
     in (rename, rule2)
   where
-    RulePattern { left, right, requires, ensures } = rule1
+    RulePattern { left, antiLeft, right, requires, ensures } = rule1
     originalFreeVariables =
         FreeVariables.getFreeVariables
         $ Kore.Step.Rule.freeVariables rule1
@@ -616,11 +622,13 @@ freeVariables
     :: Ord variable
     => RulePattern variable
     -> FreeVariables variable
-freeVariables RulePattern { left, right, requires, ensures } =
-    TermLike.freeVariables left
-    <> TermLike.freeVariables right
-    <> Predicate.freeVariables requires
-    <> Predicate.freeVariables ensures
+freeVariables rule@(RulePattern _ _ _ _ _ _) = case rule of
+    RulePattern { left, antiLeft, right, requires, ensures } ->
+        TermLike.freeVariables left
+        <> maybe (FreeVariables Set.empty) TermLike.freeVariables antiLeft
+        <> TermLike.freeVariables right
+        <> Predicate.freeVariables requires
+        <> Predicate.freeVariables ensures
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}
@@ -629,7 +637,7 @@ mapVariables
     => (variable1 -> variable2)
     -> RulePattern variable1
     -> RulePattern variable2
-mapVariables mapping rule1 =
+mapVariables mapping rule1@(RulePattern _ _ _ _ _ _) =
     rule1
         { left = TermLike.mapVariables mapping left
         , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
