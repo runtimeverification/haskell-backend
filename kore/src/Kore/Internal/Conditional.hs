@@ -162,7 +162,7 @@ instance ( SortedVariable variable
          , Unparse variable
          ) => Unparse (Conditional variable (TermLike variable)) where
     unparse Conditional { term, predicate, substitution } =
-        unparseAnd
+        unparseAndAdapted
             (below "/* term: */" (unparse term))
             (unparseAnd
                 (below
@@ -177,6 +177,15 @@ instance ( SortedVariable variable
       where
         unparseAnd first second =
             "\\and" <> parameters' [unparse sort] <> arguments' [first, second]
+        unparseAndAdapted first second =
+            "\\and"
+                <> parameters' [unparse sort]
+                <> arguments'Adapted first second
+        arguments'Adapted first second =
+            Pretty.group
+            $ "(" <> Pretty.line'
+            <> Pretty.vsep [(Pretty.indent 4 first) <> ",", second]
+            <> ")"
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
         sort = termLikeSort term
@@ -187,7 +196,7 @@ instance ( SortedVariable variable
                 $ Predicate.fromSubstitution substitution
 
     unparse2 Conditional { term, predicate, substitution } =
-        unparseAnd2
+        unparseAnd2Adapted
             (below "/* term: */" (unparse2 term))
             (unparseAnd2
                 (below
@@ -202,6 +211,15 @@ instance ( SortedVariable variable
       where
         unparseAnd2 first second =
             "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
+        unparseAnd2Adapted first second =
+            "\\and"
+                <> parameters' [unparse sort]
+                <> arguments'Adapted first second
+        arguments'Adapted first second =
+            Pretty.group
+            $ "(" <> Pretty.line'
+            <> Pretty.vsep [(Pretty.indent 4 first) <> ",", second]
+            <> ")"
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
         sort = termLikeSort term
