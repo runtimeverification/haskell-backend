@@ -418,9 +418,10 @@ liftSimplifierWithLogger
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
-   (severity, logType) <- logging <$> get
+   (severity, logScope, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
-   let logger = Logger.makeKoreLogger severity mempty textLogger
+   let scopes = unLogScope logScope
+       logger = Logger.makeKoreLogger severity scopes textLogger
    _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
    result <- Monad.Trans.lift simplifier
    maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle

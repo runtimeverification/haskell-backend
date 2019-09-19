@@ -29,6 +29,7 @@ module Kore.Repl.Data
     , runUnifierWithExplanation
     , StepResult(..)
     , LogType (..)
+    , LogScope (..)
     , ReplScript (..)
     , ReplMode (..)
     , OutputFile (..)
@@ -174,6 +175,11 @@ data LogType
     | LogToFile !FilePath
     deriving (Eq, Show)
 
+newtype LogScope =
+    LogScope
+    { unLogScope :: Set.Set Logger.Scope }
+    deriving (Eq, Show, Semigroup, Monoid)
+
 data RuleReference
     = ByIndex (Either AxiomIndex ClaimIndex)
     | ByName RuleName
@@ -240,7 +246,7 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
-    | Log Logger.Severity LogType
+    | Log Logger.Severity LogScope LogType
     -- ^ Setup the Kore logger.
     | Exit
     -- ^ Exit the repl.
@@ -412,7 +418,7 @@ data ReplState claim = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
-    , logging :: (Logger.Severity, LogType)
+    , logging :: (Logger.Severity, LogScope, LogType)
     -- ^ The log level and log type decide what gets logged and where.
     }
     deriving (GHC.Generic)
