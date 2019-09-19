@@ -11,6 +11,8 @@ module Kore.Repl.Parser
     , scriptParser
     ) where
 
+import Debug.Trace
+
 import Control.Applicative
     ( some
     , (<|>)
@@ -266,12 +268,13 @@ severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
 
 logScope :: Parser LogScope
 logScope =
-    LogScope . Set.fromList <$> many scope
+    LogScope . Set.fromList
+        <$$> literal "[" *> many scope <* literal "]"
   where
-    scope =
-        Logger.Scope . Text.pack
-        <$$> word
-        <* (literal "," <|> literal " ")
+      scope =
+          Logger.Scope . Text.pack
+            <$$> wordWithout ['[', ']', ',']
+            <* optional (literal ",")
 
 logType :: Parser LogType
 logType = noLogging <|> logStdOut <|> logFile
