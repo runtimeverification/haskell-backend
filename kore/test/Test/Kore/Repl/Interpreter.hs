@@ -496,13 +496,16 @@ logUpdatesState =
     let
         axioms  = []
         claim   = emptyClaim
-        command = Log Logger.Info mempty LogToStdOut
+        command =
+            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdOut
     in do
         Result { output, continue, state } <-
             run command axioms [claim] claim
         output   `equalsOutput` mempty
         continue `equals`     Continue
-        state    `hasLogging` (Logger.Info, mempty, LogToStdOut)
+        state
+            `hasLogging`
+            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdOut)
 
 proveSecondClaim :: IO ()
 proveSecondClaim =

@@ -34,6 +34,7 @@ module Kore.Repl.Data
     , ReplMode (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
+    , makeLogScope
     ) where
 
 import Control.Applicative
@@ -69,6 +70,7 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -179,6 +181,12 @@ newtype LogScope =
     LogScope
     { unLogScope :: Set.Set Logger.Scope }
     deriving (Eq, Show, Semigroup, Monoid)
+
+makeLogScope :: [String] -> LogScope
+makeLogScope scopes =
+    LogScope
+    . Set.fromList
+    $ fmap (Logger.Scope . Text.pack) scopes
 
 data RuleReference
     = ByIndex (Either AxiomIndex ClaimIndex)

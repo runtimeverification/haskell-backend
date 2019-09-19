@@ -418,7 +418,12 @@ initScriptTests =
 
 logTests :: [ParserTest ReplCommand]
 logTests =
-    [ "log debug [] none"        `parsesTo_` Log Logger.Debug    mempty NoLogging
-    , "log critical [] stdout"   `parsesTo_` Log Logger.Critical mempty LogToStdOut
-    , "log info [] file \"f s\"" `parsesTo_` Log Logger.Info     mempty (LogToFile "f s")
+    [ "log debug [] none"
+        `parsesTo_` Log Logger.Debug mempty NoLogging
+    , "log critical [scope1] stdout"
+        `parsesTo_` Log Logger.Critical (makeLogScope ["scope1"]) LogToStdOut
+    , "log info [ scope1,  scope2 ] file \"f s\""
+        `parsesTo_` Log Logger.Info (makeLogScope ["scope1", "scope2"]) (LogToFile "f s")
+    , "log info [ scope1  scope2 ] file \"f s\""
+        `parsesTo_` Log Logger.Info (makeLogScope ["scope1", "scope2"]) (LogToFile "f s")
     ]
