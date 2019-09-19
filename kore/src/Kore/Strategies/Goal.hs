@@ -171,6 +171,7 @@ allPathStrategy claims axioms =
             , RemoveDestination
             , TriviallyValid
             , DerivePar axioms
+            , RemoveDestination
             , Simplify
             , TriviallyValid
             , ResetGoal
@@ -205,7 +206,6 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
-        , RemoveDestination
         , Simplify
         , TriviallyValid
         , ResetGoal
