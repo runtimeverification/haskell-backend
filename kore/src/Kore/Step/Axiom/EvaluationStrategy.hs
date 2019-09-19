@@ -72,14 +72,20 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier (\_ _ _ term predicate -> evaluateAxioms rules term (Predicate.toPredicate predicate))
+    BuiltinAndAxiomSimplifier
+        (\_ _ _ term predicate ->
+            evaluateAxioms rules term (Predicate.toPredicate predicate)
+        )
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
     :: EqualityRule Variable
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
-    BuiltinAndAxiomSimplifier (\_ _ _ term predicate -> evaluateAxioms [rule] term (Predicate.toPredicate predicate))
+    BuiltinAndAxiomSimplifier
+        (\_ _ _ term predicate ->
+            evaluateAxioms [rule] term (Predicate.toPredicate predicate)
+        )
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
