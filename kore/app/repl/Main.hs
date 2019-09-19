@@ -218,7 +218,9 @@ mainWithOptions
                 lift
                 $ SMT.runSMT smtConfig (swappableLogger mLogger)
                    $ do
-                        give (MetadataTools.build indexedModule) (declareSMTLemmas indexedModule)
+                        give
+                            (MetadataTools.build indexedModule)
+                            (declareSMTLemmas indexedModule)
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
