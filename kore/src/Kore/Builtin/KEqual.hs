@@ -44,11 +44,13 @@ import Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    )
+import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Step.Simplification.And as And
+import qualified Kore.Step.Simplification.Ceil as Ceil
+import qualified Kore.Step.Simplification.Equals as Equals
+import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Or as Or
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
@@ -131,26 +133,26 @@ evalKEq true _ _ _ (valid :< app) =
     false = not true
     sort = Attribute.patternSort valid
     Application { applicationChildren } = app
-    evalEq t1 t2 = do
-        let expr = Or.simplifyEvaluated
-                (OrPattern.fromPattern
-                    (Conditional
-                        (Bool.asInternal sort true)
-                        (Predicate.makeEqualsPredicate t1 t2)
-                        mempty
-                    )
-                )
-                (OrPattern.fromPattern
-                    (Conditional
-                        (Bool.asInternal sort false)
-                        ( Predicate.makeNotPredicate $
-                            Predicate.makeEqualsPredicate t1 t2
-                        )
-                        mempty
-                    )
-                )
+    evalEq termLike1 termLike2 = do
+        let pattern1 = Pattern.fromTermLike termLike1
+            pattern2 = Pattern.fromTermLike termLike2
+
+        defined1 <- Ceil.makeEvaluate Predicate.topTODO pattern1
+        defined2 <- Ceil.makeEvaluate Predicate.topTODO pattern2
+        defined <- And.simplifyEvaluated defined1 defined2
+
+        equalTerms <- Equals.makeEvaluate pattern1 pattern2 Predicate.topTODO
+        let trueTerm = Bool.asInternal sort true
+            truePatterns = Pattern.replaceTerm trueTerm <$> equalTerms
+
+        notEqualTerms <- Not.simplifyEvaluated equalTerms
+        let falseTerm = Bool.asInternal sort false
+            falsePatterns = Pattern.replaceTerm falseTerm <$> notEqualTerms
+
+        let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
+        results <- And.simplifyEvaluated defined undefinedResults
         pure $ Applied AttemptedAxiomResults
-            { results = expr
+            { results
             , remainders = OrPattern.bottom
             }
 
