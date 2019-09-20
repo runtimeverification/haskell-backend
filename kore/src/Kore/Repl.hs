@@ -149,7 +149,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , omit       = mempty
             , labels     = Map.empty
             , aliases    = Map.empty
-            , logging    = (Logger.Debug, NoLogging)
+            , logging    = (Logger.Debug, mempty, NoLogging)
             }
 
     config :: Config claim m

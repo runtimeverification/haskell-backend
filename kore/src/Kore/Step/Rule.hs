@@ -35,6 +35,9 @@ module Kore.Step.Rule
     , Kore.Step.Rule.substitute
     ) where
 
+import Control.Exception
+    ( assert
+    )
 import qualified Data.Default as Default
 import Data.Map.Strict
     ( Map
@@ -245,6 +248,13 @@ deriving instance Eq variable => Eq (AllPathRule variable)
 deriving instance Ord variable => Ord (AllPathRule variable)
 deriving instance Show variable => Show (AllPathRule variable)
 
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (AllPathRule variable)
+  where
+    unparse = unparse . allPathRuleToPattern
+    unparse2 = unparse2 . allPathRuleToPattern
+
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
@@ -389,27 +399,75 @@ onePathRuleToPattern
     => Unparse variable
     => OnePathRule variable
     -> TermLike variable
-onePathRuleToPattern (OnePathRule rulePatt) =
-    mkImplies
+onePathRuleToPattern
+    ( OnePathRule
+        (RulePattern left antiLeft right requires ensures _)
+    )
+  =
+    assert (antiLeft == Nothing)
+    $ mkImplies
         ( mkAnd
-            (Predicate.unwrapPredicate . requires $ rulePatt)
-            (left rulePatt)
+            (Predicate.unwrapPredicate requires)
+            left
         )
-       ( mkApplyAlias
+        ( mkApplyAlias
             (wEF sort)
             [mkAnd
-                (Predicate.unwrapPredicate . ensures $ rulePatt)
-                (right rulePatt)
+                (Predicate.unwrapPredicate ensures)
+                right
             ]
-       )
+        )
   where
     sort :: Sort
-    sort = termLikeSort . right $ rulePatt
+    sort = termLikeSort right
 
 wEF :: Sort -> Alias (TermLike Variable)
 wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = []
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
+
+allPathRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => AllPathRule variable
+    -> TermLike variable
+allPathRuleToPattern
+    ( AllPathRule
+        (RulePattern left antiLeft right requires ensures _)
+    )
+  =
+    assert (antiLeft == Nothing)
+    $ mkImplies
+        ( mkAnd
+            (Predicate.unwrapPredicate requires)
+            left
+        )
+        ( mkApplyAlias
+            (wAF sort)
+            [mkAnd
+                (Predicate.unwrapPredicate ensures)
+                right
+            ]
+        )
+  where
+    sort :: Sort
+    sort = termLikeSort right
+
+wAF :: Sort -> Alias (TermLike Variable)
+wAF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakAlwaysFinally
         , idLocation = AstLocationNone
         }
     , aliasParams = []
