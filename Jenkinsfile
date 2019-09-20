@@ -50,42 +50,36 @@ pipeline {
         }
       }
     }
-    stage('Test') {
-      failFast true
-      parallel {
-        stage('Unit Tests') {
-          steps {
-            sh '''
-              ./scripts/unit-test.sh
-            '''
-          }
-          post {
-            always {
-              junit 'kore/test-results.xml'
-            }
-          }
+    stage('Unit Tests') {
+      steps {
+        sh '''
+          ./scripts/unit-test.sh
+        '''
+      }
+      post {
+        always {
+          junit 'kore/test-results.xml'
         }
-        stage('K Integration') {
-          options {
-            timeout(time: 16, unit: 'MINUTES')
-          }
-          steps {
-            sh '''
-              ./scripts/ktest.sh
-            '''
-          }
-        }
-
-        stage('KEVM Integration') {
-          options {
-            timeout(time: 24, unit: 'MINUTES')
-          }
-          steps {
-            sh '''
-              ./scripts/kevm-integration.sh
-            '''
-          }
-        }
+      }
+    }
+    stage('K Integration') {
+      options {
+        timeout(time: 16, unit: 'MINUTES')
+      }
+      steps {
+        sh '''
+          ./scripts/ktest.sh
+        '''
+      }
+    }
+    stage('KEVM Integration') {
+      options {
+        timeout(time: 24, unit: 'MINUTES')
+      }
+      steps {
+        sh '''
+          ./scripts/kevm-integration.sh
+        '''
       }
     }
     stage('Update K Submodules') {
