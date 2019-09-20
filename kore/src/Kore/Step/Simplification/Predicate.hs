@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Predicate
     ( create
     , simplify
     , simplifyPartial
+    , simplifyPredicate
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans

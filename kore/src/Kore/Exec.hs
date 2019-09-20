@@ -71,6 +71,9 @@ import Kore.Predicate.Predicate
 import Kore.Profiler.Data
     ( MonadProfiler
     )
+import qualified Kore.Profiler.Profile as Profiler
+    ( initialization
+    )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
@@ -106,9 +109,8 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
-import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.Verification
     ( Claim
-    , defaultStrategy
     , verify
     )
 import SMT
@@ -251,15 +253,16 @@ prove limit definitionModule specModule =
     evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
-        specAxioms <- traverse simplifyRuleOnSecond specClaims
+        specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
+            $ traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = Goal.Rule <$> rewriteRules
+            axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = makeClaim <$> specAxioms
         result <-
             runExceptT
             $ verify
-                (defaultStrategy claims axioms)
+                (Goal.strategy claims axioms)
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
@@ -289,7 +292,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
         specAxioms <- traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
-            axioms = Goal.Rule <$> rewriteRules
+            axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = fmap makeClaim specAxioms
         Repl.runRepl axioms claims mvar replScript replMode outputFile
 
@@ -397,7 +400,7 @@ initialize
     -> (Initialized -> simplifier a)
     -> simplifier a
 initialize verifiedModule within = do
-    rewriteRules <-
+    rewriteRules <- Profiler.initialization "simplifyRewriteRule" $
         mapM Rule.simplifyRewriteRule (extractRewriteAxioms verifiedModule)
     let initialized = Initialized { rewriteRules }
     within initialized
