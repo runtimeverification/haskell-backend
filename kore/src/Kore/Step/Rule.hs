@@ -399,22 +399,27 @@ onePathRuleToPattern
     => Unparse variable
     => OnePathRule variable
     -> TermLike variable
-onePathRuleToPattern (OnePathRule rulePatt) =
-    mkImplies
+onePathRuleToPattern
+    ( OnePathRule
+        (RulePattern left antiLeft right requires ensures _)
+    )
+  =
+    assert (antiLeft == Nothing)
+    $ mkImplies
         ( mkAnd
-            (Predicate.unwrapPredicate . requires $ rulePatt)
-            (left rulePatt)
+            (Predicate.unwrapPredicate requires)
+            left
         )
-       ( mkApplyAlias
+        ( mkApplyAlias
             (wEF sort)
             [mkAnd
-                (Predicate.unwrapPredicate . ensures $ rulePatt)
-                (right rulePatt)
+                (Predicate.unwrapPredicate ensures)
+                right
             ]
-       )
+        )
   where
     sort :: Sort
-    sort = termLikeSort . right $ rulePatt
+    sort = termLikeSort right
 
 wEF :: Sort -> Alias (TermLike Variable)
 wEF sort = Alias
