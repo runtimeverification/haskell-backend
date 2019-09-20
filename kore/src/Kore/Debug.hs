@@ -530,13 +530,13 @@ be easily loaded into GHCi, i.e. @debug@ should obey
  -}
 class Debug a where
     debug :: a -> Doc ann
-    debug = debugPrec 0
+    debug = \a -> debugPrec a 0
 
-    debugPrec :: Int -> a -> Doc ann
+    debugPrec :: a -> Int -> Doc ann
     default debugPrec
         :: (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
-        => Int  -- ^ surrounding precedence
-        -> a
+        => a
+        -> Int  -- ^ surrounding precedence
         -> Doc ann
     debugPrec = debugPrecGeneric
 
@@ -547,20 +547,20 @@ instance Debug GHC.SrcLoc
 debugPrecGeneric
     :: forall a ann
     .  (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
-    => Int  -- ^ Surrounding precedence
-    -> a
+    => a
+    -> Int  -- ^ Surrounding precedence
     -> Doc ann
-debugPrecGeneric precOut a =
-    debugPrecAux precOut (SOP.datatypeInfo $ Proxy @a) (debugSOP (SOP.from a))
+debugPrecGeneric a =
+    debugPrecAux (SOP.datatypeInfo $ Proxy @a) (debugSOP (SOP.from a))
 
 debugPrecAux
     :: forall xss ann
     .  (All SOP.Top xss)
-    => Int  -- ^ Surrounding precedence
-    -> DatatypeInfo xss
+    => DatatypeInfo xss
     -> SOP (K (Int -> Doc ann)) xss
+    -> Int  -- ^ Surrounding precedence
     -> Doc ann
-debugPrecAux precOut datatypeInfo (SOP sop) =
+debugPrecAux datatypeInfo (SOP sop) precOut =
     SOP.hcollapse $ SOP.hzipWith debugConstr constrs sop
   where
     constrs :: NP ConstructorInfo xss
@@ -618,22 +618,22 @@ debugSOP
     -> SOP (K (Int -> Doc ann)) xss
 debugSOP (SOP sop) =
     SOP
-    $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK (flip debugPrec))) sop
+    $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrec)) sop
   where
     pDebug = Proxy :: Proxy Debug
     pAllDebug = Proxy :: Proxy (All Debug)
 
 instance Debug a => Debug [a] where
-    debugPrec _ =
+    debugPrec as _ =
         Pretty.group
         . encloseSep Pretty.lbracket Pretty.rbracket Pretty.comma
-        . map debug
+        $ map debug as
 
 instance {-# OVERLAPS #-} Debug String where
-    debugPrec p a = Pretty.pretty (showsPrec p a "")
+    debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug Text where
-    debugPrec p a = Pretty.pretty (showsPrec p a "")
+    debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug Void
 
@@ -642,16 +642,16 @@ instance Debug ()
 instance (Debug a, Debug b) => Debug (a, b)
 
 instance Debug Natural where
-    debugPrec _ = Pretty.pretty
+    debugPrec x = \_ -> Pretty.pretty x
 
 instance Debug Integer where
-    debugPrec _ x = parens (x < 0) (Pretty.pretty x)
+    debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
 
 instance Debug Int where
-    debugPrec _ x = parens (x < 0) (Pretty.pretty x)
+    debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
 
 instance Debug Char where
-    debugPrec _ x = Pretty.squotes (Pretty.pretty x)
+    debugPrec x = \_ -> Pretty.squotes (Pretty.pretty x)
 
 instance Debug a => Debug (Maybe a)
 
@@ -660,10 +660,10 @@ instance Debug a => Debug (Sup a)
 instance Debug a => Debug (Identity a)
 
 instance (Debug a, Debug (f b)) => Debug (CofreeF f a b) where
-    debugPrec precOut (a :< fb) =
+    debugPrec (a :< fb) =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecAux precOut datatypeInfo (debugSOP sop)
+        debugPrecAux datatypeInfo (debugSOP sop)
       where
         datatypeInfo =
             SOP.ADT
@@ -677,10 +677,10 @@ instance
     (Debug a, Debug (w (CofreeF f a (CofreeT f w a)))) =>
     Debug (CofreeT f w a)
   where
-    debugPrec precOut (CofreeT x) =
+    debugPrec (CofreeT x) =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecAux precOut datatypeInfo (debugSOP sop)
+        debugPrecAux datatypeInfo (debugSOP sop)
       where
         datatypeInfo =
             SOP.Newtype
@@ -691,15 +691,15 @@ instance
         sop = SOP (Z (I x :* Nil))
 
 instance (Debug k, Debug a) => Debug (Map.Map k a) where
-    debugPrec precOut as =
+    debugPrec as precOut =
         parens (precOut >= 10) ("Data.Map.fromList" <+> debug (Map.toList as))
 
 instance Debug a => Debug (Set a) where
-    debugPrec precOut as =
+    debugPrec as precOut =
         parens (precOut >= 10) ("Data.Set.fromList" <+> debug (Set.toList as))
 
 instance Debug a => Debug (Seq a) where
-    debugPrec precOut as =
+    debugPrec as precOut =
         parens (precOut >= 10)
         $ "Data.Sequence.fromList" <+> debug (Foldable.toList as)
 
