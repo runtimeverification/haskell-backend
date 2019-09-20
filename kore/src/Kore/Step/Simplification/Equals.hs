@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate
     , simplify
+    , simplifyEvaluated
     ) where
 
 import Control.Error
