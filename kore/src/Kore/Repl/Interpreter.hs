@@ -155,15 +155,15 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
-    ( Claim
-    , CommonProofState
-    )
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (ProofStateTransformer)
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
+import Kore.Strategies.Verification
+    ( Claim
+    , CommonProofState
+    )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
     ( Id (..)

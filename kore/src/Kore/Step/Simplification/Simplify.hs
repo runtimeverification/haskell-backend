@@ -9,6 +9,7 @@ module Kore.Step.Simplification.Simplify
     , MonadSimplify (..)
     , simplifyTerm
     , simplifyConditionalTerm
+    , simplifyConditionalTermToOr
     , TermSimplifier
     -- * Predicate simplifiers
     , PredicateSimplifier (..)
@@ -246,11 +247,21 @@ simplifyTerm
         )
     => TermLike variable
     -> simplifier (OrPattern variable)
-simplifyTerm termLike = do
-    TermLikeSimplifier simplify <- askSimplifierTermLike
-    results <- gather $ simplify Predicate.top termLike
-    return (OrPattern.fromPatterns results)
+simplifyTerm = simplifyConditionalTermToOr Predicate.top
 
+{- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
+ -}
+simplifyConditionalTermToOr
+    :: forall variable simplifier
+    .   ( SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    => Predicate variable
+    -> TermLike variable
+    -> simplifier (OrPattern variable)
+simplifyConditionalTermToOr predicate termLike = do
+    results <- gather $ simplifyConditionalTerm predicate termLike
+    return (OrPattern.fromPatterns results)
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}

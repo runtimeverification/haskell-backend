@@ -1,6 +1,4 @@
 {-|
-Module      : Kore.OnePath.Verification
-Description : One-path verification
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -8,10 +6,9 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 This should be imported qualified.
 -}
 
-module Kore.Strategies.OnePath.Verification
+module Kore.Strategies.Verification
     ( Claim
     , CommonProofState
-    , defaultStrategy
     , verify
     , verifyClaimStep
     , toRulePattern
@@ -39,7 +36,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+    ( OnePathRule
+    , RulePattern (..)
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
@@ -48,14 +46,7 @@ import Kore.Step.Transition
     )
 import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Actions
-    ( getConfiguration
-    , getDestination
-    , makeRuleFromPatterns
-    )
-import Kore.Strategies.ProofState
-    ( ProofState (Goal)
-    )
+import qualified Kore.Strategies.ProofState as ProofState
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -64,41 +55,7 @@ import Numeric.Natural
     ( Natural
     )
 
-{- NOTE: Non-deterministic semantics
-
-The current implementation of one-path verification assumes that the proof goal
-is deterministic, that is: the proof goal would not be discharged during at a
-non-confluent state in the execution of a non-deterministic semantics. (Often
-this means that the definition is simply deterministic.) As a result, given the
-non-deterministic definition
-
-> module ABC
->   import DOMAINS
->   syntax S ::= "a" | "b" | "c"
->   rule [ab]: a => b
->   rule [ac]: a => c
-> endmodule
-
-this claim would be provable,
-
-> rule a => b [claim]
-
-but this claim would **not** be provable,
-
-> rule a => c [claim]
-
-because the algorithm would first apply semantic rule [ab], which prevents rule
-[ac] from being used.
-
-We decided to assume that the definition is deterministic because one-path
-verification is mainly used only for deterministic semantics and the assumption
-simplifies the implementation. However, this assumption is not an essential
-feature of the algorithm. You should not rely on this assumption elsewhere. This
-decision is subject to change without notice.
-
- -}
-
-type CommonProofState = ProofState (Pattern Variable)
+type CommonProofState = ProofState (OnePathRule Variable) (Pattern Variable)
 
 {- | Class type for claim-like rules
 -}
@@ -110,6 +67,8 @@ type Claim claim =
     , Unparse claim
     , Unparse (Rule claim)
     , Goal claim
+    , Prim claim ~ ProofState.Prim (Rule claim)
+    , ProofState claim claim ~ ProofState.ProofState claim
     )
 
 {- | @Verifer a@ is a 'Simplifier'-based action which returns an @a@.
@@ -133,72 +92,39 @@ If the verification succeeds, it returns ().
 verify
     :: forall claim m
     .  Claim claim
+    => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => Show (Rule claim)
     => MonadSimplify m
-    => [Strategy (Prim (Rule claim))]
-    -- ^ Creates a one-step strategy from a target pattern. See
-    -- 'defaultStrategy'.
+    => [Strategy (Prim claim)]
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify strategy =
-    mapM_ (verifyClaim strategy)
-
-{- | Default implementation for a one-path strategy. You can apply it to the
-first two arguments and pass the resulting function to 'verify'.
-
-Things to note when implementing your own:
-
-1. The first step does not use the reachability claims
-
-2. You can return an infinite list.
--}
-
-defaultStrategy
-    :: forall claim
-    .  Claim claim
-    => [claim]
-    -- The claims that we want to prove
-    -> [Rule claim]
-    -> [Strategy (Prim (Rule claim))]
-defaultStrategy
-    claims
-    axioms
-  =
-    onePathFirstStep rewrites
-    : repeat
-        (onePathFollowupStep
-            coinductiveRewrites
-            rewrites
-        )
-  where
-    rewrites :: [Rule claim]
-    rewrites = axioms
-    coinductiveRewrites :: [Rule claim]
-    coinductiveRewrites = map (toRule . toRulePattern) claims
+verify strategy' =
+    mapM_ (verifyClaim strategy')
 
 verifyClaim
     :: forall claim m
     .  MonadSimplify m
+    => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
     => Show (Rule claim)
-    => [Strategy (Prim (Rule claim))]
+    => [Strategy (Prim claim)]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
-    strategy
+    strategy'
     (goal, stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = Goal $ getConfiguration goal
+        startPattern = ProofState.Goal $ getConfiguration goal
         destination = getDestination goal
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
-                strategy
+                strategy'
     executionGraph <-
         runStrategy (modifiedTransitionRule destination) limitedStrategy startPattern
     -- Throw the first unproven configuration as an error.
@@ -206,7 +132,7 @@ verifyClaim
   where
     modifiedTransitionRule
         :: Pattern Variable
-        -> Prim (Rule claim)
+        -> Prim claim
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
     modifiedTransitionRule destination prim proofState' = do
@@ -215,6 +141,8 @@ verifyClaim
             $ transitionRule' destination prim proofState'
         Transition.scatter transitions
 
+-- TODO(Ana): allow running with all-path strategy steps
+-- when the REPL will be connected to all-path
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
@@ -247,7 +175,7 @@ verifyClaimStep
         eg
         node
   where
-    strategy' :: Strategy (Prim (Rule claim))
+    strategy' :: Strategy (Prim claim)
     strategy'
         | isRoot =
             onePathFirstStep rewrites
@@ -267,11 +195,11 @@ transitionRule'
     .  MonadSimplify m
     => Claim claim
     => Pattern Variable
-    -> Prim (Rule claim)
+    -> Prim claim
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' destination prim state = do
-    let goal = (flip makeRuleFromPatterns) destination <$> state
+    let goal = flip makeRuleFromPatterns destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next
 

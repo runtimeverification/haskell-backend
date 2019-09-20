@@ -49,33 +49,44 @@ test_evaluateAxioms :: [TestTree]
 test_evaluateAxioms =
     [ applies "F(x) => G(x) applies to F(x)"
         [axiom_ (f x) (g x)]
-        (f x)
+        (f x, makeTruePredicate)
         [Pattern.fromTermLike $ g x]
     , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to F(x)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
-        (f x)
+        (f x, makeTruePredicate)
     , applies "F(x) => G(x) [concrete] apply to F(a)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
-        (f a)
+        (f a, makeTruePredicate)
         [Pattern.fromTermLike $ g a]
     , doesn'tApply "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
         [axiom (f x) (g x) makeFalsePredicate]
-        (f x)
+        (f x, makeTruePredicate)
     , doesn'tApply "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
         [axiom_ (sigma x x) (g x)]
-        (sigma y z)
+        (sigma y z, makeTruePredicate)
     , doesn'tApply
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 and not Y > 0) doesn't apply to Σ(Z, Z)"
         [axiom (sigma x y) a (positive x `andNot` positive y)]
-        (sigma z z)
+        (sigma z z, makeTruePredicate)
     , applies
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
         [axiom (sigma x y) a (positive x `orNot` positive y)]
-        (sigma a a)
+        (sigma a a, makeTruePredicate)
         -- SMT not used to simplify trivial constraints
         [a `andRequires` (positive a `orNot` positive a)]
+    , doesn'tApply
+        -- using SMT
+        "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
+        [axiom (f x) a (positive x)]
+        (f z, makeNotPredicate (positive z))
+    , applies
+        -- using SMT
+        "f(X) => A requires (X > 0) applies to f(Z) and (Z > 0)"
+        [axiom (f x) a (positive x)]
+        (f z, positive z)
+        [a `andRequires` (positive z)]
     ]
 
 -- * Test data
@@ -146,19 +157,20 @@ withAttempted
     :: (AttemptedAxiom Variable -> Assertion)
     -> TestName
     -> [EqualityRule Variable]
-    -> TermLike Variable
+    -> (TermLike Variable, Syntax.Predicate Variable)
     -> TestTree
-withAttempted check comment axioms termLike =
-    testCase comment (evaluateAxioms axioms termLike >>= check)
+withAttempted check comment axioms termLikeAndPredicate =
+    testCase comment (evaluateAxioms axioms termLikeAndPredicate >>= check)
 
 applies
-    :: TestName
+    :: GHC.HasCallStack
+    => TestName
     -> [EqualityRule Variable]
-    -> TermLike Variable
+    -> (TermLike Variable, Syntax.Predicate Variable)
     -> [Pattern Variable]
     -> TestTree
-applies testName axioms termLike results =
-    withAttempted check testName axioms termLike
+applies testName axioms termLikeAndPredicate results =
+    withAttempted check testName axioms termLikeAndPredicate
   where
     check attempted = do
         actual <- expectApplied attempted
@@ -175,7 +187,8 @@ applies testName axioms termLike results =
         . Lens.view (field @"results")
 
 assertEqualOrPattern
-    :: String
+    :: GHC.HasCallStack
+    => String
     -> OrPattern Variable
     -> OrPattern Variable
     -> IO ()
@@ -194,7 +207,7 @@ doesn'tApply
     :: GHC.HasCallStack
     => TestName
     -> [EqualityRule Variable]
-    -> TermLike Variable
+    -> (TermLike Variable, Syntax.Predicate Variable)
     -> TestTree
 doesn'tApply =
     withAttempted (assertBool "Expected NotApplicable" . isNotApplicable)
@@ -203,7 +216,8 @@ doesn'tApply =
 
 evaluateAxioms
     :: [EqualityRule Variable]
-    -> TermLike Variable
+    -> (TermLike Variable, Syntax.Predicate Variable)
     -> IO (AttemptedAxiom Variable)
-evaluateAxioms axioms termLike =
-    runSimplifier Mock.env $ Kore.evaluateAxioms axioms termLike
+evaluateAxioms axioms (termLike, predicate) =
+    runSimplifier Mock.env
+    $ Kore.evaluateAxioms axioms termLike predicate

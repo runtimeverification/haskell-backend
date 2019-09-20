@@ -66,7 +66,7 @@ import Kore.Step.Simplification.AndTerms
     )
 import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.Verification
     ( verifyClaimStep
     )
 import Kore.Syntax.Variable

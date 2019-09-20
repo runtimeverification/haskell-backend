@@ -22,6 +22,9 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Predicate.Predicate as Syntax
+    ( Predicate
+    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
@@ -59,10 +62,12 @@ evaluateAxioms
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [EqualityRule Variable]
     -> TermLike variable
+    -> Syntax.Predicate variable
     -> simplifier (AttemptedAxiom variable)
 evaluateAxioms
     definitionRules
     patt
+    predicate
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete patt)
   = return AttemptedAxiom.NotApplicable
@@ -91,9 +96,20 @@ evaluateAxioms
         introduceDefinedness = flip Pattern.andCondition
         markRemainderEvaluated = fmap TermLike.mkEvaluated
 
-    AttemptedAxiomResults
-        <$> OrPattern.simplifyPredicatesWithSmt (Step.gatherResults result)
-        <*> OrPattern.simplifyPredicatesWithSmt (Step.remainders result)
+    simplifiedResults <-
+        OrPattern.simplifyPredicatesWithSmt
+           predicate (Step.gatherResults result)
+
+    simplifiedRemainders <-
+        OrPattern.simplifyPredicatesWithSmt
+            predicate (Step.remainders result)
+
+    Monad.guard (not $ null simplifiedResults)
+
+    return AttemptedAxiomResults
+        { results = simplifiedResults
+        , remainders = simplifiedRemainders
+        }
 
   where
     ruleIsConcrete =
