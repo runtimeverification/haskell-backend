@@ -23,6 +23,7 @@ import Control.Error
     )
 import qualified Control.Exception as Exception
 import qualified Control.Monad.State.Strict as State
+import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( catMaybes
@@ -46,6 +47,9 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
@@ -169,6 +173,7 @@ goTranslatePredicate
     :: forall variable m.
         ( Ord variable
         , Unparse variable
+        , SortedVariable variable
         , MonadSimplify m
         )
     => SmtMetadataTools Attribute.Symbol
@@ -180,8 +185,12 @@ goTranslatePredicate tools predicate = evalTranslator translator
         give tools $ translatePredicate translateUninterpreted predicate
 
 translateUninterpreted
-    :: Ord p
-    => SMT.MonadSMT m
+    :: ( Ord p
+       , p ~ TermLike variable
+       , Unparse variable
+       , SortedVariable variable
+       )
+    => MonadSimplify m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr
@@ -195,4 +204,10 @@ translateUninterpreted t pat =
         n <- Counter.increment
         var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
         State.modify' (Map.insert pat (var, t))
+        Monad.Trans.lift . Monad.Trans.lift . Monad.Trans.lift $
+            withLogScope "Evaluator"
+                . withLogScope "translateUninterpreted"
+                    . logDebug
+                    . Text.pack
+                    $ (show n) ++ " |-> " ++ (show . unparse $ pat)
         return var
