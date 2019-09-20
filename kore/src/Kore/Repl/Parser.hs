@@ -23,6 +23,8 @@ import Data.Functor
 import Data.List
     ( nub
     )
+import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Prelude hiding
     ( log
     )
@@ -246,10 +248,12 @@ saveSession =
     SaveSession <$$> literal "save-session" *> quotedOrWordWithout ""
 
 log :: Parser ReplCommand
-log =
-    Log
-        <$$> literal "log" *> severity
-        <**> logType
+log = do
+    literal "log"
+    parsedSeverity <- severity
+    parsedScope <- logScope
+    parsedType <- logType
+    pure $ Log parsedSeverity parsedScope parsedType
 
 severity :: Parser Logger.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
@@ -259,6 +263,16 @@ severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
     sWarning  = Logger.Warning  <$ literal "warning"
     sError    = Logger.Error    <$ literal "error"
     sCritical = Logger.Critical <$ literal "critical"
+
+logScope :: Parser LogScope
+logScope =
+    LogScope . Set.fromList
+        <$$> literal "[" *> many scope <* literal "]"
+  where
+      scope =
+          Logger.Scope . Text.pack
+            <$$> wordWithout ['[', ']', ',']
+            <* optional (literal ",")
 
 logType :: Parser LogType
 logType = noLogging <|> logStdOut <|> logFile
