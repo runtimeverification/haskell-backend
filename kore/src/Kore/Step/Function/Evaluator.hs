@@ -60,7 +60,8 @@ import Kore.Logger
     , WithLog
     )
 import qualified Kore.Profiler.Profile as Profile
-    ( axiomEvaluation
+    ( axiomBranching
+    , axiomEvaluation
     , equalitySimplification
     , mergeSubstitutions
     , resimplification
@@ -266,7 +267,7 @@ maybeEvaluatePattern
         Nothing -> Nothing
         Just (BuiltinAndAxiomSimplifier evaluator) ->
             Just . tracing $ do
-                result <- axiomEvaluationTracing $
+                result <- Profile.axiomEvaluation identifier $
                     evaluator
                         substitutionSimplifier
                         simplifier
@@ -283,17 +284,22 @@ maybeEvaluatePattern
                         , remainders = orRemainders
                         } -> do
                             simplified <-
-                                resimplificationTracing (length orResults)
+                                Profile.resimplification
+                                    identifier (length orResults)
                                 $ mapM simplifyIfNeeded orResults
+                            let simplifiedResult = MultiOr.flatten simplified
+                            Profile.axiomBranching
+                                identifier
+                                (length orResults)
+                                (length simplifiedResult)
                             return
                                 (AttemptedAxiom.Applied AttemptedAxiomResults
-                                    { results =
-                                        MultiOr.flatten simplified
+                                    { results = simplifiedResult
                                     , remainders = orRemainders
                                     }
                                 )
                 merged <-
-                    mergeTracing
+                    Profile.mergeSubstitutions identifier
                     $ mergeWithConditionAndSubstitution
                         childrenPredicate
                         flattened
@@ -317,20 +323,7 @@ maybeEvaluatePattern
         traceNonErrorMonad
             D_Function_evaluatePattern
             [ debugArg "axiomIdentifier" identifier ]
-        . case identifier of
-            Nothing -> id
-            Just identifier' ->
-                Profile.equalitySimplification identifier' patt
-
-    axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
-    resimplificationTracing resultCount =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.resimplification identifier' resultCount
-    mergeTracing =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.mergeSubstitutions identifier'
+        . Profile.equalitySimplification identifier patt
 
     unchangedPatt =
         Conditional
