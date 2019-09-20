@@ -39,4 +39,4 @@ test-prove: $(foreach spec, $(specs), specs/$(spec).test-spec)
 golden: $(foreach spec, $(specs), specs/$(spec).kprove.golden)
 
 clean:
-	rm -rf $(KOMPILED) specs /*.output tests/*.output
+	rm -rf $(KOMPILED) specs/*.output tests/*.output
