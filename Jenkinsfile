@@ -25,8 +25,10 @@ pipeline {
     }
     stage('Dependencies') {
       steps {
-        sh './scripts/clean.sh'
-        sh './scripts/deps.sh'
+        sh '''
+          ./scripts/clean.sh
+          ./scripts/deps.sh
+        '''
       }
     }
     stage('Build') {
@@ -43,13 +45,6 @@ pipeline {
           steps {
             sh '''
               ./scripts/kore-exec.sh
-            '''
-          }
-        }
-        stage('Unit Tests') {
-          steps {
-            sh '''
-              ./scripts/unit-test.sh STACK_BUILD_OPTS=--no-run-tests
             '''
           }
         }
