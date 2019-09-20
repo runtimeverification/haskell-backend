@@ -141,54 +141,39 @@ class Goal goal where
         -> [Rule goal]
         -> [Strategy (Prim goal)]
 
-instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
+{- NOTE: Non-deterministic semantics
 
-    newtype Rule (AllPathRule variable) =
-        AllPathRewriteRule { unRule :: RewriteRule variable }
-        deriving (GHC.Generic, Show, Unparse)
+The current implementation of one-path verification assumes that the proof goal
+is deterministic, that is: the proof goal would not be discharged during at a
+non-confluent state in the execution of a non-deterministic semantics. (Often
+this means that the definition is simply deterministic.) As a result, given the
+non-deterministic definition
 
-    type Prim (AllPathRule variable) =
-        ProofState.Prim (Rule (AllPathRule variable))
+> module ABC
+>   import DOMAINS
+>   syntax S ::= "a" | "b" | "c"
+>   rule [ab]: a => b
+>   rule [ac]: a => c
+> endmodule
 
-    type ProofState (AllPathRule variable) a =
-        ProofState.ProofState a
+this claim would be provable,
 
-    transitionRule =
-        transitionRuleTemplate
-            TransitionRuleTemplate
-                { simplifyTemplate =
-                    simplify
-                , removeDestinationTemplate =
-                    removeDestination
-                , isTriviallyValidTemplate =
-                    isTriviallyValid
-                , deriveParTemplate =
-                    derivePar
-                , deriveSeqTemplate =
-                    deriveSeq
-                }
+> rule a => b [claim]
 
-    strategy goals rules =
-        allPathFirstStep rewrites
-        : repeat
-            ( allPathFollowupStep
-                coinductiveRewrites
-                rewrites
-            )
-      where
-        rewrites = rules
-        coinductiveRewrites =
-            AllPathRewriteRule
-            . RewriteRule
-            . getAllPathRule
-            <$> goals
+but this claim would **not** be provable,
 
-instance SOP.Generic (Rule (OnePathRule variable))
+> rule a => c [claim]
 
-instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+because the algorithm would first apply semantic rule [ab], which prevents rule
+[ac] from being used.
 
-instance Debug variable => Debug (Rule (OnePathRule variable))
+We decided to assume that the definition is deterministic because one-path
+verification is mainly used only for deterministic semantics and the assumption
+simplifies the implementation. However, this assumption is not an essential
+feature of the algorithm. You should not rely on this assumption elsewhere. This
+decision is subject to change without notice.
 
+ -}
 instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
 
     newtype Rule (OnePathRule variable) =
@@ -229,6 +214,54 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
             OnePathRewriteRule
             . RewriteRule
             . getOnePathRule
+            <$> goals
+
+instance SOP.Generic (Rule (OnePathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+
+instance Debug variable => Debug (Rule (OnePathRule variable))
+
+instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
+
+    newtype Rule (AllPathRule variable) =
+        AllPathRewriteRule { unRule :: RewriteRule variable }
+        deriving (GHC.Generic, Show, Unparse)
+
+    type Prim (AllPathRule variable) =
+        ProofState.Prim (Rule (AllPathRule variable))
+
+    type ProofState (AllPathRule variable) a =
+        ProofState.ProofState a
+
+    transitionRule =
+        transitionRuleTemplate
+            TransitionRuleTemplate
+                { simplifyTemplate =
+                    simplify
+                , removeDestinationTemplate =
+                    removeDestination
+                , isTriviallyValidTemplate =
+                    isTriviallyValid
+                , deriveParTemplate =
+                    derivePar
+                , deriveSeqTemplate =
+                    deriveSeq
+                }
+
+    strategy goals rules =
+        allPathFirstStep rewrites
+        : repeat
+            ( allPathFollowupStep
+                coinductiveRewrites
+                rewrites
+            )
+      where
+        rewrites = rules
+        coinductiveRewrites =
+            AllPathRewriteRule
+            . RewriteRule
+            . getAllPathRule
             <$> goals
 
 instance SOP.Generic (Rule (AllPathRule variable))
