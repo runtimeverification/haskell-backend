@@ -63,6 +63,7 @@ axiomPatternsUnitTests =
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
+                    , antiLeft = Nothing
                     , right = varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
                     , ensures = Predicate.wrapPredicate (mkTop sortAInt)
@@ -108,6 +109,7 @@ axiomPatternsUnitTests =
                 $ assertEqual ""
                     [ RewriteRule RulePattern
                         { left = varI1
+                        , antiLeft = Nothing
                         , right = varI2
                         , requires = Predicate.wrapPredicate (mkTop sortAInt)
                         , ensures = Predicate.wrapPredicate (mkTop sortAInt)
@@ -121,13 +123,9 @@ axiomPatternsUnitTests =
             let term = applyLeqAInt varI1 varI2
                 sortR = mkSortVariable (testId "R")
             assertEqual ""
-                (Right $ FunctionAxiomPattern $ EqualityRule RulePattern
-                    { left = mkCeil sortR term
-                    , right = mkTop sortR
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = Predicate.makeTruePredicate
-                    , attributes = def
-                    }
+                (Right $ FunctionAxiomPattern $ EqualityRule $ rulePattern
+                    (mkCeil sortR term)
+                    (mkTop sortR)
                 )
                 (Rule.fromSentence $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
@@ -188,6 +186,7 @@ axiomPatternsIntegrationTests =
     rule =
         RulePattern
             { left
+            , antiLeft = Nothing
             , right
             , requires = Predicate.wrapPredicate (mkTop sortTCell)
             , ensures = Predicate.wrapPredicate (mkTop sortTCell)
@@ -351,7 +350,7 @@ test_freeVariables =
     testCase "Extract free variables" $ do
         let expect =
                 FreeVariables . Set.fromList
-                $ ElemVar <$> [Mock.x, Mock.z, Mock.t]
+                $ ElemVar <$> [Mock.x, Mock.z, Mock.t, Mock.u]
             actual = Rule.freeVariables testRulePattern
         assertEqual "Expected free variables" expect actual
 
@@ -381,6 +380,7 @@ testRulePattern =
         { left =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
+        , antiLeft = Just $ mkElemVar Mock.u
         , right =
             -- Include a binder to ensure that we respect them.
             mkExists Mock.y (mkElemVar Mock.y)

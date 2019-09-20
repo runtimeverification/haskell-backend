@@ -5,6 +5,7 @@ License     : NCSA
 module Kore.Strategies.Goal
     ( Goal (..)
     , Rule (..)
+    , TransitionRuleTemplate (..)
     , unprovenNodes
     , proven
     , onePathFirstStep
@@ -14,7 +15,7 @@ module Kore.Strategies.Goal
     , makeRuleFromPatterns
     , getConfiguration
     , getDestination
-    , transitionRule0
+    , transitionRuleTemplate
     , isTrusted
     ) where
 
@@ -140,47 +141,6 @@ class Goal goal where
         -> [Rule goal]
         -> [Strategy (Prim goal)]
 
-instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
-
-    newtype Rule (OnePathRule variable) =
-        OnePathRewriteRule { unRule :: RewriteRule variable }
-        deriving (GHC.Generic, Show, Unparse)
-
-    type Prim (OnePathRule variable) =
-        ProofState.Prim (Rule (OnePathRule variable))
-
-    type ProofState (OnePathRule variable) a =
-        ProofState.ProofState a
-
-    transitionRule =
-        transitionRule0
-            simplify
-            removeDestination
-            isTriviallyValid
-            derivePar
-            deriveSeq
-
-    strategy goals rules =
-        onePathFirstStep rewrites
-        : repeat
-            ( onePathFollowupStep
-                coinductiveRewrites
-                rewrites
-            )
-      where
-        rewrites = rules
-        coinductiveRewrites =
-            OnePathRewriteRule
-            . RewriteRule
-            . getOnePathRule
-            <$> goals
-
-instance SOP.Generic (Rule (OnePathRule variable))
-
-instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
-
-instance Debug variable => Debug (Rule (OnePathRule variable))
-
 instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
 
     newtype Rule (AllPathRule variable) =
@@ -194,12 +154,19 @@ instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
         ProofState.ProofState a
 
     transitionRule =
-        transitionRule0
-            simplify
-            removeDestination
-            isTriviallyValid
-            derivePar
-            deriveSeq
+        transitionRuleTemplate
+            TransitionRuleTemplate
+                { simplifyTemplate =
+                    simplify
+                , removeDestinationTemplate =
+                    removeDestination
+                , isTriviallyValidTemplate =
+                    isTriviallyValid
+                , deriveParTemplate =
+                    derivePar
+                , deriveSeqTemplate =
+                    deriveSeq
+                }
 
     strategy goals rules =
         allPathFirstStep rewrites
@@ -216,43 +183,95 @@ instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
             . getAllPathRule
             <$> goals
 
+instance SOP.Generic (Rule (OnePathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+
+instance Debug variable => Debug (Rule (OnePathRule variable))
+
+instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
+
+    newtype Rule (OnePathRule variable) =
+        OnePathRewriteRule { unRule :: RewriteRule variable }
+        deriving (GHC.Generic, Show, Unparse)
+
+    type Prim (OnePathRule variable) =
+        ProofState.Prim (Rule (OnePathRule variable))
+
+    type ProofState (OnePathRule variable) a =
+        ProofState.ProofState a
+
+    transitionRule =
+        transitionRuleTemplate
+            TransitionRuleTemplate
+                { simplifyTemplate =
+                    simplify
+                , removeDestinationTemplate =
+                    removeDestination
+                , isTriviallyValidTemplate =
+                    isTriviallyValid
+                , deriveParTemplate =
+                    derivePar
+                , deriveSeqTemplate =
+                    deriveSeq
+                }
+
+    strategy goals rules =
+        onePathFirstStep rewrites
+        : repeat
+            ( onePathFollowupStep
+                coinductiveRewrites
+                rewrites
+            )
+      where
+        rewrites = rules
+        coinductiveRewrites =
+            OnePathRewriteRule
+            . RewriteRule
+            . getOnePathRule
+            <$> goals
+
 instance SOP.Generic (Rule (AllPathRule variable))
 
 instance SOP.HasDatatypeInfo (Rule (AllPathRule variable))
 
 instance Debug variable => Debug (Rule (AllPathRule variable))
 
-transitionRule0
+data TransitionRuleTemplate monad goal =
+    TransitionRuleTemplate
+    { simplifyTemplate
+        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+    , removeDestinationTemplate
+        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+    , isTriviallyValidTemplate :: goal -> Bool
+    , deriveParTemplate
+        :: [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+    , deriveSeqTemplate
+        :: [Rule goal]
+        -> goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+    }
+
+transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
     => Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
-    => (goal -> Strategy.TransitionT (Rule goal) m goal)
-    -- ^ simplify
-    -> (goal -> Strategy.TransitionT (Rule goal) m goal)
-    -- ^ removeDestination
-    -> (goal -> Bool)
-    -- ^ isTriviallyValid
-    -> ( [Rule goal]
-            -> goal
-            -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-       )
-    -- ^ derivePar
-    -> ( [Rule goal]
-            -> goal
-            -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-       )
-    -- ^ deriveSeq
+    => TransitionRuleTemplate m goal
     -> Prim goal
     -> ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-transitionRule0
-    simplify'
-    removeDestination'
-    isTriviallyValid'
-    derivePar'
-    deriveSeq'
+transitionRuleTemplate
+    TransitionRuleTemplate
+        { simplifyTemplate
+        , removeDestinationTemplate
+        , isTriviallyValidTemplate
+        , deriveParTemplate
+        , deriveSeqTemplate
+        }
   =
     transitionRuleWorker
   where
@@ -266,21 +285,21 @@ transitionRule0
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
     transitionRuleWorker Simplify (Goal g) =
-        Goal <$> simplify' g
+        Goal <$> simplifyTemplate g
     transitionRuleWorker Simplify (GoalRemainder g) =
-        GoalRemainder <$> simplify' g
+        GoalRemainder <$> simplifyTemplate g
 
     transitionRuleWorker RemoveDestination (Goal g) =
-        Goal <$> removeDestination' g
+        Goal <$> removeDestinationTemplate g
     transitionRuleWorker RemoveDestination (GoalRemainder g) =
-        GoalRemainder <$> removeDestination' g
+        GoalRemainder <$> removeDestinationTemplate g
 
     transitionRuleWorker TriviallyValid (Goal g)
-      | isTriviallyValid' g = return Proven
+      | isTriviallyValidTemplate g = return Proven
     transitionRuleWorker TriviallyValid (GoalRemainder g)
-      | isTriviallyValid' g = return Proven
+      | isTriviallyValidTemplate g = return Proven
     transitionRuleWorker TriviallyValid (GoalRewritten g)
-      | isTriviallyValid' g = return Proven
+      | isTriviallyValidTemplate g = return Proven
 
     transitionRuleWorker (DerivePar rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
@@ -291,20 +310,20 @@ transitionRule0
         -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
-        derivePar' rules g
+        deriveParTemplate rules g
     transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        derivePar' rules g
+        deriveParTemplate rules g
 
     transitionRuleWorker (DeriveSeq rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeq' rules g
+        deriveSeqTemplate rules g
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeq' rules g
+        deriveSeqTemplate rules g
 
     transitionRuleWorker _ state = return state
 
@@ -351,11 +370,9 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
-        , RemoveDestination
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
-        , RemoveDestination
         , Simplify
         , TriviallyValid
         , ResetGoal
@@ -588,7 +605,13 @@ makeRuleFromPatterns configuration destination =
         (right, Conditional.toPredicate -> ensures) =
             Pattern.splitTerm destination
     in coerce RulePattern
-        { left, right, requires, ensures, attributes = Default.def }
+        { left
+        , antiLeft = Nothing
+        , right
+        , requires
+        , ensures
+        , attributes = Default.def
+        }
 
 {- | The predicate to remove the destination from the present configuration.
  -}

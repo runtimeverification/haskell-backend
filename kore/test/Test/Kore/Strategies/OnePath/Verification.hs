@@ -357,6 +357,7 @@ simpleTrustedClaim left right =
     OnePathRule
     $ RulePattern
             { left = left
+            , antiLeft = Nothing
             , right = right
             , requires = makeTruePredicate
             , ensures = makeTruePredicate

@@ -1,6 +1,9 @@
 {-|
+<<<<<<< HEAD:kore/src/Kore/Strategies/Verification.hs
 Module      : Kore.Strategies.Verification
 Description : Verification
+=======
+>>>>>>> upstream/master:kore/src/Kore/Strategies/Verification.hs
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 Maintainer  : virgil.serbanuta@runtimeverification.com
@@ -133,24 +136,12 @@ verify
     => Show (Rule claim)
     => MonadSimplify m
     => [Strategy (Prim claim)]
-    -- ^ Creates a one-step strategy from a target pattern. See
-    -- 'defaultStrategy'.
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
 verify strategy' =
     mapM_ (verifyClaim strategy')
-
-{- | Default implementation for a one-path strategy. You can apply it to the
-first two arguments and pass the resulting function to 'verify'.
-
-Things to note when implementing your own:
-
-1. The first step does not use the reachability claims
-
-2. You can return an infinite list.
--}
 
 verifyClaim
     :: forall claim m
@@ -247,7 +238,7 @@ transitionRule'
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' destination prim state = do
-    let goal = (flip makeRuleFromPatterns) destination <$> state
+    let goal = flip makeRuleFromPatterns destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next
 
