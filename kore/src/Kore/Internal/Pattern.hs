@@ -21,6 +21,7 @@ module Kore.Internal.Pattern
     , fromTermLike
     , Kore.Internal.Pattern.freeVariables
     , Kore.Internal.Pattern.freeElementVariables
+    , replaceTerm
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -29,6 +30,7 @@ module Kore.Internal.Pattern
     , Predicate
     ) where
 
+import qualified Control.Exception as Exception
 import GHC.Stack
     ( HasCallStack
     )
@@ -213,3 +215,19 @@ toPredicate = Conditional.toPredicate
 
 splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
 splitTerm = Conditional.splitTerm
+
+{- | Replace the 'term' of a 'Pattern' with the argument.
+
+It is an error to use this function where it would erase a partial term,
+i.e. the 'term' must be 'Top_' or 'Bottom_', and if it is 'Bottom_' it must have
+a false 'predicate'.
+
+ -}
+replaceTerm :: TermLike variable -> Pattern variable -> Pattern variable
+replaceTerm termLike pattern'@Conditional { term, predicate } =
+    Exception.assert doesNotErasePartial (termLike <$ pattern')
+  where
+    doesNotErasePartial
+      | Top_ _    <- term = True
+      | Bottom_ _ <- term = Syntax.Predicate.isFalse predicate
+      | otherwise         = False
