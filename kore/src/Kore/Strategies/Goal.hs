@@ -466,7 +466,6 @@ allPathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
-        , RemoveDestination
         , Simplify
         , TriviallyValid
         , DerivePar axioms
