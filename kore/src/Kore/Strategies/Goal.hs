@@ -57,6 +57,9 @@ import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Profiler.Profile as Profile
+    ( timeStrategy
+    )
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( AllPathRule (..)
@@ -318,14 +321,18 @@ transitionRuleTemplate
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
     transitionRuleWorker Simplify (Goal g) =
-        Goal <$> simplifyTemplate g
+        Profile.timeStrategy "Goal.Simplify"
+        $ Goal <$> simplifyTemplate g
     transitionRuleWorker Simplify (GoalRemainder g) =
-        GoalRemainder <$> simplifyTemplate g
+        Profile.timeStrategy "Goal.SimplifyRemainder"
+        $ GoalRemainder <$> simplifyTemplate g
 
     transitionRuleWorker RemoveDestination (Goal g) =
-        Goal <$> removeDestinationTemplate g
+        Profile.timeStrategy "Goal.RemoveDestination"
+        $ Goal <$> removeDestinationTemplate g
     transitionRuleWorker RemoveDestination (GoalRemainder g) =
-        GoalRemainder <$> removeDestinationTemplate g
+        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+        $ GoalRemainder <$> removeDestinationTemplate g
 
     transitionRuleWorker TriviallyValid (Goal g)
       | isTriviallyValidTemplate g = return Proven
@@ -343,20 +350,24 @@ transitionRuleTemplate
         -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
-        deriveParTemplate rules g
+        Profile.timeStrategy "Goal.DerivePar"
+        $ deriveParTemplate rules g
     transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveParTemplate rules g
+        Profile.timeStrategy "Goal.DeriveParRemainder"
+        $ deriveParTemplate rules g
 
     transitionRuleWorker (DeriveSeq rules) (Goal g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeqTemplate rules g
+        Profile.timeStrategy "Goal.DeriveSeq"
+        $ deriveSeqTemplate rules g
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        deriveSeqTemplate rules g
+        Profile.timeStrategy "Goal.DeriveSeqRemainder"
+        $ deriveSeqTemplate rules g
 
     transitionRuleWorker _ state = return state
 

@@ -89,7 +89,7 @@ instance
     )
     => Evaluable (Syntax.Predicate variable)
   where
-    evaluate predicate = do
+    evaluate predicate =
         case predicate of
             Syntax.Predicate.PredicateTrue -> return (Just True)
             Syntax.Predicate.PredicateFalse -> return (Just False)

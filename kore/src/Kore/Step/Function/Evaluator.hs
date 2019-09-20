@@ -37,6 +37,7 @@ import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
     , merge
@@ -59,7 +60,8 @@ import Kore.Logger
     , WithLog
     )
 import qualified Kore.Profiler.Profile as Profile
-    ( axiomEvaluation
+    ( axiomBranching
+    , axiomEvaluation
     , equalitySimplification
     , mergeSubstitutions
     , resimplification
@@ -70,7 +72,9 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import qualified Kore.Step.Simplification.Pattern as Pattern
+import qualified Kore.Step.Simplification.Conditional as Conditional
+    ( simplifyPredicate
+    )
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -263,13 +267,15 @@ maybeEvaluatePattern
         Nothing -> Nothing
         Just (BuiltinAndAxiomSimplifier evaluator) ->
             Just . tracing $ do
-                result <- axiomEvaluationTracing $
+                result <- Profile.axiomEvaluation identifier $
                     evaluator
                         substitutionSimplifier
                         simplifier
                         axiomIdToEvaluator
                         patt
-                        configurationPredicate
+                        ( configurationPredicate
+                        `Conditional.andCondition` childrenPredicate
+                        )
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
                         return AttemptedAxiom.NotApplicable
@@ -278,17 +284,22 @@ maybeEvaluatePattern
                         , remainders = orRemainders
                         } -> do
                             simplified <-
-                                resimplificationTracing (length orResults)
+                                Profile.resimplification
+                                    identifier (length orResults)
                                 $ mapM simplifyIfNeeded orResults
+                            let simplifiedResult = MultiOr.flatten simplified
+                            Profile.axiomBranching
+                                identifier
+                                (length orResults)
+                                (length simplifiedResult)
                             return
                                 (AttemptedAxiom.Applied AttemptedAxiomResults
-                                    { results =
-                                        MultiOr.flatten simplified
+                                    { results = simplifiedResult
                                     , remainders = orRemainders
                                     }
                                 )
                 merged <-
-                    mergeTracing
+                    Profile.mergeSubstitutions identifier
                     $ mergeWithConditionAndSubstitution
                         childrenPredicate
                         flattened
@@ -312,20 +323,7 @@ maybeEvaluatePattern
         traceNonErrorMonad
             D_Function_evaluatePattern
             [ debugArg "axiomIdentifier" identifier ]
-        . case identifier of
-            Nothing -> id
-            Just identifier' ->
-                Profile.equalitySimplification identifier' patt
-
-    axiomEvaluationTracing = maybe id Profile.axiomEvaluation identifier
-    resimplificationTracing resultCount =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.resimplification identifier' resultCount
-    mergeTracing =
-        case identifier of
-            Nothing -> id
-            Just identifier' -> Profile.mergeSubstitutions identifier'
+        . Profile.equalitySimplification identifier patt
 
     unchangedPatt =
         Conditional
@@ -388,7 +386,8 @@ reevaluateFunctions rewriting = do
     pattOr <- simplifyTerm (Pattern.term rewriting)
     mergedPatt <-
         OrPattern.mergeWithPredicate (Pattern.withoutTerm rewriting) pattOr
-    orResults <- BranchT.gather $ traverse Pattern.simplifyPredicate mergedPatt
+    orResults <-
+        BranchT.gather $ traverse Conditional.simplifyPredicate mergedPatt
     return (MultiOr.mergeAll orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.

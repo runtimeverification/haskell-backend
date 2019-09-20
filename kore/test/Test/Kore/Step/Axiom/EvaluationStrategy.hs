@@ -23,9 +23,7 @@ import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Pattern as Pattern
     ( Conditional (..)
     )
-import Kore.Internal.Predicate as Predicate
-    ( top
-    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( Predicate
@@ -316,6 +314,65 @@ test_firstFullEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.a)
         assertEqualWithExplanation "" expect actual
+    , testCase "Apply with top configuration" $ do
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+        let expect =
+                AttemptedAxiom.Applied
+                    AttemptedAxiomResults
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
+                                { term = Mock.g Mock.a
+                                , predicate = requirement
+                                , substitution = mempty
+                                }
+                            ]
+                        , remainders = OrPattern.fromPatterns []
+                        }
+        actual <-
+            evaluateWithPredicate
+                (firstFullEvaluation
+                    [ axiomEvaluatorWithRequires
+                        (Mock.functionalConstr10 Mock.a)
+                        (Mock.g Mock.a)
+                        requirement
+                    , axiomEvaluator
+                        (Mock.functionalConstr10 Mock.a)
+                        (Mock.g Mock.b)
+                    ]
+                )
+                (Mock.functionalConstr10 Mock.a)
+                requirement
+        assertEqualWithExplanation "" expect actual
+    , testCase "Don't apply due to top configuration" $ do
+        let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
+        let not_requirement = makeNotPredicate requirement
+        let expect =
+                AttemptedAxiom.Applied
+                    AttemptedAxiomResults
+                        { results = OrPattern.fromPatterns
+                            [ Conditional
+                                { term = Mock.g Mock.b
+                                , predicate = makeTruePredicate
+                                , substitution = mempty
+                                }
+                            ]
+                        , remainders = OrPattern.fromPatterns []
+                        }
+        actual <-
+            evaluateWithPredicate
+                (firstFullEvaluation
+                    [ axiomEvaluatorWithRequires
+                        (Mock.functionalConstr10 Mock.a)
+                        (Mock.g Mock.a)
+                        requirement
+                    , axiomEvaluator
+                        (Mock.functionalConstr10 Mock.a)
+                        (Mock.g Mock.b)
+                    ]
+                )
+                (Mock.functionalConstr10 Mock.a)
+                not_requirement
+        assertEqualWithExplanation "" expect actual
     , testCase "Error with multiple results" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         assertErrorIO
@@ -500,6 +557,14 @@ failingEvaluator =
     BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
         return AttemptedAxiom.NotApplicable
 
+axiomEvaluatorWithRequires
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
+    -> BuiltinAndAxiomSimplifier
+axiomEvaluatorWithRequires left right requires =
+    simplificationEvaluation (axiom left right requires)
+
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
@@ -533,14 +598,22 @@ evaluate
     :: BuiltinAndAxiomSimplifier
     -> TermLike Variable
     -> IO CommonAttemptedAxiom
-evaluate (BuiltinAndAxiomSimplifier simplifier) patt =
+evaluate simplifier term =
+    evaluateWithPredicate simplifier term makeTruePredicate
+
+evaluateWithPredicate
+    :: BuiltinAndAxiomSimplifier
+    -> TermLike Variable
+    -> Predicate Variable
+    -> IO CommonAttemptedAxiom
+evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifier Mock.env
     $ simplifier
         substitutionSimplifier
         patternSimplifier
         Map.empty
-        patt
-        Predicate.top
+        term
+        (Predicate.fromPredicate predicate)
   where
     substitutionSimplifier = Predicate.create
     patternSimplifier = Simplifier.create

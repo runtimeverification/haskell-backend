@@ -71,6 +71,9 @@ import Kore.Predicate.Predicate
 import Kore.Profiler.Data
     ( MonadProfiler
     )
+import qualified Kore.Profiler.Profile as Profiler
+    ( initialization
+    )
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
@@ -250,7 +253,8 @@ prove limit definitionModule specModule =
     evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractOnePathClaims specModule
-        specAxioms <- traverse simplifyRuleOnSecond specClaims
+        specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
+            $ traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
         let
             axioms = Goal.OnePathRewriteRule <$> rewriteRules
@@ -396,7 +400,7 @@ initialize
     -> (Initialized -> simplifier a)
     -> simplifier a
 initialize verifiedModule within = do
-    rewriteRules <-
+    rewriteRules <- Profiler.initialization "simplifyRewriteRule" $
         mapM Rule.simplifyRewriteRule (extractRewriteAxioms verifiedModule)
     let initialized = Initialized { rewriteRules }
     within initialized
