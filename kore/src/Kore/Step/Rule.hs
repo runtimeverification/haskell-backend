@@ -434,22 +434,26 @@ allPathRuleToPattern
     => Unparse variable
     => AllPathRule variable
     -> TermLike variable
-allPathRuleToPattern (AllPathRule rulePatt) =
+allPathRuleToPattern
+    ( AllPathRule
+        (RulePattern left _ right requires ensures _)
+    )
+  =
     mkImplies
         ( mkAnd
-            (Predicate.unwrapPredicate . requires $ rulePatt)
-            (left rulePatt)
+            (Predicate.unwrapPredicate requires)
+            left
         )
        ( mkApplyAlias
             (wAF sort)
             [mkAnd
-                (Predicate.unwrapPredicate . ensures $ rulePatt)
-                (right rulePatt)
+                (Predicate.unwrapPredicate ensures)
+                right
             ]
        )
   where
     sort :: Sort
-    sort = termLikeSort . right $ rulePatt
+    sort = termLikeSort right
 
 wAF :: Sort -> Alias (TermLike Variable)
 wAF sort = Alias
