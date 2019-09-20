@@ -22,7 +22,7 @@ prove_tests := \
 
 merge_tests := \
     1 \
-	2
+    2
 
 test: $(foreach test, $(all_tests), tests/$(test).test)
 
