@@ -560,7 +560,7 @@ debugPrecAux
     -> SOP (K (Int -> Doc ann)) xss
     -> Int  -- ^ Surrounding precedence
     -> Doc ann
-debugPrecAux datatypeInfo (SOP sop) precOut =
+debugPrecAux datatypeInfo (SOP sop) =
     SOP.hcollapse $ SOP.hzipWith debugConstr constrs sop
   where
     constrs :: NP ConstructorInfo xss
@@ -569,47 +569,51 @@ debugPrecAux datatypeInfo (SOP sop) precOut =
             SOP.ADT     _ _ cs -> cs
             SOP.Newtype _ _ c  -> c :* Nil
 
-    precConstr, precRecord :: Int
-    precConstr = 10  -- precedence of function application
-    precRecord = 11  -- precedence of record syntax
+precConstr, precRecord :: Int
+precConstr = 10  -- precedence of function application
+precRecord = 11  -- precedence of record syntax
 
-    debugConstr
-        :: ConstructorInfo xs  -- ^ Constructor
-        -> NP (K (Int -> Doc ann)) xs             -- ^ Arguments
-        -> K (Doc ann) xs
+debugConstr
+    :: ConstructorInfo xs  -- ^ Constructor
+    -> NP (K (Int -> Doc ann)) xs             -- ^ Arguments
+    -> K (Int -> Doc ann) xs
 
-    debugConstr (SOP.Constructor name) args =
-        K $ parens (precOut >= precConstr && (not . null) args')
-        $ Pretty.nest 4
+debugConstr (SOP.Constructor name) args =
+    K $ \precOut ->
+        parens (precOut >= precConstr && (not . null) args')
+        . Pretty.nest 4
         $ Pretty.sep (name' : args')
-      where
-        name' = parens needsParens (Pretty.pretty name)
-          where
-            initial = head name
-            needsParens = (not . Char.isLetter) initial && initial /= '('
-        args' = map ($ precConstr) (SOP.hcollapse args)
+    where
+    name' = parens needsParens (Pretty.pretty name)
+        where
+        initial = head name
+        needsParens = (not . Char.isLetter) initial && initial /= '('
+    args' = map ($ precConstr) (SOP.hcollapse args)
 
-    debugConstr (SOP.Infix name _ precInfix) (K x :* K y :* Nil) =
-        K $ parens (precOut >= precInfix)
-        $ Pretty.nest 4
+debugConstr (SOP.Infix name _ precInfix) (K x :* K y :* Nil) =
+    K $ \precOut ->
+        parens (precOut >= precInfix)
+        . Pretty.nest 4
         $ Pretty.sep [x precInfix, Pretty.pretty name, y precInfix]
 
-    debugConstr (SOP.Record name fields) args =
-        K $ parens (precOut >= precRecord)
-        $ Pretty.align $ Pretty.nest 4 $ Pretty.group $ mconcat
+debugConstr (SOP.Record name fields) args =
+    K $ \precOut ->
+        parens (precOut >= precRecord)
+        . Pretty.align . Pretty.nest 4 . Pretty.group
+        $ mconcat
             [ Pretty.pretty name
             , Pretty.line
             , encloseSep Pretty.lbrace Pretty.rbrace Pretty.comma args'
             ]
-      where
-        args' = SOP.hcollapse $ SOP.hzipWith debugField fields args
+    where
+    args' = SOP.hcollapse $ SOP.hzipWith debugField fields args
 
-    debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
-    debugField (FieldInfo fieldName) (K arg) =
-        K $ Pretty.nest 4 $ Pretty.sep
-            [ Pretty.pretty fieldName Pretty.<+> "="
-            , arg 0
-            ]
+debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
+debugField (FieldInfo fieldName) (K arg) =
+    K $ Pretty.nest 4 $ Pretty.sep
+        [ Pretty.pretty fieldName Pretty.<+> "="
+        , arg 0
+        ]
 
 debugSOP
     :: forall xss ann
