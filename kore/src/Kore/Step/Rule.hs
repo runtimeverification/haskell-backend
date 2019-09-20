@@ -35,6 +35,9 @@ module Kore.Step.Rule
     , Kore.Step.Rule.substitute
     ) where
 
+import Control.Exception
+    ( assert
+    )
 import qualified Data.Default as Default
 import Data.Map.Strict
     ( Map
@@ -436,21 +439,22 @@ allPathRuleToPattern
     -> TermLike variable
 allPathRuleToPattern
     ( AllPathRule
-        (RulePattern left _ right requires ensures _)
+        (RulePattern left antiLeft right requires ensures _)
     )
   =
-    mkImplies
+    assert (antiLeft == Nothing)
+    $ mkImplies
         ( mkAnd
             (Predicate.unwrapPredicate requires)
             left
         )
-       ( mkApplyAlias
+        ( mkApplyAlias
             (wAF sort)
             [mkAnd
                 (Predicate.unwrapPredicate ensures)
                 right
             ]
-       )
+        )
   where
     sort :: Sort
     sort = termLikeSort right
