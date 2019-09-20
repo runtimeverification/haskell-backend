@@ -361,11 +361,9 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
-        , RemoveDestination
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
-        , RemoveDestination
         , Simplify
         , TriviallyValid
         , ResetGoal

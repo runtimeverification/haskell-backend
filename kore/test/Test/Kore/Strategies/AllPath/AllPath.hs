@@ -307,7 +307,6 @@ instance Goal.Goal Goal where
                 , ProofState.RemoveDestination
                 , ProofState.TriviallyValid
                 , ProofState.DerivePar axioms
-                , ProofState.RemoveDestination
                 , ProofState.Simplify
                 , ProofState.TriviallyValid
                 , ProofState.ResetGoal
