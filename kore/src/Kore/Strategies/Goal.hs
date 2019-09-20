@@ -10,6 +10,8 @@ module Kore.Strategies.Goal
     , proven
     , onePathFirstStep
     , onePathFollowupStep
+    , allPathFirstStep
+    , allPathFollowupStep
     , makeRuleFromPatterns
     , getConfiguration
     , getDestination
@@ -60,7 +62,8 @@ import qualified Kore.Profiler.Profile as Profile
     )
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
-    ( OnePathRule (..)
+    ( AllPathRule (..)
+    , OnePathRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     )
@@ -231,6 +234,54 @@ instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
 
 instance Debug variable => Debug (Rule (OnePathRule variable))
 
+instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
+
+    newtype Rule (AllPathRule variable) =
+        AllPathRewriteRule { unRule :: RewriteRule variable }
+        deriving (GHC.Generic, Show, Unparse)
+
+    type Prim (AllPathRule variable) =
+        ProofState.Prim (Rule (AllPathRule variable))
+
+    type ProofState (AllPathRule variable) a =
+        ProofState.ProofState a
+
+    transitionRule =
+        transitionRuleTemplate
+            TransitionRuleTemplate
+                { simplifyTemplate =
+                    simplify
+                , removeDestinationTemplate =
+                    removeDestination
+                , isTriviallyValidTemplate =
+                    isTriviallyValid
+                , deriveParTemplate =
+                    derivePar
+                , deriveSeqTemplate =
+                    deriveSeq
+                }
+
+    strategy goals rules =
+        allPathFirstStep rewrites
+        : repeat
+            ( allPathFollowupStep
+                coinductiveRewrites
+                rewrites
+            )
+      where
+        rewrites = rules
+        coinductiveRewrites =
+            AllPathRewriteRule
+            . RewriteRule
+            . getAllPathRule
+            <$> goals
+
+instance SOP.Generic (Rule (AllPathRule variable))
+
+instance SOP.HasDatatypeInfo (Rule (AllPathRule variable))
+
+instance Debug variable => Debug (Rule (AllPathRule variable))
+
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
     { simplifyTemplate
@@ -346,7 +397,6 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
-        , RemoveDestination
         , Simplify
         , TriviallyValid
         , ResetGoal
@@ -375,6 +425,50 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
+        , Simplify
+        , TriviallyValid
+        , ResetGoal
+        , Simplify
+        , TriviallyValid
+        ]
+
+allPathFirstStep
+    :: [Rule (AllPathRule variable)]
+    -> Strategy (Prim (AllPathRule variable))
+allPathFirstStep axioms =
+    (Strategy.sequence . map Strategy.apply)
+        [ CheckProven
+        , CheckGoalRemainder
+        , Simplify
+        , TriviallyValid
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , DerivePar axioms
+        , Simplify
+        , TriviallyValid
+        , ResetGoal
+        , Simplify
+        , TriviallyValid
+        ]
+
+allPathFollowupStep
+    :: [Rule (AllPathRule variable)]
+    -> [Rule (AllPathRule variable)]
+    -> Strategy (Prim (AllPathRule variable))
+allPathFollowupStep claims axioms =
+    (Strategy.sequence . map Strategy.apply)
+        [ CheckProven
+        , CheckGoalRemainder
+        , Simplify
+        , TriviallyValid
+        , RemoveDestination
+        , Simplify
+        , TriviallyValid
+        , DeriveSeq claims
+        , Simplify
+        , TriviallyValid
+        , DerivePar axioms
         , Simplify
         , TriviallyValid
         , ResetGoal
