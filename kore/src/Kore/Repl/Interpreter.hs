@@ -155,15 +155,15 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
-    ( Claim
-    , CommonProofState
-    )
 import Kore.Strategies.ProofState
     ( ProofStateTransformer (ProofStateTransformer)
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
+import Kore.Strategies.Verification
+    ( Claim
+    , CommonProofState
+    )
 import Kore.Syntax.Application
 import qualified Kore.Syntax.Id as Id
     ( Id (..)
@@ -264,7 +264,7 @@ replInterpreter0 printAux printKore replCmd = do
                 TryAlias name      -> tryAlias name printAux printKore
                 LoadScript file    -> loadScript file    $> Continue
                 ProofStatus        -> proofStatus        $> Continue
-                Log s t            -> handleLog (s,t)    $> Continue
+                Log s sc t         -> handleLog (s,sc,t) $> Continue
                 Exit               -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
@@ -486,7 +486,7 @@ loadScript file = parseEvalScript file
 
 handleLog
     :: MonadState (ReplState claim) m
-    => (Logger.Severity, LogType)
+    => (Logger.Severity, LogScope, LogType)
     -> m ()
 handleLog t = field @"logging" .= t
 

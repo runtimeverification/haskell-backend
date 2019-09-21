@@ -31,6 +31,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import qualified Kore.Profiler.Profile as Profile
+    ( simplificationBranching
+    )
 import Kore.Step.Function.Evaluator
     ( evaluateApplication
     )
@@ -61,16 +64,24 @@ simplify predicate application = do
     evaluated <-
         traverse
             (makeAndEvaluateApplications predicate symbol)
-            -- The "Propagation Or" inference rule together with
-            -- "Propagation Bottom" for the case when a child or is empty.
-            (MultiOr.fullCrossProduct children)
-    return (OrPattern.flatten evaluated)
+            childrenCrossProduct
+    let result = OrPattern.flatten evaluated
+    Profile.simplificationBranching
+        "Application"
+        (symbolConstructor symbol)
+        (length childrenCrossProduct)
+        (length result)
+    return result
   where
     Application
         { applicationSymbolOrAlias = symbol
         , applicationChildren = children
         }
       = application
+
+    -- The "Propagation Or" inference rule together with
+    -- "Propagation Bottom" for the case when a child or is empty.
+    childrenCrossProduct = MultiOr.fullCrossProduct children
 
 makeAndEvaluateApplications
     :: (SimplifierVariable variable, MonadSimplify simplifier)

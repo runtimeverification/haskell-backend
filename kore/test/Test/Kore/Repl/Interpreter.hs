@@ -66,7 +66,7 @@ import Kore.Step.Simplification.AndTerms
     )
 import qualified Kore.Step.Simplification.Data as Kore
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.Verification
     ( verifyClaimStep
     )
 import Kore.Syntax.Variable
@@ -496,12 +496,16 @@ logUpdatesState =
     let
         axioms  = []
         claim   = emptyClaim
-        command = Log Logger.Info LogToStdOut
+        command =
+            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdOut
     in do
-        Result { output, continue, state } <- run command axioms [claim] claim
+        Result { output, continue, state } <-
+            run command axioms [claim] claim
         output   `equalsOutput` mempty
         continue `equals`     Continue
-        state    `hasLogging` (Logger.Info, LogToStdOut)
+        state
+            `hasLogging`
+            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdOut)
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
@@ -634,7 +638,10 @@ hasAlias st alias@AliasDefinition { name } =
     in
         actual `equals` Just alias
 
-hasLogging :: ReplState Claim -> (Logger.Severity, LogType) -> IO ()
+hasLogging
+    :: ReplState Claim
+    -> (Logger.Severity, LogScope, LogType)
+    -> IO ()
 hasLogging st expectedLogging =
     let
         actualLogging = logging st
@@ -668,7 +675,7 @@ mkState axioms claims claim =
         , omit        = mempty
         , labels      = Map.singleton (ClaimIndex 0) Map.empty
         , aliases     = Map.empty
-        , logging     = (Logger.Debug, NoLogging)
+        , logging     = (Logger.Debug, mempty, NoLogging)
         }
   where
     graph' = emptyExecutionGraph claim

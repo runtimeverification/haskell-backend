@@ -50,7 +50,7 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.Logger
 import Kore.Profiler.Data
-    ( MonadProfiler (profileDuration)
+    ( MonadProfiler (profile)
     )
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Registry as Axiom.Registry
@@ -107,9 +107,9 @@ instance (MonadUnliftIO m, WithLog LogMessage m)
 
 instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
   where
-    profileDuration event duration =
-        SimplifierT (profileDuration event (runSimplifierT duration))
-    {-# INLINE profileDuration #-}
+    profile event duration =
+        SimplifierT (profile event (runSimplifierT duration))
+    {-# INLINE profile #-}
 
 instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
     => MonadSimplify (SimplifierT m)
