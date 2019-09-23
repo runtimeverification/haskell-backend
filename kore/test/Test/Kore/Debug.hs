@@ -168,7 +168,7 @@ test_debugPrec =
     , Rn { unRn = A }            `yields` "Rn { unRn = A }"
     ]
   where
-    yields input = Terse.equals_ (render $ debugPrec 10 input)
+    yields input = Terse.equals_ (render $ debugPrec input 10)
     render = Pretty.renderString . layout
     layout =
         Pretty.layoutSmart

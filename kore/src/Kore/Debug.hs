@@ -530,13 +530,13 @@ be easily loaded into GHCi, i.e. @debug@ should obey
  -}
 class Debug a where
     debug :: a -> Doc ann
-    debug = debugPrec 0
+    debug = \a -> debugPrec a 0
 
-    debugPrec :: Int -> a -> Doc ann
+    debugPrec :: a -> Int -> Doc ann
     default debugPrec
         :: (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
-        => Int  -- ^ surrounding precedence
-        -> a
+        => a
+        -> Int  -- ^ surrounding precedence
         -> Doc ann
     debugPrec = debugPrecGeneric
 
@@ -547,91 +547,97 @@ instance Debug GHC.SrcLoc
 debugPrecGeneric
     :: forall a ann
     .  (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
-    => Int  -- ^ Surrounding precedence
-    -> a
+    => a
+    -> Int  -- ^ Surrounding precedence
     -> Doc ann
-debugPrecGeneric precOut a =
-    debugPrecSOP precOut (SOP.datatypeInfo $ Proxy @a) (SOP.from a)
+debugPrecGeneric a =
+    debugPrecAux (SOP.datatypeInfo $ Proxy @a) (debugSOP (SOP.from a))
 
-debugPrecSOP
+debugPrecAux
     :: forall xss ann
-    .  All2 Debug xss
-    => Int  -- ^ Surrounding precedence
-    -> DatatypeInfo xss
-    -> SOP I xss
+    .  (All SOP.Top xss)
+    => DatatypeInfo xss
+    -> SOP (K (Int -> Doc ann)) xss
+    -> Int  -- ^ Surrounding precedence
     -> Doc ann
-debugPrecSOP precOut datatypeInfo (SOP sop) =
-    SOP.hcollapse $ SOP.hczipWith pAllDebug debugConstr constrs sop
+debugPrecAux datatypeInfo (SOP sop) =
+    SOP.hcollapse $ SOP.hzipWith debugConstr constrs sop
   where
-    pDebug = Proxy :: Proxy Debug
-    pAllDebug = Proxy :: Proxy (All Debug)
-
     constrs :: NP ConstructorInfo xss
     constrs =
         case datatypeInfo of
             SOP.ADT     _ _ cs -> cs
             SOP.Newtype _ _ c  -> c :* Nil
 
-    precConstr, precRecord :: Int
-    precConstr = 10  -- precedence of function application
-    precRecord = 11  -- precedence of record syntax
+precConstr, precRecord :: Int
+precConstr = 10  -- precedence of function application
+precRecord = 11  -- precedence of record syntax
 
-    debugConstr
-        :: All Debug xs
-        => ConstructorInfo xs  -- ^ Constructor
-        -> NP I xs             -- ^ Arguments
-        -> K (Doc ann) xs
+debugConstr
+    :: ConstructorInfo xs  -- ^ Constructor
+    -> NP (K (Int -> Doc ann)) xs             -- ^ Arguments
+    -> K (Int -> Doc ann) xs
 
-    debugConstr (SOP.Constructor name) args =
-        K $ parens (precOut >= precConstr && (not . null) args')
-        $ Pretty.nest 4
+debugConstr (SOP.Constructor name) args =
+    K $ \precOut ->
+        parens (precOut >= precConstr && (not . null) args')
+        . Pretty.nest 4
         $ Pretty.sep (name' : args')
+  where
+    name' = parens needsParens (Pretty.pretty name)
       where
-        name' = parens needsParens (Pretty.pretty name)
-          where
-            initial = head name
-            needsParens = (not . Char.isLetter) initial && initial /= '('
-        args' =
-            SOP.hcollapse
-            $ SOP.hcmap pDebug (SOP.mapIK $ debugPrec precConstr) args
+        initial = head name
+        needsParens = (not . Char.isLetter) initial && initial /= '('
+    args' = map ($ precConstr) (SOP.hcollapse args)
 
-    debugConstr (SOP.Infix name _ precInfix) (I x :* I y :* Nil) =
-        K $ parens (precOut >= precInfix)
-        $ Pretty.nest 4
-        $ Pretty.sep
-            [ debugPrec precInfix x
-            , Pretty.pretty name
-            , debugPrec precInfix y
-            ]
+debugConstr (SOP.Infix name _ precInfix) (K x :* K y :* Nil) =
+    K $ \precOut ->
+        parens (precOut >= precInfix)
+        . Pretty.nest 4
+        $ Pretty.sep [x precInfix, Pretty.pretty name, y precInfix]
 
-    debugConstr (SOP.Record name fields) args =
-        K $ parens (precOut >= precRecord)
-        $ Pretty.align $ Pretty.nest 4 $ Pretty.group $ mconcat
+debugConstr (SOP.Record name fields) args =
+    K $ \precOut ->
+        parens (precOut >= precRecord)
+        . Pretty.align . Pretty.nest 4 . Pretty.group
+        $ mconcat
             [ Pretty.pretty name
             , Pretty.line
             , encloseSep Pretty.lbrace Pretty.rbrace Pretty.comma args'
             ]
-      where
-        args' = SOP.hcollapse $ SOP.hczipWith pDebug debugField fields args
+  where
+    args' = SOP.hcollapse $ SOP.hzipWith debugField fields args
 
-    debugField :: Debug x => FieldInfo x -> I x -> K (Doc ann) x
-    debugField (FieldInfo fieldName) (I arg) =
-        K $ Pretty.nest 4 $ Pretty.sep
-            [ Pretty.pretty fieldName Pretty.<+> "="
-            , debugPrec 0 arg
-            ]
+debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
+debugField (FieldInfo fieldName) (K arg) =
+    K $ Pretty.nest 4 $ Pretty.sep
+        [ Pretty.pretty fieldName Pretty.<+> "="
+        , arg 0
+        ]
+
+debugSOP
+    :: forall xss ann
+    .  All2 Debug xss
+    => SOP I xss
+    -> SOP (K (Int -> Doc ann)) xss
+debugSOP (SOP sop) =
+    SOP
+    $ SOP.hcmap pAllDebug (SOP.hcmap pDebug (SOP.mapIK debugPrec)) sop
+  where
+    pDebug = Proxy :: Proxy Debug
+    pAllDebug = Proxy :: Proxy (All Debug)
 
 instance Debug a => Debug [a] where
-    debugPrec _ =
+    debugPrec as _ =
         Pretty.group
         . encloseSep Pretty.lbracket Pretty.rbracket Pretty.comma
-        . map debug
+        $ map debug as
 
 instance {-# OVERLAPS #-} Debug String where
-    debugPrec p a = Pretty.pretty (showsPrec p a "")
+    debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug Text where
-    debugPrec p a = Pretty.pretty (showsPrec p a "")
+    debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug Void
 
@@ -640,16 +646,16 @@ instance Debug ()
 instance (Debug a, Debug b) => Debug (a, b)
 
 instance Debug Natural where
-    debugPrec _ = Pretty.pretty
+    debugPrec x = \_ -> Pretty.pretty x
 
 instance Debug Integer where
-    debugPrec _ x = parens (x < 0) (Pretty.pretty x)
+    debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
 
 instance Debug Int where
-    debugPrec _ x = parens (x < 0) (Pretty.pretty x)
+    debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
 
 instance Debug Char where
-    debugPrec _ x = Pretty.squotes (Pretty.pretty x)
+    debugPrec x = \_ -> Pretty.squotes (Pretty.pretty x)
 
 instance Debug a => Debug (Maybe a)
 
@@ -658,10 +664,10 @@ instance Debug a => Debug (Sup a)
 instance Debug a => Debug (Identity a)
 
 instance (Debug a, Debug (f b)) => Debug (CofreeF f a b) where
-    debugPrec precOut (a :< fb) =
+    debugPrec (a :< fb) =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecSOP precOut datatypeInfo sop
+        debugPrecAux datatypeInfo (debugSOP sop)
       where
         datatypeInfo =
             SOP.ADT
@@ -675,10 +681,10 @@ instance
     (Debug a, Debug (w (CofreeF f a (CofreeT f w a)))) =>
     Debug (CofreeT f w a)
   where
-    debugPrec precOut (CofreeT x) =
+    debugPrec (CofreeT x) =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecSOP precOut datatypeInfo sop
+        debugPrecAux datatypeInfo (debugSOP sop)
       where
         datatypeInfo =
             SOP.Newtype
@@ -689,15 +695,15 @@ instance
         sop = SOP (Z (I x :* Nil))
 
 instance (Debug k, Debug a) => Debug (Map.Map k a) where
-    debugPrec precOut as =
+    debugPrec as precOut =
         parens (precOut >= 10) ("Data.Map.fromList" <+> debug (Map.toList as))
 
 instance Debug a => Debug (Set a) where
-    debugPrec precOut as =
+    debugPrec as precOut =
         parens (precOut >= 10) ("Data.Set.fromList" <+> debug (Set.toList as))
 
 instance Debug a => Debug (Seq a) where
-    debugPrec precOut as =
+    debugPrec as precOut =
         parens (precOut >= 10)
         $ "Data.Sequence.fromList" <+> debug (Foldable.toList as)
 
