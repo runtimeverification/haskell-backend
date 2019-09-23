@@ -23,7 +23,6 @@ import Control.Error
     )
 import qualified Control.Exception as Exception
 import qualified Control.Monad.State.Strict as State
-import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( catMaybes
@@ -204,10 +203,12 @@ translateUninterpreted t pat =
         n <- Counter.increment
         var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
         State.modify' (Map.insert pat (var, t))
-        Monad.Trans.lift . Monad.Trans.lift . Monad.Trans.lift $
-            withLogScope "Evaluator"
-                . withLogScope "translateUninterpreted"
-                    . logDebug
-                    . Text.pack
-                    $ (show n) ++ " |-> " ++ (show . unparse $ pat)
+        logVariableAssignment n
         return var
+    logVariableAssignment n =
+        withLogScope "Evaluator"
+        . withLogScope "translateUninterpreted"
+        . logDebug
+        . Text.pack . show
+        . Pretty.nest 4 . Pretty.sep
+        $ [Pretty.pretty n, "|->", unparse pat]
