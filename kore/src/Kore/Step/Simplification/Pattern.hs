@@ -10,10 +10,10 @@ module Kore.Step.Simplification.Pattern
 
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -58,13 +58,9 @@ simplify
     => Pattern variable
     -> simplifier (OrPattern variable)
 simplify pattern' = do
-    simplifiedTerm <-
-        simplifyConditionalTermToOr predicate term
-    orPatterns <-
-        Branch.gather
-        $ traverse
-            (Pattern.mergeWithPredicate predicate)
-            simplifiedTerm
-    return (MultiOr.mergeAll orPatterns)
+    orSimplifiedTerms <- simplifyConditionalTermToOr predicate term
+    fmap OrPattern.fromPatterns . Branch.gather $ do
+        simplifiedTerm <- Branch.scatter orSimplifiedTerms
+        Pattern.mergeWithPredicate predicate simplifiedTerm
   where
     (term, predicate) = Conditional.splitTerm pattern'
