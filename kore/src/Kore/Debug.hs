@@ -583,9 +583,9 @@ debugConstr (SOP.Constructor name) args =
         parens (precOut >= precConstr && (not . null) args')
         . Pretty.nest 4
         $ Pretty.sep (name' : args')
-    where
+  where
     name' = parens needsParens (Pretty.pretty name)
-        where
+      where
         initial = head name
         needsParens = (not . Char.isLetter) initial && initial /= '('
     args' = map ($ precConstr) (SOP.hcollapse args)
@@ -605,7 +605,7 @@ debugConstr (SOP.Record name fields) args =
             , Pretty.line
             , encloseSep Pretty.lbrace Pretty.rbrace Pretty.comma args'
             ]
-    where
+  where
     args' = SOP.hcollapse $ SOP.hzipWith debugField fields args
 
 debugField :: FieldInfo x -> K (Int -> Doc ann) x -> K (Doc ann) x
