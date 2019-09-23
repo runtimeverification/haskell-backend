@@ -38,6 +38,7 @@ module Kore.Predicate.Predicate
     , Kore.Predicate.Predicate.freeElementVariables
     , Kore.Predicate.Predicate.hasFreeVariable
     , Kore.Predicate.Predicate.mapVariables
+    , singleSubstitutionToPredicate
     , stringFromPredicate
     , substitutionToPredicate
     , fromPredicate
