@@ -7,7 +7,6 @@ module Test.Kore.Step.Function.Integration
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Control.Lens as Lens
 import Data.Function
@@ -109,7 +108,7 @@ import Test.Kore.Step.Axiom.Matcher
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_functionIntegration :: [TestTree]
 test_functionIntegration =
@@ -130,7 +129,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Simple evaluation (builtin branch)" $ do
         let expect =
@@ -149,7 +148,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin works)"
       $ do
@@ -175,7 +174,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Simple evaluation (Axioms & Builtin branch, Builtin fails)"
       $ do
@@ -200,7 +199,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Evaluates inside functions" $ do
         let expect =
@@ -219,7 +218,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.functionalConstr10 (Mock.functionalConstr10 Mock.c))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Evaluates 'or'" $ do
         let expect =
@@ -246,7 +245,7 @@ test_functionIntegration =
                         (Mock.functionalConstr10 Mock.d)
                     )
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Evaluates on multiple branches" $ do
         let expect =
@@ -275,7 +274,7 @@ test_functionIntegration =
                         (Mock.functionalConstr10 Mock.c)
                     )
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Returns conditions" $ do
         let expect =
@@ -296,7 +295,7 @@ test_functionIntegration =
                     )
                 )
                 (Mock.f Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Merges conditions" $ do
         let expect =
@@ -333,7 +332,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.functionalConstr10 (Mock.functional20 Mock.c Mock.d))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Reevaluates user-defined function results." $ do
         let expect =
@@ -359,7 +358,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Merges substitutions with reevaluation ones." $ do
         let expect =
@@ -403,7 +402,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Simplifies substitution-predicate." $ do
         -- Mock.plain10 below prevents:
@@ -446,7 +445,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Evaluates only simplifications." $ do
         let expect =
@@ -477,7 +476,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Picks first matching simplification." $ do
         let expect =
@@ -518,7 +517,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Falls back to evaluating the definition." $ do
         let expect =
@@ -547,7 +546,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Multiple definition branches." $ do
         let expect =
@@ -575,7 +574,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     ]
   where
     evaluate
@@ -642,7 +641,7 @@ equals comment term results =
     testCase comment $ do
         actual <- simplify term
         let expect = OrPattern.fromPatterns $ Pattern.fromTermLike <$> results
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
 simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify =

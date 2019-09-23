@@ -3,11 +3,6 @@ module Test.Kore.Strategies.OnePath.Step
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Data.Default
     ( def
@@ -25,7 +20,6 @@ import Data.Reflection
 import Numeric.Natural
     ( Natural
     )
-
 
 import Data.Limit
     ( Limit (..)
@@ -87,7 +81,7 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 
 makeOnePathRule :: TermLike Variable -> TermLike Variable -> OnePathRule Variable
@@ -112,7 +106,7 @@ test_onePathStrategy =
             )
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (ProofState.Goal $ makeOnePathRule Mock.a Mock.a)
             actual
     , testCase "Axiom priority, first step" $ do
@@ -125,7 +119,7 @@ test_onePathStrategy =
             (makeOnePathRule Mock.a Mock.a)
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation "" ProofState.Proven _actual
+        assertEqual "" ProofState.Proven _actual
 
         -- Goal: a => d
         -- Coinductive axiom: a => b
@@ -137,7 +131,7 @@ test_onePathStrategy =
             (makeOnePathRule Mock.a Mock.d)
             [simpleRewrite Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (ProofState.Goal $ makeOnePathRule Mock.c Mock.d)
             _actual
     , testCase "Axiom priority, second step" $ do
@@ -156,7 +150,7 @@ test_onePathStrategy =
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             ProofState.Proven
             _actual
 
@@ -172,7 +166,7 @@ test_onePathStrategy =
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (sort
                 [ ProofState.Goal $ makeOnePathRule Mock.c Mock.e
                 ]
@@ -194,7 +188,7 @@ test_onePathStrategy =
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (sort
                 [ ProofState.Goal $ makeOnePathRule Mock.d Mock.e
                 ]
@@ -281,7 +275,7 @@ test_onePathStrategy =
                     )
                     (fromTermLike $ Mock.functionalConstr11 Mock.a)
                 ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             expected
             actual
     , testCase "Stuck pattern" $ do
@@ -311,7 +305,7 @@ test_onePathStrategy =
         let equalsXA = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.a
             equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
             equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
-        assertEqualWithExplanation ""
+        assertEqual ""
             [ ProofState.Goal $ makeRuleFromPatterns
                 Conditional
                     { term = Mock.f Mock.b
@@ -364,7 +358,7 @@ test_onePathStrategy =
                     Mock.c
                     $ Mock.f Mock.b
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             [ ProofState.GoalRemainder $ makeRuleFromPatterns
                 ( Conditional
                     { term = Mock.functionalConstr10 Mock.b
@@ -404,7 +398,7 @@ test_onePathStrategy =
                         (Mock.builtinBool True)
                     )
                 ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             ProofState.Proven
             _actual
     , testCase "Configuration with SMT pruning" $ do
@@ -451,7 +445,7 @@ test_onePathStrategy =
                     (Mock.builtinBool False)
                 )
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             [ ProofState.Goal $ makeRuleFromPatterns
                 ( Conditional
                     { term = Mock.a
@@ -504,7 +498,7 @@ test_onePathStrategy =
                     (Mock.builtinBool True)
                 )
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             [ ProofState.Goal $ makeRuleFromPatterns
                 ( Conditional
                     { term = Mock.a

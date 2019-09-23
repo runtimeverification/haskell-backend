@@ -2,7 +2,6 @@ module Test.Kore.Step.Axiom.Identifier
     ( test_matchAxiomIdentifier ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
@@ -15,7 +14,7 @@ import Kore.Step.Axiom.Identifier
 
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 
 test_matchAxiomIdentifier :: [TestTree]
@@ -55,7 +54,7 @@ match
     -> TestTree
 match name input expect =
     testCase name
-    $ assertEqualWithExplanation "" expect
+    $ assertEqual "" expect
     $ matchAxiomIdentifier input
 
 matches

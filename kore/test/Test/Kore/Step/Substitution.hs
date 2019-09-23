@@ -4,7 +4,6 @@ module Test.Kore.Step.Substitution
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 
@@ -33,7 +32,7 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_normalize :: [TestTree]
 test_normalize =
@@ -45,7 +44,7 @@ test_normalize =
     , testCase "∃ y z. x = σ(y, z)" $ do
         let expect = Predicate.fromPredicate existsPredicate
         actual <- normalizeExcept expect
-        assertEqualWithExplanation
+        assertEqual
             "Expected original result"
             (Right $ MultiOr.make [expect])
             actual
@@ -55,7 +54,7 @@ test_normalize =
                 Predicate.fromPredicate
                 $ Syntax.Predicate.makeNotPredicate existsPredicate
         actual <- normalizeExcept expect
-        assertEqualWithExplanation
+        assertEqual
             "Expected original result"
             (Right $ MultiOr.make [expect])
             actual
@@ -87,7 +86,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 Mock.a
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor normalization with variables"
@@ -107,7 +106,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Double constructor is bottom"
@@ -124,7 +123,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 Mock.a)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Double constructor is bottom with variables"
@@ -144,7 +143,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 (mkElemVar Mock.y))
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of function"
@@ -175,7 +174,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.f Mock.a)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of function with variables"
@@ -195,7 +194,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.f (mkElemVar Mock.y))
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of functional symbol"
@@ -215,7 +214,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.functional10 (mkElemVar Mock.y))
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor circular dependency?"
@@ -235,7 +234,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkElemVar Mock.x)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Non-ctor circular dependency"
@@ -256,7 +255,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.f (mkElemVar Mock.x)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Normalizes substitution"
@@ -273,7 +272,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ (ElemVar Mock.x, Mock.constr10 Mock.a)
                     , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
 
     , testCase "Predicate from normalizing substitution"
@@ -297,7 +296,7 @@ test_mergeAndNormalizeSubstitutions =
                             , (ElemVar Mock.x, Mock.constr10 Mock.cg)
                             ]
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
 
     , testCase "Normalizes substitution and substitutes in predicate"
@@ -326,7 +325,7 @@ test_mergeAndNormalizeSubstitutions =
                             , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                             ]
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
     ]
 

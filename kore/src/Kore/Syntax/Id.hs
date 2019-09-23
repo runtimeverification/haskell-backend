@@ -71,6 +71,8 @@ instance SOP.HasDatatypeInfo Id
 
 instance Debug Id
 
+instance Diff Id
+
 instance IsString Id where
     fromString = noLocationId . fromString
 
@@ -123,6 +125,9 @@ instance SOP.Generic AstLocation
 instance SOP.HasDatatypeInfo AstLocation
 
 instance Debug AstLocation
+
+instance Diff AstLocation where
+    diffPrec = diffPrecIgnore
 
 {-| 'prettyPrintAstLocation' displays an `AstLocation` in a way that's
 (sort of) user friendly.

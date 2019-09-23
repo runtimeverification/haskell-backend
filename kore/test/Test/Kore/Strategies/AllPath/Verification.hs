@@ -3,11 +3,6 @@ module Test.Kore.Strategies.AllPath.Verification
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Data.Default
     ( def
@@ -40,7 +35,7 @@ import Kore.Strategies.Goal
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Strategies.Common
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_allPathVerification :: [TestTree]
 test_allPathVerification =
@@ -52,7 +47,7 @@ test_allPathVerification =
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.a ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Distinct spec" $ do
@@ -63,7 +58,7 @@ test_allPathVerification =
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.b ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "b or c spec" $ do
@@ -74,7 +69,7 @@ test_allPathVerification =
             (Limit 2)
             [ simpleAxiom Mock.a Mock.b ]
             [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Everything is provable when we have cyclic rules" $ do
@@ -85,7 +80,7 @@ test_allPathVerification =
             (Limit 3)
             [ simpleAxiom Mock.a Mock.a ]
             [ simpleClaim Mock.a Mock.b ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Concurrent rules" $ do
@@ -100,7 +95,7 @@ test_allPathVerification =
             , simpleAxiom Mock.a Mock.c
             ]
             [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Provable using one-path; not provable using all-path" $ do
@@ -115,7 +110,7 @@ test_allPathVerification =
             , simpleAxiom Mock.a Mock.c
             ]
             [ simpleClaim Mock.a Mock.b ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
     , testCase "Verifies one claim with branching" $ do
@@ -133,7 +128,7 @@ test_allPathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
-        assertEqualWithExplanation "" (Right ()) actual
+        assertEqual "" (Right ()) actual
     , testCase "Partial verification failure" $ do
         -- Axiom: constr11(a) => b
         -- Axiom: constr10(x) => constr11(x)
@@ -147,7 +142,7 @@ test_allPathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -172,7 +167,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "fails first of two claims" $ do
@@ -191,7 +186,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.e
             , simpleClaim Mock.d Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
     , testCase "fails second of two claims" $ do
@@ -210,7 +205,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
     , testCase "second proves first but fails" $ do
@@ -227,7 +222,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "first proves second but fails" $ do
@@ -244,7 +239,7 @@ test_allPathVerification =
             [ simpleClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "trusted first proves second" $ do
@@ -261,7 +256,7 @@ test_allPathVerification =
             [ simpleTrustedClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Prefers using claims for rewriting" $ do
@@ -283,7 +278,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
     ]

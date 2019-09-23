@@ -3,7 +3,6 @@ module Test.Kore.Step.Simplification.Builtin
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -25,7 +24,7 @@ import Kore.Step.Simplification.Builtin
 
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -57,7 +56,7 @@ test_simplify =
         -> TestTree
     becomes name origin expect =
         testCase name
-        $ assertEqualWithExplanation ""
+        $ assertEqual ""
             (OrPattern.fromPatterns expect)
             (evaluate origin)
 

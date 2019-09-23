@@ -1,7 +1,6 @@
 module Test.Kore.Step.Rule.Combine where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Data.Default
     ( def
@@ -44,7 +43,7 @@ import qualified SMT
 
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 class RewriteRuleBase base where
     rewritesTo :: base Variable -> base Variable -> RewriteRule Variable
@@ -72,14 +71,14 @@ test_combineRulesPredicate =
         let expected = makeTruePredicate
             actual = mergeRulesPredicate
                 [ Mock.a `rewritesTo` Mock.cf ]
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Two rules" $
         let expected = makeCeilPredicate (mkAnd Mock.cf Mock.b)
             actual = mergeRulesPredicate
                 [ Mock.a `rewritesTo` Mock.cf
                 , Mock.b `rewritesTo` Mock.cg
                 ]
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Three rules case" $
         let expected =
                 makeAndPredicate
@@ -91,7 +90,7 @@ test_combineRulesPredicate =
                 , Mock.b `rewritesTo` Mock.cg
                 , Mock.c `rewritesTo` Mock.ch
                 ]
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Rules with predicates" $
         let expected =
                 makeMultipleAndPredicate
@@ -119,7 +118,7 @@ test_combineRulesPredicate =
                     `rewritesTo`
                     Pair (Mock.ch, makeCeilPredicate (Mock.g Mock.c))
                 ]
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Rules with variables" $
         let expected =
                 makeMultipleAndPredicate
@@ -136,7 +135,7 @@ test_combineRulesPredicate =
                     `rewritesTo`
                     Pair (Mock.h x, makeCeilPredicate (Mock.h Mock.a))
                 ]
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     ]
   where
     x :: TermLike Variable
@@ -151,7 +150,7 @@ test_combineRules =
 
         actual <- runMergeRules [ Mock.a `rewritesTo` Mock.cf ]
 
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "Two rules" $ do
         let expected = [Mock.a `rewritesTo` Mock.cf]
 
@@ -160,7 +159,7 @@ test_combineRules =
             , Mock.b `rewritesTo` Mock.cf
             ]
 
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "Predicate simplification" $ do
         let expected =
                 [   Pair
@@ -177,7 +176,7 @@ test_combineRules =
             , Mock.functionalConstr10 Mock.b `rewritesTo` Mock.cg
             ]
 
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "Substitution" $ do
         let expected =
                 [   Mock.functionalConstr10 (Mock.functionalConstr11 y)
@@ -189,7 +188,7 @@ test_combineRules =
             , Mock.functionalConstr11 y `rewritesTo` y
             ]
 
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "Substitution in predicates" $ do
         let expected =
                 [   Pair
@@ -217,7 +216,7 @@ test_combineRules =
             , Mock.functionalConstr11 y `rewritesTo` y
             ]
 
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     ]
   where
     x = mkElemVar Mock.x

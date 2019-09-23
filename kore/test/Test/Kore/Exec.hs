@@ -5,13 +5,6 @@ module Test.Kore.Exec
     ) where
 
 import Test.Tasty
-    ( TestTree
-    , testGroup
-    )
-import Test.Tasty.HUnit
-    ( assertEqual
-    , testCase
-    )
 
 import Control.Applicative
     ( liftA2
@@ -69,10 +62,10 @@ import qualified SMT
 import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_exec :: TestTree
-test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
+test_exec = testCase "exec" $ actual >>= assertEqual "" expected
   where
     unlimited :: Limit Integer
     unlimited = Unlimited
@@ -103,18 +96,16 @@ test_exec = testCase "exec" $ actual >>= assertEqualWithExplanation "" expected
     inputPattern = applyToNoArgs mySort "b"
     expected = applyToNoArgs mySort "d"
 
-test_search :: TestTree
+test_search :: [TestTree]
 test_search =
-    testGroup
-        "search"
-        [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
+    [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
   where
     unlimited :: Limit Integer
     unlimited = Unlimited
     makeTestCase searchType =
         testCase (show searchType) (assertion searchType)
-    assertion searchType = actual searchType
-        >>= assertEqualWithExplanation "" (expected searchType)
+    assertion searchType =
+        actual searchType >>= assertEqual "" (expected searchType)
     actual searchType = do
         finalPattern <-
             SMT.runSMT SMT.defaultConfig emptyLogger

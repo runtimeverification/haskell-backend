@@ -5,7 +5,6 @@ module Test.Kore.Step.Simplification.Equals
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 
@@ -53,7 +52,7 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_equalsSimplification_Or_Pattern :: [TestTree]
 test_equalsSimplification_Or_Pattern =
@@ -67,7 +66,7 @@ test_equalsSimplification_Or_Pattern =
                     , equalsFirst = OrPattern.fromPatterns []
                     , equalsSecond = OrPattern.fromPatterns []
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "a == a" $ do
         let expect = OrPattern.fromPatterns [ Conditional.top ]
@@ -91,7 +90,7 @@ test_equalsSimplification_Or_Pattern =
                             }
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "a != bottom" $ do
         let expect = OrPattern.fromPatterns []
@@ -109,7 +108,7 @@ test_equalsSimplification_Or_Pattern =
                             }
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "f(a) vs g(a)" $ do
         let expect =
@@ -140,7 +139,7 @@ test_equalsSimplification_Or_Pattern =
                             }
                         ]
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "f vs g or h" $ do
         let expect =
@@ -202,7 +201,7 @@ test_equalsSimplification_Or_Pattern =
                     , equalsFirst = first
                     , equalsSecond = second
                     }
-        assertEqualWithExplanation "f vs g or h" expect actual1
+        assertEqual "f vs g or h" expect actual1
         actual2 <-
             evaluateOr
                 Equals
@@ -211,7 +210,7 @@ test_equalsSimplification_Or_Pattern =
                     , equalsFirst = second
                     , equalsSecond = first
                     }
-        assertEqualWithExplanation "g or h or f" expect actual2
+        assertEqual "g or h or f" expect actual2
 
     , testCase "f vs g[x = a] or h" $ do
         let expect =
@@ -305,7 +304,7 @@ test_equalsSimplification_Or_Pattern =
                     , "but instead found:"
                     , unlines (unparseToString <$> Foldable.toList actual1)
                     ]
-        assertEqualWithExplanation message1 expect actual1
+        assertEqual message1 expect actual1
         actual2 <-
             evaluateOr
                 Equals
@@ -314,7 +313,7 @@ test_equalsSimplification_Or_Pattern =
                     , equalsFirst = second
                     , equalsSecond = first
                     }
-        assertEqualWithExplanation "g[x = a] or h or f" expect actual2
+        assertEqual "g[x = a] or h or f" expect actual2
     ]
 
 test_equalsSimplification_Pattern :: [TestTree]
@@ -343,7 +342,7 @@ test_equalsSimplification_Pattern =
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "constructor-patt vs constructor-patt" $ do
         let expect =
@@ -394,7 +393,7 @@ test_equalsSimplification_Pattern =
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     ]
 
 test_equalsSimplification_TermLike :: [TestTree]
@@ -837,12 +836,12 @@ assertTermEqualsMultiGeneric expectPure first second = do
             OrPattern.fromPatterns
                 (map predSubstToPattern expectPure)
     actualExpanded <- evaluate (termToPattern first) (termToPattern second)
-    assertEqualWithExplanation
+    assertEqual
         "Pattern"
         expectExpanded
         actualExpanded
     actualPure <- evaluateTermsGeneric first second
-    assertEqualWithExplanation
+    assertEqual
         "PureMLPattern"
         (MultiOr.make expectPure)
         actualPure

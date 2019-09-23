@@ -42,8 +42,6 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.Debug
-    ( Debug
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
@@ -234,6 +232,8 @@ instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
 
 instance Debug variable => Debug (Rule (OnePathRule variable))
 
+instance (Debug variable, Diff variable) => Diff (Rule (OnePathRule variable))
+
 instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
 
     newtype Rule (AllPathRule variable) =
@@ -281,6 +281,8 @@ instance SOP.Generic (Rule (AllPathRule variable))
 instance SOP.HasDatatypeInfo (Rule (AllPathRule variable))
 
 instance Debug variable => Debug (Rule (AllPathRule variable))
+
+instance (Debug variable, Diff variable) => Diff (Rule (AllPathRule variable))
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate

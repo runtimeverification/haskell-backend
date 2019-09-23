@@ -104,7 +104,17 @@ data ConstructorArgument sort name =
         { name :: !name
         , argType :: !sort
         }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic (ConstructorArgument sort name)
+
+instance SOP.HasDatatypeInfo (ConstructorArgument sort name)
+
+instance (Debug sort, Debug name) => Debug (ConstructorArgument sort name)
+
+instance
+    (Debug sort, Debug name, Diff sort, Diff name)
+    => Diff (ConstructorArgument sort name)
 
 {-| A data type constructor.
 --}
@@ -113,7 +123,19 @@ data Constructor sort symbol name =
         { name :: !symbol
         , arguments :: ![ConstructorArgument sort name]
         }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic (Constructor sort symbol name)
+
+instance SOP.HasDatatypeInfo (Constructor sort symbol name)
+
+instance
+    (Debug sort, Debug symbol, Debug name)
+    => Debug (Constructor sort symbol name)
+
+instance
+    (Debug sort, Debug symbol, Debug name, Diff sort, Diff symbol, Diff name)
+    => Diff (Constructor sort symbol name)
 
 {-| A constructor-based data type declaration.
 
@@ -125,7 +147,19 @@ data DataTypeDeclaration sort symbol name =
         , typeArguments :: ![name]
         , constructors :: ![Constructor sort symbol name]
         }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic (DataTypeDeclaration sort symbol name)
+
+instance SOP.HasDatatypeInfo (DataTypeDeclaration sort symbol name)
+
+instance
+    (Debug sort, Debug symbol, Debug name)
+    => Debug (DataTypeDeclaration sort symbol name)
+
+instance
+    (Debug sort, Debug symbol, Debug name, Diff sort, Diff symbol, Diff name)
+    => Diff (DataTypeDeclaration sort symbol name)
 
 -- | A non-constructor-based data type declaration.
 data SortDeclaration name =
@@ -133,7 +167,15 @@ data SortDeclaration name =
         { name :: !name
         , arity :: Int
         }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic (SortDeclaration name)
+
+instance SOP.HasDatatypeInfo (SortDeclaration name)
+
+instance Debug name => Debug (SortDeclaration name)
+
+instance (Debug name, Diff name) => Diff (SortDeclaration name)
 
 -- | A function declaration.
 data FunctionDeclaration sort name =
@@ -142,7 +184,17 @@ data FunctionDeclaration sort name =
         , inputSorts :: ![sort]
         , resultSort :: !sort
         }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic (FunctionDeclaration sort name)
+
+instance SOP.HasDatatypeInfo (FunctionDeclaration sort name)
+
+instance (Debug sort, Debug name) => Debug (FunctionDeclaration sort name)
+
+instance
+    (Debug sort, Debug name, Diff sort, Diff name)
+    => Diff (FunctionDeclaration sort name)
 
 -- | Extracts the name from a sexpression denoting a named object.
 nameFromSExpr :: SExpr -> Text

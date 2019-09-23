@@ -40,6 +40,8 @@ instance SOP.HasDatatypeInfo Functional
 
 instance Debug Functional
 
+instance Diff Functional
+
 -- | Kore identifier representing the @functional@ attribute symbol.
 functionalId :: Id
 functionalId = "functional"

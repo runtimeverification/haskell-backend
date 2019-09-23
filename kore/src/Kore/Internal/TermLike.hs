@@ -274,6 +274,8 @@ instance SOP.HasDatatypeInfo (Evaluated child)
 
 instance Debug child => Debug (Evaluated child)
 
+instance (Debug child, Diff child) => Diff (Evaluated child)
+
 instance Hashable child => Hashable (Evaluated child)
 
 instance NFData child => NFData (Evaluated child)
@@ -335,6 +337,10 @@ instance SOP.Generic (TermLikeF variable child)
 instance SOP.HasDatatypeInfo (TermLikeF variable child)
 
 instance (Debug child, Debug variable) => Debug (TermLikeF variable child)
+
+instance
+    (Debug child, Debug variable, Diff child, Diff variable
+    ) => Diff (TermLikeF variable child)
 
 instance
     (Hashable child, Hashable variable) =>
@@ -432,6 +438,8 @@ instance SOP.Generic (TermLike variable)
 instance SOP.HasDatatypeInfo (TermLike variable)
 
 instance Debug variable => Debug (TermLike variable)
+
+instance (Debug variable, Diff variable) => Diff (TermLike variable)
 
 instance
     (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>

@@ -8,7 +8,6 @@ import Hedgehog hiding
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Trans
@@ -107,7 +106,7 @@ import Test.Kore.With
 import Test.SMT hiding
     ( runSMT
     )
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 genSetInteger :: Gen (Set Integer)
 genSetInteger = Gen.set (Range.linear 0 32) genInteger
@@ -144,7 +143,7 @@ test_unit =
     becomes original expect name =
         testCase name $ do
             actual <- runSMT $ evaluate original
-            assertEqualWithExplanation "" (Pattern.fromTermLike expect) actual
+            assertEqual "" (Pattern.fromTermLike expect) actual
 
     internalOpaque set =
         asInternalNormalized (emptyNormalizedSet `with` OpaqueSet set)
@@ -1536,7 +1535,7 @@ test_concretizeKeys :: TestTree
 test_concretizeKeys =
     testCaseWithSMT "unify Set with symbolic keys" $ do
         actual <- evaluate original
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
   where
     x =
         ElementVariable Variable
@@ -1586,7 +1585,7 @@ test_concretizeKeysAxiom =
     testCaseWithSMT "unify Set with symbolic keys in axiom" $ do
         config <- evaluate $ pair symbolicKey concreteSet
         actual <- runStep config axiom
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
   where
     x = mkIntVar (testId "x")
     key = 1

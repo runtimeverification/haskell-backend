@@ -4,7 +4,6 @@ module Test.Kore.Step.Simplification.Iff
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Function as Function
 
@@ -33,7 +32,7 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 import qualified Test.Terse as Terse
 
 test_simplify :: [TestTree]
@@ -52,7 +51,7 @@ test_simplify =
         testCase name $ do
             let expect = OrPattern.fromPatterns rs
             actual <- simplify $ makeIff [a] [b]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
 test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
@@ -67,7 +66,7 @@ test_makeEvaluate =
     , testCase "iff with predicates and substitutions"
         -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
-        (assertEqualWithExplanation "iff(top and predicate, top and predicate)"
+        (assertEqual "iff(top and predicate, top and predicate)"
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
@@ -101,7 +100,7 @@ test_makeEvaluate =
             )
         )
     , testCase "iff with generic patterns"
-        (assertEqualWithExplanation "iff(generic, generic)"
+        (assertEqual "iff(generic, generic)"
             (OrPattern.fromPatterns
                 [ Conditional
                     { term =
@@ -152,7 +151,7 @@ testSimplifyBoolean a b =
     testCase ("iff(" ++ nameBool a ++ ", " ++ nameBool b ++ ")") $ do
         actual <- simplify $ makeIff [valueBool a] [valueBool b]
         let expect = OrPattern.fromPatterns [valueBool r]
-        assertEqualWithExplanation ("expected: " ++ nameBool r) expect actual
+        assertEqual ("expected: " ++ nameBool r) expect actual
   where
     r = a == b
 

@@ -49,6 +49,9 @@ instance SOP.HasDatatypeInfo (And sort child)
 
 instance (Debug sort, Debug child) => Debug (And sort child)
 
+instance
+    (Debug sort, Debug child, Diff sort, Diff child) => Diff (And sort child)
+
 instance Unparse child => Unparse (And Sort child) where
     unparse And { andSort, andFirst, andSecond } =
         "\\and"

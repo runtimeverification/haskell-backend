@@ -14,10 +14,13 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import GHC.Stack
     ( HasCallStack
     )
 
+import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Logger
     ( LogMessage (..)
@@ -43,8 +46,8 @@ import SMT
     )
 
 import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
 import Test.Terse
+
 --
 -- -- * Tests
 --
@@ -264,7 +267,15 @@ insEdge = Strategy.insEdge
 
 -- | Simple program configurations for unit testing.
 data K = BorC | A | B | C | D | E | F | Bot
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic K
+
+instance SOP.HasDatatypeInfo K
+
+instance Debug K
+
+instance Diff K
 
 matches :: K -> K -> Bool
 matches B BorC = True
@@ -278,10 +289,6 @@ difference a    b
   | a `matches` b = Bot
   | otherwise     = a
 
-instance EqualWithExplanation K where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
 type Goal = (K, K)
 
 type ProofState = Goal.ProofState Goal Goal
@@ -292,7 +299,7 @@ instance Goal.Goal Goal where
 
     newtype Rule Goal =
         Rule { unRule :: (K, K) }
-        deriving (Eq, Show, EqualWithExplanation)
+        deriving (Eq, GHC.Generic, Show)
 
     type Prim Goal = ProofState.Prim (Goal.Rule Goal)
 
@@ -347,6 +354,14 @@ instance Goal.Goal Goal where
                 , deriveSeqTemplate =
                     deriveSeq
                 }
+
+instance SOP.Generic (Goal.Rule Goal)
+
+instance SOP.HasDatatypeInfo (Goal.Rule Goal)
+
+instance Debug (Goal.Rule Goal)
+
+instance Diff (Goal.Rule Goal)
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination

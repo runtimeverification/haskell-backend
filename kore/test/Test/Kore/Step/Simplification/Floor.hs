@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.Floor
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import qualified Data.Default as Default
 
@@ -47,13 +42,13 @@ import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_floorSimplification :: [TestTree]
 test_floorSimplification =
     [ testCase "Floor - or distribution"
         -- floor(a or b) = (top and floor(a)) or (top and floor(b))
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
@@ -71,7 +66,7 @@ test_floorSimplification =
     , testCase "Floor - bool operations"
         (do
             -- floor(top) = top
-            assertEqualWithExplanation "floor(top)"
+            assertEqual "floor(top)"
                 (OrPattern.fromPatterns
                     [ Pattern.top ]
                 )
@@ -81,7 +76,7 @@ test_floorSimplification =
                     )
                 )
             -- floor(bottom) = bottom
-            assertEqualWithExplanation "floor(bottom)"
+            assertEqual "floor(bottom)"
                 (OrPattern.fromPatterns
                     []
                 )
@@ -94,7 +89,7 @@ test_floorSimplification =
     , testCase "expanded Floor - bool operations"
         (do
             -- floor(top) = top
-            assertEqualWithExplanation "floor(top)"
+            assertEqual "floor(top)"
                 (OrPattern.fromPatterns
                     [ Pattern.top ]
                 )
@@ -102,7 +97,7 @@ test_floorSimplification =
                     (Pattern.top :: Pattern Variable)
                 )
             -- floor(bottom) = bottom
-            assertEqualWithExplanation "floor(bottom)"
+            assertEqual "floor(bottom)"
                 (OrPattern.fromPatterns
                     []
                 )
@@ -113,7 +108,7 @@ test_floorSimplification =
     , testCase "floor with predicates and substitutions"
         -- floor(term and predicate and subst)
         --     = top and (floor(term) and predicate) and subst
-        (assertEqualWithExplanation "floor(top)"
+        (assertEqual "floor(top)"
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_

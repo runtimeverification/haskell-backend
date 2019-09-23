@@ -52,6 +52,8 @@ instance SOP.HasDatatypeInfo SymbolOrAlias
 
 instance Debug SymbolOrAlias
 
+instance Diff SymbolOrAlias
+
 instance Unparse SymbolOrAlias where
     unparse
         SymbolOrAlias
@@ -83,6 +85,10 @@ instance SOP.Generic (Application head child)
 instance SOP.HasDatatypeInfo (Application head child)
 
 instance (Debug head, Debug child) => Debug (Application head child)
+
+instance
+    ( Debug head, Debug child, Diff head, Diff child
+    ) => Diff (Application head child)
 
 instance (Unparse head, Unparse child) => Unparse (Application head child) where
     unparse Application { applicationSymbolOrAlias, applicationChildren } =

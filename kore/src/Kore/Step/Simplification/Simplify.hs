@@ -51,6 +51,7 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
+import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Branch
@@ -58,6 +59,7 @@ import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
+import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
@@ -412,12 +414,19 @@ data AttemptedAxiomResults variable =
         , remainders :: !(OrPattern variable)
         -- ^ The part of the pattern that was not rewritten by the axiom.
         }
-    deriving GHC.Generic
-
-deriving instance Ord variable => Eq (AttemptedAxiomResults variable)
-deriving instance Show variable => Show (AttemptedAxiomResults variable)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance (NFData variable) => NFData (AttemptedAxiomResults variable)
+
+instance SOP.Generic (AttemptedAxiomResults variable)
+
+instance SOP.HasDatatypeInfo (AttemptedAxiomResults variable)
+
+instance Debug variable => Debug (AttemptedAxiomResults variable)
+
+instance
+    (Debug variable, Diff variable, Ord variable)
+    => Diff (AttemptedAxiomResults variable)
 
 instance Ord variable => Semigroup (AttemptedAxiomResults variable) where
     (<>)
@@ -448,12 +457,19 @@ a case for axioms that can't be applied.
 data AttemptedAxiom variable
     = NotApplicable
     | Applied !(AttemptedAxiomResults variable)
-    deriving GHC.Generic
-
-deriving instance Ord variable => Eq (AttemptedAxiom variable)
-deriving instance Show variable => Show (AttemptedAxiom variable)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
 instance (NFData variable) => NFData (AttemptedAxiom variable)
+
+instance SOP.Generic (AttemptedAxiom variable)
+
+instance SOP.HasDatatypeInfo (AttemptedAxiom variable)
+
+instance Debug variable => Debug (AttemptedAxiom variable)
+
+instance
+    (Debug variable, Diff variable, Ord variable)
+    => Diff (AttemptedAxiom variable)
 
 isApplicable, isNotApplicable :: AttemptedAxiom variable -> Bool
 isApplicable (Applied _) = True

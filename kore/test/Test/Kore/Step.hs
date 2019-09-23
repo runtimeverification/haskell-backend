@@ -1,7 +1,6 @@
 module Test.Kore.Step where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens
@@ -77,7 +76,7 @@ import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 {-
     Tests of running a strategy by checking if the expected
@@ -149,8 +148,7 @@ takeSteps (Start start, wrappedAxioms) =
 compareTo
     :: HasCallStack
     => Expect -> Actual -> IO ()
-compareTo (Expect expected) actual =
-    assertEqualWithExplanation "" (pure expected) actual
+compareTo (Expect expected) actual = assertEqual "" (pure expected) actual
 
 
     {- Types used in this file -}
@@ -346,25 +344,25 @@ test_stepStrategy =
         -- Axiom: X1 => X1
         -- Start pattern: V1
         -- Expected: V1
-        (assertEqualWithExplanation "" expectIdentity =<< actualIdentity)
+        (assertEqual "" expectIdentity =<< actualIdentity)
     , testCase "Applies two simple axioms"
         -- Axiom: X1 => X1
         -- Axiom: X1 => implies(X1, X1)
         -- Start pattern: V1
         -- Expected: V1
         -- Expected: implies(V1, V1)
-        (assertEqualWithExplanation "" expectTwoAxioms =<< actualTwoAxioms)
+        (assertEqual "" expectTwoAxioms =<< actualTwoAxioms)
     , testCase "Fails to apply a simple axiom"      --- unification failure
         -- Axiom: sigma(X1, X1) => X1
         -- Start pattern: sigma(f(A1), g(B1))
         -- Expected: empty result list
-        (assertEqualWithExplanation "" expectFailSimple =<< actualFailSimple)
+        (assertEqual "" expectFailSimple =<< actualFailSimple)
     , testCase "Fails to apply a simple axiom due to cycle."
         -- unification error constructor based
         -- Axiom: sigma(f(X1), X1) => X1
         -- Start pattern: sigma(A1, A1)
         -- Expected: empty result list
-        (assertEqualWithExplanation "" expectFailCycle =<< actualFailCycle)
+        (assertEqual "" expectFailCycle =<< actualFailCycle)
     ]
 
 data PredicateState = PredicatePositive | PredicateNegated
@@ -425,7 +423,7 @@ test_SMT =
                 , attributes = def
                 }
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             [ Mock.a
                 `Pattern.withCondition` smtPredicate Mock.b PredicatePositive
             ]
@@ -462,7 +460,7 @@ test_SMT =
                 , attributes = def
                 }
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             [ Conditional
                 { term = Mock.a
                 , predicate =

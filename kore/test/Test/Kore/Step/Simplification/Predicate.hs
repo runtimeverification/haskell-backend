@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.Predicate
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import qualified Data.Map as Map
 
@@ -45,15 +40,15 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =
     [ testCase "Identity for top and bottom" $ do
         actualBottom <- runSimplifier Map.empty Conditional.bottomPredicate
-        assertEqualWithExplanation "" mempty actualBottom
+        assertEqual "" mempty actualBottom
         actualTop <- runSimplifier Map.empty Conditional.topPredicate
-        assertEqualWithExplanation ""
+        assertEqual ""
             (MultiOr.singleton Conditional.topPredicate)
             actualTop
 
@@ -83,7 +78,7 @@ test_predicateSimplification =
                         , (ElemVar Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
+        assertEqual "" (MultiOr.singleton expect) actual
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
@@ -111,7 +106,7 @@ test_predicateSimplification =
                         , (ElemVar Mock.y, Mock.functional01)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
+        assertEqual "" (MultiOr.singleton expect) actual
 
     , testCase "Simplifies predicate after substitution" $ do
         let expect =
@@ -149,7 +144,7 @@ test_predicateSimplification =
                         , (ElemVar Mock.y, Mock.functional01)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
+        assertEqual "" (MultiOr.singleton expect) actual
 
     , testCase "Merges substitution from predicate simplification" $ do
         let expect =
@@ -182,7 +177,7 @@ test_predicateSimplification =
                         [ (ElemVar Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
+        assertEqual "" (MultiOr.singleton expect) actual
 
     , testCase "Reapplies substitution from predicate simplification" $ do
         let expect =
@@ -225,7 +220,7 @@ test_predicateSimplification =
                         [ (ElemVar Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
+        assertEqual "" (MultiOr.singleton expect) actual
 
     , testCase "Simplifies after reapplying substitution" $ do
         let expect =
@@ -269,7 +264,7 @@ test_predicateSimplification =
                         [ (ElemVar Mock.y, Mock.b)
                         ]
                     }
-        assertEqualWithExplanation "" (MultiOr.singleton expect) actual
+        assertEqual "" (MultiOr.singleton expect) actual
     ]
 
 runSimplifier

@@ -5,12 +5,6 @@ module Test.Kore.Unification.Unifier
     ) where
 
 import Test.Tasty
-    ( TestName
-    , TestTree
-    , testGroup
-    )
-import Test.Tasty.HUnit
-import Test.Tasty.HUnit.Extensions
 
 import Control.Exception
     ( ErrorCall (ErrorCall)
@@ -26,7 +20,10 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
@@ -59,6 +56,7 @@ import qualified SMT
 import Test.Kore
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty.HUnit.Ext
 
 var :: Text -> Sort -> ElementVariable Variable
 var name variableSort =
@@ -186,7 +184,7 @@ andSimplifySuccess term1 term2 results = do
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
-    assertEqualWithExplanation message expect subst'
+    assertEqual message expect subst'
   where
     message =
         (show . Pretty.vsep)
@@ -264,7 +262,7 @@ unificationProcedureSuccessWithSimplifiers
                     )
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
-        assertEqualWithExplanation ""
+        assertEqual ""
             expect
             (map normalize results)
 
@@ -507,7 +505,7 @@ test_unification =
         UnificationError
         -}
     , testCase "Maps substitution variables"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             [(ElemVar $ ElementVariable $ W "1", war' "2")]
             (Substitution.unwrap
                 . Substitution.mapVariables showVar
@@ -554,28 +552,36 @@ test_unsupportedConstructs =
             )
 
 newtype V = V Integer
-    deriving (Show, Eq, Ord)
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-newtype W = W String
-    deriving (Show, Eq, Ord)
+instance SOP.Generic V
+
+instance SOP.HasDatatypeInfo V
+
+instance Debug V
+
+instance Diff V
 
 instance SortedVariable V where
     sortedVariableSort _ = sortVar
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 
+newtype W = W String
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic W
+
+instance SOP.HasDatatypeInfo W
+
+instance Debug W
+
+instance Diff W
+
 instance SortedVariable W where
     sortedVariableSort _ = sortVar
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
-
-instance EqualWithExplanation V where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
-instance EqualWithExplanation W where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
 
 showVar :: V -> W
 showVar (V i) = W (show i)

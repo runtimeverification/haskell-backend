@@ -3,7 +3,6 @@ module Test.Kore.Builtin.Bool where
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Text as Text
 
@@ -18,7 +17,7 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import Test.Kore.Comparators ()
 import Test.SMT
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_or :: TestTree
 test_or = testBinary orBoolSymbol (||)
@@ -123,7 +122,7 @@ test_simplification =
                 SMT.runSMT SMT.defaultConfig mempty
                 $ SMT.withSolver
                 $ evaluate makerInput
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
 
 
 hprop_unparse :: Property

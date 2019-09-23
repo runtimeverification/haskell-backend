@@ -37,6 +37,8 @@ instance SOP.HasDatatypeInfo Anywhere
 
 instance Debug Anywhere
 
+instance Diff Anywhere
+
 -- | Kore identifier representing the @anywhere@ attribute symbol.
 anywhereId :: Id
 anywhereId = "anywhere"

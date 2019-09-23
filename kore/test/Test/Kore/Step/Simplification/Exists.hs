@@ -4,7 +4,6 @@ module Test.Kore.Step.Simplification.Exists
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -29,7 +28,7 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_simplify :: [TestTree]
 test_simplify =
@@ -98,7 +97,7 @@ test_simplify =
     simplifiesTo original expected message =
         testCase message $ do
             actual <- simplify (makeExists Mock.x original)
-            assertEqualWithExplanation "expected simplification"
+            assertEqual "expected simplification"
                 (OrPattern.fromPatterns expected) actual
 
 test_makeEvaluate :: [TestTree]
@@ -107,12 +106,12 @@ test_makeEvaluate =
         [ testCase "Top" $ do
             let expect = OrPattern.fromPatterns [ Pattern.top ]
             actual <- makeEvaluate Mock.x (Pattern.top :: Pattern Variable)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase " Bottom" $ do
             let expect = OrPattern.fromPatterns []
             actual <- makeEvaluate Mock.x (Pattern.bottom :: Pattern Variable)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testCase "exists applies substitution if possible" $ do
@@ -138,7 +137,7 @@ test_makeEvaluate =
                         Substitution.wrap
                             [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
                     }
-        assertEqualWithExplanation "exists with substitution" expect actual
+        assertEqual "exists with substitution" expect actual
 
     , testCase "exists disappears if variable not used" $ do
         -- exists x . (t and p and s)
@@ -160,7 +159,7 @@ test_makeEvaluate =
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "exists with substitution" expect actual
+        assertEqual "exists with substitution" expect actual
 
     , testCase "exists applied on term if not used elsewhere" $ do
         -- exists x . (t(x) and p and s)
@@ -182,7 +181,7 @@ test_makeEvaluate =
                     , predicate = makeCeilPredicate gOfA
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "exists on term" expect actual
+        assertEqual "exists on term" expect actual
 
     , testCase "exists applied on predicate if not used elsewhere" $ do
         -- exists x . (t and p(x) and s)
@@ -205,7 +204,7 @@ test_makeEvaluate =
                     , predicate = makeCeilPredicate fOfX
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "exists on predicate" expect actual
+        assertEqual "exists on predicate" expect actual
 
     , testCase "exists moves substitution above" $
         -- error for exists x . (t(x) and p(x) and s)
@@ -230,7 +229,7 @@ test_makeEvaluate =
                     , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
                     , substitution = Substitution.wrap [(ElemVar Mock.x, gOfA)]
                     }
-        assertEqualWithExplanation "exists reevaluates" expect actual
+        assertEqual "exists reevaluates" expect actual
     , testCase "exists matches equality if result is top" $ do
         -- exists x . (f(x) = f(a))
         --    = top.s
@@ -249,7 +248,7 @@ test_makeEvaluate =
                     , predicate = makeEqualsPredicate fOfX (Mock.f Mock.a)
                     , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
                     }
-        assertEqualWithExplanation "exists matching" expect actual
+        assertEqual "exists matching" expect actual
     , testCase "exists does not match equality if free var in subst" $ do
         -- exists x . (f(x) = f(a)) and (y=f(x))
         --    = exists x . (f(x) = f(a)) and (y=f(x))
@@ -276,7 +275,7 @@ test_makeEvaluate =
                         Substitution.wrap
                             [(ElemVar Mock.y, fOfX), (ElemVar Mock.z, fOfA)]
                     }
-        assertEqualWithExplanation "exists matching" expect actual
+        assertEqual "exists matching" expect actual
     , testCase "exists does not match equality if free var in term" $
         -- error for exists x . (f(x) = f(a)) and (y=f(x))
         assertErrorIO (const (return ())) $

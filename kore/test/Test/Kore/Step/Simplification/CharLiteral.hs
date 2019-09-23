@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.CharLiteral
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -19,12 +14,12 @@ import Kore.Step.Simplification.CharLiteral
     )
 
 import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_charLiteralSimplification :: [TestTree]
 test_charLiteralSimplification =
     [ testCase "CharLiteral evaluates to CharLiteral"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromTermLike $ mkCharLiteral 'a')
             (evaluate (CharLiteral 'a'))
         )

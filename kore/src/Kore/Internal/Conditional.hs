@@ -105,6 +105,10 @@ instance SOP.HasDatatypeInfo (Conditional variable child)
 instance (Debug variable, Debug child) => Debug (Conditional variable child)
 
 instance
+    ( Debug variable, Debug child, Diff variable, Diff child, Ord variable )
+    => Diff (Conditional variable child)
+
+instance
     (Hashable child, Hashable variable) =>
     Hashable (Conditional variable child)
 

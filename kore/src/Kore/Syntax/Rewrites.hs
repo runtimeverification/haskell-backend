@@ -48,6 +48,10 @@ instance SOP.HasDatatypeInfo (Rewrites sort child)
 
 instance (Debug sort, Debug child) => Debug (Rewrites sort child)
 
+instance
+    ( Debug sort, Debug child, Diff sort, Diff child
+    ) => Diff (Rewrites sort child)
+
 instance Unparse child => Unparse (Rewrites Sort child) where
     unparse Rewrites { rewritesSort, rewritesFirst, rewritesSecond } =
         "\\rewrites"

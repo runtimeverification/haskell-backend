@@ -106,6 +106,8 @@ instance SOP.HasDatatypeInfo Axiom
 
 instance Debug Axiom
 
+instance Diff Axiom
+
 instance NFData Axiom
 
 instance Default Axiom where

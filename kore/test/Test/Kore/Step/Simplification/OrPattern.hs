@@ -1,11 +1,6 @@
 module Test.Kore.Step.Simplification.OrPattern where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -41,16 +36,16 @@ import Kore.Syntax.Variable
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_orPatternSimplification :: [TestTree]
 test_orPatternSimplification =
     [ testCase "Identity for top" $ do
         actual <- runSimplifyPredicates makeTruePredicate OrPattern.top
-        assertEqualWithExplanation "" OrPattern.top actual
+        assertEqual "" OrPattern.top actual
     , testCase "Identity for bottom" $ do
         actual <- runSimplifyPredicates makeTruePredicate OrPattern.bottom
-        assertEqualWithExplanation "" OrPattern.bottom actual
+        assertEqual "" OrPattern.bottom actual
     , testCase "Filters with SMT" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -74,7 +69,7 @@ test_orPatternSimplification =
                     }
                 ]
             )
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "Filters with SMT and additional predicate" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -98,7 +93,7 @@ test_orPatternSimplification =
                     }
                 ]
             )
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     ]
   where
     x :: TermLike Variable
