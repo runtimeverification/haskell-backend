@@ -173,7 +173,7 @@ instance
         unparseAndList [] = mempty
         unparseAndList [t] = unparse t
         unparseAndList [t, u] = unparseAnd (unparse t) (unparse u)
-        unparseAndList (t:ts) = 
+        unparseAndList (t:ts) =
             unparseAndAdapted (unparse t) (unparseAndList ts)
         unparseAndAdapted first second =
             "\\and"
@@ -212,7 +212,7 @@ instance
         unparseAndList2 [] = mempty
         unparseAndList2 [t] = unparse2 t
         unparseAndList2 [t, u] = unparseAnd2 (unparse2 t) (unparse2 u)
-        unparseAndList2 (t:ts) = 
+        unparseAndList2 (t:ts) =
             unparseAnd2Adapted (unparse2 t) (unparseAndList2 ts)
         unparseAnd2 first second =
             "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
