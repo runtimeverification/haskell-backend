@@ -141,13 +141,17 @@ evalKEq true _ _ _ (valid :< app) =
         defined2 <- Ceil.makeEvaluate Predicate.topTODO pattern2
         defined <- And.simplifyEvaluated defined1 defined2
 
-        equalTerms <- Equals.makeEvaluate pattern1 pattern2 Predicate.topTODO
+        equalTerms <-
+            Equals.makeEvaluateTermsToPredicate
+                termLike1
+                termLike2
+                Predicate.topTODO
         let trueTerm = Bool.asInternal sort true
-            truePatterns = Pattern.replaceTerm trueTerm <$> equalTerms
+            truePatterns = Pattern.withCondition trueTerm <$> equalTerms
 
-        notEqualTerms <- Not.simplifyEvaluated equalTerms
+        notEqualTerms <- Not.simplifyEvaluatedPredicate equalTerms
         let falseTerm = Bool.asInternal sort false
-            falsePatterns = Pattern.replaceTerm falseTerm <$> notEqualTerms
+            falsePatterns = Pattern.withCondition falseTerm <$> notEqualTerms
 
         let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
         results <- And.simplifyEvaluated defined undefinedResults
