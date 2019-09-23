@@ -45,21 +45,18 @@ simplifyPredicatesWithSmt
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyPredicatesWithSmt predicate' unsimplified = do
-    simplifiedOrs <- traverse
-        (BranchT.gather . Conditional.simplifyPredicate)
-        (MultiOr.extractPatterns unsimplified)
-    -- Wrapping the original patterns as their own terms in order to
-    -- be able to retrieve them unchanged after adding predicate' to them,
-    -- simplification and SMT filtering
-    let wrappedPatterns :: [Conditional variable (Pattern variable)]
-        wrappedPatterns =
-            addPredicate . conditionalAsTerm <$> concat simplifiedOrs
-    simplifiedWrappedPatterns <- traverse
-        (BranchT.gather . Conditional.simplifyPredicate)
-        wrappedPatterns
+    simplifiedWrappedPatterns <-
+        fmap MultiOr.make . BranchT.gather $ do
+            unsimplified1 <- BranchT.scatter unsimplified
+            simplified <- Conditional.simplifyPredicate unsimplified1
+            -- Wrapping the original patterns as their own terms in order to be
+            -- able to retrieve them unchanged after adding predicate' to them,
+            -- simplification and SMT filtering
+            let wrapped = addPredicate $ conditionalAsTerm simplified
+            resimplified <- Conditional.simplifyPredicate wrapped
+            return resimplified
     filteredWrappedPatterns <-
-        SMT.Evaluator.filterMultiOr
-            (MultiOr.make (concat simplifiedWrappedPatterns))
+        SMT.Evaluator.filterMultiOr simplifiedWrappedPatterns
     return (Conditional.term <$> filteredWrappedPatterns)
   where
     conditionalAsTerm
