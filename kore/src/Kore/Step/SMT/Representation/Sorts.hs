@@ -11,9 +11,9 @@ module Kore.Step.SMT.Representation.Sorts
     ) where
 
 import Control.Monad
-    ( when
-    , zipWithM
+    ( zipWithM
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( mapMaybe
@@ -24,10 +24,6 @@ import qualified Data.Text as Text
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
     )
-import qualified Kore.Attribute.Axiom as Attribute.Axiom
-    ( constructor
-    )
-import qualified Kore.Attribute.Axiom.Constructor as Axiom.Constructor
 import Kore.Attribute.Hook
     ( Hook (Hook)
     )
@@ -43,11 +39,19 @@ import qualified Kore.Attribute.Sort as Attribute
     ( Sort
     )
 import qualified Kore.Attribute.Sort as Attribute.Sort
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors
+    ( Constructor (Constructor)
+    , ConstructorLike (ConstructorLikeConstructor)
+    , Constructors (getConstructors)
+    )
+import qualified Kore.Attribute.Sort.Constructors as Constructors.DoNotUse
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Int as Int
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
-    , recursiveIndexedModuleAxioms
     , recursiveIndexedModuleSortDescriptions
     )
 import Kore.Internal.TermLike
@@ -63,14 +67,10 @@ import Kore.Syntax.Id
     ( Id
     )
 import Kore.Syntax.Sentence
-    ( SentenceAxiom (SentenceAxiom)
-    , SentenceSort (SentenceSort)
+    ( SentenceSort (SentenceSort)
     )
 import qualified Kore.Syntax.Sentence as SentenceSort
     ( SentenceSort (..)
-    )
-import qualified Kore.Syntax.Sentence as SentenceAxiom
-    ( SentenceAxiom (..)
     )
 import Kore.Unparser
     ( unparseToString
@@ -122,11 +122,13 @@ All references to other sorts and symbols are left unresolved.
 buildRepresentations
     :: forall symbolAttribute
     .  VerifiedModule symbolAttribute Attribute.Axiom
+    -> Map.Map Id Attribute.Constructors
     -> AST.UnresolvedDeclarations
-buildRepresentations indexedModule =
+buildRepresentations indexedModule sortConstructors =
     builtinAndSmtLibDeclarations
     `AST.mergePreferFirst`
-        listToDeclarations (parseNoJunkAxioms builtinAndSmtLibSorts)
+        listToDeclarations
+            (sortsWithConstructors builtinAndSmtLibSorts simpleSortIDs)
     `AST.mergePreferFirst`
         listToDeclarations simpleSortDeclarations
   where
@@ -149,16 +151,14 @@ buildRepresentations indexedModule =
       where
         AST.Declarations {sorts} = builtinAndSmtLibDeclarations
 
-    parseNoJunkAxioms
+    sortsWithConstructors
         :: Set.Set Id
+        -> [Id]
         -> [(Id, AST.UnresolvedSort)]
-    parseNoJunkAxioms blacklist =
-        filter
-            (not . (`Set.member` blacklist) . fst)
-            (mapMaybe
-                parseNoJunkAxiom
-                (recursiveIndexedModuleAxioms indexedModule)
-            )
+    sortsWithConstructors blacklist whitelist =
+        mapMaybe
+            (sortWithConstructor sortConstructors)
+            (filter (not . (`Set.member` blacklist)) whitelist)
 
     builtinSortDeclarations :: [(Id, AST.UnresolvedSort)]
     builtinSortDeclarations =
@@ -167,6 +167,9 @@ buildRepresentations indexedModule =
     smtlibSortDeclarations :: [(Id, AST.UnresolvedSort)]
     smtlibSortDeclarations =
         extractDefinitionsFromSentences smtlibSortDeclaration
+
+    simpleSortIDs :: [Id]
+    simpleSortIDs = map fst simpleSortDeclarations
 
     simpleSortDeclarations :: [(Id, AST.UnresolvedSort)]
     simpleSortDeclarations =
@@ -280,146 +283,68 @@ emptySortArgsToSmt representation _ args = (error . unlines)
     , "args = " ++ show (fmap unparseToString args)
     ]
 
-parseNoJunkAxiom
-    ::  ( Attribute.Axiom
-        , Verified.SentenceAxiom
-        )
+sortWithConstructor
+    :: Map.Map Id Attribute.Constructors
+    -> Id
     -> Maybe (Id, AST.UnresolvedSort)
-parseNoJunkAxiom (attributes, SentenceAxiom {sentenceAxiomPattern})
-  | Axiom.Constructor.isConstructor (Attribute.Axiom.constructor attributes)
-  = parseNoJunkPattern sentenceAxiomPattern
-  | otherwise = Nothing
-
-parseNoJunkPattern
-    :: TermLike Variable
-    -> Maybe (Id , AST.UnresolvedSort)
-parseNoJunkPattern patt = do  -- Maybe
-    (name, sortBuilder, constructors) <- parseNoJunkPatternHelper patt
-    -- We currently have invalid axioms like
-    -- axiom{} \bottom{Sort'Hash'KVariable{}}() [constructor{}()] // no junk
-    -- We could use them to prove anything we want and skip all the pain of
-    -- doing actual proofs, but it seems that we should pretend that
-    -- all is fine and look the other way when we encounter one of these
-    -- inconsistent things.
-    -- TODO (virgil): Transform this check into an assertion.
-    when (null constructors) Nothing
-    return (name, sortBuilder constructors)
-
-parseNoJunkPatternHelper
-    :: TermLike Variable
-    ->  Maybe
-        ( Id
-        , [AST.UnresolvedConstructor] -> AST.UnresolvedSort
-        , [AST.UnresolvedConstructor]
-        )
-parseNoJunkPatternHelper
-    (Bottom_
-        (SortActualSort SortActual
-            { sortActualName, sortActualSorts = [] }
-        )
-    )
-  = Just (sortActualName, fromConstructors, [])
-  where
-    encodedName = AST.encodable sortActualName
-    fromConstructors :: [AST.UnresolvedConstructor] -> AST.UnresolvedSort
-    fromConstructors constructors =
-        AST.Sort
+sortWithConstructor sortConstructors sortId = do  -- Maybe
+    constructors <- Map.lookup sortId sortConstructors
+    constructorLikeList <- Attribute.Constructors.getConstructors constructors
+    constructorList <- traverse constructorFromLike constructorLikeList
+    finalConstructors <-
+        traverse buildConstructor (Foldable.toList constructorList)
+    return
+        ( sortId
+        , AST.Sort
             { smtFromSortArgs =
                 emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
             , declaration = AST.SortDeclarationDataType
                 SMT.DataTypeDeclaration
                     { name = encodedName
                     , typeArguments = []
-                    , constructors = constructors
+                    , constructors = finalConstructors
                     }
             }
-parseNoJunkPatternHelper (Or_ _ first second) = do  -- Maybe
-    (name, sortBuilder, constructors) <- parseNoJunkPatternHelper second
-    constructor <- parseSMTConstructor first
-    return (name, sortBuilder, constructor : constructors)
-parseNoJunkPatternHelper _ = Nothing
-
-parseSMTConstructor :: TermLike Variable -> Maybe AST.UnresolvedConstructor
-parseSMTConstructor patt =
-    case parsedPatt of
-        App_ symbol children -> do
-            childVariables <-
-                checkOnlyQuantifiedVariablesOnce quantifiedVariables children
-            buildConstructor symbol childVariables
-        _ -> Nothing
-  where
-    (quantifiedVariables, parsedPatt) = parseExists patt
-
-    parseExists
-        :: TermLike Variable
-        -> (Set.Set (ElementVariable Variable), TermLike Variable)
-    parseExists (Exists_ _ variable child) =
-        (Set.insert variable childVars, unquantifiedPatt)
-      where
-        (childVars, unquantifiedPatt) = parseExists child
-    parseExists unquantifiedPatt = (Set.empty, unquantifiedPatt)
-
-    checkOnlyQuantifiedVariablesOnce
-        :: Set.Set (ElementVariable Variable)
-        -> [TermLike Variable]
-        -> Maybe [ElementVariable Variable]
-    checkOnlyQuantifiedVariablesOnce
-        allowedVars
-        []
-      | Set.null allowedVars = Just []
-      | otherwise = Nothing
-    checkOnlyQuantifiedVariablesOnce
-        allowedVars
-        (patt0 : patts)
-      = case patt0 of
-        ElemVar_ var ->
-            if var `Set.member` allowedVars
-                then do
-                    vars <-
-                        checkOnlyQuantifiedVariablesOnce
-                            (Set.delete var allowedVars)
-                            patts
-                    return (var : vars)
-                else Nothing
-        _ -> Nothing
-
-    buildConstructor
-        :: Symbol
-        -> [ElementVariable Variable]
-        -> Maybe AST.UnresolvedConstructor
-    buildConstructor
-        Symbol { symbolConstructor, symbolParams = [] }
-        childVariables
-      = do -- Maybe monad
-        args <- zipWithM (parseVariableSort encodedName) [1..] childVariables
-        return SMT.Constructor
-            { name = AST.SymbolReference symbolConstructor
-            , arguments = args
-            }
-      where
-        encodedName = AST.encodable symbolConstructor
-
-    -- TODO(virgil): Also handle parameterized sorts.
-    buildConstructor _ _ = Nothing
-
-    parseVariableSort
-        :: AST.Encodable
-        -> Integer
-        -> ElementVariable Variable
-        -> Maybe AST.UnresolvedConstructorArgument
-    parseVariableSort
-        constructorName
-        index
-        (ElementVariable Variable
-            { variableSort =
-                sort@(SortActualSort SortActual {sortActualSorts = []})
-            }
         )
-      = Just SMT.ConstructorArgument
-            { name =
-                AST.appendToEncoding
-                    constructorName
-                    ((Text.pack . show) index)
-            , argType = AST.SortReference sort
-            }
-    parseVariableSort _ _ _ = Nothing
+  where
+    encodedName = AST.encodable sortId
+    constructorFromLike
+        (Attribute.Constructors.ConstructorLikeConstructor c)
+      = Just c
+    constructorFromLike _ = Nothing
+
+buildConstructor
+    :: Attribute.Constructors.Constructor
+    -> Maybe AST.UnresolvedConstructor
+buildConstructor
+    Attribute.Constructors.Constructor
+        { name = Symbol { symbolConstructor, symbolParams = [] }
+        , sorts
+        }
+  = do  -- Maybe monad
+    args <- zipWithM (buildConstructorArgument encodedName) [1..] sorts
+    return SMT.Constructor
+        { name = AST.SymbolReference symbolConstructor
+        , arguments = args
+        }
+  where
+    encodedName = AST.encodable symbolConstructor
+buildConstructor _ = Nothing
+
+buildConstructorArgument
+    :: AST.Encodable
+    -> Integer
+    -> Sort
+    -> Maybe AST.UnresolvedConstructorArgument
+buildConstructorArgument
+    constructorName
+    index
+    sort@(SortActualSort SortActual {sortActualSorts = []})
+    = Just SMT.ConstructorArgument
+        { name =
+            AST.appendToEncoding
+                constructorName
+                ((Text.pack . show) index)
+        , argType = AST.SortReference sort
+        }
+buildConstructorArgument _ _ _ = Nothing

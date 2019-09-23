@@ -109,6 +109,9 @@ import Kore.Step.Rule as RulePattern
 import qualified Kore.Step.Rule.Combine as Rules
     ( mergeRules
     )
+import Kore.Step.Rule.Expand
+    ( expandOnePathSingleConstructors
+    )
 import Kore.Step.Search
     ( searchGraph
     )
@@ -269,8 +272,14 @@ prove
     -> smt (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
     evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
+        tools <- Simplifier.askMetadataTools
         let Initialized { rewriteRules } = initialized
-            specClaims = extractOnePathClaims specModule
+            specClaims =
+                map
+                    (\(attr, rule)
+                        -> (attr, expandOnePathSingleConstructors tools rule)
+                    )
+                    (extractOnePathClaims specModule)
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms

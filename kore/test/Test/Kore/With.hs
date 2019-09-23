@@ -10,10 +10,23 @@ import Data.List
     ( foldl'
     )
 import qualified Data.List as List
+import Data.List.NonEmpty
+    ( NonEmpty ((:|))
+    )
 import qualified Data.Map.Strict as Map
 
 import Kore.Attribute.Attributes
     ( AttributePattern
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors (Constructors)
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors
+    ( Constructor (Constructor)
+    , ConstructorLike (..)
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Constructor
+    ( Constructor (..)
     )
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.TermLike
@@ -102,6 +115,9 @@ class With a b where
     with :: a -> b -> a
 
 newtype Attribute = Attribute { getAttribute :: AttributePattern }
+
+instance (With b c) => With (a->b) (a->c) where
+    with fb fc = \a -> fb a `with` fc a
 
 instance With [a] a where
     with as a = a : as
@@ -415,3 +431,32 @@ instance Ord child
         [OpaqueSet child]
   where
     with = foldl' with
+
+instance With Attribute.Constructors Attribute.Constructors.ConstructorLike
+  where
+    with (Attribute.Constructors Nothing) constructorLike =
+        Attribute.Constructors (Just (constructorLike :| []))
+    with
+        (Attribute.Constructors (Just (c :| cs)))
+        constructorLike
+      = Attribute.Constructors (Just (constructorLike :| (c : cs)))
+
+instance With Attribute.Constructors.ConstructorLike Kore.Sort
+  where
+    with
+        (Attribute.Constructors.ConstructorLikeConstructor constructor) sort
+      =
+        Attribute.Constructors.ConstructorLikeConstructor
+            (constructor `with` sort)
+    with
+        Attribute.Constructors.ConstructorLikeInjection _sort
+      =
+        error "Cannot add sort to injection."
+
+
+instance With Attribute.Constructors.Constructor Kore.Sort
+  where
+    with
+        c@(Attribute.Constructors.Constructor {sorts}) sort
+      =
+        c{Attribute.Constructors.Constructor.sorts = sorts `with` sort}
