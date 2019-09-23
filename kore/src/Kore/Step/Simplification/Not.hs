@@ -35,7 +35,6 @@ import Kore.Internal.OrPredicate
     )
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( mkAnd
     )
