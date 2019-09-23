@@ -60,6 +60,7 @@ import Prelude hiding
     ( log
     )
 
+import Control.Monad.Counter
 import ListT
     ( ListT
     , mapListT
@@ -123,6 +124,8 @@ class Monad m => WithLog msg m where
 instance (WithLog msg m, Monad m, Monoid w) => WithLog msg (AccumT w m) where
     localLogAction mapping = mapAccumT (localLogAction mapping)
     {-# INLINE localLogAction #-}
+
+instance (WithLog msg m, Monad m) => WithLog msg (CounterT m)
 
 instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
 
