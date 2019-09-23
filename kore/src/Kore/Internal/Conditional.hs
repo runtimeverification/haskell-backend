@@ -42,6 +42,7 @@ import Kore.Internal.TermLike
     )
 import Kore.Predicate.Predicate
     ( Predicate
+    , singleSubstitutionToPredicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
@@ -156,7 +157,7 @@ instance
     => Unparse (Conditional variable (TermLike variable))
   where
     unparse Conditional { term, predicate, substitution } =
-        unparseAnd
+        unparseAndAdapted
             (below "/* term: */" (unparse term))
             (unparseAnd
                 (below
@@ -165,10 +166,24 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse termLikeSubstitution)
+                    (unparseAndList termLikeSubstitution)
                 )
             )
       where
+        unparseAndList [] = mempty
+        unparseAndList [t] = unparse t
+        unparseAndList [t, u] = unparseAnd (unparse t) (unparse u)
+        unparseAndList (t:ts) =
+            unparseAndAdapted (unparse t) (unparseAndList ts)
+        unparseAndAdapted first second =
+            "\\and"
+                <> parameters' [unparse sort]
+                <> arguments'Adapted first second
+        arguments'Adapted first second =
+            Pretty.group
+            $ "(" <> Pretty.line'
+            <> Pretty.vsep [(Pretty.indent 4 first) <> ",", second]
+            <> ")"
         unparseAnd first second =
             "\\and" <> parameters' [unparse sort] <> arguments' [first, second]
         below first second =
@@ -176,12 +191,12 @@ instance
         sort = termLikeSort term
         termLikePredicate = Predicate.fromPredicate sort predicate
         termLikeSubstitution =
-            Predicate.fromPredicate
-                sort
-                $ Predicate.fromSubstitution substitution
+            Predicate.fromPredicate sort
+            .  singleSubstitutionToPredicate
+            <$> Substitution.unwrap substitution
 
     unparse2 Conditional { term, predicate, substitution } =
-        unparseAnd2
+        unparseAnd2Adapted
             (below "/* term: */" (unparse2 term))
             (unparseAnd2
                 (below
@@ -190,20 +205,34 @@ instance
                 )
                 (below
                     "/* substitution: */"
-                    (unparse2 termLikeSubstitution)
+                    (unparseAndList2 termLikeSubstitution)
                 )
             )
       where
+        unparseAndList2 [] = mempty
+        unparseAndList2 [t] = unparse2 t
+        unparseAndList2 [t, u] = unparseAnd2 (unparse2 t) (unparse2 u)
+        unparseAndList2 (t:ts) =
+            unparseAnd2Adapted (unparse2 t) (unparseAndList2 ts)
         unparseAnd2 first second =
             "\\and2" <> parameters' [unparse sort] <> arguments' [first, second]
+        unparseAnd2Adapted first second =
+            "\\and2"
+                <> parameters' [unparse sort]
+                <> arguments'Adapted first second
+        arguments'Adapted first second =
+            Pretty.group
+            $ "(" <> Pretty.line'
+            <> Pretty.vsep [(Pretty.indent 4 first) <> ",", second]
+            <> ")"
         below first second =
             (Pretty.align . Pretty.vsep) [first, second]
         sort = termLikeSort term
         termLikePredicate = Predicate.fromPredicate sort predicate
         termLikeSubstitution =
-            Predicate.fromPredicate
-                sort
-                $ Predicate.fromSubstitution substitution
+            Predicate.fromPredicate sort
+            .  singleSubstitutionToPredicate
+            <$> Substitution.unwrap substitution
 
 {- | Forget the 'term', keeping only the attached conditions.
  -}

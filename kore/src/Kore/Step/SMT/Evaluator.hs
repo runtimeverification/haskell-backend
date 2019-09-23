@@ -46,6 +46,9 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
@@ -169,6 +172,7 @@ goTranslatePredicate
     :: forall variable m.
         ( Ord variable
         , Unparse variable
+        , SortedVariable variable
         , MonadSimplify m
         )
     => SmtMetadataTools Attribute.Symbol
@@ -180,8 +184,12 @@ goTranslatePredicate tools predicate = evalTranslator translator
         give tools $ translatePredicate translateUninterpreted predicate
 
 translateUninterpreted
-    :: Ord p
-    => SMT.MonadSMT m
+    :: ( Ord p
+       , p ~ TermLike variable
+       , Unparse variable
+       , SortedVariable variable
+       )
+    => MonadSimplify m
     => SExpr  -- ^ type name
     -> p  -- ^ uninterpreted pattern
     -> Translator m p SExpr
@@ -195,4 +203,12 @@ translateUninterpreted t pat =
         n <- Counter.increment
         var <- SMT.declare ("<" <> Text.pack (show n) <> ">") t
         State.modify' (Map.insert pat (var, t))
+        logVariableAssignment n
         return var
+    logVariableAssignment n =
+        withLogScope "Evaluator"
+        . withLogScope "translateUninterpreted"
+        . logDebug
+        . Text.pack . show
+        . Pretty.nest 4 . Pretty.sep
+        $ [Pretty.pretty n, "|->", unparse pat]
