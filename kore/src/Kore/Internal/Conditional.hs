@@ -20,6 +20,9 @@ module Kore.Internal.Conditional
     , isNormalized
     ) where
 
+import Control.Comonad
+    ( Comonad (..)
+    )
 import Control.DeepSeq
     ( NFData
     )
@@ -144,9 +147,27 @@ instance InternalVariable variable => Applicative (Conditional variable) where
         Conditional f predicate1 substitution1 = predicated1
         Conditional a predicate2 substitution2 = predicated2
 
-instance TopBottom term
-    => TopBottom (Conditional variable term)
-  where
+{- | 'Conditional' is equivalent to the 'Control.Comonad.Env.Env' comonad.
+
+That is to say, @Conditional variable term@ is a @term@ together with its
+environment (in this case, a conjunction of side conditions).
+
+@extract@ returns the 'term' of the 'Conditional'.
+
+@duplicate@ re-wraps the 'Conditional' with its own side conditions.
+
+ -}
+instance InternalVariable variable => Comonad (Conditional variable) where
+    extract = term
+    {-# INLINE extract #-}
+
+    duplicate conditional = conditional { term = conditional }
+    {-# INLINE duplicate #-}
+
+    extend f conditional = conditional { term = f conditional }
+    {-# INLINE extend #-}
+
+instance TopBottom term => TopBottom (Conditional variable term) where
     isTop Conditional {term, predicate, substitution} =
         isTop term && isTop predicate && isTop substitution
     isBottom Conditional {term, predicate, substitution} =
