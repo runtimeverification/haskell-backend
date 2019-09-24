@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-top-binds    #-}
-
 {-# LANGUAGE UndecidableInstances #-}
 
 {- |
