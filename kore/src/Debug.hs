@@ -15,6 +15,7 @@ module Debug
     , Diff (..)
     , diffPrecEq
     , diffPrecGeneric
+    , diffPrecIgnore
     ) where
 
 import Control.Comonad.Trans.Cofree
@@ -378,6 +379,15 @@ class Diff a where
         -> Maybe (Int -> Doc ann)
     diffPrec = diffPrecGeneric
 
+{- | An implementation of 'diffPrec' which ignores differences.
+
+@diffPrecIgnore@ returns @Nothing@ for all combinations of arguments. This is
+useful for types which cannot be compared, for example: functions.
+
+ -}
+diffPrecIgnore :: a -> a -> Maybe (Int -> Doc ann)
+diffPrecIgnore _ _ = Nothing
+
 {- | Default implementation of 'diffPrec' for instances of 'Eq'.
 
 For any type which is 'Eq' and 'Debug', @diffPrecEq@ provides a default
@@ -568,4 +578,4 @@ instance (Debug a, Debug b, Diff a, Diff b) => Diff (Either a b)
 
 -- | Assume all functions are the same because we cannot compare them.
 instance Diff (a -> b) where
-    diffPrec _ _ = Nothing
+    diffPrec = diffPrecIgnore
