@@ -1,7 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds    #-}
 
-{-# LANGUAGE UndecidableInstances #-}
-
 {- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
