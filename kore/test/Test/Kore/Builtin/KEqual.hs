@@ -94,6 +94,12 @@ test_KEqual =
                     (kseq (inj kItemSort dvX) dotk)
         actual <- evaluate original
         assertEqual' "" expect actual
+
+    , testCaseWithSMT "Bottom ==K Top" $ do
+        let expect = Pattern.bottom
+            original = keqBool (mkBottom kSort) (mkTop kSort)
+        actual <- evaluate original
+        assertEqual' "" expect actual
     ]
   where
     dvT =
