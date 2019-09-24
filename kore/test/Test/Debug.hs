@@ -1,4 +1,4 @@
-module Test.Kore.Debug where
+module Test.Debug where
 
 import Test.Tasty
 
@@ -7,7 +7,7 @@ import qualified Data.Text.Prettyprint.Doc.Render.String as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
-import Kore.Debug
+import Debug
 import Kore.Sort
 import Kore.Syntax.CharLiteral
 import Kore.Syntax.Variable
