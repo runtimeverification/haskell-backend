@@ -1,4 +1,7 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds    #-}
+
+{-# LANGUAGE UndecidableInstances #-}
+
 {-|
 Module      : Kore.Debug
 Description : Debugging helpers.
@@ -55,8 +58,6 @@ stack -j3 test --pedantic --test-arguments --pattern=zzz 2>&1 | \
 
 Enjoy.
 -}
-
-{-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Debug
     ( traceEither
