@@ -5,16 +5,7 @@ set -exuo pipefail
 # Configuration
 OPAM_SETUP_SKIP="${OPAM_SETUP_SKIP:-true}"
 
-TOP=${TOP:-$(git rev-parse --show-toplevel)}
-KEVM_DIR=$TOP/evm-semantics
-export KEVM_DIR
-
-# Prefer to use Kore master
-PATH="$TOP/.build/kore/bin${PATH:+:}$PATH"
-export PATH
-rm -f .build/k/bin/kore-*
-
-mkdir -p $(dirname $KEVM_DIR)
+mkdir -p $(dirname ${KEVM_DIR:?})
 
 rm -rf $KEVM_DIR
 git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $KEVM_DIR --branch 'master'
@@ -32,7 +23,3 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 [[ "$OPAM_SETUP_SKIP" != "false" ]] || ./deps/k/k-distribution/target/release/k/bin/k-configure-opam-dev
 
 make build-haskell -B
-
-make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-run test-interactive-search
-
-make -j8 -C "$TOP/src/main/k/evm-semantics" test

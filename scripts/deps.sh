@@ -12,3 +12,6 @@ MAKE="make -O -j --directory $TOP"
 stack build --only-dependencies --test --no-run-tests --bench --no-run-benchmarks
 
 $MAKE k-frontend
+
+# Do not use the bundled backend.
+rm -f .build/k/bin/kore-*
