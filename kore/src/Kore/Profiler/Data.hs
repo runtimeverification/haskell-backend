@@ -11,6 +11,9 @@ module Kore.Profiler.Data
     , Destination (..)
     ) where
 
+import Control.Monad
+    ( when
+    )
 import Control.Monad.IO.Class
     ( MonadIO (liftIO)
     )
@@ -94,9 +97,11 @@ class Monad profiler => MonadProfiler profiler where
             }
     {-# INLINE profileConfiguration #-}
 
-profileValue :: Monad m => [String] -> Int -> m ()
-profileValue tags value =
-    traceM (intercalate "-" tags ++ " --> " ++ show value)
+profileValue :: MonadProfiler profiler => [String] -> Int -> profiler ()
+profileValue tags value = do
+    Configuration {destination} <- profileConfiguration
+    when (isHumanReadable destination)
+        (traceM (intercalate "-" tags ++ " --> " ++ show value))
 
 -- Instance for tests.
 instance MonadProfiler Identity where
@@ -171,6 +176,10 @@ data ProfileEvent
         -- counted as part of @t1@, @t1-t2@ and @t1-t2-t3@.
         }
     deriving (Show, Read)
+
+isHumanReadable :: Destination -> Bool
+isHumanReadable HumanReadable = True
+isHumanReadable _ = False
 
 nanosToSeconds :: Integer -> Double
 nanosToSeconds nanos =
