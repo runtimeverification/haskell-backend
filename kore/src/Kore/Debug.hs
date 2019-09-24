@@ -2,65 +2,52 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
-{-|
-Module      : Kore.Debug
-Description : Debugging helpers.
+{- |
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+License     : NCSA
 
-Usage: When you have a function whose result is in a monad which is handled by
+When you have a function whose result is in a monad which is handled by
 the functions below, e.g.
 
-```
-f :: a -> b -> ExceptT c m d
-f arg1 arg2 =
-    do
-        <f function body>
-```
+> f :: a -> b -> ExceptT c m d
+> f arg1 arg2 = do
+>     ⟨f function body⟩
 
 then you can wrap it like this, getting information about its arguments and
 result:
 
-```
-f :: a -> b -> ExceptT c m d
-f arg1 arg2 =
-    traceExceptT
-        "stepWithRule"
-        ("arg1=" ++ show arg1 ++ ",arg2=" ++ show arg2)
-    $ do
-        <actual f function body>
-```
+> f :: a -> b -> ExceptT c m d
+> f arg1 arg2 =
+>     traceExceptT
+>         "stepWithRule"
+>         ("arg1=" ++ show arg1 ++ ",arg2=" ++ show arg2)
+>     $ do
+>         ⟨actual f function body⟩
 
 The output will look something like:
 
-```
-starting stepWithRule with arg1=...,arg2=...
-<extra tracing done by the action>
-ending stepWithRule with result: ...
-```
+> starting stepWithRule with arg1=...,arg2=...
+> ⟨extra tracing done by the action⟩
+> ending stepWithRule with result: ...
 
 In order to make the output readable, you can filter it through debugFilter.py,
 which will indent the text and may simplify it, e.g.
 
-```
-cd src/main/k/working/tests/collections/set-unify-framing-variable
-make test-k 2>&1 | python ../src/main/python/debugFilter.py > debug.txt
-```
+> cd src/main/k/working/tests/collections/set-unify-framing-variable
+> make test-k 2>&1 | python ../src/main/python/debugFilter.py > debug.txt
 
 It also works for test error messages:
-```
-stack -j3 test --pedantic --test-arguments --pattern=zzz 2>&1 | \
-    python ../python/debugFilter.py`
-```
+
+> stack -j3 test --pedantic --test-arguments --pattern=zzz 2>&1 | \
+>    python ../python/debugFilter.py
 
 Enjoy.
 -}
 
 module Kore.Debug
-    ( traceEither
+    (
+    -- * Tracing
+      traceEither
     , traceExceptT
     , traceMaybe
     , traceMaybeT
@@ -71,10 +58,13 @@ module Kore.Debug
     , debugArg
     , DebugPlace (..)
     , DebugResult (..)
+    -- * Debug
     , Debug (..)
     , debugPrecGeneric
+    -- * Diff
     , Diff (..)
     , diffPrecEq
+    , diffPrecGeneric
     ) where
 
 import Control.Comonad.Trans.Cofree
@@ -725,6 +715,20 @@ instance Debug GHC.SrcLoc
 two values, as far as it is practical to do so. Like 'debug', @diff@ and
 @diffPrec@ should produce valid Haskell source syntax to facilitate
 debugging. To elide the identical parts of two values, use holes (@_@).
+
+A default implementation is provided for @diffPrec@ by @diffPrecGeneric@, which
+only requires some instances to be derived:
+
+> data DataType = ...
+>     deriving (GHC.Generics.Generic)
+>
+> instance Generics.SOP.Generic DataType
+>
+> instance Generics.SOP.HasDatatypeInfo DataType
+>
+> instance Debug DataType
+>
+> instance Diff DataType
 
  -}
 class Debug a => Diff a where
