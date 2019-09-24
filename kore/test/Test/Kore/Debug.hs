@@ -117,7 +117,7 @@ instance SOP.HasDatatypeInfo (N a)
 
 instance Debug a => Debug (N a)
 
-instance Diff a => Diff (N a)
+instance (Debug a, Diff a) => Diff (N a)
 
 -- A record newtype
 newtype Rn a = Rn { unRn :: a } deriving GHC.Generic
@@ -128,7 +128,7 @@ instance SOP.HasDatatypeInfo (Rn a)
 
 instance Debug a => Debug (Rn a)
 
-instance Diff a => Diff (Rn a)
+instance (Debug a, Diff a) => Diff (Rn a)
 
 test_debug :: [TestTree]
 test_debug =

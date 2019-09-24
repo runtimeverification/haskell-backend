@@ -756,7 +756,7 @@ only requires some instances to be derived:
 > instance Diff DataType
 
  -}
-class Debug a => Diff a where
+class Diff a where
     diff :: a -> a -> Maybe (Doc ann)
     diff a b = ($ 0) <$> diffPrec a b
 
@@ -768,7 +768,7 @@ class Debug a => Diff a where
      -}
     diffPrec :: a -> a -> Maybe (Int -> Doc ann)
     default diffPrec
-        :: (Generic a, HasDatatypeInfo a, All2 Diff (Code a))
+        :: (Debug a, Generic a, HasDatatypeInfo a, All2 Diff (Code a))
         => a
         -> a
         -> Maybe (Int -> Doc ann)
@@ -879,7 +879,7 @@ diffPrecSOP datatypeInfo (a, SOP aNS) (b, SOP bNS) =
 instance Diff Bool where
     diffPrec = diffPrecEq
 
-instance Diff a => Diff [a]
+instance (Debug a, Diff a) => Diff [a]
 
 instance {-# OVERLAPS #-} Diff String where
     diffPrec = diffPrecEq
@@ -963,5 +963,5 @@ instance Diff ExitCode
 instance (Debug a, Debug b, Diff a, Diff b) => Diff (Either a b)
 
 -- | Assume all functions are the same because we cannot compare them.
-instance (Typeable a, Typeable b) => Diff (a -> b) where
+instance Diff (a -> b) where
     diffPrec _ _ = Nothing
