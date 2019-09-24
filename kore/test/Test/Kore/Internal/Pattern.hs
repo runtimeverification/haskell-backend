@@ -38,7 +38,6 @@ import Test.Kore
     ( Gen
     , sortGen
     )
-import Test.Kore.Comparators ()
 import Test.Kore.Internal.TermLike
     ( termLikeChildGen
     )

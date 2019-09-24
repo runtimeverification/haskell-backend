@@ -22,7 +22,6 @@ import Kore.Step.Simplification.Builtin
     ( simplify
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 

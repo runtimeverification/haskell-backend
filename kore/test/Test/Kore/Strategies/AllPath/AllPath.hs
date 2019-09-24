@@ -45,7 +45,6 @@ import SMT
     ( MonadSMT (..)
     )
 
-import Test.Kore.Comparators ()
 import Test.Terse
 
 --

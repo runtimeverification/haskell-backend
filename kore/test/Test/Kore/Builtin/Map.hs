@@ -85,7 +85,6 @@ import Test.Kore.Builtin.Int
     )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Set as Test.Set
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
 import Test.Tasty.HUnit.Ext

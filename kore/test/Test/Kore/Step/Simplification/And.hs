@@ -26,7 +26,6 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )

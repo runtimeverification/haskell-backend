@@ -19,7 +19,6 @@ import Kore.Internal.ApplicationSorts
 import Test.Kore hiding
     ( symbolGen
     )
-import Test.Kore.Comparators ()
 import Test.Kore.Internal.Symbol
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext

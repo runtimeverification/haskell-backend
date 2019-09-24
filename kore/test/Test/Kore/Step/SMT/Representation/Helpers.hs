@@ -31,7 +31,6 @@ import qualified SMT.AST as AST
     ( showSExpr
     )
 
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Ext
 
 testsForModule

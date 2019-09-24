@@ -32,7 +32,6 @@ import Kore.Step.Rule
     )
 import Kore.Strategies.Goal
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Strategies.Common
 import Test.Tasty.HUnit.Ext

@@ -33,7 +33,6 @@ import Kore.Syntax.Variable
     ( Variable
     )
 
-import Test.Kore.Comparators ()
 import Test.Kore.Predicate.Predicate ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification

@@ -9,7 +9,6 @@ import Control.Monad.State.Strict
 import Kore.Internal.TermLike
 import Kore.Step.Function.Memo
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 

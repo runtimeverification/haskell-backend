@@ -14,7 +14,6 @@ import Kore.Step.Simplification.Top
     )
 import Kore.Syntax
 
-import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )

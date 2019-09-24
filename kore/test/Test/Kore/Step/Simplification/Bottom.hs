@@ -18,7 +18,6 @@ import Kore.Step.Simplification.Bottom
 import Kore.Syntax.Bottom
 import Kore.Syntax.Variable
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 

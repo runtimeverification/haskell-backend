@@ -13,7 +13,6 @@ import Kore.Step.Simplification.DomainValue
     ( simplify
     )
 
-import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )

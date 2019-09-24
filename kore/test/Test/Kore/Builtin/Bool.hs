@@ -15,7 +15,6 @@ import qualified SMT
 
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-import Test.Kore.Comparators ()
 import Test.SMT
 import Test.Tasty.HUnit.Ext
 

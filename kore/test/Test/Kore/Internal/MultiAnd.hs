@@ -14,7 +14,6 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Ext
 
 data TestTopBottom = TestTop | TestBottom | TestOther !Integer

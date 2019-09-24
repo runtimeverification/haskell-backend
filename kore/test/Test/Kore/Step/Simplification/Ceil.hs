@@ -49,7 +49,6 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore.Builtin.Builtin
     ( emptyNormalizedSet
     )
-import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )

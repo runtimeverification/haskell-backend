@@ -13,7 +13,6 @@ import Kore.Step.Simplification.CharLiteral
     ( simplify
     )
 
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Ext
 
 test_charLiteralSimplification :: [TestTree]

@@ -60,7 +60,6 @@ import qualified Kore.Verified as Verified
 import qualified SMT
 
 import Test.Kore
-import Test.Kore.Comparators ()
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
 import Test.Tasty.HUnit.Ext
 

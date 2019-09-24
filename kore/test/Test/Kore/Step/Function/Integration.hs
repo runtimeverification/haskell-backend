@@ -101,7 +101,6 @@ import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Int
 import qualified Test.Kore.Builtin.List as List
 import qualified Test.Kore.Builtin.Map as Map
-import Test.Kore.Comparators ()
 import Test.Kore.Step.Axiom.Matcher
     ( doesn'tMatch
     , matches

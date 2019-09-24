@@ -19,7 +19,6 @@ import Kore.Step.Simplification.StringLiteral
     ( simplify
     )
 
-import Test.Kore.Comparators ()
 import Test.Tasty.HUnit.Ext
 
 test_stringLiteralSimplification :: [TestTree]

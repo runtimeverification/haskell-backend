@@ -17,7 +17,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Pattern as Pattern
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
