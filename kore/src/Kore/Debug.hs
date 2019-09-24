@@ -105,6 +105,10 @@ import Data.Text.Prettyprint.Doc
     , (<+>)
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
+    ( Typeable
+    , typeOf
+    )
 import Data.Void
     ( Void
     )
@@ -128,6 +132,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Stack as GHC
 import Numeric.Natural
     ( Natural
+    )
+import System.Exit
+    ( ExitCode (..)
     )
 
 import Data.Sup
@@ -656,35 +663,43 @@ instance Debug a => Debug (Sup a)
 instance Debug a => Debug (Identity a)
 
 instance (Debug a, Debug (f b)) => Debug (CofreeF f a b) where
-    debugPrec (a :< fb) =
+    debugPrec cofreeF =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecAux datatypeInfo (debugSOP sop)
-      where
-        datatypeInfo =
-            SOP.ADT
-                "Control.Comonad.Trans.Cofree"
-                "CofreeF"
-                (constrInfo :* Nil)
-        constrInfo = SOP.Infix ":<" SOP.RightAssociative 5
-        sop = SOP (Z (I a :* I fb :* Nil))
+        debugPrecAux datatypeInfoCofreeF (debugSOP $ fromCofreeF cofreeF)
+
+datatypeInfoCofreeF :: DatatypeInfo '[ '[x, y] ]
+datatypeInfoCofreeF =
+    SOP.ADT
+        "Control.Comonad.Trans.Cofree"
+        "CofreeF"
+        (constrInfo :* Nil)
+  where
+    constrInfo = SOP.Infix ":<" SOP.RightAssociative 5
+
+fromCofreeF :: CofreeF f a b -> SOP I '[ '[a, f b] ]
+fromCofreeF (a :< fb) = SOP (Z (I a :* I fb :* Nil))
 
 instance
     (Debug a, Debug (w (CofreeF f a (CofreeT f w a)))) =>
     Debug (CofreeT f w a)
   where
-    debugPrec (CofreeT x) =
+    debugPrec x =
         -- Cannot have orphan instances of Generic and HasDatatypeInfo.
         -- Use a fake instance instead.
-        debugPrecAux datatypeInfo (debugSOP sop)
-      where
-        datatypeInfo =
-            SOP.Newtype
-                "Control.Comonad.Trans.Cofree"
-                "CofreeT"
-                constrInfo
-        constrInfo = SOP.Record "CofreeT" (FieldInfo "runCofreeT" :* Nil)
-        sop = SOP (Z (I x :* Nil))
+        debugPrecAux datatypeInfoCofreeT (debugSOP (fromCofreeT x))
+
+datatypeInfoCofreeT :: DatatypeInfo '[ '[x] ]
+datatypeInfoCofreeT =
+    SOP.Newtype
+        "Control.Comonad.Trans.Cofree"
+        "CofreeT"
+        constrInfo
+  where
+    constrInfo = SOP.Record "CofreeT" (FieldInfo "runCofreeT" :* Nil)
+
+fromCofreeT :: CofreeT f w a -> SOP I '[ '[w (CofreeF f a (CofreeT f w a))] ]
+fromCofreeT (CofreeT x) = SOP (Z (I x :* Nil))
 
 instance (Debug k, Debug a) => Debug (Map.Map k a) where
     debugPrec as precOut =
@@ -703,11 +718,21 @@ instance Debug a => Debug (Const a b)
 
 instance Debug Bool
 
+instance (Debug a, Debug b) => Debug (Either a b)
+
+instance Debug ExitCode
+
 instance Debug SExpr
 
 instance Debug GHC.CallStack
 
 instance Debug GHC.SrcLoc
+
+-- | Prints a typed hole for the function.
+instance (Typeable a, Typeable b) => Debug (a -> b) where
+    debugPrec f = \precOut ->
+        parens (precOut > 0)
+        $ "_" <+> "::" <+> (Pretty.pretty . show) (typeOf f)
 
 {- | 'Diff' displays the difference between values for debugging.
 
@@ -787,23 +812,30 @@ diffPrecGeneric
     -> a
     -> Maybe (Int -> Doc ann)
 diffPrecGeneric a b =
+    diffPrecSOP (SOP.datatypeInfo (Proxy @a)) (a, SOP.from a) (b, SOP.from b)
+
+diffPrecSOP
+    :: forall a xss ann
+    .  (Debug a, All2 Diff xss)
+    => DatatypeInfo xss
+    -> (a, SOP I xss)
+    -> (a, SOP I xss)
+    -> Maybe (Int -> Doc ann)
+diffPrecSOP datatypeInfo (a, SOP aNS) (b, SOP bNS) =
     diffNS constrs aNS bNS
   where
-    constrs :: NP ConstructorInfo (Code a)
+    constrs :: NP ConstructorInfo xss
     constrs =
-        case SOP.datatypeInfo (Proxy @a) of
+        case datatypeInfo of
             SOP.ADT     _ _ cs -> cs
             SOP.Newtype _ _ c  -> c :* Nil
 
-    SOP aNS = SOP.from a
-    SOP bNS = SOP.from b
-
     diffNS
-        :: forall xss
-        .  All2 Diff xss
-        => NP ConstructorInfo xss
-        -> NS (NP I) xss
-        -> NS (NP I) xss
+        :: forall xss'
+        .  All2 Diff xss'
+        => NP ConstructorInfo xss'
+        -> NS (NP I) xss'
+        -> NS (NP I) xss'
         -> Maybe (Int -> Doc ann)
     diffNS (c :* _) (Z aNP) (Z bNP) = diffNP c aNP bNP
     diffNS (_ :* cs) (S aNS') (S bNS') = diffNS cs aNS' bNS'
@@ -872,3 +904,64 @@ instance Diff Int where
 
 instance Diff Char where
     diffPrec = diffPrecEq
+
+instance (Debug a, Diff a) => Diff (Const a b)
+
+instance (Debug a, Diff a) => Diff (Maybe a)
+
+instance (Debug a, Diff a) => Diff (Sup a)
+
+instance (Debug a, Diff a) => Diff (Identity a)
+
+instance
+    (Debug a, Debug (f b), Diff a, Diff (f b)) => Diff (CofreeF f a b) where
+    diffPrec x y =
+        -- Cannot have orphan instances of Generic and HasDatatypeInfo.
+        -- Use a fake instance instead.
+        diffPrecSOP datatypeInfoCofreeF (x, fromCofreeF x) (y, fromCofreeF y)
+
+instance
+    ( Debug a, Debug (w (CofreeF f a (CofreeT f w a)))
+    , Diff a, Diff (w (CofreeF f a (CofreeT f w a)))
+    )
+    => Diff (CofreeT f w a)
+  where
+    diffPrec x y =
+        -- Cannot have orphan instances of Generic and HasDatatypeInfo.
+        -- Use a fake instance instead.
+        diffPrecSOP datatypeInfoCofreeT (x, fromCofreeT x) (y, fromCofreeT y)
+
+instance (Debug a, Diff a) => Diff (Seq a) where
+    diffPrec as bs =
+        fmap wrapFromList
+        $ diffPrec (Foldable.toList as) (Foldable.toList bs)
+      where
+        wrapFromList diff' precOut =
+            parens (precOut >= 10) $ "Data.Sequence.fromList" <+> diff' 10
+
+instance
+    ( Debug key, Debug value, Diff key, Diff value )
+    => Diff (Map key value)
+  where
+    diffPrec as bs =
+        fmap wrapFromList $ diffPrec (Map.toList as) (Map.toList bs)
+      where
+        wrapFromList diff' precOut =
+            parens (precOut >= 10) $ "Data.Map.fromList" <+> diff' 10
+
+instance (Debug a, Debug b, Diff a, Diff b) => Diff (a, b)
+
+instance (Debug a, Diff a) => Diff (Set a) where
+    diffPrec as bs =
+        fmap wrapFromList $ diffPrec (Set.toList as) (Set.toList bs)
+      where
+        wrapFromList diff' precOut =
+            parens (precOut >= 10) $ "Data.Set.fromList" <+> diff' 10
+
+instance Diff ExitCode
+
+instance (Debug a, Debug b, Diff a, Diff b) => Diff (Either a b)
+
+-- | Assume all functions are the same because we cannot compare them.
+instance (Typeable a, Typeable b) => Diff (a -> b) where
+    diffPrec _ _ = Nothing
