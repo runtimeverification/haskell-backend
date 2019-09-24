@@ -32,6 +32,7 @@ module Kore.Unparser
     , escapeStringT
     , escapeChar
     , escapeCharT
+    , unparseAssoc'
     ) where
 
 import qualified Data.Char as Char
@@ -55,6 +56,7 @@ import Data.Text.Prettyprint.Doc.Render.Text
     )
 import Data.Void
 import Generics.SOP
+import qualified GHC.Stack as GHC
 import qualified Numeric
 
 {- | Class of types that can be rendered in concrete Kore syntax.
@@ -293,4 +295,29 @@ oneCharEscapes =
         , ('\n', 'n')
         , ('\r', 'r')
         , ('\t', 't')
+        ]
+
+{- | Unparse an associative binary operator applied to many arguments.
+
+@unparseAssoc'@ avoids creeping indentation.
+
+ -}
+unparseAssoc'
+    :: GHC.HasCallStack
+    => Doc ann    -- ^ pattern head
+    -> Doc ann    -- ^ identity element
+    -> [Doc ann]  -- ^ arguments
+    -> Doc ann
+unparseAssoc' _ ident [] = ident
+unparseAssoc' _ _ [x] = x
+unparseAssoc' oper ident (x:y:rest)
+  | null rest = oper <> arguments' [x, y]
+  | otherwise =
+    (group . mconcat)
+        [ oper
+        , lparen <> line'
+        , indent 4 x
+        , comma <> line
+        , unparseAssoc' oper ident (y : rest)
+        , line' <> rparen
         ]
