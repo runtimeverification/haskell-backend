@@ -82,9 +82,6 @@ import System.Exit
     )
 
 import Data.Sup
-import SMT.AST
-    ( SExpr
-    )
 
 {- | Insert a separator between the items and enclose them with the delimiters.
 
@@ -330,8 +327,6 @@ instance Debug Bool
 instance (Debug a, Debug b) => Debug (Either a b)
 
 instance Debug ExitCode
-
-instance Debug SExpr
 
 instance Debug GHC.CallStack
 
