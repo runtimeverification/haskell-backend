@@ -83,17 +83,17 @@ instance Debug D
 instance Diff D
 
 -- A product type with an infix constructor
-data I = S ::: S deriving GHC.Generic
+data I a b = a ::: b deriving GHC.Generic
 
 infixl 7 :::
 
-instance SOP.Generic I
+instance SOP.Generic (I a b)
 
-instance SOP.HasDatatypeInfo I
+instance SOP.HasDatatypeInfo (I a b)
 
-instance Debug I
+instance (Debug a, Debug b) => Debug (I a b)
 
-instance Diff I
+instance (Debug a, Debug b, Diff a, Diff b) => Diff (I a b)
 
 -- A product type with a prefix constructor and an auxiliary fixity declaration
 data I' = (::::) S S deriving GHC.Generic
@@ -129,6 +129,21 @@ instance SOP.HasDatatypeInfo (Rn a)
 instance Debug a => Debug (Rn a)
 
 instance (Debug a, Diff a) => Diff (Rn a)
+
+
+-- A record
+data R3 a b c = R3 { fieldA :: a, fieldB :: b, fieldC :: c }
+    deriving GHC.Generic
+
+instance SOP.Generic (R3 a b c)
+
+instance SOP.HasDatatypeInfo (R3 a b c)
+
+instance (Debug a, Debug b, Debug c) => Debug (R3 a b c)
+
+instance
+    ( Debug a, Debug b, Debug c, Diff a, Diff b, Diff c )
+    => Diff (R3 a b c)
 
 test_debug :: [TestTree]
 test_debug =
@@ -243,6 +258,19 @@ test_diff =
     , test ([True], [])            $ Just "{- was: [ True ] -} []"
     , test ([], [True])            $ Just "{- was: [] -} [ True ]"
     , test ([True], [True, False]) $ Just "_ : {- was: [] -} [ False ]"
+    , test ([True, True], [True, False, True])
+        $ Just "_ : ({- was: True -} False : {- was: [] -} [ True ])"
+    , test
+        ( R3 { fieldA = True , fieldB = True , fieldC = True }
+        , R3 { fieldA = False, fieldB = False, fieldC = True }
+        )
+        $ Just "R3 { fieldA = {- was: True -} False, fieldB = {- was: True -} False, fieldC = _ }"
+    , test
+        ( R3 { fieldA = True, fieldB = True , fieldC = True }
+        , R3 { fieldA = True, fieldB = False, fieldC = False }
+        )
+        $ Just "R3 { fieldA = _, fieldB = {- was: True -} False, fieldC = {- was: True -} False }"
+    , test (True ::: False, True ::: True) $ Just "_ ::: {- was: False -} True"
     ]
   where
     test (a, b) = Terse.equals_ (render <$> diff a b)
