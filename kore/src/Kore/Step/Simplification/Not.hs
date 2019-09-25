@@ -12,6 +12,7 @@ module Kore.Step.Simplification.Not
     , makeEvaluatePredicate
     , simplify
     , simplifyEvaluated
+    , simplifyEvaluatedPredicate
     ) where
 
 import qualified Data.Foldable as Foldable
@@ -29,6 +30,10 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.OrPredicate
+    ( OrPredicate
+    )
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike hiding
     ( mkAnd
@@ -37,9 +42,12 @@ import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeNotPredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.Simplify
+import Kore.TopBottom
+    ( TopBottom
+    )
 
 {-|'simplify' simplifies a 'Not' pattern with an 'OrPattern'
 child.
@@ -83,6 +91,16 @@ simplifyEvaluated simplified =
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
         mkMultiAndPattern andPattern
+
+simplifyEvaluatedPredicate
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => OrPredicate variable
+    -> simplifier (OrPredicate variable)
+simplifyEvaluatedPredicate notChild =
+    fmap OrPredicate.fromPredicates $ gather $ do
+        let not' = Not { notChild = notChild, notSort = () }
+        andPredicate <- scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
+        mkMultiAndPredicate andPredicate
 
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
@@ -134,9 +152,16 @@ makeEvaluatePredicate
         , predicate =
             makeNotPredicate
             $ makeAndPredicate predicate
-            $ Predicate.fromSubstitution substitution
+            $ Syntax.Predicate.fromSubstitution substitution
         , substitution = mempty
         }
+
+makeEvaluateNotPredicate
+    :: InternalVariable variable
+    => Not sort (Predicate variable)
+    -> OrPredicate variable
+makeEvaluateNotPredicate Not { notChild = predicate } =
+    OrPredicate.fromPredicates [ makeEvaluatePredicate predicate ]
 
 makeTermNot
     :: InternalVariable variable
@@ -153,9 +178,9 @@ makeTermNot term
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
 distributeNot
-    :: (Ord sort, Ord variable)
-    => Not sort (OrPattern variable)
-    -> MultiAnd (Not sort (Pattern variable))
+    :: (Ord sort, Ord child, TopBottom child)
+    => Not sort (MultiOr child)
+    -> MultiAnd (Not sort child)
 distributeNot notOr@Not { notChild } =
     MultiAnd.make $ worker <$> Foldable.toList notChild
   where
@@ -164,16 +189,16 @@ distributeNot notOr@Not { notChild } =
 {- | Distribute 'MultiAnd' over 'MultiOr'.
  -}
 distributeAnd
-    :: MultiAnd (OrPattern variable)
-    -> MultiOr (MultiAnd (Pattern variable))
+    :: MultiAnd (MultiOr child)
+    -> MultiOr (MultiAnd child)
 distributeAnd = sequenceA
 
 {- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'BranchT'.
  -}
 scatterAnd
     :: Monad m
-    => MultiAnd (OrPattern variable)
-    -> BranchT m (MultiAnd (Pattern variable))
+    => MultiAnd (MultiOr child)
+    -> BranchT m (MultiAnd child)
 scatterAnd = scatter . distributeAnd
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
@@ -184,3 +209,14 @@ mkMultiAndPattern
     -> BranchT simplifier (Pattern variable)
 mkMultiAndPattern patterns =
     Foldable.foldrM And.makeEvaluate Pattern.top patterns
+
+{- | Conjoin and simplify a 'MultiAnd' of 'Predicate'.
+ -}
+mkMultiAndPredicate
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => MultiAnd (Predicate variable)
+    -> BranchT simplifier (Predicate variable)
+mkMultiAndPredicate predicates =
+    -- Using Foldable.fold because the Monoid instance of Predicate
+    -- implements And semantics.
+    return $ Foldable.fold predicates

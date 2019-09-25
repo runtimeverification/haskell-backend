@@ -54,6 +54,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.PatternAttributesError as PatternAttributesError
 import Kore.Step.Rule
     ( OnePathRule (..)
+    , RewriteRule (..)
     , RulePattern (..)
     )
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -2523,3 +2524,17 @@ instance
   where
     wrapperField = Function.on (EqWrap "getOnePathRule = ") getOnePathRule
     wrapperConstructorName _ = "OnePathRule"
+
+instance
+    (EqualWithExplanation variable, Show variable, Ord variable) =>
+    EqualWithExplanation (RewriteRule variable)
+  where
+    compareWithExplanation = wrapperCompareWithExplanation
+    printWithExplanation = show
+
+instance
+    (EqualWithExplanation variable, Show variable, Ord variable) =>
+    WrapperEqualWithExplanation (RewriteRule variable)
+  where
+    wrapperField = Function.on (EqWrap "getRewriteRule = ") getRewriteRule
+    wrapperConstructorName _ = "RewriteRule"
