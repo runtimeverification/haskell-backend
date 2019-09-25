@@ -82,6 +82,16 @@ pipeline {
         '''
       }
     }
+    stage('Integration: KWASM') {
+      options {
+        timeout(time: 8, unit: 'MINUTES')
+      }
+      steps {
+        sh '''
+          ./scripts/integration-kwasm.sh
+        '''
+      }
+    }
     stage('Update K Submodules') {
       when { branch 'master' }
       steps {
