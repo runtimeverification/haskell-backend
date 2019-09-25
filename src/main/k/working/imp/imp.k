@@ -107,7 +107,7 @@ to be looked up is the first task in the \textsf{k} cell (the cell is
 closed to the left and torn to the right), while the binding can be
 anywhere in the \textsf{state} cell (the cell is torn at both sides). */
 
-  rule <k> X:Id => I ...</k> <state>... X |-> I ...</state>
+  rule <k> X:Id => I ...</k> <state>... X |-> I ...</state>  [label(variable_lookup)]
 
 /*@ \subsubsection{Arithmetic operators}
 There is nothing special about these, but recall that \K's configuration
@@ -156,7 +156,7 @@ The assigned variable is updated in the state.  The variable is expected
 to be declared, otherwise the semantics will get stuck.  At the same time,
 the assignment is dissolved. */
 
-  rule <k> X = I:Int; => . ...</k> <state>... X |-> (_ => I) ...</state>
+  rule <k> X = I:Int; => . ...</k> <state>... X |-> (_ => I) ...</state>  [label(variable_setting)]
 
 /*@ \subsubsection{Sequential composition}
 Sequential composition is simply structurally translated into \K's

@@ -11,6 +11,9 @@ module Kore.Profiler.Data
     , Destination (..)
     ) where
 
+import Control.Monad
+    ( when
+    )
 import Control.Monad.IO.Class
     ( MonadIO (liftIO)
     )
@@ -84,19 +87,21 @@ class Monad profiler => MonadProfiler profiler where
         return Configuration
             { identifierFilter = Nothing
             , dumpIdentifier = Nothing
-            , destination = HumanReadable
+            , destination = KoreProfiler
             , logBranching = False
-            , logStrategy = False
+            , logStrategy = True
             , logSimplification = False
             , logInitialization = False
-            , logEvaluation = False
-            , logSmt = False
+            , logEvaluation = True
+            , logSmt = True
             }
     {-# INLINE profileConfiguration #-}
 
-profileValue :: Monad m => [String] -> Int -> m ()
-profileValue tags value =
-    traceM (intercalate "-" tags ++ " --> " ++ show value)
+profileValue :: MonadProfiler profiler => [String] -> Int -> profiler ()
+profileValue tags value = do
+    Configuration {destination} <- profileConfiguration
+    when (isHumanReadable destination)
+        (traceM (intercalate "-" tags ++ " --> " ++ show value))
 
 -- Instance for tests.
 instance MonadProfiler Identity where
@@ -119,6 +124,7 @@ instance MonadProfiler Identity where
 
 data Destination =
     GhcEventsAnalyze
+  | KoreProfiler
   | HumanReadable
     -- ^ Suggestions for the human readable output:
     --
@@ -171,6 +177,10 @@ data ProfileEvent
         }
     deriving (Show, Read)
 
+isHumanReadable :: Destination -> Bool
+isHumanReadable HumanReadable = True
+isHumanReadable _ = False
+
 nanosToSeconds :: Integer -> Double
 nanosToSeconds nanos =
     fromInteger nanos / (1000 * 1000 * 1000)
@@ -201,6 +211,7 @@ profileEvent
     action
   = case destination of
         GhcEventsAnalyze -> profileGhcEventsAnalyze event action
+        KoreProfiler -> profileKoreProfiler event action
         HumanReadable -> profileHumanReadable event action
 
 {- Times an action in a human readable way.
@@ -219,6 +230,25 @@ profileHumanReadable tags action = do
     a <- action
     endTime <- liftIO (getTime Monotonic)
     liftIO $ traceStderr
+        event {end = Just endTime}
+    return a
+
+{- Times an action for the kore-profiler tool.
+-}
+profileKoreProfiler
+    :: MonadIO profiler
+    => [String] -> profiler a -> profiler a
+profileKoreProfiler tags action = do
+    startTime <- liftIO (getTime Monotonic)
+    let event = ProfileEvent
+            { start = startTime
+            , end = Nothing
+            , tags
+            }
+    liftIO $ traceEventIO (show event)
+    a <- action
+    endTime <- liftIO (getTime Monotonic)
+    liftIO $ traceEventIO $ show
         event {end = Just endTime}
     return a
 

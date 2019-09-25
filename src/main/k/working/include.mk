@@ -25,6 +25,9 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.kprove: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
+%.kmerge: %.merge $(DEFINITION) $(KORE_EXEC)
+	$(KORE_EXEC) --definition $(DEFINITION) --merge-rules $<
+
 %.search.final.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
@@ -53,13 +56,22 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
+%.merge-output: %.merge $(DEFINITION) $(KORE_EXEC)
+	$(KORE_EXEC) $(DEFINITION) --module $(MODULE_NAME) --merge-rules $< --output $@
+
 %.repl.output: % $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE) --output-file $@
 
 %.test: %.output
 	diff -u $<.golden $<
 
+%.merge-test: %.merge-output
+	diff -u $(basename $<).merge-golden $<
+
 %.output.golden: %.output
 	mv $< $<.golden
+
+%.merge-golden: %.merge-output
+	mv $< $(basename $<).merge-golden
 
 .PHONY: test-k test golden clean %.test %.krun
