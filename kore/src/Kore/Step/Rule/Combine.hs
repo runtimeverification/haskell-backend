@@ -206,7 +206,7 @@ mergeRules rules = BranchT.gather $ do
 
     Monad.unless (finalRule `Rule.isFreeOf` substitutedVariables)
         (error
-            (  "Substituted variables not remove from the rule, cannot throw "
+            (  "Substituted variables not removed from the rule, cannot throw "
             ++ "substitution away."
             )
         )
