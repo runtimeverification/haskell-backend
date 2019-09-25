@@ -23,8 +23,20 @@ import Data.Reflection
 import Data.Semigroup
     ( (<>)
     )
+import Data.Text
+    ( Text
+    )
+import qualified Data.Text as Text
+    ( null
+    , split
+    )
+import qualified Data.Text.IO as Text
+    ( putStrLn
+    , readFile
+    )
 import Data.Text.Prettyprint.Doc
     ( Doc
+    , vsep
     )
 import Data.Text.Prettyprint.Doc.Render.Text
     ( hPutDoc
@@ -238,6 +250,7 @@ data KoreExecOptions = KoreExecOptions
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
+    , koreMergeOptions    :: !(Maybe KoreMergeOptions)
     }
 
 -- | Command Line Argument Parser
@@ -288,6 +301,7 @@ parseKoreExecOptions =
         <*> parseKoreLogOptions
         <*> pure Nothing
         <*> optional parseKoreProveOptions
+        <*> optional parseKoreMergeOptions
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
@@ -351,6 +365,9 @@ mainWithOptions execOptions@KoreExecOptions { koreLogOptions } =
 
       | Just searchOptions <- koreSearchOptions execOptions ->
         koreSearch execOptions searchOptions
+
+      | Just mergeOptions <- koreMergeOptions execOptions ->
+        koreMerge execOptions mergeOptions
 
       | otherwise ->
         koreRun execOptions
@@ -428,6 +445,33 @@ koreProve execOptions proveOptions = do
     unknown =
         ( ExitSuccess
         , mkElemVar $ elemVarS "Unknown" (mkSort $ noLocationId "SortUnknown")
+        )
+
+koreMerge :: KoreExecOptions -> KoreMergeOptions -> Main ExitCode
+koreMerge execOptions mergeOptions = do
+    let KoreExecOptions {definitionFileName} = execOptions
+    definition <- loadDefinitions [definitionFileName]
+    let KoreExecOptions {mainModuleName} = execOptions
+    mainModule <- loadModule mainModuleName definition
+    let KoreMergeOptions {rulesFileName} = mergeOptions
+    ruleIds <- lift $ loadRuleIds rulesFileName
+    eitherMergedRule <- execute execOptions mainModule $
+        mergeRules mainModule ruleIds
+    case eitherMergedRule of
+        (Left err) -> do
+            lift $ Text.putStrLn err
+            return (ExitFailure 1)
+        (Right mergedRule) -> do
+            lift $ renderResult execOptions (vsep (map unparse mergedRule))
+            return ExitSuccess
+
+loadRuleIds :: FilePath -> IO [Text]
+loadRuleIds fileName = do
+    fileContents <- Text.readFile fileName
+    return
+        (filter
+            (not . Text.null)
+            (Text.split (`elem` (" \t\n\r" :: String)) fileContents)
         )
 
 type MonadExecute exe =

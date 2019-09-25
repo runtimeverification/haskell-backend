@@ -4,8 +4,10 @@ module GlobalMain
     ( MainOptions(..)
     , GlobalOptions(..)
     , KoreProveOptions(..)
+    , KoreMergeOptions(..)
     , Main
     , parseKoreProveOptions
+    , parseKoreMergeOptions
     , mainGlobal
     , defaultMainGlobal
     , enableDisableFlag
@@ -201,6 +203,22 @@ parseKoreProveOptions =
                         known = "Known search order are: " ++ names
                     in
                         readerError (unknown ++ known)
+
+data KoreMergeOptions =
+    KoreMergeOptions
+        { rulesFileName     :: !FilePath
+        -- ^ Name for file containing a sequence of rules to merge.
+        }
+
+parseKoreMergeOptions :: Parser KoreMergeOptions
+parseKoreMergeOptions =
+    KoreMergeOptions
+    <$> strOption
+            (  metavar "MERGE_RULES_FILE"
+            <> long "merge-rules"
+            <> help
+                "List of rules to merge."
+            )
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}

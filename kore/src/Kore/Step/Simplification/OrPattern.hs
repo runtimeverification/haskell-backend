@@ -7,6 +7,8 @@ module Kore.Step.Simplification.OrPattern
     ( simplifyPredicatesWithSmt
     ) where
 
+import qualified Control.Comonad as Comonad
+
 import qualified Branch as BranchT
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -61,7 +63,7 @@ simplifyPredicatesWithSmt predicate' unsimplified = do
   where
     conditionalAsTerm
         :: Pattern variable -> Conditional variable (Pattern variable)
-    conditionalAsTerm c = c {Conditional.term = c}
+    conditionalAsTerm = Comonad.duplicate
 
     addPredicate :: Conditional variable term -> Conditional variable term
     addPredicate c@Conditional {predicate} =
