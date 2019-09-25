@@ -182,7 +182,45 @@ By applying this iteratively, we get
 
 ### Removing Substitutions
 
-Let us say that our axioms are `α₁(X₁)⇒β₁(X₁)` … `αₙ(Xₙ)⇒βₙ(Xₙ)` and
+Let us take an example. Let us say that we have two axioms:
+
+```
+(X + Y) ~> R => (X +Int Y) ~> R    if isConcrete(X) and isConcrete(Y)
+Z ~> ([] * T) ~> S => (Z * T) ~> S   if isConcrete(Z)
+```
+
+If we try to combine them, we would get
+
+```
+(X + Y) ~> R => (Z * T) ~> S
+    if  isConcrete(X) and isConcrete(Y) and isConcrete(Z)
+        and (Z == X +Int Y) and (R == ([] * T ~> S))
+```
+
+Now, this is a bit ugly, but we can apply the substitutions for `Z` and `R`,
+getting
+
+```
+(X + Y) ~> [] * T ~> S => ((X +Int Y) * T) ~> S
+    if  isConcrete(X) and isConcrete(Y) and isConcrete(X +Int Y)
+        and (Z == X +Int Y) and (R == ([] * T ~> S))
+
+// isConcrete(X +Int Y) is true
+(X + Y) ~> [] * T ~> S => ((X +Int Y) * T) ~> S
+    if  isConcrete(X) and isConcrete(Y)
+        and (Z == X +Int Y) and (R == ([] * T ~> S))
+```
+
+This is better, but, since we're not actually using `Z` and `R`, we can
+remove the substitution:
+
+```
+(X + Y) ~> [] * T ~> S => ((X +Int Y) * T) ~> S
+    if  isConcrete(X) and isConcrete(Y)
+```
+
+To make it more formal, let us say that our axioms are
+`α₁(X₁)⇒β₁(X₁)` … `αₙ(Xₙ)⇒βₙ(Xₙ)` and
 `P(X₁, …, Xₙ)` is the merge predicate, and that the merged rule is
 `α₁(X₁) ∧ P(X₁, …, Xₙ) ⇒ βₙ(Xₙ)`.
 
@@ -207,11 +245,14 @@ Then the rule becomes
 
 ### Distributing over predicate disjunction
 
+This is useful when we're doing AC unification, say, because two merged rules
+use a map, perhaps the `state` map.
+
 If the merge rule is `α₁(X₁) ∧ (P(X₁, …, Xₙ) ∨ Q(X₁, …, Xₙ)) ⇒ βₙ(Xₙ)` then we
 may have substitutions inside `P` and `Q`, but we may not be able to apply them
 directly to get a simplified rule. But we can do this:
 
-```
+``
 α₁(X₁) ∧ (P(X₁, …, Xₙ) ∨ Q(X₁, …, Xₙ)) ⇒ βₙ(Xₙ)
 (α₁(X₁) ∧ P(X₁, …, Xₙ)) ∨ (α₁(X₁) ∧ Q(X₁, …, Xₙ)) ⇒ βₙ(Xₙ)
 (α₁(X₁) ∧ P(X₁, …, Xₙ) ⇒ βₙ(Xₙ)) ∧ (α₁(X₁) ∧ Q(X₁, …, Xₙ) ⇒ βₙ(Xₙ))
