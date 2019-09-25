@@ -389,7 +389,7 @@ extractRules rules = foldr addExtractRule (Right [])
     maybeRuleName
         (RewriteRule RulePattern
             { attributes = Attribute.Axiom
-                { label = Attribute.Label maybeName }
+                { uniqueId = Attribute.UniqueId maybeName }
             }
         )
       =
