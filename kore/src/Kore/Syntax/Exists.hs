@@ -58,8 +58,8 @@ instance
 instance
     ( Debug sort, Debug variable, Debug child
     , Diff sort, Diff variable, Diff child
-    ) =>
-    Diff (Exists sort variable child)
+    )
+    => Diff (Exists sort variable child)
 
 instance
     (SortedVariable variable, Unparse variable, Unparse child) =>

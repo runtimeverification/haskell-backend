@@ -124,8 +124,8 @@ instance
     Debug (Pattern variable annotation)
 
 instance
-    (Debug annotation, Debug variable, Diff annotation, Diff variable) =>
-    Diff (Pattern variable annotation)
+    (Debug annotation, Debug variable, Diff annotation, Diff variable)
+    => Diff (Pattern variable annotation)
 
 instance
     (SortedVariable variable, Unparse variable) =>

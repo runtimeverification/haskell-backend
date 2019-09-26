@@ -339,20 +339,18 @@ instance SOP.HasDatatypeInfo (TermLikeF variable child)
 instance (Debug child, Debug variable) => Debug (TermLikeF variable child)
 
 instance
-    (Debug child, Debug variable, Diff child, Diff variable
-    ) => Diff (TermLikeF variable child)
+    ( Debug child, Debug variable, Diff child, Diff variable )
+    => Diff (TermLikeF variable child)
 
 instance
-    (Hashable child, Hashable variable) =>
-    Hashable (TermLikeF variable child)
+    (Hashable child, Hashable variable)
+    => Hashable (TermLikeF variable child)
 
 instance (NFData child, NFData variable) => NFData (TermLikeF variable child)
 
 instance
-    ( SortedVariable variable, Unparse variable
-    , Unparse child
-    ) =>
-    Unparse (TermLikeF variable child)
+    ( SortedVariable variable, Unparse variable, Unparse child )
+    => Unparse (TermLikeF variable child)
   where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
@@ -452,8 +450,8 @@ instance (Debug variable, Diff variable) => Diff (TermLike variable) where
         <|> diffPrecGeneric termLike1 termLike2
 
 instance
-    (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>
-    Eq (TermLike variable)
+    (Eq variable, Eq (TermLikeF variable (TermLike variable)))
+    => Eq (TermLike variable)
   where
     (==)
         (Recursive.project -> _ :< pat1)
@@ -461,8 +459,8 @@ instance
       = pat1 == pat2
 
 instance
-    (Ord variable, Ord (TermLikeF variable (TermLike variable))) =>
-    Ord (TermLike variable)
+    (Ord variable, Ord (TermLikeF variable (TermLike variable)))
+    => Ord (TermLike variable)
   where
     compare
         (Recursive.project -> _ :< pat1)
@@ -597,8 +595,8 @@ extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes = extract . getTermLike
 
 instance
-    (Ord variable, SortedVariable variable, Show variable) =>
-    Binding (TermLike variable)
+    (Ord variable, SortedVariable variable, Show variable)
+    => Binding (TermLike variable)
   where
     type VariableType (TermLike variable) = UnifiedVariable variable
 

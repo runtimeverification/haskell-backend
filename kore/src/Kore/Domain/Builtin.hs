@@ -167,20 +167,20 @@ data NormalizedAc (collection :: * -> * -> *) key child = NormalizedAc
 deriving instance
     ( Eq key, Eq child
     , Eq (Element collection child), Eq (Value collection child)
-    ) =>
-    Eq (NormalizedAc collection key child)
+    )
+    => Eq (NormalizedAc collection key child)
 
 deriving instance
     ( Ord key, Ord child
     , Ord (Element collection child), Ord (Value collection child)
-    ) =>
-    Ord (NormalizedAc collection key child)
+    )
+    => Ord (NormalizedAc collection key child)
 
 deriving instance
     ( Show key, Show child
     , Show (Element collection child), Show (Value collection child)
-    ) =>
-    Show (NormalizedAc collection key child)
+    )
+    => Show (NormalizedAc collection key child)
 
 deriving instance
     (Functor (Element collection), Functor (Value collection)) =>
@@ -197,8 +197,8 @@ deriving instance
 instance
     ( Hashable key, Hashable child
     , Hashable (Element collection child), Hashable (Value collection child)
-    ) =>
-    Hashable (NormalizedAc collection key child)
+    )
+    => Hashable (NormalizedAc collection key child)
   where
     hashWithSalt salt normalized@(NormalizedAc _ _ _) =
         salt
@@ -213,8 +213,8 @@ instance
 instance
     ( NFData key, NFData child
     , NFData (Element collection child), NFData (Value collection child)
-    ) =>
-    NFData (NormalizedAc collection key child)
+    )
+    => NFData (NormalizedAc collection key child)
 
 instance SOP.Generic (NormalizedAc key valueWrapper child)
 
@@ -223,16 +223,16 @@ instance SOP.HasDatatypeInfo (NormalizedAc key valueWrapper child)
 instance
     ( Debug key, Debug child
     , Debug (Element collection child), Debug (Value collection child)
-    ) =>
-    Debug (NormalizedAc collection key child)
+    )
+    => Debug (NormalizedAc collection key child)
 
 instance
     ( Debug key, Debug child
     , Debug (Element collection child), Debug (Value collection child)
     , Diff key, Diff child
     , Diff (Element collection child), Diff (Value collection child)
-    ) =>
-    Diff (NormalizedAc collection key child)
+    )
+    => Diff (NormalizedAc collection key child)
 
 emptyNormalizedAc :: NormalizedAc key valueWrapper child
 emptyNormalizedAc = NormalizedAc
@@ -424,8 +424,8 @@ instance SOP.HasDatatypeInfo (NormalizedMap key child)
 instance (Debug key, Debug child) => Debug (NormalizedMap key child)
 
 instance
-    (Debug key, Debug child, Diff key, Diff child
-    ) => Diff (NormalizedMap key child)
+    ( Debug key, Debug child, Diff key, Diff child )
+    => Diff (NormalizedMap key child)
 
 instance AcWrapper NormalizedMap where
     newtype Value NormalizedMap child = MapValue { getMapValue :: child }
@@ -510,8 +510,8 @@ instance SOP.HasDatatypeInfo (NormalizedSet key child)
 instance (Debug key, Debug child) => Debug (NormalizedSet key child)
 
 instance
-    (Debug key, Debug child, Diff key, Diff child
-    ) => Diff (NormalizedSet key child)
+    ( Debug key, Debug child, Diff key, Diff child )
+    => Diff (NormalizedSet key child)
 
 instance AcWrapper NormalizedSet where
     data Value NormalizedSet child = SetValue

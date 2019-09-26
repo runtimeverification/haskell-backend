@@ -93,8 +93,8 @@ instance SOP.HasDatatypeInfo (PatternF variable child)
 instance (Debug variable, Debug child) => Debug (PatternF variable child)
 
 instance
-    (Debug variable, Debug child, Diff variable, Diff child
-    ) => Diff (PatternF variable child)
+    ( Debug variable, Debug child, Diff variable, Diff child )
+    => Diff (PatternF variable child)
 
 instance
     (Hashable child, Hashable variable) =>

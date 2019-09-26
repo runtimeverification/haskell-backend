@@ -49,8 +49,8 @@ instance SOP.HasDatatypeInfo (Or sort child)
 instance (Debug sort, Debug child) => Debug (Or sort child)
 
 instance
-    ( Debug sort, Debug child, Diff sort, Diff child
-    ) => Diff (Or sort child)
+    ( Debug sort, Debug child, Diff sort, Diff child )
+    => Diff (Or sort child)
 
 instance Unparse child => Unparse (Or Sort child) where
     unparse Or { orSort, orFirst, orSecond } =
