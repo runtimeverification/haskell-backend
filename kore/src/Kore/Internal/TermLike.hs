@@ -439,7 +439,17 @@ instance SOP.HasDatatypeInfo (TermLike variable)
 
 instance Debug variable => Debug (TermLike variable)
 
-instance (Debug variable, Diff variable) => Diff (TermLike variable)
+instance (Debug variable, Diff variable) => Diff (TermLike variable) where
+    diffPrec
+        termLike1@(Recursive.project -> attrs1 :< termLikeF1)
+        termLike2@(Recursive.project -> _      :< termLikeF2)
+      =
+        -- If the patterns differ, do not display the difference in the
+        -- attributes, which would overload the user with redundant information.
+        diffPrecGeneric
+            (Recursive.embed (attrs1 :< termLikeF1))
+            (Recursive.embed (attrs1 :< termLikeF2))
+        <|> diffPrecGeneric termLike1 termLike2
 
 instance
     (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>
