@@ -42,7 +42,7 @@ import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
-import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
     ( Error

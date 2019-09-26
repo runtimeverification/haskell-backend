@@ -39,7 +39,7 @@ import Data.Text
     )
 
 import qualified Kore.Attribute.Symbol as Attribute
-import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Symbols as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
 import Kore.IndexedModule.IndexedModule
