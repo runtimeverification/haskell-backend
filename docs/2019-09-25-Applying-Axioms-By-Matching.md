@@ -19,7 +19,7 @@ and a goal `φ → •ψ` such that
 (1) `φ` can be decomposed as `φ = φₜ ∧ φₚ`, (1') `φₚ` predicate.
 (2) `α(Y)` can be decomposed as `α(Y) = αₜ(Y) ∧ αₚ(Y)`
 and there exists `t` such that
-(3) `φₜ = αₜ(t)` and
+(3) `φₚ → (φₜ = αₜ(t))` and
 (4) `φₚ → αₚ(t)`
 
 Then, if we can show that
@@ -29,15 +29,16 @@ Then it is true that `φ → •ψ`.
 
 ### Proof
 
+
 Premise (0) says
 `∀ Y .α(Y) → •β(Y)`; instantiating `Y` with `t` we get
 `α(t) → •β(t)` which is equivalent by (2) with
-`αₜ(t) ∧ αₚ(t) → •β(t)`, and, by (3), with 
-(6) `φₜ ∧ αₚ(t) → •β(t)`.
+(6) `αₜ(t) ∧ αₚ(t) → •β(t)`.
 
-Premise (4) says
-`φₚ → αₚ(t)`; by FOL reasoning (conjunction to left), we get
-`φₜ ∧ φₚ → φₜ ∧ αₚ(t)`; by (5) and transitivity of `→`, we get
+From (3) and (4), by FOL reasoning (conclusions with same premise), we get
+`φₚ → (φₜ = αₜ(t)) ∧ αₚ(t)`; by FOL reasoning (conjunction to left), we get
+`φₜ ∧ φₚ → φₜ ∧ (φₜ = αₜ(t)) ∧ αₚ(t)`; by equality elimination we get
+`φₜ ∧ φₚ → αₜ(t) ∧ αₚ(t)`; by (6) and transitivity of `→`, we get
 `φₜ ∧ φₚ → •β(t)`; by FOL reasoning we get
 `φₜ ∧ φₚ → •β(t) ∧ φₚ`; due to (1') and properties of conjunction we get
 `φₜ ∧ φₚ → •(β(t) ∧ φₚ)`, which is equivalent by (1) with
@@ -50,16 +51,39 @@ Premise (5) says
 
 QED
 
+### Coverage concerns (All-path-reachability)
+
+Note that if `φ` and `αₜ(Y)` are not constructor-based
+(in which case the unifier `Y = t` is an MGU) then 
+the above technique does not guarantee coverage as-is,
+since `t` is not guaranteed to be the most general unifier
+(there could be more than one minimal unifier).
+
+The above reasoning could be extended to include multiple
+substitution by replacing (3), (4) and (5) with something like
+(3') `φₚ → (φₜ = αₜ(tᵢ))`, for i=1..n
+(4') `φₚ → αₚ(tᵢ)`, for i=1..n
+
+But it's not clear how to ensure completeness and link this
+with the STEP rule. Also note that our usage of the STEP rule itself
+in the proofs for the all-path algorithms assumes that `φ` is function-like.
+
+Therefore the proposal for applying rewrite rules by matching proposed here
+should not be used for all-path-reachability, at least not until we get a
+better intuition.
+
+Nevertheless, the proposal for equational axioms below does not suffer from the
+same problem.
 
 Equality axioms
 ---------------
 
 Given an axiom of the form 
-(0) `∀ Y . αₚ(Y) → αₜ(Y) = β(Y)`
+(0) `∀ Y . αₚ(Y) → (αₜ(Y) = β(Y))`
 and a goal `φ → ψ` such that 
 (1) `φ` can be decomposed as `φ = φₜ ∧ φₚ`
 and there exists `t` such that
-(2) `φₜ = αₜ(t)` and
+(2) `φₚ → (φₜ = αₜ(t))` and
 (3) `φₚ → αₚ(t)`
 
 Then, if we can show that
@@ -70,16 +94,12 @@ Then it is true that `φ → ψ`.
 ### Proof
 
 Premise (0) says
-(0) `∀ Y . αₚ(Y) → αₜ(Y) = β(Y)`; instantiating `Y` with `t` we get
-`αₚ(t) → αₜ(t) = β(t)` which is equivalent by (3) with
-`αₚ(t) → φₜ = β(t)`; by (3) and transitivity of `→` we get
-`φₚ → φₜ = β(t)`; by FOL reasoning (conjunction to left), we get
-(5) `φₜ ∧ φₚ → φₜ ∧ (φₜ = β(t))`.
-
-
-We can show that (see below)
-`φₜ ∧ (φₜ = β(t)) ↔ β(t) ∧ (φₜ = β(t))`; by (5) and transitivity of `→`, we get
-`φₜ ∧ φₚ → β(t) ∧ (φₜ = β(t))`; by FOL reasoning (dropping the second conjunct) we get
+(0) `∀ Y . αₚ(Y) → (αₜ(Y) = β(Y))`; instantiating `Y` with `t` we get
+`αₚ(t) → (αₜ(t) = β(t))`; by (3) and transitivity of `→` we get
+`φₚ → (αₜ(t) = β(t))`; by FOL (conjunctions with same premise) using (2) we get
+`φₚ → (φₜ = αₜ(t)) ∧ (αₜ(t) = β(t))`; by FOL reasoning (conjunction to left), we get
+`φₜ ∧ φₚ → φₜ ∧ (φₜ = αₜ(t)) ∧ (αₜ(t) = β(t))`; by equality elimination we get
+`φₜ ∧ φₚ → αₜ(t) ∧ (αₜ(t) = β(t))`; by equality elimination we get
 `φₜ ∧ φₚ → β(t)`; by FOL reasoning we get
 `φₜ ∧ φₚ → β(t) ∧ φₚ`; by (4) and transitivity we get
 `φₜ ∧ φₚ → ψ`, which is equivalent by (1) with
@@ -87,18 +107,15 @@ We can show that (see below)
 
 QED
 
-#### Semantic proof for `φₜ ∧ (φₜ = β(t)) ↔ β(t) ∧ (φₜ = β(t))`
+### Coverage concerns (All-path-reachability)
 
-Say the interpretation of `φₜ` is `P` and the one of `β(t)` is `B`.
+Note that the original goal and the derived one only
+differ in that `φₜ` and `β(t)`'s places are exchanged.
+Because the equality is symmetric in (2) and `φₚ` is carried over to the
+derived goal `φ → ψ` from `β(t) ∧ φₚ → ψ`.
 
-If `P` and `B` are equal, then the interpretation of `(φₜ = β(t))`
-is the whole set, whence the interpretation of `φₜ ∧ (φₜ = β(t))` is `P` and
-the interpretation of `β(t) ∧ (φₜ = β(t))` is `B`, thus they are equal.
-
-If `P` and `B` are not equal, then the interpretation of `(φₜ = β(t))`
-is the empty set, whence the interpretation of both `φₜ ∧ (φₜ = β(t))` and
-`β(t) ∧ (φₜ = β(t))` is the empty set, thus they are equal.
-
+Hence the derived goal is equivalent to the original one, so
+all-path-reachability is not affected by the transformation.
 
 Implementation concerns
 -----------------------
@@ -114,15 +131,35 @@ whose proof of soundness assumes that both `φₜ` and `αₜ(Y)` are _function-
 and use the predicate `⌈φₜ ∧ αₜ(Y)⌉` to compute the substution and the remainder.
 
 Assuming that one or both of `φₜ` and `αₜ(Y)` are __not__ function-like,
-we cannot soundly apply the algorithm above.
+we cannot soundly apply the algorithms described in those documents.
 
 However,  if `⌈φₜ ∧ αₜ(Y)⌉` simplifies to a predicate of the form `(Y = t) ∧ p`
-such that `p` is `⊤` (unification did not introduce extra constraints)
 and if `t` verifies the conditions stated above, namely,
 
-- `φₜ = αₜ(t)` (syntactic, not semantic, equality) and
-- `φₚ → αₚ(t)` (validity, not satisfiability)
+- `φₚ → φₜ = αₜ(t)`
+  * This could be checked syntactically (disregarding `φₚ`) or with an SMT (validity)
+- `φₚ → αₚ(t)`
+  * This could be checked with an SMT
 
 then we can replace the goal as per the usual algorithm
 and set the remainder to `⊥`.
+
+Note: SMTs can prove validity of a formula by checking that its negation is
+unsatisfiable.
+
+### Multiple unifiers
+
+If `⌈φₜ ∧ αₜ(Y)⌉` simplifies to a disjunctive predicate of the form
+`((Y = t₁) ∧ p₁) ∨ ... ∨ ((Y = t₁) ∧ p₁)` then any of the `t` could be used to
+verify the conditions above, since the algorithm works for any `t`.
+
+Attempting to use each of them for the rewrite rules case
+might increase chances of success for one-path-reachability.
+
+Attempting to use each of them for equality axioms 
+might reduce the need for unification modulo axioms later on.
+
+For all-path, if there is a certainty that `t₁`, ..., `tₙ` are all possible 
+substitutions such that `φₚ → φₜ = α(t)`, then verifying all derived goals 
+could potentially constitute part of a completeness argument.
 
