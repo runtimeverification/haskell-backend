@@ -45,6 +45,39 @@ test_matchAxiomIdentifier =
         (TermLike.mkExists Mock.x
             $ TermLike.mkEquals_ (TermLike.mkElemVar Mock.x) (Mock.f Mock.a))
         (Exists (Equals Variable (Application Mock.fId)))
+    , testGroup "Map"
+        [ matches "unitMap"
+            (Mock.builtinMap [])
+            (Application Mock.unitMapId)
+        , matches "elementMap"
+            (Mock.builtinMap [(Mock.a, Mock.a)])
+            (Application Mock.elementMapId)
+        , matches "concatMap"
+            (Mock.builtinMap [(Mock.a, Mock.a), (Mock.b, Mock.b)])
+            (Application Mock.concatMapId)
+        ]
+    , testGroup "Set"
+        [ matches "unitSet"
+            (Mock.builtinSet [])
+            (Application Mock.unitSetId)
+        , matches "elementSet"
+            (Mock.builtinSet [Mock.a])
+            (Application Mock.elementSetId)
+        , matches "concatSet"
+            (Mock.builtinSet [Mock.a, Mock.b])
+            (Application Mock.concatSetId)
+        ]
+    , testGroup "List"
+        [ matches "unitList"
+            (Mock.builtinList [])
+            (Application Mock.unitListId)
+        , matches "elementList"
+            (Mock.builtinList [Mock.a])
+            (Application Mock.elementListId)
+        , matches "concatList"
+            (Mock.builtinList [Mock.a, Mock.b])
+            (Application Mock.concatListId)
+        ]
     ]
 
 match
