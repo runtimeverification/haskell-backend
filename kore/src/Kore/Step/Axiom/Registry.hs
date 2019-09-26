@@ -161,11 +161,11 @@ axiomPatternsToEvaluators =
                 then Nothing
                 else Just (definitionEvaluation evaluations)
 
-{- | Return the evaluator corresponding to the 'AxiomPattern'.
+{- | Return the evaluator corresponding to the 'EqualityRule'.
 
-@axiomPatternEvaluator@ returns 'Nothing' if the axiom pattern should not be
+@ignoreEqualityRule@ returns 'Nothing' if the 'EqualityRule' should not be
 used as an evaluator, such as if it is an associativity or commutativity
-axiom; this is determined by checking the 'AxiomPatternAttributes'.
+axiom; this is determined by checking the 'Attribute.Axiom' attributes.
 
  -}
 ignoreEqualityRule :: EqualityRule Variable -> Bool
