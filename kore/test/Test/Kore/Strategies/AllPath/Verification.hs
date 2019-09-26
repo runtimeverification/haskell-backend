@@ -1,5 +1,5 @@
-module Test.Kore.Strategies.OnePath.Verification
-    ( test_onePathVerification
+module Test.Kore.Strategies.AllPath.Verification
+    ( test_allPathVerification
     ) where
 
 import Test.Tasty
@@ -31,7 +31,7 @@ import Kore.Predicate.Predicate
     , makeTruePredicate
     )
 import Kore.Step.Rule
-    ( OnePathRule (..)
+    ( AllPathRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     )
@@ -42,96 +42,81 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Strategies.Common
 import Test.Tasty.HUnit.Extensions
 
-test_onePathVerification :: [TestTree]
-test_onePathVerification =
-    [ testCase "Runs zero steps" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
+test_allPathVerification :: [TestTree]
+test_allPathVerification =
+    [ testCase "Identity spec" $ do
+        -- Axioms: []
+        -- Claims: a => a
+        -- Expected: success
+        actual <- runVerification
+            (Limit 1)
+            []
+            [ simpleClaim Mock.a Mock.a ]
+        assertEqualWithExplanation ""
+            (Right ())
+            actual
+    , testCase "Distinct spec" $ do
+        -- Axioms: []
+        -- Claims: a => b
         -- Expected: error a
         actual <- runVerification
-            (Limit 0)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleClaim Mock.a Mock.b]
+            (Limit 1)
+            []
+            [ simpleClaim Mock.a Mock.b ]
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
-    , testCase "Runs one step" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
-        -- Expected: error b
-        -- Note that the check that we have reached the destination happens
-        -- at the beginning of each step. At the beginning of the first step
-        -- the pattern is 'a', so we didn't reach our destination yet, even if
-        -- the rewrite transforms 'a' into 'b'. We detect the success at the
-        -- beginning of the second step, which does not run here.
-        actual <- runVerification
-            (Limit 1)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleClaim Mock.a Mock.b]
-        assertEqualWithExplanation ""
-            (Left $ Pattern.fromTermLike Mock.b)
-            actual
-    , testCase "Returns first failing claim" $ do
-        -- Axiom: a => b or c
-        -- Claim: a => d
-        -- Expected: error b
-        actual <- runVerification
-            (Limit 1)
-            [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
-            [simpleClaim Mock.a Mock.d]
-        assertEqualWithExplanation ""
-            (Left . Pattern.fromTermLike $ Mock.b)
-            actual
-    , testCase "Verifies one claim" $ do
-        -- Axiom: a => b
-        -- Claim: a => b
+    , testCase "b or c spec" $ do
+        -- Axioms: a => b
+        -- Claims: a => b #Or c
         -- Expected: success
         actual <- runVerification
             (Limit 2)
-            [simpleAxiom Mock.a Mock.b]
-            [simpleClaim Mock.a Mock.b]
+            [ simpleAxiom Mock.a Mock.b ]
+            [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
         assertEqualWithExplanation ""
             (Right ())
             actual
-    , testCase "Trusted claim cannot prove itself" $ do
-        -- Trusted Claim: a => b
-        -- Expected: error a
-        actual <- runVerification
-            (Limit 4)
-            []
-            [ simpleTrustedClaim Mock.a Mock.b
-            , simpleClaim Mock.a Mock.b
-            ]
-        assertEqualWithExplanation ""
-            (Left $ Pattern.fromTermLike Mock.a)
-            actual
-    , testCase "Verifies one claim multiple steps" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
-        -- Claim: a => c
+    , testCase "Everything is provable when we have cyclic rules" $ do
+        -- Axioms: a => a
+        -- Claims: a => b
         -- Expected: success
         actual <- runVerification
             (Limit 3)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
-            ]
-            [simpleClaim Mock.a Mock.c]
+            [ simpleAxiom Mock.a Mock.a ]
+            [ simpleClaim Mock.a Mock.b ]
         assertEqualWithExplanation ""
             (Right ())
             actual
-    , testCase "Verifies one claim stops early" $ do
-        -- Axiom: a => b
-        -- Axiom: b => c
+    , testCase "Concurrent rules" $ do
+        -- Axioms:
+        --     a => b
+        --     a => c
+        -- Claims: a => b #Or c
+        -- Expected: success
+        actual <- runVerification
+            (Limit 2)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.a Mock.c
+            ]
+            [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
+        assertEqualWithExplanation ""
+            (Right ())
+            actual
+    , testCase "Provable using one-path; not provable using all-path" $ do
+        -- Axioms:
+        --     a => b
+        --     a => c
         -- Claim: a => b
-        -- Expected: success
+        -- Expected: error c
         actual <- runVerification
-            (Limit 3)
+            (Limit 2)
             [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.b Mock.c
+            , simpleAxiom Mock.a Mock.c
             ]
-            [simpleClaim Mock.a Mock.c]
+            [ simpleClaim Mock.a Mock.b ]
         assertEqualWithExplanation ""
-            (Right ())
+            (Left $ Pattern.fromTermLike Mock.c)
             actual
     , testCase "Verifies one claim with branching" $ do
         -- Axiom: constr11(a) => b
@@ -262,23 +247,6 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
-    , testCase "trusted second proves first" $ do
-        -- Axiom: a => b
-        -- Axiom: c => d
-        -- Claim: a => d
-        -- Trusted Claim: b => c
-        -- Expected: success
-        actual <- runVerification
-            (Limit 4)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.c Mock.d
-            ]
-            [ simpleClaim Mock.a Mock.d
-            , simpleTrustedClaim Mock.b Mock.c
-            ]
-        assertEqualWithExplanation ""
-            (Right ())
-            actual
     , testCase "trusted first proves second" $ do
         -- Axiom: a => b
         -- Axiom: c => d
@@ -318,43 +286,28 @@ test_onePathVerification =
         assertEqualWithExplanation ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
-    , testCase "Provable using one-path; not provable using all-path" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claim: a => b
-        -- Expected: success
-        actual <- runVerification
-            (Limit 5)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleClaim Mock.a Mock.b ]
-        assertEqualWithExplanation ""
-            (Right ())
-            actual
     ]
 
 simpleAxiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Rule (OnePathRule Variable)
+    -> Rule (AllPathRule Variable)
 simpleAxiom left right =
-    OnePathRewriteRule $ simpleRewrite left right
+    AllPathRewriteRule $ simpleRewrite left right
 
 simpleClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Variable
+    -> AllPathRule Variable
 simpleClaim left right =
-    OnePathRule . getRewriteRule $ simpleRewrite left right
+    AllPathRule . getRewriteRule $ simpleRewrite left right
 
 simpleTrustedClaim
     :: TermLike Variable
     -> TermLike Variable
-    -> OnePathRule Variable
+    -> AllPathRule Variable
 simpleTrustedClaim left right =
-    OnePathRule
+    AllPathRule
     $ RulePattern
             { left = left
             , antiLeft = Nothing

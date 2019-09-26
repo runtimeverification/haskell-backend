@@ -1,0 +1,17 @@
+  #Not ( {
+    I
+  #Equals
+    0
+  } )
+#And
+  <T>
+    <k>
+      #done ( 0 )
+    </k>
+  </T>
+#And
+  {
+    I >Int 0
+  #Equals
+    true
+  }

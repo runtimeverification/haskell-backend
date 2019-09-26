@@ -30,11 +30,15 @@ module Kore.Step.Rule
     , mkCeilAxiom
     , refreshRulePattern
     , onePathRuleToPattern
+    , isFreeOf
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
     ) where
 
+import Control.Exception
+    ( assert
+    )
 import qualified Data.Default as Default
 import Data.Map.Strict
     ( Map
@@ -54,7 +58,7 @@ import qualified GHC.Generics as GHC
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (FreeVariables)
+    ( FreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Priority
@@ -63,13 +67,53 @@ import Kore.Attribute.Priority
 import Kore.Debug
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import Kore.Internal.Alias
+    ( Alias (..)
+    )
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike
+    ( pattern And_
+    , pattern ApplyAlias_
+    , pattern Ceil_
+    , pattern Equals_
+    , pattern Forall_
+    , pattern Implies_
+    , pattern Not_
+    , pattern Rewrites_
+    , TermLike
+    , mkAnd
+    , mkApplyAlias
+    , mkAxiom
+    , mkAxiom_
+    , mkCeil
+    , mkEquals
+    , mkImplies
+    , mkRewrites
+    , mkTop
+    , mkTop_
+    , mkVar
+    , termLikeSort
+    )
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.Variable
+    ( InternalVariable
+    )
 import Kore.Predicate.Predicate
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
+import Kore.Sort
+    ( Sort (..)
+    , SortVariable (SortVariable)
+    )
+import Kore.Substitute
+    ( SubstitutionVariable
+    )
 import qualified Kore.Syntax.Definition as Syntax
+import Kore.Syntax.Id
+    ( AstLocation (..)
+    , Id (..)
+    )
 import Kore.Unparser
     ( Unparse
     , unparse
@@ -245,6 +289,13 @@ deriving instance Eq variable => Eq (AllPathRule variable)
 deriving instance Ord variable => Ord (AllPathRule variable)
 deriving instance Show variable => Show (AllPathRule variable)
 
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (AllPathRule variable)
+  where
+    unparse = unparse . allPathRuleToPattern
+    unparse2 = unparse2 . allPathRuleToPattern
+
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
 --}
@@ -389,27 +440,75 @@ onePathRuleToPattern
     => Unparse variable
     => OnePathRule variable
     -> TermLike variable
-onePathRuleToPattern (OnePathRule rulePatt) =
-    mkImplies
+onePathRuleToPattern
+    ( OnePathRule
+        (RulePattern left antiLeft right requires ensures _)
+    )
+  =
+    assert (antiLeft == Nothing)
+    $ mkImplies
         ( mkAnd
-            (Predicate.unwrapPredicate . requires $ rulePatt)
-            (left rulePatt)
+            (Predicate.unwrapPredicate requires)
+            left
         )
-       ( mkApplyAlias
+        ( mkApplyAlias
             (wEF sort)
             [mkAnd
-                (Predicate.unwrapPredicate . ensures $ rulePatt)
-                (right rulePatt)
+                (Predicate.unwrapPredicate ensures)
+                right
             ]
-       )
+        )
   where
     sort :: Sort
-    sort = termLikeSort . right $ rulePatt
+    sort = termLikeSort right
 
 wEF :: Sort -> Alias (TermLike Variable)
 wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = []
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
+
+allPathRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => AllPathRule variable
+    -> TermLike variable
+allPathRuleToPattern
+    ( AllPathRule
+        (RulePattern left antiLeft right requires ensures _)
+    )
+  =
+    assert (antiLeft == Nothing)
+    $ mkImplies
+        ( mkAnd
+            (Predicate.unwrapPredicate requires)
+            left
+        )
+        ( mkApplyAlias
+            (wAF sort)
+            [mkAnd
+                (Predicate.unwrapPredicate ensures)
+                right
+            ]
+        )
+  where
+    sort :: Sort
+    sort = termLikeSort right
+
+wAF :: Sort -> Alias (TermLike Variable)
+wAF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakAlwaysFinally
         , idLocation = AstLocationNone
         }
     , aliasParams = []
@@ -629,6 +728,15 @@ freeVariables rule@(RulePattern _ _ _ _ _ _) = case rule of
         <> TermLike.freeVariables right
         <> Predicate.freeVariables requires
         <> Predicate.freeVariables ensures
+
+isFreeOf
+    :: Ord variable
+    => RulePattern variable
+    -> Set.Set (UnifiedVariable variable)
+    -> Bool
+isFreeOf rule =
+    Set.disjoint (getFreeVariables $ freeVariables rule)
+
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}

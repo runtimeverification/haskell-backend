@@ -71,6 +71,8 @@ import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Text.Megaparsec.Char.Lexer as Lexer
 
+import Debug
+
 -- | S-expressions, the basic format for SMT-LIB 2.
 data SExpr
     = Atom !Text
@@ -82,6 +84,10 @@ instance NFData SExpr
 instance SOP.Generic SExpr
 
 instance SOP.HasDatatypeInfo SExpr
+
+instance Debug SExpr
+
+instance Diff SExpr
 
 instance IsString SExpr where
     fromString = Atom . Text.pack
