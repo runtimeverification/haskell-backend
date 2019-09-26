@@ -11,6 +11,8 @@ Expose concrete execution as a library
 module Kore.Exec
     ( exec
     , execGetExitCode
+    , extractRules
+    , mergeRules
     , search
     , prove
     , proveWithRepl
@@ -20,6 +22,9 @@ module Kore.Exec
     ) where
 
 import Control.Concurrent.MVar
+import Control.Error.Util
+    ( note
+    )
 import qualified Control.Monad as Monad
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
@@ -31,6 +36,16 @@ import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( Coercible
     , coerce
+    )
+import Data.List.NonEmpty
+    ( NonEmpty ((:|))
+    )
+import qualified Data.Map as Map
+import Data.Maybe
+    ( mapMaybe
+    )
+import Data.Text
+    ( Text
     )
 import System.Exit
     ( ExitCode (..)
@@ -90,6 +105,9 @@ import Kore.Step.Rule
     )
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
+    )
+import qualified Kore.Step.Rule.Combine as Rules
+    ( mergeRules
     )
 import Kore.Step.Search
     ( searchGraph
@@ -324,6 +342,74 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             (Bounded.bmcStrategy axioms)
             searchOrder
             (head claims, limit)
+
+-- | Rule merging
+mergeRules
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadProfiler smt
+        , MonadSMT smt
+        , MonadUnliftIO smt
+        )
+    => VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The main module
+    -> [Text]
+    -- ^ The list of rules to merge
+    -> smt (Either Text [RewriteRule Variable])
+mergeRules verifiedModule ruleNames =
+    evalSimplifier verifiedModule
+    $ initialize verifiedModule
+    $ \initialized -> do
+        let Initialized { rewriteRules } = initialized
+
+        let nonEmptyRules :: Either Text (NonEmpty (RewriteRule Variable))
+            nonEmptyRules = do
+                rules <- extractRules rewriteRules ruleNames
+                case rules of
+                    [] -> Left "Empty rule list."
+                    (r : rs) -> Right (r :| rs)
+
+        case nonEmptyRules of
+            (Left left) -> return (Left left)
+            (Right rules) -> Right <$> Rules.mergeRules rules
+
+extractRules
+    :: [RewriteRule Variable]
+    -> [Text]
+    -> Either Text [RewriteRule Variable]
+extractRules rules = foldr addExtractRule (Right [])
+  where
+    addExtractRule
+        :: Text
+        -> Either Text [RewriteRule Variable]
+        -> Either Text [RewriteRule Variable]
+    addExtractRule ruleName processedRules =
+        (:) <$> extractRule ruleName <*> processedRules
+
+    maybeRuleName :: RewriteRule Variable -> Maybe Text
+    maybeRuleName
+        (RewriteRule RulePattern
+            { attributes = Attribute.Axiom
+                { label = Attribute.Label maybeName }
+            }
+        )
+      =
+        maybeName
+
+    namedRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
+    namedRules = mapMaybe namedRule
+      where
+        namedRule rule = do
+            name <- maybeRuleName rule
+            return (name, rule)
+
+    rulesByName :: Map.Map Text (RewriteRule Variable)
+    rulesByName = Map.fromList (namedRules rules)
+
+    extractRule :: Text -> Either Text (RewriteRule Variable)
+    extractRule ruleName =
+        note
+            ("Rule not found: '" <> ruleName <> "'.")
+            (Map.lookup ruleName rulesByName)
 
 assertSingleClaim :: Monad m => [claim] -> m ()
 assertSingleClaim claims =

@@ -7,14 +7,21 @@ import Data.Default
     ( def
     )
 
+import Data.List.NonEmpty
+    ( NonEmpty ((:|))
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
     , mkElemVar
     )
+import Kore.Logger.Output
+    ( emptyLogger
+    )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
+    , makeEqualsPredicate
     , makeMultipleAndPredicate
     , makeTruePredicate
     )
@@ -27,9 +34,13 @@ import Kore.Step.Rule
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
 import Kore.Step.Rule.Combine
+import Kore.Step.Simplification.Data
+    ( runSimplifier
+    )
 import Kore.Syntax.Variable
     ( Variable
     )
+import qualified SMT
 
 import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -55,8 +66,8 @@ instance RewriteRuleBase TermLike where
     t1 `rewritesTo` t2 =
         Pair (t1, makeTruePredicate) `rewritesTo` Pair (t2, makeTruePredicate)
 
-test_combineRules :: [TestTree]
-test_combineRules =
+test_combineRulesPredicate :: [TestTree]
+test_combineRulesPredicate =
     [ testCase "One rule" $
         let expected = makeTruePredicate
             actual = mergeRulesPredicate
@@ -132,3 +143,91 @@ test_combineRules =
     x = mkElemVar Mock.x
     x_0 :: TermLike Variable
     x_0 = mkElemVar Mock.var_x_0
+
+test_combineRules :: [TestTree]
+test_combineRules =
+    [ testCase "One rule" $ do
+        let expected = [Mock.a `rewritesTo` Mock.cf]
+
+        actual <- runMergeRules [ Mock.a `rewritesTo` Mock.cf ]
+
+        assertEqualWithExplanation "" expected actual
+    , testCase "Two rules" $ do
+        let expected = [Mock.a `rewritesTo` Mock.cf]
+
+        actual <- runMergeRules
+            [ Mock.a `rewritesTo` Mock.b
+            , Mock.b `rewritesTo` Mock.cf
+            ]
+
+        assertEqualWithExplanation "" expected actual
+    , testCase "Predicate simplification" $ do
+        let expected =
+                [   Pair
+                        ( Mock.a
+                        , makeAndPredicate
+                            (makeCeilPredicate Mock.cf)
+                            (makeEqualsPredicate Mock.cf Mock.b)
+                        )
+                    `rewritesTo` Pair (Mock.cg, makeTruePredicate)
+                ]
+
+        actual <- runMergeRules
+            [ Mock.a `rewritesTo` Mock.functionalConstr10 Mock.cf
+            , Mock.functionalConstr10 Mock.b `rewritesTo` Mock.cg
+            ]
+
+        assertEqualWithExplanation "" expected actual
+    , testCase "Substitution" $ do
+        let expected =
+                [   Mock.functionalConstr10 (Mock.functionalConstr11 y)
+                    `rewritesTo` y
+                ]
+
+        actual <- runMergeRules
+            [ Mock.functionalConstr10 x `rewritesTo` x
+            , Mock.functionalConstr11 y `rewritesTo` y
+            ]
+
+        assertEqualWithExplanation "" expected actual
+    , testCase "Substitution in predicates" $ do
+        let expected =
+                [   Pair
+                        ( Mock.functionalConstr10 (Mock.functionalConstr11 y)
+                        , makeAndPredicate
+                            (makeEqualsPredicate
+                                (Mock.f (Mock.functionalConstr11 y))
+                                (Mock.g (Mock.functionalConstr11 y))
+                            )
+                            (makeEqualsPredicate
+                                (Mock.g (Mock.functionalConstr11 y))
+                                (Mock.h (Mock.functionalConstr11 y))
+                            )
+                        )
+                    `rewritesTo` Pair (y, makeTruePredicate)
+                ]
+
+        actual <- runMergeRules
+            [   Pair
+                    ( Mock.functionalConstr10 x
+                    , makeEqualsPredicate (Mock.f x) (Mock.g x)
+                    )
+                `rewritesTo`
+                Pair (x, makeEqualsPredicate (Mock.g x) (Mock.h x))
+            , Mock.functionalConstr11 y `rewritesTo` y
+            ]
+
+        assertEqualWithExplanation "" expected actual
+    ]
+  where
+    x = mkElemVar Mock.x
+    y = mkElemVar Mock.y
+
+runMergeRules
+    :: [RewriteRule Variable]
+    -> IO [RewriteRule Variable]
+runMergeRules (rule : rules) =
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ runSimplifier Mock.env
+    $ mergeRules (rule :| rules)
+runMergeRules [] = error "Unexpected empty list of rules."
