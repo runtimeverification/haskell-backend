@@ -1,21 +1,13 @@
 {- |
-Module      : Kore.Builtin.MapSymbols
-Description : Tools for handling the symbols involved with map biltins
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
 
-This module is intended to be imported qualified, to avoid collision with other
-builtin modules.
-
-@
-    import qualified Kore.Builtin.MapSymbols as Map
-@
 -}
 
-module Kore.Builtin.MapSymbols
-    ( -- * Symbols
-      lookupSymbolUpdate
+module Kore.Builtin.Map.Map
+    ( asTermLike
+    -- * Symbols
+    , lookupSymbolUpdate
     , lookupSymbolLookup
     , lookupSymbolInKeys
     , lookupSymbolKeys
@@ -28,7 +20,7 @@ module Kore.Builtin.MapSymbols
     , isSymbolRemove
     , isSymbolRemoveAll
     , isSymbolSize
-      -- * keys
+    -- * Keys
     , concatKey
     , elementKey
     , in_keysKey
@@ -41,22 +33,24 @@ module Kore.Builtin.MapSymbols
     , sizeKey
     ) where
 
+import qualified Data.Map as Map
 import Data.String
     ( IsString
     )
+
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
+import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
     ( Error
     )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import Kore.Internal.Symbol
-    ( Symbol
-    )
+import Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )
@@ -176,3 +170,58 @@ isSymbolRemoveAll = Builtin.isSymbol removeAllKey
 -}
 isSymbolSize :: Symbol -> Bool
 isSymbolSize = Builtin.isSymbol sizeKey
+
+{- | Externalizes a 'Domain.InternalMap' as a 'TermLike'.
+ -}
+asTermLike
+    :: forall variable
+    .  InternalVariable variable
+    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+asTermLike builtin =
+    AssocComm.asTermLike
+        (AssocComm.UnitSymbol unitSymbol)
+        (AssocComm.ConcatSymbol concatSymbol)
+        (AssocComm.ConcreteElements
+            (map concreteElement (Map.toAscList concreteElements))
+        )
+        (AssocComm.VariableElements
+            (element . Domain.unwrapElement <$> elementsWithVariables)
+        )
+        (AssocComm.Opaque filteredMaps)
+  where
+    filteredMaps :: [TermLike variable]
+    filteredMaps = filter (not . isEmptyMap) opaque
+
+    isEmptyMap :: TermLike variable -> Bool
+    isEmptyMap
+        (Builtin_
+            (Domain.BuiltinMap
+                Domain.InternalAc { builtinAcChild = wrappedChild }
+            )
+        )
+      =
+        Domain.unwrapAc wrappedChild == Domain.emptyNormalizedAc
+    isEmptyMap (App_ symbol _) = unitSymbol == symbol
+    isEmptyMap _ = False
+
+    Domain.InternalAc { builtinAcChild } = builtin
+    Domain.InternalAc { builtinAcUnit = unitSymbol } = builtin
+    Domain.InternalAc { builtinAcElement = elementSymbol } = builtin
+    Domain.InternalAc { builtinAcConcat = concatSymbol } = builtin
+
+    normalizedAc = Domain.unwrapAc builtinAcChild
+
+    Domain.NormalizedAc { elementsWithVariables } = normalizedAc
+    Domain.NormalizedAc { concreteElements } = normalizedAc
+    Domain.NormalizedAc { opaque } = normalizedAc
+
+    concreteElement
+        :: (TermLike Concrete, Domain.MapValue (TermLike variable))
+        -> TermLike variable
+    concreteElement (key, value) = element (TermLike.fromConcrete key, value)
+    element
+        :: (TermLike variable, Domain.MapValue (TermLike variable))
+        -> TermLike variable
+    element (key, Domain.MapValue value) =
+        mkApplySymbol elementSymbol [key, value]

@@ -40,7 +40,7 @@ import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Map as Map
-import qualified Kore.Builtin.MapSymbols as Map
+import qualified Kore.Builtin.Map.Map as Map
 import Kore.Domain.Builtin
     ( NormalizedMap (..)
     )

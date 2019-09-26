@@ -17,8 +17,8 @@ module Kore.Builtin.Attributes
     , isConstructorModuloLike_
     ) where
 
-import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.MapSymbols as Map
+import qualified Kore.Builtin.List.List as List
+import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.SetSymbols as Set
 import Kore.Internal.Symbol
 

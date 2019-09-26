@@ -73,7 +73,7 @@ import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.MapSymbols as Map
+import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.SetSymbols as Set
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
