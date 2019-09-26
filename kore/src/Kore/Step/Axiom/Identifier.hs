@@ -27,6 +27,7 @@ module Kore.Step.Axiom.Identifier
 import Control.Applicative
     ( Alternative (..)
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
@@ -39,6 +40,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.TermLike
     ( CofreeF (..)
     , TermLike
@@ -116,4 +118,13 @@ matchAxiomIdentifier = Recursive.fold matchWorker
                 Exists <$> TermLike.existsChild exists
             TermLike.VariableF _ ->
                 pure Variable
+            TermLike.BuiltinF (Domain.BuiltinMap internalMap) ->
+                pure (Application symbolId)
+              where
+                symbol =
+                    case Foldable.toList internalMap of
+                        [   ] -> Domain.builtinAcUnit internalMap
+                        [ _ ] -> Domain.builtinAcElement internalMap
+                        _ : _ -> Domain.builtinAcConcat internalMap
+                symbolId = TermLike.symbolConstructor symbol
             _ -> empty
