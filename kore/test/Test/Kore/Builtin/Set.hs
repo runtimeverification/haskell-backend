@@ -33,7 +33,7 @@ import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
-import qualified Kore.Builtin.SetSymbols as Set
+import qualified Kore.Builtin.Set.Set as Set
 import Kore.Domain.Builtin
     ( NormalizedAc (NormalizedAc)
     , NormalizedSet

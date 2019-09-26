@@ -19,7 +19,7 @@ module Kore.Builtin.Attributes
 
 import qualified Kore.Builtin.List.List as List
 import qualified Kore.Builtin.Map.Map as Map
-import qualified Kore.Builtin.SetSymbols as Set
+import qualified Kore.Builtin.Set.Set as Set
 import Kore.Internal.Symbol
 
 -- | Is the symbol a constructor modulo associativity, commutativity and

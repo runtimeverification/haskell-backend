@@ -1,21 +1,13 @@
 {- |
-Module      : Kore.Builtin.SetSymbols
-Description : Tools for handling the symbols involved with map biltins
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
 
-This module is intended to be imported qualified, to avoid collision with other
-builtin modules.
-
-@
-    import qualified Kore.Builtin.SetSymbols as Set
-@
 -}
 
-module Kore.Builtin.SetSymbols
-    ( -- * Symbols
-      isSymbolConcat
+module Kore.Builtin.Set.Set
+    ( asTermLike
+    -- * Symbols
+    , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
     , isSymbolList2set
@@ -34,25 +26,24 @@ module Kore.Builtin.SetSymbols
     , list2setKey
     ) where
 
+import qualified Data.Map as Map
 import Data.String
     ( IsString
     )
+
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
+import qualified Kore.Builtin.AssocComm.AssocComm as AssocComm
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error as Kore
     ( Error
     )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import Kore.Internal.Symbol
-    ( Symbol
-    )
-import Kore.Sort
-    ( Sort
-    )
+import Kore.Internal.TermLike as TermLike
 
 concatKey :: IsString s => s
 concatKey = "SET.concat"
@@ -124,3 +115,57 @@ isSymbolUnit = Builtin.isSymbol unitKey
 -}
 isSymbolList2set :: Symbol -> Bool
 isSymbolList2set = Builtin.isSymbol list2setKey
+
+{- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
+-}
+asTermLike
+    :: forall variable
+    .  InternalVariable variable
+    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
+    -> TermLike variable
+asTermLike builtin =
+    AssocComm.asTermLike
+        (AssocComm.UnitSymbol unitSymbol)
+        (AssocComm.ConcatSymbol concatSymbol)
+        (AssocComm.ConcreteElements
+            (map concreteElement (Map.toAscList concreteElements))
+        )
+        (AssocComm.VariableElements
+            (element . Domain.unwrapElement <$> elementsWithVariables)
+        )
+        (AssocComm.Opaque filteredSets)
+  where
+    filteredSets :: [TermLike variable]
+    filteredSets = filter (not . isEmptySet) opaque
+
+    isEmptySet :: TermLike variable -> Bool
+    isEmptySet
+        (Builtin_
+            (Domain.BuiltinSet
+                Domain.InternalAc { builtinAcChild = wrappedChild }
+            )
+        )
+      =
+        Domain.unwrapAc wrappedChild == Domain.emptyNormalizedAc
+    isEmptySet (App_ symbol _) = unitSymbol == symbol
+    isEmptySet _ = False
+
+    Domain.InternalAc { builtinAcChild } = builtin
+    Domain.InternalAc { builtinAcUnit = unitSymbol } = builtin
+    Domain.InternalAc { builtinAcElement = elementSymbol } = builtin
+    Domain.InternalAc { builtinAcConcat = concatSymbol } = builtin
+
+    normalizedAc = Domain.unwrapAc builtinAcChild
+
+    Domain.NormalizedAc { elementsWithVariables } = normalizedAc
+    Domain.NormalizedAc { concreteElements } = normalizedAc
+    Domain.NormalizedAc { opaque } = normalizedAc
+
+    concreteElement
+        :: (TermLike Concrete, Domain.SetValue (TermLike variable))
+        -> TermLike variable
+    concreteElement (key, value) = element (TermLike.fromConcrete key, value)
+    element
+        :: (TermLike variable, Domain.SetValue (TermLike variable))
+        -> TermLike variable
+    element (key, Domain.SetValue) = mkApplySymbol elementSymbol [key]
