@@ -62,23 +62,33 @@ pipeline {
         }
       }
     }
-    stage('K Integration') {
+    stage('Integration: K') {
       options {
         timeout(time: 16, unit: 'MINUTES')
       }
       steps {
         sh '''
-          ./scripts/ktest.sh
+          ./scripts/integration-k.sh
         '''
       }
     }
-    stage('KEVM Integration') {
+    stage('Integration: KEVM') {
       options {
         timeout(time: 24, unit: 'MINUTES')
       }
       steps {
         sh '''
-          ./scripts/kevm-integration.sh
+          ./scripts/integration-kevm.sh
+        '''
+      }
+    }
+    stage('Integration: KWASM') {
+      options {
+        timeout(time: 8, unit: 'MINUTES')
+      }
+      steps {
+        sh '''
+          ./scripts/integration-kwasm.sh
         '''
       }
     }
