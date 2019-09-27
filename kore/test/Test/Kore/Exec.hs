@@ -21,6 +21,7 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
+import Data.Proxy
 import Data.Set
     ( Set
     )
@@ -33,16 +34,18 @@ import System.Exit
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
+    ( AttributesVerification (..)
     , verifyAndIndexDefinition
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Constructor
+import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
+import Kore.Error
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
@@ -207,10 +210,12 @@ verifiedMyModule
 verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
-    Right indexedModules = verifyAndIndexDefinition
-        DoNotVerifyAttributes
-        Builtin.koreVerifiers
-        definition
+    indexedModules =
+        either (error . printError) id
+        $ verifyAndIndexDefinition
+            (VerifyAttributes Proxy Proxy)
+            Builtin.koreVerifiers
+            definition
     definition = Definition
         { definitionAttributes = Attributes []
         , definitionModules =
@@ -327,6 +332,7 @@ test_execGetExitCode =
         , moduleSentences = []
         , moduleAttributes = Attributes []
         }
+
     -- simplification of the exit code pattern will not produce an integer
     -- (no axiom present for the symbol)
     testModuleNoAxiom = Module
@@ -337,6 +343,7 @@ test_execGetExitCode =
             ]
         , moduleAttributes = Attributes []
         }
+
     -- simplification succeeds
     testModuleSuccessfulSimplification = Module
         { moduleName = ModuleName "MY-MODULE"
@@ -352,8 +359,8 @@ test_execGetExitCode =
 
     myIntSort = SortActualSort $ SortActual myIntSortId []
 
-    intSortDecl :: Verified.SentenceSort
-    intSortDecl = SentenceSort
+    intSortDecl :: Verified.SentenceHook
+    intSortDecl = SentenceHookedSort SentenceSort
         { sentenceSortName = myIntSortId
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes [hookAttribute Int.sort]
@@ -364,7 +371,9 @@ test_execGetExitCode =
     getExitCodeDecl :: Verified.SentenceSymbol
     getExitCodeDecl =
         ( mkSymbol_ getExitCodeId [myIntSort] myIntSort )
-            { sentenceSymbolAttributes = Attributes [functionalAttribute] }
+            { sentenceSymbolAttributes =
+                Attributes [functionAttribute, functionalAttribute]
+            }
 
     mockGetExitCodeAxiom =
         mkEqualityAxiom
@@ -379,6 +388,10 @@ test_execGetExitCode =
             Symbol
                 { symbolConstructor = getExitCodeId
                 , symbolParams = []
-                , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolAttributes =
+                    Attribute.defaultSymbolAttributes
+                    { Attribute.functional = Functional True
+                    , Attribute.function = Function True
+                    }
                 , symbolSorts = applicationSorts [myIntSort] myIntSort
                 }
