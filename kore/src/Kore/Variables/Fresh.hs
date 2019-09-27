@@ -75,8 +75,9 @@ instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
 instance FreshVariable Variable where
     refreshVariable avoiding variable = do
         largest <- Set.lookupLT pivotMax avoiding
-        if largest >= pivotMin
-            then Just (fixSort . nextVariable $ largest)
+        let fixedLargest = fixSort largest
+        if fixedLargest >= pivotMin
+            then Just (nextVariable fixedLargest)
             else Nothing
       where
         pivotMax = variable { variableCounter = Just Sup }
