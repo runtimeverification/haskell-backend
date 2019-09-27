@@ -30,6 +30,7 @@ module Kore.Unification.Substitution
 import Control.DeepSeq
     ( NFData
     )
+import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import Data.Hashable
@@ -181,8 +182,7 @@ singleton
     -> Substitution variable
 singleton var termLike
   | TermLike.hasFreeVariable var termLike = Substitution [(var, termLike)]
-  | otherwise =
-    NormalizedSubstitution (Map.singleton var termLike)
+  | otherwise = NormalizedSubstitution (Map.singleton var termLike)
 
 -- | Wrap the list of substitutions to an un-normalized substitution. Note that
 -- @wrap . unwrap@ is not @id@ because the normalization state is lost.
@@ -198,7 +198,21 @@ unsafeWrap
     :: Ord variable
     => [(UnifiedVariable variable, TermLike variable)]
     -> Substitution variable
-unsafeWrap = NormalizedSubstitution . Map.fromList
+unsafeWrap =
+    NormalizedSubstitution . List.foldl' insertNormalized Map.empty
+  where
+    insertNormalized subst (var, termLike) =
+        -- The variable must not occur in the substitution,
+        Exception.assert (Map.notMember var subst)
+        -- or in the right-hand side of this or any other substitution,
+        $ Exception.assert (not $ occurs termLike)
+        $ Exception.assert (not $ any occurs subst)
+        -- and this substitution must not depend on any substitution variable.
+        $ Exception.assert (not $ any depends $ Map.keys subst)
+        $ Map.insert var termLike subst
+      where
+        occurs = TermLike.hasFreeVariable var
+        depends var' = TermLike.hasFreeVariable var' termLike
 
 -- | Maps a function over the inner representation of the 'Substitution'. The
 -- normalization status is reset to un-normalized.
