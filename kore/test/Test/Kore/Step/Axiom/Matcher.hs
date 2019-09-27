@@ -857,12 +857,19 @@ test_matching_Set =
         (mkSet [mkInt 0   ] [])
     , doesn'tMatch
         "[x:Int] s:Set does not match [0]"
-        (mkSet [mkElemVar xInt]         [mkVar sSet])
-        (mkSet [mkInt 0   , mkInt 1   ] [          ])
+        (mkSet [mkElemVar xInt]         [mkElemVar sSet])
+        (mkSet [mkInt 0   , mkInt 1   ] [              ])
+    , matches "[x:Int] s:Set matches [y:Int] s':Set"
+        (mkSet [mkElemVar xInt]         [mkElemVar sSet])
+        (mkSet [mkElemVar yInt]         [mkElemVar s'Set])
+        [ (ElemVar xInt, mkElemVar yInt)
+        , (ElemVar sSet, mkElemVar s'Set)
+        ]
     ]
 
-sSet :: UnifiedVariable.UnifiedVariable Variable
-sSet = UnifiedVariable.ElemVar $ elemVarS (testId "sSet") Test.setSort
+sSet, s'Set :: ElementVariable Variable
+sSet = elemVarS (testId "sSet") Test.setSort
+s'Set = elemVarS (testId "s'Set") Test.setSort
 
 mkSet
     :: [TermLike Variable]
