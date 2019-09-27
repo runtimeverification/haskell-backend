@@ -16,6 +16,9 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
+import Control.Monad
+    ( unless
+    )
 import qualified Data.Foldable as Foldable
 import Data.Maybe
     ( isJust
@@ -40,7 +43,7 @@ import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Rule
     ( EqualityRule (..)
-    , RulePattern (left)
+    , RulePattern (..)
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -102,13 +105,19 @@ evaluateWithCheck
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-evaluateWithCheck rules term predicate
-  | not $ isFunctionPattern $ term
-    = error "term is not function-like"
-  | not $ all isFunctionPattern $ fmap (left . getEqualityRule) rules
-    = error "rule is not function-like"
-  | otherwise
-    = evaluateAxioms rules term (Predicate.toPredicate predicate)
+evaluateWithCheck rules term predicate = do
+    unless (isFunctionPattern term) $ error . show . Pretty.vsep $
+        [ "Expected function-like term, but found:"
+        , Pretty.indent 4 (unparse term)
+        ]
+    Foldable.traverse_ checkFunctionLikeRule rules
+    evaluateAxioms rules term (Predicate.toPredicate predicate)
+  where
+    checkFunctionLikeRule (getEqualityRule -> RulePattern { left }) =
+        unless (isFunctionPattern left) $ error . show . Pretty.vsep $
+            [ "Expected function-like left-hand side of rule, but found:"
+            , Pretty.indent 4 (unparse left)
+            ]
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
