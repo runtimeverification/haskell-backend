@@ -332,11 +332,17 @@ matchBuiltinSet
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) = do
-    matchNormalizedAc pushSetValue wrapTermLike normalized1 normalized2
+    matchNormalizedAc
+        pushSetValue
+        pushSetElement
+        wrapTermLike
+        normalized1
+        normalized2
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild set1
     normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild set2
     pushSetValue _ = return ()
+    pushSetElement = push . fmap Builtin.getSetElement
     wrapTermLike unwrapped =
         set2
         & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
@@ -348,11 +354,21 @@ matchBuiltinMap
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
-    matchNormalizedAc pushMapValue wrapTermLike normalized1 normalized2
+    matchNormalizedAc
+        pushMapValue
+        pushMapElement
+        wrapTermLike
+        normalized1
+        normalized2
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild map1
     normalized2 = Builtin.unwrapAc $ Builtin.builtinAcChild map2
     pushMapValue = push . fmap Builtin.getMapValue
+    pushMapElement (Pair mapElem1 mapElem2) = do
+        let (key1, value1) = Builtin.getMapElement mapElem1
+            (key2, value2) = Builtin.getMapElement mapElem2
+        push (Pair key1 key2)
+        push (Pair value1 value2)
     wrapTermLike unwrapped =
         map2
         & Lens.set (field @"builtinAcChild") (Builtin.wrapAc unwrapped)
@@ -643,32 +659,40 @@ rightAlignLists internal1 internal2
 matchNormalizedAc
     :: (MatchingVariable variable, MonadUnify unifier)
     => (Pair (Builtin.Value normalized (TermLike variable)) -> MatcherT variable unifier ())
+    -> (Pair (Builtin.Element normalized (TermLike variable)) -> MatcherT variable unifier ())
     ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
         -> TermLike variable
         )
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
-  | [] <- abstract2, [] <- opaque2
-  , [] <- abstract1
+matchNormalizedAc pushValue pushElement wrapTermLike normalized1 normalized2
+  | length concrete1 <= length concrete2
+  , length abstract1 <= length abstract2
+  , length opaque1 < 2
   = do
-    Monad.guard (null excess1)
+    let concrete3 = Map.difference concrete2 concrete1
+        abstract3 = take (length abstract2 - length abstract1) abstract2
+        normalized3 =
+            wrapTermLike normalized2
+                { Builtin.concreteElements = concrete3
+                , Builtin.elementsWithVariables = abstract3
+                }
     case opaque1 of
-        []       -> Monad.guard (null excess2)
-        [frame1] -> push (Pair frame1 normalized2')
+        []       -> do
+            Monad.guard (null concrete3)
+            Monad.guard (null abstract3)
+        [frame1] -> push (Pair frame1 normalized3)
         _        -> empty
-    Monad.Trans.lift $ Foldable.traverse_ pushValue concrete12
+    Monad.Trans.lift $ do
+        Foldable.traverse_ pushValue concrete12
+        Foldable.traverse_ pushElement abstract12
   where
-    normalized2' =
-        wrapTermLike normalized2 { Builtin.concreteElements = excess2 }
     abstract1 = Builtin.elementsWithVariables normalized1
     concrete1 = Builtin.concreteElements normalized1
     opaque1 = Builtin.opaque normalized1
     abstract2 = Builtin.elementsWithVariables normalized2
     concrete2 = Builtin.concreteElements normalized2
-    opaque2 = Builtin.opaque normalized2
-    excess1 = Map.difference concrete1 concrete2
-    excess2 = Map.difference concrete2 concrete1
     concrete12 = Map.intersectionWith Pair concrete1 concrete2
-matchNormalizedAc _ _ _ _ = empty
+    abstract12 = zipWith Pair abstract1 abstract2
+matchNormalizedAc _ _ _ _ _ = empty
