@@ -908,6 +908,13 @@ test_matching_Map =
         "x:Int |-> y:Int  m:Map does not match 0 |-> 1  2 |-> 4"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
         (mkMap [(mkInt 0   , mkInt 1   )] [          ])
+    , matches "x |-> y  m:Map matches u |-> v  m':Map"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
+        (mkMap [(mkElemVar uInt, mkElemVar vInt)] [mkElemVar m'Map])
+        [ (ElemVar xInt, mkElemVar uInt)
+        , (ElemVar yInt, mkElemVar vInt)
+        , (ElemVar mMap, mkElemVar m'Map)
+        ]
     , matches "(x:Int, [x:Int -> y:Int] m:Map) matches (0, [0 -> 1, 1 -> 2])"
         (mkPair (mkElemVar xInt) (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap]))
         (mkPair (mkInt 0   ) (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []))
@@ -917,8 +924,11 @@ test_matching_Map =
         ]
     ]
 
-xInt, yInt, zInt, mMap :: ElementVariable Variable
+uInt, vInt, xInt, yInt, zInt, mMap, m'Map :: ElementVariable Variable
 mMap = elemVarS (testId "mMap") Test.mapSort
+m'Map = elemVarS (testId "m'Map") Test.mapSort
+uInt = elemVarS (testId "uInt") Test.intSort
+vInt = elemVarS (testId "vInt") Test.intSort
 xInt = elemVarS (testId "xInt") Test.intSort
 yInt = elemVarS (testId "yInt") Test.intSort
 zInt = elemVarS (testId "zInt") Test.intSort
