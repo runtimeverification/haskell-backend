@@ -115,6 +115,7 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Step.Substitution as Substitution
 import Kore.Syntax.ElementVariable
     ( ElementVariable (getElementVariable)
     )
@@ -733,7 +734,8 @@ unifyEqualsNormalized
 
     let unifierTerm :: TermLike variable
         unifierTerm = asInternal tools sort1 renormalized
-    return (unifierTerm `withCondition` unifierPredicate)
+    normalizedPredicate <- Monad.Trans.lift $ Substitution.normalizeExcept unifierPredicate
+    return (unifierTerm `withCondition` normalizedPredicate)
   where
     sort1 = termLikeSort first
 

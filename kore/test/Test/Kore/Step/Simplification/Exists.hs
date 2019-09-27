@@ -236,7 +236,8 @@ test_makeEvaluate =
                 [ Conditional
                     { term = fOfA
                     , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.y, fOfA)]
                     }
                 ]
         actual <-
@@ -261,7 +262,8 @@ test_makeEvaluate =
                                 (makeEqualsPredicate fOfX (Mock.f Mock.a))
                                 (makeEqualsPredicate (mkElemVar Mock.y) fOfX)
                             )
-                    , substitution = Substitution.wrap [(ElemVar Mock.z, fOfA)]
+                    , substitution =
+                        Substitution.unsafeWrap [(ElemVar Mock.z, fOfA)]
                     }
                 ]
         actual <-

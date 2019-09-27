@@ -670,7 +670,7 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.x, fOfA)
                         , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
@@ -689,7 +689,7 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.x, fOfA)
                         , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
@@ -708,7 +708,7 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.x, fOfA)
                         , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
@@ -727,7 +727,7 @@ test_equalsSimplification_TermLike =
                         makeAndPredicate
                             (makeCeilPredicate fOfB)
                             (makeCeilPredicate fOfA)
-                    , substitution = Substitution.wrap
+                    , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.x, fOfA)
                         , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                         ]
@@ -777,8 +777,8 @@ test_equalsSimplification_TermLike =
             in
                 testCase "[a] `concat` x /\\ [a, b] "
                     (assertTermEquals
-                        (Predicate.fromSingleSubstitution
-                            (ElemVar x, Mock.builtinList [Mock.b])
+                        (Predicate.fromSubstitution $ Substitution.unsafeWrap
+                            [(ElemVar x, Mock.builtinList [Mock.b])]
                         )
                         term5
                         term6

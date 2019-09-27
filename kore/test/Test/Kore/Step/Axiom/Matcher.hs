@@ -401,8 +401,9 @@ test_matcherVariableFunction =
             let evaluated = mkEvaluated Mock.functional00
                 expect =
                     Just . OrPredicate.fromPredicate
-                    $ Predicate.fromSingleSubstitution
-                        (UnifiedVariable.ElemVar Mock.x, evaluated)
+                    $ Predicate.fromSubstitution
+                    $ Substitution.unsafeWrap
+                        [(UnifiedVariable.ElemVar Mock.x, evaluated)]
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
             assertEqual "" expect actual
 
@@ -410,9 +411,9 @@ test_matcherVariableFunction =
             let evaluated = mkEvaluated Mock.cf
                 expect =
                     (Just . OrPredicate.fromPredicate)
-                    (Predicate.fromSingleSubstitution
-                        (UnifiedVariable.ElemVar Mock.x, evaluated))
-                        { predicate = makeCeilPredicate evaluated }
+                    (Predicate.fromSubstitution $ Substitution.unsafeWrap
+                        [(UnifiedVariable.ElemVar Mock.x, evaluated)]
+                    ) { predicate = makeCeilPredicate evaluated }
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
             assertEqual "" expect actual
         ]

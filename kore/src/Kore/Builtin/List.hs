@@ -102,6 +102,7 @@ import Kore.Step.Simplification.SimplificationType
     ( SimplificationType
     )
 import Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Step.Substitution as Substitution
 import Kore.Syntax.Sentence
     ( SentenceSort (..)
     )
@@ -444,8 +445,10 @@ unifyEquals
     simplifyChild
     first
     second
-  =
-    unifyEquals0 first second
+  = do
+    (term, unifier) <- Pattern.splitTerm <$> unifyEquals0 first second
+    normalized <- Monad.Trans.lift $ Substitution.normalizeExcept unifier
+    return (Pattern.withCondition term normalized)
   where
     propagatePredicates
         :: Traversable t

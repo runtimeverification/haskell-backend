@@ -178,7 +178,10 @@ matchIncremental termLike1 termLike2 =
                 $ MultiAnd.toPredicate predicate
             substitution' =
                 Predicate.fromSubstitution
-                $ Substitution.fromMap substitution
+                -- unsafeWrap is safe because the matcher guarantees the
+                -- substitution is normalized.
+                $ Substitution.unsafeWrap
+                $ Map.toList substitution
             solution = predicate' <> substitution'
         return solution
 
