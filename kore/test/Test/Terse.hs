@@ -64,8 +64,7 @@ import Prelude
 import Test.Tasty
     ( TestTree
     )
-import Test.Tasty.HUnit
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 
 
@@ -93,14 +92,14 @@ satisfies_ = actual_predicate
 -- |
 -- > (3 + 4) `equals` 7  $ "addition works"
 equals
-    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    :: (HasCallStack, Diff a)
     => a -> a -> String -> TestTree
 equals = actual_expected_name
 
 -- |
 -- > (3 + 4) `equals_` 7
 equals_
-    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    :: (HasCallStack, Diff a)
     => a -> a -> TestTree
 equals_ = actual_expected
 
@@ -201,16 +200,15 @@ actual_predicate actual predicate =
 -- |
 -- > actual_expected_name (+ 1 1) 2 "addition" "(+ 1 1) should be 2"
 actual_expected_name_intention
-    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    :: (HasCallStack, Diff a)
     => a -> a -> String -> String -> TestTree
 actual_expected_name_intention actual expected name intention =
-    testCase name $
-        assertEqualWithExplanation intention expected actual
+    testCase name $ assertEqual intention expected actual
 
 -- |
 -- > actual_expected_name (+ 1 1) 2 "addition"
 actual_expected_name
-    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    :: (HasCallStack, Diff a)
     => a -> a -> String -> TestTree
 actual_expected_name actual expected name =
     actual_expected_name_intention actual expected name ""
@@ -218,7 +216,7 @@ actual_expected_name actual expected name =
 -- |
 -- > actual_expected (+ 1 1) 2
 actual_expected
-    :: (HasCallStack, Eq a, Show a, EqualWithExplanation a)
+    :: (HasCallStack, Diff a)
     => a -> a -> TestTree
 actual_expected actual expected =
     actual_expected_name actual expected "actual_expected with no name"
@@ -227,16 +225,15 @@ actual_expected actual expected =
 -- |
 -- > f_2_expected_name (+) (1, 2) 3 "addition"
 f_2_expected_name
-    :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
+    :: (HasCallStack, Diff e)
     => (a -> b -> e) -> (a, b) -> e -> String -> TestTree
 f_2_expected_name f (arg1, arg2) expected name =
-    testCase name $
-        assertEqualWithExplanation "" expected (f arg1 arg2)
+    testCase name $ assertEqual "" expected (f arg1 arg2)
 
 -- |
 -- > f_2_expected (+) (1, 2) 3
 f_2_expected
-    :: (HasCallStack, Eq e, Show e, EqualWithExplanation e)
+    :: (HasCallStack, Diff e)
     => (a -> b -> e) -> (a, b) -> e -> TestTree
 f_2_expected f tuple expected =
     f_2_expected_name f tuple expected "f_2_expected with no name"
@@ -253,8 +250,7 @@ throws_from_expected_name_intention lazyValue expected name intention =
     missingThrow =
         assertFailure $ "No `error` was raised for " <> name <> "."
 
-    messageChecker (ErrorCall msg) =
-        assertEqualWithExplanation intention msg expected
+    messageChecker (ErrorCall msg) = assertEqual intention msg expected
 
 throws_from_expected_name
     :: (HasCallStack)
@@ -305,8 +301,8 @@ throws_from_expected lazyValue expected =
 -- > the test input to produce the value to be tested.
 
 wrapped_maker_expected_name_intention
-    :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
-    =>  ((IO a -> TestTree) -> TestTree)
+    :: (HasCallStack, Diff b)
+    => ((IO a -> TestTree) -> TestTree)
     -> (a -> IO b)  -- ^ take raw input, produce value to be checked
     -> b            -- ^ the expected value
     -> String       -- ^ the name of the generated test case
@@ -316,10 +312,10 @@ wrapped_maker_expected_name_intention wrapper maker expected name intention =
     wrapper $ \getResource ->
         testCase name $ do
             resource <- getResource
-            maker resource >>= assertEqualWithExplanation intention expected
+            maker resource >>= assertEqual intention expected
 
 wrapped_maker_expected_name
-    :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
+    :: (HasCallStack, Diff b)
     =>  ((IO a -> TestTree) -> TestTree)
     -> (a -> IO b)  -- ^ take raw input, produce value to be checked
     -> b            -- ^ the expected value
@@ -331,7 +327,7 @@ wrapped_maker_expected_name wrapper maker expected name =
         ""
 
 wrapped_maker_expected
-    :: (HasCallStack, Eq b, Show b, EqualWithExplanation b)
+    :: (HasCallStack, Diff b)
     =>  ((IO a -> TestTree) -> TestTree)
     -> (a -> IO b)  -- ^ take raw input, produce value to be checked
     -> b            -- ^ the expected value

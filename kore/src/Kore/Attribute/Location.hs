@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo LineColumn
 
 instance Debug LineColumn
 
+instance Diff LineColumn
+
 instance NFData LineColumn
 
 data Location = Location
@@ -51,6 +53,8 @@ instance SOP.Generic Location
 instance SOP.HasDatatypeInfo Location
 
 instance Debug Location
+
+instance Diff Location
 
 instance NFData Location
 

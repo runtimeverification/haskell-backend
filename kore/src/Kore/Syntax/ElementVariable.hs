@@ -33,7 +33,8 @@ instance SOP.HasDatatypeInfo (ElementVariable variable)
 
 instance Debug variable => Debug (ElementVariable variable)
 
+instance (Debug variable, Diff variable) => Diff (ElementVariable variable)
+
 instance Unparse variable => Unparse (ElementVariable variable) where
     unparse = unparse . getElementVariable
     unparse2 = unparse2 . getElementVariable
-

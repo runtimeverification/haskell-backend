@@ -12,7 +12,6 @@ import Kore.Syntax.Id
 import Test.Kore
     ( testId
     )
-import Test.Kore.Comparators ()
 import Test.Terse
 
 test_Id :: [TestTree]

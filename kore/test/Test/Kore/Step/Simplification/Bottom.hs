@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.Bottom
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -23,14 +18,13 @@ import Kore.Step.Simplification.Bottom
 import Kore.Syntax.Bottom
 import Kore.Syntax.Variable
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromPatterns [ Pattern.bottom ])
             (evaluate Bottom { bottomSort = Mock.testSort })
         )

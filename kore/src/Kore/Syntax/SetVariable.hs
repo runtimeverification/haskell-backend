@@ -33,7 +33,8 @@ instance SOP.HasDatatypeInfo (SetVariable variable)
 
 instance Debug variable => Debug (SetVariable variable)
 
+instance (Debug variable, Diff variable) => Diff (SetVariable variable)
+
 instance Unparse variable => Unparse (SetVariable variable) where
     unparse = unparse . getSetVariable
     unparse2 = unparse2 . getSetVariable
-

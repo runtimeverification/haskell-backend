@@ -6,7 +6,6 @@ module Test.Kore.Step.SMT.Representation.Helpers
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Map as Map
 
@@ -32,8 +31,7 @@ import qualified SMT.AST as AST
     ( showSExpr
     )
 
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 testsForModule
     :: String
@@ -50,15 +48,15 @@ testsForModule name functionToTest indexedModule tests =
 
 declarationsAre
     ::  ( HasCallStack
-        , EqualWithExplanation sort, Show sort
-        , EqualWithExplanation symbol, Show symbol
-        , EqualWithExplanation name, Show name
+        , Debug sort, Diff sort
+        , Debug symbol, Diff symbol
+        , Debug name, Diff name
         )
     => AST.Declarations sort symbol name
     -> AST.Declarations sort symbol name
     -> TestTree
 declarationsAre expected actual =
-    testCase "declarationsAre" (assertEqualWithExplanation "" expected actual)
+    testCase "declarationsAre" (assertEqual "" expected actual)
 
 smtForSortIs
     :: HasCallStack
@@ -80,7 +78,7 @@ smtForSortIs
                     ++ ")"
                     )
             Just AST.Sort {smtFromSortArgs} ->
-                assertEqualWithExplanation
+                assertEqual
                     ""
                     (Just expectedSExpr)
                     (AST.showSExpr <$> smtFromSortArgs Map.empty [])
@@ -105,7 +103,7 @@ smtForSymbolIs
                     ++ ")"
                     )
             Just AST.Symbol {smtFromSortArgs} ->
-                assertEqualWithExplanation
+                assertEqual
                     ""
                     (Just expectedSExpr)
                     (AST.showSExpr <$> smtFromSortArgs Map.empty [])

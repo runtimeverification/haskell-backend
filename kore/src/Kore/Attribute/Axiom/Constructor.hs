@@ -29,6 +29,8 @@ instance SOP.HasDatatypeInfo Constructor
 
 instance Debug Constructor
 
+instance Diff Constructor
+
 instance NFData Constructor
 
 instance Default Constructor where

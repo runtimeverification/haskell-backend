@@ -37,6 +37,8 @@ instance SOP.HasDatatypeInfo (Inhabitant child)
 
 instance Debug (Inhabitant child)
 
+instance Diff (Inhabitant child)
+
 instance Unparse (Inhabitant child) where
     unparse = unparse . inhSort
     unparse2 = unparse2 . inhSort

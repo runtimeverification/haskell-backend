@@ -40,6 +40,8 @@ instance SOP.HasDatatypeInfo Injective
 
 instance Debug Injective
 
+instance Diff Injective
+
 -- | Kore identifier representing the @injective@ attribute symbol.
 injectiveId :: Id
 injectiveId = "injective"
