@@ -25,6 +25,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -38,7 +39,8 @@ import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Rule
-    ( EqualityRule
+    ( EqualityRule (..)
+    , RulePattern (left)
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -53,6 +55,8 @@ import Kore.Unparser
     )
 
 import qualified Kore.Logger as Logger
+import Kore.Unparser
+import Kore.Variables.Fresh
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -74,7 +78,7 @@ definitionEvaluation
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (\_ _ _ term predicate ->
-            evaluateAxioms rules term (Predicate.toPredicate predicate)
+            evaluateWithCheck rules term predicate
         )
 
 -- | Create an evaluator from a single simplification rule.
@@ -84,8 +88,27 @@ simplificationEvaluation
 simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier
         (\_ _ _ term predicate ->
-            evaluateAxioms [rule] term (Predicate.toPredicate predicate)
+            evaluateWithCheck [rule] term predicate
         )
+
+evaluateWithCheck
+    :: (Debug variable
+      , FreshVariable variable
+      , SortedVariable variable
+      , Show variable
+      , Unparse variable
+      , MonadSimplify simplifier)
+    => [EqualityRule Variable]
+    -> TermLike variable
+    -> Predicate variable
+    -> simplifier (AttemptedAxiom variable)
+evaluateWithCheck rules term predicate
+  | not $ isFunctionPattern $ term
+    = error "term is not function-like"
+  | not $ all isFunctionPattern $ fmap (left . getEqualityRule) rules
+    = error "rule is not function-like"
+  | otherwise
+    = evaluateAxioms rules term (Predicate.toPredicate predicate)
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
