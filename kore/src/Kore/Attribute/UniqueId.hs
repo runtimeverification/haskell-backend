@@ -23,10 +23,6 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as AttributeParser
 import Kore.Debug
-import qualified Kore.Error
-    ( koreFail
-    )
-
 
 {- | @UniqueId@ represents the @uniqueId@ attribute for axioms.
  -}
@@ -71,13 +67,9 @@ instance ParseAttributes UniqueId where
             -> AttributeParser.Parser UniqueId
         parseApplication params args (UniqueId Nothing) = do
             AttributeParser.getZeroParams params
-            case args of
-                [_] -> do
-                    arg <- AttributeParser.getOneArgument args
-                    StringLiteral str <- AttributeParser.getStringLiteral arg
-                    return (UniqueId (Just str))
-                _ -> Kore.Error.koreFail
-                    ("expected one argument, found " ++ show (length args))
+            arg <- AttributeParser.getOneArgument args
+            StringLiteral str <- AttributeParser.getStringLiteral arg
+            return (UniqueId (Just str))
         parseApplication _ _ (UniqueId (Just _)) = failDuplicate'
 
         withApplication' = AttributeParser.withApplication uniqueIdId
