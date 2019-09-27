@@ -5,7 +5,7 @@
                 Lbl'-LT-'k'-GT-'{}(
                     kseq{}(
                         inj{SortStmt{}, SortKItem{}}(
-                            Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'UndsUnds'Id'Unds'AExp{}(
+                            Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
                                 VarX:SortId{},
                                 inj{SortInt{}, SortAExp{}}(VarI:SortInt{})
                             )
