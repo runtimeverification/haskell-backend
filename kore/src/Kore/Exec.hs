@@ -68,7 +68,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.IndexedModule.Resolvers
-    ( resolveSymbol
+    ( resolveInternalSymbol
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
@@ -210,13 +210,13 @@ execGetExitCode
     -- ^ The final pattern (top cell) to extract the exit code
     -> smt ExitCode
 execGetExitCode indexedModule strategy' finalTerm =
-    case resolveSymbol indexedModule $ noLocationId "LblgetExitCode" of
-        Left _ -> return ExitSuccess
-        Right (_,  exitCodeSymbol) -> do
+    case resolveInternalSymbol indexedModule $ noLocationId "LblgetExitCode" of
+        Nothing -> return ExitSuccess
+        Just mkExitCodeSymbol -> do
             exitCodePattern <-
                 -- TODO (thomas.tuegel): Run in original execution context.
                 exec indexedModule strategy'
-                $ applySymbol_ exitCodeSymbol [finalTerm]
+                $ mkApplySymbol (mkExitCodeSymbol []) [finalTerm]
             case exitCodePattern of
                 Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
                   | exit == 0 -> return ExitSuccess
