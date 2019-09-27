@@ -385,8 +385,8 @@ extractRules rules = foldr addExtractRule (Right [])
     addExtractRule ruleName processedRules =
         (:) <$> extractRule ruleName <*> processedRules
 
-    maybeRuleName :: RewriteRule Variable -> Maybe Text
-    maybeRuleName
+    maybeRuleUniqueId :: RewriteRule Variable -> Maybe Text
+    maybeRuleUniqueId
         (RewriteRule RulePattern
             { attributes = Attribute.Axiom
                 { uniqueId = Attribute.UniqueId maybeName }
@@ -395,15 +395,34 @@ extractRules rules = foldr addExtractRule (Right [])
       =
         maybeName
 
-    namedRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
-    namedRules = mapMaybe namedRule
+    maybeRuleLabel :: RewriteRule Variable -> Maybe Text
+    maybeRuleLabel
+        (RewriteRule RulePattern
+            { attributes = Attribute.Axiom
+                { label = Attribute.Label maybeName }
+            }
+        )
+      =
+        maybeName
+
+    idRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
+    idRules = mapMaybe namedRule
       where
         namedRule rule = do
-            name <- maybeRuleName rule
+            name <- maybeRuleUniqueId rule
+            return (name, rule)
+
+    labelRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
+    labelRules = mapMaybe namedRule
+      where
+        namedRule rule = do
+            name <- maybeRuleLabel rule
             return (name, rule)
 
     rulesByName :: Map.Map Text (RewriteRule Variable)
-    rulesByName = Map.fromList (namedRules rules)
+    rulesByName = Map.union
+        (Map.fromList (idRules rules))
+        (Map.fromList (labelRules rules))
 
     extractRule :: Text -> Either Text (RewriteRule Variable)
     extractRule ruleName =

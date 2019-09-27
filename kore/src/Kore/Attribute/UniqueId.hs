@@ -37,6 +37,8 @@ instance Debug UniqueId
 
 instance NFData UniqueId
 
+instance Diff UniqueId
+
 instance Default UniqueId where
     def = UniqueId Nothing
 
