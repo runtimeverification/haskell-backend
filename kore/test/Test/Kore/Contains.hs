@@ -3,7 +3,6 @@ module Test.Kore.Contains
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Data.Map
     ( Map
@@ -20,7 +19,7 @@ import qualified Kore.Syntax.Id as Kore
     ( Id
     )
 
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 class AssertContains container contained where
     assertContains :: HasCallStack => container -> contained -> IO ()
@@ -35,7 +34,7 @@ class AssertContains container contained where
     testContainedIn :: HasCallStack => contained -> container -> TestTree
     testContainedIn = flip testContains
 
-instance (Ord a, Show a, EqualWithExplanation b)
+instance (Ord a, Show a, Diff b)
     => AssertContains (Map a b) (a, b)
   where
     assertContains actualContainer (expectedKey, expectedValue) =
@@ -47,10 +46,10 @@ instance (Ord a, Show a, EqualWithExplanation b)
                     ++ ")"
                     )
             Just actualValue ->
-                assertEqualWithExplanation "" expectedValue actualValue
+                assertEqual "" expectedValue actualValue
 
 instance
-    (EqualWithExplanation (AST.Sort sort symbol name))
+    (Diff (AST.Sort sort symbol name))
     => AssertContains
         (AST.Declarations sort symbol name)
         (Kore.Id, AST.Sort sort symbol name)
@@ -59,7 +58,7 @@ instance
         assertContains sorts
 
 instance
-    (EqualWithExplanation (AST.Symbol sort name))
+    (Diff (AST.Symbol sort name))
     => AssertContains
         (AST.Declarations sort symbol name)
         (Kore.Id, AST.Symbol sort name)

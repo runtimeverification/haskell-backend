@@ -23,9 +23,13 @@ import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Internal.TermLike
-    ( TermLike
+    ( InternalVariable
+    , TermLike
     , mapVariables
     )
 import Kore.Sort
@@ -40,7 +44,15 @@ import Kore.Variables.UnifiedVariable
 data UnificationOrSubstitutionError
     = UnificationError UnificationError
     | SubstitutionError SubstitutionError
-    deriving Show
+    deriving (GHC.Generic, Show)
+
+instance SOP.Generic UnificationOrSubstitutionError
+
+instance SOP.HasDatatypeInfo UnificationOrSubstitutionError
+
+instance Debug UnificationOrSubstitutionError
+
+instance Diff UnificationOrSubstitutionError
 
 instance Pretty UnificationOrSubstitutionError where
     pretty (UnificationError  err) = Pretty.pretty err
@@ -52,7 +64,16 @@ data UnificationError = UnsupportedPatterns
     { message :: String
     , first :: TermLike Variable
     , second :: TermLike Variable
-    } deriving (Eq, Show)
+    }
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic UnificationError
+
+instance SOP.HasDatatypeInfo UnificationError
+
+instance Debug UnificationError
+
+instance Diff UnificationError
 
 unsupportedPatterns
     ::  ( SortedVariable variable
@@ -84,9 +105,17 @@ substitutions.
 -}
 data SubstitutionError =
     forall variable.
-    (Ord variable, Show variable, SortedVariable variable, Unparse variable) =>
+    InternalVariable variable =>
     NonCtorCircularVariableDependency [UnifiedVariable variable]
     -- ^ the circularity path may pass through non-constructors: maybe solvable.
+
+instance Debug SubstitutionError where
+    debugPrec (NonCtorCircularVariableDependency variables) prec =
+        (if (prec >= 10) then Pretty.parens else id)
+        $ "NonCtorCircularVariableDependency" Pretty.<+> debugPrec variables 10
+
+instance Diff SubstitutionError where
+    diffPrec = diffPrecIgnore
 
 instance Show SubstitutionError where
     showsPrec prec (NonCtorCircularVariableDependency variables) =

@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.Forall
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -29,15 +24,14 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_forallSimplification :: [TestTree]
 test_forallSimplification =
     [ testCase "Forall - or distribution"
         -- forall(a or b) = forall(a) or forall(b)
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkForall Mock.x something1OfX
@@ -61,7 +55,7 @@ test_forallSimplification =
     , testCase "Forall - bool operations"
         (do
             -- forall(top) = top
-            assertEqualWithExplanation "forall(top)"
+            assertEqual "forall(top)"
                 (OrPattern.fromPatterns
                     [ Pattern.top ]
                 )
@@ -72,7 +66,7 @@ test_forallSimplification =
                     )
                 )
             -- forall(bottom) = bottom
-            assertEqualWithExplanation "forall(bottom)"
+            assertEqual "forall(bottom)"
                 (OrPattern.fromPatterns
                     []
                 )
@@ -86,14 +80,14 @@ test_forallSimplification =
     , testCase "expanded Forall - bool operations"
         (do
             -- forall(top) = top
-            assertEqualWithExplanation "forall(top)"
+            assertEqual "forall(top)"
                 Pattern.top
                 (makeEvaluate
                     Mock.x
                     (Pattern.top :: Pattern Variable)
                 )
             -- forall(bottom) = bottom
-            assertEqualWithExplanation "forall(bottom)"
+            assertEqual "forall(bottom)"
                 Pattern.bottom
                 (makeEvaluate
                     Mock.x
@@ -102,7 +96,7 @@ test_forallSimplification =
         )
     , testCase "forall applies substitution if possible"
         -- forall x . (t(x) and p(x) and [x = alpha, others])
-        (assertEqualWithExplanation "forall with substitution"
+        (assertEqual "forall with substitution"
             Conditional
                 { term =
                     mkForall Mock.x
@@ -131,7 +125,7 @@ test_forallSimplification =
         )
     , testCase "forall disappears if variable not used"
         -- forall x . (t and p and s)
-        (assertEqualWithExplanation "forall with substitution"
+        (assertEqual "forall with substitution"
             Conditional
                 { term =
                     mkForall Mock.x (mkAnd fOfA (mkCeil_ gOfA))
@@ -149,7 +143,7 @@ test_forallSimplification =
         )
     , testCase "forall applied on term if not used elsewhere"
         -- forall x . (t(x) and p and s)
-        (assertEqualWithExplanation "forall on term"
+        (assertEqual "forall on term"
             Conditional
                 { term = mkForall Mock.x (mkAnd fOfX (mkCeil_ gOfA))
                 , predicate = makeTruePredicate
@@ -168,7 +162,7 @@ test_forallSimplification =
         -- forall x . (t and p(x) and s)
         --    = t and (forall x . p(x)) and s
         --    if t, s do not depend on x.
-        (assertEqualWithExplanation "forall on predicate"
+        (assertEqual "forall on predicate"
             Conditional
                 { term = mkForall Mock.x (mkAnd fOfA (mkCeil_ fOfX))
                 , predicate = makeTruePredicate
@@ -185,7 +179,7 @@ test_forallSimplification =
         )
     , testCase "forall moves substitution above"
         -- forall x . (t(x) and p(x) and s)
-        (assertEqualWithExplanation "forall moves substitution"
+        (assertEqual "forall moves substitution"
             Conditional
                 { term =
                     mkForall Mock.x
@@ -210,7 +204,7 @@ test_forallSimplification =
     , testCase "forall reevaluates"
         -- forall x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
-        (assertEqualWithExplanation "forall reevaluates"
+        (assertEqual "forall reevaluates"
             Pattern.top
             (makeEvaluate
                 Mock.x

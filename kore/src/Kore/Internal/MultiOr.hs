@@ -83,6 +83,8 @@ instance SOP.HasDatatypeInfo (MultiOr child)
 
 instance Debug child => Debug (MultiOr child)
 
+instance (Debug child, Diff child) => Diff (MultiOr child)
+
 instance (Ord child, TopBottom child) => Semigroup (MultiOr child) where
     (MultiOr []) <> b = b
     a <> (MultiOr []) = a

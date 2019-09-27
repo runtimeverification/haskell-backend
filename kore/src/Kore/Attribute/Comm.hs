@@ -33,6 +33,8 @@ instance SOP.HasDatatypeInfo Comm
 
 instance Debug Comm
 
+instance Diff Comm
+
 instance NFData Comm
 
 instance Default Comm where

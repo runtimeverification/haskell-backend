@@ -28,6 +28,8 @@ instance SOP.HasDatatypeInfo SmtLemma
 
 instance Debug SmtLemma
 
+instance Diff SmtLemma
+
 instance Default SmtLemma where
     def = SmtLemma False
 

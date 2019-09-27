@@ -19,7 +19,6 @@ module Test.Kore.Step.Axiom.Matcher
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Data.Function
     ( on
@@ -68,10 +67,9 @@ import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.List as Test.List
 import qualified Test.Kore.Builtin.Map as Test.Map
 import qualified Test.Kore.Builtin.Set as Test.Set
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
@@ -107,7 +105,7 @@ test_matcherEqualHeads =
     , testCase "Bottom" $ do
         let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
         actual <- matchDefinition mkBottom_ mkBottom_
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Ceil" $ do
         let expect = Just $ MultiOr.make
@@ -122,7 +120,7 @@ test_matcherEqualHeads =
             matchDefinition
                 (mkCeil_ (Mock.plain10 (mkElemVar Mock.x)))
                 (mkCeil_ (Mock.plain10 Mock.a))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Equals" $ do
         let expect = Just $ MultiOr.make
@@ -138,14 +136,14 @@ test_matcherEqualHeads =
             matchDefinition
                 (mkEquals_ (Mock.plain10 (mkElemVar Mock.x)) (Mock.plain10 Mock.a))
                 (mkEquals_ (Mock.plain10 (mkElemVar Mock.y)) (Mock.plain10 Mock.a))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "CharLiteral" $ do
         actual <-
             matchDefinition
                 (mkCharLiteral 'a')
                 (mkCharLiteral 'a')
-        assertEqualWithExplanation "" topOrPredicate actual
+        assertEqual "" topOrPredicate actual
 
     , testCase "Builtin" $ do
         actual <-
@@ -160,7 +158,7 @@ test_matcherEqualHeads =
                     , domainValueChild = mkStringLiteral "10"
                     }
                 )
-        assertEqualWithExplanation "" topOrPredicate actual
+        assertEqual "" topOrPredicate actual
 
     , testCase "DomainValue" $ do
         let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -176,7 +174,7 @@ test_matcherEqualHeads =
                     , domainValueChild = mkStringLiteral "10"
                     }
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
 
     , testCase "StringLiteral" $ do
@@ -185,7 +183,7 @@ test_matcherEqualHeads =
             matchDefinition
                 (mkStringLiteral "10")
                 (mkStringLiteral "10")
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Top" $ do
         let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
@@ -193,7 +191,7 @@ test_matcherEqualHeads =
             matchDefinition
                 mkTop_
                 mkTop_
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Iff vs Or" $ do
         let expect = Nothing
@@ -201,7 +199,7 @@ test_matcherEqualHeads =
             matchDefinition
                 (mkIff (Mock.plain10 Mock.a) (mkElemVar Mock.x))
                 (mkOr (Mock.plain10 Mock.a) Mock.b)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testGroup "Simplification"
         [ testCase "same symbol" $ do
@@ -217,7 +215,7 @@ test_matcherEqualHeads =
                 matchSimplification
                     (Mock.plain10 (mkElemVar Mock.x))
                     (Mock.plain10 Mock.a)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
     ]
 
@@ -237,7 +235,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <- matchDefinition (mkElemVar Mock.x) Mock.functional00
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "SetVariable vs Function" $ do
         let expect = Just $ MultiOr.make
@@ -249,7 +247,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <- matchDefinition (mkSetVar Mock.setX) Mock.cf
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "SetVariable vs Bottom" $ do
         let expect = Just $ MultiOr.make
@@ -261,7 +259,7 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <- matchDefinition (mkSetVar Mock.setX) (mkBottom Mock.testSort)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Function" $ do
         let expect = Just $ MultiOr.make
@@ -273,12 +271,12 @@ test_matcherVariableFunction =
                     }
                 ]
         actual <- matchDefinition (mkElemVar Mock.x) Mock.cf
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Non-functional" $ do
         let expect = Nothing
         actual <- matchDefinition (mkElemVar Mock.x) (Mock.constr10 Mock.cf)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Unidirectional" $ do
         let expect = Nothing
@@ -286,7 +284,7 @@ test_matcherVariableFunction =
             matchDefinition
                 (Mock.functional10 (mkElemVar Mock.y))
                 (mkElemVar Mock.x)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Injection" $ do
         let
@@ -307,7 +305,7 @@ test_matcherVariableFunction =
             matchDefinition
                 (Mock.sortInjectionSubToTop (mkElemVar x))
                 (Mock.sortInjectionSubSubToTop a)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Injection reverse" $ do
         let
@@ -318,7 +316,7 @@ test_matcherVariableFunction =
             matchDefinition
                 (Mock.sortInjectionSubSubToTop a)
                 (Mock.sortInjectionSubToTop (mkElemVar x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Injection + substitution" $ do
         let
@@ -346,7 +344,7 @@ test_matcherVariableFunction =
                     (Mock.sortInjectionSubSubToTop aSubSub)
                     (Mock.functional10 Mock.a)
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "substitution + Injection" $ do
         let
@@ -374,7 +372,7 @@ test_matcherVariableFunction =
                     (Mock.functional10 Mock.a)
                     (Mock.sortInjectionSubSubToTop aSubSub)
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testGroup "Simplification"
         [ testCase "Function" $ do
@@ -388,7 +386,7 @@ test_matcherVariableFunction =
                         }
                     ]
             actual <- matchSimplification (mkElemVar Mock.x) Mock.cf
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "Non-function" $ do
             let expect = Nothing
@@ -396,7 +394,7 @@ test_matcherVariableFunction =
                 matchSimplification
                     (mkElemVar Mock.x)
                     (Mock.constr10 Mock.cf)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
     , testGroup "Evaluated"
         [ testCase "Functional" $ do
@@ -406,7 +404,7 @@ test_matcherVariableFunction =
                     $ Predicate.fromSingleSubstitution
                         (UnifiedVariable.ElemVar Mock.x, evaluated)
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "Function" $ do
             let evaluated = mkEvaluated Mock.cf
@@ -416,7 +414,7 @@ test_matcherVariableFunction =
                         (UnifiedVariable.ElemVar Mock.x, evaluated))
                         { predicate = makeCeilPredicate evaluated }
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
     ]
   where
@@ -457,7 +455,7 @@ test_matcherMergeSubresults =
                     Mock.cf
                     (Mock.constr20 Mock.cf Mock.b)
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Merge error" $ do
         let expect = Nothing
@@ -465,7 +463,7 @@ test_matcherMergeSubresults =
             matchDefinition
                 (mkAnd (mkElemVar Mock.x) (mkElemVar Mock.x))
                 (mkAnd (mkElemVar Mock.y) (Mock.f (mkElemVar Mock.y)))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     ]
 
 test_matching_Bool :: [TestTree]
@@ -473,15 +471,15 @@ test_matching_Bool =
     [ testCase "concrete top" $ do
         let expect = top
         actual <- matchConcrete True True
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "concrete bottom" $ do
         let expect = Nothing
         actual <- matchConcrete True False
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "variable vs concrete" $ do
         let expect = substitution [(UnifiedVariable.ElemVar Mock.xBool, True)]
         actual <- matchVariable Mock.xBool True
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , doesn'tMatch "true does not match x:Bool"
         (mkBool True)
         (mkElemVar Mock.xBool)
@@ -510,12 +508,12 @@ test_matching_Int =
     [ testCase "concrete top" $ do
         let expect = top
         actual <- matchConcrete 1 1
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , doesn'tMatch "1 does not match 2" (mkInt 1) (mkInt 2)
     , testCase "variable vs concrete" $ do
         let expect = substitution [(UnifiedVariable.ElemVar Mock.xInt, 1)]
         actual <- matchVariable Mock.xInt 1
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , doesn'tMatch "1 does not match x:Int"
         (mkInt 1)
         (mkElemVar xInt)
@@ -540,16 +538,16 @@ test_matching_String =
     [ testCase "concrete top" $ do
         let expect = topOrPredicate
         actual <- matchConcrete "str" "str"
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "concrete bottom" $ do
         let expect = Nothing
         actual <- matchConcrete "s1" "s2"
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "variable vs concrete" $ do
         let expect =
                 substitution [(UnifiedVariable.ElemVar Mock.xString, "str")]
         actual <- matchVariable Mock.xString "str"
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , doesn'tMatch "\"str\" does not match x:String"
         (mkStr "str")
         (mkElemVar Mock.xString)

@@ -35,8 +35,11 @@ import qualified Data.Text.Prettyprint.Doc as Doc
     ( parens
     , (<+>)
     )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import qualified Kore.Builtin.External as Builtin
+import Kore.Debug
 import Kore.Internal.TermLike
     ( CofreeF (..)
     , InternalVariable
@@ -71,7 +74,15 @@ data AxiomIdentifier
     -- ^ An @\\exists@ pattern with the given child.
     | Variable
     -- ^ Any variable pattern.
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic AxiomIdentifier
+
+instance SOP.HasDatatypeInfo AxiomIdentifier
+
+instance Debug AxiomIdentifier
+
+instance Diff AxiomIdentifier
 
 instance Pretty AxiomIdentifier where
     pretty (Application name) = unparse name
