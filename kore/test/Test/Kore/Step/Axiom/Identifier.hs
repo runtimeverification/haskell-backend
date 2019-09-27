@@ -44,39 +44,49 @@ test_matchAxiomIdentifier =
             $ TermLike.mkEquals_ (TermLike.mkElemVar Mock.x) (Mock.f Mock.a))
         (Exists (Equals Variable (Application Mock.fId)))
     , testGroup "Map"
-        [ matches "unitMap"
+        [ test "unitMap"
             (Mock.builtinMap [])
             (Application Mock.unitMapId)
-        , matches "elementMap"
+        , test "elementMap"
             (Mock.builtinMap [(Mock.a, Mock.a)])
             (Application Mock.elementMapId)
-        , matches "concatMap"
+        , test "concatMap"
             (Mock.builtinMap [(Mock.a, Mock.a), (Mock.b, Mock.b)])
             (Application Mock.concatMapId)
         ]
     , testGroup "Set"
-        [ matches "unitSet"
+        [ test "unitSet"
             (Mock.builtinSet [])
             (Application Mock.unitSetId)
-        , matches "elementSet"
+        , test "elementSet"
             (Mock.builtinSet [Mock.a])
             (Application Mock.elementSetId)
-        , matches "concatSet"
+        , test "concatSet"
             (Mock.builtinSet [Mock.a, Mock.b])
             (Application Mock.concatSetId)
         ]
     , testGroup "List"
-        [ matches "unitList"
+        [ test "unitList"
             (Mock.builtinList [])
             (Application Mock.unitListId)
-        , matches "elementList"
+        , test "elementList"
             (Mock.builtinList [Mock.a])
             (Application Mock.elementListId)
-        , matches "concatList"
+        , test "concatList"
             (Mock.builtinList [Mock.a, Mock.b])
             (Application Mock.concatListId)
         ]
     ]
+  where
+    test name termLike axiomIdentifier =
+        testGroup name
+            [ matches name termLike axiomIdentifier
+            , matches ceilName
+                (TermLike.mkCeil_ termLike)
+                (Ceil axiomIdentifier)
+            ]
+      where
+        ceilName = "ceil " <> name
 
 match
     :: GHC.HasCallStack
