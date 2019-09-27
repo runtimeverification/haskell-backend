@@ -863,7 +863,7 @@ test_matching_Set =
         (mkSet [mkElemVar xInt]         [mkElemVar sSet])
         (mkSet [mkElemVar yInt]         [mkElemVar s'Set])
         [ (ElemVar xInt, mkElemVar yInt)
-        , (ElemVar sSet, mkElemVar s'Set)
+        , (ElemVar sSet, mkSet [] [mkElemVar s'Set])
         ]
     ]
 
@@ -920,7 +920,7 @@ test_matching_Map =
         (mkMap [(mkElemVar uInt, mkElemVar vInt)] [mkElemVar m'Map])
         [ (ElemVar xInt, mkElemVar uInt)
         , (ElemVar yInt, mkElemVar vInt)
-        , (ElemVar mMap, mkElemVar m'Map)
+        , (ElemVar mMap, mkMap [] [mkElemVar m'Map])
         ]
     , matches "(x:Int, [x:Int -> y:Int] m:Map) matches (0, [0 -> 1, 1 -> 2])"
         (mkPair (mkElemVar xInt) (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap]))
