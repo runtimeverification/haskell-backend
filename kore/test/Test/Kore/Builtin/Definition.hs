@@ -52,6 +52,7 @@ builtinSymbol name resultSort operandSorts =
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts operandSorts resultSort
         }
+    & function
 
 unarySymbol :: Text -> Sort -> Internal.Symbol
 unarySymbol name sort = builtinSymbol name sort [sort]
