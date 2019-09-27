@@ -305,11 +305,11 @@ fromSingleSubstitution
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> Conditional variable ()
-fromSingleSubstitution pair =
+fromSingleSubstitution (variable, termLike) =
     Conditional
         { term = ()
         , predicate = Predicate.makeTruePredicate
-        , substitution = Substitution.wrap [pair]
+        , substitution = Substitution.singleton variable termLike
         }
 
 {- | Combine the predicate with the conditions of the first argument.
