@@ -21,8 +21,6 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
-    ( Debug
-    )
 import Kore.Syntax.Variable
     ( SortedVariable (..)
     )
@@ -58,6 +56,8 @@ instance SOP.Generic (Target variable)
 instance SOP.HasDatatypeInfo (Target variable)
 
 instance Debug variable => Debug (Target variable)
+
+instance (Debug variable, Diff variable) => Diff (Target variable)
 
 unwrapVariable :: Target variable -> variable
 unwrapVariable (Target variable) = variable

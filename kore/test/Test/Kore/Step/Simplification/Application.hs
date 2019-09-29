@@ -3,7 +3,6 @@ module Test.Kore.Step.Simplification.Application
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -39,10 +38,9 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_applicationSimplification :: [TestTree]
 test_applicationSimplification =
@@ -81,7 +79,7 @@ test_applicationSimplification =
                     , [cExpanded, dExpanded]
                     ]
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
@@ -95,7 +93,7 @@ test_applicationSimplification =
                     , []
                     ]
                 )
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
@@ -116,7 +114,7 @@ test_applicationSimplification =
                     )
                 )
                 (makeApplication Mock.fSymbol [[aExpanded]])
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testGroup "Combines child predicates and substitutions"
         [ testCase "When not applying functions" $ do
@@ -159,7 +157,7 @@ test_applicationSimplification =
                             ]
                         ]
                     )
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "When applying functions" $ do
             -- sigma(a and f(a)=f(b) and [x=f(a)], b and g(a)=g(b) and [y=g(a)])
@@ -239,7 +237,7 @@ test_applicationSimplification =
                             ]
                         ]
                     )
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
     ]
   where

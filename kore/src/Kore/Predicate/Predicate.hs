@@ -108,6 +108,8 @@ instance SOP.HasDatatypeInfo (GenericPredicate pat)
 
 instance Debug pat => Debug (GenericPredicate pat)
 
+instance (Debug pat, Diff pat) => Diff (GenericPredicate pat)
+
 instance Hashable pat => Hashable (GenericPredicate pat)
 
 instance NFData pat => NFData (GenericPredicate pat)

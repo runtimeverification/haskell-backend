@@ -29,6 +29,8 @@ instance SOP.HasDatatypeInfo Unit
 
 instance Debug Unit
 
+instance Diff Unit
+
 instance NFData Unit
 
 instance Default Unit where

@@ -48,6 +48,10 @@ instance SOP.HasDatatypeInfo (Iff sort child)
 
 instance (Debug sort, Debug child) => Debug (Iff sort child)
 
+instance
+    ( Debug sort, Debug child, Diff sort, Diff child )
+    => Diff (Iff sort child)
+
 instance Unparse child => Unparse (Iff Sort child) where
     unparse Iff { iffSort, iffFirst, iffSecond } =
         "\\iff"

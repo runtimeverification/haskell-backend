@@ -29,6 +29,8 @@ instance SOP.HasDatatypeInfo Concrete
 
 instance Debug Concrete
 
+instance Diff Concrete
+
 instance NFData Concrete
 
 instance Default Concrete where

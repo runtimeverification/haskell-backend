@@ -29,6 +29,8 @@ instance SOP.HasDatatypeInfo Idem
 
 instance Debug Idem
 
+instance Diff Idem
+
 instance NFData Idem
 
 instance Default Idem where

@@ -30,6 +30,8 @@ instance SOP.HasDatatypeInfo Label
 
 instance Debug Label
 
+instance Diff Label
+
 instance Semigroup Label where
     (<>) a@(Label (Just _)) _ = a
     (<>) _                  b = b

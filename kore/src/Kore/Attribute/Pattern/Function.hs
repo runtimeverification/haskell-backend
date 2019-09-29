@@ -38,6 +38,8 @@ instance SOP.HasDatatypeInfo Function
 
 instance Debug Function
 
+instance Diff Function
+
 instance NFData Function
 
 instance Hashable Function

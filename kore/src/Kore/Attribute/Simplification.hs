@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Simplification
 
 instance Debug Simplification
 
+instance Diff Simplification
+
 instance NFData Simplification
 
 instance Default Simplification where

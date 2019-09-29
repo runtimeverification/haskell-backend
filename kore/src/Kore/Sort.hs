@@ -96,6 +96,8 @@ instance SOP.HasDatatypeInfo SortVariable
 
 instance Debug SortVariable
 
+instance Diff SortVariable
+
 {-|'SortActual' corresponds to the @sort-constructor{sort-list}@ branch of the
 @object-sort@ and @meta-sort@ syntactic categories from the Semantics of K,
 Section 9.1.2 (Sorts).
@@ -116,6 +118,8 @@ instance SOP.Generic SortActual
 instance SOP.HasDatatypeInfo SortActual
 
 instance Debug SortActual
+
+instance Diff SortActual
 
 instance Unparse SortActual where
     unparse SortActual { sortActualName, sortActualSorts } =
@@ -148,6 +152,8 @@ instance SOP.Generic Sort
 instance SOP.HasDatatypeInfo Sort
 
 instance Debug Sort
+
+instance Diff Sort
 
 instance Unparse Sort where
     unparse =

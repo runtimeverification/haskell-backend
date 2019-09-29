@@ -48,6 +48,8 @@ instance SOP.HasDatatypeInfo (UnifiedVariable variable)
 
 instance Debug variable => Debug (UnifiedVariable variable)
 
+instance (Debug variable, Diff variable) => Diff (UnifiedVariable variable)
+
 instance Hashable variable => Hashable (UnifiedVariable variable)
 
 instance Unparse variable => Unparse (UnifiedVariable variable) where

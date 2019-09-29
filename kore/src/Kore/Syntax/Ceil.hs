@@ -50,6 +50,9 @@ instance SOP.HasDatatypeInfo (Ceil sort child)
 
 instance (Debug sort, Debug child) => Debug (Ceil sort child)
 
+instance
+    (Debug sort, Debug child, Diff sort, Diff child) => Diff (Ceil sort child)
+
 instance Unparse child => Unparse (Ceil Sort child) where
     unparse Ceil { ceilOperandSort, ceilResultSort, ceilChild } =
         "\\ceil"

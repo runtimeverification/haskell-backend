@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Function
 
 instance Debug Function
 
+instance Diff Function
+
 -- | Kore identifier representing the @function@ attribute symbol.
 functionId :: Id
 functionId = "function"
