@@ -13,7 +13,6 @@ module Kore.Step.Substitution
     , createPredicatesAndSubstitutionsMerger
     , createPredicatesAndSubstitutionsMergerExcept
     , mergePredicatesAndSubstitutions
-    , mergePredicatesAndSubstitutionsExcept
     , normalize
     , normalizeExcept
     ) where
@@ -117,19 +116,6 @@ mergePredicatesAndSubstitutions predicates substitutions = do
         , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
         , substitution = Foldable.fold substitutions
         }
-
-mergePredicatesAndSubstitutionsExcept
-    ::  forall variable unifier
-    .   ( SimplifierVariable variable
-        , HasCallStack
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
-    => [Syntax.Predicate variable]
-    -> [Substitution variable]
-    -> unifier (Predicate variable)
-mergePredicatesAndSubstitutionsExcept =
-    Unification.mergePredicatesAndSubstitutionsExcept
 
 {-| Creates a 'PredicateMerger' that returns errors on unifications it
 can't handle.

@@ -18,9 +18,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutionsExcept
-    )
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
@@ -335,8 +332,10 @@ merge
 merge s1 s2 =
     Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
-    $ mergePredicatesAndSubstitutionsExcept [] $ Substitution.wrap <$> [s1, s2]
+    $ mergeSubstitutionsExcept $ Substitution.wrap <$> [s1, s2]
   where
+    mergeSubstitutionsExcept =
+        Substitution.normalizeExcept . Predicate.fromSubstitution . mconcat
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
