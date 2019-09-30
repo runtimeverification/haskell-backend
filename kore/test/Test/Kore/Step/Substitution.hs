@@ -127,8 +127,8 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
                     "Unknown unification case."
-                    (mkElemVar Mock.y)
                     (Mock.constr10 (mkElemVar Mock.y))
+                    (mkElemVar Mock.y)
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -218,8 +218,8 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
                     "Unknown unification case."
-                    (mkElemVar Mock.y)
                     (Mock.constr10 (mkElemVar Mock.x))
+                    (mkElemVar Mock.y)
             actual <-
                 merge
                     [   ( ElemVar Mock.x

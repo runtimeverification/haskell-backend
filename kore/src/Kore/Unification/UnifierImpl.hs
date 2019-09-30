@@ -27,6 +27,7 @@ import Data.List
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 
 import qualified Branch
@@ -79,7 +80,7 @@ simplifyAnds
         )
     => NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
-simplifyAnds patterns = do
+simplifyAnds (NonEmpty.sort -> patterns) = do
     result <- foldM simplifyAnds' Pattern.top patterns
     TopBottom.guardAgainstBottom result
     return result
