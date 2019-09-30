@@ -5,7 +5,7 @@ License     : NCSA
  -}
 module Kore.Unification.UnifierImpl
     ( simplifyAnds
-    , normalizeSubstitutionDuplication
+    , deduplicateSubstitution
     , normalizeExcept
     ) where
 
@@ -130,13 +130,23 @@ deduplicateOnce (variable, patterns) = do
     let substitution' = Predicate.fromSingleSubstitution (variable, termLike)
     return (substitution' <> simplified)
 
--- |Takes a potentially non-normalized substitution,
--- and if it contains multiple assignments to the same variable,
--- it solves all such assignments.
--- As new assignments may be produced during the solving process,
--- `normalizeSubstitutionDuplication` recursively calls itself until it
--- stabilizes.
-normalizeSubstitutionDuplication
+{- | Simplify a substitution so that each variable occurs only once.
+
+Simplify a conjunction of substitutions,
+
+@
+x₁ = t₁ ∧ ... ∧ xₙ = tₙ
+@
+
+where some of the @xᵢ@ may be the same so that each variable occurs on the
+left-hand side of only one substitution clause. New substitutions may be
+produced during simplification; @deduplicateSubstitution@ recurses until the
+solution stabilizes.
+
+See also: 'deduplicateOnce'
+
+ -}
+deduplicateSubstitution
     :: forall variable unifier
     .   ( SimplifierVariable variable
         , MonadUnify unifier
@@ -144,7 +154,7 @@ normalizeSubstitutionDuplication
         )
     => Substitution variable
     -> unifier (Predicate variable)
-normalizeSubstitutionDuplication =
+deduplicateSubstitution =
     worker . Predicate.fromSubstitution
   where
     isSingleton (_, _ :| duplicates) = null duplicates
@@ -187,7 +197,7 @@ normalizeExcept
 normalizeExcept Conditional { term, predicate, substitution } = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
-    deduplicated <- normalizeSubstitutionDuplication substitution
+    deduplicated <- deduplicateSubstitution substitution
     let
         Conditional { substitution = preDeduplicatedSubstitution } =
             deduplicated
