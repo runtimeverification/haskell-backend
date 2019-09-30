@@ -14,13 +14,13 @@ import Control.Error
 import Control.Monad
     ( foldM
     )
+import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
 import qualified Data.Functor.Foldable as Recursive
 import Data.List
-    ( foldl'
-    , groupBy
+    ( groupBy
     , partition
     , sortBy
     )
@@ -149,7 +149,7 @@ normalizeSubstitutionDuplication subst
     return (Predicate.fromSubstitution subst)
   | otherwise = do
     predSubst <-
-        mergePredicateList
+        Foldable.fold
         <$> mapM (uncurry solveGroupedSubstitution) varAndSubstList
     finalSubst <-
         normalizeSubstitutionDuplication
@@ -181,13 +181,6 @@ normalizeSubstitutionDuplication subst
         nonSingletonSubstitutions >>= \case
             [] -> []
             ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
-
-mergePredicateList
-    :: InternalVariable variable
-    => [Predicate variable]
-    -> Predicate variable
-mergePredicateList [] = Predicate.top
-mergePredicateList (p:ps) = foldl' (<>) p ps
 
 normalizeExcept
     ::  forall unifier variable term
