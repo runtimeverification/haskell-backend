@@ -26,7 +26,6 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 
 import qualified Branch
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Conditional (..)
@@ -39,9 +38,6 @@ import Kore.Logger
     , WithLog
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import qualified Kore.Predicate.Predicate as Predicate
-    ( makeAndPredicate
-    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Error
@@ -122,14 +118,14 @@ x = (t₁ ∧ ... ∧ tₙ) ∧ ⌈t₁ ∧ ... ∧ tₙ⌉
 @
 
  -}
-solveGroupedSubstitution
+deduplicateOnce
     :: ( SimplifierVariable variable
        , MonadUnify unifier
        , WithLog LogMessage unifier
        )
     => (UnifiedVariable variable, NonEmpty (TermLike variable))
     -> unifier (Predicate variable)
-solveGroupedSubstitution (variable, patterns) = do
+deduplicateOnce (variable, patterns) = do
     (termLike, simplified) <- Pattern.splitTerm <$> simplifyAnds patterns
     let substitution' = Predicate.fromSingleSubstitution (variable, termLike)
     return (substitution' <> simplified)
@@ -148,31 +144,11 @@ normalizeSubstitutionDuplication
         )
     => Substitution variable
     -> unifier (Predicate variable)
-normalizeSubstitutionDuplication subst
-  | all isSingleton substitutions || Substitution.isNormalized subst =
-    return (Predicate.fromSubstitution subst)
-  | otherwise = do
-    predSubst <- Foldable.fold <$> mapM solveGroupedSubstitution substitutions
-    finalSubst <-
-        normalizeSubstitutionDuplication
-            (Conditional.substitution predSubst)
-    let
-        pred' =
-            Predicate.makeAndPredicate
-                (Conditional.predicate predSubst)
-                (Conditional.predicate finalSubst)
-    return Conditional
-        { term = ()
-        , predicate = pred'
-        , substitution = Conditional.substitution finalSubst
-        }
+normalizeSubstitutionDuplication =
+    worker . Predicate.fromSubstitution
   where
-    substitutions :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
-    substitutions =
-        Map.toAscList
-        . Foldable.foldl' insertSubstitution Map.empty
-        . map sortRenamedVariable
-        $ Substitution.unwrap subst
+    isSingleton (_, _ :| duplicates) = null duplicates
+
     insertSubstitution
         :: forall variable1 term
         .  Ord variable1
@@ -182,7 +158,23 @@ normalizeSubstitutionDuplication subst
     insertSubstitution multiMap (variable, termLike) =
         let push = (termLike :|) . maybe [] Foldable.toList
         in Map.alter (Just . push) variable multiMap
-    isSingleton (_, _ :| duplicates) = null duplicates
+
+    worker conditional@Conditional { predicate, substitution }
+      | all isSingleton substitutions || Substitution.isNormalized substitution
+      = return conditional
+
+      | otherwise = do
+        deduplicated <- Foldable.fold <$> mapM deduplicateOnce substitutions
+        worker (Predicate.fromPredicate predicate <> deduplicated)
+
+      where
+        substitutions
+            :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
+        substitutions =
+            Map.toAscList
+            . Foldable.foldl' insertSubstitution Map.empty
+            . map sortRenamedVariable
+            $ Substitution.unwrap substitution
 
 normalizeExcept
     ::  forall unifier variable term
