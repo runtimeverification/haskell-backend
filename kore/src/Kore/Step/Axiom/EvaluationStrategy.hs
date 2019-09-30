@@ -24,7 +24,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
-import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -44,7 +43,6 @@ import Kore.Step.Rule
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
-    , hasRemainders
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
@@ -54,8 +52,6 @@ import Kore.Unparser
     )
 
 import qualified Kore.Logger as Logger
-import Kore.Unparser
-import Kore.Variables.Fresh
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}

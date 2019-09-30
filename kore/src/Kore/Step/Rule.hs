@@ -810,16 +810,16 @@ checkFunctionLike
     => [RulePattern variable']
     -> TermLike variable
     -> Either String ()
-checkFunctionLike [] _ = pure () 
-checkFunctionLike rules term 
-  | TermLike.isFunctionPattern term = 
+checkFunctionLike [] _ = pure ()
+checkFunctionLike rules term
+  | TermLike.isFunctionPattern term =
         Foldable.traverse_ checkFunctionLikeRule rules
   | otherwise = Left . show . Pretty.vsep $
         [ "Expected function-like term, but found:"
         , Pretty.indent 4 (unparse term)
         ]
   where
-    checkFunctionLikeRule RulePattern { left } 
+    checkFunctionLikeRule RulePattern { left }
       | TermLike.isFunctionPattern left = return ()
       | otherwise = Left . show . Pretty.vsep $
             [ "Expected function-like left-hand side of rule, but found:"

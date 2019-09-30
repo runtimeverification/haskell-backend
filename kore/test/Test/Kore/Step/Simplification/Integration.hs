@@ -40,9 +40,9 @@ import Kore.Step.Axiom.Registry
     ( axiomPatternsToEvaluators
     )
 import Kore.Step.Rule
-    ( rulePattern
+    ( EqualityRule (EqualityRule)
     , RulePattern (..)
-    , EqualityRule (EqualityRule)
+    , rulePattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -328,7 +328,7 @@ test_simplificationIntegration =
         assertEqualWithExplanation "" expect actual
     ]
 
-simplificationRulePattern    
+simplificationRulePattern
     :: InternalVariable variable
     => TermLike variable
     -> TermLike variable

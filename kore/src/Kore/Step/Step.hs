@@ -590,8 +590,8 @@ applyRewriteRulesParallel
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRewriteRulesParallel unificationProcedure rewriteRules initialConfig =
-    applyRulesParallel 
-        unificationProcedure 
+    applyRulesParallel
+        unificationProcedure
         (getRewriteRule <$> rewriteRules)
         initialConfig
 
