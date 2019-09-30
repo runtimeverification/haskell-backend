@@ -21,7 +21,7 @@ module Kore.Builtin.Set
     , builtinFunctions
     , Domain.Builtin
     , returnConcreteSet
-    , asTermLike
+    , Set.asTermLike
     , internalize
     , expectBuiltinSet
     , expectConcreteBuiltinSet
@@ -67,7 +67,7 @@ import Kore.Builtin.Builtin
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
-import qualified Kore.Builtin.SetSymbols as Set
+import qualified Kore.Builtin.Set.Set as Set
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -82,7 +82,6 @@ import Kore.Internal.TermLike
     , Concrete
     , InternalVariable
     , TermLike
-    , mkApplySymbol
     , mkSort
     , termLikeSort
     )
@@ -421,60 +420,6 @@ builtinFunctions =
         , (Set.intersectionKey, evalIntersection)
         , (Set.list2setKey, evalList2set)
         ]
-
-{- | Externalizes a 'Domain.InternalSet' as a 'TermLike'.
--}
-asTermLike
-    :: forall variable
-    .  InternalVariable variable
-    => Domain.InternalSet (TermLike Concrete) (TermLike variable)
-    -> TermLike variable
-asTermLike builtin =
-    Ac.asTermLike
-        (Ac.UnitSymbol unitSymbol)
-        (Ac.ConcatSymbol concatSymbol)
-        (Ac.ConcreteElements
-            (map concreteElement (Map.toAscList concreteElements))
-        )
-        (Ac.VariableElements
-            (element . Domain.unwrapElement <$> elementsWithVariables)
-        )
-        (Ac.Opaque filteredSets)
-  where
-    filteredSets :: [TermLike variable]
-    filteredSets = filter (not . isEmptySet) opaque
-
-    isEmptySet :: TermLike variable -> Bool
-    isEmptySet
-        (Builtin_
-            (Domain.BuiltinSet
-                Domain.InternalAc { builtinAcChild = wrappedChild }
-            )
-        )
-      =
-        Domain.unwrapAc wrappedChild == Domain.emptyNormalizedAc
-    isEmptySet (App_ symbol _) = unitSymbol == symbol
-    isEmptySet _ = False
-
-    Domain.InternalAc { builtinAcChild } = builtin
-    Domain.InternalAc { builtinAcUnit = unitSymbol } = builtin
-    Domain.InternalAc { builtinAcElement = elementSymbol } = builtin
-    Domain.InternalAc { builtinAcConcat = concatSymbol } = builtin
-
-    normalizedAc = Domain.unwrapAc builtinAcChild
-
-    Domain.NormalizedAc { elementsWithVariables } = normalizedAc
-    Domain.NormalizedAc { concreteElements } = normalizedAc
-    Domain.NormalizedAc { opaque } = normalizedAc
-
-    concreteElement
-        :: (TermLike Concrete, Domain.SetValue (TermLike variable))
-        -> TermLike variable
-    concreteElement (key, value) = element (TermLike.fromConcrete key, value)
-    element
-        :: (TermLike variable, Domain.SetValue (TermLike variable))
-        -> TermLike variable
-    element (key, Domain.SetValue) = mkApplySymbol elementSymbol [key]
 
 {- | Convert a Set-sorted 'TermLike' to its internal representation.
 

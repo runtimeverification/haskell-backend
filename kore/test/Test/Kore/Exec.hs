@@ -204,7 +204,7 @@ verifiedMyModule module_ = indexedModule
     definition = Definition
         { definitionAttributes = Attributes []
         , definitionModules =
-            [(fmap . fmap) Builtin.externalizePattern module_]
+            [(fmap . fmap) Builtin.externalize module_]
         }
 
 mySortName :: Id
