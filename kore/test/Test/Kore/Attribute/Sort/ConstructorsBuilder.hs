@@ -42,7 +42,6 @@ import Kore.Syntax.Id
     ( Id (getId)
     )
 
-import Test.Kore.Comparators ()
 import Test.Kore.Step.SMT.Builders
     ( emptyModule
     , indexModule
@@ -61,7 +60,6 @@ import Test.Kore.Step.SMT.Helpers
 import Test.Kore.With
     ( with
     )
-import Test.Tasty.HUnit.Extensions
 
 test_sortParsing :: [TestTree]
 test_sortParsing =
@@ -132,7 +130,7 @@ constructorsAre
     -> TestTree
 constructorsAre expected name actual =
     testCase name
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (Map.fromList (map buildConstructors expected))
             actual
         )

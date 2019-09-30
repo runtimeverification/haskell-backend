@@ -67,12 +67,10 @@ import Kore.Syntax.Variable
 import Test.Kore
     ( testId
     )
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.With
     ( with
     )
-import Test.Tasty.HUnit.Extensions
 
 class OnePathRuleBase base where
     rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
@@ -103,7 +101,7 @@ test_expandRule =
                 expandOnePathSingleConstructors
                     (metadataTools [])
                     (Mock.f x `rewritesTo` Mock.g x)
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Nothing to expand without constructors" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
@@ -112,7 +110,7 @@ test_expandRule =
                         [ (Mock.testSortId, noConstructor) ]
                     )
                     (Mock.f x `rewritesTo` Mock.g x)
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Nothing to expand with multiple constructors" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
@@ -126,7 +124,7 @@ test_expandRule =
                         ]
                     )
                     (Mock.f x `rewritesTo` Mock.g x)
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Expands variable once to constant" $
         let expected =
                 Pair (Mock.f Mock.a, makeEqualsPredicate x Mock.a)
@@ -141,7 +139,7 @@ test_expandRule =
                         ]
                     )
                     (Mock.f x `rewritesTo` Mock.g x)
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Expands variable once to argument constructor" $
         let expected =
                 Pair
@@ -168,7 +166,7 @@ test_expandRule =
                         ]
                     )
                     (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     , testCase "Expands variable twice." $
         let expected =
                 Pair
@@ -198,7 +196,7 @@ test_expandRule =
                         ]
                     )
                     (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
-        in assertEqualWithExplanation "" expected actual
+        in assertEqual "" expected actual
     ]
   where
     x = mkElemVar Mock.x
