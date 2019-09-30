@@ -42,6 +42,7 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import GHC.Stack
@@ -113,6 +114,17 @@ instance SOP.Generic (Substitution variable)
 instance SOP.HasDatatypeInfo (Substitution variable)
 
 instance Debug variable => Debug (Substitution variable)
+
+instance
+    ( Debug variable, Diff variable, Ord variable )
+    => Diff (Substitution variable)
+  where
+    diffPrec a b =
+        wrapDiffPrec <$> Function.on diffPrec unwrap a b
+      where
+        wrapDiffPrec diff' = \precOut ->
+            (if precOut >= 10 then Pretty.parens else id)
+            ("Kore.Unification.Substitution.wrap" Pretty.<+> diff' 10)
 
 deriving instance Show variable => Show (Substitution variable)
 

@@ -11,7 +11,6 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Trans
@@ -86,10 +85,9 @@ import Test.Kore.Builtin.Int
     )
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.Set as Test.Set
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.SMT
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 genMapInteger :: Gen a -> Gen (Map Integer a)
 genMapInteger genElement =
@@ -371,8 +369,8 @@ test_keysUnit =
                 patExpect = Test.Set.asTermLike Set.empty
                 predicate = mkEquals_ patExpect patKeys
             expect <- evaluate patExpect
-            assertEqualWithExplanation "" expect =<< evaluate patKeys
-            assertEqualWithExplanation "" Pattern.top =<< evaluate predicate
+            assertEqual "" expect =<< evaluate patKeys
+            assertEqual "" Pattern.top =<< evaluate predicate
 
 test_keysElement :: TestTree
 test_keysElement =
@@ -437,7 +435,7 @@ test_simplify =
                 original = asTermLike $ Map.fromList [(key, mkAnd x mkTop_)]
                 expected = asPattern $ Map.fromList [(key, x)]
             actual <- evaluate original
-            assertEqualWithExplanation "expected simplified Map" expected actual
+            assertEqual "expected simplified Map" expected actual
 
 -- | Maps with symbolic keys are not simplified.
 test_symbolic :: TestTree
@@ -971,7 +969,7 @@ test_concretizeKeys =
         "unify a concrete Map with a symbolic Map"
         $ do
             actual <- evaluate original
-            assertEqualWithExplanation "expected simplified Map" expected actual
+            assertEqual "expected simplified Map" expected actual
   where
     x =
         ElementVariable Variable
@@ -1027,7 +1025,7 @@ test_concretizeKeysAxiom =
             let concreteMap = asTermLike $ Map.fromList [(key, val)]
             config <- evaluate $ pair symbolicKey concreteMap
             actual <- runStep config axiom
-            assertEqualWithExplanation "expected MAP.lookup" expected actual
+            assertEqual "expected MAP.lookup" expected actual
   where
     x = mkIntVar (testId "x")
     v = mkIntVar (testId "v")
@@ -1082,8 +1080,7 @@ test_renormalize =
         -- ^ expected normalized map
         -> TestTree
     becomes name origin expect =
-        testCase name
-        $ assertEqualWithExplanation "" (Just expect) (Ac.renormalize origin)
+        testCase name $ assertEqual "" (Just expect) (Ac.renormalize origin)
 
     unchanged
         :: GHC.HasCallStack
@@ -1098,8 +1095,7 @@ test_renormalize =
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
         -> TestTree
     denorm name origin =
-        testCase name
-        $ assertEqualWithExplanation "" Nothing (Ac.renormalize origin)
+        testCase name $ assertEqual "" Nothing (Ac.renormalize origin)
 
     mkMap
         :: [(TermLike Variable, TermLike Variable)]

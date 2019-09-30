@@ -17,9 +17,21 @@ import Data.Graph
     , stronglyConnComp
     )
 import qualified Data.Map as Map
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Kore.Debug
 
 newtype ToplogicalSortCycles node = ToplogicalSortCycles [node]
-    deriving (Show, Eq)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic (ToplogicalSortCycles node)
+
+instance SOP.HasDatatypeInfo (ToplogicalSortCycles node)
+
+instance Debug node => Debug (ToplogicalSortCycles node)
+
+instance (Debug node, Diff node) => Diff (ToplogicalSortCycles node)
 
 {-| 'topologicalSort' sorts a graph topologically, starting with nodes which
 have no 'next' nodes.

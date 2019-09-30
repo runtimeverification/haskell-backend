@@ -108,6 +108,8 @@ instance SOP.HasDatatypeInfo Symbol
 
 instance Debug Symbol
 
+instance Diff Symbol
+
 instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =
         unparse symbolConstructor
@@ -148,6 +150,8 @@ instance SOP.HasDatatypeInfo Alias
 
 instance Debug Alias
 
+instance Diff Alias
+
 instance Unparse Alias where
     unparse Alias { aliasConstructor, aliasParams } =
         unparse aliasConstructor <> parameters aliasParams
@@ -179,6 +183,9 @@ instance SOP.Generic (SentenceAlias patternType)
 instance SOP.HasDatatypeInfo (SentenceAlias patternType)
 
 instance Debug patternType => Debug (SentenceAlias patternType)
+
+instance
+    (Debug patternType, Diff patternType) => Diff (SentenceAlias patternType)
 
 instance Unparse patternType => Unparse (SentenceAlias patternType) where
     unparse
@@ -247,6 +254,8 @@ instance SOP.Generic (SentenceSymbol patternType)
 instance SOP.HasDatatypeInfo (SentenceSymbol patternType)
 
 instance Debug (SentenceSymbol patternType)
+
+instance Diff (SentenceSymbol patternType)
 
 instance Unparse (SentenceSymbol patternType) where
     unparse
@@ -327,6 +336,8 @@ instance SOP.HasDatatypeInfo (SentenceImport patternType)
 
 instance Debug (SentenceImport patternType)
 
+instance Diff (SentenceImport patternType)
+
 instance Unparse (SentenceImport patternType) where
     unparse
         SentenceImport { sentenceImportModuleName, sentenceImportAttributes }
@@ -376,6 +387,8 @@ instance SOP.Generic (SentenceSort patternType)
 instance SOP.HasDatatypeInfo (SentenceSort patternType)
 
 instance Debug (SentenceSort patternType)
+
+instance Diff (SentenceSort patternType)
 
 instance Unparse (SentenceSort patternType) where
     unparse
@@ -445,6 +458,9 @@ instance SOP.HasDatatypeInfo (SentenceAxiom patternType)
 
 instance Debug patternType => Debug (SentenceAxiom patternType)
 
+instance
+    (Debug patternType, Diff patternType) => Diff (SentenceAxiom patternType)
+
 instance Unparse patternType => Unparse (SentenceAxiom patternType) where
     unparse = unparseAxiom "axiom"
     unparse2 = unparseAxiom2 "axiom"
@@ -508,6 +524,9 @@ instance SOP.HasDatatypeInfo (SentenceClaim patternType)
 
 instance Debug patternType => Debug (SentenceClaim patternType)
 
+instance
+    (Debug patternType, Diff patternType) => Diff (SentenceClaim patternType)
+
 instance Unparse patternType => Unparse (SentenceClaim patternType) where
     unparse = unparseAxiom "claim" . getSentenceClaim
     unparse2 = unparseAxiom2 "claim" . getSentenceClaim
@@ -532,6 +551,8 @@ instance SOP.Generic (SentenceHook patternType)
 instance SOP.HasDatatypeInfo (SentenceHook patternType)
 
 instance Debug (SentenceHook patternType)
+
+instance Diff (SentenceHook patternType)
 
 instance Unparse (SentenceHook patternType) where
     unparse =
@@ -576,6 +597,9 @@ instance SOP.Generic (Sentence patternType)
 instance SOP.HasDatatypeInfo (Sentence patternType)
 
 instance Debug patternType => Debug (Sentence patternType)
+
+instance
+    (Debug patternType, Diff patternType) => Diff (Sentence patternType)
 
 instance Unparse patternType => Unparse (Sentence patternType) where
      unparse = unparseGeneric

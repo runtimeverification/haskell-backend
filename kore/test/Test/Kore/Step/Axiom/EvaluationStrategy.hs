@@ -1,11 +1,6 @@
 module Test.Kore.Step.Axiom.EvaluationStrategy where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Data.Default
     ( def
@@ -53,10 +48,9 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_definitionEvaluation :: [TestTree]
 test_definitionEvaluation =
@@ -83,7 +77,7 @@ test_definitionEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Evaluation with remainder" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
             expect =
@@ -114,7 +108,7 @@ test_definitionEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 Mock.a)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Failed evaluation" $ do
         let expect = AttemptedAxiom.NotApplicable
         actual <-
@@ -127,7 +121,7 @@ test_definitionEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 Mock.b)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Evaluation with multiple branches SMT prunes remainders" $ do
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
@@ -154,7 +148,7 @@ test_definitionEvaluation =
                     , remainders = OrPattern.bottom
                     }
         actual <- evaluate evaluator initial
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Does not evaluate concrete axiom with symbolic input" $ do
         let expectConcrete =
                 AttemptedAxiom.Applied
@@ -179,10 +173,10 @@ test_definitionEvaluation =
                 ]
 
         actualConcrete <- evaluate evaluator (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expectConcrete actualConcrete
+        assertEqual "" expectConcrete actualConcrete
 
         actualSymbolic <- evaluate evaluator symbolicTerm
-        assertEqualWithExplanation "" expectSymbolic actualSymbolic
+        assertEqual "" expectSymbolic actualSymbolic
     ]
 
 test_firstFullEvaluation :: [TestTree]
@@ -209,7 +203,7 @@ test_firstFullEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Uses first matching" $ do
         let expect =
                 AttemptedAxiom.Applied
@@ -238,7 +232,7 @@ test_firstFullEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 Mock.a)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Skips partial matches" $ do
         let expect =
                 AttemptedAxiom.Applied
@@ -267,7 +261,7 @@ test_firstFullEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "None matching" $ do
         let
             expect = AttemptedAxiom.NotApplicable
@@ -283,7 +277,7 @@ test_firstFullEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Skip when remainder" $ do
         let expect =
                 AttemptedAxiom.Applied
@@ -313,7 +307,7 @@ test_firstFullEvaluation =
                     ]
                 )
                 (Mock.functionalConstr10 Mock.a)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Apply with top configuration" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         let expect =
@@ -342,7 +336,7 @@ test_firstFullEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.a)
                 requirement
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Don't apply due to top configuration" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         let not_requirement = makeNotPredicate requirement
@@ -372,7 +366,7 @@ test_firstFullEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.a)
                 not_requirement
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Error with multiple results" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
         assertErrorIO
@@ -427,7 +421,7 @@ test_simplifierWithFallback =
                     )
                 )
                 (Mock.functionalConstr10 Mock.a)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Uses first with remainder" $ do
         let requirement = makeEqualsPredicate (Mock.f Mock.a) (Mock.g Mock.b)
             expect =
@@ -467,7 +461,7 @@ test_simplifierWithFallback =
                     )
                 )
                 (Mock.functionalConstr10 Mock.a)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Falls back to second" $ do
         let expect =
                 AttemptedAxiom.Applied
@@ -494,7 +488,7 @@ test_simplifierWithFallback =
                     )
                 )
                 (Mock.functionalConstr10 Mock.b)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "None works" $ do
         let
             expect = AttemptedAxiom.NotApplicable
@@ -511,7 +505,7 @@ test_simplifierWithFallback =
                     )
                 )
                 (Mock.functionalConstr10 Mock.c)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     ]
 
 test_builtinEvaluation :: [TestTree]
@@ -539,7 +533,7 @@ test_builtinEvaluation =
                     )
                 )
                 (Mock.functionalConstr10 Mock.a)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "Failed evaluation"
         (assertErrorIO
             (assertSubstring ""

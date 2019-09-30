@@ -61,6 +61,8 @@ instance SOP.HasDatatypeInfo Smthook
 
 instance Debug Smthook
 
+instance Diff Smthook
+
 -- | Kore identifier representing the @smthook@ attribute symbol.
 smthookId :: Id
 smthookId = "smt-hook"

@@ -46,6 +46,8 @@ instance SOP.HasDatatypeInfo (FreeVariables variable)
 
 instance Debug variable => Debug (FreeVariables variable)
 
+instance (Debug variable, Diff variable) => Diff (FreeVariables variable)
+
 instance NFData variable => NFData (FreeVariables variable)
 
 instance Hashable variable => Hashable (FreeVariables variable) where

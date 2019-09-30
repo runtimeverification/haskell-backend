@@ -49,6 +49,9 @@ instance SOP.HasDatatypeInfo (Floor sort child)
 
 instance (Debug sort, Debug child) => Debug (Floor sort child)
 
+instance
+    (Debug sort, Debug child, Diff sort, Diff child) => Diff (Floor sort child)
+
 instance Unparse child => Unparse (Floor Sort child) where
     unparse Floor { floorOperandSort, floorResultSort, floorChild } =
         "\\floor"

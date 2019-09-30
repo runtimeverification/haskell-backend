@@ -65,6 +65,8 @@ instance SOP.HasDatatypeInfo (Alias patternType)
 
 instance Debug patternType => Debug (Alias patternType)
 
+instance (Debug patternType, Diff patternType) => Diff (Alias patternType)
+
 instance Unparse (Alias patternType) where
     unparse Alias { aliasConstructor, aliasParams } =
         unparse aliasConstructor

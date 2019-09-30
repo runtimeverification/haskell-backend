@@ -86,6 +86,8 @@ instance SOP.HasDatatypeInfo Symbol
 
 instance Debug Symbol
 
+instance Diff Symbol
+
 instance Unparse Symbol where
     unparse Symbol { symbolConstructor, symbolParams } =
         unparse symbolConstructor <> parameters symbolParams

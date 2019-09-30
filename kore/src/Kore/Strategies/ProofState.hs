@@ -12,7 +12,10 @@ module Kore.Strategies.ProofState
     ) where
 
 import Data.Hashable
-import GHC.Generics as GHC
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Kore.Debug
 
 
 {- | The primitive transitions of the all-path reachability proof strategy.
@@ -42,9 +45,17 @@ data ProofState a
     -- ^ We already rewrote the goal this step.
     | Proven
     -- ^ The parent goal was proven.
-    deriving (Eq, Show, Ord, Functor, Generic)
+    deriving (Eq, Show, Ord, Functor, GHC.Generic)
 
 instance Hashable goal => Hashable (ProofState goal)
+
+instance SOP.Generic (ProofState a)
+
+instance SOP.HasDatatypeInfo (ProofState a)
+
+instance Debug a => Debug (ProofState a)
+
+instance (Debug a, Diff a) => Diff (ProofState a)
 
 {- | Extract the unproven goals of a 'ProofState'.
 

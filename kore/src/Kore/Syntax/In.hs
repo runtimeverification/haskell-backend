@@ -51,6 +51,10 @@ instance SOP.HasDatatypeInfo (In sort child)
 
 instance (Debug sort, Debug child) => Debug (In sort child)
 
+instance
+    ( Debug sort, Debug child, Diff sort, Diff child )
+    => Diff (In sort child)
+
 instance Unparse child => Unparse (In Sort child) where
     unparse
         In

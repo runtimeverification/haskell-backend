@@ -1,7 +1,6 @@
 module Test.Kore.Step.SMT.Representation.Sorts where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
@@ -60,7 +59,7 @@ import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers
 import Test.Kore.With
     ( with
     )
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_sortParsing :: [TestTree]
 test_sortParsing =
@@ -135,7 +134,7 @@ test_sortParsing =
   where
     inDeclarations
         ::  ( HasCallStack
-            , EqualWithExplanation (AST.Sort sort symbol name)
+            , Diff (AST.Sort sort symbol name)
             )
         => (Kore.Id, AST.Sort sort symbol name)
         -> AST.Declarations sort symbol name

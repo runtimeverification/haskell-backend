@@ -15,7 +15,6 @@ import Kore.Variables.Target
     ( Target (..)
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Terse
 

@@ -59,7 +59,6 @@ import Kore.Syntax.Definition hiding
 
 import Test.Kore
 import Test.Kore.ASTVerifier.DefinitionVerifier
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 

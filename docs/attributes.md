@@ -131,6 +131,14 @@ Unit element axiom
 unit{}()
 ```
 
+### Unique ID
+
+Unique identifier for axioms, usually assigned by the frontend at compile time.
+
+```
+UNIQUE'Unds'ID{}("07a34b11585162c291311c03441e08beb2532e48d")
+```
+
 
 ## Symbol Attributes
 

@@ -49,6 +49,8 @@ instance SOP.HasDatatypeInfo ModuleName
 
 instance Debug ModuleName
 
+instance Diff ModuleName
+
 instance Unparse ModuleName where
     unparse = Pretty.pretty . getModuleName
     unparse2 = Pretty.pretty . getModuleName
@@ -81,6 +83,8 @@ instance SOP.Generic (Module sentence)
 instance SOP.HasDatatypeInfo (Module sentence)
 
 instance Debug sentence => Debug (Module sentence)
+
+instance (Debug sentence, Diff sentence) => Diff (Module sentence)
 
 instance Unparse sentence => Unparse (Module sentence) where
     unparse
