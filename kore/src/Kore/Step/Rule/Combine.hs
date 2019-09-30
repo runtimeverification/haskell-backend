@@ -90,6 +90,9 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
 
+import Debug.Trace
+import Kore.Unparser
+
 {-
 Given a list of rules
 
@@ -177,11 +180,13 @@ mergeRules
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
 mergeRules rules = BranchT.gather $ do
+    traceM ("Initial: " ++ unparseToString mergedPredicate)
     Conditional {term = (), predicate, substitution} <-
         Predicate.simplify 0
             (Predicate.fromPredicate
                 (makeAndPredicate firstRequires mergedPredicate)
             )
+    traceM ("Simplified: " ++ unparseToString Conditional {term = (), predicate, substitution})
     evaluation <- SMT.evaluate predicate
     evaluatedPredicate <- case evaluation of
         Nothing -> return predicate
@@ -204,6 +209,8 @@ mergeRules rules = BranchT.gather $ do
 
         substitutedVariables = Substitution.variables substitution
 
+    traceM ("right=" ++ unparseToString lastRight)
+    traceM ("finalRight=" ++ unparseToString finalRight)
     Monad.unless (finalRule `Rule.isFreeOf` substitutedVariables)
         (error
             (  "Substituted variables not removed from the rule, cannot throw "
