@@ -102,8 +102,8 @@ test_sortParsing =
         (constructorsAre
             [   ( "S"
                 , noConstructor
-                    `with` (constructor "D" `withS` koreSort "S")
                     `with` constructor "C"
+                    `with` (constructor "D" `withS` koreSort "S")
                 )
             ]
         )

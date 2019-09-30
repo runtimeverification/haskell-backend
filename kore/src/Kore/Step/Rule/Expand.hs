@@ -234,7 +234,27 @@ expandConstructor
                 UseAsPrototype
                 sort
 
-data VariableUsage = UseDirectly | UseAsPrototype
+{-| Context: we have a TermLike that contains a variables, and we
+attempt to expand them into constructor applications whenever that's possible.
+
+We expand a variable by attempting to expand its sort into an unique
+constructor application, and, recursively, the argument sorts of that
+constructor.
+
+This data type tells us how to use the initial variable that we are expanding
+when we can't expand a sort, so we have to return a variable of that sort
+instead.
+-}
+data VariableUsage =
+    UseDirectly
+    -- ^ We don't need to generate a new variable, we are at the top and
+    -- we didn't manage to expand anything, so we can just reuse the
+    -- variable in the original term as the sort's expansion (useful if we
+    -- want to have prettier terms).
+  | UseAsPrototype
+    -- ^ We have expanded the initial sort at least once, so we need a variable
+    -- somewhere in the middle of the expansion. We can't reuse the original
+    -- variable, so we need to generate a new one based on it.
 
 maybeNewVariable
     :: Set.Set (ElementVariable Variable)

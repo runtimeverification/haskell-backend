@@ -74,8 +74,7 @@ instance FreshVariable variable => FreshVariable (UnifiedVariable variable)
 
 instance FreshVariable Variable where
     refreshVariable avoiding variable = do
-        largest <- Set.lookupLT pivotMax avoiding
-        let fixedLargest = fixSort largest
+        fixedLargest <- fixSort <$> Set.lookupLT pivotMax avoiding
         if fixedLargest >= pivotMin
             then Just (nextVariable fixedLargest)
             else Nothing

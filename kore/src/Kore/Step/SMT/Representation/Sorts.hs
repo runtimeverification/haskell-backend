@@ -158,7 +158,7 @@ buildRepresentations indexedModule sortConstructors =
     sortsWithConstructors blacklist whitelist =
         mapMaybe
             (sortWithConstructor sortConstructors)
-            (filter (not . (`Set.member` blacklist)) whitelist)
+            (filter (`Set.notMember` blacklist) whitelist)
 
     builtinSortDeclarations :: [(Id, AST.UnresolvedSort)]
     builtinSortDeclarations =

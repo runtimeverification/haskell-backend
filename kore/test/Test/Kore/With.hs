@@ -13,6 +13,10 @@ import qualified Data.List as List
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
+import qualified Data.List.NonEmpty as NonEmpty
+    ( cons
+    , reverse
+    )
 import qualified Data.Map.Strict as Map
 
 import Kore.Attribute.Attributes
@@ -437,9 +441,11 @@ instance With Attribute.Constructors Attribute.Constructors.ConstructorLike
     with (Attribute.Constructors Nothing) constructorLike =
         Attribute.Constructors (Just (constructorLike :| []))
     with
-        (Attribute.Constructors (Just (c :| cs)))
+        (Attribute.Constructors (Just constructors))
         constructorLike
-      = Attribute.Constructors (Just (constructorLike :| (c : cs)))
+      = Attribute.Constructors
+        $ Just
+        $ nonEmptyAppend constructorLike constructors
 
 instance With Attribute.Constructors.ConstructorLike Kore.Sort
   where
@@ -459,4 +465,7 @@ instance With Attribute.Constructors.Constructor Kore.Sort
     with
         c@(Attribute.Constructors.Constructor {sorts}) sort
       =
-        c{Attribute.Constructors.Constructor.sorts = sorts `with` sort}
+        c{Attribute.Constructors.Constructor.sorts = sorts ++ [sort]}
+
+nonEmptyAppend :: a -> NonEmpty a -> NonEmpty a
+nonEmptyAppend a = NonEmpty.reverse . NonEmpty.cons a . NonEmpty.reverse

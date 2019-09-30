@@ -33,6 +33,9 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
+    ( second
+    )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( Coercible
     , coerce
@@ -276,9 +279,7 @@ prove limit definitionModule specModule =
         let Initialized { rewriteRules } = initialized
             specClaims =
                 map
-                    (\(attr, rule)
-                        -> (attr, expandOnePathSingleConstructors tools rule)
-                    )
+                    (Bifunctor.second $ expandOnePathSingleConstructors tools)
                     (extractOnePathClaims specModule)
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond specClaims

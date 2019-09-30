@@ -1,7 +1,6 @@
 module Test.Kore.Step.Rule.Expand where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Data.Default
     ( def
@@ -71,6 +70,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.With
     ( with
     )
+import Test.Tasty.HUnit.Ext
 
 class OnePathRuleBase base where
     rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
@@ -197,6 +197,68 @@ test_expandRule =
                     )
                     (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
         in assertEqual "" expected actual
+    , testCase "Expands multiple arguments." $
+        let expected =
+                Pair
+                    ( Mock.fSort0 (expandableConstructor2 Mock.a Mock.a)
+                    , makeEqualsPredicate
+                        x0
+                        (expandableConstructor2 Mock.a Mock.a)
+                    )
+                `rewritesTo`
+                Pair
+                    ( Mock.gSort0 (expandableConstructor2 Mock.a Mock.a)
+                    , makeTruePredicate
+                    )
+            actual =
+                expandOnePathSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSort0Id
+                            , noConstructor
+                                `with`
+                                    ( constructor expandableConstructor2Symbol
+                                    `with` Mock.testSort
+                                    `with` Mock.testSort
+                                    )
+                            )
+                        ,   ( Mock.testSortId
+                            , noConstructor `with` constructor Mock.aSymbol
+                            )
+                        ]
+                    )
+                    (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
+        in assertEqual "" expected actual
+    , testCase "Expands one of multiple arguments" $
+        let expected =
+                Pair
+                    ( Mock.fSort0 (expandableConstructor2a x00TestSort1 Mock.a)
+                    , makeEqualsPredicate
+                        x0
+                        (expandableConstructor2a x00TestSort1 Mock.a)
+                    )
+                `rewritesTo`
+                Pair
+                    ( Mock.gSort0 (expandableConstructor2a x00TestSort1 Mock.a)
+                    , makeTruePredicate
+                    )
+            actual =
+                expandOnePathSingleConstructors
+                    (metadataTools
+                        [   ( Mock.testSort0Id
+                            , noConstructor
+                                `with`
+                                    ( constructor expandableConstructor2aSymbol
+                                    `with` Mock.testSort1
+                                    `with` Mock.testSort
+                                    )
+                            )
+                        ,   ( Mock.testSortId
+                            , noConstructor `with` constructor Mock.aSymbol
+                            )
+                        ]
+                    )
+                    (Mock.fSort0 x0 `rewritesTo` Mock.gSort0 x0)
+        in assertEqual "" expected actual
     ]
   where
     x = mkElemVar Mock.x
@@ -206,6 +268,11 @@ test_expandRule =
         ElementVariable
             (Variable (testId "x0") (Just (Element 0)) Mock.testSort)
     x00TestSort = mkElemVar x00TestSortVar
+
+    x00TestSort1Var =
+        ElementVariable
+            (Variable (testId "x0") (Just (Element 0)) Mock.testSort1)
+    x00TestSort1 = mkElemVar x00TestSort1Var
 
     metadataTools
         :: [(Id, Attribute.Constructors)]
@@ -227,6 +294,38 @@ test_expandRule =
         => TermLike Variable -> TermLike Variable
     expandableConstructor1 arg =
         mkApplySymbol expandableConstructor1Symbol [arg]
+
+    expandableConstructor2Id :: Id
+    expandableConstructor2Id = testId "expandableConstructor2"
+    expandableConstructor2Symbol :: Symbol
+    expandableConstructor2Symbol =
+        Mock.symbol
+            expandableConstructor2Id
+            [Mock.testSort, Mock.testSort]
+            Mock.testSort0
+        & Symbol.functional
+        & Symbol.constructor
+    expandableConstructor2
+        :: HasCallStack
+        => TermLike Variable -> TermLike Variable -> TermLike Variable
+    expandableConstructor2 arg1 arg2 =
+        mkApplySymbol expandableConstructor2Symbol [arg1, arg2]
+
+    expandableConstructor2aId :: Id
+    expandableConstructor2aId = testId "expandableConstructor2a"
+    expandableConstructor2aSymbol :: Symbol
+    expandableConstructor2aSymbol =
+        Mock.symbol
+            expandableConstructor2aId
+            [Mock.testSort1, Mock.testSort]
+            Mock.testSort0
+        & Symbol.functional
+        & Symbol.constructor
+    expandableConstructor2a
+        :: HasCallStack
+        => TermLike Variable -> TermLike Variable -> TermLike Variable
+    expandableConstructor2a arg1 arg2 =
+        mkApplySymbol expandableConstructor2aSymbol [arg1, arg2]
 
 noConstructor :: Attribute.Constructors
 noConstructor = Attribute.Constructors Nothing
