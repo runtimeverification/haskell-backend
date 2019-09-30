@@ -109,7 +109,7 @@ testSubsortModule =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVariable "R"]
             , sentenceAxiomPattern =
-                Builtin.externalizePattern (mkTop sortVarR)
+                Builtin.externalize (mkTop sortVarR)
             , sentenceAxiomAttributes = Attributes
                 [subsortAttribute subSort superSort]
             }
