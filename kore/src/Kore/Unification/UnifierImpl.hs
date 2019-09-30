@@ -101,10 +101,22 @@ groupSubstitutionByVariable
     => [(UnifiedVariable variable, TermLike variable)]
     -> [[(UnifiedVariable variable, TermLike variable)]]
 groupSubstitutionByVariable =
-    groupBy ((==) `on` fst) . sortBy (compare `on` fst) . map sortRenaming
-  where
-    sortRenaming (var, Var_ var') | var' < var = (var', mkVar var)
-    sortRenaming eq = eq
+    groupBy ((==) `on` fst) . sortBy (compare `on` fst)
+
+{- | Sort variable-renaming substitutions.
+
+Variable-renaming substitutions are sorted so that the greater variable is
+substituted in place of the lesser. Consistent ordering prevents variable-only
+cycles.
+
+ -}
+sortRenamedVariable
+    :: InternalVariable variable
+    => (UnifiedVariable variable, TermLike variable)
+    -> (UnifiedVariable variable, TermLike variable)
+sortRenamedVariable (variable1, Var_ variable2)
+  | variable2 < variable1 = (variable2, mkVar variable1)
+sortRenamedVariable subst = subst
 
 {- | Simplify a conjunction of substitutions for the same variable.
 
@@ -169,7 +181,8 @@ normalizeSubstitutionDuplication subst
         }
   where
     groupedSubstitution =
-        groupSubstitutionByVariable $ Substitution.unwrap subst
+        groupSubstitutionByVariable . map sortRenamedVariable
+        $ Substitution.unwrap subst
     isSingleton [_] = True
     isSingleton _   = False
     singletonSubstitutions, nonSingletonSubstitutions
