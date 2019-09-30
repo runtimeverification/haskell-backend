@@ -11,14 +11,10 @@ module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
     , simplificationEvaluation
-    , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
     ) where
 
-import Control.Monad
-    ( unless
-    )
 import qualified Data.Foldable as Foldable
 import Data.Maybe
     ( isJust
@@ -43,7 +39,7 @@ import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Rule
     ( EqualityRule (..)
-    , RulePattern (..)
+    , StepContext (..)
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -81,7 +77,11 @@ definitionEvaluation
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (\_ _ _ term predicate ->
-            evaluateWithCheck rules term predicate
+            evaluateAxioms
+                DefinitionContext
+                rules
+                term
+                (Predicate.toPredicate predicate)
         )
 
 -- | Create an evaluator from a single simplification rule.
@@ -91,63 +91,12 @@ simplificationEvaluation
 simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier
         (\_ _ _ term predicate ->
-            evaluateWithCheck [rule] term predicate
+            evaluateAxioms
+                SimplificationContext
+                [rule]
+                term
+                (Predicate.toPredicate predicate)
         )
-
-evaluateWithCheck
-    :: (Debug variable
-      , FreshVariable variable
-      , SortedVariable variable
-      , Show variable
-      , Unparse variable
-      , MonadSimplify simplifier)
-    => [EqualityRule Variable]
-    -> TermLike variable
-    -> Predicate variable
-    -> simplifier (AttemptedAxiom variable)
-evaluateWithCheck rules term predicate = do
-    unless (isFunctionPattern term) $ error . show . Pretty.vsep $
-        [ "Expected function-like term, but found:"
-        , Pretty.indent 4 (unparse term)
-        ]
-    Foldable.traverse_ checkFunctionLikeRule rules
-    evaluateAxioms rules term (Predicate.toPredicate predicate)
-  where
-    checkFunctionLikeRule (getEqualityRule -> RulePattern { left }) =
-        unless (isFunctionPattern left) $ error . show . Pretty.vsep $
-            [ "Expected function-like left-hand side of rule, but found:"
-            , Pretty.indent 4 (unparse left)
-            ]
-
-{- | Creates an evaluator for a function from all the rules that define it.
-
-The function is not applied (@totalDefinitionEvaluation@ returns
-'AttemptedAxiom.NotApplicable') if the supplied rules do not match the entire
-input.
-
-See also: 'definitionEvaluation'
-
--}
-totalDefinitionEvaluation
-    :: [EqualityRule Variable]
-    -> BuiltinAndAxiomSimplifier
-totalDefinitionEvaluation rules =
-    BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
-  where
-    totalDefinitionEvaluationWorker
-        :: forall variable simplifier
-        .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
-        -> Predicate variable
-        -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker _ _ _ term predicate = do
-        result <- evaluateAxioms rules term (Predicate.toPredicate predicate)
-        if AttemptedAxiom.hasRemainders result
-            then return AttemptedAxiom.NotApplicable
-            else return result
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.

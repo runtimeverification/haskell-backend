@@ -13,6 +13,8 @@ import Test.Tasty.HUnit
     ( testCase
     )
 
+import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Simplification
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
 import Kore.Internal.OrPattern
@@ -39,9 +41,8 @@ import Kore.Step.Axiom.Registry
     )
 import Kore.Step.Rule
     ( rulePattern
-    )
-import Kore.Step.Rule
-    ( EqualityRule (EqualityRule)
+    , RulePattern (..)
+    , EqualityRule (EqualityRule)
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -226,7 +227,7 @@ test_simplificationIntegration =
                             ]
                           )
                         , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
-                          , [ EqualityRule $ rulePattern
+                          , [ EqualityRule $ simplificationRulePattern
                                 (mkCeil testSortVariable
                                     $ Mock.tdivInt
                                         (mkElemVar Mock.xInt)
@@ -326,6 +327,19 @@ test_simplificationIntegration =
                     }
         assertEqualWithExplanation "" expect actual
     ]
+
+simplificationRulePattern    
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> RulePattern variable
+simplificationRulePattern left right =
+    patt
+        { attributes = (attributes patt)
+            { Attribute.simplification = Simplification True}
+        }
+  where
+    patt = rulePattern left right
 
 test_substitute :: [TestTree]
 test_substitute =

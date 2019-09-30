@@ -470,6 +470,7 @@ pairSymbol lSort rSort =
         , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
     & constructor
+    & functional
 
 pair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 pair l r =

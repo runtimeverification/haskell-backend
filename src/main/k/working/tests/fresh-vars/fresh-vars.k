@@ -8,6 +8,6 @@ module FRESH-VARS
     requires N >Int 0
   rule foo(0) => .Seq
 
-  syntax X ::= "foo"
-  rule <k> foo => foo(3) </k>
+  syntax KItem ::= "foo"
+  rule foo => foo(3)
 endmodule

@@ -37,6 +37,7 @@ import qualified Kore.Step.Axiom.Evaluate as Kore
 import Kore.Step.Rule
     ( EqualityRule (..)
     , RulePattern (..)
+    , StepContext (DefinitionContext)
     , rulePattern
     )
 import Kore.Step.Simplification.Simplify
@@ -220,4 +221,4 @@ evaluateAxioms
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms (termLike, predicate) =
     runSimplifier Mock.env
-    $ Kore.evaluateAxioms axioms termLike predicate
+    $ Kore.evaluateAxioms DefinitionContext axioms termLike predicate

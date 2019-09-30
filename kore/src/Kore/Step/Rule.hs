@@ -12,6 +12,7 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , StepContext (..)
     , allPathGlobally
     , rulePattern
     , isHeatingRule
@@ -31,6 +32,7 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , isFreeOf
+    , checkFunctionLike
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
@@ -40,6 +42,7 @@ import Control.Exception
     ( assert
     )
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )
@@ -777,3 +780,48 @@ substitute subst rulePattern' =
         }
   where
     RulePattern { left, right, requires, ensures } = rulePattern'
+
+{- | Context in which a step is taken
+-}
+data StepContext
+  = SimplificationContext
+  | DefinitionContext
+  | RewriteContext
+  | OnePathContext
+  | AllPathContext
+  deriving (Show, Eq)
+
+
+{- | Check if the term and the 'left' fields of the rules are function-like
+
+-}
+
+checkFunctionLike
+    ::  (Debug variable
+        , FreshVariable variable
+        , SortedVariable variable
+        , Show variable
+        , Unparse variable
+        , Debug variable'
+        , FreshVariable variable'
+        , SortedVariable variable'
+        , Show variable'
+        , Unparse variable')
+    => [RulePattern variable']
+    -> TermLike variable
+    -> Either String ()
+checkFunctionLike [] _ = pure () 
+checkFunctionLike rules term 
+  | TermLike.isFunctionPattern term = 
+        Foldable.traverse_ checkFunctionLikeRule rules
+  | otherwise = Left . show . Pretty.vsep $
+        [ "Expected function-like term, but found:"
+        , Pretty.indent 4 (unparse term)
+        ]
+  where
+    checkFunctionLikeRule RulePattern { left } 
+      | TermLike.isFunctionPattern left = return ()
+      | otherwise = Left . show . Pretty.vsep $
+            [ "Expected function-like left-hand side of rule, but found:"
+            , Pretty.indent 4 (unparse left)
+            ]

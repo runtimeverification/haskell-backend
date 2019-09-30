@@ -34,6 +34,7 @@ import Kore.Step.Remainder
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( EqualityRule (..)
+    , StepContext (..)
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -60,11 +61,13 @@ import Kore.Variables.Fresh
 evaluateAxioms
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => [EqualityRule Variable]
+    => StepContext
+    -> [EqualityRule Variable]
     -> TermLike variable
     -> Syntax.Predicate variable
     -> simplifier (AttemptedAxiom variable)
 evaluateAxioms
+    context
     definitionRules
     patt
     predicate
@@ -126,7 +129,7 @@ evaluateAxioms
 
     applyRules initial rules =
         Monad.Unify.maybeUnifierT
-        $ Step.applyRulesSequence unificationProcedure initial rules
+        $ Step.applyRulesSequence unificationProcedure context initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =
         Monad.Unify.runUnifierT (unification pattern1 pattern2)
