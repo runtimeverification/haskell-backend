@@ -40,6 +40,8 @@ instance SOP.HasDatatypeInfo (Bottom sort child)
 
 instance Debug sort => Debug (Bottom sort child)
 
+instance (Debug sort, Diff sort) => Diff (Bottom sort child)
+
 instance Unparse (Bottom Sort child) where
     unparse Bottom { bottomSort } =
         "\\bottom" <> parameters [bottomSort] <> noArguments

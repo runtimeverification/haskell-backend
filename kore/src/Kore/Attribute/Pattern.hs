@@ -63,6 +63,8 @@ instance SOP.HasDatatypeInfo (Pattern variable)
 
 instance Debug variable => Debug (Pattern variable)
 
+instance (Debug variable, Diff variable) => Diff (Pattern variable)
+
 instance
     ( Synthetic Sort base
     , Synthetic (FreeVariables variable) base

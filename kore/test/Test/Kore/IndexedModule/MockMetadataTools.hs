@@ -92,9 +92,7 @@ functionalAttributes = defaultAttributes { functional = Functional True }
 constructorAttributes :: StepperAttributes
 constructorAttributes =
     defaultSymbolAttributes
-        { constructor = Constructor True
-        , injective = Injective True
-        }
+        { constructor = Constructor True }
 
 constructorFunctionalAttributes :: StepperAttributes
 constructorFunctionalAttributes =

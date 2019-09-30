@@ -43,6 +43,8 @@ instance SOP.HasDatatypeInfo Hook
 
 instance Debug Hook
 
+instance Diff Hook
+
 {- | Parse the @hook@ Kore attribute, if present.
 
   It is a parse error if the @hook@ attribute is not given exactly one literal

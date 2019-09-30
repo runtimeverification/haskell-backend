@@ -29,6 +29,8 @@ instance SOP.HasDatatypeInfo RuleIndex
 
 instance Debug RuleIndex
 
+instance Diff RuleIndex
+
 instance NFData RuleIndex
 
 instance Default RuleIndex where

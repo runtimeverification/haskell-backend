@@ -1,13 +1,11 @@
 module Test.Kore.Internal.MultiAnd where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( assertEqual
-    , testCase
-    )
 
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Kore.Debug
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -16,12 +14,18 @@ import Kore.TopBottom
     ( TopBottom (..)
     )
 
-
-import Test.Kore.Comparators ()
---import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 data TestTopBottom = TestTop | TestBottom | TestOther !Integer
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic TestTopBottom
+
+instance SOP.HasDatatypeInfo TestTopBottom
+
+instance Debug TestTopBottom
+
+instance Diff TestTopBottom
 
 instance TopBottom TestTopBottom where
     isTop TestTop = True

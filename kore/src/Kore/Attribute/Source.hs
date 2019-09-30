@@ -42,6 +42,8 @@ instance SOP.HasDatatypeInfo Source
 
 instance Debug Source
 
+instance Diff Source
+
 instance NFData Source
 
 instance Default Source where

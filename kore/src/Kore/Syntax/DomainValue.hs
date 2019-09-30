@@ -48,6 +48,10 @@ instance SOP.HasDatatypeInfo (DomainValue sort child)
 
 instance (Debug sort, Debug child) => Debug (DomainValue sort child)
 
+instance
+    ( Debug sort, Debug child, Diff sort, Diff child )
+    => Diff (DomainValue sort child)
+
 instance Unparse child => Unparse (DomainValue Sort child) where
     unparse DomainValue { domainValueSort, domainValueChild } =
         "\\dv"

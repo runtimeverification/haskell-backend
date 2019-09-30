@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.StringLiteral
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -24,13 +19,12 @@ import Kore.Step.Simplification.StringLiteral
     ( simplify
     )
 
-import Test.Kore.Comparators ()
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_stringLiteralSimplification :: [TestTree]
 test_stringLiteralSimplification =
     [ testCase "StringLiteral evaluates to StringLiteral"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkStringLiteral "a"

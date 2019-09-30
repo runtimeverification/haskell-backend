@@ -66,6 +66,8 @@ instance SOP.HasDatatypeInfo Variable
 
 instance Debug Variable
 
+instance Diff Variable
+
 instance Unparse Variable where
     unparse Variable { variableName, variableCounter, variableSort } =
         unparse variableName
@@ -178,6 +180,8 @@ instance SOP.Generic Concrete
 instance SOP.HasDatatypeInfo Concrete
 
 instance Debug Concrete
+
+instance Diff Concrete
 
 instance Unparse Concrete where
     unparse = \case {}

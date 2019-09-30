@@ -3,7 +3,6 @@ module Test.Kore.Step.Simplification.And
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Kore.Internal.MultiOr
     ( MultiOr (MultiOr)
@@ -27,55 +26,54 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_andSimplification :: [TestTree]
 test_andSimplification =
     [ testCase "And truth table" $ do
-        assertEqualWithExplanation "false and false = false"
+        assertEqual "false and false = false"
             OrPattern.bottom
             =<< evaluate (makeAnd [] [])
-        assertEqualWithExplanation "false and true = false"
+        assertEqual "false and true = false"
             OrPattern.bottom
             =<< evaluate (makeAnd [] [Pattern.top])
-        assertEqualWithExplanation "true and false = false"
+        assertEqual "true and false = false"
             OrPattern.bottom
             =<< evaluate (makeAnd [Pattern.top] [])
-        assertEqualWithExplanation "true and true = true"
+        assertEqual "true and true = true"
             OrPattern.top
             =<< evaluate (makeAnd [Pattern.top] [Pattern.top])
 
     , testCase "And with booleans" $ do
-        assertEqualWithExplanation "false and something = false"
+        assertEqual "false and something = false"
             OrPattern.bottom
             =<< evaluate (makeAnd [] [fOfXExpanded])
-        assertEqualWithExplanation "something and false = false"
+        assertEqual "something and false = false"
             OrPattern.bottom
             =<< evaluate (makeAnd [fOfXExpanded] [])
-        assertEqualWithExplanation "true and something = something"
+        assertEqual "true and something = something"
             (OrPattern.fromPatterns [fOfXExpanded])
             =<< evaluate (makeAnd [Pattern.top] [fOfXExpanded])
-        assertEqualWithExplanation "something and true = something"
+        assertEqual "something and true = something"
             (OrPattern.fromPatterns [fOfXExpanded])
             =<< evaluate (makeAnd [fOfXExpanded] [Pattern.top])
 
     , testCase "And with partial booleans" $ do
-        assertEqualWithExplanation "false term and something = false"
+        assertEqual "false term and something = false"
             mempty
             =<< evaluatePatterns bottomTerm fOfXExpanded
-        assertEqualWithExplanation "something and false term = false"
+        assertEqual "something and false term = false"
             mempty
             =<< evaluatePatterns fOfXExpanded bottomTerm
-        assertEqualWithExplanation "false predicate and something = false"
+        assertEqual "false predicate and something = false"
             mempty
             =<< evaluatePatterns falsePredicate fOfXExpanded
-        assertEqualWithExplanation "something and false predicate = false"
+        assertEqual "something and false predicate = false"
             mempty
             =<< evaluatePatterns fOfXExpanded falsePredicate
 
@@ -88,7 +86,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns plain0OfXExpanded plain1OfXExpanded
-            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
+            assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And function terms" $ do
             let expect =
@@ -98,7 +96,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
-            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
+            assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And predicates" $ do
             let expect =
@@ -122,7 +120,7 @@ test_andSimplification =
                         , predicate = makeCeilPredicate gOfX
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
+            assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - simple" $ do
             let expect =
@@ -146,7 +144,7 @@ test_andSimplification =
                         , substitution =
                             Substitution.wrap [(ElemVar Mock.z, gOfX)]
                         }
-            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
+            assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - multiple terms" $ do
             let
@@ -167,7 +165,7 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
+            assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - separate predicate" $ do
             let
@@ -189,7 +187,7 @@ test_andSimplification =
                     , predicate = makeTruePredicate
                     , substitution = Substitution.wrap [(ElemVar Mock.y, gOfX)]
                     }
-            assertEqualWithExplanation "" (OrPattern.fromPatterns [expect]) actual
+            assertEqual "" (OrPattern.fromPatterns [expect]) actual
 
         , testCase "And substitutions - failure" $ do
             actual <-
@@ -212,12 +210,12 @@ test_andSimplification =
                                 )
                             ]
                         }
-            assertEqualWithExplanation "" OrPattern.bottom actual
+            assertEqual "" OrPattern.bottom actual
             {-
             TODO(virgil): Uncomment this after substitution merge can handle
             function equality.
 
-            assertEqualWithExplanation
+            assertEqual
                 "Combines conditions with substitution merge condition"
                 Pattern
                     { term = mkTop_
@@ -257,7 +255,7 @@ test_andSimplification =
                             [(ElemVar Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns yExpanded fOfXExpanded
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqual "" (MultiOr [expect]) actual
 
         , testCase "term-variable" $ do
             let expect =
@@ -268,7 +266,7 @@ test_andSimplification =
                             [(ElemVar Mock.y, fOfX)]
                         }
             actual <- evaluatePatterns fOfXExpanded yExpanded
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqual "" (MultiOr [expect]) actual
         ]
 
     , testGroup "constructor and"
@@ -291,7 +289,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" (MultiOr [expect]) actual
+            assertEqual "" (MultiOr [expect]) actual
 
         , testCase "different constructors" $ do
             actual <-
@@ -306,7 +304,7 @@ test_andSimplification =
                         , predicate = makeTruePredicate
                         , substitution = mempty
                         }
-            assertEqualWithExplanation "" (MultiOr []) actual
+            assertEqual "" (MultiOr []) actual
         ]
 
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
@@ -355,7 +353,7 @@ test_andSimplification =
                         }
                     ]
                 )
-        assertEqualWithExplanation "Distributes or" expect actual
+        assertEqual "Distributes or" expect actual
     ]
   where
     yExpanded = Conditional

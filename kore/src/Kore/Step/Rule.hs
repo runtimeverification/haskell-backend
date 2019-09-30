@@ -150,6 +150,8 @@ instance SOP.HasDatatypeInfo (RulePattern variable)
 
 instance Debug variable => Debug (RulePattern variable)
 
+instance (Debug variable, Diff variable) => Diff (RulePattern variable)
+
 instance
     (SortedVariable variable, Unparse variable) =>
     Pretty (RulePattern variable)
@@ -206,6 +208,8 @@ instance SOP.Generic (RewriteRule variable)
 instance SOP.HasDatatypeInfo (RewriteRule variable)
 
 instance Debug variable => Debug (RewriteRule variable)
+
+instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -272,6 +276,8 @@ instance SOP.Generic (OnePathRule variable)
 instance SOP.HasDatatypeInfo (OnePathRule variable)
 
 instance Debug variable => Debug (OnePathRule variable)
+
+instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)

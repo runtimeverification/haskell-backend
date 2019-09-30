@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Defined
 
 instance Debug Defined
 
+instance Diff Defined
+
 instance NFData Defined
 
 instance Hashable Defined
