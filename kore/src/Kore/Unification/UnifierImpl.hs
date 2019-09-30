@@ -1,21 +1,19 @@
-{-|
-Module      : Kore.Unification.UnifierImpl
-Description : Datastructures and functionality for performing unification on
-              Pure patterns
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : traian.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
--}
-module Kore.Unification.UnifierImpl where
+
+ -}
+module Kore.Unification.UnifierImpl
+    ( simplifyAnds
+    , normalizeSubstitutionDuplication
+    , normalizeExcept
+    ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
 import Control.Monad
     ( foldM
     )
-import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
@@ -30,7 +28,6 @@ import Data.List.NonEmpty
     ( NonEmpty (..)
     )
 import qualified Data.Map.Strict as Map
-import qualified GHC.Stack as GHC
 
 import qualified Branch
 import qualified Kore.Internal.Conditional as Conditional
@@ -44,9 +41,6 @@ import Kore.Internal.TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
-    )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
@@ -237,20 +231,3 @@ normalizeExcept Conditional { term, predicate, substitution } = do
         Unifier.lowerExceptT
         . withExceptT substitutionToUnifyOrSubError
         . normalizeSubstitution
-
-mergePredicatesAndSubstitutionsExcept
-    ::  forall variable unifier
-    .   ( SimplifierVariable variable
-        , GHC.HasCallStack
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
-    => [Syntax.Predicate variable]
-    -> [Substitution variable]
-    -> unifier (Predicate variable)
-mergePredicatesAndSubstitutionsExcept predicates substitutions =
-    normalizeExcept Conditional
-        { term = ()
-        , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
-        , substitution = Foldable.fold substitutions
-        }
