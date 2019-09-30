@@ -259,13 +259,9 @@ mergePredicatesAndSubstitutionsExcept
     => [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier (Predicate variable)
-mergePredicatesAndSubstitutionsExcept predicates substitutions = do
-    let
-        mergedSubstitution = Foldable.fold substitutions
-        mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
-    normalizeExcept
-        Conditional
-            { term = ()
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
+mergePredicatesAndSubstitutionsExcept predicates substitutions =
+    normalizeExcept Conditional
+        { term = ()
+        , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
+        , substitution = Foldable.fold substitutions
+        }
