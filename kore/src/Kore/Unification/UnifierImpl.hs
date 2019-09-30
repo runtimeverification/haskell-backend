@@ -114,10 +114,9 @@ solveGroupedSubstitution
        , MonadUnify unifier
        , WithLog LogMessage unifier
        )
-    => UnifiedVariable variable
-    -> NonEmpty (TermLike variable)
+    => (UnifiedVariable variable, NonEmpty (TermLike variable))
     -> unifier (Predicate variable)
-solveGroupedSubstitution var patterns = do
+solveGroupedSubstitution (var, patterns) = do
     predSubst <- simplifyAnds patterns
     return Conditional
         { term = ()
@@ -146,9 +145,7 @@ normalizeSubstitutionDuplication subst
   | null nonSingletonSubstitutions || Substitution.isNormalized subst =
     return (Predicate.fromSubstitution subst)
   | otherwise = do
-    predSubst <-
-        Foldable.fold
-        <$> mapM (uncurry solveGroupedSubstitution) varAndSubstList
+    predSubst <- Foldable.fold <$> mapM solveGroupedSubstitution varAndSubstList
     finalSubst <-
         normalizeSubstitutionDuplication
             (  Substitution.wrap (concat singletonSubstitutions)
