@@ -44,8 +44,7 @@ import Kore.Logger
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
-    ( isFalse
-    , makeAndPredicate
+    ( makeAndPredicate
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
@@ -81,22 +80,21 @@ simplifyAnds
     => NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
 simplifyAnds patterns = do
-    let
-        simplifyAnds'
-            :: Pattern variable
-            -> TermLike variable
-            -> unifier (Pattern variable)
-        simplifyAnds' intermediate pat =
-            case Cofree.tailF (Recursive.project pat) of
-                AndF And { andFirst = lhs, andSecond = rhs } ->
-                    foldM simplifyAnds' intermediate [lhs, rhs]
-                _ -> do
-                    result <- termUnification (Pattern.term intermediate) pat
-                    normalizeExcept (result <* intermediate)
     result <- foldM simplifyAnds' Pattern.top patterns
-    if Predicate.isFalse . Pattern.predicate $ result
-        then return Pattern.bottom
-        else return result
+    TopBottom.guardAgainstBottom result
+    return result
+  where
+    simplifyAnds'
+        :: Pattern variable
+        -> TermLike variable
+        -> unifier (Pattern variable)
+    simplifyAnds' intermediate pat =
+        case Cofree.tailF (Recursive.project pat) of
+            AndF And { andFirst = lhs, andSecond = rhs } ->
+                foldM simplifyAnds' intermediate [lhs, rhs]
+            _ -> do
+                result <- termUnification (Pattern.term intermediate) pat
+                normalizeExcept (result <* intermediate)
 
 groupSubstitutionByVariable
     :: (Ord variable, SortedVariable variable)
