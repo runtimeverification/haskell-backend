@@ -14,61 +14,84 @@ Rewrite rules
 -------------
 
 Given a rewrite axiom of the form 
+
 (0) `∀ Y .α(Y) → •β(Y)`
+
 and a goal `φ → •ψ` such that 
+
 (1) `φ` can be decomposed as `φ = φₜ ∧ φₚ`, (1') `φₚ` predicate.
+
 (2) `α(Y)` can be decomposed as `α(Y) = αₜ(Y) ∧ αₚ(Y)`
-and there exists `t` such that
+
+and there exist(s) functional pattern(s) `t` such that
+
 (3) `φₚ → (φₜ = αₜ(t))` and
+
 (4) `φₚ → αₚ(t)`
 
 Then, if we can show that
-(5) `β(t) ∧ φₚ → ψ`
 
-Then it is true that `φ → •ψ`.
+(5) `β(t) ∧ φₚ → ψ`,
+
+it is true that `φ → •ψ`.
 
 ### Proof
 
 
 Premise (0) says
-`∀ Y .α(Y) → •β(Y)`; instantiating `Y` with `t` we get
+
+`∀ Y .α(Y) → •β(Y)`; instantiating `Y` with `t` (functional) we get
+
 `α(t) → •β(t)` which is equivalent by (2) with
+
 (6) `αₜ(t) ∧ αₚ(t) → •β(t)`.
 
 From (3) and (4), by FOL reasoning (conclusions with same premise), we get
+
 `φₚ → (φₜ = αₜ(t)) ∧ αₚ(t)`; by FOL reasoning (conjunction to left), we get
+
 `φₜ ∧ φₚ → φₜ ∧ (φₜ = αₜ(t)) ∧ αₚ(t)`; by equality elimination we get
+
 `φₜ ∧ φₚ → αₜ(t) ∧ αₚ(t)`; by (6) and transitivity of `→`, we get
+
 `φₜ ∧ φₚ → •β(t)`; by FOL reasoning we get
+
 `φₜ ∧ φₚ → •β(t) ∧ φₚ`; due to (1') and properties of conjunction we get
+
 `φₜ ∧ φₚ → •(β(t) ∧ φₚ)`, which is equivalent by (1) with
+
 (7) `φ → •(β(t) ∧ φₚ)`.
 
 Premise (5) says
+
 `β(t) ∧ φₚ → ψ`; by the Framing rule of ML with `•`, we get
+
 `•(β(t) ∧ φₚ) → •ψ`; by (7) and transitivity of `→`, we get
+
 `φ → •ψ`.
 
 QED
 
 ### Coverage concerns (All-path-reachability)
 
-Note that if `φ` and `αₜ(Y)` are not constructor-based
-(in which case the unifier `Y = t` is an MGU) then 
-the above technique does not guarantee coverage as-is,
+Note that if `φ` and `αₜ(Y)` are not functional and constructor-based,
+then the MGU migh not be computable.
+In this case,  the above technique does not guarantee coverage as-is,
 since `t` is not guaranteed to be the most general unifier
 (there could be more than one minimal unifier).
 
 The above reasoning could be extended to include multiple
 substitution by replacing (3), (4) and (5) with something like
+
 (3') `φₚ → (φₜ = αₜ(tᵢ))`, for i=1..n
+
 (4') `φₚ → αₚ(tᵢ)`, for i=1..n
 
 But it's not clear how to ensure completeness and link this
 with the STEP rule. Also note that our usage of the STEP rule itself
 in the proofs for the all-path algorithms assumes that `φ` is function-like.
 
-Therefore the proposal for applying rewrite rules by matching proposed here
+Therefore the proposal for applying rewrite rules by matching described here
 should not be used for all-path-reachability, at least not until we get a
 better intuition.
 
@@ -79,30 +102,47 @@ Equality axioms
 ---------------
 
 Given an axiom of the form 
+
 (0) `∀ Y . αₚ(Y) → (αₜ(Y) = β(Y))`
+
 and a goal `φ → ψ` such that 
+
 (1) `φ` can be decomposed as `φ = φₜ ∧ φₚ`
-and there exists `t` such that
+
+and there exist(s) functional pattern(s) `t` such that
+
 (2) `φₚ → (φₜ = αₜ(t))` and
+
 (3) `φₚ → αₚ(t)`
 
 Then, if we can show that
-(4) `β(t) ∧ φₚ → ψ`
 
-Then it is true that `φ → ψ`.
+(4) `β(t) ∧ φₚ → ψ`,
+
+it is true that `φ → ψ`.
 
 ### Proof
 
 Premise (0) says
-(0) `∀ Y . αₚ(Y) → (αₜ(Y) = β(Y))`; instantiating `Y` with `t` we get
+
+(0) `∀ Y . αₚ(Y) → (αₜ(Y) = β(Y))`; instantiating `Y` with `t` (functional) we get
+
 `αₚ(t) → (αₜ(t) = β(t))`; by (3) and transitivity of `→` we get
+
 `φₚ → (αₜ(t) = β(t))`; by FOL (conjunctions with same premise) using (2) we get
+
 `φₚ → (φₜ = αₜ(t)) ∧ (αₜ(t) = β(t))`; by FOL reasoning (conjunction to left), we get
+
 `φₜ ∧ φₚ → φₜ ∧ (φₜ = αₜ(t)) ∧ (αₜ(t) = β(t))`; by equality elimination we get
+
 `φₜ ∧ φₚ → αₜ(t) ∧ (αₜ(t) = β(t))`; by equality elimination we get
+
 `φₜ ∧ φₚ → β(t)`; by FOL reasoning we get
+
 `φₜ ∧ φₚ → β(t) ∧ φₚ`; by (4) and transitivity we get
+
 `φₜ ∧ φₚ → ψ`, which is equivalent by (1) with
+
 `φ → ψ`.
 
 QED
