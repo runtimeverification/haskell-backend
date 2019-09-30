@@ -208,14 +208,14 @@ mergePredicateList [] = Predicate.top
 mergePredicateList (p:ps) = foldl' (<>) p ps
 
 normalizeExcept
-    ::  forall unifier variable
+    ::  forall unifier variable term
     .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
-    => Predicate variable
-    -> unifier (Predicate variable)
-normalizeExcept Conditional { predicate, substitution } = do
+    => Conditional variable term
+    -> unifier (Conditional variable term)
+normalizeExcept Conditional { term, predicate, substitution } = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
     deduplicated <- normalizeSubstitutionDuplication substitution
@@ -238,11 +238,12 @@ normalizeExcept Conditional { predicate, substitution } = do
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
-    Branch.alternate $ Simplifier.simplifyPredicate Conditional
-            { term = ()
-            , predicate = mergedPredicate
-            , substitution = normalizedSubstitution
-            }
+    simplified <- Branch.alternate $ Simplifier.simplifyPredicate Conditional
+        { term = ()
+        , predicate = mergedPredicate
+        , substitution = normalizedSubstitution
+        }
+    return simplified { term }
   where
     normalizeSubstitution' =
         Unifier.lowerExceptT
