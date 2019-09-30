@@ -112,20 +112,11 @@ mergePredicatesAndSubstitutions
     -> [Substitution variable]
     -> BranchT simplifier (Predicate variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
-    result <-
-        (Monad.Trans.lift . Monad.Unify.runUnifierT)
-        (mergePredicatesAndSubstitutionsExcept predicates substitutions)
-    case result of
-        Left _ ->
-            let
-                mergedPredicate =
-                    Syntax.Predicate.makeMultipleAndPredicate
-                        (  predicates
-                        ++ map Syntax.Predicate.fromSubstitution substitutions
-                        )
-            in
-                return $ Predicate.fromPredicate mergedPredicate
-        Right r -> Branch.scatter r
+    normalize Conditional
+        { term = ()
+        , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
+        , substitution = Foldable.fold substitutions
+        }
 
 mergePredicatesAndSubstitutionsExcept
     ::  forall variable unifier
