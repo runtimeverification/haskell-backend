@@ -1,4 +1,4 @@
-\implies{SortGeneratedTopCell{}}(
+\rewrites{SortGeneratedTopCell{}}(
     \and{SortGeneratedTopCell{}}(
         Lbl'-LT-'generatedTop'-GT-'{}(
             Lbl'-LT-'T'-GT-'{}(
