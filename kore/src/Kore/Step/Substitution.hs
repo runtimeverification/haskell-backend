@@ -18,12 +18,8 @@ module Kore.Step.Substitution
     , normalizeExcept
     ) where
 
-import Control.Monad.Except
-    ( withExceptT
-    )
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
 import GHC.Stack
     ( HasCallStack
     )
@@ -43,20 +39,10 @@ import qualified Kore.Predicate.Predicate as Syntax
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.Simplification.Simplify as Simplifier
-import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Error
-    ( substitutionToUnifyOrSubError
-    )
 import Kore.Unification.Substitution
     ( Substitution
     )
-import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.SubstitutionNormalization
-    ( normalizeSubstitution
-    )
-import Kore.Unification.UnifierImpl
-    ( normalizeSubstitutionDuplication
-    )
+import qualified Kore.Unification.UnifierImpl as Unification
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
@@ -104,42 +90,7 @@ normalizeExcept
         )
     => Predicate variable
     -> unifier (Predicate variable)
-normalizeExcept Conditional { predicate, substitution } = do
-    predicateSimplifier <- Simplifier.askSimplifierPredicate
-    -- The intermediate steps do not need to be checked for \bottom because we
-    -- use guardAgainstBottom at the end.
-    deduplicated <- normalizeSubstitutionDuplication substitution
-    let
-        PredicateSimplifier simplifySubstitution = predicateSimplifier
-        Conditional { substitution = preDeduplicatedSubstitution } =
-            deduplicated
-        Conditional { predicate = deduplicatedPredicate } = deduplicated
-        -- The substitution is not fully normalized, but it is safe to convert
-        -- to a Map because it has been deduplicated.
-        deduplicatedSubstitution =
-            Map.fromList $ Substitution.unwrap preDeduplicatedSubstitution
-
-    normalized <- normalizeSubstitution' deduplicatedSubstitution
-    let
-        Conditional { substitution = normalizedSubstitution } = normalized
-        Conditional { predicate = normalizedPredicate } = normalized
-
-        mergedPredicate =
-            Syntax.Predicate.makeMultipleAndPredicate
-                [predicate, deduplicatedPredicate, normalizedPredicate]
-
-    TopBottom.guardAgainstBottom mergedPredicate
-    Branch.alternate $ simplifySubstitution Conditional
-            { term = ()
-            , predicate = mergedPredicate
-            , substitution = normalizedSubstitution
-            }
-  where
-
-    normalizeSubstitution' =
-        Monad.Unify.lowerExceptT
-        . withExceptT substitutionToUnifyOrSubError
-        . normalizeSubstitution
+normalizeExcept = Unification.normalizeExcept
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
@@ -186,16 +137,8 @@ mergePredicatesAndSubstitutionsExcept
     => [Syntax.Predicate variable]
     -> [Substitution variable]
     -> unifier (Predicate variable)
-mergePredicatesAndSubstitutionsExcept predicates substitutions = do
-    let
-        mergedSubstitution = Foldable.fold substitutions
-        mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
-    normalizeExcept
-        Conditional
-            { term = ()
-            , predicate = mergedPredicate
-            , substitution = mergedSubstitution
-            }
+mergePredicatesAndSubstitutionsExcept =
+    Unification.mergePredicatesAndSubstitutionsExcept
 
 {-| Creates a 'PredicateMerger' that returns errors on unifications it
 can't handle.

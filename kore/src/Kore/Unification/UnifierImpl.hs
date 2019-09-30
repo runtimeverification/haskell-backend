@@ -11,9 +11,11 @@ Portability : portable
 module Kore.Unification.UnifierImpl where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Error
 import Control.Monad
     ( foldM
     )
+import qualified Data.Foldable as Foldable
 import Data.Function
     ( on
     )
@@ -27,7 +29,10 @@ import Data.List
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
+import qualified Data.Map.Strict as Map
+import qualified GHC.Stack as GHC
 
+import qualified Branch
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -40,27 +45,37 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
+import qualified Kore.Predicate.Predicate as Syntax
+    ( Predicate
+    )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
     ( isFalse
     , makeAndPredicate
+    )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.TopBottom as TopBottom
+import Kore.Unification.Error
+    ( substitutionToUnifyOrSubError
     )
 import Kore.Unification.Substitution
     ( Substitution
     )
 import qualified Kore.Unification.Substitution as Substitution
+import Kore.Unification.SubstitutionNormalization
+    ( normalizeSubstitution
+    )
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
     )
+import qualified Kore.Unification.Unify as Unifier
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
 import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
     ( termUnification
-    )
-import {-# SOURCE #-} Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutionsExcept
     )
 
 simplifyAnds
@@ -191,3 +206,66 @@ mergePredicateList
     -> Predicate variable
 mergePredicateList [] = Predicate.top
 mergePredicateList (p:ps) = foldl' (<>) p ps
+
+normalizeExcept
+    ::  forall unifier variable
+    .   ( SimplifierVariable variable
+        , MonadUnify unifier
+        , WithLog LogMessage unifier
+        )
+    => Predicate variable
+    -> unifier (Predicate variable)
+normalizeExcept Conditional { predicate, substitution } = do
+    -- The intermediate steps do not need to be checked for \bottom because we
+    -- use guardAgainstBottom at the end.
+    deduplicated <- normalizeSubstitutionDuplication substitution
+    let
+        Conditional { substitution = preDeduplicatedSubstitution } =
+            deduplicated
+        Conditional { predicate = deduplicatedPredicate } = deduplicated
+        -- The substitution is not fully normalized, but it is safe to convert
+        -- to a Map because it has been deduplicated.
+        deduplicatedSubstitution =
+            Map.fromList $ Substitution.unwrap preDeduplicatedSubstitution
+
+    normalized <- normalizeSubstitution' deduplicatedSubstitution
+    let
+        Conditional { substitution = normalizedSubstitution } = normalized
+        Conditional { predicate = normalizedPredicate } = normalized
+
+        mergedPredicate =
+            Syntax.Predicate.makeMultipleAndPredicate
+                [predicate, deduplicatedPredicate, normalizedPredicate]
+
+    TopBottom.guardAgainstBottom mergedPredicate
+    Branch.alternate $ Simplifier.simplifyPredicate Conditional
+            { term = ()
+            , predicate = mergedPredicate
+            , substitution = normalizedSubstitution
+            }
+  where
+    normalizeSubstitution' =
+        Unifier.lowerExceptT
+        . withExceptT substitutionToUnifyOrSubError
+        . normalizeSubstitution
+
+mergePredicatesAndSubstitutionsExcept
+    ::  forall variable unifier
+    .   ( SimplifierVariable variable
+        , GHC.HasCallStack
+        , MonadUnify unifier
+        , WithLog LogMessage unifier
+        )
+    => [Syntax.Predicate variable]
+    -> [Substitution variable]
+    -> unifier (Predicate variable)
+mergePredicatesAndSubstitutionsExcept predicates substitutions = do
+    let
+        mergedSubstitution = Foldable.fold substitutions
+        mergedPredicate = Syntax.Predicate.makeMultipleAndPredicate predicates
+    normalizeExcept
+        Conditional
+            { term = ()
+            , predicate = mergedPredicate
+            , substitution = mergedSubstitution
+            }
