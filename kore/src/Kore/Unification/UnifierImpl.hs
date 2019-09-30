@@ -98,19 +98,7 @@ simplifyAnds patterns = do
                     foldM simplifyAnds' intermediate [lhs, rhs]
                 _ -> do
                     result <- termUnification (Pattern.term intermediate) pat
-                    predSubst <-
-                        mergePredicatesAndSubstitutionsExcept
-                            [ Pattern.predicate result
-                            , Pattern.predicate intermediate
-                            ]
-                            [ Pattern.substitution result
-                            , Pattern.substitution intermediate
-                            ]
-                    return Pattern.Conditional
-                        { term = Pattern.term result
-                        , predicate = Conditional.predicate predSubst
-                        , substitution = Conditional.substitution predSubst
-                        }
+                    normalizeExcept (result <* intermediate)
     result <- foldM simplifyAnds' Pattern.top patterns
     if Predicate.isFalse . Pattern.predicate $ result
         then return Pattern.bottom
