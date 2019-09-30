@@ -218,15 +218,14 @@ test_Debug =
         }
         `yields`
         "Variable\n\
-        \    { variableName = Id { getId = \"v\", idLocation = AstLocationTest }\n\
-        \    , variableCounter = Nothing\n\
-        \    , variableSort =\n\
-        \        SortVariableSort\n\
-        \            SortVariable\n\
-        \                { getSortVariable =\n\
-        \                    Id { getId = \"sv\", idLocation = AstLocationTest }\n\
-        \                }\n\
-        \    }"
+        \{ variableName = Id { getId = \"v\", idLocation = AstLocationTest }\n\
+        \, variableCounter = Nothing\n\
+        \, variableSort =\n\
+        \    SortVariableSort\n\
+        \        SortVariable\n\
+        \        { getSortVariable = Id { getId = \"sv\", idLocation = AstLocationTest }\n\
+        \        }\n\
+        \}"
         $  "Variable"
     , CharLiteral 'a'
         `yields`
