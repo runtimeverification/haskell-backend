@@ -17,7 +17,7 @@ module Kore.Builtin.Map
     , sortDeclVerifiers
     , symbolVerifiers
     , builtinFunctions
-    , asTermLike
+    , Map.asTermLike
     , internalize
     -- * Unification
     , unifyEquals
@@ -58,7 +58,7 @@ import Kore.Builtin.Builtin
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
-import qualified Kore.Builtin.MapSymbols as Map
+import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
@@ -73,7 +73,6 @@ import Kore.Internal.TermLike
     , pattern Builtin_
     , InternalVariable
     , TermLike
-    , mkApplySymbol
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -442,61 +441,6 @@ builtinFunctions =
         , (Map.removeAllKey, evalRemoveAll)
         , (Map.sizeKey, evalSize)
         ]
-
-{- | Externalizes a 'Domain.InternalMap' as a 'TermLike'.
--}
-asTermLike
-    :: forall variable
-    .  InternalVariable variable
-    => Domain.InternalMap (TermLike Concrete) (TermLike variable)
-    -> TermLike variable
-asTermLike builtin =
-    Ac.asTermLike
-        (Ac.UnitSymbol unitSymbol)
-        (Ac.ConcatSymbol concatSymbol)
-        (Ac.ConcreteElements
-            (map concreteElement (Map.toAscList concreteElements))
-        )
-        (Ac.VariableElements
-            (element . Domain.unwrapElement <$> elementsWithVariables)
-        )
-        (Ac.Opaque filteredMaps)
-  where
-    filteredMaps :: [TermLike variable]
-    filteredMaps = filter (not . isEmptyMap) opaque
-
-    isEmptyMap :: TermLike variable -> Bool
-    isEmptyMap
-        (Builtin_
-            (Domain.BuiltinMap
-                Domain.InternalAc { builtinAcChild = wrappedChild }
-            )
-        )
-      =
-        Domain.unwrapAc wrappedChild == Domain.emptyNormalizedAc
-    isEmptyMap (App_ symbol _) = unitSymbol == symbol
-    isEmptyMap _ = False
-
-    Domain.InternalAc { builtinAcChild } = builtin
-    Domain.InternalAc { builtinAcUnit = unitSymbol } = builtin
-    Domain.InternalAc { builtinAcElement = elementSymbol } = builtin
-    Domain.InternalAc { builtinAcConcat = concatSymbol } = builtin
-
-    normalizedAc = Domain.unwrapAc builtinAcChild
-
-    Domain.NormalizedAc { elementsWithVariables } = normalizedAc
-    Domain.NormalizedAc { concreteElements } = normalizedAc
-    Domain.NormalizedAc { opaque } = normalizedAc
-
-    concreteElement
-        :: (TermLike Concrete, Domain.MapValue (TermLike variable))
-        -> TermLike variable
-    concreteElement (key, value) = element (TermLike.fromConcrete key, value)
-    element
-        :: (TermLike variable, Domain.MapValue (TermLike variable))
-        -> TermLike variable
-    element (key, Domain.MapValue value) =
-        mkApplySymbol elementSymbol [key, value]
 
 {- | Convert a Map-sorted 'TermLike' to its internal representation.
 
