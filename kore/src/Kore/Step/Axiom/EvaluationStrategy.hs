@@ -236,21 +236,18 @@ applyFirstSimplifierThatWorks
               -- configuration.
               -- However, right now, we shouldn't be able to get more
               -- than one result, so we throw an error.
-              error
-                  (  "Unexpected simplification result with more "
-                  ++ "than one configuration: \n"
-                  ++ (show . Pretty.vsep $
-                        [ Pretty.indent 2 "input:"
-                        , Pretty.indent 4 (unparse patt)
-                        , Pretty.indent 2 "results:"
-                        , (Pretty.indent 4 . Pretty.vsep)
-                            (unparse <$> Foldable.toList orResults)
-                        , Pretty.indent 2 "remainders:"
-                        , (Pretty.indent 4 . Pretty.vsep)
-                            (unparse <$> Foldable.toList orRemainders)
-                        ]
-                     )
-                  )
+              error . show . Pretty.vsep $
+                [ "Unexpected simplification result with more \
+                  \than one configuration:"
+                , Pretty.indent 2 "input:"
+                , Pretty.indent 4 (unparse patt)
+                , Pretty.indent 2 "results:"
+                , (Pretty.indent 4 . Pretty.vsep)
+                    (unparse <$> Foldable.toList orResults)
+                , Pretty.indent 2 "remainders:"
+                , (Pretty.indent 4 . Pretty.vsep)
+                    (unparse <$> Foldable.toList orRemainders)
+                ]
           | not (OrPattern.isFalse orRemainders) ->  do
               Logger.logWarning
                   . Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep
