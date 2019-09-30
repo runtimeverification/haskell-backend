@@ -15,19 +15,14 @@ import Control.Monad
     ( foldM
     )
 import qualified Data.Foldable as Foldable
-import Data.Function
-    ( on
-    )
 import qualified Data.Functor.Foldable as Recursive
-import Data.List
-    ( groupBy
-    , partition
-    , sortBy
-    )
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
 import qualified Data.List.NonEmpty as NonEmpty
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 
 import qualified Branch
@@ -97,13 +92,6 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
                 result <- termUnification (Pattern.term intermediate) pat
                 normalizeExcept (result <* intermediate)
 
-groupSubstitutionByVariable
-    :: (Ord variable, SortedVariable variable)
-    => [(UnifiedVariable variable, TermLike variable)]
-    -> [[(UnifiedVariable variable, TermLike variable)]]
-groupSubstitutionByVariable =
-    groupBy ((==) `on` fst) . sortBy (compare `on` fst)
-
 {- | Sort variable-renaming substitutions.
 
 Variable-renaming substitutions are sorted so that the greater variable is
@@ -161,15 +149,13 @@ normalizeSubstitutionDuplication
     => Substitution variable
     -> unifier (Predicate variable)
 normalizeSubstitutionDuplication subst
-  | null nonSingletonSubstitutions || Substitution.isNormalized subst =
+  | all isSingleton substitutions || Substitution.isNormalized subst =
     return (Predicate.fromSubstitution subst)
   | otherwise = do
-    predSubst <- Foldable.fold <$> mapM solveGroupedSubstitution varAndSubstList
+    predSubst <- Foldable.fold <$> mapM solveGroupedSubstitution substitutions
     finalSubst <-
         normalizeSubstitutionDuplication
-            (  Substitution.wrap (concat singletonSubstitutions)
-            <> Conditional.substitution predSubst
-            )
+            (Conditional.substitution predSubst)
     let
         pred' =
             Predicate.makeAndPredicate
@@ -181,21 +167,22 @@ normalizeSubstitutionDuplication subst
         , substitution = Conditional.substitution finalSubst
         }
   where
-    groupedSubstitution =
-        groupSubstitutionByVariable . map sortRenamedVariable
+    substitutions :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
+    substitutions =
+        Map.toAscList
+        . Foldable.foldl' insertSubstitution Map.empty
+        . map sortRenamedVariable
         $ Substitution.unwrap subst
-    isSingleton [_] = True
-    isSingleton _   = False
-    singletonSubstitutions, nonSingletonSubstitutions
-        :: [[(UnifiedVariable variable, TermLike variable)]]
-    (singletonSubstitutions, nonSingletonSubstitutions) =
-        partition isSingleton groupedSubstitution
-    varAndSubstList
-        :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
-    varAndSubstList =
-        nonSingletonSubstitutions >>= \case
-            [] -> []
-            ((x, y) : ys) -> [(x, y :| (snd <$> ys))]
+    insertSubstitution
+        :: forall variable1 term
+        .  Ord variable1
+        => Map variable1 (NonEmpty term)
+        -> (variable1, term)
+        -> Map variable1 (NonEmpty term)
+    insertSubstitution multiMap (variable, termLike) =
+        let push = (termLike :|) . maybe [] Foldable.toList
+        in Map.alter (Just . push) variable multiMap
+    isSingleton (_, _ :| duplicates) = null duplicates
 
 normalizeExcept
     ::  forall unifier variable term
