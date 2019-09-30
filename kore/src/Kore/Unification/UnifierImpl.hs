@@ -106,9 +106,21 @@ groupSubstitutionByVariable =
     sortRenaming (var, Var_ var') | var' < var = (var', mkVar var)
     sortRenaming eq = eq
 
--- simplifies x = t1 /\ x = t2 /\ ... /\ x = tn by transforming it into
--- x = ((t1 /\ t2) /\ (..)) /\ tn
--- then recursively reducing that to finally get x = t /\ subst
+{- | Simplify a conjunction of substitutions for the same variable.
+
+Simplify a conjunction of substitutions for the same variable @x@,
+
+@
+x = t₁ ∧ ... ∧ x = tₙ
+@
+
+by unifying the assignments @tᵢ@,
+
+@
+x = (t₁ ∧ ... ∧ tₙ) ∧ ⌈t₁ ∧ ... ∧ tₙ⌉
+@
+
+ -}
 solveGroupedSubstitution
     :: ( SimplifierVariable variable
        , MonadUnify unifier
@@ -116,16 +128,10 @@ solveGroupedSubstitution
        )
     => (UnifiedVariable variable, NonEmpty (TermLike variable))
     -> unifier (Predicate variable)
-solveGroupedSubstitution (var, patterns) = do
-    predSubst <- simplifyAnds patterns
-    return Conditional
-        { term = ()
-        , predicate = Pattern.predicate predSubst
-        , substitution = Substitution.wrap $ termAndSubstitution predSubst
-        }
-  where
-    termAndSubstitution s =
-        (var, Pattern.term s) : Substitution.unwrap (Pattern.substitution s)
+solveGroupedSubstitution (variable, patterns) = do
+    (termLike, simplified) <- Pattern.splitTerm <$> simplifyAnds patterns
+    let substitution' = Predicate.fromSingleSubstitution (variable, termLike)
+    return (substitution' <> simplified)
 
 -- |Takes a potentially non-normalized substitution,
 -- and if it contains multiple assignments to the same variable,
