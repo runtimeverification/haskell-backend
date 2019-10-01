@@ -92,7 +92,7 @@ test_topologicalSort =
         )
     , testCase "Simple cycle"
         (assertEqual ""
-            (Left (ToplogicalSortCycles [1]))
+            (Left (TopologicalSortCycles [1]))
             (topologicalSort
                 (Map.fromList
                     [ (1, [1])
@@ -103,7 +103,7 @@ test_topologicalSort =
         )
     , testCase "Long cycle"
         (assertEqual ""
-            (Left (ToplogicalSortCycles [1, 2, 3]))
+            (Left (TopologicalSortCycles [1, 2, 3]))
             (topologicalSort
                 (Map.fromList
                     [ (1, [2])
@@ -116,7 +116,7 @@ test_topologicalSort =
         )
     , testCase "Cycle not starting at the first visited node"
         (assertEqual ""
-            (Left (ToplogicalSortCycles [2, 3]))
+            (Left (TopologicalSortCycles [2, 3]))
             (topologicalSort
                 (Map.fromList
                     [ (1, [2])
