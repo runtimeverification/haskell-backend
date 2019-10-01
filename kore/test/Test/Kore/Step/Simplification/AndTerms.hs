@@ -525,7 +525,7 @@ test_andTermsSimplification =
                         { term =
                             Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
+                        , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -546,7 +546,7 @@ test_andTermsSimplification =
                         { term =
                             Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
+                        , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -567,7 +567,7 @@ test_andTermsSimplification =
                         { term =
                             Mock.builtinMap [(Mock.a, fOfA) , (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
+                        , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -588,7 +588,7 @@ test_andTermsSimplification =
                         { term =
                             Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
+                        , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, fOfA)
                             , (ElemVar Mock.m, Mock.builtinMap [(Mock.b, fOfB)])
                             ]
@@ -608,7 +608,7 @@ test_andTermsSimplification =
                     [ Conditional
                         { term = Mock.builtinMap [ (Mock.a, fOfA) ]
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap
+                        , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.a)
                             , (ElemVar Mock.y, fOfA)
                             ]
@@ -797,7 +797,7 @@ test_andTermsSimplification =
         , testCase "different lengths" $ do
             let term7 = Mock.builtinList [Mock.a, Mock.a]
                 term8 = Mock.builtinList [Mock.a]
-                expect = Just []
+                expect = Just [Pattern.bottom]
             actual <- unify term7 term8
             assertEqual "" expect actual
 

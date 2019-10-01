@@ -73,6 +73,7 @@ import Kore.Predicate.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate
     , makeNotPredicate
+    , makeTruePredicate
     )
 import Kore.Step.PatternAttributes
     ( isConstructorLikeTop
@@ -93,12 +94,12 @@ import Kore.Step.Substitution
     ( PredicateMerger
     , createLiftedPredicatesAndSubstitutionsMerger
     , createPredicatesAndSubstitutionsMergerExcept
-    , normalizeExcept
     )
 import Kore.TopBottom
 import Kore.Unification.Error
     ( unsupportedPatterns
     )
+import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Kore.Variables.Fresh
@@ -601,13 +602,14 @@ variableFunctionAndEquals
     first@(ElemVar_ v1)
     second@(ElemVar_ v2)
   =
-    return
-    $ Pattern.withCondition termLike
-    $ Predicate.fromSingleSubstitution subst
-  where
-    subst@(_, termLike)
-      | v2 > v1   = (ElemVar v1, second)
-      | otherwise = (ElemVar v2, first)
+    return Conditional
+        { term = if v2 > v1 then second else first
+        , predicate = makeTruePredicate
+        , substitution =
+            Substitution.wrap
+                [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first)
+                ]
+        }
 variableFunctionAndEquals
     configurationPredicate
     simplificationType
@@ -634,8 +636,7 @@ variableFunctionAndEquals
                     resultPredicates -> Unify.scatter resultPredicates
     let result =
             predicate <> Predicate.fromSingleSubstitution (ElemVar v, second)
-    normalized <- normalizeExcept result
-    return (Pattern.withCondition second normalized)
+    return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ = empty
 
 {- | Unify a function pattern with a variable.

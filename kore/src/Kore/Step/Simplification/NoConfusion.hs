@@ -33,7 +33,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify as Simplifier
-import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.Unify as Unify
 import Kore.Unparser
 
@@ -64,8 +63,7 @@ equalInjectiveHeadsAndEquals
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let merged = Foldable.foldMap Pattern.withoutTerm children
             term = mkApplySymbol firstHead (Pattern.term <$> children)
-        normalized <- Substitution.normalizeExcept merged
-        return (Pattern.withCondition term normalized)
+        return (Pattern.withCondition term merged)
   where
     isFirstInjective = Symbol.isInjective firstHead
     isSecondInjective = Symbol.isInjective secondHead
