@@ -68,6 +68,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+              reuseNode true
             }
           }
           options {
@@ -83,6 +84,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+              reuseNode true
             }
           }
           options {
@@ -98,6 +100,7 @@ pipeline {
           agent {
             dockerfile {
               additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+              reuseNode true
             }
           }
           options {
