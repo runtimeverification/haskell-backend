@@ -170,7 +170,7 @@ deduplicateSubstitution =
         in Map.alter (Just . push) variable multiMap
 
     worker conditional@Conditional { predicate, substitution }
-      | all isSingleton substitutions || Substitution.isNormalized substitution
+      | Substitution.isNormalized substitution || all isSingleton substitutions
       = return conditional
 
       | otherwise = do
