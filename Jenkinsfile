@@ -70,7 +70,7 @@ pipeline {
           }
           steps {
             sh '''
-              ./scripts/integration-k.sh
+              env KSERVER_SOCKET=${HOME:?}/.kserver-k ./scripts/integration-k.sh
             '''
           }
         }
@@ -80,7 +80,7 @@ pipeline {
           }
           steps {
             sh '''
-              ./scripts/integration-kevm.sh
+              env KSERVER_SOCKET=${HOME:?}/.kserver-kevm ./scripts/integration-kevm.sh
             '''
           }
         }
@@ -90,7 +90,7 @@ pipeline {
           }
           steps {
             sh '''
-              ./scripts/integration-kwasm.sh
+              env KSERVER_SOCKET=${HOME:?}/.kserver-kwasm ./scripts/integration-kwasm.sh
             '''
           }
         }
