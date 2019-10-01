@@ -12,6 +12,8 @@ module Kore.Internal.TermLike
     , Evaluated (..)
     , Builtin
     , extractAttributes
+    , isSimplified
+    , markSimplified
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
@@ -212,6 +214,7 @@ import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
+import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
@@ -926,6 +929,14 @@ externalizeFreshVariables termLike =
     --TODO(traiansf): consider removing this usage of asVariable
     asVariable :: UnifiedVariable variable -> variable
     asVariable = foldMapVariable id
+
+isSimplified :: TermLike variable -> Bool
+isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
+
+markSimplified :: TermLike variable -> TermLike variable
+markSimplified (Recursive.project -> attrs :< termLikeF) =
+    Recursive.embed
+        (attrs { Attribute.simplified = Pattern.Simplified True } :< termLikeF)
 
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort
