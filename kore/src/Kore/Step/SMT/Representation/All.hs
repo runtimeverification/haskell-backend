@@ -10,8 +10,13 @@ module Kore.Step.SMT.Representation.All
     ( build
     ) where
 
+import qualified Data.Map as Map
+
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors
     )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
@@ -29,6 +34,9 @@ import qualified Kore.Step.SMT.Representation.Sorts as Sorts
 import qualified Kore.Step.SMT.Representation.Symbols as Symbols
     ( buildRepresentations
     )
+import Kore.Syntax.Id
+    ( Id
+    )
 
 {-| Builds a consistent representation of the sorts and symbols in the given
 module and its submodules.
@@ -38,9 +46,10 @@ sorts).
 -}
 build
     :: VerifiedModule Attribute.Symbol Attribute.Axiom
+    -> Map.Map Id Attribute.Constructors
     -> AST.SmtDeclarations
-build indexedModule =
+build indexedModule sortConstructors =
     resolve (sorts `AST.mergePreferFirst` symbols)
   where
-    sorts = Sorts.buildRepresentations indexedModule
+    sorts = Sorts.buildRepresentations indexedModule sortConstructors
     symbols = Symbols.buildRepresentations indexedModule

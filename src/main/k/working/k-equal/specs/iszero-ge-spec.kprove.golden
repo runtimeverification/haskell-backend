@@ -11,6 +11,14 @@
   </T>
 #And
   {
+    DotVar0
+  #Equals
+    <generatedCounter>
+      DotVar00
+    </generatedCounter>
+  }
+#And
+  {
     I >=Int 0
   #Equals
     true
