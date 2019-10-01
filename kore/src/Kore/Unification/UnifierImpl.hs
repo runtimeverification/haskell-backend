@@ -80,13 +80,17 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
         :: Pattern variable
         -> TermLike variable
         -> unifier (Pattern variable)
-    simplifyAnds' intermediate pat =
-        case Cofree.tailF (Recursive.project pat) of
-            AndF And { andFirst = lhs, andSecond = rhs } ->
-                foldM simplifyAnds' intermediate [lhs, rhs]
+    simplifyAnds' intermediate termLike =
+        case Cofree.tailF (Recursive.project termLike) of
+            AndF And { andFirst, andSecond } ->
+                foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
-                result <- termUnification (Pattern.term intermediate) pat
-                normalizeExcept (result <* intermediate)
+                unified <- termUnification intermediateTerm termLike
+                normalizeExcept
+                    $ Pattern.andCondition unified intermediateCondition
+      where
+        (intermediateTerm, intermediateCondition) =
+            Pattern.splitTerm intermediate
 
 {- | Sort variable-renaming substitutions.
 
