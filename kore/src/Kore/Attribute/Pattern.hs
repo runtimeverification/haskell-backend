@@ -29,6 +29,7 @@ import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
+import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Sort
@@ -50,6 +51,7 @@ data Pattern variable =
         , function :: !Function
         , defined :: !Defined
         , created :: !Created
+        , simplified :: !Simplified
         }
     deriving (Eq, GHC.Generic, Show)
 
@@ -82,6 +84,7 @@ instance
             , function = synthetic (function <$> base)
             , defined = synthetic (defined <$> base)
             , created = synthetic (created <$> base)
+            , simplified = synthetic (simplified <$> base)
             }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
