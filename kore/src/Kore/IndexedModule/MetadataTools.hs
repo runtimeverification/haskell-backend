@@ -13,6 +13,7 @@ module Kore.IndexedModule.MetadataTools
     , SmtMetadataTools
     , extractMetadataTools
     , isConstructorOrOverloaded
+    , findSortConstructors
     ) where
 
 import Data.Function
@@ -33,6 +34,9 @@ import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors
+    )
 import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
@@ -52,7 +56,7 @@ import Kore.Syntax.Application
 
 -- |'MetadataTools' defines a dictionary of functions which can be used to
 -- access the metadata needed during the unification process.
-data MetadataTools smt attributes = MetadataTools
+data MetadataTools sortConstructors smt attributes = MetadataTools
     { sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
     , isSubsortOf :: Sort -> Sort -> Bool
@@ -70,11 +74,13 @@ data MetadataTools smt attributes = MetadataTools
     -- ^ Whether the symbol is overloaded
     , smtData :: smt
     -- ^ The SMT data for the given module.
+    , sortConstructors :: Map Id sortConstructors
+    -- ^ The constructors for each sort.
     }
   deriving Functor
 
 type SmtMetadataTools attributes =
-    MetadataTools SMT.AST.SmtDeclarations attributes
+    MetadataTools Attribute.Constructors SMT.AST.SmtDeclarations attributes
 
 -- |'extractMetadataTools' extracts a set of 'MetadataTools' from a
 -- 'KoreIndexedModule'.  The metadata tools are functions yielding information
@@ -82,13 +88,17 @@ type SmtMetadataTools attributes =
 -- its argument and result sorts.
 --
 extractMetadataTools
-    ::  forall declAtts smt.
+    ::  forall declAtts smt sortConstructors.
         VerifiedModule declAtts Attribute.Axiom
     ->  (  VerifiedModule declAtts Attribute.Axiom
+        -> Map Id sortConstructors
+        )
+    ->  (  VerifiedModule declAtts Attribute.Axiom
+        -> Map Id sortConstructors
         -> smt
         )
-    -> MetadataTools smt declAtts
-extractMetadataTools m smtExtractor =
+    -> MetadataTools sortConstructors smt declAtts
+extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
         { sortAttributes = getSortAttributes m
         , isSubsortOf = checkSubsort
@@ -97,13 +107,16 @@ extractMetadataTools m smtExtractor =
         , symbolAttributes = getSymbolAttributes m
         , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
         , isOverloaded = checkOverloaded . Symbol.toSymbolOrAlias
-        , smtData = smtExtractor m
+        , smtData = smtExtractor m constructors
+        , sortConstructors = constructors
         }
   where
     subsortTable :: Map Sort [Sort]
     subsortTable = Map.unionsWith (++)
         [ Map.insert subsort [] $ Map.singleton supersort [subsort]
         | Subsort subsort supersort <- indexedModuleSubsorts m]
+
+    constructors = constructorsExtractor m
 
     -- In `sortGraph`, an edge (a, b) represents a subsort relationship between
     -- b and a.
@@ -153,3 +166,17 @@ isConstructorOrOverloaded
     -> Bool
 isConstructorOrOverloaded tools s =
     Symbol.isConstructor s || isOverloaded tools s
+
+{-| Extracts all constructors for a sort.
+
+Should return Nothing if the sort has no constructors or if the sort has no
+constructors, or `inj` behaves like a constructor, but the latter is only true
+if the constructor axioms actually include `inj` when needed, which is not true
+right now.
+-}
+findSortConstructors
+    :: SmtMetadataTools attributes -> Id -> Maybe Attribute.Constructors
+findSortConstructors
+    MetadataTools {sortConstructors}
+    sortId
+  = Map.lookup sortId sortConstructors

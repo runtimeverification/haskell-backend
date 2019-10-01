@@ -14,6 +14,9 @@ module Kore.IndexedModule.MetadataToolsBuilder
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
     )
+import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
+    ( indexBySort
+    )
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -38,4 +41,8 @@ import qualified Kore.Step.SMT.Representation.All as SMT.Representation
 build
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> SmtMetadataTools StepperAttributes
-build m = extractMetadataTools m SMT.Representation.build
+build m =
+    extractMetadataTools
+        m
+        Attribute.Constructors.indexBySort
+        SMT.Representation.build
