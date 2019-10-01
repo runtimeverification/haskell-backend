@@ -52,7 +52,7 @@
                 Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                         inj{SortId{}, SortKItem{}}(VarX0:SortId{}),
-                        VarI:SortKItem{}
+                        VarI0:SortKItem{}
                     ),
                     /* opaque child: */ VarDotVar30:SortMap{}
                 )

@@ -74,11 +74,12 @@ testSubsorts =
             DoNotVerifyAttributes
             Builtin.koreVerifiers
             testSubsortDefinition
-    meta :: MetadataTools () Attribute.Symbol
+    meta :: MetadataTools () () Attribute.Symbol
     meta =
         extractMetadataTools
             (moduleIndex Map.! testObjectModuleName)
-            (const ())
+            (const Map.empty)
+            (const $ const ())
 
 
 testSubsortDefinition :: ParsedDefinition

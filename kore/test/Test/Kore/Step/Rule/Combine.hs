@@ -5,10 +5,10 @@ import Test.Tasty
 import Data.Default
     ( def
     )
-
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
+
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd

@@ -3,6 +3,7 @@ module Test.Kore.Proof.Value where
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import qualified Data.Map as Map
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Symbol as Attribute
@@ -45,7 +46,7 @@ test_Builtin_InternalInt =
 test_Builtin_InternalBool :: [TestTree]
 test_Builtin_InternalBool =
     [ testValue "true" trueInternal
-    , testValue "fales" falseInternal
+    , testValue "false" falseInternal
     ]
 
 unit_injConstructor :: Assertion
@@ -227,6 +228,7 @@ tools =
         []
         []
         Mock.emptySmtDeclarations
+        Map.empty
 
 assertValue :: GHC.HasCallStack => TermLike Variable -> Assertion
 assertValue termLike =
