@@ -21,6 +21,7 @@ module Kore.Internal.Pattern
     , fromTermLike
     , Kore.Internal.Pattern.freeVariables
     , Kore.Internal.Pattern.freeElementVariables
+    , isSimplified
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -44,7 +45,10 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Predicate
     ( Predicate
     )
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike as TermLike hiding
+    ( isSimplified
+    )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
@@ -74,6 +78,9 @@ fromPredicateSorted
     -> Predicate variable
     -> Pattern variable
 fromPredicateSorted sort = (<$) (mkTop sort)
+
+isSimplified :: Pattern variable -> Bool
+isSimplified = TermLike.isSimplified . Conditional.term
 
 freeVariables
     :: Ord variable
