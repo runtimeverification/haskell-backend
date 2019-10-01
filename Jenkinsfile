@@ -62,34 +62,53 @@ pipeline {
         }
       }
     }
-    stage('Integration: K') {
-      options {
-        timeout(time: 16, unit: 'MINUTES')
-      }
-      steps {
-        sh '''
-          ./scripts/integration-k.sh
-        '''
-      }
-    }
-    stage('Integration: KEVM') {
-      options {
-        timeout(time: 24, unit: 'MINUTES')
-      }
-      steps {
-        sh '''
-          ./scripts/integration-kevm.sh
-        '''
-      }
-    }
-    stage('Integration: KWASM') {
-      options {
-        timeout(time: 8, unit: 'MINUTES')
-      }
-      steps {
-        sh '''
-          ./scripts/integration-kwasm.sh
-        '''
+    stage('Integration Tests') {
+      parallel {
+        stage('K') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+            }
+          }
+          options {
+            timeout(time: 16, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/integration-k.sh
+            '''
+          }
+        }
+        stage('KEVM') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+            }
+          }
+          options {
+            timeout(time: 24, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/integration-kevm.sh
+            '''
+          }
+        }
+        stage('KWASM') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+            }
+          }
+          options {
+            timeout(time: 8, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/integration-kwasm.sh
+            '''
+          }
+        }
       }
     }
     stage('Update K Submodules') {
