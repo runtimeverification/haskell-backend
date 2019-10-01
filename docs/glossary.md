@@ -49,6 +49,25 @@
    language to analyze the behaviour of the program (e.g. through symbolic
    execution), and uses what it learned to improve the compilation result.
 
+<a name="sort-injection"></a>*sort injection*
+
+1. (noun)
+   A [symbol](#symbol) with the `sortInjection` attribute. The sort injection
+   symbol is used to represent the K sub-sort relation in Kore: K sorts contain
+   symbols and sorts (their sub-sorts), but Kore sorts contain only symbols; the
+   sort injection symbol wraps patterns of a sub-sort so they can be included
+   (_injected_) into the super-sort.
+1. (noun)
+   A [sort injection](#sort-injection) is a [pattern](#pattern) of the form,
+   ```
+   inj{Sub{}, Super{}}(φ:Sub{})
+   ```
+   where `inj{Sub{}, Super{}}` is a sort injection symbol (described
+   above). Where the K sort `Super` contains `Sub`, the pattern `φ` with
+   least-sort `Sub` can appear anywhere that a term of sort `Super` is
+   required. In Kore, this is represented with the injection above because all
+   sorts are regarded as distinct.
+
 <a name="substitution"></a>*substitution*
 
 1. (noun)
