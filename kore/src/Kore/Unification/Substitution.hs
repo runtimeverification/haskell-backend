@@ -102,9 +102,13 @@ data Substitution variable
         !(Map (UnifiedVariable variable) (TermLike variable))
     deriving GHC.Generic
 
-deriving instance Ord variable => Eq (Substitution variable)
+-- | 'Eq' does not differentiate normalized and denormalized 'Substitution's.
+instance Ord variable => Eq (Substitution variable) where
+    (==) = Function.on (==) unwrap
 
-deriving instance Ord variable => Ord (Substitution variable)
+-- | 'Ord' does not differentiate normalized and denormalized 'Substitution's.
+instance Ord variable => Ord (Substitution variable) where
+    compare = Function.on compare unwrap
 
 instance SOP.Generic (Substitution variable)
 
@@ -115,6 +119,13 @@ instance Debug variable => Debug (Substitution variable)
 instance
     ( Debug variable, Diff variable, Ord variable )
     => Diff (Substitution variable)
+  where
+    diffPrec a b =
+        wrapDiffPrec <$> Function.on diffPrec unwrap a b
+      where
+        wrapDiffPrec diff' = \precOut ->
+            (if precOut >= 10 then Pretty.parens else id)
+            ("Kore.Unification.Substitution.wrap" Pretty.<+> diff' 10)
 
 deriving instance Show variable => Show (Substitution variable)
 
