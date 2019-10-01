@@ -11,7 +11,6 @@ module Kore.Step.Rule.Combine
 import Control.Applicative
     ( empty
     )
-import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
@@ -39,9 +38,6 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( mkAnd
     )
-import qualified Kore.Internal.TermLike as TermLike
-    ( substitute
-    )
 import Kore.Internal.Variable
     ( InternalVariable
     )
@@ -54,17 +50,14 @@ import Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
-    ( substitute
-    )
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , refreshRulePattern
     )
-import qualified Kore.Step.Rule as Rule
+import qualified Kore.Step.Rule as RulePattern
     ( freeVariables
-    , isFreeOf
+    , fullyApplySubstitution
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -77,10 +70,6 @@ import qualified Kore.Step.SMT.Evaluator as SMT
     )
 import Kore.Substitute
     ( SubstitutionVariable
-    )
-import qualified Kore.Unification.Substitution as Substitution
-    ( toMap
-    , variables
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
@@ -167,9 +156,9 @@ renameRuleVariable
         `Set.union` ruleVariables
         `Set.union` newRuleVariables
 
-    (FreeVariables ruleVariables) = Rule.freeVariables rulePattern
+    (FreeVariables ruleVariables) = RulePattern.freeVariables rulePattern
 
-    (FreeVariables newRuleVariables) = Rule.freeVariables rulePattern
+    (FreeVariables newRuleVariables) = RulePattern.freeVariables rulePattern
 
     (_, newRulePattern) =
         refreshRulePattern (FreeVariables usedVariables) rulePattern
@@ -180,50 +169,31 @@ mergeRules
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
-    mergeDisjointVarRules rules
+    BranchT.gather $ do
+        Conditional {term = (), predicate, substitution} <-
+            Predicate.simplify 0
+                (Predicate.fromPredicate
+                    (makeAndPredicate firstRequires mergedPredicate)
+                )
+        evaluation <- SMT.evaluate predicate
+        evaluatedPredicate <- case evaluation of
+            Nothing -> return predicate
+            Just True -> return makeTruePredicate
+            Just False -> empty
 
-mergeDisjointVarRules
-    :: (MonadSimplify simplifier, SimplifierVariable variable)
-    => [RewriteRule variable]
-    -> simplifier [RewriteRule variable]
-mergeDisjointVarRules [] = return []
-mergeDisjointVarRules [a] = return [a]
-mergeDisjointVarRules rules = BranchT.gather $ do
-    Conditional {term = (), predicate, substitution} <-
-        Predicate.simplify 0
-            (Predicate.fromPredicate
-                (makeAndPredicate firstRequires mergedPredicate)
-            )
-    evaluation <- SMT.evaluate predicate
-    evaluatedPredicate <- case evaluation of
-        Nothing -> return predicate
-        Just True -> return makeTruePredicate
-        Just False -> empty
+        let finalRule =
+                RulePattern.fullyApplySubstitution
+                    substitution
+                    RulePattern
+                        { left = firstLeft
+                        , requires = evaluatedPredicate
+                        , antiLeft = firstAntiLeft
+                        , right = lastRight
+                        , ensures = lastEnsures
+                        , attributes = def
+                        }
 
-    let subst = Substitution.toMap substitution
-        finalLeft = TermLike.substitute subst firstLeft
-        finalAntiLeft = TermLike.substitute subst <$> firstAntiLeft
-        finalRight = TermLike.substitute subst lastRight
-        finalEnsures = Syntax.Predicate.substitute subst lastEnsures
-        finalRule = RulePattern
-            { left = finalLeft
-            , requires = evaluatedPredicate
-            , antiLeft = finalAntiLeft
-            , right = finalRight
-            , ensures = finalEnsures
-            , attributes = def
-            }
-
-        substitutedVariables = Substitution.variables substitution
-
-    Monad.unless (finalRule `Rule.isFreeOf` substitutedVariables)
-        (error
-            (  "Substituted variables not removed from the rule, cannot throw "
-            ++ "substitution away."
-            )
-        )
-
-    return (RewriteRule finalRule)
+        return (RewriteRule finalRule)
   where
     mergedPredicate = mergeRulesPredicate rules
     firstRule = head rules
