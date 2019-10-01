@@ -15,14 +15,10 @@ import qualified Control.Monad as Monad
 import Data.Default
     ( Default (..)
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
-    )
-import qualified Data.List.NonEmpty as NonEmpty
-    ( head
-    , last
-    , toList
     )
 import Data.Set
     ( Set
@@ -110,10 +106,17 @@ mergeRulesPredicate
     => [RewriteRule variable]
     -> Syntax.Predicate variable
 mergeRulesPredicate rules =
+    mergeDisjointVarRulesPredicate
+    $ renameRulesVariables rules
+
+mergeDisjointVarRulesPredicate
+    :: SubstitutionVariable variable
+    => [RewriteRule variable]
+    -> Syntax.Predicate variable
+mergeDisjointVarRulesPredicate rules =
     makeMultipleAndPredicate
     $ map mergeRulePairPredicate
-    $ makeConsecutivePairs
-    $ renameRulesVariables rules
+    $ makeConsecutivePairs rules
 
 makeConsecutivePairs :: [a] -> [(a, a)]
 makeConsecutivePairs [] = []
@@ -176,7 +179,16 @@ mergeRules
     => NonEmpty (RewriteRule variable)
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
-mergeRules rules = BranchT.gather $ do
+mergeRules (renameRulesVariables . Foldable.toList -> rules) =
+    mergeDisjointVarRules rules
+
+mergeDisjointVarRules
+    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    => [RewriteRule variable]
+    -> simplifier [RewriteRule variable]
+mergeDisjointVarRules [] = return []
+mergeDisjointVarRules [a] = return [a]
+mergeDisjointVarRules rules = BranchT.gather $ do
     Conditional {term = (), predicate, substitution} <-
         Predicate.simplify 0
             (Predicate.fromPredicate
@@ -213,11 +225,11 @@ mergeRules rules = BranchT.gather $ do
 
     return (RewriteRule finalRule)
   where
-    mergedPredicate = mergeRulesPredicate (NonEmpty.toList rules)
-    firstRule = NonEmpty.head rules
+    mergedPredicate = mergeRulesPredicate rules
+    firstRule = head rules
     RewriteRule RulePattern
         {left = firstLeft, requires = firstRequires, antiLeft = firstAntiLeft}
       =
         firstRule
     RewriteRule RulePattern {right = lastRight, ensures = lastEnsures} =
-        NonEmpty.last rules
+        last rules
