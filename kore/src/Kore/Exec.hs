@@ -50,6 +50,9 @@ import Data.Maybe
 import Data.Text
     ( Text
     )
+import Kore.Step.Rule.Simplify
+    ( simplifyOnePathRuleLhs
+    )
 import System.Exit
     ( ExitCode (..)
     )
@@ -527,8 +530,14 @@ initializeProver definitionModule specModule within =
                 map
                     (Bifunctor.second $ expandOnePathSingleConstructors tools)
                     (extractOnePathClaims specModule)
+            mapMSecond :: Monad m => (b -> m [c]) -> (a, b) -> m [(a, c)]
+            mapMSecond f (a, b) = do
+                c <- f b
+                return (map ((,) a) c)
+        simplifiedSpecClaims <-
+            mapM (mapMSecond simplifyOnePathRuleLhs) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
-            $ traverse simplifyRuleOnSecond specClaims
+            $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
         assertSomeClaims specAxioms
         let
             axioms = Goal.OnePathRewriteRule <$> rewriteRules
