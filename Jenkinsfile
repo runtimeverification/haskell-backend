@@ -65,12 +65,6 @@ pipeline {
     stage('Integration Tests') {
       parallel {
         stage('K') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-              reuseNode true
-            }
-          }
           options {
             timeout(time: 16, unit: 'MINUTES')
           }
@@ -81,12 +75,6 @@ pipeline {
           }
         }
         stage('KEVM') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-              reuseNode true
-            }
-          }
           options {
             timeout(time: 24, unit: 'MINUTES')
           }
@@ -97,12 +85,6 @@ pipeline {
           }
         }
         stage('KWASM') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-              reuseNode true
-            }
-          }
           options {
             timeout(time: 8, unit: 'MINUTES')
           }
