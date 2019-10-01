@@ -33,6 +33,8 @@ module Kore.Predicate.Predicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
+    , isSimplified
+    , markSimplified
     , freeVariables
     , isFreeOf
     , Kore.Predicate.Predicate.freeElementVariables
@@ -81,6 +83,8 @@ import Kore.Error
     )
 import Kore.Internal.TermLike hiding
     ( freeVariables
+    , isSimplified
+    , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
@@ -457,6 +461,13 @@ freeVariables
     => Predicate variable
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
+
+isSimplified :: Predicate variable -> Bool
+isSimplified (GenericPredicate termLike) = TermLike.isSimplified termLike
+
+markSimplified :: Predicate variable -> Predicate variable
+markSimplified (GenericPredicate termLike) =
+    GenericPredicate (TermLike.markSimplified termLike)
 
 isFreeOf
     :: Ord variable
