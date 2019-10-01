@@ -118,7 +118,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                Builtin.externalizePattern $ Internal.mkElemVar anotherVariable
+                Builtin.externalize $ Internal.mkElemVar anotherVariable
             }
         )
         (NamePrefix "dummy")
@@ -148,7 +148,7 @@ test_patternVerifier =
         )
         (MuF Mu
             { muVariable = objectSetVariable'
-            , muChild = Builtin.externalizePattern $
+            , muChild = Builtin.externalize $
                 Internal.mkSetVar anotherSetVariable
             }
         )
@@ -178,7 +178,7 @@ test_patternVerifier =
         )
         (NuF Nu
             { nuVariable = objectSetVariable'
-            , nuChild = Builtin.externalizePattern $
+            , nuChild = Builtin.externalize $
                 Internal.mkSetVar anotherSetVariable
             }
         )
@@ -540,7 +540,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "abcd"  -- Not a decimal integer
             }
         )
@@ -554,7 +554,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "-256"
             }
         )
@@ -568,7 +568,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "1024"
             }
         )
@@ -582,7 +582,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "+128"
             }
         )
@@ -609,7 +609,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "untrue"  -- Not a BOOL.Bool
             }
         )
@@ -623,7 +623,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "true"
             }
         )
@@ -637,7 +637,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "false"
             }
         )
@@ -659,7 +659,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "1"  -- Not a decimal integer
             }
         )
@@ -795,7 +795,7 @@ test_verifyBinder =
     testVerifyBinder name expect =
         testCase name $ do
             let
-                original = Builtin.externalizePattern expect
+                original = Builtin.externalize expect
                 verifier = verifyStandalonePattern Nothing original
                 Right actual = runPatternVerifier context verifier
             assertEqual "" expect actual
@@ -1055,7 +1055,7 @@ genericPatternInAllContexts
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild =
-                Builtin.externalizePattern $ Internal.mkElemVar anotherVariable
+                Builtin.externalize $ Internal.mkElemVar anotherVariable
             }
     anotherVariable =
         ElementVariable Variable
@@ -1109,7 +1109,7 @@ objectPatternInAllContexts
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkElemVar anotherVariable
             }
     anotherVariable =
@@ -1190,7 +1190,7 @@ patternsInAllContexts
                         ]
                     }
             , sentenceAliasRightPattern =
-                Builtin.externalizePattern $ Internal.mkTop anotherSort
+                Builtin.externalize $ Internal.mkTop anotherSort
             , sentenceAliasAttributes = Attributes []
             }
 

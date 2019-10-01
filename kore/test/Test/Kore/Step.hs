@@ -524,6 +524,7 @@ mockMetadataTools = MetadataTools
     , isOverloading = undefined
     , isOverloaded = undefined
     , smtData = undefined
+    , sortConstructors = undefined
     }
 
 mockEnv :: Env Simplifier

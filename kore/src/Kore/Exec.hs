@@ -33,6 +33,9 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
+    ( second
+    )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( Coercible
     , coerce
@@ -108,6 +111,9 @@ import Kore.Step.Rule as RulePattern
     )
 import qualified Kore.Step.Rule.Combine as Rules
     ( mergeRules
+    )
+import Kore.Step.Rule.Expand
+    ( expandOnePathSingleConstructors
     )
 import Kore.Step.Search
     ( searchGraph
@@ -269,8 +275,12 @@ prove
     -> smt (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
     evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
+        tools <- Simplifier.askMetadataTools
         let Initialized { rewriteRules } = initialized
-            specClaims = extractOnePathClaims specModule
+            specClaims =
+                map
+                    (Bifunctor.second $ expandOnePathSingleConstructors tools)
+                    (extractOnePathClaims specModule)
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms
@@ -385,8 +395,18 @@ extractRules rules = foldr addExtractRule (Right [])
     addExtractRule ruleName processedRules =
         (:) <$> extractRule ruleName <*> processedRules
 
-    maybeRuleName :: RewriteRule Variable -> Maybe Text
-    maybeRuleName
+    maybeRuleUniqueId :: RewriteRule Variable -> Maybe Text
+    maybeRuleUniqueId
+        (RewriteRule RulePattern
+            { attributes = Attribute.Axiom
+                { uniqueId = Attribute.UniqueId maybeName }
+            }
+        )
+      =
+        maybeName
+
+    maybeRuleLabel :: RewriteRule Variable -> Maybe Text
+    maybeRuleLabel
         (RewriteRule RulePattern
             { attributes = Attribute.Axiom
                 { label = Attribute.Label maybeName }
@@ -395,15 +415,24 @@ extractRules rules = foldr addExtractRule (Right [])
       =
         maybeName
 
-    namedRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
-    namedRules = mapMaybe namedRule
+    idRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
+    idRules = mapMaybe namedRule
       where
         namedRule rule = do
-            name <- maybeRuleName rule
+            name <- maybeRuleUniqueId rule
+            return (name, rule)
+
+    labelRules :: [RewriteRule Variable] -> [(Text, RewriteRule Variable)]
+    labelRules = mapMaybe namedRule
+      where
+        namedRule rule = do
+            name <- maybeRuleLabel rule
             return (name, rule)
 
     rulesByName :: Map.Map Text (RewriteRule Variable)
-    rulesByName = Map.fromList (namedRules rules)
+    rulesByName = Map.union
+        (Map.fromList (idRules rules))
+        (Map.fromList (labelRules rules))
 
     extractRule :: Text -> Either Text (RewriteRule Variable)
     extractRule ruleName =

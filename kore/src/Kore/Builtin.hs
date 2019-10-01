@@ -26,12 +26,11 @@ module Kore.Builtin
     , koreVerifiers
     , koreEvaluators
     , evaluators
-    , externalizePattern
+    , externalize
     , internalize
     , renormalize
     ) where
 
-import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Control.Lens as Lens
 import Data.Function
 import qualified Data.Functor.Foldable as Recursive
@@ -47,13 +46,11 @@ import Data.Semigroup
 import Data.Text
     ( Text
     )
-import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Hook
     ( Hook (..)
     )
-import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol
     ( StepperAttributes
     )
@@ -61,6 +58,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import Kore.Builtin.External
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.Krypto as Krypto
@@ -68,7 +66,6 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as String
-import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (..)
     , VerifiedModule
@@ -77,8 +74,6 @@ import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
-import qualified Kore.Internal.Alias as Alias
-import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
@@ -86,7 +81,6 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
-import qualified Kore.Syntax.Pattern as Syntax
 import Kore.Unparser
 import Kore.Variables.Fresh
 
@@ -193,96 +187,6 @@ evaluators builtins indexedModule =
         do
             name <- getHook
             Map.lookup name builtins
-
-{- | Externalize the 'TermLike' into a 'Syntax.Pattern'.
-
-All builtins will be rendered using their concrete Kore syntax.
-
-See also: 'asPattern'
-
- -}
-externalizePattern
-    ::  forall variable
-    .   InternalVariable variable
-    =>  TermLike variable
-    ->  Syntax.Pattern variable Attribute.Null
-externalizePattern =
-    Recursive.unfold externalizePatternWorker
-  where
-    externalizePatternWorker
-        ::  TermLike variable
-        ->  Recursive.Base
-                (Syntax.Pattern variable Attribute.Null)
-                (TermLike variable)
-    externalizePatternWorker termLike =
-        case termLikeF of
-            BuiltinF domain ->
-                case domain of
-                    Domain.BuiltinMap  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Map.asTermLike builtin)
-                    Domain.BuiltinList builtin ->
-                        (toPatternF . Recursive.project)
-                            (List.asTermLike builtin)
-                    Domain.BuiltinSet  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Set.asTermLike builtin)
-                    Domain.BuiltinInt  builtin ->
-                        (toPatternF . Recursive.project)
-                            (Int.asTermLike builtin)
-                    Domain.BuiltinBool builtin ->
-                        (toPatternF . Recursive.project)
-                            (Bool.asTermLike builtin)
-                    Domain.BuiltinString builtin ->
-                        (toPatternF . Recursive.project)
-                            (String.asTermLike builtin)
-            _ -> toPatternF termLikeBase
-      where
-        termLikeBase@(_ :< termLikeF) = Recursive.project termLike
-
-    toPatternF
-        :: GHC.HasCallStack
-        => Recursive.Base (TermLike variable) (TermLike variable)
-        -> Recursive.Base
-            (Syntax.Pattern variable Attribute.Null)
-            (TermLike variable)
-    toPatternF (_ :< termLikeF) =
-        (Attribute.Null :<)
-        $ case termLikeF of
-            AndF andF -> Syntax.AndF andF
-            ApplyAliasF applyAliasF ->
-                Syntax.ApplicationF
-                $ mapHead Alias.toSymbolOrAlias applyAliasF
-            ApplySymbolF applySymbolF ->
-                Syntax.ApplicationF
-                $ mapHead Symbol.toSymbolOrAlias applySymbolF
-            BottomF bottomF -> Syntax.BottomF bottomF
-            CeilF ceilF -> Syntax.CeilF ceilF
-            DomainValueF domainValueF -> Syntax.DomainValueF domainValueF
-            EqualsF equalsF -> Syntax.EqualsF equalsF
-            ExistsF existsF -> Syntax.ExistsF existsF
-            FloorF floorF -> Syntax.FloorF floorF
-            ForallF forallF -> Syntax.ForallF forallF
-            IffF iffF -> Syntax.IffF iffF
-            ImpliesF impliesF -> Syntax.ImpliesF impliesF
-            InF inF -> Syntax.InF inF
-            MuF muF -> Syntax.MuF muF
-            NextF nextF -> Syntax.NextF nextF
-            NotF notF -> Syntax.NotF notF
-            NuF nuF -> Syntax.NuF nuF
-            OrF orF -> Syntax.OrF orF
-            RewritesF rewritesF -> Syntax.RewritesF rewritesF
-            StringLiteralF stringLiteralF ->
-                Syntax.StringLiteralF stringLiteralF
-            CharLiteralF charLiteralF -> Syntax.CharLiteralF charLiteralF
-            TopF topF -> Syntax.TopF topF
-            VariableF variableF -> Syntax.VariableF variableF
-            InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
-            EvaluatedF evaluatedF ->
-                Cofree.tailF
-                $ externalizePatternWorker
-                $ getEvaluated evaluatedF
-            BuiltinF _ -> error "Unexpected internal builtin"
 
 {- | Convert a 'TermLike' to its internal representation.
 

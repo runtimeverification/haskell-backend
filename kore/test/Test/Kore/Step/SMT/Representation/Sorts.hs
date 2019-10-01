@@ -5,6 +5,9 @@ import Test.Tasty
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
     )
+import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
+    ( indexBySort
+    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -149,4 +152,6 @@ testsForModule
         ]
     -> TestTree
 testsForModule name =
-    Helpers.testsForModule name buildRepresentations
+    Helpers.testsForModule name build
+  where
+    build m = buildRepresentations m (Attribute.Constructors.indexBySort m)
