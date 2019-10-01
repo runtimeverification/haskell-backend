@@ -179,9 +179,8 @@ mergeRules
     => NonEmpty (RewriteRule variable)
     -> simplifier [RewriteRule variable]
 mergeRules (a :| []) = return [a]
-mergeRules rules =
-    mergeDisjointVarRules
-    $ renameRulesVariables (Foldable.toList rules)
+mergeRules (renameRulesVariables . Foldable.toList -> rules) =
+    mergeDisjointVarRules rules
 
 mergeDisjointVarRules
     :: (MonadSimplify simplifier, SimplifierVariable variable)
