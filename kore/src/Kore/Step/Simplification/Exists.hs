@@ -315,7 +315,8 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
   | quantifyTerm = markSimplified . mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
-    $ Predicate.fromPredicate
+    -- TODO (thomas.tuegel): This could probably be simplified further.
+    $ Predicate.fromPredicate . Syntax.Predicate.markSimplified
     $ Syntax.Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
