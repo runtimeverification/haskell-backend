@@ -347,11 +347,8 @@ makeEvaluateNormalizedAc
         let negateEquality
                 :: OrPredicate variable -> Predicate.Predicate variable
             negateEquality orPredicate =
-                mergeAnd
-                    (map
-                        Not.makeEvaluatePredicate
-                        (Foldable.toList orPredicate)
-                    )
+                mergeAnd . Foldable.toList . MultiOr.flatten
+                $ Not.makeEvaluatePredicate <$> orPredicate
         let negations =
                 map (OrPredicate.fromPredicate . negateEquality) equalities
 
