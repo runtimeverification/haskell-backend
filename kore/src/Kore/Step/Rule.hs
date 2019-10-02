@@ -25,7 +25,7 @@ module Kore.Step.Rule
     , extractOnePathClaims
     , extractAllPathClaims
     , extractImplicationClaims
-    , fullyApplySubstitution
+    , applySubstitution
     , mkRewriteAxiom
     , mkEqualityAxiom
     , mkCeilAxiom
@@ -795,7 +795,7 @@ substitute subst rulePattern'@(RulePattern _ _ _ _ _ _) =
 {-| Applies a substitution to a rule and checks that it was fully applied,
 i.e. there is no substitution variable left in the rule.
 -}
-fullyApplySubstitution
+applySubstitution
     ::  ( HasCallStack
         , Ord variable
         , SubstitutionVariable variable
@@ -803,7 +803,7 @@ fullyApplySubstitution
     => Substitution variable
     -> RulePattern variable
     -> RulePattern variable
-fullyApplySubstitution substitution rule =
+applySubstitution substitution rule =
     if finalRule `isFreeOf` substitutedVariables
         then finalRule
         else error

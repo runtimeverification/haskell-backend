@@ -56,8 +56,8 @@ import Kore.Step.Rule
     , refreshRulePattern
     )
 import qualified Kore.Step.Rule as RulePattern
-    ( freeVariables
-    , fullyApplySubstitution
+    ( applySubstitution
+    , freeVariables
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -182,7 +182,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
             Just False -> empty
 
         let finalRule =
-                RulePattern.fullyApplySubstitution
+                RulePattern.applySubstitution
                     substitution
                     RulePattern
                         { left = firstLeft
