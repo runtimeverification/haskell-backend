@@ -14,6 +14,7 @@ import Control.Comonad.Trans.Cofree
     )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -103,6 +104,9 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
+import Kore.Unparser
+    ( unparse
+    )
 
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
@@ -153,7 +157,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
-        tracer termLike $
+        assertSimplifiedResults $ tracer termLike $
         let doNotSimplify = return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
@@ -204,3 +208,17 @@ simplifyInternal term predicate = simplifyInternalWorker term
                 return $ CharLiteral.simplify (getConst charLiteralF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
+      where
+        assertSimplifiedResults getResults = do
+            results <- getResults
+            if OrPattern.isSimplified results
+                then return results
+                else (error . show . Pretty.vsep)
+                    [ "Incomplete simplification!"
+                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 4 (unparse termLike)
+                    , Pretty.indent 2 "results:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> OrPattern.toPatterns results)
+                    , "Expected all patterns to be fully simplified."
+                    ]
