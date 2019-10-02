@@ -45,6 +45,7 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Predicate
     ( Predicate
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike hiding
     ( isSimplified
     )
@@ -80,7 +81,8 @@ fromPredicateSorted
 fromPredicateSorted sort = (<$) (mkTop sort)
 
 isSimplified :: Pattern variable -> Bool
-isSimplified = TermLike.isSimplified . Conditional.term
+isSimplified (splitTerm -> (t, p)) =
+    TermLike.isSimplified t && Predicate.isSimplified p
 
 freeVariables
     :: Ord variable
