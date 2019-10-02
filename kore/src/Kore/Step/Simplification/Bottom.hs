@@ -15,10 +15,11 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
 import Kore.Syntax.Bottom
 
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
 simplify :: Ord variable => Bottom Sort child -> OrPattern variable
-simplify Bottom {} = OrPattern.bottom
+simplify Bottom {} = fmap TermLike.markSimplified <$> OrPattern.bottom

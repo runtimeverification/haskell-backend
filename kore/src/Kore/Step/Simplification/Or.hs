@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Or
 import Control.Applicative
     ( Alternative (..)
     )
+import qualified Control.Exception as Exception
 
 import Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -37,7 +38,9 @@ simplify
     => Or Sort (OrPattern variable)
     -> OrPattern variable
 simplify Or { orFirst = first, orSecond = second } =
-    simplifyEvaluated first second
+    Exception.assert (all Pattern.isSimplified first)
+    $ Exception.assert (all Pattern.isSimplified second)
+    $ simplifyEvaluated first second
 
 {- | Simplify an 'Or' given its two 'OrPattern' children.
 
@@ -72,17 +75,21 @@ __TODO__ (virgil): This should do all possible mergings, not just the first term
 with the second.
 -}
 
-simplifyEvaluated first second
-
-  | (head1 : tail1) <- MultiOr.extractPatterns first
-  , (head2 : tail2) <- MultiOr.extractPatterns second
-  , Just result <- simplifySinglePatterns head1 head2
-  = OrPattern.fromPatterns $ result : (tail1 ++ tail2)
-
-  | otherwise =
-    MultiOr.merge first second
-
+simplifyEvaluated first second =
+    Exception.assert (OrPattern.isSimplified first)
+    Exception.assert (OrPattern.isSimplified second)
+    worker
   where
+    worker
+
+      | (head1 : tail1) <- MultiOr.extractPatterns first
+      , (head2 : tail2) <- MultiOr.extractPatterns second
+      , Just result <- simplifySinglePatterns head1 head2
+      = OrPattern.fromPatterns $ result : (tail1 ++ tail2)
+
+      | otherwise =
+        MultiOr.merge first second
+
     simplifySinglePatterns first' second' =
         disjoinPredicates first' second' <|> topAnnihilates first' second'
 

@@ -7,6 +7,7 @@ module Kore.Step.Simplification.Builtin
     ( simplify
     ) where
 
+import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens
 import Data.Functor.Compose
 import Data.Generics.Product
@@ -26,7 +27,8 @@ import Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import Kore.Internal.TermLike
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeFalsePredicate
     )
@@ -39,9 +41,10 @@ simplify
     => Builtin (OrPattern variable)
     -> OrPattern variable
 simplify builtin =
-    MultiOr.filterOr $ do
+    Exception.assert (all (all Pattern.isSimplified) builtin)
+    $ MultiOr.filterOr $ do
         child <- simplifyBuiltin builtin
-        return (mkBuiltin <$> child)
+        return (TermLike.markSimplified . mkBuiltin <$> child)
 
 simplifyBuiltin
     :: InternalVariable variable

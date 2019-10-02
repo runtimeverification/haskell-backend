@@ -13,6 +13,8 @@ module Kore.Step.Simplification.Iff
     , simplifyEvaluated
     ) where
 
+import qualified Control.Exception as Exception
+
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -38,7 +40,9 @@ simplify
     => Iff Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify Iff { iffFirst = first, iffSecond = second } =
-    simplifyEvaluated first second
+    Exception.assert (OrPattern.isSimplified first)
+    $ Exception.assert (OrPattern.isSimplified second)
+    $ simplifyEvaluated first second
 
 {-| evaluates an 'Iff' given its two 'OrPattern' children.
 
@@ -62,21 +66,23 @@ simplifyEvaluated
     => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated
-    first
-    second
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isFalse first  = Not.simplifyEvaluated second
-  | OrPattern.isTrue second  = return first
-  | OrPattern.isFalse second = Not.simplifyEvaluated first
-  | otherwise =
-    return $ case ( firstPatterns, secondPatterns ) of
-        ([firstP], [secondP]) -> makeEvaluate firstP secondP
-        _ ->
-            makeEvaluate
-                (OrPattern.toPattern first)
-                (OrPattern.toPattern second)
+simplifyEvaluated first second =
+    Exception.assert (OrPattern.isSimplified first)
+    $ Exception.assert (OrPattern.isSimplified second)
+    $ worker
   where
+    worker
+      | OrPattern.isTrue first   = return second
+      | OrPattern.isFalse first  = Not.simplifyEvaluated second
+      | OrPattern.isTrue second  = return first
+      | OrPattern.isFalse second = Not.simplifyEvaluated first
+      | otherwise =
+        return $ case ( firstPatterns, secondPatterns ) of
+            ([firstP], [secondP]) -> makeEvaluate firstP secondP
+            _ ->
+                makeEvaluate
+                    (OrPattern.toPattern first)
+                    (OrPattern.toPattern second)
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
 
@@ -89,12 +95,17 @@ makeEvaluate
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable
-makeEvaluate first second
-  | Pattern.isTop first = OrPattern.fromPatterns [second]
-  | Pattern.isBottom first = Not.makeEvaluate second
-  | Pattern.isTop second = OrPattern.fromPatterns [first]
-  | Pattern.isBottom second = Not.makeEvaluate first
-  | otherwise = makeEvaluateNonBoolIff first second
+makeEvaluate first second =
+    Exception.assert (Pattern.isSimplified first)
+    $ Exception.assert (Pattern.isSimplified second)
+    $ worker
+  where
+    worker
+      | Pattern.isTop first = OrPattern.fromPatterns [second]
+      | Pattern.isBottom first = Not.makeEvaluate second
+      | Pattern.isTop second = OrPattern.fromPatterns [first]
+      | Pattern.isBottom second = Not.makeEvaluate first
+      | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
     :: InternalVariable variable

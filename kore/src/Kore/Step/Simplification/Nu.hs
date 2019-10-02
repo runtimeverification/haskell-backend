@@ -7,6 +7,8 @@ module Kore.Step.Simplification.Nu
     , makeEvaluate
     ) where
 
+import qualified Control.Exception as Exception
+
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -34,4 +36,5 @@ makeEvaluate
     -> Pattern variable
     -> Pattern variable
 makeEvaluate variable patt =
-    Pattern.fromTermLike $ mkNu variable $ Pattern.toTermLike patt
+    Exception.assert (Pattern.isSimplified patt)
+    $ Pattern.fromTermLike $ mkNu variable $ Pattern.toTermLike patt

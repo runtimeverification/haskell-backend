@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Application
     , Application (..)
     ) where
 
+import qualified Control.Exception as Exception
+
 import Branch
     ( BranchT
     )
@@ -30,7 +32,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Profiler.Profile as Profile
     ( simplificationBranching
     )
@@ -60,7 +62,8 @@ simplify
     => Predicate variable
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify predicate application = do
+simplify predicate application =
+    Exception.assert (all OrPattern.isSimplified application) $ do
     evaluated <-
         traverse
             (makeAndEvaluateApplications predicate symbol)
@@ -98,13 +101,14 @@ makeAndEvaluateSymbolApplications
     -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateSymbolApplications predicate symbol children = do
-    expandedApplications <-
-        Branch.gather $ makeExpandedApplication symbol children
-    orResults <- traverse
-                    (evaluateApplicationFunction predicate)
-                    expandedApplications
-    return (MultiOr.mergeAll orResults)
+makeAndEvaluateSymbolApplications predicate symbol children =
+    Exception.assert (all Pattern.isSimplified children) $ do
+        expandedApplications <-
+            Branch.gather $ makeExpandedApplication symbol children
+        orResults <- traverse
+                        (evaluateApplicationFunction predicate)
+                        expandedApplications
+        return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
     :: (SimplifierVariable variable, MonadSimplify simplifier)

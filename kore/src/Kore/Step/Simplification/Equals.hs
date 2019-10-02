@@ -16,6 +16,7 @@ module Kore.Step.Simplification.Equals
 import Control.Error
     ( MaybeT (..)
     )
+import qualified Control.Exception as Exception
 import Control.Monad
     ( foldM
     )
@@ -37,7 +38,7 @@ import Kore.Internal.OrPredicate
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( pattern PredicateTrue
     , makeAndPredicate
@@ -150,7 +151,9 @@ simplify
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify predicate Equals { equalsFirst = first, equalsSecond = second } =
-    simplifyEvaluated predicate first second
+    Exception.assert (all Pattern.isSimplified first)
+    $ Exception.assert (all Pattern.isSimplified second)
+    $ simplifyEvaluated predicate first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -240,46 +243,51 @@ makeEvaluate
     -> Pattern variable
     -> Predicate variable
     -> simplifier (OrPattern variable)
-makeEvaluate
-    first@Conditional { term = Top_ _ }
-    second@Conditional { term = Top_ _ }
-    _
-  =
-    return (Iff.makeEvaluate first second)
-makeEvaluate
-    Conditional
-        { term = firstTerm
-        , predicate = PredicateTrue
-        , substitution = (Substitution.unwrap -> [])
-        }
-    Conditional
-        { term = secondTerm
-        , predicate = PredicateTrue
-        , substitution = (Substitution.unwrap -> [])
-        }
-    predicate
-  = do
-    result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
-    return (Pattern.fromPredicate <$> result)
-
-makeEvaluate
-    first@Conditional { term = firstTerm }
-    second@Conditional { term = secondTerm }
-    predicate
-  = do
-    let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
-    firstCeil <- Ceil.makeEvaluate predicate first'
-    let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
-    secondCeil <- Ceil.makeEvaluate predicate second'
-    firstCeilNegation <- Not.simplifyEvaluated firstCeil
-    secondCeilNegation <- Not.simplifyEvaluated secondCeil
-    termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-    negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
-    ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
-    equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
-    return $ Or.simplifyEvaluated equalityAnd negationAnd
+makeEvaluate first'' second'' =
+    Exception.assert (Pattern.isSimplified first'')
+    $ Exception.assert (Pattern.isSimplified second'')
+    $ worker first'' second''
   where
-    termsAreEqual = firstTerm == secondTerm
+    worker
+        first@Conditional { term = Top_ _ }
+        second@Conditional { term = Top_ _ }
+        _
+        =
+        return (Iff.makeEvaluate first second)
+    worker
+        Conditional
+            { term = firstTerm
+            , predicate = PredicateTrue
+            , substitution = (Substitution.unwrap -> [])
+            }
+        Conditional
+            { term = secondTerm
+            , predicate = PredicateTrue
+            , substitution = (Substitution.unwrap -> [])
+            }
+        predicate
+        = do
+        result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
+        return (Pattern.fromPredicate <$> result)
+
+    worker
+        first@Conditional { term = firstTerm }
+        second@Conditional { term = secondTerm }
+        predicate
+      = do
+        let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
+        firstCeil <- Ceil.makeEvaluate predicate first'
+        let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
+        secondCeil <- Ceil.makeEvaluate predicate second'
+        firstCeilNegation <- Not.simplifyEvaluated firstCeil
+        secondCeilNegation <- Not.simplifyEvaluated secondCeil
+        termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
+        negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
+        ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
+        equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
+        return $ Or.simplifyEvaluated equalityAnd negationAnd
+      where
+        termsAreEqual = firstTerm == secondTerm
 
 -- Do not export this. This not valid as a standalone function, it
 -- assumes that some extra conditions will be added on the outside
@@ -330,42 +338,47 @@ makeEvaluateTermsToPredicate
     -> TermLike variable
     -> Predicate variable
     -> simplifier (OrPredicate variable)
-makeEvaluateTermsToPredicate first second configurationPredicate
-  | first == second = return OrPredicate.top
-  | otherwise = do
-    result <- runMaybeT $ AndTerms.termEquals first second
-    case result of
-        Nothing ->
-            return
-                $ OrPredicate.fromPredicate
-                $ Predicate.fromPredicate
-                $ makeEqualsPredicate first second
-        Just predicatedOr -> do
-            firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
-            secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
-            let
-                toPredicateSafe
-                    ps@Conditional {term = (), predicate, substitution}
-                  | Substitution.null substitution =
-                    predicate
-                  | otherwise =
-                    error
-                        (  "Unimplemented: we should split the configuration"
-                        ++ " for or with nonempty substitution."
-                        ++ " input=" ++ show ps
-                        ++ ", first=" ++ show first
-                        ++ ", second=" ++ show second
-                        )
-                firstCeil =
-                    OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
-                secondCeil =
-                    OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
-                firstCeilNegation = makeNotPredicate firstCeil
-                secondCeilNegation = makeNotPredicate secondCeil
-                ceilNegationAnd =
-                    makeAndPredicate firstCeilNegation secondCeilNegation
-            return $ MultiOr.merge
-                predicatedOr
-                (OrPredicate.fromPredicate
-                    $ Predicate.fromPredicate ceilNegationAnd
-                )
+makeEvaluateTermsToPredicate first second configurationPredicate =
+    Exception.assert (TermLike.isSimplified first)
+    $ Exception.assert (TermLike.isSimplified second)
+    $ worker
+  where
+    worker
+      | first == second = return OrPredicate.top
+      | otherwise = do
+        result <- runMaybeT $ AndTerms.termEquals first second
+        case result of
+            Nothing ->
+                return
+                    $ OrPredicate.fromPredicate
+                    $ Predicate.fromPredicate
+                    $ makeEqualsPredicate first second
+            Just predicatedOr -> do
+                firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
+                secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
+                let
+                    toPredicateSafe
+                        ps@Conditional {term = (), predicate, substitution}
+                      | Substitution.null substitution =
+                        predicate
+                      | otherwise =
+                        error
+                            (  "Unimplemented: we should split the configuration"
+                            ++ " for or with nonempty substitution."
+                            ++ " input=" ++ show ps
+                            ++ ", first=" ++ show first
+                            ++ ", second=" ++ show second
+                            )
+                    firstCeil =
+                        OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
+                    secondCeil =
+                        OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
+                    firstCeilNegation = makeNotPredicate firstCeil
+                    secondCeilNegation = makeNotPredicate secondCeil
+                    ceilNegationAnd =
+                        makeAndPredicate firstCeilNegation secondCeilNegation
+                return $ MultiOr.merge
+                    predicatedOr
+                    (OrPredicate.fromPredicate
+                        $ Predicate.fromPredicate ceilNegationAnd
+                    )

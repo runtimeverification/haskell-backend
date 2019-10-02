@@ -24,6 +24,7 @@ import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
     )
+-- import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -153,6 +154,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
+        -- (fmap . fmap . fmap) TermLike.markSimplified $
         tracer termLike $
         let doNotSimplify = return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike

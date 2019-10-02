@@ -12,6 +12,8 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
+import qualified Control.Exception as Exception
+
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -44,7 +46,9 @@ simplify
     => Implies Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify Implies { impliesFirst = first, impliesSecond = second } =
-    simplifyEvaluated first second
+    Exception.assert (OrPattern.isSimplified first)
+    $ Exception.assert (OrPattern.isSimplified second)
+    $ simplifyEvaluated first second
 
 {-| simplifies an Implies given its two 'OrPattern' children.
 
@@ -69,14 +73,19 @@ simplifyEvaluated
     => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated first second
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isFalse first  = return OrPattern.top
-  | OrPattern.isTrue second  = return OrPattern.top
-  | OrPattern.isFalse second = Not.simplifyEvaluated first
-  | otherwise = do
-    results <- traverse (simplifyEvaluateHalfImplies first) second
-    return (MultiOr.flatten results)
+simplifyEvaluated first second =
+    Exception.assert (OrPattern.isSimplified first)
+    Exception.assert (OrPattern.isSimplified second)
+    worker
+  where
+    worker
+      | OrPattern.isTrue first   = return second
+      | OrPattern.isFalse first  = return OrPattern.top
+      | OrPattern.isTrue second  = return OrPattern.top
+      | OrPattern.isFalse second = Not.simplifyEvaluated first
+      | otherwise = do
+        results <- traverse (simplifyEvaluateHalfImplies first) second
+        return (MultiOr.flatten results)
 
 simplifyEvaluateHalfImplies
     :: (SimplifierVariable variable, MonadSimplify simplifier)

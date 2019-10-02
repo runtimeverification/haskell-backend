@@ -11,6 +11,7 @@ module Kore.Step.Simplification.AndPredicates
     ( simplifyEvaluatedMultiPredicate
     ) where
 
+import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 
 import Branch
@@ -33,6 +34,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPredicate
     ( OrPredicate
     )
+import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern
     ( Predicate
     )
@@ -47,7 +49,8 @@ simplifyEvaluatedMultiPredicate
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => MultiAnd (OrPredicate variable)
     -> simplifier (OrPredicate variable)
-simplifyEvaluatedMultiPredicate predicates = do
+simplifyEvaluatedMultiPredicate predicates =
+    Exception.assert (all OrPredicate.isSimplified predicates) $ do
     let
         crossProduct :: MultiOr [Predicate variable]
         crossProduct =
