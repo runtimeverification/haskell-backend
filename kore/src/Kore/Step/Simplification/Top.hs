@@ -15,7 +15,6 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Syntax.Top
@@ -27,4 +26,4 @@ simplify
     :: InternalVariable variable
     => Top Sort child
     -> OrPattern variable
-simplify _ = fmap TermLike.markSimplified <$> OrPattern.top
+simplify _ = OrPattern.top

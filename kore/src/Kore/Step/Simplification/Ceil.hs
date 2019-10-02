@@ -15,7 +15,6 @@ module Kore.Step.Simplification.Ceil
     , Ceil (..)
     ) where
 
-import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.List as List
@@ -85,8 +84,7 @@ simplify
     predicate
     Ceil { ceilChild = child }
   =
-    Exception.assert (OrPattern.isSimplified child)
-    $ simplifyEvaluated predicate child
+    simplifyEvaluated predicate child
 
 {-| 'simplifyEvaluated' evaluates a ceil given its child, see 'simplify'
 for details.
@@ -113,8 +111,7 @@ simplifyEvaluated
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated predicate child =
-    Exception.assert (OrPattern.isSimplified child)
-    $ MultiOr.flatten <$> traverse (makeEvaluate predicate) child
+    MultiOr.flatten <$> traverse (makeEvaluate predicate) child
 
 {-| Evaluates a ceil given its child as an Pattern, see 'simplify'
 for details.
@@ -127,13 +124,10 @@ makeEvaluate
     => Predicate.Predicate variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluate predicate child =
-    Exception.assert (Pattern.isSimplified child) worker
-  where
-    worker
-      | Pattern.isTop    child = return (fmap TermLike.markSimplified <$> OrPattern.top)
-      | Pattern.isBottom child = return (fmap TermLike.markSimplified <$> OrPattern.bottom)
-      | otherwise              = makeEvaluateNonBoolCeil predicate child
+makeEvaluate predicate child
+  | Pattern.isTop    child = return OrPattern.top
+  | Pattern.isBottom child = return OrPattern.bottom
+  | otherwise              = makeEvaluateNonBoolCeil predicate child
 
 makeEvaluateNonBoolCeil
     ::  ( SimplifierVariable variable
@@ -154,7 +148,7 @@ makeEvaluateNonBoolCeil predicate patt@Conditional {term}
                 , termCeil
                 ]
             )
-    return (fmap TermLike.markSimplified <$> fmap Pattern.fromPredicate result)
+    return (fmap Pattern.fromPredicate result)
 
 -- TODO: Ceil(function) should be an and of all the function's conditions, both
 -- implicit and explicit.
@@ -175,7 +169,7 @@ makeEvaluateTerm
     configurationPredicate
     term@(Recursive.project -> _ :< projected)
   =
-    Exception.assert (TermLike.isSimplified term) makeEvaluateTermWorker
+    makeEvaluateTermWorker
   where
     makeEvaluateTermWorker
       | isTop term            = return OrPredicate.top

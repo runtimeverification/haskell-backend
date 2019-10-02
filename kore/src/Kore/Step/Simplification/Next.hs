@@ -11,8 +11,6 @@ module Kore.Step.Simplification.Next
     ( simplify
     ) where
 
-import qualified Control.Exception as Exception
-
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -32,9 +30,7 @@ simplify
     :: InternalVariable variable
     => Next Sort (OrPattern variable)
     -> OrPattern variable
-simplify Next { nextChild = child } =
-    Exception.assert (OrPattern.isSimplified child)
-    simplifyEvaluated child
+simplify Next { nextChild = child } = simplifyEvaluated child
 
 simplifyEvaluated
     :: InternalVariable variable

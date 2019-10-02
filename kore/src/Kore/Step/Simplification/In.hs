@@ -11,8 +11,6 @@ module Kore.Step.Simplification.In
     ( simplify
     ) where
 
-import qualified Control.Exception as Exception
-
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -49,8 +47,6 @@ simplify
     -> In Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify predicate In { inContainedChild = first, inContainingChild = second } =
-    Exception.assert (OrPattern.isSimplified first)
-    Exception.assert (OrPattern.isSimplified second)
     simplifyEvaluatedIn predicate first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.

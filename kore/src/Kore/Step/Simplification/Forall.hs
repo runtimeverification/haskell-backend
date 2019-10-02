@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
-import qualified Control.Exception as Exception
-
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -45,8 +43,7 @@ simplify
 simplify
     Forall { forallVariable, forallChild }
   =
-    Exception.assert (OrPattern.isSimplified forallChild)
-    $ simplifyEvaluated forallVariable forallChild
+    simplifyEvaluated forallVariable forallChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -80,11 +77,8 @@ makeEvaluate
     => ElementVariable variable
     -> Pattern variable
     -> Pattern variable
-makeEvaluate variable patt =
-    Exception.assert (Pattern.isSimplified patt) worker
-  where
-    worker
-      | Pattern.isTop patt    = Pattern.top
-      | Pattern.isBottom patt = Pattern.bottom
-      | otherwise =
-        Pattern.fromTermLike $ mkForall variable $ Pattern.toTermLike patt
+makeEvaluate variable patt
+  | Pattern.isTop patt    = Pattern.top
+  | Pattern.isBottom patt = Pattern.bottom
+  | otherwise =
+    Pattern.fromTermLike $ mkForall variable $ Pattern.toTermLike patt

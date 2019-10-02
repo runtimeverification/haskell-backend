@@ -15,7 +15,6 @@ module Kore.Step.Simplification.Not
     , simplifyEvaluatedPredicate
     ) where
 
-import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 
 import Branch
@@ -36,7 +35,6 @@ import Kore.Internal.OrPredicate
     )
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( mkAnd
     )
@@ -64,9 +62,7 @@ simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Not Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Not { notChild } =
-    Exception.assert (OrPattern.isSimplified notChild)
-    simplifyEvaluated notChild
+simplify Not { notChild } = simplifyEvaluated notChild
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -91,7 +87,6 @@ simplifyEvaluated
     => OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyEvaluated simplified =
-    Exception.assert (OrPattern.isSimplified simplified)
     fmap OrPattern.fromPatterns $ gather $ do
         let not' = Not { notChild = simplified, notSort = () }
         andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
@@ -102,7 +97,6 @@ simplifyEvaluatedPredicate
     => OrPredicate variable
     -> simplifier (OrPredicate variable)
 simplifyEvaluatedPredicate notChild =
-    Exception.assert (OrPredicate.isSimplified notChild)
     fmap OrPredicate.fromPredicates $ gather $ do
         let not' = Not { notChild = notChild, notSort = () }
         andPredicate <- scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
@@ -117,9 +111,7 @@ makeEvaluate
     :: InternalVariable variable
     => Pattern variable
     -> OrPattern variable
-makeEvaluate pattern' =
-    Exception.assert (Pattern.isSimplified pattern')
-    makeEvaluateNot $ Not () pattern'
+makeEvaluate = makeEvaluateNot . Not ()
 
 makeEvaluateNot
     :: InternalVariable variable
@@ -150,13 +142,12 @@ makeEvaluatePredicate
     => Predicate variable
     -> Predicate variable
 makeEvaluatePredicate
-    conditional@Conditional
+    Conditional
         { term = ()
         , predicate
         , substitution
         }
-  = Exception.assert (Predicate.isSimplified conditional)
-    Conditional
+  = Conditional
         { term = ()
         , predicate =
             makeNotPredicate

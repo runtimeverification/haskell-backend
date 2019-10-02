@@ -18,7 +18,6 @@ module Kore.Step.Simplification.And
 import Control.Applicative
     ( Alternative (empty)
     )
-import qualified Control.Exception as Exception
 import Control.Monad
     ( foldM
     )
@@ -40,7 +39,7 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
     ( termAnd
     )
@@ -88,9 +87,7 @@ simplify
     => And Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify And { andFirst = first, andSecond = second } =
-    Exception.assert (OrPattern.isSimplified first)
-    $ Exception.assert (OrPattern.isSimplified second)
-    $ simplifyEvaluated first second
+    simplifyEvaluated first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -114,22 +111,18 @@ simplifyEvaluated
     => OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated first second =
-    Exception.assert (OrPattern.isSimplified first)
-    $ Exception.assert (OrPattern.isSimplified second)
-    $ worker
-  where
-    worker
-      | OrPattern.isFalse first  = return OrPattern.bottom
-      | OrPattern.isFalse second = return OrPattern.bottom
-      | OrPattern.isTrue first   = return second
-      | OrPattern.isTrue second  = return first
-      | otherwise                = do
-        result <- gather $ do
+simplifyEvaluated first second
+  | OrPattern.isFalse first  = return OrPattern.bottom
+  | OrPattern.isFalse second = return OrPattern.bottom
+  | OrPattern.isTrue first   = return second
+  | OrPattern.isTrue second  = return first
+  | otherwise                = do
+    result <-
+        gather $ do
             first1 <- scatter first
             second1 <- scatter second
             makeEvaluate first1 second1
-        return (OrPattern.fromPatterns result)
+    return (OrPattern.fromPatterns result)
 
 simplifyEvaluatedMultiple
     :: (SimplifierVariable variable, MonadSimplify simplifier)
@@ -137,9 +130,7 @@ simplifyEvaluatedMultiple
     -> simplifier (OrPattern variable)
 simplifyEvaluatedMultiple [] = return OrPattern.top
 simplifyEvaluatedMultiple (pat : patterns) =
-    Exception.assert (OrPattern.isSimplified pat)
-    $ Exception.assert (all OrPattern.isSimplified patterns)
-    $ foldM simplifyEvaluated pat patterns
+    foldM simplifyEvaluated pat patterns
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 
@@ -153,16 +144,11 @@ makeEvaluate
     => Pattern variable
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluate first second =
-    Exception.assert (Pattern.isSimplified first)
-    $ Exception.assert (Pattern.isSimplified second)
-    $ worker
-  where
-    worker
-      | Pattern.isBottom first || Pattern.isBottom second = empty
-      | Pattern.isTop first = return second
-      | Pattern.isTop second = return first
-      | otherwise = makeEvaluateNonBool first second
+makeEvaluate first second
+  | Pattern.isBottom first || Pattern.isBottom second = empty
+  | Pattern.isTop first = return second
+  | Pattern.isTop second = return first
+  | otherwise = makeEvaluateNonBool first second
 
 makeEvaluateNonBool
     ::  ( SimplifierVariable variable
@@ -190,7 +176,7 @@ applyAndIdempotence
     => TermLike variable
     -> TermLike variable
 applyAndIdempotence patt =
-    foldl1' (\a b -> TermLike.markSimplified $ mkAnd a b) (nub (children patt))
+    foldl1' mkAnd (nub (children patt))
   where
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]

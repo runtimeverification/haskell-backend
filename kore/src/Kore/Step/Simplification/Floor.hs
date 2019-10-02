@@ -12,8 +12,6 @@ module Kore.Step.Simplification.Floor
     , makeEvaluateFloor
     ) where
 
-import qualified Control.Exception as Exception
-
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -44,8 +42,7 @@ simplify
     => Floor Sort (OrPattern variable)
     -> OrPattern variable
 simplify Floor { floorChild = child } =
-    Exception.assert (OrPattern.isSimplified child)
-    $ simplifyEvaluatedFloor child
+    simplifyEvaluatedFloor child
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -77,13 +74,10 @@ makeEvaluateFloor
     :: InternalVariable variable
     => Pattern variable
     -> OrPattern variable
-makeEvaluateFloor child =
-    Exception.assert (Pattern.isSimplified child) worker
-  where
-    worker
-      | Pattern.isTop child    = OrPattern.top
-      | Pattern.isBottom child = OrPattern.bottom
-      | otherwise              = makeEvaluateNonBoolFloor child
+makeEvaluateFloor child
+  | Pattern.isTop child    = OrPattern.top
+  | Pattern.isBottom child = OrPattern.bottom
+  | otherwise              = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
     :: InternalVariable variable
