@@ -6,6 +6,9 @@ import Data.Default
     ( def
     )
 
+import qualified Kore.Internal.MultiAnd as MultiAnd
+    ( extractPatterns
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -158,6 +161,7 @@ runSimplifyRule
     :: OnePathRule Variable
     -> IO [OnePathRule Variable]
 runSimplifyRule rule =
-    SMT.runSMT SMT.defaultConfig emptyLogger
+    fmap MultiAnd.extractPatterns
+    $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ runSimplifier Mock.env
     $ simplifyOnePathRuleLhs rule

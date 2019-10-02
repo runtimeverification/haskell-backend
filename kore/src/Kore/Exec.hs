@@ -76,6 +76,9 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.IndexedModule.Resolvers
     ( resolveSymbol
     )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+    ( extractPatterns
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
@@ -516,7 +519,8 @@ data InitializedProver =
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver
-    :: MonadSimplify simplifier
+    :: forall simplifier a
+    .  MonadSimplify simplifier
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -> (InitializedProver -> simplifier a)
@@ -530,12 +534,20 @@ initializeProver definitionModule specModule within =
                 map
                     (Bifunctor.second $ expandOnePathSingleConstructors tools)
                     (extractOnePathClaims specModule)
-            mapMSecond :: Monad m => (b -> m [c]) -> (a, b) -> m [(a, c)]
-            mapMSecond f (a, b) = do
-                c <- f b
-                return (map ((,) a) c)
+            mapMSecond
+                :: Monad m
+                => (rule -> m [rule'])
+                -> (attributes, rule) -> m [(attributes, rule')]
+            mapMSecond f (attribute, rule) = do
+                simplified <- f rule
+                return (map ((,) attribute) simplified)
+            simplifyToList
+                :: OnePathRule Variable -> simplifier [OnePathRule Variable]
+            simplifyToList rules = do
+                simplified <- simplifyOnePathRuleLhs rules
+                return (MultiAnd.extractPatterns simplified)
         simplifiedSpecClaims <-
-            mapM (mapMSecond simplifyOnePathRuleLhs) specClaims
+            mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
         assertSomeClaims specAxioms
