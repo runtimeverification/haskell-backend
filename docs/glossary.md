@@ -56,7 +56,11 @@
    symbol is used to represent the K sub-sort relation in Kore: K sorts contain
    symbols and sorts (their sub-sorts), but Kore sorts contain only symbols; the
    sort injection symbol wraps patterns of a sub-sort so they can be included
-   (_injected_) into the super-sort.
+   (_injected_) into the super-sort. Two important properties follow from this
+   definition: first, that sort injection symbols are injective; second, that
+   the sort injection symbol from a particular sub-sort is distinct (in the
+   no-confusion-different-constructors sense) from the super-sort's
+   constructors.
 1. (noun)
    A [sort injection](#sort-injection) is a [pattern](#pattern) of the form,
    ```
