@@ -1828,7 +1828,8 @@ mkEvaluated
     => SortedVariable variable
     => TermLike variable
     -> TermLike variable
-mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
+mkEvaluated =
+    markSimplified . updateCallStack . synthesize . EvaluatedF . Evaluated
 
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
