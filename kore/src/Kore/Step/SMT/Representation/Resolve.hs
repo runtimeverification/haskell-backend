@@ -10,6 +10,9 @@ module Kore.Step.SMT.Representation.Resolve
     ( resolve
     ) where
 
+import Control.Error.Safe
+    ( assertMay
+    )
 import qualified Data.Map as Map
 import Data.Text
     ( Text
@@ -27,7 +30,7 @@ import Kore.Step.SMT.AST
     , Encodable
     , IndirectSymbolDeclaration (IndirectSymbolDeclaration)
     , KoreSortDeclaration (SortDeclarationDataType, SortDeclarationSort, SortDeclaredIndirectly)
-    , KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly)
+    , KoreSymbolDeclaration (SymbolBuiltin, SymbolConstructor, SymbolDeclaredDirectly)
     , SmtDeclarations
     , Sort (Sort)
     , SortReference (SortReference)
@@ -38,6 +41,7 @@ import Kore.Step.SMT.AST
     , UnresolvedDataTypeDeclaration
     , UnresolvedDeclarations
     , UnresolvedFunctionDeclaration
+    , UnresolvedIndirectSymbolDeclaration
     , UnresolvedKoreSortDeclaration
     , UnresolvedKoreSymbolDeclaration
     , UnresolvedSort
@@ -46,6 +50,9 @@ import Kore.Step.SMT.AST
     , encode
     )
 import qualified Kore.Step.SMT.AST as DoNotUse
+import qualified Kore.Syntax.Id as Kore
+    ( Id
+    )
 import qualified SMT
 
 import Kore.Debug
@@ -54,6 +61,7 @@ data Resolvers sort symbol name = Resolvers
     { sortResolver :: SortReference -> Maybe sort
     , symbolResolver :: SymbolReference -> Maybe symbol
     , nameResolver :: Encodable -> name
+    , sortDeclaresSymbol :: SortReference -> Kore.Id -> Bool
     }
 
 {-| Enforces consistency on the given declarations (i.e. all referenced sorts
@@ -73,6 +81,7 @@ smtResolvers Declarations {sorts, symbols} =
         { sortResolver = referenceCheckSort
         , symbolResolver = referenceCheckSymbol
         , nameResolver = encode
+        , sortDeclaresSymbol = sortDeclaresSymbolImpl sorts
         }
   where
     referenceCheckSort
@@ -143,6 +152,7 @@ referenceCheckResolvers Declarations {sorts, symbols} =
         { sortResolver = referenceCheckSort
         , symbolResolver = referenceCheckSymbol
         , nameResolver = id
+        , sortDeclaresSymbol = sortDeclaresSymbolImpl sorts
         }
   where
     referenceCheckSort
@@ -178,7 +188,7 @@ resolveDeclarations
   =
     Declarations
         { sorts = Map.mapMaybe (resolveSort resolvers) sorts
-        , symbols = Map.mapMaybe (resolveSymbol resolvers) symbols
+        , symbols = Map.mapMaybeWithKey (resolveSymbol resolvers) symbols
         }
 
 resolveSort
@@ -271,13 +281,16 @@ resolveSortDeclaration
 resolveSymbol
     :: (Show sort, Show name)
     => Resolvers sort symbol name
+    -> Kore.Id
     -> UnresolvedSymbol
     -> Maybe (Symbol sort name)
 resolveSymbol
     resolvers
+    symbolId
     Symbol { smtFromSortArgs, declaration }
   = traceMaybe D_SMT_resolveSymbol [debugArg "declaration" declaration] $ do
-    newDeclaration <- resolveKoreSymbolDeclaration resolvers declaration
+    newDeclaration <-
+        resolveKoreSymbolDeclaration resolvers symbolId declaration
     return Symbol
         { smtFromSortArgs = smtFromSortArgs
         , declaration = newDeclaration
@@ -285,18 +298,45 @@ resolveSymbol
 
 resolveKoreSymbolDeclaration
     :: Resolvers sort symbol name
+    -> Kore.Id
     -> UnresolvedKoreSymbolDeclaration
     -> Maybe (KoreSymbolDeclaration sort name)
-resolveKoreSymbolDeclaration resolvers (SymbolDeclaredDirectly declaration) =
+resolveKoreSymbolDeclaration resolvers _ (SymbolDeclaredDirectly declaration) =
     SymbolDeclaredDirectly <$> resolveFunctionDeclaration resolvers declaration
 resolveKoreSymbolDeclaration
-    Resolvers {sortResolver, nameResolver}
-    (SymbolDeclaredIndirectly IndirectSymbolDeclaration {name, sorts})
+    resolvers
+    _
+    (SymbolBuiltin indirectDeclaration)
+  =
+    SymbolBuiltin
+        <$> resolveIndirectSymbolDeclaration resolvers indirectDeclaration
+resolveKoreSymbolDeclaration
+    resolvers@Resolvers {sortDeclaresSymbol}
+    symbolId
+    (SymbolConstructor indirectDeclaration@IndirectSymbolDeclaration
+        {resultSort}
+    )
   = do
-    newSorts <- mapM sortResolver sorts
-    return $ SymbolDeclaredIndirectly IndirectSymbolDeclaration
+    assertMay (sortDeclaresSymbol resultSort symbolId)
+
+    SymbolConstructor
+        <$> resolveIndirectSymbolDeclaration resolvers indirectDeclaration
+
+resolveIndirectSymbolDeclaration
+    :: Resolvers sort symbol name
+    -> UnresolvedIndirectSymbolDeclaration
+    -> Maybe (IndirectSymbolDeclaration sort name)
+resolveIndirectSymbolDeclaration
+    Resolvers {sortResolver, nameResolver}
+    IndirectSymbolDeclaration
+        {name, resultSort, argumentSorts}
+  = do
+    newResultSort <- sortResolver resultSort
+    newArgumentSorts <- mapM sortResolver argumentSorts
+    return IndirectSymbolDeclaration
         { name = nameResolver name
-        , sorts = newSorts
+        , resultSort = newResultSort
+        , argumentSorts = newArgumentSorts
         }
 
 resolveFunctionDeclaration
@@ -314,3 +354,38 @@ resolveFunctionDeclaration
         , inputSorts = newInputSorts
         , resultSort = newResultSort
         }
+
+sortDeclaresSymbolImpl
+    :: Map.Map Kore.Id UnresolvedSort
+    -> SortReference
+    -> Kore.Id
+    -> Bool
+sortDeclaresSymbolImpl
+    sorts
+    (SortReference
+        (Kore.SortActualSort Kore.SortActual
+            { sortActualName
+            , sortActualSorts = []
+            }
+        )
+    )
+    symbolId
+  = case Map.lookup sortActualName sorts of
+    Nothing -> False
+    Just Sort {declaration = SortDeclarationSort _} -> False
+    Just Sort {declaration = SortDeclaredIndirectly _} -> False
+    Just Sort {declaration = SortDeclarationDataType dataType} ->
+        dataTypeDeclaresSymbol dataType symbolId
+sortDeclaresSymbolImpl _ _ _ = False
+
+dataTypeDeclaresSymbol :: UnresolvedDataTypeDeclaration -> Kore.Id -> Bool
+dataTypeDeclaresSymbol
+    SMT.DataTypeDeclaration {constructors}
+    symbolId
+  = any isSameSymbol constructors
+  where
+    isSameSymbol :: UnresolvedConstructor -> Bool
+    isSameSymbol
+        SMT.Constructor {name = SymbolReference symbolReferenceId}
+      =
+        symbolReferenceId == symbolId
