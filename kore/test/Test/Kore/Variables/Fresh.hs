@@ -3,6 +3,9 @@ module Test.Kore.Variables.Fresh (test_refreshVariable) where
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import Data.Maybe
+    ( isJust
+    )
 import qualified Data.Set as Set
 
 import Kore.Sort
@@ -40,6 +43,14 @@ test_refreshVariable =
     , testCase "refreshVariable - expecting the same sort" $
         assertBool "Expected fresh variable has same sort as original"
             (variableSort original == variableSort fresh2)
+
+    , testCase "refreshVariable - sort order does not matter" $
+        let assertRefreshes a b =
+                assertBool "Expected fresh variable"
+                    (isJust (refreshVariable (Set.singleton a) b))
+        in do
+            assertRefreshes original metaVariableDifferentSort
+            assertRefreshes metaVariableDifferentSort original
     ]
   where
     original = metaVariable

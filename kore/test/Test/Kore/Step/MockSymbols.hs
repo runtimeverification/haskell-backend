@@ -14,7 +14,7 @@ module Test.Kore.Step.MockSymbols where
    * one-element functions are called f, g, h.
    * constructors are called "constr<n><k>" where n is the arity and k is used
      to differentiate between them (both are one-digit).
-   * functional constructors are called "functionallConstr<n><k>"
+   * functional constructors are called "functionalConstr<n><k>"
    * functional symbols are called "functional<n><k>"
    * symbols without any special attribute are called "plain<n><k>"
    * variables are called x, y, z...
@@ -41,6 +41,9 @@ import Kore.Attribute.Hook
     )
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors
+    )
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
@@ -114,8 +117,12 @@ eId :: Id
 eId = testId "e"
 fId :: Id
 fId = testId "f"
+fSort0Id :: Id
+fSort0Id = testId "fSort0"
 gId :: Id
 gId = testId "g"
+gSort0Id :: Id
+gSort0Id = testId "gSort0"
 hId :: Id
 hId = testId "h"
 cfId :: Id
@@ -278,8 +285,14 @@ eSymbol = symbol eId [] testSort & functional & constructor
 fSymbol :: Symbol
 fSymbol = symbol fId [testSort] testSort & function
 
+fSort0Symbol :: Symbol
+fSort0Symbol = symbol fSort0Id [testSort0] testSort0 & function
+
 gSymbol :: Symbol
 gSymbol = symbol gId [testSort] testSort & function
+
+gSort0Symbol :: Symbol
+gSort0Symbol = symbol gSort0Id [testSort0] testSort0 & function
 
 hSymbol :: Symbol
 hSymbol = symbol hId [testSort] testSort & function
@@ -532,7 +545,7 @@ x = ElementVariable $ Variable (testId "x") mempty testSort
 setX :: SetVariable Variable
 setX = SetVariable $ Variable (testId "@x") mempty testSort
 x0 :: ElementVariable Variable
-x0 = ElementVariable $ Variable (testId "x") mempty testSort0
+x0 = ElementVariable $ Variable (testId "x0") mempty testSort0
 y :: ElementVariable Variable
 y = ElementVariable $ Variable (testId "y") mempty testSort
 setY :: SetVariable Variable
@@ -639,6 +652,14 @@ f, g, h
 f arg = Internal.mkApplySymbol fSymbol [arg]
 g arg = Internal.mkApplySymbol gSymbol [arg]
 h arg = Internal.mkApplySymbol hSymbol [arg]
+
+fSort0, gSort0
+    :: InternalVariable variable
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fSort0 arg = Internal.mkApplySymbol fSort0Symbol [arg]
+gSort0 arg = Internal.mkApplySymbol gSort0Symbol [arg]
 
 cf :: InternalVariable variable => TermLike variable
 cf = Internal.mkApplySymbol cfSymbol []
@@ -1039,7 +1060,9 @@ symbols =
     , dSymbol
     , eSymbol
     , fSymbol
+    , fSort0Symbol
     , gSymbol
+    , gSort0Symbol
     , hSymbol
     , cfSymbol
     , cfSort0Symbol
@@ -1267,6 +1290,13 @@ smtUnresolvedDeclarations = SMT.Declarations
         ]
     }
 
+sortConstructors :: Map.Map Id Attribute.Constructors
+sortConstructors = Map.fromList
+    [
+    -- TODO(virgil): testSort has constructors, it should have a
+    -- constructor-based definition. The same for others.
+    ]
+
 testSortId :: Id
 testSortId = testId "testSort"
 testSort0Id :: Id
@@ -1480,6 +1510,7 @@ emptyMetadataTools =
         [] -- sortAttributesMapping
         [] -- subsorts
         emptySmtDeclarations
+        Map.empty -- sortConstructors
 
 metadataTools :: GHC.HasCallStack => SmtMetadataTools Attribute.Symbol
 metadataTools =
@@ -1489,6 +1520,7 @@ metadataTools =
         subsorts
         headSortsMapping
         smtDeclarations
+        sortConstructors
 
 termLikeSimplifier :: TermLikeSimplifier
 termLikeSimplifier = Simplifier.create

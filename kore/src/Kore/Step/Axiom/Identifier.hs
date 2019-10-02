@@ -38,15 +38,21 @@ import qualified Data.Text.Prettyprint.Doc as Doc
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Builtin.External as Builtin
 import Kore.Debug
 import Kore.Internal.TermLike
     ( CofreeF (..)
+    , InternalVariable
     , TermLike
     )
-import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Syntax.Application as Syntax
+import qualified Kore.Syntax.Ceil as Syntax
+import qualified Kore.Syntax.Equals as Syntax
+import qualified Kore.Syntax.Exists as Syntax
 import Kore.Syntax.Id
     ( Id (..)
     )
+import Kore.Syntax.PatternF
 import Kore.Unparser
     ( unparse
     )
@@ -96,24 +102,25 @@ Returns 'Nothing' if the 'TermLike' does not conform to one of the structures we
 recognize.
 
  -}
-matchAxiomIdentifier :: TermLike variable -> Maybe AxiomIdentifier
-matchAxiomIdentifier = Recursive.fold matchWorker
+matchAxiomIdentifier
+    :: InternalVariable variable
+    => TermLike variable
+    -> Maybe AxiomIdentifier
+matchAxiomIdentifier = Recursive.fold matchWorker . Builtin.externalize
   where
-    matchWorker (_ :< termLikeF) =
-        case termLikeF of
-            TermLike.ApplySymbolF application ->
+    matchWorker (_ :< patternF) =
+        case patternF of
+            ApplicationF application ->
                 pure (Application symbolId)
               where
-                symbol = TermLike.applicationSymbolOrAlias application
-                symbolId = TermLike.symbolConstructor symbol
-            TermLike.CeilF ceil ->
-                Ceil <$> TermLike.ceilChild ceil
-            TermLike.EqualsF equals ->
+                symbol = Syntax.applicationSymbolOrAlias application
+                symbolId = Syntax.symbolOrAliasConstructor symbol
+            CeilF ceil -> Ceil <$> Syntax.ceilChild ceil
+            EqualsF equals ->
                 Equals
-                    <$> TermLike.equalsFirst equals
-                    <*> TermLike.equalsSecond equals
-            TermLike.ExistsF exists ->
-                Exists <$> TermLike.existsChild exists
-            TermLike.VariableF _ ->
+                    <$> Syntax.equalsFirst equals
+                    <*> Syntax.equalsSecond equals
+            ExistsF exists -> Exists <$> Syntax.existsChild exists
+            VariableF _ ->
                 pure Variable
             _ -> empty

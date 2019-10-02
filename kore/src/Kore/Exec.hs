@@ -33,6 +33,9 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
+    ( second
+    )
+import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( Coercible
     , coerce
@@ -108,6 +111,9 @@ import Kore.Step.Rule as RulePattern
     )
 import qualified Kore.Step.Rule.Combine as Rules
     ( mergeRules
+    )
+import Kore.Step.Rule.Expand
+    ( expandOnePathSingleConstructors
     )
 import Kore.Step.Search
     ( searchGraph
@@ -269,8 +275,12 @@ prove
     -> smt (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
     evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
+        tools <- Simplifier.askMetadataTools
         let Initialized { rewriteRules } = initialized
-            specClaims = extractOnePathClaims specModule
+            specClaims =
+                map
+                    (Bifunctor.second $ expandOnePathSingleConstructors tools)
+                    (extractOnePathClaims specModule)
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond specClaims
         assertSomeClaims specAxioms

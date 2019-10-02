@@ -155,7 +155,7 @@ test_ignore =
             { sentenceAxiomParameters = [ sortVarS ]
             , sentenceAxiomAttributes = attributes
             , sentenceAxiomPattern =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ mkEquals sortS
                     (mkApplySymbol superSymbol [])
                     (mkApplySymbol subSymbol   [])

@@ -9,6 +9,9 @@ import Data.Reflection
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
     )
+import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
+    ( indexBySort
+    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -119,6 +122,7 @@ test_sortDeclaration =
     ]
   where
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
+
     declareSymbolsAndSorts
         ::  ( Given (SmtMetadataTools Attribute.Symbol)
             , SMT.MonadSMT m
@@ -126,4 +130,5 @@ test_sortDeclaration =
         => VerifiedModule Attribute.Symbol Attribute.Axiom
         -> m ()
     declareSymbolsAndSorts m =
-        Declaration.declare (Representation.build m)
+        Declaration.declare
+            (Representation.build m (Attribute.Constructors.indexBySort m))
