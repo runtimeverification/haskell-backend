@@ -732,7 +732,8 @@ unifyEqualsNormalized
     renormalized <- normalize1 normalizedTerm
 
     let unifierTerm :: TermLike variable
-        unifierTerm = asInternal tools sort1 renormalized
+        unifierTerm =
+            TermLike.markSimplified $ asInternal tools sort1 renormalized
     return (unifierTerm `withCondition` unifierPredicate)
   where
     sort1 = termLikeSort first
