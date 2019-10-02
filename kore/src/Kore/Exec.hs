@@ -533,8 +533,7 @@ initializeProver definitionModule specModule within =
         let
             axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = fmap makeClaim specAxioms
-            initializedProver = InitializedProver
-                { axioms, claims}
+            initializedProver = InitializedProver { axioms, claims}
         within initializedProver
 
 evalProver
