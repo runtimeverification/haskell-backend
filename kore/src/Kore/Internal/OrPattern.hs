@@ -5,6 +5,7 @@ License     : NCSA
 -}
 module Kore.Internal.OrPattern
     ( OrPattern
+    , isSimplified
     , fromPatterns
     , toPatterns
     , fromPattern
@@ -30,7 +31,9 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike hiding
+    ( isSimplified
+    )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.TopBottom
     ( TopBottom (..)
@@ -39,6 +42,9 @@ import Kore.TopBottom
 {-| The disjunction of 'Pattern'.
 -}
 type OrPattern variable = MultiOr (Pattern variable)
+
+isSimplified :: OrPattern variable -> Bool
+isSimplified = all Pattern.isSimplified
 
 {- | A "disjunction" of one 'Pattern.Pattern'.
  -}
