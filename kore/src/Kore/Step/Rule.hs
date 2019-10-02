@@ -25,6 +25,7 @@ module Kore.Step.Rule
     , extractOnePathClaims
     , extractAllPathClaims
     , extractImplicationClaims
+    , fullyApplySubstitution
     , mkRewriteAxiom
     , mkEqualityAxiom
     , mkCeilAxiom
@@ -54,6 +55,9 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import GHC.Stack
+    ( HasCallStack
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
@@ -113,6 +117,13 @@ import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( AstLocation (..)
     , Id (..)
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
+import qualified Kore.Unification.Substitution as Substitution
+    ( toMap
+    , variables
     )
 import Kore.Unparser
     ( Unparse
@@ -763,23 +774,43 @@ mapVariables mapping rule1@(RulePattern _ _ _ _ _ _) =
     RulePattern { left, antiLeft, right, requires, ensures } = rule1
 
 
-{- | Traverse the predicate from the top down and apply substitutions.
-
-The 'freeVariables' annotation is used to avoid traversing subterms that
-contain none of the targeted variables.
-
+{- | Apply the substitution to the rule.
  -}
 substitute
     :: SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
-substitute subst rulePattern' =
+substitute subst rulePattern'@(RulePattern _ _ _ _ _ _) =
     rulePattern'
         { left = TermLike.substitute subst left
+        , antiLeft = TermLike.substitute subst <$> antiLeft
         , right = TermLike.substitute subst right
         , requires = Predicate.substitute subst requires
         , ensures = Predicate.substitute subst ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rulePattern'
+    RulePattern { left, antiLeft, right, requires, ensures } = rulePattern'
+
+{-| Applies a substitution to a rule and checks that it was fully applied,
+i.e. there is no substitution variable left in the rule.
+-}
+fullyApplySubstitution
+    ::  ( HasCallStack
+        , Ord variable
+        , SubstitutionVariable variable
+        )
+    => Substitution variable
+    -> RulePattern variable
+    -> RulePattern variable
+fullyApplySubstitution substitution rule =
+    if finalRule `isFreeOf` substitutedVariables
+        then finalRule
+        else error
+            (  "Substituted variables not removed from the rule, cannot throw "
+            ++ "substitution away."
+            )
+  where
+    subst = Substitution.toMap substitution
+    finalRule = substitute subst rule
+    substitutedVariables = Substitution.variables substitution
