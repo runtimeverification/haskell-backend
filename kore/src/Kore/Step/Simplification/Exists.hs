@@ -218,10 +218,7 @@ makeEvaluateBoundLeft
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundLeft
-    variable
-    boundTerm
-    normalized
+makeEvaluateBoundLeft variable boundTerm normalized
   = withoutFreeVariable (ElemVar variable) boundTerm $ do
         let
             boundSubstitution = Map.singleton (ElemVar variable) boundTerm
@@ -253,11 +250,7 @@ makeEvaluateBoundRight
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundRight
-    variable
-    freeSubstitution
-    normalized
-  = do
+makeEvaluateBoundRight variable freeSubstitution normalized = do
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern
   where
@@ -319,7 +312,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     , "variable=" ++ unparseToString variable
     , "patt=" ++ unparseToString original
     ]
-  | quantifyTerm = mkExists variable <$> original
+  | quantifyTerm = markSimplified . mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
     $ Predicate.fromPredicate
