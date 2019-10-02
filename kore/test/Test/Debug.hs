@@ -9,7 +9,6 @@ import qualified GHC.Generics as GHC
 
 import Debug
 import Kore.Sort
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.Variable
 
 import Test.Kore
@@ -228,10 +227,6 @@ test_Debug =
         \                }\n\
         \    }"
         $  "Variable"
-    , CharLiteral 'a'
-        `yields`
-        "CharLiteral { getCharLiteral = 'a' }"
-        $ "CharLiteral"
     , Just (testId "v")
         `yields`
         "Just Id { getId = \"v\", idLocation = AstLocationTest }"

@@ -160,28 +160,15 @@ test_unparse =
                 }::Attributes
             )
             "[\\top{#CharList{}}()]"
-        , unparseTest
-            (Attributes
-                { getAttributes =
-                    [ asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
-                    , asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
-                    ]
-                }::Attributes
-            )
-            "[''', ''']"
         ]
 
 test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Object testId" $ roundtrip idGen idParser
+        [ testProperty "Generic testId" $ roundtrip idGen genericKoreIdParser
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
-        , testProperty "CharLiteral" $
-            roundtrip charLiteralGen charLiteralParser
         , testProperty "Object Symbol" $
             roundtrip symbolGen symbolParser
         , testProperty "Object Alias" $

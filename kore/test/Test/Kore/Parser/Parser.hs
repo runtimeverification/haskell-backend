@@ -25,7 +25,6 @@ import Test.Kore.Parser
 test_koreParser :: [TestTree]
 test_koreParser =
     [ testGroup "objectSortParser" objectSortParserTests
-    , testGroup "metaSortConverter" metaSortConverterTests
     , testGroup "objectSortListParser" objectSortListParserTests
     , testGroup "objectSortVariableParser" objectSortVariableParserTests
     , testGroup
@@ -105,16 +104,6 @@ objectSortParserTests =
                     ]
                 }
         , FailureWithoutMessage ["var1, var2", "var1{var1 var2}"]
-        ]
-
-metaSortConverterTests :: [TestTree]
-metaSortConverterTests =
-    parseTree metaSortParser
-        [ success "#Char{}" charMetaSort
-        , success "#String{}" stringMetaSort
-        , FailureWithoutMessage
-            [ "var1, var2", "var1{var1 var2}"
-            ]
         ]
 
 objectSortListParserTests :: [TestTree]

@@ -67,7 +67,6 @@ test_sortParsing =
         (indexModule $ emptyModule "m")
         [declarationsAre
             (emptyDeclarations
-                `with` unresolvedSortMap "#Char"
                 `with` unresolvedSortMap "#String"
             )
         ]
@@ -76,8 +75,7 @@ test_sortParsing =
             `with` sortDeclaration "S"
             `with` sortDeclaration "T"
         )
-        [ inDeclarations (unresolvedSortMap "#Char")
-        , inDeclarations (unresolvedSortMap "S")
+        [ inDeclarations (unresolvedSortMap "S")
         , inDeclarations (unresolvedSortMap "T")
         , smtForSortIs "S" "|HB_S|"
         , smtForSortIs "T" "|HB_T|"
@@ -90,8 +88,7 @@ test_sortParsing =
                 (symbolDeclaration "C" "S" [] `with` [functional, constructor])
             `with` constructorAxiom "S" [("C", [])]
         )
-        [ inDeclarations (unresolvedSortMap "#Char")
-        , inDeclarations
+        [ inDeclarations
             (unresolvedDataMap "S"
                 `with` unresolvedSortConstructor "C"
             )

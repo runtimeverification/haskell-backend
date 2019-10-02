@@ -55,12 +55,6 @@ test_patternAttributes =
                     levelShow
                     (FunctionalStringLiteral (StringLiteral "10"))
                 )
-            assertEqual "FunctionalCharLiteral"
-                (FunctionalCharLiteral (CharLiteral 'a'))
-                (Proof.Functional.mapVariables
-                    levelShow
-                    (FunctionalCharLiteral (CharLiteral 'a'))
-                )
         )
     , testCase "isConstructorLikePattern"
         (do
@@ -106,15 +100,6 @@ test_patternAttributes =
                 (isConstructorLikePattern
                     Mock.metadataTools
                     str
-                )
-            let
-                chr :: TermLike Variable
-                chr = mkCharLiteral 'a'
-            assertEqual "char literals are constructor-like"
-                (Right [ConstructorLikeProof])
-                (isConstructorLikePattern
-                    Mock.metadataTools
-                    chr
                 )
             let
                 dv :: TermLike Variable
@@ -202,16 +187,6 @@ test_patternAttributes =
                 (isConstructorModuloLikePattern
                     Mock.metadataTools
                     str
-                )
-            let
-                chr :: TermLike Variable
-                chr = mkCharLiteral 'a'
-            assertEqual
-                "char literals are constructor-modulo-like"
-                (Right [ConstructorLikeProof])
-                (isConstructorModuloLikePattern
-                    Mock.metadataTools
-                    chr
                 )
             let
                 dv :: TermLike Variable

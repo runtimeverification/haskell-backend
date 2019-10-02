@@ -346,7 +346,7 @@ sortVisibilityTests =
             , sentenceSortAttributes = Attributes []
             }
     topSortPattern = mkTop sort
-    metaTopSortPattern = mkTop charMetaSort
+    metaTopSortPattern = mkTop stringMetaSort
     sortReferenceInSort =
         SortActualSort SortActual
             { sortActualName = testId "sort2"
@@ -620,9 +620,9 @@ symbolVisibilityTests =
         mkApplySymbol
             Internal.Symbol
                 { symbolConstructor = testId "#symbol1"
-                , symbolParams = [ charMetaSort ]
+                , symbolParams = [ stringMetaSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts = applicationSorts [] charMetaSort
+                , symbolSorts = applicationSorts [] stringMetaSort
                 }
             []
     metaSymbolDeclaration =
@@ -823,10 +823,10 @@ aliasVisibilityTests =
         mkApplyAlias
             Internal.Alias
                 { aliasConstructor = testId "#alias1"
-                , aliasParams = [ charMetaSort ]
-                , aliasSorts = applicationSorts [] charMetaSort
+                , aliasParams = [ stringMetaSort ]
+                , aliasSorts = applicationSorts [] stringMetaSort
                 , aliasLeft = []
-                , aliasRight = mkTop charMetaSort
+                , aliasRight = mkTop stringMetaSort
                 }
             []
     metaAliasDeclaration =

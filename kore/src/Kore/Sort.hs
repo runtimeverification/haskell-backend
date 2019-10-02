@@ -19,14 +19,9 @@ module Kore.Sort
     , alignSorts
     -- * Meta-sorts
     , MetaSortType (..)
-    , MetaBasicSortType (..)
-    , metaSortsList
     , metaSort
     , metaSortTypeString
     , metaSortsListWithString
-    , charMetaSortId
-    , charMetaSortActual
-    , charMetaSort
     , stringMetaSortId
     , stringMetaSortActual
     , stringMetaSort
@@ -222,33 +217,16 @@ from the Semantics of K, Section 9.1.2 (Sorts).
 Ths is not represented directly in the AST, we're using the string
 representation instead.
 -}
-data MetaBasicSortType
-    = CharSort
-    deriving (GHC.Generic)
-
-instance Hashable MetaBasicSortType
-
 data MetaSortType
-    = MetaBasicSortType MetaBasicSortType
-    | StringSort
+    = StringSort
     deriving (GHC.Generic)
 
 instance Hashable MetaSortType
 
-metaBasicSortsList :: [MetaBasicSortType]
-metaBasicSortsList = [ CharSort ]
-
-metaSortsList :: [MetaSortType]
-metaSortsList = map MetaBasicSortType metaBasicSortsList
-
 metaSortsListWithString :: [MetaSortType]
-metaSortsListWithString = StringSort : metaSortsList
-
-metaBasicSortTypeString :: MetaBasicSortType -> String
-metaBasicSortTypeString CharSort        = "Char"
+metaSortsListWithString = [StringSort]
 
 metaSortTypeString :: MetaSortType -> String
-metaSortTypeString (MetaBasicSortType s) = metaBasicSortTypeString s
 metaSortTypeString StringSort            = "String"
 
 instance Show MetaSortType where
@@ -256,17 +234,7 @@ instance Show MetaSortType where
 
 metaSort :: MetaSortType -> Sort
 metaSort = \case
-    MetaBasicSortType CharSort -> charMetaSort
     StringSort -> stringMetaSort
-
-charMetaSortId :: Id
-charMetaSortId = implicitId "#Char"
-
-charMetaSortActual :: SortActual
-charMetaSortActual = SortActual charMetaSortId []
-
-charMetaSort :: Sort
-charMetaSort = SortActualSort charMetaSortActual
 
 stringMetaSortId :: Id
 stringMetaSortId = implicitId "#String"

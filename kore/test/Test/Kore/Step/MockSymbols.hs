@@ -1171,9 +1171,6 @@ sortAttributesMapping =
         )
 
     -- Also add attributes for the implicitly defined sorts.
-    ,   ( charMetaSort
-        , Default.def
-        )
     ,   ( stringMetaSort
         , Default.def { Attribute.hook = Hook (Just "STRING.String") }
         )

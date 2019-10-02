@@ -27,7 +27,11 @@ module Kore.Parser.Lexeme
     , commaParser
     , curlyPairParser
     , curlyPairRemainderParser
-    , idParser
+    , genericIdParser
+    , genericKoreIdParser
+    , variableIdParser
+    , sortIdParser
+    , symbolIdParser
     , idFirstChars
     , idOtherChars
     , openCurlyBraceParser
@@ -40,9 +44,9 @@ module Kore.Parser.Lexeme
     , mlLexemeParser
     , moduleNameParser
     , parenPairParser
+    , skipChar
     , skipWhitespace
     , stringLiteralParser
-    , charLiteralParser
     -- * Error messages
     , unrepresentableCode
     , illegalSurrogate
@@ -80,7 +84,6 @@ import qualified Kore.Parser.CharDict as CharDict
 import Kore.Parser.CharSet as CharSet
 import Kore.Parser.ParserUtils as ParserUtils
 import Kore.Sort
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.Definition
 import Kore.Syntax.StringLiteral
 
@@ -97,20 +100,29 @@ sourcePosToFileLocation
     , column   = unPos column'
     }
 
-{-|'idParser' parses either an @object-identifier@, or a
-@set-variable-identifier@.
-
-The @set-variable-@ version always starts with @\@@, while the @object-@
-one does not.
+{-| Generic identifier parser. Takes a parser for the string of the identifier
+ and returns an 'Id' annotated with position.
 -}
-idParser :: Parser Id
-idParser = do
+genericIdParser :: Parser String -> Parser Id
+genericIdParser idRawParser = do
     pos <- sourcePosToFileLocation <$> getSourcePos
-    name <- lexeme (objectIdRawParser KeywordsForbidden <|> setVarIdRawParser)
+    name <- lexeme idRawParser
     return Id
         { getId = Text.pack name
         , idLocation = AstLocationFile pos
         }
+
+variableIdRawParser :: Parser String
+variableIdRawParser = elemVarIdRawParser <|> setVarIdRawParser
+
+{-|'variableIdParser' parses either an @element-variable-identifier@, or a
+@set-variable-identifier@.
+
+The @set-variable-@ version always starts with @\@@, while the @element-@
+one does not.
+-}
+variableIdParser :: Parser Id
+variableIdParser = genericIdParser variableIdRawParser
 
 {-|'stringLiteralParser' parses a C-style string literal, unescaping it.
 
@@ -118,13 +130,6 @@ Always starts with @"@.
 -} {- " -}
 stringLiteralParser :: Parser StringLiteral
 stringLiteralParser = lexeme stringLiteralRawParser
-
-{-|'charLiteralParser' parses a C-style char literal, unescaping it.
-
-Always starts with @'@.
--}
-charLiteralParser :: Parser CharLiteral
-charLiteralParser = lexeme charLiteralRawParser
 
 {-|'moduleNameParser' parses a module name.-}
 moduleNameParser :: Parser ModuleName
@@ -196,6 +201,13 @@ moduleNameFirstCharSet = idFirstCharSet
 moduleNameCharSet :: CharSet
 moduleNameCharSet = idCharSet
 
+sortIdRawParser :: Parser String
+sortIdRawParser =
+    genericKoreIdRawParser KeywordsForbidden
+
+-- | Parses a 'SortVariable' 'Id'
+sortIdParser :: Parser Id
+sortIdParser = genericIdParser sortIdRawParser
 
 {-|'moduleNameRawParser' parses a @module-name@. Does not consume whitespace.-}
 moduleNameRawParser :: Parser ModuleName
@@ -217,18 +229,25 @@ idCharSet :: CharSet
 idCharSet =
     CharSet.join idFirstCharSet (CharSet.makeCharSet idOtherChars)
 
-{-|'objectIdRawParser' extracts the string representing an @object-identifier@.
-Does not consume whitespace.
--}
-objectIdRawParser :: IdKeywordParsing -> Parser String
-objectIdRawParser keywordParsing = do
-    backslash <- Parser.string "\\" <|> pure ""
-    name <- objectNonslashIdRawParser keywordParsing
-    pure (backslash ++ name)
+symbolIdRawParser :: Parser String
+symbolIdRawParser = do
+    c <- peekChar'
+    if c == '\\'
+    then do
+        skipChar '\\'
+        (c :) <$> genericKoreIdRawParser KeywordsPermitted
+    else genericKoreIdRawParser KeywordsForbidden
 
-objectNonslashIdRawParser :: IdKeywordParsing -> Parser String
-objectNonslashIdRawParser =
+-- | Parses a 'Symbol' 'Id'
+symbolIdParser :: Parser Id
+symbolIdParser = genericIdParser symbolIdRawParser
+
+genericKoreIdRawParser :: IdKeywordParsing -> Parser String
+genericKoreIdRawParser =
     genericIdRawParser idFirstCharSet idCharSet
+
+genericKoreIdParser :: Parser Id
+genericKoreIdParser = genericIdParser (genericKoreIdRawParser KeywordsForbidden)
 
 {-|'setVarIdRawParser' extracts the string representing a
 @set-variable-identifier@. Does not consume whitespace.
@@ -237,16 +256,17 @@ Always starts with @@@
 -}
 setVarIdRawParser :: Parser String
 setVarIdRawParser = do
-    c <- Parser.char '@'
-    c' <- peekChar'
-    case c' of
-        '`' -> do
-            skipChar c'
-            idToken <- objectNonslashIdRawParser KeywordsPermitted
-            return (c:c':idToken)
-        _ -> do
-            idToken <- objectIdRawParser KeywordsPermitted
-            return (c:idToken)
+    start <- Parser.char '@'
+    end <- genericKoreIdRawParser KeywordsPermitted
+    return (start:end)
+
+{-|'elemVarIdRawParser' extracts the string representing a
+@set-variable-identifier@. Does not consume whitespace.
+
+Always starts with @@@
+-}
+elemVarIdRawParser :: Parser String
+elemVarIdRawParser = genericKoreIdRawParser KeywordsForbidden
 
 {- | Parse and unescape a Kore string literal.
 
@@ -257,18 +277,6 @@ stringLiteralRawParser :: Parser StringLiteral
 stringLiteralRawParser = do
     skipChar '"'
     StringLiteral . Text.pack <$> Parser.manyTill charParser (skipChar '"')
-
-{- | Parse and unescape a Kore character literal.
-
-@charLiteralRawParser@ does not consume whitespace.
-
- -}
-charLiteralRawParser :: Parser CharLiteral
-charLiteralRawParser = do
-    skipChar '\''
-    c <- charParser
-    skipChar '\''
-    return (CharLiteral c)
 
 {- | Select printable ASCII characters.
 

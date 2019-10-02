@@ -38,7 +38,6 @@ import Control.Applicative
 import Control.Arrow
     ( (&&&)
     )
-import qualified Control.Monad as Monad
 import Text.Megaparsec
     ( some
     )
@@ -75,7 +74,7 @@ BNF definition:
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 sortVariableParser :: Parser SortVariable
-sortVariableParser = SortVariable <$> idParser
+sortVariableParser = SortVariable <$> sortIdParser
 
 {-|'sortParser' parses either an @object-sort@, or a @meta-sort@.
 
@@ -92,7 +91,7 @@ The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 objectSortParser :: Parser Sort
 objectSortParser = do
-    identifier <- idParser
+    identifier <- sortIdParser
     c <- ParserUtils.peekChar
     case c of
         Just '{' -> actualSortParser identifier
@@ -104,20 +103,6 @@ objectSortParser = do
             { sortActualName = identifier
             , sortActualSorts = sorts
             }
-
-
-metaSortParser :: Parser Sort
-metaSortParser = do
-    sort <- keywordBasedParsers
-        (map
-            (show &&& return . metaSort)
-            metaSortsListWithString
-        )
-    sorts <- inCurlyBracesListParser objectSortParser
-    Monad.unless (null sorts) (fail "Expecting no parameters for meta sorts")
-    return sort
-
-
 
 {-|'symbolOrAliasDeclarationRawParser' parses a head and constructs it using the provided
 constructor.
@@ -135,7 +120,7 @@ symbolOrAliasDeclarationRawParser
     :: (Id -> [SortVariable] -> result)  -- ^ Element constructor.
     -> Parser result
 symbolOrAliasDeclarationRawParser constructor = do
-    headConstructor <- idParser
+    headConstructor <- symbolIdParser
     symbolOrAliasDeclarationRemainderRawParser (constructor headConstructor)
 
 {-|'symbolOrAliasDeclarationRemainderRawParser' parses the sort list that occurs
@@ -399,7 +384,7 @@ BNF definitions:
 The @set-@ version always starts with @\@@, while the regular one does not.
 -}
 variableParser :: Parser Variable
-variableParser = idParser >>= variableRemainderParser
+variableParser = variableIdParser >>= variableRemainderParser
 
 singletonVariableParser :: Parser (ElementVariable Variable)
 singletonVariableParser = do
@@ -426,28 +411,23 @@ BNF definitions:
 
 @
 ⟨pattern⟩ ::=
-    | ⟨variable⟩
-    | ⟨set-variable⟩
+    | ⟨element-variable⟩
     | ⟨object-head⟩ ‘(’ ⟨child-list⟩ ‘)’
-⟨variable⟩ ::= ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
-⟨set-variable⟩ ::= '\@' ⟨object-identifier⟩ ‘:’ ⟨object-sort⟩
+⟨element-variable⟩ ::= ⟨generic-identifier⟩ ‘:’ ⟨object-sort⟩
 ⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
-⟨object-head-constructor⟩ ::= ⟨object-identifier⟩
+⟨object-head-constructor⟩ ::= ⟨generic-identifier⟩
 @
 -}
-variableOrTermPatternParser
+elemVarOrTermPatternParser
     :: Parser child
-    -> Bool  -- ^ Whether it can be a Set Variable
     -> Parser (PatternF Variable child)
-variableOrTermPatternParser childParser isSetVariable = do
-    identifier <- idParser
+elemVarOrTermPatternParser childParser = do
+    identifier <- genericKoreIdParser
     c <- ParserUtils.peekChar'
     if c == ':'
         then do
             var <- variableRemainderParser identifier
-            if isSetVariable
-                then return $ VariableF $ Const $ SetVar  $ SetVariable     var
-                else return $ VariableF $ Const $ ElemVar $ ElementVariable var
+            return $ VariableF $ Const $ ElemVar $ ElementVariable var
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
@@ -463,7 +443,7 @@ variableOrTermPatternParser childParser isSetVariable = do
 headParser :: Parser SymbolOrAlias
 headParser =
     SymbolOrAlias
-        <$> idParser
+        <$> symbolIdParser
         <*> inCurlyBracesListParser objectSortParser
 
 {-|'koreVariableOrTermPatternParser' parses a variable pattern or an
@@ -480,9 +460,16 @@ BNF definitions:
 koreVariableOrTermPatternParser :: Parser ParsedPattern
 koreVariableOrTermPatternParser = do
     c <- ParserUtils.peekChar'
-    asParsedPattern <$> variableOrTermPatternParser
-        korePatternParser
-        (c == '@')
+    asParsedPattern <$>
+        case c of
+        '@' -> do
+            identifier <- variableIdParser
+            var <- variableRemainderParser identifier
+            return $ VariableF $ Const $ SetVar  $ SetVariable var
+        '\\' -> do
+            identifier <- symbolIdParser
+            symbolOrAliasPatternRemainderParser korePatternParser identifier
+        _ -> elemVarOrTermPatternParser korePatternParser
 
 {-|'koreMLConstructorParser' parses a pattern starting with @\@.
 
@@ -527,7 +514,7 @@ Always starts with @\@.
 -}
 koreMLConstructorParser :: Parser ParsedPattern
 koreMLConstructorParser = do
-    _ <- Parser.char '\\'
+    skipChar '\\'
     mlPatternParser
   where
     mlPatternParser = keywordBasedParsers
@@ -706,7 +693,6 @@ korePatternParser = do
     case c of
         '\\' -> koreMLConstructorParser
         '"'  -> asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
-        '\'' -> asParsedPattern . CharLiteralF . Const <$> charLiteralParser
         _    -> koreVariableOrTermPatternParser
 
 {-|'inSquareBracketsListParser' parses a @list@ of items delimited by
@@ -972,7 +958,7 @@ Always starts with @{@.
 sortSentenceRemainderParser :: Parser ParsedSentenceSort
 sortSentenceRemainderParser =
     SentenceSort
-    <$> idParser
+    <$> sortIdParser
     <*> inCurlyBracesListParser sortVariableParser
     <*> attributesParser
 
@@ -994,21 +980,3 @@ hookedSortSentenceRemainderParser :: Parser ParsedSentence
 hookedSortSentenceRemainderParser =
     asSentence . SentenceHookedSort <$> sortSentenceRemainderParser
 
-leveledPatternParser
-    :: Parser child
-    -> Parser (DomainValue Sort child)
-    -> Parser (PatternF Variable child)
-leveledPatternParser patternParser domainValueParser' = do
-    c <- ParserUtils.peekChar'
-    case c of
-        '\\' -> leveledMLConstructorParser patternParser domainValueParser'
-        '"'  -> StringLiteralF . Const <$> stringLiteralParser
-        '\'' -> CharLiteralF . Const <$> charLiteralParser
-        _ -> variableOrTermPatternParser patternParser (c == '@')
-
-purePatternParser :: Parser ParsedPattern
-purePatternParser = do
-    patternHead <- leveledPatternParser childParser domainValueParser
-    return $ asPattern (mempty :< patternHead)
-  where
-    childParser = purePatternParser

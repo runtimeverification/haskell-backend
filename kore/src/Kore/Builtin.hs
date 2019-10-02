@@ -274,7 +274,6 @@ externalizePattern =
             RewritesF rewritesF -> Syntax.RewritesF rewritesF
             StringLiteralF stringLiteralF ->
                 Syntax.StringLiteralF stringLiteralF
-            CharLiteralF charLiteralF -> Syntax.CharLiteralF charLiteralF
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF

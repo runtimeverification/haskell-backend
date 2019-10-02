@@ -457,18 +457,6 @@ test_equalsSimplification_TermLike =
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
-    , testCase "'a' == 'a'"
-        (assertTermEqualsGeneric
-            Predicate.topPredicate
-            (mkCharLiteral 'a')
-            (mkCharLiteral 'a')
-        )
-    , testCase "'a' != 'b'"
-        (assertTermEqualsGeneric
-            Predicate.bottomPredicate
-            (mkCharLiteral 'a')
-            (mkCharLiteral 'b')
-        )
     , testCase "a != bottom"
         (assertTermEquals
             Predicate.bottomPredicate
