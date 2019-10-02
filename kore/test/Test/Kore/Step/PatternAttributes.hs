@@ -204,7 +204,7 @@ test_patternAttributes =
                             )
                         )
                 )
-            assertEqual ""
+            assertEqual "CharLiteralF is constructor-like-top"
                 True
                 (isConstructorLikeTop
                     Mock.metadataTools
@@ -216,6 +216,19 @@ test_patternAttributes =
                                         getCharLiteral = 'a' 
                                     }
                             )
+                        )
+                )
+            assertEqual "AndF is not is constructor-like-top"
+                False
+                (isConstructorLikeTop
+                    Mock.metadataTools
+                    $ undefined :<
+                        AndF (
+                           And 
+                            { andSort = Mock.testSort
+                            , andFirst = Mock.aSymbol
+                            , andSecond = Mock.bSymbol
+                            } 
                         )
                 )
         )
