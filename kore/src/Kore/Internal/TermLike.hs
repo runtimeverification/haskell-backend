@@ -1325,7 +1325,9 @@ mkBottom
     => SortedVariable variable
     => Sort
     -> TermLike variable
-mkBottom bottomSort = updateCallStack $ synthesize (BottomF Bottom { bottomSort })
+mkBottom bottomSort =
+    markSimplified $ updateCallStack
+    $ synthesize (BottomF Bottom { bottomSort })
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
 
@@ -1740,7 +1742,8 @@ mkTop
     => SortedVariable variable
     => Sort
     -> TermLike variable
-mkTop topSort = updateCallStack $ synthesize (TopF Top { topSort })
+mkTop topSort =
+    markSimplified $ updateCallStack $ synthesize (TopF Top { topSort })
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
 
@@ -1765,7 +1768,7 @@ mkVar
     => SortedVariable variable
     => UnifiedVariable variable
     -> TermLike variable
-mkVar = updateCallStack . synthesize . VariableF . Const
+mkVar = markSimplified . updateCallStack . synthesize . VariableF . Const
 
 {- | Construct an element variable pattern.
  -}
@@ -1796,7 +1799,8 @@ mkStringLiteral
     => Text
     -> TermLike variable
 mkStringLiteral =
-    updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
+    markSimplified . updateCallStack . synthesize
+    . StringLiteralF . Const . StringLiteral
 
 {- | Construct a 'CharLiteral' pattern.
  -}
@@ -1807,7 +1811,8 @@ mkCharLiteral
     => Char
     -> TermLike variable
 mkCharLiteral =
-    updateCallStack . synthesize . CharLiteralF . Const . CharLiteral
+    markSimplified . updateCallStack . synthesize
+    . CharLiteralF . Const . CharLiteral
 
 mkInhabitant
     :: GHC.HasCallStack
