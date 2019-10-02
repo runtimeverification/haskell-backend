@@ -46,9 +46,6 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
-import Data.String
-    ( IsString
-    )
 import Data.Text
     ( Text
     )
@@ -56,16 +53,11 @@ import qualified Data.Text as Text
 import qualified Text.Megaparsec as Parsec
 import qualified Text.Megaparsec.Char as Parsec
 
+import Kore.Builtin.Bool.Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Error
-import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-
-{- | Builtin name of the @Bool@ sort.
- -}
-sort :: Text
-sort = "BOOL.Bool"
 
 {- | Verify that the sort is hooked to the builtin @Bool@ sort.
 
@@ -143,57 +135,6 @@ parse = (Parsec.<|>) true false
     true = Parsec.string "true" $> True
     false = Parsec.string "false" $> False
 
-{- | Render a 'Bool' as an internal domain value pattern of the given sort.
-
-  The result sort should be hooked to the builtin @Bool@ sort, but this is not
-  checked.
-
-  See also: 'sort'
-
- -}
-asInternal
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Bool  -- ^ builtin value to render
-    -> TermLike variable
-asInternal builtinBoolSort builtinBoolValue =
-    (mkBuiltin . Domain.BuiltinBool)
-        Domain.InternalBool
-            { builtinBoolSort
-            , builtinBoolValue
-            }
-
-{- | Render a 'Bool' as a domain value pattern of the given sort.
-
-  The result sort should be hooked to the builtin @Bool@ sort, but this is not
-  checked.
-
-  See also: 'sort'
-
- -}
-asTermLike
-    :: InternalVariable variable
-    => Domain.InternalBool  -- ^ builtin value to render
-    -> TermLike variable
-asTermLike builtin =
-    mkDomainValue DomainValue
-        { domainValueSort = builtinBoolSort
-        , domainValueChild = mkStringLiteral literal
-        }
-  where
-    Domain.InternalBool { builtinBoolSort } = builtin
-    Domain.InternalBool { builtinBoolValue = bool } = builtin
-    literal
-      | bool      = "true"
-      | otherwise = "false"
-
-asPattern
-    :: InternalVariable variable
-    => Sort  -- ^ resulting sort
-    -> Bool  -- ^ builtin value to render
-    -> Pattern variable
-asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
-
 {- | @builtinFunctions@ are builtin functions on the 'Bool' sort.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -216,30 +157,3 @@ builtinFunctions =
         Builtin.binaryOperator extractBoolDomainValue asPattern
     xor a b = (a && not b) || (not a && b)
     implies a b = not a || b
-
-orKey :: IsString s => s
-orKey = "BOOL.or"
-
-andKey :: IsString s => s
-andKey = "BOOL.and"
-
-xorKey :: IsString s => s
-xorKey = "BOOL.xor"
-
-neKey :: IsString s => s
-neKey = "BOOL.ne"
-
-eqKey :: IsString s => s
-eqKey = "BOOL.eq"
-
-notKey :: IsString s => s
-notKey = "BOOL.not"
-
-impliesKey :: IsString s => s
-impliesKey = "BOOL.implies"
-
-andThenKey :: IsString s => s
-andThenKey = "BOOL.andThen"
-
-orElseKey :: IsString s => s
-orElseKey = "BOOL.orElse"

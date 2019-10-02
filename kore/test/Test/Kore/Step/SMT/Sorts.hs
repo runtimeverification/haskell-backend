@@ -2,11 +2,29 @@ module Test.Kore.Step.SMT.Sorts where
 
 import Test.Tasty
 
+import Data.Reflection
+    ( Given
+    )
 import Data.Text
     ( Text
     )
 
+import qualified Kore.Attribute.Axiom as Attribute
+    ( Axiom
+    )
+import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
+    ( indexBySort
+    )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol
+    )
 import qualified Kore.Builtin.Int as Int
+import Kore.IndexedModule.IndexedModule
+    ( VerifiedModule
+    )
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import Kore.Parser
     ( ParsedPattern
     )
@@ -359,5 +377,14 @@ test_sortDeclaration =
             :: SentenceImport ParsedPattern
             )
 
-    testsForModule name =
-        Helpers.testsForModule name (Declaration.declare . Representation.build)
+    testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
+
+    declareSymbolsAndSorts
+        ::  ( Given (SmtMetadataTools Attribute.Symbol)
+            , SMT.MonadSMT m
+            )
+        => VerifiedModule Attribute.Symbol Attribute.Axiom
+        -> m ()
+    declareSymbolsAndSorts m =
+        Declaration.declare
+            (Representation.build m (Attribute.Constructors.indexBySort m))

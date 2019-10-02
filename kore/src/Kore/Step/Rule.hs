@@ -216,11 +216,11 @@ instance
     => Unparse (RewriteRule variable)
   where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
-        unparse $ mkImplies
+        unparse $ mkRewrites
             (mkAnd left (Predicate.unwrapPredicate requires))
             right
     unparse2 (RewriteRule RulePattern { left, right, requires } ) =
-        unparse2 $ mkImplies
+        unparse2 $ mkRewrites
             (mkAnd left (Predicate.unwrapPredicate requires))
             right
 
@@ -452,7 +452,7 @@ onePathRuleToPattern
     )
   =
     assert (antiLeft == Nothing)
-    $ mkImplies
+    $ mkRewrites
         ( mkAnd
             (Predicate.unwrapPredicate requires)
             left

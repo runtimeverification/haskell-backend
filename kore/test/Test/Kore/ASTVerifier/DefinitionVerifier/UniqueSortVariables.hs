@@ -420,5 +420,5 @@ test_uniqueSortVariables =
         )
     ]
   where
-    topS  = Builtin.externalizePattern $ mkTop $ simpleSort $ SortName "s"
-    topS1 = Builtin.externalizePattern $ mkTop $ simpleSort $ SortName "s1"
+    topS  = Builtin.externalize $ mkTop $ simpleSort $ SortName "s"
+    topS1 = Builtin.externalize $ mkTop $ simpleSort $ SortName "s1"

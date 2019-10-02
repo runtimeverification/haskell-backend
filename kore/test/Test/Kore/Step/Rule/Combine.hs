@@ -5,10 +5,10 @@ import Test.Tasty
 import Data.Default
     ( def
     )
-
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
+
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -216,9 +216,22 @@ test_combineRules =
             ]
 
         assertEqual "" expected actual
+    , testCase "Renames variables" $ do
+        let expected =
+                [   Mock.functionalConstr10 (Mock.functionalConstr11 x0)
+                    `rewritesTo` x0
+                ]
+
+        actual <- runMergeRules
+            [ Mock.functionalConstr10 x `rewritesTo` x
+            , Mock.functionalConstr11 x `rewritesTo` x
+            ]
+
+        assertEqual "" expected actual
     ]
   where
     x = mkElemVar Mock.x
+    x0 = mkElemVar Mock.var_x_0
     y = mkElemVar Mock.y
 
 runMergeRules
