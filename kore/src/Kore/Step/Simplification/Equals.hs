@@ -340,8 +340,8 @@ makeEvaluateTermsToPredicate first second configurationPredicate
     case result of
         Nothing ->
             return
-                $ OrPredicate.fromPredicate
-                $ Predicate.fromPredicate
+                $ OrPredicate.fromPredicate . Predicate.fromPredicate
+                $ Syntax.Predicate.markSimplified
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
             firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
