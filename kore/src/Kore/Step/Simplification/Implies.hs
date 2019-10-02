@@ -83,12 +83,10 @@ simplifyEvaluateHalfImplies
     => OrPattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluateHalfImplies
-    first
-    second
-  | OrPattern.isTrue first  = return (OrPattern.fromPatterns [second])
-  | OrPattern.isFalse first = return (OrPattern.fromPatterns [Pattern.top])
-  | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
+simplifyEvaluateHalfImplies first second
+  | OrPattern.isTrue first  = return (OrPattern.fromPattern second)
+  | OrPattern.isFalse first = return OrPattern.top
+  | Pattern.isTop second    = return OrPattern.top
   | Pattern.isBottom second = Not.simplifyEvaluated first
   | otherwise =
     -- TODO: Also merge predicate-only patterns for 'Or'
@@ -101,18 +99,13 @@ makeEvaluateImplies
     => Pattern variable
     -> Pattern variable
     -> OrPattern variable
-makeEvaluateImplies
-    first second
-  | Pattern.isTop first =
-    OrPattern.fromPatterns [second]
-  | Pattern.isBottom first =
-    OrPattern.fromPatterns [Pattern.top]
-  | Pattern.isTop second =
-    OrPattern.fromPatterns [Pattern.top]
-  | Pattern.isBottom second =
-    Not.makeEvaluate first
-  | otherwise =
-    makeEvaluateImpliesNonBool first second
+makeEvaluateImplies first second
+  | Pattern.isTop first = OrPattern.fromPattern second
+  | Pattern.isBottom first = OrPattern.top
+  | Pattern.isTop second = OrPattern.top
+  | first == second = OrPattern.top
+  | Pattern.isBottom second = Not.makeEvaluate first
+  | otherwise = makeEvaluateImpliesNonBool first second
 
 makeEvaluateImpliesNonBool
     :: InternalVariable variable
