@@ -39,7 +39,7 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
     ( termAnd
     )
@@ -176,7 +176,11 @@ applyAndIdempotence
     => TermLike variable
     -> TermLike variable
 applyAndIdempotence patt =
-    foldl1' mkAnd (nub (children patt))
+    foldl1' mkAndSimplified (nub (children patt))
   where
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
+    mkAndSimplified a b
+      | TermLike.isSimplified a, TermLike.isSimplified b =
+        markSimplified $ mkAnd a b
+      | otherwise = mkAnd a b
