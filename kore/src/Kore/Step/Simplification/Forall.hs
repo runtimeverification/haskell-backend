@@ -40,9 +40,7 @@ simplify
     :: InternalVariable variable
     => Forall Sort variable (OrPattern variable)
     -> OrPattern variable
-simplify
-    Forall { forallVariable, forallChild }
-  =
+simplify Forall { forallVariable, forallChild } =
     simplifyEvaluated forallVariable forallChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
