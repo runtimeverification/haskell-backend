@@ -81,4 +81,6 @@ makeEvaluate variable patt
   | Pattern.isTop patt    = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom
   | otherwise =
-    Pattern.fromTermLike $ mkForall variable $ Pattern.toTermLike patt
+    Pattern.fromTermLike
+    $ markSimplified . mkForall variable
+    $ Pattern.toTermLike patt
