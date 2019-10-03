@@ -5,11 +5,15 @@ module Test.Kore.Step.PatternAttributes
 import Test.Tasty
 
 import Data.Functor.Const
-
+    ( Const (..)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Domain.Builtin
+    ( Builtin (..)
+    , InternalInt (..)
+    )
 import Kore.Internal.TermLike
 import Kore.Proof.Functional as Proof.Functional
 import Kore.Step.PatternAttributes
@@ -38,7 +42,7 @@ levelShow (LevelInt i) = LevelString (show i)
 
 test_patternAttributes :: [TestTree]
 test_patternAttributes =
-    [ testCase "patternattributes variable mapping"
+    [ testCase "variable mapping"
         (do
             assertEqual "FunctionalVariable"
                 (FunctionalVariable (LevelString "10"))
@@ -65,7 +69,7 @@ test_patternAttributes =
                     (FunctionalCharLiteral (CharLiteral 'a'))
                 )
         )
-    , testCase "patternattributes isConstructorLikePattern"
+    , testCase "isConstructorLikePattern"
         (do
             assertEqual "variables are constructor-like"
                 (Right [ConstructorLikeProof])
@@ -153,86 +157,79 @@ test_patternAttributes =
                     injectionConstant
                 )
         )
-    , testCase "patternattributes isConstructorLikeTop"
+    , testCase "isConstructorLikeTop"
         (do
+            let
+                app :: Application Symbol child
+                app = Application
+                        { applicationSymbolOrAlias = Mock.aSymbol
+                        , applicationChildren = undefined
+                        }
             assertEqual "ApplySymbolF is constructor-like-top"
                 True
-                (isConstructorLikeTop 
+                (isConstructorLikeTop
                     Mock.metadataTools
-                    $ undefined :< 
-                        (ApplySymbolF Application 
-                            { applicationSymbolOrAlias = Mock.aSymbol
-                            , applicationChildren = undefined
-                            }
-                        )
+                    $ undefined :< ApplySymbolF app
                 )
+            let
+                dv :: DomainValue Sort Symbol
+                dv = DomainValue
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = Mock.aSymbol
+                        }
             assertEqual "DomainValueF is constructor-like-top"
                 True
                 (isConstructorLikeTop
                     Mock.metadataTools
-                    $ undefined :<
-                        DomainValueF 
-                            (DomainValue 
-                                { domainValueSort = Mock.testSort
-                                , domainValueChild = Mock.aSymbol
-                                }
-                            )
-
+                    $ undefined :< DomainValueF dv
                 )
+            let
+                b :: Kore.Domain.Builtin.Builtin key child
+                b = BuiltinInt
+                        (InternalInt
+                            { builtinIntSort = Mock.intSort
+                            , builtinIntValue = 1
+                            }
+                        )
             assertEqual "BuiltinF is constructor-like-top"
                 True
                 (isConstructorLikeTop
                     Mock.metadataTools
-                    $ undefined :<
-                        BuiltinF (BuiltinInt (InternalInt
-                            { builtinIntSort = Mock.intSort
-                            , builtinIntValue = 1 
-                            }
-                        ))
+                    $ undefined :< BuiltinF b
                 )
+            let
+                sl :: Const StringLiteral b
+                sl = Const ( StringLiteral { getStringLiteral = mempty } )
             assertEqual "StringLiteralF is constructor-like-top"
                 True
                 (isConstructorLikeTop
                     Mock.metadataTools
-                    $ undefined :<
-                        StringLiteralF (
-                            Const (
-                                StringLiteral
-                                    {
-                                        getStringLiteral = mempty
-                                    }
-                            )
-                        )
+                    $ undefined :< StringLiteralF sl
                 )
+            let
+                cl :: Const CharLiteral b
+                cl = Const ( CharLiteral { getCharLiteral = 'a' } )
             assertEqual "CharLiteralF is constructor-like-top"
                 True
                 (isConstructorLikeTop
                     Mock.metadataTools
-                    $ undefined :<
-                        CharLiteralF (
-                            Const (
-                                CharLiteral
-                                    {
-                                        getCharLiteral = 'a' 
-                                    }
-                            )
-                        )
+                    $ undefined :< CharLiteralF cl
                 )
+            let
+                a :: And Sort Symbol
+                a = And
+                        { andSort = Mock.testSort
+                        , andFirst = Mock.aSymbol
+                        , andSecond = Mock.bSymbol
+                        }
             assertEqual "AndF is not is constructor-like-top"
                 False
                 (isConstructorLikeTop
                     Mock.metadataTools
-                    $ undefined :<
-                        AndF (
-                           And 
-                            { andSort = Mock.testSort
-                            , andFirst = Mock.aSymbol
-                            , andSecond = Mock.bSymbol
-                            } 
-                        )
+                    $ undefined :< AndF a
                 )
         )
-    , testCase "patternattributes isConstructorModuloLikePattern"
+    , testCase "isConstructorModuloLikePattern"
         (do
             assertEqual "variables are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
