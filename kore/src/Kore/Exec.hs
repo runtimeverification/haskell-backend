@@ -50,6 +50,9 @@ import Data.Maybe
 import Data.Text
     ( Text
     )
+import Kore.Step.Rule.Simplify
+    ( simplifyOnePathRuleLhs
+    )
 import System.Exit
     ( ExitCode (..)
     )
@@ -72,6 +75,9 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import Kore.IndexedModule.Resolvers
     ( resolveSymbol
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+    ( extractPatterns
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
@@ -513,7 +519,8 @@ data InitializedProver =
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver
-    :: MonadSimplify simplifier
+    :: forall simplifier a
+    .  MonadSimplify simplifier
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -> (InitializedProver -> simplifier a)
@@ -527,8 +534,22 @@ initializeProver definitionModule specModule within =
                 map
                     (Bifunctor.second $ expandOnePathSingleConstructors tools)
                     (extractOnePathClaims specModule)
+            mapMSecond
+                :: Monad m
+                => (rule -> m [rule'])
+                -> (attributes, rule) -> m [(attributes, rule')]
+            mapMSecond f (attribute, rule) = do
+                simplified <- f rule
+                return (map ((,) attribute) simplified)
+            simplifyToList
+                :: OnePathRule Variable -> simplifier [OnePathRule Variable]
+            simplifyToList rules = do
+                simplified <- simplifyOnePathRuleLhs rules
+                return (MultiAnd.extractPatterns simplified)
+        simplifiedSpecClaims <-
+            mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
-            $ traverse simplifyRuleOnSecond specClaims
+            $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
         assertSomeClaims specAxioms
         let
             axioms = Goal.OnePathRewriteRule <$> rewriteRules
