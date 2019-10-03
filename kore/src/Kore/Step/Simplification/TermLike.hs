@@ -15,6 +15,7 @@ import Control.Comonad.Trans.Cofree
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Stack as GHC
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -140,7 +141,7 @@ simplifyToOr term predicate =
 
 simplifyInternal
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> Predicate variable
     -> simplifier (OrPattern variable)
