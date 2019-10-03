@@ -118,6 +118,9 @@ import Kore.Syntax.Id
     ( AstLocation (..)
     , Id (..)
     )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Kore.Unification.Substitution
     ( Substitution
     )
@@ -180,6 +183,10 @@ instance
             ]
       where
         RulePattern { left, right, requires, ensures } = rulePattern'
+
+instance TopBottom (RulePattern variable) where
+    isTop _ = False
+    isBottom _ = False
 
 rulePattern
     :: InternalVariable variable
@@ -297,6 +304,10 @@ instance
     unparse = unparse . onePathRuleToPattern
     unparse2 = unparse2 . onePathRuleToPattern
 
+instance TopBottom (OnePathRule variable) where
+    isTop _ = False
+    isBottom _ = False
+
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule variable =
@@ -312,6 +323,10 @@ instance
   where
     unparse = unparse . allPathRuleToPattern
     unparse2 = unparse2 . allPathRuleToPattern
+
+instance TopBottom (AllPathRule variable) where
+    isTop _ = False
+    isBottom _ = False
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
