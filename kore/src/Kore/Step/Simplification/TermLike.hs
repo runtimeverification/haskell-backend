@@ -116,7 +116,7 @@ import Kore.Unparser
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> Predicate variable
     -> simplifier (Pattern variable)
@@ -128,7 +128,7 @@ simplify patt predicate = do
 'OrPattern'.
 -}
 simplifyToOr
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
     => Predicate variable
     -> TermLike variable
     -> simplifier (OrPattern variable)

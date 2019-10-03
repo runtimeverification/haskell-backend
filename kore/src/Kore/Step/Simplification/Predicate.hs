@@ -18,6 +18,7 @@ import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
@@ -56,7 +57,7 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
     => Int
     -> Predicate variable
     -> BranchT simplifier (Predicate variable)
@@ -129,12 +130,10 @@ See also: 'simplify'
 
 -}
 simplifyPartial
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
     => Syntax.Predicate variable
     -> BranchT simplifier (Predicate variable)
-simplifyPartial
-    predicate
-  = do
+simplifyPartial predicate = do
     patternOr <-
         Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
