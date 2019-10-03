@@ -496,7 +496,9 @@ singleSubstitutionToPredicate
     => (UnifiedVariable variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (TermLike.mkVar var) patt
+    -- markSimplified because this should only be called when we don't know what
+    -- to do with a substitution.
+    markSimplified $ makeEqualsPredicate (TermLike.mkVar var) patt
 
 {- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
 
