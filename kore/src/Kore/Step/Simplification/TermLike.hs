@@ -12,6 +12,7 @@ module Kore.Step.Simplification.TermLike
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
+import qualified Control.Exception as Exception
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -26,6 +27,7 @@ import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
     )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -159,7 +161,9 @@ simplifyInternal term predicate = simplifyInternalWorker term
 
     simplifyInternalWorker termLike =
         assertSimplifiedResults $ tracer termLike $
-        let doNotSimplify = return (OrPattern.fromTermLike termLike)
+        let doNotSimplify =
+                Exception.assert (TermLike.isSimplified termLike)
+                return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
             -- Unimplemented cases
