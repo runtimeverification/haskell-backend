@@ -128,7 +128,8 @@ makeEvaluateImpliesNonBool
         [ Conditional
             { term = firstTerm
             , predicate =
-                Syntax.Predicate.makeImpliesPredicate
+                Syntax.Predicate.markSimplified
+                $ Syntax.Predicate.makeImpliesPredicate
                     (Syntax.Predicate.makeAndPredicate
                         firstPredicate
                         (Syntax.Predicate.fromSubstitution firstSubstitution)
@@ -141,6 +142,7 @@ makeEvaluateImpliesNonBool
             }
         ]
   | otherwise =
+    -- TODO (thomas.tuegel): Maybe this should be an error?
     OrPattern.fromPatterns
         [ Conditional
             { term =
