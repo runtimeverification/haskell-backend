@@ -50,6 +50,9 @@ import Data.Maybe
 import Data.Text
     ( Text
     )
+import Kore.Step.Rule.Simplify
+    ( simplifyOnePathRuleLhs
+    )
 import System.Exit
     ( ExitCode (..)
     )
@@ -72,6 +75,9 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import Kore.IndexedModule.Resolvers
     ( resolveSymbol
+    )
+import qualified Kore.Internal.MultiAnd as MultiAnd
+    ( extractPatterns
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
@@ -274,19 +280,9 @@ prove
     -- ^ The spec module
     -> smt (Either (TermLike Variable) ())
 prove limit definitionModule specModule =
-    evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
-        tools <- Simplifier.askMetadataTools
-        let Initialized { rewriteRules } = initialized
-            specClaims =
-                map
-                    (Bifunctor.second $ expandOnePathSingleConstructors tools)
-                    (extractOnePathClaims specModule)
-        specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
-            $ traverse simplifyRuleOnSecond specClaims
-        assertSomeClaims specAxioms
-        let
-            axioms = Goal.OnePathRewriteRule <$> rewriteRules
-            claims = makeClaim <$> specAxioms
+    evalProver definitionModule specModule
+    $ \initialized -> do
+        let InitializedProver { axioms, claims } = initialized
         result <-
             runExceptT
             $ verify
@@ -314,14 +310,9 @@ proveWithRepl
     -- ^ Optional Output file
     -> SMT ()
 proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
-    evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
-        let Initialized { rewriteRules } = initialized
-            specClaims = extractOnePathClaims specModule
-        specAxioms <- traverse simplifyRuleOnSecond specClaims
-        assertSomeClaims specAxioms
-        let
-            axioms = Goal.OnePathRewriteRule <$> rewriteRules
-            claims = fmap makeClaim specAxioms
+    evalProver definitionModule specModule
+    $ \initialized -> do
+        let InitializedProver { axioms, claims } = initialized
         Repl.runRepl axioms claims mvar replScript replMode outputFile
 
 -- | Bounded model check a spec given as a module containing rules to be checked
@@ -519,3 +510,66 @@ initialize verifiedModule within = do
         mapM Rule.simplifyRewriteRule (extractRewriteAxioms verifiedModule)
     let initialized = Initialized { rewriteRules }
     within initialized
+
+data InitializedProver =
+    InitializedProver
+        { axioms :: ![Goal.Rule (OnePathRule Variable)]
+        , claims :: ![OnePathRule Variable]
+        }
+
+-- | Collect various rules and simplifiers in preparation to execute.
+initializeProver
+    :: forall simplifier a
+    .  MonadSimplify simplifier
+    => VerifiedModule StepperAttributes Attribute.Axiom
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -> (InitializedProver -> simplifier a)
+    -> simplifier a
+initializeProver definitionModule specModule within =
+    initialize definitionModule
+    $ \initialized -> do
+        tools <- Simplifier.askMetadataTools
+        let Initialized { rewriteRules } = initialized
+            specClaims =
+                map
+                    (Bifunctor.second $ expandOnePathSingleConstructors tools)
+                    (extractOnePathClaims specModule)
+            mapMSecond
+                :: Monad m
+                => (rule -> m [rule'])
+                -> (attributes, rule) -> m [(attributes, rule')]
+            mapMSecond f (attribute, rule) = do
+                simplified <- f rule
+                return (map ((,) attribute) simplified)
+            simplifyToList
+                :: OnePathRule Variable -> simplifier [OnePathRule Variable]
+            simplifyToList rules = do
+                simplified <- simplifyOnePathRuleLhs rules
+                return (MultiAnd.extractPatterns simplified)
+        simplifiedSpecClaims <-
+            mapM (mapMSecond simplifyToList) specClaims
+        specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
+            $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
+        assertSomeClaims specAxioms
+        let
+            axioms = Goal.OnePathRewriteRule <$> rewriteRules
+            claims = fmap makeClaim specAxioms
+            initializedProver = InitializedProver { axioms, claims}
+        within initializedProver
+
+evalProver
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadProfiler smt
+        , MonadUnliftIO smt
+        , MonadSMT smt
+        )
+    => VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The main module
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The spec module
+    -> (InitializedProver -> Simplifier.SimplifierT smt a)
+    -- The prover
+    -> smt a
+evalProver definitionModule specModule prover =
+    evalSimplifier definitionModule
+    $ initializeProver definitionModule specModule prover
