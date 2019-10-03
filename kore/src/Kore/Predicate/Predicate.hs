@@ -42,7 +42,6 @@ module Kore.Predicate.Predicate
     , Kore.Predicate.Predicate.mapVariables
     , singleSubstitutionToPredicate
     , stringFromPredicate
-    , substitutionToPredicate
     , fromPredicate
     , fromSubstitution
     , unwrapPredicate
@@ -492,21 +491,6 @@ hasFreeVariable
 hasFreeVariable variable =
     isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
 
-{- | 'substitutionToPredicate' transforms a substitution in a predicate.
-
-An empty substitution list returns a true predicate. A non-empty substitution
-returns a conjunction of variable/substitution equalities.
-
--}
-substitutionToPredicate
-    :: InternalVariable variable
-    => Substitution variable
-    -> Predicate variable
-substitutionToPredicate =
-    makeMultipleAndPredicate
-    . fmap singleSubstitutionToPredicate
-    . Substitution.unwrap
-
 singleSubstitutionToPredicate
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
@@ -524,7 +508,10 @@ fromSubstitution
     :: InternalVariable variable
     => Substitution variable
     -> Predicate variable
-fromSubstitution = substitutionToPredicate
+fromSubstitution =
+    makeMultipleAndPredicate
+    . fmap singleSubstitutionToPredicate
+    . Substitution.unwrap
 
 {- | Traverse the predicate from the top down and apply substitutions.
 

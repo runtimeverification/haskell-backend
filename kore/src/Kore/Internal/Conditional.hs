@@ -346,7 +346,7 @@ a 'PredicateSubstition' into only a 'Predicate'; i.e. when @term ~ ()@,
 @toPredicate@ is also used to extract the 'Predicate' and 'Substitution' while
 discarding the 'term'.
 
-See also: 'substitutionToPredicate'.
+See also: 'Predicate.fromSubstitution'.
 
 -}
 toPredicate
