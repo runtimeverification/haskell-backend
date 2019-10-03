@@ -211,14 +211,17 @@ simplifyInternal term predicate = simplifyInternalWorker term
       where
         assertSimplifiedResults getResults = do
             results <- getResults
-            if OrPattern.isSimplified results
+            let unsimplified =
+                    filter (not . Pattern.isSimplified)
+                    $ OrPattern.toPatterns results
+            if null unsimplified
                 then return results
                 else (error . show . Pretty.vsep)
                     [ "Incomplete simplification!"
                     , Pretty.indent 2 "input:"
                     , Pretty.indent 4 (unparse termLike)
-                    , Pretty.indent 2 "results:"
+                    , Pretty.indent 2 "unsimplified results:"
                     , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> OrPattern.toPatterns results)
+                        (unparse <$> unsimplified)
                     , "Expected all patterns to be fully simplified."
                     ]
