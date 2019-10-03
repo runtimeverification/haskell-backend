@@ -337,6 +337,7 @@ data TermLikeF variable child
         ( Synthetic (FreeVariables variable), Synthetic Sort
         , Synthetic Pattern.Functional, Synthetic Pattern.Function
         , Synthetic Pattern.Defined
+        , Synthetic Pattern.Simplified
         ) via (Generically1 (TermLikeF variable))
 
 instance SOP.Generic (TermLikeF variable child)

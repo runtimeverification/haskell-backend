@@ -6,6 +6,8 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Simplified
     ( Simplified (..)
+    , alwaysSimplified
+    , notSimplified
     ) where
 
 import Control.DeepSeq
@@ -16,6 +18,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Kore.Domain.Builtin
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
 
@@ -41,26 +44,106 @@ instance NFData Simplified
 
 instance Hashable Simplified
 
-instance {-# OVERLAPPABLE #-} Functor f => Synthetic Simplified f where
-    synthetic = const (Simplified False)
-    {-# INLINE synthetic #-}
+alwaysSimplified :: a -> Simplified
+alwaysSimplified = const (Simplified True)
+{-# INLINE alwaysSimplified #-}
+
+notSimplified :: a -> Simplified
+notSimplified = const (Simplified False)
+{-# INLINE notSimplified #-}
 
 instance Synthetic Simplified (Bottom sort) where
-    synthetic = const (Simplified True)
+    synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Top sort) where
-    synthetic = const (Simplified True)
+    synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const StringLiteral) where
-    synthetic = const (Simplified True)
+    synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const CharLiteral) where
-    synthetic = const (Simplified True)
+    synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const (UnifiedVariable variable)) where
-    synthetic = const (Simplified True)
+    synthetic = alwaysSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Exists sort variable) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Forall sort variable) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (And sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Or sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Not sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Application head) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Ceil sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Floor sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (DomainValue sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Equals sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (In sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Implies sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Iff sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Mu variable) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Nu variable) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Next sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Rewrites sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Builtin sort) where
+    synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified Inhabitant where
+    synthetic = notSimplified
     {-# INLINE synthetic #-}

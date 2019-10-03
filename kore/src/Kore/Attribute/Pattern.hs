@@ -73,6 +73,7 @@ instance
     , Synthetic Functional base
     , Synthetic Function base
     , Synthetic Defined base
+    , Synthetic Simplified base
     ) =>
     Synthetic (Pattern variable) base
   where
