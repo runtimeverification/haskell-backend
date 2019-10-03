@@ -293,6 +293,10 @@ instance Synthetic syn Evaluated where
     synthetic = getEvaluated
     {-# INLINE synthetic #-}
 
+instance {-# OVERLAPS #-} Synthetic Pattern.Simplified Evaluated where
+    synthetic = const (Pattern.Simplified True)
+    {-# INLINE synthetic #-}
+
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
 
@@ -1330,8 +1334,7 @@ mkBottom
     => Sort
     -> TermLike variable
 mkBottom bottomSort =
-    markSimplified $ updateCallStack
-    $ synthesize (BottomF Bottom { bottomSort })
+    updateCallStack $ synthesize (BottomF Bottom { bottomSort })
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
 
@@ -1747,7 +1750,7 @@ mkTop
     => Sort
     -> TermLike variable
 mkTop topSort =
-    markSimplified $ updateCallStack $ synthesize (TopF Top { topSort })
+    updateCallStack $ synthesize (TopF Top { topSort })
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
 
@@ -1772,7 +1775,7 @@ mkVar
     => SortedVariable variable
     => UnifiedVariable variable
     -> TermLike variable
-mkVar = markSimplified . updateCallStack . synthesize . VariableF . Const
+mkVar = updateCallStack . synthesize . VariableF . Const
 
 {- | Construct an element variable pattern.
  -}
@@ -1803,8 +1806,7 @@ mkStringLiteral
     => Text
     -> TermLike variable
 mkStringLiteral =
-    markSimplified . updateCallStack . synthesize
-    . StringLiteralF . Const . StringLiteral
+    updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
 
 {- | Construct a 'CharLiteral' pattern.
  -}
@@ -1815,8 +1817,7 @@ mkCharLiteral
     => Char
     -> TermLike variable
 mkCharLiteral =
-    markSimplified . updateCallStack . synthesize
-    . CharLiteralF . Const . CharLiteral
+    updateCallStack . synthesize . CharLiteralF . Const . CharLiteral
 
 mkInhabitant
     :: GHC.HasCallStack
@@ -1832,8 +1833,7 @@ mkEvaluated
     => SortedVariable variable
     => TermLike variable
     -> TermLike variable
-mkEvaluated =
-    markSimplified . updateCallStack . synthesize . EvaluatedF . Evaluated
+mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
 
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []

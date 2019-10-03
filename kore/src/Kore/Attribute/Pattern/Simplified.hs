@@ -16,6 +16,8 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Kore.Syntax
+import Kore.Variables.UnifiedVariable
 
 {- | A pattern is 'Simplified' if it has run through the simplifier.
 
@@ -39,6 +41,26 @@ instance NFData Simplified
 
 instance Hashable Simplified
 
-instance Functor f => Synthetic Simplified f where
+instance {-# OVERLAPPABLE #-} Functor f => Synthetic Simplified f where
     synthetic = const (Simplified False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Bottom sort) where
+    synthetic = const (Simplified True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Top sort) where
+    synthetic = const (Simplified True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Const StringLiteral) where
+    synthetic = const (Simplified True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Const CharLiteral) where
+    synthetic = const (Simplified True)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Const (UnifiedVariable variable)) where
+    synthetic = const (Simplified True)
     {-# INLINE synthetic #-}
