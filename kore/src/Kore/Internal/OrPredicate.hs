@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Internal.OrPredicate
     ( OrPredicate
     , isSimplified
+    , toPredicates
     , fromPredicates
     , fromPredicate
     , bottom
@@ -89,6 +90,9 @@ isFalse = isBottom
 -}
 isTrue :: Ord variable => OrPredicate variable -> Bool
 isTrue = isTop
+
+toPredicates :: OrPredicate variable -> [Predicate variable]
+toPredicates = Foldable.toList
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
