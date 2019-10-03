@@ -118,8 +118,21 @@ instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isTop (GenericPredicate patt) = isTop patt
     isBottom (GenericPredicate patt) = isBottom patt
 
-instance Unparse pattern' => Unparse (GenericPredicate pattern') where
-    unparse (GenericPredicate pattern') = unparse pattern'
+instance
+    (Ord variable, SortedVariable variable)
+    => Unparse (GenericPredicate (TermLike variable))
+  where
+    unparse predicate =
+        unparseAssoc'
+            ("\\and" <> parameters [sort])
+            (unparse (mkTop sort :: TermLike variable))
+            (worker <$> getMultiAndPredicate predicate)
+      where
+        worker (GenericPredicate termLike) = unparse termLike
+        sort =
+            termLikeSort termLike
+          where
+            GenericPredicate termLike = predicate
     unparse2 (GenericPredicate pattern') = unparse2 pattern'
 
 
@@ -199,6 +212,16 @@ makeMultipleAndPredicate =
     foldl' makeAndPredicate makeTruePredicate . nub
     -- 'and' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
+
+getMultiAndPredicate
+    :: Predicate variable
+    -> [Predicate variable]
+getMultiAndPredicate original@(GenericPredicate termLike) =
+    case termLike of
+        And_ _ left right ->
+            concatMap (getMultiAndPredicate . GenericPredicate) [left, right]
+        _ -> [original]
+
 
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
