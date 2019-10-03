@@ -30,8 +30,7 @@ test_simplifyInternal =
 
 simplifyInternalEvaluated :: TermLike Variable -> IO (OrPattern Variable)
 simplifyInternalEvaluated original =
-    runSimplifier env
-    $ TermLike.simplifyInternal original Predicate.top
+    runSimplifier env $ TermLike.simplifyInternal original Predicate.top
   where
     env = Mock.env
         { simplifierTermLike =

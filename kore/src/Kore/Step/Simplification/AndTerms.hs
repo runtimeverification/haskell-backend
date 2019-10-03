@@ -17,6 +17,7 @@ module Kore.Step.Simplification.AndTerms
     , TermSimplifier
     , TermTransformationOld
     , cannotUnifyDistinctDomainValues
+    , functionAnd
     ) where
 
 import Control.Applicative
@@ -1043,7 +1044,9 @@ functionAnd first second
         -- Ceil predicate not needed since first being
         -- bottom will make the entire term bottom. However,
         -- one must be careful to not just drop the term.
-        , predicate = makeEqualsPredicate first second
+        , predicate =
+            Syntax.Predicate.markSimplified
+            $ makeEqualsPredicate first second
         , substitution = mempty
         }
   | otherwise = empty

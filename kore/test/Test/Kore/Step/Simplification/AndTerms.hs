@@ -26,7 +26,8 @@ import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
+import Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
@@ -45,7 +46,8 @@ import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
 import Kore.Step.Simplification.AndTerms
-    ( termAnd
+    ( functionAnd
+    , termAnd
     , termEquals
     , termUnification
     )
@@ -1245,6 +1247,21 @@ test_equalsTermsSimplification =
             (Mock.concatSet (Mock.elementSet (mkElemVar Mock.x)) (mkElemVar Mock.xSet))
             (asInternal (Set.fromList [Mock.a, Mock.b]))
         assertEqual "" expected actual
+    ]
+
+test_functionAnd :: [TestTree]
+test_functionAnd =
+    [ testCase "simplifies result" $ do
+        let f = TermLike.markSimplified . Mock.f
+            x = mkElemVar Mock.x
+            y = mkElemVar Mock.y
+            expect =
+                Pattern.withCondition (f x)
+                $ Predicate.fromPredicate
+                $ makeEqualsPredicate (f x) (f y)
+        let Just actual = functionAnd (f x) (f y)
+        assertEqual "" expect actual
+        assertBool "" (Pattern.isSimplified actual)
     ]
 
 fOfA :: TermLike Variable
