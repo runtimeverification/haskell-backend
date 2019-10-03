@@ -166,7 +166,7 @@ test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Generic testId" $ roundtrip idGen genericKoreIdParser
+        [ testProperty "Generic testId" $ roundtrip idGen idParser
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
         , testProperty "Object Symbol" $
@@ -176,7 +176,7 @@ test_parse =
         , testProperty "Object SortVariable" $
             roundtrip sortVariableGen sortVariableParser
         , testProperty "Object Sort" $
-            roundtrip (standaloneGen sortGen) objectSortParser
+            roundtrip (standaloneGen sortGen) sortParser
         , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $

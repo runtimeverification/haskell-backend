@@ -6,43 +6,21 @@ Parser definition for Kore. Meant for internal use only.
 
 Conventions used:
 
-1. In various cases we distinguish between @object-@ and @meta-@ versions of an
-   element. For this we parametrize the element's type with a @level@ and we
-   provide an element of type @level@ to the parser, usually called @x@.
+1. Parsers called 'Raw' receive a constructor that constructs the element.
 
-2. The meta versions are identified by the presence of @#@ characters, usually
-   found at the start of the element. However, when they are found inside,
-   we may split the parser in two pieces, one that parses everything until the
-   first element that may start with @#@ and identifies the value of @x@ and
-   another one that receives 'x' and parses the reminder.
-
-3. Whenever we have both an element which can be meta or object and
-   an element which is the union of the two, the union is called 'Unified*'.
-   As an example, if we have @⟨object-variable⟩@, @⟨meta-variable⟩@ and
-   @⟨variable⟩ ::= ⟨object-variable⟩ | ⟨meta-variable⟩@, then we'll represent
-   the fist two by "Variable" and the latter by "UnifiedVariable".
-
-3. Parsers called 'Raw' receive a constructor that constructs the element.
-
-4. Parsers called 'Reminder' receive an element's parsed prefix and an element
+2. Parsers called 'Reminder' receive an element's parsed prefix and an element
    constructor, parse whatever is left of the element and construct it.
 
-5. All parsers consume the whitespace after the parsed element and expect no
+3. All parsers consume the whitespace after the parsed element and expect no
    whitespace before.
 -}
 module Kore.Parser.Parser where
 
-import Control.Applicative
-    ( (<|>)
-    )
 import Control.Arrow
     ( (&&&)
     )
 import Text.Megaparsec
     ( some
-    )
-import qualified Text.Megaparsec.Char as Parser
-    ( char
     )
 
 import Kore.AST.Common
@@ -61,36 +39,29 @@ import Kore.Variables.UnifiedVariable
 asParsedPattern :: (PatternF Variable) ParsedPattern -> ParsedPattern
 asParsedPattern patternBase = asPattern (mempty :< patternBase)
 
-{-|'sortVariableParser' parses either an @object-sort-variable@, or a
-@meta-sort-variable@.
+{-| Parses a @sort-variable@.
 
 BNF definition:
 
 @
-⟨object-sort-variable⟩ ::= ⟨object-identifier⟩
-⟨meta-sort-variable⟩ ::= ⟨meta-identifier⟩
+<sort-variable> ::= <sort-id>
 @
-
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 sortVariableParser :: Parser SortVariable
 sortVariableParser = SortVariable <$> sortIdParser
 
-{-|'sortParser' parses either an @object-sort@, or a @meta-sort@.
+{-| Parses a @sort@.
 
 BNF definition:
 
 @
-⟨object-sort⟩ ::=
-    | ⟨object-sort-variable⟩
-    | ⟨object-sort-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
-⟨meta-sort⟩ ::= ⟨meta-sort-variable⟩ | ⟨meta-sort-constructor⟩ ‘{’ ‘}’
+<sort>
+  ::= <sort-variable>
+    | <sort-id> "{" <sorts> "}"
 @
-
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-objectSortParser :: Parser Sort
-objectSortParser = do
+sortParser :: Parser Sort
+sortParser = do
     identifier <- sortIdParser
     c <- ParserUtils.peekChar
     case c of
@@ -98,72 +69,70 @@ objectSortParser = do
         _        -> return (SortVariableSort $ SortVariable identifier)
   where
     actualSortParser identifier = do
-        sorts <- inCurlyBracesListParser objectSortParser
+        sorts <- inCurlyBracesListParser sortParser
         return $ SortActualSort SortActual
             { sortActualName = identifier
             , sortActualSorts = sorts
             }
 
-{-|'symbolOrAliasDeclarationRawParser' parses a head and constructs it using the provided
+{-| Parses a head and constructs it using the provided
 constructor.
 
 BNF definitions:
 
 @
-⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
-⟨meta-head⟩ ::= ⟨meta-head-constructor⟩ ‘{’ ⟨meta-sort-list⟩ ‘}’
+... ::= ... <symbol-id> "{" <sort-variables> "}" ...
 @
 
 The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-symbolOrAliasDeclarationRawParser
+symbolOrAliasParser
     :: (Id -> [SortVariable] -> result)  -- ^ Element constructor.
     -> Parser result
-symbolOrAliasDeclarationRawParser constructor = do
+symbolOrAliasParser constructor = do
     headConstructor <- symbolIdParser
-    symbolOrAliasDeclarationRemainderRawParser (constructor headConstructor)
+    symbolOrAliasRemainderRawParser (constructor headConstructor)
 
-{-|'symbolOrAliasDeclarationRemainderRawParser' parses the sort list that occurs
-in heads and constructs the head using the provided constructor.
+{-| Parses the sort variables list that occurs alias and symbol declaration
+heads and constructs the appropriate using the provided constructor.
 
 BNF fragments:
 
 @
-... ::= ... ‘{’ ⟨object-sort-variable-list⟩ ‘}’ ...
-... ::= ... ‘{’ head-sort-variable-list⟩ ‘}’ ...
+... ::= ... "{" <sort-variables> "}" ...
 @
 
 Always starts with @{@.
 -}
-symbolOrAliasDeclarationRemainderRawParser
+symbolOrAliasRemainderRawParser
     :: ([SortVariable] -> result)  -- ^ Element constructor.
     -> Parser result
-symbolOrAliasDeclarationRemainderRawParser constructor =
+symbolOrAliasRemainderRawParser constructor =
     constructor <$> inCurlyBracesListParser sortVariableParser
 
-{-|'aliasParser' parses either an @object-head@ or a @meta-head@ and interprets
-it as an alias head.
+{-| Parses @symbol-or-alias@ and interprets it as an 'Alias'.
 
 BNF definitions:
 
 @
-⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
-⟨meta-head⟩ ::= ⟨meta-head-constructor⟩ ‘{’ ⟨meta-sort-list⟩ ‘}’
+<alias> ::= <symbol-or-alias>
 @
 
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 aliasParser :: Parser Alias
-aliasParser = symbolOrAliasDeclarationRawParser Alias
+aliasParser = symbolOrAliasParser Alias
 
 
-{-|'symbolParser' is the same as 'aliasParser', but it interprets the head
-as a symbol one.
+{-| Parses @symbol-or-alias@ and interprets it as a 'Symbol'.
+
+@
+<symbol> ::= <symbol-or-alias>
+@
 -}
 symbolParser :: Parser Symbol
-symbolParser = symbolOrAliasDeclarationRawParser Symbol
+symbolParser = symbolOrAliasParser Symbol
 
-{-|'unaryOperatorRemainderParser' parses the part after an unary operator's
+{-| Parses the part after an unary operator's
 name and the first open curly brace and constructs it using the provided
 constructor.
 It uses an open recursion scheme for the children.
@@ -171,7 +140,7 @@ It uses an open recursion scheme for the children.
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
 @
 
 -}
@@ -182,10 +151,10 @@ unaryOperatorRemainderParser
     -> Parser result
 unaryOperatorRemainderParser childParser constructor =
     constructor
-    <$> inCurlyBracesRemainderParser objectSortParser
+    <$> inCurlyBracesRemainderParser sortParser
     <*> inParenthesesParser childParser
 
-{-|'binaryOperatorRemainderParser' parses the part after a binary operator's
+{-| Parses the part after a binary operator's
 name and the first open curly brace and constructs it using the provided
 constructor.
 It uses an open recursion scheme for the children.
@@ -193,7 +162,7 @@ It uses an open recursion scheme for the children.
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
 @
 
 -}
@@ -203,11 +172,11 @@ binaryOperatorRemainderParser
     -- ^ Element constructor.
     -> Parser (m child)
 binaryOperatorRemainderParser childParser constructor = do
-    sort <- inCurlyBracesRemainderParser objectSortParser
+    sort <- inCurlyBracesRemainderParser sortParser
     (child1, child2) <- parenPairParser childParser childParser
     return (constructor sort child1 child2)
 
-{-|'existsForallRemainderParser' parses the part after an exists or forall
+{-| Parses the part after an @exists@ or @forall@
 operator's name and the first open curly brace and constructs it using the
 provided constructor.
 It uses an open recursion scheme for the children.
@@ -215,7 +184,7 @@ It uses an open recursion scheme for the children.
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨sort⟩ "}" "(" ⟨element-variable⟩ "," ⟨pattern⟩ ")"
 @
 
 -}
@@ -225,11 +194,11 @@ existsForallRemainderParser
     -- ^ Element constructor.
     -> Parser (m child)
 existsForallRemainderParser childParser constructor = do
-    sort <- inCurlyBracesRemainderParser objectSortParser
-    (variable, qChild) <- parenPairParser singletonVariableParser childParser
+    sort <- inCurlyBracesRemainderParser sortParser
+    (variable, qChild) <- parenPairParser elementVariableParser childParser
     return (constructor sort variable qChild)
 
-{-|'muNuRemainderParser' parses the part after a mu or nu
+{-| Parses the part after a @mu@ or @nu@
 operator's name and the first open curly brace and constructs it using the
 provided constructor.
 It uses an open recursion scheme for the children.
@@ -237,7 +206,7 @@ It uses an open recursion scheme for the children.
 BNF fragment:
 
 @
-... ::= ... ‘}’ ‘(’ ⟨set-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... "}" "(" ⟨set-variable⟩ "," ⟨pattern⟩ ")"
 @
 
 -}
@@ -251,7 +220,7 @@ muNuRemainderParser childParser constructor = do
     (variable, qChild) <- parenPairParser setVariableParser childParser
     return (constructor variable qChild)
 
-{-|'ceilFloorRemainderParser' parses the part after a ceil or floor
+{-| Parses the part after a ceil or floor
 operator's name and the first open curly brace and constructs it using the
 provided constructor.
 It uses an open recursion scheme for the children.
@@ -259,7 +228,7 @@ It uses an open recursion scheme for the children.
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ ")"
 @
 
 -}
@@ -269,11 +238,11 @@ ceilFloorRemainderParser
     -- ^ Element constructor.
     -> Parser (m child)
 ceilFloorRemainderParser childParser constructor = do
-    (sort1, sort2) <- curlyPairRemainderParser objectSortParser
+    (sort1, sort2) <- curlyPairRemainderParser sortParser
     cfChild <- inParenthesesParser childParser
     return (constructor sort1 sort2 cfChild)
 
-{-|'equalsInRemainderParser' parses the part after an equals or in
+{-| Parses the part after an @equals@ or @in@
 operator's name and the first open curly brace and constructs it using the
 provided constructor.
 It uses an open recursion scheme for the children.
@@ -281,7 +250,7 @@ It uses an open recursion scheme for the children.
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
+... ::= ... ⟨sort⟩ "," ⟨sort⟩ "}" "(" ⟨pattern⟩ "," ⟨pattern⟩ ")"
 @
 
 -}
@@ -291,18 +260,18 @@ equalsInRemainderParser
     -- ^ Element constructor.
     -> Parser (m child)
 equalsInRemainderParser childParser constructor = do
-    (sort1, sort2) <- curlyPairRemainderParser objectSortParser
+    (sort1, sort2) <- curlyPairRemainderParser sortParser
     (child1, child2) <- parenPairParser childParser childParser
     return (constructor sort1 sort2 child1 child2)
 
-{-|'topBottomRemainderParser' parses the part after a top or bottom
+{-| Parses the part after a @top@ or @bottom@
 operator's name and the first open curly brace and constructs it using the
 provided constructor.
 
 BNF fragments:
 
 @
-... ::= ... ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
+... ::= ... ⟨sort⟩ "}" "(" ")"
 @
 
 -}
@@ -310,20 +279,19 @@ topBottomRemainderParser
     :: (Sort -> m child)  -- ^ Element constructor.
     -> Parser (m child)
 topBottomRemainderParser constructor = do
-    sort <- inCurlyBracesRemainderParser objectSortParser
+    sort <- inCurlyBracesRemainderParser sortParser
     inParenthesesParser (return ())
     return (constructor sort)
 
-{-|'symbolOrAliasPatternRemainderParser' parses the part after a the first
+{-| Parses the part after a the first
 identifier in an application pattern and constructs it.
 It uses an open recursion scheme for the children.
 
 BNF fragments:
 
 @
-⟨object-pattern⟩ = ⟨object-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
-⟨object-head⟩ ::= ... ‘{’ ⟨object-sort-list⟩ ‘}’
-
+<application-pattern> ::=
+    ... "{" <sorts> "}" "(" <patterns> ")"
 @
 
 Always starts with @{@.
@@ -336,11 +304,20 @@ symbolOrAliasPatternRemainderParser childParser identifier =
     ApplicationF
     <$> (   Application
         <$> (   SymbolOrAlias identifier
-            <$> inCurlyBracesListParser objectSortParser
+            <$> inCurlyBracesListParser sortParser
             )
         <*> inParenthesesListParser childParser
         )
 
+{- | Parses an 'Application' pattern.
+
+BNF fragments:
+
+@
+<application-pattern> ::=
+    <symbol-id> "{" <sorts> "}" "(" <patterns> ")"
+@
+-}
 applicationParser
     :: Parser child
     -> Parser (Application SymbolOrAlias child)
@@ -349,13 +326,12 @@ applicationParser childParser =
         <$> headParser
         <*> inParenthesesListParser childParser
 
-{-|'variableRemainderParser' parses the part after a variable's name and
-constructs it.
+{-| Parses the part after a variable's name and constructs it.
 
 BNF fragments:
 
 @
-⟨object-variable⟩ ::= ... ‘:’ ⟨object-sort⟩
+⟨...-variable⟩ ::= ... ‘:’ ⟨sort⟩
 @
 
 Always starts with @:@.
@@ -365,64 +341,72 @@ variableRemainderParser
     -> Parser Variable
 variableRemainderParser identifier = do
     colonParser
-    sort <- objectSortParser
+    sort <- sortParser
     return Variable
         { variableName = identifier
         , variableSort = sort
         , variableCounter = mempty
         }
 
-{-|'variableParser' parses a variable
-
-BNF definitions:
+{- | Parses an element variable
 
 @
-⟨variable⟩ ::= ⟨identifier⟩ ‘:’ ⟨sort⟩
-⟨set-variable⟩ ::= ⟨set-variable-identifier⟩ ‘:’ ⟨sort⟩
+<element-variable>
+  ::= <element-variable-id> ":" <sort>
 @
-
-The @set-@ version always starts with @\@@, while the regular one does not.
 -}
-variableParser :: Parser Variable
-variableParser = variableIdParser >>= variableRemainderParser
+elementVariableParser :: Parser (ElementVariable Variable)
+elementVariableParser =
+    ElementVariable <$> (elementVariableIdParser >>= variableRemainderParser)
 
-singletonVariableParser :: Parser (ElementVariable Variable)
-singletonVariableParser = do
-    c <- ParserUtils.peekChar'
-    if c == '@' then fail "Expecting singleton variable token"
-    else ElementVariable <$> variableParser
 
+{- | Parses an set variable
+
+@
+<set-variable>
+  ::= <set-variable-id> ":" <sort>
+@
+-}
 setVariableParser :: Parser (SetVariable Variable)
-setVariableParser = do
+setVariableParser =
+    SetVariable <$> (setVariableIdParser >>= variableRemainderParser)
+
+{- | Parses a variable.
+
+@
+<variable>
+  ::= <element-variable>
+    | <set-variable>
+@
+
+Set variables always start with @\@@, while element variables do not.
+-}
+variableParser :: Parser (UnifiedVariable Variable)
+variableParser = do
     c <- ParserUtils.peekChar'
-    if c == '@' then SetVariable <$> variableParser
-    else fail "Expecting set variable token"
+    if c == '@'
+        then SetVar  <$> setVariableParser
+        else ElemVar <$> elementVariableParser
 
-unifiedVariableParser :: Parser (UnifiedVariable Variable)
-unifiedVariableParser =
-    (<|>)
-        (ElemVar <$> singletonVariableParser)
-        (SetVar  <$> setVariableParser)
-
-{-|'variableOrTermPatternParser' parses an (object or meta) (variable pattern or
-application pattern), using an open recursion scheme for its children.
+{-| Parses an element variable pattern or application pattern, using an open recursion scheme for its children.
 
 BNF definitions:
 
 @
+<pattern>
+  ::= <element-variable>
+    | <application-pattern>
+
 ⟨pattern⟩ ::=
     | ⟨element-variable⟩
-    | ⟨object-head⟩ ‘(’ ⟨child-list⟩ ‘)’
-⟨element-variable⟩ ::= ⟨generic-identifier⟩ ‘:’ ⟨object-sort⟩
-⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
-⟨object-head-constructor⟩ ::= ⟨generic-identifier⟩
+    | ⟨application-pattern⟩
 @
 -}
 elemVarOrTermPatternParser
     :: Parser child
     -> Parser (PatternF Variable child)
 elemVarOrTermPatternParser childParser = do
-    identifier <- genericKoreIdParser
+    identifier <- idParser
     c <- ParserUtils.peekChar'
     if c == ':'
         then do
@@ -431,30 +415,27 @@ elemVarOrTermPatternParser childParser = do
         else symbolOrAliasPatternRemainderParser childParser identifier
 
 
-{-| parses a symbol or alias constructor and sort list
+{-| Parses a symbol or alias constructor and sort list
 @
-⟨head⟩ ::= ⟨object-head⟩ | ⟨meta-head⟩
-
-⟨object-head⟩ ::= ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-list⟩ ‘}’
-⟨object-head-constructor⟩ ::= ⟨object-identifier⟩
-
+<application-pattern> ::=
+    <symbol-id> "{" <sorts> "}" ...
 @
 -}
 headParser :: Parser SymbolOrAlias
 headParser =
     SymbolOrAlias
         <$> symbolIdParser
-        <*> inCurlyBracesListParser objectSortParser
+        <*> inCurlyBracesListParser sortParser
 
-{-|'koreVariableOrTermPatternParser' parses a variable pattern or an
-application one.
+{-| Parses a variable pattern or an application one.
 
 BNF definitions:
 
 @
-⟨object-pattern⟩ ::=
-    | ⟨object-variable⟩
-    | ⟨object-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
+<pattern>
+  ::= <element-variable>
+    | <set-variable>
+    | <application-pattern>
 @
 -}
 koreVariableOrTermPatternParser :: Parser ParsedPattern
@@ -463,51 +444,61 @@ koreVariableOrTermPatternParser = do
     asParsedPattern <$>
         case c of
         '@' -> do
-            identifier <- variableIdParser
-            var <- variableRemainderParser identifier
-            return $ VariableF $ Const $ SetVar  $ SetVariable var
+            var <- setVariableParser
+            return $ VariableF $ Const $ SetVar var
         '\\' -> do
             identifier <- symbolIdParser
             symbolOrAliasPatternRemainderParser korePatternParser identifier
         _ -> elemVarOrTermPatternParser korePatternParser
 
-{-|'koreMLConstructorParser' parses a pattern starting with @\@.
+{-|'koreMLConstructorParser' parses an @ML-pattern@.
 
 BNF definitions:
 
 @
-⟨object-pattern⟩ ::=
-   | ‘\and’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\not’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\or’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\implies’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\iff’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\ceil’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\dv’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\in’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\next’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\rewrites’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\top’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
-    | ‘\bottom’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
-
-⟨meta-pattern⟩ ::=
-    | ‘\and’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\not’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\or’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\implies’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\iff’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\ceil’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\floor’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\equals’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\in’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\top’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
-    | ‘\bottom’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
+<ML-pattern>
+  ::=
+    // Predicate Logic Connectives
+      "\top" "{" <sort> "}" "(" ")"
+    | "\bottom" "{" <sort> "}" "(" ")"
+    | "\not" "{" <sort> "}"
+        "(" <pattern> ")"
+    | "\and" "{" <sort> "}"
+        "(" <pattern> "," <pattern> ")"
+    | "\or" "{" <sort> "}"
+        "(" <pattern> "," <pattern> ")"
+    | "\implies" "{" <sort> "}"
+        "(" <pattern> "," <pattern> ")"
+    | "\iff" "{" <sort> "}"
+        "(" <pattern> "," <pattern> ")"
+    // FOL quantifiers
+    | "\exists" "{" <sort> "}"
+        "(" <element-variable> "," <pattern> ")"
+    | "\forall" "{" <sort> "}"
+        "(" <element-variable> "," <pattern> ")"
+    // Fixpoint operators
+    | "\mu" "{" <sort> "}"
+        "(" <set-variable> "," <pattern> ")"
+    | "\nu" "{" <sort> "}"
+        "(" <set-variable> "," <pattern> ")"
+    // Definedness and totality
+    | "\ceil" "{" <sort> "," <sort> "}"
+        "(" <pattern> ")"
+    | "\floor" "{" <sort> "," <sort> "}"
+        "(" <pattern> ")"
+    // Equality and membership
+    | "\equals" "{" <sort> "," <sort> "}"
+        "(" <pattern> "," <pattern> ")"
+    | "\in" "{" <sort> "," <sort> "}"
+        "(" <pattern> "," <pattern> ")"
+    // Transition systems
+    | "\next" "{" <sort> "}"
+        "(" <pattern> ")"
+    | "\rewrites" "{" <sort> "}"
+        "(" <pattern> "," <pattern> ")"
+    // Domain values
+    | "\dv" "{" <sort> "}"
+        "(" <string-literal> ")"
 @
 
 Always starts with @\@.
@@ -530,49 +521,7 @@ koreMLConstructorParser = do
                 domainValueParser
                 patternType
 
-{-|'leveledMLConstructorParser' is similar to 'koreMLConstructorParser'
-in that it parses a pattern starting with @\@.
-
-BNF definitions (here cat ranges over meta and object):
-
-@
-⟨cat-pattern⟩ ::=
-    | ‘\and’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\not’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\or’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\implies’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\iff’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨cat-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨cat-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\ceil’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\floor’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\equals’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\in’ ‘{’ ⟨cat-sort⟩ ‘,’ ⟨cat-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\top’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ‘)’
-    | ‘\bottom’ ‘{’ ⟨cat-sort⟩ ‘}’ ‘(’ ‘)’
-@
--}
-leveledMLConstructorParser
-    :: Parser child
-    -> Parser (DomainValue Sort child)
-    -> Parser (PatternF Variable child)
-leveledMLConstructorParser childParser domainValueParser' = do
-    _ <- Parser.char '\\'
-    keywordBasedParsers
-        (map
-            (patternString &&& leveledMLConstructorRemainderParser)
-            allPatternTypes
-        )
-  where
-    leveledMLConstructorRemainderParser patternType = do
-        openCurlyBraceParser
-        mlConstructorRemainderParser
-            childParser
-            domainValueParser'
-            patternType
-
-{-|'unsupportedPatternType' reports an error for a missing parser for
-a 'MLPatternType'.
+{-| Reports an error for a missing parser for a 'MLPatternType'.
 -}
 unsupportedPatternType
     :: Show level => level -> MLPatternType -> Parser a
@@ -582,11 +531,9 @@ unsupportedPatternType level patternType =
         ++ unparseToString patternType
         ++ " " ++ show level ++ " pattern.")
 
-{-|'mlConstructorRemainderParser' represents a continuation parser for
-'leveledMLConstructorParser', called after the constructor and the open curly
-brace were parsed. Note that parsing the constructor and open curly brace is
-required to be able to peek at the first character of the sort identifier, in
-order to determine whether we are parsing a 'Meta' or an 'Object' 'Pattern'.
+{-| A continuation parser for
+'koreMLConstructorParser', called after the constructor and the open curly
+brace were parsed.
 -}
 mlConstructorRemainderParser
     :: Parser child
@@ -636,56 +583,24 @@ mlConstructorRemainderParser childParser domainValueParser' patternType =
 domainValueParser :: Parser (DomainValue Sort ParsedPattern)
 domainValueParser =
     DomainValue
-        <$> inCurlyBracesRemainderParser objectSortParser
+        <$> inCurlyBracesRemainderParser sortParser
         <*> inParenthesesParser childParser
   where
     childParser =
         asParsedPattern . StringLiteralF . Const <$> stringLiteralParser
 
-{-|'korePatternParser' parses an unifiedPattern
+{-| Parses an pattern.
 
 BNF definitions:
 
 @
-⟨object-pattern⟩ ::=
-    | ⟨object-variable⟩
-    | ⟨object-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
-    | ‘\and’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\not’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\or’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\implies’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\iff’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨object-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\ceil’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\floor’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\equals’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\in’ ‘{’ ⟨object-sort⟩ ‘,’ ⟨object-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\top’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
-    | ‘\bottom’ ‘{’ ⟨object-sort⟩ ‘}’ ‘(’ ‘)’
-
-⟨meta-pattern⟩ ::=
-    | ⟨meta-variable⟩
-    | ⟨char⟩
-    | ⟨string⟩
-    | ⟨meta-head⟩ ‘(’ ⟨pattern-list⟩ ‘)’
-    | ‘\and’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\not’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\or’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\implies’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\iff’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\forall’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\exists’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨meta-variable⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\ceil’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\floor’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘)’
-    | ‘\equals’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ ⟨pattern⟩ ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\in’ ‘{’ ⟨meta-sort⟩ ‘,’ ⟨meta-sort⟩ ‘}’ ‘(’ pattern ‘,’ ⟨pattern⟩ ‘)’
-    | ‘\top’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
-    | ‘\bottom’ ‘{’ ⟨meta-sort⟩ ‘}’ ‘(’ ‘)’
+<pattern>
+  ::= <element-variable>
+    | <set-variable>
+    | <ML-pattern>
+    | <application-pattern>
+    | <string-literal>
 @
-
-Note that the @meta-pattern@ can be a @string@, while the @object-pattern@
-can't.
 -}
 korePatternParser :: Parser ParsedPattern
 korePatternParser = do
@@ -720,12 +635,13 @@ inCurlyBracesListParser :: Parser item -> Parser [item]
 inCurlyBracesListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '{' '}' ','
 
-{-|'attributesParser' parses an @attribute@.
+{-| Parser a (possibly empty) comma separated list of attributes enclosed in
+square brackets.
 
 BNF definition:
 
 @
-⟨attribute⟩ ::= ‘[’ ⟨pattern-list⟩ ‘]’
+⟨attributes⟩ ::= ‘[’ ⟨patterns⟩ ‘]’
 @
 
 Always starts with @[@.
@@ -735,11 +651,11 @@ attributesParser
 attributesParser =
     Attributes <$> inSquareBracketsListParser korePatternParser
 
-{-|'koreDefinitionParser' parses a Kore @definition@
+{- | Parses a Kore @definition@
 
-BNF definition:
 @
-⟨definition⟩ ::= ⟨attribute⟩ ‘module’ ⟨module-name⟩ ⟨declaration⟩ ∗ ‘endmodule’ ⟨attribute⟩
+<definition>
+  ::= <attributes> <modules_+>
 @
 -}
 koreDefinitionParser :: Parser ParsedDefinition
@@ -757,7 +673,12 @@ definitionParser sentenceParser =
 
 BNF definition fragment:
 @
-... ::= ... ‘module’ ⟨module-name⟩ ⟨declaration⟩ ∗ ‘endmodule’ ⟨attribute⟩ ...
+
+<module>
+  ::=   "module" <module-name-id>
+            <sentences_>
+        "endmodule"
+        "[" <attributes> "]"
 @
 -}
 moduleParser
@@ -765,7 +686,7 @@ moduleParser
     -> Parser (Module sentence)
 moduleParser sentenceParser = do
     mlLexemeParser "module"
-    name <- moduleNameParser
+    name <- moduleNameIdParser
     sentences <- ParserUtils.manyUntilChar 'e' sentenceParser
     mlLexemeParser "endmodule"
     attributes <- attributesParser
@@ -784,199 +705,177 @@ data SentenceType
 
 {-|'koreSentenceParser' parses a @declaration@.
 
+
 BNF definition fragments:
 @
-⟨declaration⟩ ::=
-    | ⟨import-declaration⟩
-    | ⟨sort-declaration⟩
-    | ⟨symbol-declaration⟩
-    | ⟨alias-declaration⟩
-    | ⟨axiom-declaration⟩
-    | ⟨hook-declaration⟩
-⟨axiom-declaration⟩ ::= ‘axiom’ ...
-⟨sort-declaration⟩ ::= ‘sort’ ...
-⟨import-declaration⟩ ::= ‘import’ ⟨module-name⟩ ⟨attribute⟩
-⟨symbol-declaration⟩ ::= ( ⟨object-symbol-declaration⟩ | ⟨meta-symbol-declaration⟩ ) ⟨attribute⟩
-⟨object-symbol-declaration⟩ ::= ‘symbol’ ...
-⟨meta-symbol-declaration⟩ ::= ‘symbol’ ...
-⟨alias-declaration⟩ ::= ( ⟨object-alias-declaration⟩ | ⟨meta-alias-declaration⟩ ) ⟨attribute⟩
-⟨object-alias-declaration⟩ ::= ‘alias’ ...
-⟨meta-alias-declaration⟩ ::= ‘alias’ ...
-⟨hook-declararion⟩ ::= ‘hooked-sort’ ... | 'hooked-symbol' ...
+<sentence>
+  ::= <import-statement>
+    | <sort-definition>
+    | <hooked-sort-definition>
+    | <symbol-definition>
+    | <hooked-symbol-definition>
+    | <axiom>
+    | <claim>
+    | <alias-definition>
+
+<alias-definition> ::= "alias" ...
+<axiom> ::= "axiom" ...
+<claim> ::= "claim" ...
+<sort-definition> ::= "sort" ...
+<symbol-definition> ::= "symbol" ...
+<import-statement> ::= "import" ...
+<hooked-sort-definition> ::= "hooked-sort" ...
+<hooked-symbol-definition> ::= "hooked-symbol" ...
 @
 -}
 koreSentenceParser :: Parser ParsedSentence
 koreSentenceParser = keywordBasedParsers
-    [ ( "alias", sentenceConstructorRemainderParser AliasSentenceType )
-    , ( "axiom", axiomSentenceRemainderParser SentenceAxiomSentence )
-    , ( "claim", claimSentenceRemainderParser SentenceClaimSentence )
-    , ( "sort", sentenceSortRemainderParser )
-    , ( "symbol", sentenceConstructorRemainderParser SymbolSentenceType )
+    [ ( "alias", aliasSentenceRemainderParser)
+    , ( "axiom", axiomSentenceRemainderParser SentenceAxiomSentence)
+    ,   ( "claim"
+        , axiomSentenceRemainderParser (SentenceClaimSentence . SentenceClaim)
+        )
+    , ( "sort", sortSentenceRemainderParser SentenceSortSentence )
+    ,   ( "hooked-sort"
+        , sortSentenceRemainderParser (asSentence . SentenceHookedSort)
+        )
+    , ( "symbol", symbolSentenceRemainderParser SentenceSymbolSentence)
+    ,   ( "hooked-symbol"
+        , symbolSentenceRemainderParser (asSentence . SentenceHookedSymbol)
+        )
     , ( "import", importSentenceRemainderParser )
-    , ( "hooked-sort", hookedSortSentenceRemainderParser )
-    , ( "hooked-symbol", hookedSymbolSentenceRemainderParser )
     ]
 
-sentenceConstructorRemainderParser
-    :: SentenceType
-    -> Parser ParsedSentence
-sentenceConstructorRemainderParser = \case
-    AliasSentenceType ->
-        SentenceAliasSentence <$> aliasSentenceRemainderParser
-    SymbolSentenceType ->
-        SentenceSymbolSentence
-        <$>
-        symbolSentenceRemainderParser symbolParser SentenceSymbol
-
-sentenceSortRemainderParser :: Parser ParsedSentence
-sentenceSortRemainderParser =
-  SentenceSortSentence <$> sortSentenceRemainderParser
-
-{-|'symbolSentenceRemainderParser' parses the part after the starting
-keyword of an alias or symbol declaration using the given head parser
-to parse the head and constructs it using the given constructor.
+{- | Parses the part of @symbol@ or @hooked-symbol@ after its introductory
+keyword using the given constructor to construct the appropriate object.
 
 BNF fragment example:
 
 @
-... ::=  ... ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-variable-list⟩ ‘}’
-             ‘(’ ⟨object-sort-variable-list⟩ ‘)’ ‘:’ ⟨object-sort⟩ ⟨attribute⟩
+<symbol-definition>
+  ::= "symbol" <symbol-id> "{" <sort-variables> "}"
+        "(" <sorts> ")" ":" <sort>
+        "[" <attributes> "]"
+<hooked-symbol-definition>
+  ::= "hooked-symbol" <symbol-id> "{" <sort-variables> "}"
+        "(" <sorts> ")" ":" <sort>
+        "[" <attributes> "]"
 @
 
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
 symbolSentenceRemainderParser
-    :: Parser m  -- Head parser.
-    -> (m -> [Sort] -> Sort -> Attributes -> as)
-    -- ^ Element constructor.
-    -> Parser as
-symbolSentenceRemainderParser aliasSymbolParser constructor
+    :: ( SentenceSymbol ParsedPattern -> Sentence ParsedPattern )
+    -> Parser (Sentence ParsedPattern)
+symbolSentenceRemainderParser ctor
   = do
-    aliasSymbol <- aliasSymbolParser
-    sorts <- inParenthesesListParser objectSortParser
+    aliasSymbol <- symbolParser
+    sorts <- inParenthesesListParser sortParser
     colonParser
-    resultSort <- objectSortParser
+    resultSort <- sortParser
     attributes <- attributesParser
-    return (constructor aliasSymbol sorts resultSort attributes)
+    return (ctor $ SentenceSymbol aliasSymbol sorts resultSort attributes)
 
 
-{-|'aliasSentenceRemainderParser' parses the part after the starting
-keyword of an alias declaration.
+{-| Parses the part after the starting keyword of an alias declaration.
 
 BNF fragment example:
 
 @
-... ::=  `alias` ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-variable-list⟩ ‘}’ ‘(’ ⟨object-sort-list⟩ ‘)’ ‘:’ ⟨object-sort⟩ ⟨attribute⟩
-         `where` ⟨object-head-constructor⟩ ‘{’ ⟨object-sort-variable-list⟩ ‘}’ ‘(’ ⟨object-variable-list⟩ ‘)’ `:=` ⟨object-pattern⟩
+<alias-definition>
+  ::= "alias" <symbol-id> "{" <sort-variables> "}"
+        "(" <sorts> ")" ":" <sort>
+        "where" <application-pattern> ":=" <pattern>
+        "[" <attributes> "]"
 @
 
-The @meta-@ version always starts with @#@, while the @object-@ one does not.
 -}
-aliasSentenceRemainderParser :: Parser (SentenceAlias ParsedPattern)
+aliasSentenceRemainderParser :: Parser (Sentence ParsedPattern)
 aliasSentenceRemainderParser = do
     aliasSymbol <- aliasParser
-    sorts <- inParenthesesListParser objectSortParser
+    sorts <- inParenthesesListParser sortParser
     colonParser
-    resultSort <- objectSortParser
+    resultSort <- sortParser
     mlLexemeParser "where"
     -- Note: constraints for left pattern checked in verifySentence
-    leftPattern <- applicationParser unifiedVariableParser
+    leftPattern <- applicationParser variableParser
     mlLexemeParser ":="
     rightPattern <- korePatternParser
     attributes <- attributesParser
     return
-        (SentenceAlias
+        (SentenceAliasSentence $ SentenceAlias
             aliasSymbol sorts resultSort leftPattern rightPattern attributes
         )
 
-{-|'importSentenceRemainderParser' parses the part after the starting
-'import' keyword of an import-declaration and constructs it.
+{-| Parses the part after the starting 'import' keyword of an import-declaration and constructs it.
 
 BNF example:
 
 @
-⟨import-declaration⟩ ::= ... ⟨module-name⟩ ⟨attribute⟩
+<import-statement>
+  ::= "import" <module-name-id>
+        "[" <attributes> "]"
 @
 -}
 importSentenceRemainderParser :: Parser ParsedSentence
 importSentenceRemainderParser =
     SentenceImportSentence
     <$> ( SentenceImport
-          <$> moduleNameParser
+          <$> moduleNameIdParser
           <*> attributesParser
         )
 
-{-|'axiomSentenceRemainderParser' parses the part after the starting
-'axiom' keyword of an axiom-declaration and constructs it.
+{- | Parses the part of @axiom@ or @claim@ after its introductory
+keyword using the given constructor to construct the appropriate object.
 
 BNF example:
 
 @
-⟨axiom-declaration⟩ ::= ... ‘{’ ⟨sort-variable-list⟩ ‘}’ ⟨pattern⟩ ⟨attribute⟩
+<axiom>
+  ::= "axiom" "{" <sort-variables> "}"
+        <pattern>
+        "[" <attributes> "]"
+<claim>
+  ::= "claim" "{" <sort-variables> "}"
+        <pattern>
+        "[" <attributes> "]"
 @
 
-Always starts with @{@.
 -}
 axiomSentenceRemainderParser
-    :: ( SentenceAxiom ParsedPattern -> Sentence ParsedPattern )
+    :: (SentenceAxiom ParsedPattern -> ParsedSentence)
     -> Parser ParsedSentence
 axiomSentenceRemainderParser ctor =
-  ctor
-  <$> ( SentenceAxiom
-        <$> inCurlyBracesListParser sortVariableParser
-        <*> korePatternParser
-        <*> attributesParser
-      )
+    ctor <$>
+        ( SentenceAxiom
+            <$> inCurlyBracesListParser sortVariableParser
+            <*> korePatternParser
+            <*> attributesParser
+        )
 
-{-|'claimSentenceRemainderParser' parses the part after the starting
-'claim' keyword of an claim declaration and constructs it.
-
-Always starts with @{@.
--}
-claimSentenceRemainderParser
-    :: ( SentenceClaim ParsedPattern -> Sentence ParsedPattern )
-    -> Parser ParsedSentence
-claimSentenceRemainderParser ctor =
-  ctor . SentenceClaim
-  <$> ( SentenceAxiom
-        <$> inCurlyBracesListParser sortVariableParser
-        <*> korePatternParser
-        <*> attributesParser
-      )
-
-{-|'sortSentenceRemainderParser' parses the part after the starting
-@sort@ keyword of a sort-declaration and constructs it.
+{- | Parses the part of @sort@ or @hooked-sort@ after its introductory
+keyword using the given constructor to construct the appropriate object.
 
 BNF example:
 
 @
-⟨sort-declaration⟩ ::= ... ‘{’ ⟨sort-variable-list⟩ ‘}’ ⟨object-sort⟩ ⟨attribute⟩
+<sort-definition>
+  ::= "sort" <sort-id> "{" <sort-variables> "}"
+        "[" <attributes> "]"
+<hooked-sort-definition>
+  ::= "hooked-sort" <sort-id> "{" <sort-variables> "}"
+        "[" <attributes> "]"
 @
 
-Always starts with @{@.
 -}
-sortSentenceRemainderParser :: Parser ParsedSentenceSort
-sortSentenceRemainderParser =
-    SentenceSort
-    <$> sortIdParser
-    <*> inCurlyBracesListParser sortVariableParser
-    <*> attributesParser
+sortSentenceRemainderParser
+    :: (SentenceSort ParsedPattern -> ParsedSentence)
+    -> Parser ParsedSentence
+sortSentenceRemainderParser ctor =
+    ctor <$>
+        (SentenceSort
+            <$> sortIdParser
+            <*> inCurlyBracesListParser sortVariableParser
+            <*> attributesParser
+        )
 
-{-|'hookedSymbolSentenceRemainderParser' parses the part after the starting
-@hooked-symbol@ keyword of an hook-declaration as a 'SentenceSymbol' and
-constructs the corresponding 'SentenceHook'.
--}
-hookedSymbolSentenceRemainderParser :: Parser ParsedSentence
-hookedSymbolSentenceRemainderParser =
-    (<$>)
-        (SentenceHookSentence . SentenceHookedSymbol)
-        (symbolSentenceRemainderParser symbolParser SentenceSymbol)
-
-{-|'hookedSortSentenceRemainderParser' parses the part after the starting
-'hooked-sort@ keyword of a sort-declaration as a 'SentenceSort' and constructs
-the corresponding 'SentenceHook'.
--}
-hookedSortSentenceRemainderParser :: Parser ParsedSentence
-hookedSortSentenceRemainderParser =
-    asSentence . SentenceHookedSort <$> sortSentenceRemainderParser
 

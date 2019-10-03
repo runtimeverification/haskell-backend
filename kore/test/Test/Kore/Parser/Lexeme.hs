@@ -23,7 +23,7 @@ test_koreLexeme =
     , testGroup "inSquareBracketsParser" inSquareBracketsParserTests
     , testGroup "keywordBasedParsers" keywordBasedParsersTests
     , testGroup "mlLexemeParser" mlLexemeParserTests
-    , testGroup "moduleNameParser" moduleNameParserTests
+    , testGroup "moduleNameIdParser" moduleNameIdParserTests
     , testGroup "parenPairParser" parenPairParserTests
     , testGroup "skipWhitespace" skipWhitespaceTests
     , testGroup "stringLiteralParser" stringLiteralParserTests
@@ -45,7 +45,7 @@ commaParserTests =
 
 curlyPairParserTests :: [TestTree]
 curlyPairParserTests =
-    parseTree (curlyPairParser genericKoreIdParser moduleNameParser)
+    parseTree (curlyPairParser idParser moduleNameIdParser)
         [ success "{a,B}" (testId "a", ModuleName "B")
         , success "{ a , B } " (testId "a", ModuleName "B")
         , success "{/**/a/**/,/**/B/**/}/**/" (testId "a", ModuleName "B")
@@ -95,7 +95,7 @@ idParserTests =
 
 inCurlyBracesParserTests :: [TestTree]
 inCurlyBracesParserTests =
-    parseTree (inCurlyBracesParser genericKoreIdParser)
+    parseTree (inCurlyBracesParser idParser)
         [ success "{a}" (testId "a")
         , success "{ a } " (testId "a")
         , success "{/**/a/**/}/**/" (testId "a")
@@ -105,7 +105,7 @@ inCurlyBracesParserTests =
 
 inParenthesesParserTests :: [TestTree]
 inParenthesesParserTests =
-    parseTree (inParenthesesParser genericKoreIdParser)
+    parseTree (inParenthesesParser idParser)
         [ success "(a)" (testId "a")
         , success "( a ) " (testId "a")
         , success "(/**/a/**/)/**/" (testId "a")
@@ -115,7 +115,7 @@ inParenthesesParserTests =
 
 inSquareBracketsParserTests :: [TestTree]
 inSquareBracketsParserTests =
-    parseTree (inSquareBracketsParser genericKoreIdParser)
+    parseTree (inSquareBracketsParser idParser)
         [ success "[a]" (testId "a")
         , success "[ a ] " (testId "a")
         , success "[/**/a/**/]/**/" (testId "a")
@@ -127,10 +127,10 @@ keywordBasedParsersTests :: [TestTree]
 keywordBasedParsersTests =
     parseTree
         (keywordBasedParsers
-            [ ("abc", inCurlyBracesParser genericKoreIdParser)
-            , ("de", inParenthesesParser genericKoreIdParser)
-            , ("dd", genericKoreIdParser)
-            , ("df", inSquareBracketsParser genericKoreIdParser)
+            [ ("abc", inCurlyBracesParser idParser)
+            , ("de", inParenthesesParser idParser)
+            , ("dd", idParser)
+            , ("df", inSquareBracketsParser idParser)
             ]
         )
         [ success "abc{a}" (testId "a")
@@ -171,9 +171,9 @@ mlLexemeParserTests =
     , FailureWithoutMessage ["", "Hello", " hello"]
     ]
 
-moduleNameParserTests :: [TestTree]
-moduleNameParserTests =
-    parseTree moduleNameParser
+moduleNameIdParserTests :: [TestTree]
+moduleNameIdParserTests =
+    parseTree moduleNameIdParser
         [ success "A" (ModuleName "A")
         , success "A-" (ModuleName "A-")
         , success "A2" (ModuleName "A2")
@@ -187,7 +187,7 @@ moduleNameParserTests =
 
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
-    parseTree (parenPairParser genericKoreIdParser moduleNameParser)
+    parseTree (parenPairParser idParser moduleNameIdParser)
         [ success "(a,B)" (testId "a", ModuleName "B")
         , success "( a , B ) " (testId "a", ModuleName "B")
         , success "(/**/a/**/,/**/B/**/)/**/" (testId "a", ModuleName "B")
@@ -278,8 +278,7 @@ stringLiteralParserTests =
                     , "1 | \"\DEL\""
                     , "  |  ^"
                     , "unexpected delete"
-                    , "expecting '\"', escape sequence, \
-                      \or printable ASCII character"
+                    , "expecting '\"' or printable ASCII character"
                     ]
             }
         , Failure FailureTest

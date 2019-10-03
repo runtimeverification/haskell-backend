@@ -70,7 +70,7 @@ test_koreParser =
 
 objectSortParserTests :: [TestTree]
 objectSortParserTests =
-    parseTree objectSortParser
+    parseTree sortParser
         [ success "var" $
             SortVariableSort ( SortVariable (testId "var") )
         , success "sort1{}" $
@@ -108,7 +108,7 @@ objectSortParserTests =
 
 objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
-    parseTree (inParenthesesListParser objectSortParser)
+    parseTree (inParenthesesListParser sortParser)
         [ success "()" []
         , success "(var)"
             [ sortVariableSort "var" ]
@@ -204,7 +204,7 @@ objectSymbolParserTests =
 
 variableParserTests :: [TestTree]
 variableParserTests =
-    parseTree singletonVariableParser
+    parseTree elementVariableParser
         [ success "v:s"
             $ ElementVariable Variable
                 { variableName = testId "v"
