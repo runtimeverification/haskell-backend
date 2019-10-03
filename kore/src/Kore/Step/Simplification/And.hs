@@ -15,6 +15,11 @@ module Kore.Step.Simplification.And
     , And (..)
     ) where
 
+import qualified Debug.Trace
+import Kore.Unparser
+    ( unparse
+    )
+
 import Control.Applicative
     ( Alternative (empty)
     )
@@ -180,7 +185,11 @@ applyAndIdempotence patt =
   where
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
+    traceUnsimplified x
+      | TermLike.isSimplified x = id
+      | otherwise = Debug.Trace.traceShow (unparse x)
     mkAndSimplified a b
-      | TermLike.isSimplified a, TermLike.isSimplified b =
-        markSimplified $ mkAnd a b
-      | otherwise = mkAnd a b
+      | TermLike.isSimplified a, TermLike.isSimplified b
+      = markSimplified $ mkAnd a b
+      | otherwise
+      = traceUnsimplified a . traceUnsimplified b $ mkAnd a b
