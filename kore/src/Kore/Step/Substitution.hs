@@ -74,7 +74,8 @@ normalize Conditional { term, predicate, substitution } = do
             return Conditional
                 { term
                 , predicate =
-                    Syntax.Predicate.makeAndPredicate predicate
+                    Syntax.Predicate.markSimplified
+                    $ Syntax.Predicate.makeAndPredicate predicate
                     $ Syntax.Predicate.fromSubstitution substitution
                 , substitution = mempty
                 }
