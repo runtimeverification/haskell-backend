@@ -23,6 +23,7 @@ import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( makeOrPredicate
     )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 
 -- * Driver
 
@@ -161,7 +162,11 @@ disjoinPredicates
         }
 
   | term1 == term2 && substitution1 == substitution2 =
-    Just (predicated1 { predicate = makeOrPredicate predicate1 predicate2 })
+    Just predicated1
+        { predicate =
+            Syntax.Predicate.markSimplified
+            $ makeOrPredicate predicate1 predicate2
+        }
   | otherwise =
     Nothing
 
