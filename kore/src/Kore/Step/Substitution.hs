@@ -76,6 +76,9 @@ normalize Conditional { term, predicate, substitution } = do
                 , predicate =
                     Syntax.Predicate.markSimplified
                     $ Syntax.Predicate.makeAndPredicate predicate
+                    -- TODO (thomas.tuegel): Promoting the entire substitution
+                    -- to the predicate is a problem. We should only promote the
+                    -- part which has cyclic dependencies.
                     $ Syntax.Predicate.fromSubstitution substitution
                 , substitution = mempty
                 }
