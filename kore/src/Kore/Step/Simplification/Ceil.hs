@@ -250,10 +250,8 @@ makeEvaluateBuiltin
         (makeEvaluateNormalizedAc predicate (Domain.unwrapAc builtinAcChild))
   where
     unsimplified =
-        OrPredicate.fromPredicate
-            (Predicate.fromPredicate
-                (makeCeilPredicate (mkBuiltin patt))
-            )
+        OrPredicate.fromPredicate . Predicate.fromPredicate
+        $ Syntax.Predicate.markSimplified . makeCeilPredicate $ mkBuiltin patt
 makeEvaluateBuiltin predicate (Domain.BuiltinList l) = do
     children <- mapM (makeEvaluateTerm predicate) (Foldable.toList l)
     let
