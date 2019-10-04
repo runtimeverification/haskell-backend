@@ -397,27 +397,24 @@ finalizeRulesParallel
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesParallel initial unifiedRules =
-    case Rule.checkFunctionLike (term <$> unifiedRules) (term initial) of
-        Left err -> error $ "Rules:\n" <> show (unparseToString . TermLike.mapVariables Target.unwrapVariable . Rule.left . term <$> unifiedRules) <> err
-        _        -> do
-            let initialCondition = Conditional.withoutTerm initial
-            results <-
-                Foldable.fold
-                <$> traverse (finalizeRule initialCondition) unifiedRules
-            let unifications =
-                    MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
-                remainder =
-                    Predicate.fromPredicate (Remainder.remainder' unifications)
-            remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
-            return Step.Results
-                { results = Seq.fromList results
-                , remainders =
-                    OrPattern.fromPatterns
-                    $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
-                }
+finalizeRulesParallel initial unifiedRules = do
+    let initialCondition = Conditional.withoutTerm initial
+    results <-
+        Foldable.fold
+        <$> traverse (finalizeRule initialCondition) unifiedRules
+    let unifications =
+            MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
+        remainder =
+            Predicate.fromPredicate (Remainder.remainder' unifications)
+    remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
+    return Step.Results
+        { results = Seq.fromList results
+        , remainders =
+            OrPattern.fromPatterns
+            $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
+        }
 
-finalizeRulesSequenceWithCheck
+finalizeRulesWithCheck
     ::  forall unifier variable
     .   ( SimplifierVariable variable
         , MonadUnify unifier
@@ -425,14 +422,15 @@ finalizeRulesSequenceWithCheck
         )
     => Rule.StepContext
     -> Pattern (Target variable)
+    -> unifier (Results variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesSequenceWithCheck Rule.SimplificationContext initial unifiedRules =
-    finalizeRulesSequence initial unifiedRules
-finalizeRulesSequenceWithCheck _ initial unifiedRules =
-    case Rule.checkFunctionLike (term <$> unifiedRules) (term initial) of
+finalizeRulesWithCheck Rule.SimplificationContext initial unifier unifiedRules =
+    unifier
+finalizeRulesWithCheck _ initial unifier unifiedRules =
+    case checkFunctionLike unifiedRules (term initial) of
         Left err -> error $ "Rules:\n" <> show (unparseToString . TermLike.mapVariables Target.unwrapVariable . Rule.left . term <$> unifiedRules) <> err
-        _        -> finalizeRulesSequence initial unifiedRules
+        _        -> unifier
 
 finalizeRulesSequence
     ::  forall unifier variable
@@ -470,6 +468,27 @@ finalizeRulesSequence initial unifiedRules
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')
         return results
+
+checkFunctionLike
+    :: (InternalVariable variable, InternalVariable variable') 
+    => [UnifiedRule variable']
+    -> TermLike variable
+    -> Either String ()
+checkFunctionLike [] _ = pure ()
+checkFunctionLike unifiedRules term
+  | TermLike.isFunctionPattern term =
+        Foldable.traverse_ checkFunctionLikeRule unifiedRules
+  | otherwise = Left . show . Pretty.vsep $
+        [ "Expected function-like term, but found:"
+        , Pretty.indent 4 (unparse term)
+        ]
+  where
+    checkFunctionLikeRule Conditional { term = (RulePattern { left }) }
+      | TermLike.isFunctionPattern left = return ()
+      | otherwise = Left . show . Pretty.vsep $
+            [ "Expected function-like left-hand side of rule, but found:"
+            , Pretty.indent 4 (unparse left)
+            ]
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -568,9 +587,19 @@ applyRulesParallel
     -- axiom variables.
     (map toAxiomVariables -> rules)
     (toConfigurationVariables -> initial)
-  =
-    unifyRules unificationProcedure initial rules
-    >>= finalizeRulesParallel initial
+  = do
+    unifiedRules <- unifyRules unificationProcedure initial rules
+    case checkFunctionLike unifiedRules (term initial) of
+        Left err -> error $ "Rules:\n" <> show 
+                        (
+                        unparseToString 
+                        . TermLike.mapVariables Target.unwrapVariable 
+                        . Rule.left 
+                        . term 
+                        <$> unifiedRules
+                        )
+                         <> err
+        _        -> finalizeRulesParallel initial unifiedRules
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -589,11 +618,11 @@ applyRewriteRulesParallel
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRewriteRulesParallel unificationProcedure rewriteRules initialConfig =
+applyRewriteRulesParallel unificationProcedure rewriteRules =
     applyRulesParallel
         unificationProcedure
         (getRewriteRule <$> rewriteRules)
-        initialConfig
+        
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -620,9 +649,13 @@ applyRulesSequence
     -- axiom variables.
     (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
-  =
-    unifyRules unificationProcedure initial rules
-    >>= finalizeRulesSequenceWithCheck context initial
+  = do
+    unifiedRules <- unifyRules unificationProcedure initial rules
+    finalizeRulesWithCheck 
+        context 
+        initial 
+        (finalizeRulesSequence initial unifiedRules)
+        unifiedRules
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
