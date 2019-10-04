@@ -48,6 +48,7 @@ module SMT
     ) where
 
 import Control.Concurrent.MVar
+import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens hiding
     ( makeLenses
     )
@@ -433,11 +434,11 @@ stopSolver mvar = do
 
 -- | Run an external SMT solver.
 runSMT :: Config -> Logger -> SMT a -> IO a
-runSMT config logger SmtT { runSmtT } = do
-    solver <- newSolver config logger
-    a <- runReaderT runSmtT solver
-    stopSolver solver
-    return a
+runSMT config logger SmtT { runSmtT } =
+    Exception.bracket
+        (newSolver config logger)
+        stopSolver
+        (runReaderT runSmtT)
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
