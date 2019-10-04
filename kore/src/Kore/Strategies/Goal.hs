@@ -402,8 +402,6 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , ResetGoal
-        , Simplify
-        , TriviallyValid
         ]
 
 -- TODO(Ana): could be less general when all-path will be connected to repl
@@ -430,8 +428,6 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , ResetGoal
-        , Simplify
-        , TriviallyValid
         ]
 
 allPathFirstStep
