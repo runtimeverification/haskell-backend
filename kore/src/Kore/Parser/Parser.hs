@@ -75,8 +75,7 @@ sortParser = do
             , sortActualSorts = sorts
             }
 
-{-| Parses a head and constructs it using the provided
-constructor.
+{-| Parses a head and constructs it using the provided constructor.
 
 BNF definitions:
 
@@ -132,9 +131,9 @@ aliasParser = symbolOrAliasParser Alias
 symbolParser :: Parser Symbol
 symbolParser = symbolOrAliasParser Symbol
 
-{-| Parses the part after an unary operator's
-name and the first open curly brace and constructs it using the provided
-constructor.
+{-| Parses the part after an unary operator's name and the first open
+curly brace and constructs it using the provided constructor.
+
 It uses an open recursion scheme for the children.
 
 BNF fragments:
@@ -154,9 +153,9 @@ unaryOperatorRemainderParser childParser constructor =
     <$> inCurlyBracesRemainderParser sortParser
     <*> inParenthesesParser childParser
 
-{-| Parses the part after a binary operator's
-name and the first open curly brace and constructs it using the provided
-constructor.
+{-| Parses the part after a binary operator's name and
+the first open curly brace and constructs it using the provided constructor.
+
 It uses an open recursion scheme for the children.
 
 BNF fragments:
@@ -176,9 +175,9 @@ binaryOperatorRemainderParser childParser constructor = do
     (child1, child2) <- parenPairParser childParser childParser
     return (constructor sort child1 child2)
 
-{-| Parses the part after an @exists@ or @forall@
-operator's name and the first open curly brace and constructs it using the
-provided constructor.
+{-| Parses the part after an @exists@ or @forall@ operator's name
+and the first open curly brace and constructs it using the provided constructor.
+
 It uses an open recursion scheme for the children.
 
 BNF fragments:
@@ -198,9 +197,9 @@ existsForallRemainderParser childParser constructor = do
     (variable, qChild) <- parenPairParser elementVariableParser childParser
     return (constructor sort variable qChild)
 
-{-| Parses the part after a @mu@ or @nu@
-operator's name and the first open curly brace and constructs it using the
-provided constructor.
+{-| Parses the part after a @mu@ or @nu@ operator's name and
+the first open curly brace and constructs it using the provided constructor.
+
 It uses an open recursion scheme for the children.
 
 BNF fragment:
@@ -220,9 +219,9 @@ muNuRemainderParser childParser constructor = do
     (variable, qChild) <- parenPairParser setVariableParser childParser
     return (constructor variable qChild)
 
-{-| Parses the part after a ceil or floor
-operator's name and the first open curly brace and constructs it using the
-provided constructor.
+{-| Parses the part after a ceil or floor operator's name and
+the first open curly brace and constructs it using the provided constructor.
+
 It uses an open recursion scheme for the children.
 
 BNF fragments:
@@ -242,9 +241,9 @@ ceilFloorRemainderParser childParser constructor = do
     cfChild <- inParenthesesParser childParser
     return (constructor sort1 sort2 cfChild)
 
-{-| Parses the part after an @equals@ or @in@
-operator's name and the first open curly brace and constructs it using the
-provided constructor.
+{-| Parses the part after an @equals@ or @in@ operator's name and
+the first open curly brace and constructs it using the provided constructor.
+
 It uses an open recursion scheme for the children.
 
 BNF fragments:
@@ -264,9 +263,10 @@ equalsInRemainderParser childParser constructor = do
     (child1, child2) <- parenPairParser childParser childParser
     return (constructor sort1 sort2 child1 child2)
 
-{-| Parses the part after a @top@ or @bottom@
-operator's name and the first open curly brace and constructs it using the
-provided constructor.
+{-| Parses the part after a @top@ or @bottom@ operator's name and
+the first open curly brace and constructs it using the provided constructor.
+
+It uses an open recursion scheme for the children.
 
 BNF fragments:
 
@@ -283,8 +283,9 @@ topBottomRemainderParser constructor = do
     inParenthesesParser (return ())
     return (constructor sort)
 
-{-| Parses the part after a the first
-identifier in an application pattern and constructs it.
+{-| Parses the part after a the first identifier in an application pattern
+and constructs it.
+
 It uses an open recursion scheme for the children.
 
 BNF fragments:
@@ -388,7 +389,8 @@ variableParser = do
         then SetVar  <$> setVariableParser
         else ElemVar <$> elementVariableParser
 
-{-| Parses an element variable pattern or application pattern, using an open recursion scheme for its children.
+{-| Parses an element variable pattern or application pattern,
+using an open recursion scheme for its children.
 
 BNF definitions:
 
@@ -531,9 +533,8 @@ unsupportedPatternType level patternType =
         ++ unparseToString patternType
         ++ " " ++ show level ++ " pattern.")
 
-{-| A continuation parser for
-'koreMLConstructorParser', called after the constructor and the open curly
-brace were parsed.
+{-| A continuation parser for 'koreMLConstructorParser', called after
+the constructor and the open curly brace were parsed.
 -}
 mlConstructorRemainderParser
     :: Parser child
@@ -619,17 +620,15 @@ inSquareBracketsListParser :: Parser item -> Parser [item]
 inSquareBracketsListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '[' ']' ','
 
-{-|'inParenthesesListParser' is the same as
-'inSquareBracketsListParser' except that it uses parentheses instead of
-square brackets.
+{-|'inParenthesesListParser' is the same as 'inSquareBracketsListParser'
+except that it uses parentheses instead of square brackets.
 -}
 inParenthesesListParser :: Parser item -> Parser [item]
 inParenthesesListParser =
     ParserUtils.sepByCharWithDelimitingChars skipWhitespace '(' ')' ','
 
-{-|'inCurlyBracesListParser' is the same as
-'inSquareBracketsListParser' except that it uses curly braces instead of
-square brackets.
+{-|'inCurlyBracesListParser' is the same as 'inSquareBracketsListParser'
+except that it uses curly braces instead of square brackets.
 -}
 inCurlyBracesListParser :: Parser item -> Parser [item]
 inCurlyBracesListParser =
@@ -669,7 +668,7 @@ definitionParser sentenceParser =
         <$> attributesParser
         <*> some (moduleParser sentenceParser)
 
-{-|'moduleParser' parses the module part of a Kore @definition@
+{-|'moduleParser' parses the module part of a Kore @definition@.
 
 BNF definition fragment:
 @
@@ -703,7 +702,7 @@ data SentenceType
     | SymbolSentenceType
 
 
-{-|'koreSentenceParser' parses a @declaration@.
+{-|'koreSentenceParser' parses a @sentence@.
 
 
 BNF definition fragments:
@@ -806,7 +805,8 @@ aliasSentenceRemainderParser = do
             aliasSymbol sorts resultSort leftPattern rightPattern attributes
         )
 
-{-| Parses the part after the starting 'import' keyword of an import-declaration and constructs it.
+{- | Parses the part after the starting 'import' keyword of an
+import-declaration and constructs it.
 
 BNF example:
 

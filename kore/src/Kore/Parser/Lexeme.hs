@@ -401,7 +401,7 @@ symbolIdRawParser = do
         (c :) <$> idRawParser KeywordsPermitted
     else idRawParser KeywordsForbidden
 
-{-|Parses an @set-variable-id@, which always starts with @\@@.
+{-|Parses a @set-variable-id@, which always starts with @\@@.
 
 @
 <set-variable-id> ::= ['@'] <id>
