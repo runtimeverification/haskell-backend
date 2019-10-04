@@ -59,6 +59,11 @@ test_symbolParsing =
         [ declarationsAre
             AST.Declarations
                 { symbols = Map.empty
+                -- "C" not present here because constructors should be declared
+                -- together with their sorts. If the sort does not declare the
+                -- constructor, then the symbol should not be in the
+                -- symbol declarations map.
+
                 , sorts = Map.fromList
                     [ ("#Char", astSortDeclaration "#Char")
                     , ("S", astSortDeclaration "S")

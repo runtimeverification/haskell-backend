@@ -317,6 +317,14 @@ resolveKoreSymbolDeclaration
         {resultSort}
     )
   = do
+    -- If the sort does not declare the constructor symbol, and we would try to
+    -- use it, we would get a "not declared error" from the SMT. Also,
+    -- if it's not declared by the sort, then we don't have
+    -- any constraints on it, so there's currently no point in declaring
+    -- it separately.
+    --
+    -- Note that direct smtlib declarations take precedence over constructors,
+    -- so we would not reach this line if this symbol had a smtlib attribute.
     assertMay (sortDeclaresSymbol resultSort symbolId)
 
     SymbolConstructor
