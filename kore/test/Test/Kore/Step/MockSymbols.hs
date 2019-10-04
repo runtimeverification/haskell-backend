@@ -1232,9 +1232,10 @@ smtConstructor symbolId argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
         , declaration =
-            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+            SMT.SymbolConstructor SMT.IndirectSymbolDeclaration
                 { name = encodableId
-                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                , resultSort = SMT.SortReference resultSort
+                , argumentSorts = map SMT.SortReference argumentSorts
                 }
         }
   where
@@ -1247,9 +1248,10 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
         , declaration =
-            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+            SMT.SymbolBuiltin SMT.IndirectSymbolDeclaration
                 { name = SMT.AlreadyEncoded builtin
-                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                , resultSort = SMT.SortReference resultSort
+                , argumentSorts = map SMT.SortReference argumentSorts
                 }
         }
 

@@ -306,16 +306,18 @@ instance With AST.UnresolvedSymbol Kore.Sort where
 instance With AST.UnresolvedKoreSymbolDeclaration Kore.Sort where
     with (AST.SymbolDeclaredDirectly _) _ =
         error "Cannot add sorts to SymbolDeclaredDirectly."
-    with (AST.SymbolDeclaredIndirectly declaration) sort =
-        AST.SymbolDeclaredIndirectly (declaration `with` sort)
+    with (AST.SymbolBuiltin declaration) sort =
+        AST.SymbolBuiltin (declaration `with` sort)
+    with (AST.SymbolConstructor declaration) sort =
+        AST.SymbolConstructor (declaration `with` sort)
 
 instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
     with
-        s@AST.IndirectSymbolDeclaration {sorts}
+        s@AST.IndirectSymbolDeclaration {argumentSorts}
         sort
       = s
-        { AST.IndirectSymbolDeclaration.sorts =
-            sorts `with` AST.SortReference sort
+        { AST.IndirectSymbolDeclaration.argumentSorts =
+            argumentSorts `with` AST.SortReference sort
         }
 
 newtype ConcreteElement =
