@@ -218,9 +218,12 @@ makeKoreLogger
     -> LogAction m Text
     -> LogAction m LogMessage
 makeKoreLogger severity scopeSet logToText =
-    Colog.cfilter (\(LogMessage _ logSeverity logScope _) -> logSeverity >= severity && logScope `member` scopeSet)
-        . Colog.cmapM addTimeStamp
-        $ contramap messageToText logToText
+    Colog.cfilter
+        (\(LogMessage _ logSeverity logScope _) ->
+            logSeverity >= severity && logScope `member` scopeSet
+        )
+    . Colog.cmapM addTimeStamp
+    $ contramap messageToText logToText
   where
     addTimeStamp :: LogMessage -> m LogMessageWithTimestamp
     addTimeStamp msg =
@@ -277,7 +280,8 @@ emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
 stderrLogger :: MonadIO m => Severity -> Set Scope -> LogAction m LogMessage
-stderrLogger logLevel logScopes = makeKoreLogger logLevel logScopes Colog.logTextStderr
+stderrLogger logLevel logScopes =
+    makeKoreLogger logLevel logScopes Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
