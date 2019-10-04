@@ -127,9 +127,12 @@ evaluateAxioms
     rejectNarrowing (Result.results -> results) =
         (Monad.guard . not) (Foldable.any Step.isNarrowingResult results)
 
-    applyRules initial rules =
-        Monad.Unify.maybeUnifierT
-        $ Step.applyRulesSequence unificationProcedure context initial rules
+    applyRules
+        (Step.toConfigurationVariables -> initial)
+        rules
+      = Monad.Unify.maybeUnifierT
+        $ Step.checkFunctionLikeResults context initial
+        $ Step.applyRulesSequence unificationProcedure initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =
         Monad.Unify.runUnifierT (unification pattern1 pattern2)

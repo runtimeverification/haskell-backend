@@ -74,7 +74,7 @@ definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (\_ _ _ term predicate ->
             evaluateAxioms
-                DefinitionContext
+                FunctionEvaluationContext
                 rules
                 term
                 (Predicate.toPredicate predicate)

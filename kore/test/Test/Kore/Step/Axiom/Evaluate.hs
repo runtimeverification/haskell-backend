@@ -37,7 +37,7 @@ import qualified Kore.Step.Axiom.Evaluate as Kore
 import Kore.Step.Rule
     ( EqualityRule (..)
     , RulePattern (..)
-    , StepContext (DefinitionContext)
+    , StepContext (FunctionEvaluationContext)
     , rulePattern
     )
 import Kore.Step.Simplification.Simplify
@@ -55,7 +55,10 @@ test_evaluateAxioms =
     , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to F(x)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f x, makeTruePredicate)
-    , applies "F(x) => G(x) [concrete] apply to F(a)"
+    , doesn'tApply "F(x) => G(x) doesn't apply to F(top)"
+        [axiom_ (f x) (g x)]
+        (f mkTop_, makeTruePredicate)
+     , applies "F(x) => G(x) [concrete] apply to F(a)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f a, makeTruePredicate)
         [Pattern.fromTermLike $ g a]
@@ -221,4 +224,4 @@ evaluateAxioms
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms (termLike, predicate) =
     runSimplifier Mock.env
-    $ Kore.evaluateAxioms DefinitionContext axioms termLike predicate
+    $ Kore.evaluateAxioms FunctionEvaluationContext axioms termLike predicate

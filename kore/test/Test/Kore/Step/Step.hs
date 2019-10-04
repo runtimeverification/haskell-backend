@@ -8,6 +8,7 @@ module Test.Kore.Step.Step
 
 import Test.Tasty
 
+import qualified Control.Exception as Exception
 import Data.Default as Default
     ( def
     )
@@ -285,6 +286,15 @@ test_applyRewriteRule_ =
                     (mkExists Mock.y (mkElemVar Mock.x))
         actual <- applyRewriteRule_ initial axiom
         assertEqual "" expect actual
+
+    , testCase "Apply non-function-like rule" $ do
+        let expect = Right
+                [ OrPattern.fromPatterns [initial { term = mkElemVar Mock.x }] ]
+            initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
+        result <- Exception.try $ applyRewriteRule_ initial axiomSigmaTopId
+        case result of
+            Left (Exception.ErrorCall _) -> return ()
+            Right _ -> assertFailure "Expected error"
 
     , testCase "symbol clash" $ do
         let expect = Right mempty
@@ -619,6 +629,11 @@ test_applyRewriteRule_ =
     axiomSigmaId =
         RewriteRule $ rulePattern
             (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
+            (mkElemVar Mock.x)
+
+    axiomSigmaTopId =
+        RewriteRule $ rulePattern
+            (Mock.sigma (mkElemVar Mock.x) mkTop_)
             (mkElemVar Mock.x)
 
     axiomSigmaXXYY =

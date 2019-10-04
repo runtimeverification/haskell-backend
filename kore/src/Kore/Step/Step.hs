@@ -22,6 +22,7 @@ module Kore.Step.Step
     , Step.gatherResults
     , Step.withoutRemainders
     , checkSubstitutionCoverage
+    , checkFunctionLikeResults
     , unifyRule
     , unifyRules
     , applyInitialConditions
@@ -414,7 +415,7 @@ finalizeRulesParallel initial unifiedRules = do
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
 
-finalizeRulesWithCheck
+checkFunctionLikeResults
     ::  forall unifier variable
     .   ( SimplifierVariable variable
         , MonadUnify unifier
@@ -423,13 +424,14 @@ finalizeRulesWithCheck
     => Rule.StepContext
     -> Pattern (Target variable)
     -> unifier (Results variable)
-    -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesWithCheck Rule.SimplificationContext initial unifier unifiedRules =
+checkFunctionLikeResults Rule.SimplificationContext initial unifier =
     unifier
-finalizeRulesWithCheck _ initial unifier unifiedRules =
+checkFunctionLikeResults _ initial unifier = do
+    results <- Step.results <$> unifier
+    let unifiedRules = Step.appliedRule <$> results
     case checkFunctionLike unifiedRules (term initial) of
-        Left err -> error $ "Rules:\n" <> show (unparseToString . TermLike.mapVariables Target.unwrapVariable . Rule.left . term <$> unifiedRules) <> err
+        Left err -> error err
         _        -> unifier
 
 finalizeRulesSequence
@@ -470,12 +472,17 @@ finalizeRulesSequence initial unifiedRules
         return results
 
 checkFunctionLike
-    :: (InternalVariable variable, InternalVariable variable') 
-    => [UnifiedRule variable']
+    ::  ( InternalVariable variable
+        , InternalVariable variable'
+        , Foldable f
+        , Eq (f (UnifiedRule variable'))
+        , Monoid (f (UnifiedRule variable'))
+        )
+    => f (UnifiedRule variable')
     -> TermLike variable
     -> Either String ()
-checkFunctionLike [] _ = pure ()
 checkFunctionLike unifiedRules term
+  | unifiedRules == mempty = pure ()
   | TermLike.isFunctionPattern term =
         Foldable.traverse_ checkFunctionLikeRule unifiedRules
   | otherwise = Left . show . Pretty.vsep $
@@ -483,7 +490,7 @@ checkFunctionLike unifiedRules term
         , Pretty.indent 4 (unparse term)
         ]
   where
-    checkFunctionLikeRule Conditional { term = (RulePattern { left }) }
+    checkFunctionLikeRule Conditional { term = RulePattern { left } }
       | TermLike.isFunctionPattern left = return ()
       | otherwise = Left . show . Pretty.vsep $
             [ "Expected function-like left-hand side of rule, but found:"
@@ -578,7 +585,7 @@ applyRulesParallel
     => UnificationProcedure
     -> [RulePattern variable]
     -- ^ Rewrite rules
-    -> Pattern variable
+    -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesParallel
@@ -586,20 +593,9 @@ applyRulesParallel
     -- Wrap the rule and configuration so that unification prefers to substitute
     -- axiom variables.
     (map toAxiomVariables -> rules)
-    (toConfigurationVariables -> initial)
-  = do
-    unifiedRules <- unifyRules unificationProcedure initial rules
-    case checkFunctionLike unifiedRules (term initial) of
-        Left err -> error $ "Rules:\n" <> show 
-                        (
-                        unparseToString 
-                        . TermLike.mapVariables Target.unwrapVariable 
-                        . Rule.left 
-                        . term 
-                        <$> unifiedRules
-                        )
-                         <> err
-        _        -> finalizeRulesParallel initial unifiedRules
+    initial
+  = unifyRules unificationProcedure initial rules
+    >>= finalizeRulesParallel initial
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
 
@@ -618,11 +614,16 @@ applyRewriteRulesParallel
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRewriteRulesParallel unificationProcedure rewriteRules =
-    applyRulesParallel
+applyRewriteRulesParallel
+    unificationProcedure
+    rewriteRules
+    (toConfigurationVariables -> initial)
+  = checkFunctionLikeResults Rule.RewriteContext initial
+    $ applyRulesParallel
         unificationProcedure
         (getRewriteRule <$> rewriteRules)
-        
+        initial
+
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -636,26 +637,19 @@ applyRulesSequence
         , MonadUnify unifier
         )
     => UnificationProcedure
-    -> Rule.StepContext
-    -> Pattern variable
+    -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
 applyRulesSequence
     unificationProcedure
-    context
-    -- Wrap the rule and configuration so that unification prefers to substitute
+    initial
+    -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
-    (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
-  = do
-    unifiedRules <- unifyRules unificationProcedure initial rules
-    finalizeRulesWithCheck 
-        context 
-        initial 
-        (finalizeRulesSequence initial unifiedRules)
-        unifiedRules
+  = unifyRules unificationProcedure initial rules
+    >>= finalizeRulesSequence initial
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -674,9 +668,12 @@ applyRewriteRulesSequence
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
-applyRewriteRulesSequence unificationProcedure initialConfig rewriteRules =
-    applyRulesSequence
+applyRewriteRulesSequence
+    unificationProcedure
+    (toConfigurationVariables -> initialConfig)
+    rewriteRules
+  = checkFunctionLikeResults Rule.RewriteContext initialConfig
+    $ applyRulesSequence
         unificationProcedure
-        Rule.RewriteContext
         initialConfig
         (getRewriteRule <$> rewriteRules)

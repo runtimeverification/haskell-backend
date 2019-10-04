@@ -836,8 +836,6 @@ applySubstitution substitution rule =
 -}
 data StepContext
   = SimplificationContext
-  | DefinitionContext
+  | FunctionEvaluationContext
   | RewriteContext
-  | OnePathContext
-  | AllPathContext
   deriving (Show, Eq)
