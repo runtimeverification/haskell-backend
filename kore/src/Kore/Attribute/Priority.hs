@@ -20,7 +20,6 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
-
 {- | @Priority@ represents the @priority@ attribute.
  -}
 newtype Priority = Priority { getPriority :: Maybe Integer }
@@ -31,6 +30,8 @@ instance SOP.Generic Priority
 instance SOP.HasDatatypeInfo Priority
 
 instance Debug Priority
+
+instance Diff Priority
 
 instance NFData Priority
 

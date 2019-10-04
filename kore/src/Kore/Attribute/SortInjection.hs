@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo SortInjection
 
 instance Debug SortInjection
 
+instance Diff SortInjection
+
 -- | Kore identifier representing the @sortInjection@ attribute symbol.
 sortInjectionId :: Id
 sortInjectionId = "sortInjection"

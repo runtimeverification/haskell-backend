@@ -3,12 +3,17 @@ module Test.Kore.Step.PatternAttributes
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
+import Data.Functor.Const
+    ( Const (..)
+    )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Kore.Domain.Builtin
+    ( Builtin (..)
+    , InternalInt (..)
+    )
 import Kore.Internal.TermLike
 import Kore.Proof.Functional as Proof.Functional
 import Kore.Step.PatternAttributes
@@ -16,14 +21,21 @@ import Kore.Step.PatternAttributesError
     ( ConstructorLikeError (..)
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as MockSymbols
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 newtype LevelInt level = LevelInt Int
 newtype LevelString level = LevelString String
-    deriving (Show, Eq)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic (LevelString level)
+
+instance SOP.HasDatatypeInfo (LevelString level)
+
+instance Debug (LevelString level)
+
+instance Diff (LevelString level)
 
 levelShow :: LevelInt level -> LevelString level
 levelShow (LevelInt i) = LevelString (show i)
@@ -32,25 +44,25 @@ test_patternAttributes :: [TestTree]
 test_patternAttributes =
     [ testCase "variable mapping"
         (do
-            assertEqualWithExplanation "FunctionalVariable"
+            assertEqual "FunctionalVariable"
                 (FunctionalVariable (LevelString "10"))
                 (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalVariable (LevelInt 10))
                 )
-            assertEqualWithExplanation "FunctionalHead"
+            assertEqual "FunctionalHead"
                 (FunctionalHead MockSymbols.aSymbol)
                 (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalHead MockSymbols.aSymbol)
                 )
-            assertEqualWithExplanation "FunctionalStringLiteral"
+            assertEqual "FunctionalStringLiteral"
                 (FunctionalStringLiteral (StringLiteral "10"))
                 (Proof.Functional.mapVariables
                     levelShow
                     (FunctionalStringLiteral (StringLiteral "10"))
                 )
-            assertEqualWithExplanation "FunctionalCharLiteral"
+            assertEqual "FunctionalCharLiteral"
                 (FunctionalCharLiteral (CharLiteral 'a'))
                 (Proof.Functional.mapVariables
                     levelShow
@@ -59,7 +71,7 @@ test_patternAttributes =
         )
     , testCase "isConstructorLikePattern"
         (do
-            assertEqualWithExplanation "variables are constructor-like"
+            assertEqual "variables are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
                     Mock.metadataTools
@@ -68,7 +80,7 @@ test_patternAttributes =
             let
                 constructor :: TermLike Variable
                 constructor = Mock.a
-            assertEqualWithExplanation "constructors are constructor-like"
+            assertEqual "constructors are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
                     Mock.metadataTools
@@ -77,7 +89,7 @@ test_patternAttributes =
             let
                 sortInjection :: TermLike Variable
                 sortInjection = Mock.sortInjection10 Mock.aSort0
-            assertEqualWithExplanation "sort injections are constructor-like"
+            assertEqual "sort injections are constructor-like"
                 (Right [ConstructorLikeProof, ConstructorLikeProof])
                 (isConstructorLikePattern
                     Mock.metadataTools
@@ -86,7 +98,7 @@ test_patternAttributes =
             let
                 mapElement :: TermLike Variable
                 mapElement = Mock.elementMap Mock.a Mock.b
-            assertEqualWithExplanation
+            assertEqual
                 "constructors-modulo are not constructor-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorLikePattern
@@ -96,7 +108,7 @@ test_patternAttributes =
             let
                 str :: TermLike Variable
                 str = mkStringLiteral "10"
-            assertEqualWithExplanation "string literals are constructor-like"
+            assertEqual "string literals are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
                     Mock.metadataTools
@@ -105,7 +117,7 @@ test_patternAttributes =
             let
                 chr :: TermLike Variable
                 chr = mkCharLiteral 'a'
-            assertEqualWithExplanation "char literals are constructor-like"
+            assertEqual "char literals are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
                     Mock.metadataTools
@@ -118,7 +130,7 @@ test_patternAttributes =
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
                         }
-            assertEqualWithExplanation "domain values are constructor-like"
+            assertEqual "domain values are constructor-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorLikePattern
                     Mock.metadataTools
@@ -128,7 +140,7 @@ test_patternAttributes =
             let
                 functionConstant :: TermLike Variable
                 functionConstant = Mock.cf
-            assertEqualWithExplanation
+            assertEqual
                 "function symbols are not constructor-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorLikePattern
@@ -138,16 +150,88 @@ test_patternAttributes =
             let
                 injectionConstant :: TermLike Variable
                 injectionConstant = Mock.injective10 Mock.a
-            assertEqualWithExplanation "injections are not constructor-like"
+            assertEqual "injections are not constructor-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorLikePattern
                     Mock.metadataTools
                     injectionConstant
                 )
         )
+    , testCase "isConstructorLikeTop"
+        (do
+            let
+                app :: Application Symbol child
+                app = Application
+                        { applicationSymbolOrAlias = Mock.aSymbol
+                        , applicationChildren = undefined
+                        }
+            assertEqual "ApplySymbolF is constructor-like-top"
+                True
+                (isConstructorLikeTop
+                    Mock.metadataTools
+                    $ undefined :< ApplySymbolF app
+                )
+            let
+                dv :: DomainValue Sort Symbol
+                dv = DomainValue
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = Mock.aSymbol
+                        }
+            assertEqual "DomainValueF is constructor-like-top"
+                True
+                (isConstructorLikeTop
+                    Mock.metadataTools
+                    $ undefined :< DomainValueF dv
+                )
+            let
+                b :: Kore.Domain.Builtin.Builtin key child
+                b = BuiltinInt
+                        (InternalInt
+                            { builtinIntSort = Mock.intSort
+                            , builtinIntValue = 1
+                            }
+                        )
+            assertEqual "BuiltinF is constructor-like-top"
+                True
+                (isConstructorLikeTop
+                    Mock.metadataTools
+                    $ undefined :< BuiltinF b
+                )
+            let
+                sl :: Const StringLiteral b
+                sl = Const ( StringLiteral { getStringLiteral = mempty } )
+            assertEqual "StringLiteralF is constructor-like-top"
+                True
+                (isConstructorLikeTop
+                    Mock.metadataTools
+                    $ undefined :< StringLiteralF sl
+                )
+            let
+                cl :: Const CharLiteral b
+                cl = Const ( CharLiteral { getCharLiteral = 'a' } )
+            assertEqual "CharLiteralF is constructor-like-top"
+                True
+                (isConstructorLikeTop
+                    Mock.metadataTools
+                    $ undefined :< CharLiteralF cl
+                )
+            let
+                a :: And Sort Symbol
+                a = And
+                        { andSort = Mock.testSort
+                        , andFirst = Mock.aSymbol
+                        , andSecond = Mock.bSymbol
+                        }
+            assertEqual "AndF is not is constructor-like-top"
+                False
+                (isConstructorLikeTop
+                    Mock.metadataTools
+                    $ undefined :< AndF a
+                )
+        )
     , testCase "isConstructorModuloLikePattern"
         (do
-            assertEqualWithExplanation "variables are constructor-modulo-like"
+            assertEqual "variables are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
                     Mock.metadataTools
@@ -156,7 +240,7 @@ test_patternAttributes =
             let
                 constructor :: TermLike Variable
                 constructor = Mock.a
-            assertEqualWithExplanation
+            assertEqual
                 "constructors are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
@@ -166,7 +250,7 @@ test_patternAttributes =
             let
                 sortInjection :: TermLike Variable
                 sortInjection = Mock.sortInjection10 Mock.aSort0
-            assertEqualWithExplanation
+            assertEqual
                 "sort injections are constructor-modulo-like"
                 (Right [ConstructorLikeProof, ConstructorLikeProof])
                 (isConstructorModuloLikePattern
@@ -176,7 +260,7 @@ test_patternAttributes =
             let
                 mapElement :: TermLike Variable
                 mapElement = Mock.elementMap Mock.a Mock.b
-            assertEqualWithExplanation
+            assertEqual
                 "constructors-modulo are constructor-modulo-like"
                 (Right
                     [ ConstructorLikeProof
@@ -191,7 +275,7 @@ test_patternAttributes =
             let
                 str :: TermLike Variable
                 str = mkStringLiteral "10"
-            assertEqualWithExplanation
+            assertEqual
                 "string literals are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
@@ -201,7 +285,7 @@ test_patternAttributes =
             let
                 chr :: TermLike Variable
                 chr = mkCharLiteral 'a'
-            assertEqualWithExplanation
+            assertEqual
                 "char literals are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
@@ -215,7 +299,7 @@ test_patternAttributes =
                         { domainValueSort = Mock.testSort
                         , domainValueChild = mkStringLiteral "a"
                         }
-            assertEqualWithExplanation
+            assertEqual
                 "domain values are constructor-modulo-like"
                 (Right [ConstructorLikeProof])
                 (isConstructorModuloLikePattern
@@ -226,7 +310,7 @@ test_patternAttributes =
             let
                 functionConstant :: TermLike Variable
                 functionConstant = Mock.cf
-            assertEqualWithExplanation
+            assertEqual
                 "function symbols are not constructor-modulo-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorModuloLikePattern
@@ -236,7 +320,7 @@ test_patternAttributes =
             let
                 injectionConstant :: TermLike Variable
                 injectionConstant = Mock.injective10 Mock.a
-            assertEqualWithExplanation
+            assertEqual
                 "injections are not constructor-modulo-like"
                 (Left NonConstructorLikeHead)
                 (isConstructorModuloLikePattern

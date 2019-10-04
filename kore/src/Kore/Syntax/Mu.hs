@@ -49,6 +49,10 @@ instance SOP.HasDatatypeInfo (Mu variable child)
 instance (Debug variable, Debug child) => Debug (Mu variable child)
 
 instance
+    ( Debug variable, Debug child, Diff variable, Diff child )
+    => Diff (Mu variable child)
+
+instance
     (SortedVariable variable, Unparse variable, Unparse child) =>
     Unparse (Mu variable child)
   where

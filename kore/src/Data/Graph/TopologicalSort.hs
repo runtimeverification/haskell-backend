@@ -9,7 +9,7 @@ Portability : portable
 -}
 module Data.Graph.TopologicalSort
     ( topologicalSort
-    , ToplogicalSortCycles(..)
+    , TopologicalSortCycles(..)
     ) where
 
 import Data.Graph
@@ -17,9 +17,21 @@ import Data.Graph
     , stronglyConnComp
     )
 import qualified Data.Map as Map
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
-newtype ToplogicalSortCycles node = ToplogicalSortCycles [node]
-    deriving (Show, Eq)
+import Kore.Debug
+
+newtype TopologicalSortCycles node = TopologicalSortCycles [node]
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic (TopologicalSortCycles node)
+
+instance SOP.HasDatatypeInfo (TopologicalSortCycles node)
+
+instance Debug node => Debug (TopologicalSortCycles node)
+
+instance (Debug node, Diff node) => Diff (TopologicalSortCycles node)
 
 {-| 'topologicalSort' sorts a graph topologically, starting with nodes which
 have no 'next' nodes.
@@ -31,7 +43,7 @@ Returns an error for graphs that have cycles.
 topologicalSort
     :: (Ord node, Show node)
     => Map.Map node [node]
-    -> Either (ToplogicalSortCycles node) [node]
+    -> Either (TopologicalSortCycles node) [node]
 topologicalSort edges =
     mapM
         extractSortedNode
@@ -42,6 +54,6 @@ topologicalSort edges =
             )
         )
   where
-    extractSortedNode :: SCC node -> Either (ToplogicalSortCycles node) node
+    extractSortedNode :: SCC node -> Either (TopologicalSortCycles node) node
     extractSortedNode (AcyclicSCC n)    = Right n
-    extractSortedNode (CyclicSCC nodes) = Left (ToplogicalSortCycles nodes)
+    extractSortedNode (CyclicSCC nodes) = Left (TopologicalSortCycles nodes)

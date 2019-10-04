@@ -3,11 +3,6 @@ module Test.Kore.Strategies.OnePath.Verification
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Data.Default
     ( def
@@ -37,10 +32,9 @@ import Kore.Step.Rule
     )
 import Kore.Strategies.Goal
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Strategies.Common
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_onePathVerification :: [TestTree]
 test_onePathVerification =
@@ -52,7 +46,7 @@ test_onePathVerification =
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Runs one step" $ do
@@ -68,7 +62,7 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "Returns first failing claim" $ do
@@ -79,7 +73,7 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left . Pattern.fromTermLike $ Mock.b)
             actual
     , testCase "Verifies one claim" $ do
@@ -90,7 +84,7 @@ test_onePathVerification =
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Trusted claim cannot prove itself" $ do
@@ -102,7 +96,7 @@ test_onePathVerification =
             [ simpleTrustedClaim Mock.a Mock.b
             , simpleClaim Mock.a Mock.b
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Verifies one claim multiple steps" $ do
@@ -116,7 +110,7 @@ test_onePathVerification =
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleClaim Mock.a Mock.c]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Verifies one claim stops early" $ do
@@ -130,7 +124,7 @@ test_onePathVerification =
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleClaim Mock.a Mock.c]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Verifies one claim with branching" $ do
@@ -148,7 +142,7 @@ test_onePathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
-        assertEqualWithExplanation "" (Right ()) actual
+        assertEqual "" (Right ()) actual
     , testCase "Partial verification failure" $ do
         -- Axiom: constr11(a) => b
         -- Axiom: constr10(x) => constr11(x)
@@ -162,7 +156,7 @@ test_onePathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -187,7 +181,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "fails first of two claims" $ do
@@ -206,7 +200,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.e
             , simpleClaim Mock.d Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
     , testCase "fails second of two claims" $ do
@@ -225,7 +219,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
     , testCase "second proves first but fails" $ do
@@ -242,7 +236,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "first proves second but fails" $ do
@@ -259,7 +253,7 @@ test_onePathVerification =
             [ simpleClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "trusted second proves first" $ do
@@ -276,7 +270,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleTrustedClaim Mock.b Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "trusted first proves second" $ do
@@ -293,7 +287,7 @@ test_onePathVerification =
             [ simpleTrustedClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Prefers using claims for rewriting" $ do
@@ -315,7 +309,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
     , testCase "Provable using one-path; not provable using all-path" $ do
@@ -330,7 +324,7 @@ test_onePathVerification =
             , simpleAxiom Mock.a Mock.c
             ]
             [ simpleClaim Mock.a Mock.b ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     ]

@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Null
 
 instance Debug Null
 
+instance Diff Null
+
 instance Default Null where
     def = Null
 

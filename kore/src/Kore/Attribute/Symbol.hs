@@ -115,6 +115,8 @@ instance SOP.HasDatatypeInfo Symbol
 
 instance Debug Symbol
 
+instance Diff Symbol
+
 instance ParseAttributes Symbol where
     parseAttribute attr =
         typed @Function (parseAttribute attr)

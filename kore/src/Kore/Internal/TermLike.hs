@@ -274,6 +274,8 @@ instance SOP.HasDatatypeInfo (Evaluated child)
 
 instance Debug child => Debug (Evaluated child)
 
+instance (Debug child, Diff child) => Diff (Evaluated child)
+
 instance Hashable child => Hashable (Evaluated child)
 
 instance NFData child => NFData (Evaluated child)
@@ -337,16 +339,18 @@ instance SOP.HasDatatypeInfo (TermLikeF variable child)
 instance (Debug child, Debug variable) => Debug (TermLikeF variable child)
 
 instance
-    (Hashable child, Hashable variable) =>
-    Hashable (TermLikeF variable child)
+    ( Debug child, Debug variable, Diff child, Diff variable )
+    => Diff (TermLikeF variable child)
+
+instance
+    (Hashable child, Hashable variable)
+    => Hashable (TermLikeF variable child)
 
 instance (NFData child, NFData variable) => NFData (TermLikeF variable child)
 
 instance
-    ( SortedVariable variable, Unparse variable
-    , Unparse child
-    ) =>
-    Unparse (TermLikeF variable child)
+    ( SortedVariable variable, Unparse variable, Unparse child )
+    => Unparse (TermLikeF variable child)
   where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
@@ -433,9 +437,21 @@ instance SOP.HasDatatypeInfo (TermLike variable)
 
 instance Debug variable => Debug (TermLike variable)
 
+instance (Debug variable, Diff variable) => Diff (TermLike variable) where
+    diffPrec
+        termLike1@(Recursive.project -> attrs1 :< termLikeF1)
+        termLike2@(Recursive.project -> _      :< termLikeF2)
+      =
+        -- If the patterns differ, do not display the difference in the
+        -- attributes, which would overload the user with redundant information.
+        diffPrecGeneric
+            (Recursive.embed (attrs1 :< termLikeF1))
+            (Recursive.embed (attrs1 :< termLikeF2))
+        <|> diffPrecGeneric termLike1 termLike2
+
 instance
-    (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>
-    Eq (TermLike variable)
+    (Eq variable, Eq (TermLikeF variable (TermLike variable)))
+    => Eq (TermLike variable)
   where
     (==)
         (Recursive.project -> _ :< pat1)
@@ -443,8 +459,8 @@ instance
       = pat1 == pat2
 
 instance
-    (Ord variable, Ord (TermLikeF variable (TermLike variable))) =>
-    Ord (TermLike variable)
+    (Ord variable, Ord (TermLikeF variable (TermLike variable)))
+    => Ord (TermLike variable)
   where
     compare
         (Recursive.project -> _ :< pat1)
@@ -579,8 +595,8 @@ extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes = extract . getTermLike
 
 instance
-    (Ord variable, SortedVariable variable, Show variable) =>
-    Binding (TermLike variable)
+    (Ord variable, SortedVariable variable, Show variable)
+    => Binding (TermLike variable)
   where
     type VariableType (TermLike variable) = UnifiedVariable variable
 

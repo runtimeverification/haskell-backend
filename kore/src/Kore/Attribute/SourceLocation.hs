@@ -51,6 +51,8 @@ instance SOP.HasDatatypeInfo SourceLocation
 
 instance Debug SourceLocation
 
+instance Diff SourceLocation
+
 instance NFData SourceLocation
 
 instance Default SourceLocation where

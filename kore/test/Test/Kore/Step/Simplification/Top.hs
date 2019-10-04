@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.Top
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -19,16 +14,15 @@ import Kore.Step.Simplification.Top
     )
 import Kore.Syntax
 
-import Test.Kore.Comparators ()
 import Test.Kore.Step.MockSymbols
     ( testSort
     )
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_topSimplification :: [TestTree]
 test_topSimplification =
     [ testCase "Top evaluates to top"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromPattern Pattern.top)
             (evaluate Top { topSort = testSort })
         )

@@ -29,6 +29,8 @@ instance SOP.HasDatatypeInfo Assoc
 
 instance Debug Assoc
 
+instance Diff Assoc
+
 instance NFData Assoc
 
 instance Default Assoc where

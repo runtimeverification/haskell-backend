@@ -4,7 +4,6 @@ module Test.Kore.Internal.Pattern
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Data.Text.Prettyprint.Doc
 import qualified Generics.SOP as SOP
@@ -39,11 +38,10 @@ import Test.Kore
     ( Gen
     , sortGen
     )
-import Test.Kore.Comparators ()
 import Test.Kore.Internal.TermLike
     ( termLikeChildGen
     )
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 internalPatternGen :: Gen (Internal.Pattern Variable)
 internalPatternGen =
@@ -52,7 +50,7 @@ internalPatternGen =
 test_expandedPattern :: [TestTree]
 test_expandedPattern =
     [ testCase "Mapping variables"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             Conditional
                 { term = war "1"
                 , predicate = makeEquals (war "2") (war "3")
@@ -69,7 +67,7 @@ test_expandedPattern =
             )
         )
     , testCase "Converting to a ML pattern"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (makeAnd
                 (makeAnd
                     (var 1)
@@ -87,7 +85,7 @@ test_expandedPattern =
             )
         )
     , testCase "Converting to a ML pattern - top pattern"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (makeAnd
                 (makeEq (var 2) (var 3))
                 (makeEq (var 4) (var 5))
@@ -102,7 +100,7 @@ test_expandedPattern =
             )
         )
     , testCase "Converting to a ML pattern - top predicate"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (var 1)
             (Pattern.toTermLike
                 Conditional
@@ -113,7 +111,7 @@ test_expandedPattern =
             )
         )
     , testCase "Converting to a ML pattern - bottom pattern"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (mkBottom sortVariable)
             (Pattern.toTermLike
                 Conditional
@@ -125,7 +123,7 @@ test_expandedPattern =
             )
         )
     , testCase "Converting to a ML pattern - bottom predicate"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (mkBottom sortVariable)
             (Pattern.toTermLike
                 Conditional
@@ -146,6 +144,8 @@ instance SOP.HasDatatypeInfo V
 
 instance Debug V
 
+instance Diff V
+
 instance Unparse V where
     unparse (V n) = "V" <> pretty n <> ":" <> unparse sortVariable
     unparse2 = undefined
@@ -154,10 +154,6 @@ instance SortedVariable V where
     sortedVariableSort _ = sortVariable
     fromVariable = undefined
     toVariable = undefined
-
-instance EqualWithExplanation V where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
 
 newtype W = W String
     deriving (Show, Eq, Ord, GHC.Generic)
@@ -168,6 +164,8 @@ instance SOP.HasDatatypeInfo W
 
 instance Debug W
 
+instance Diff W
+
 instance Unparse W where
     unparse (W name) = "W" <> pretty name <> ":" <> unparse sortVariable
     unparse2 = undefined
@@ -176,11 +174,6 @@ instance SortedVariable W where
     sortedVariableSort _ = sortVariable
     fromVariable = undefined
     toVariable = undefined
-
-instance EqualWithExplanation W where
-    compareWithExplanation = rawCompareWithExplanation
-    printWithExplanation = show
-
 
 showVar :: V -> W
 showVar (V i) = W (show i)

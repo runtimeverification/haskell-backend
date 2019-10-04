@@ -2,7 +2,6 @@ module Test.Kore.Step.Axiom.Identifier
     ( test_matchAxiomIdentifier ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified GHC.Stack as GHC
 
@@ -13,9 +12,8 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Axiom.Identifier
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 
 test_matchAxiomIdentifier :: [TestTree]
@@ -45,7 +43,50 @@ test_matchAxiomIdentifier =
         (TermLike.mkExists Mock.x
             $ TermLike.mkEquals_ (TermLike.mkElemVar Mock.x) (Mock.f Mock.a))
         (Exists (Equals Variable (Application Mock.fId)))
+    , testGroup "Map"
+        [ test "unitMap"
+            (Mock.builtinMap [])
+            (Application Mock.unitMapId)
+        , test "elementMap"
+            (Mock.builtinMap [(Mock.a, Mock.a)])
+            (Application Mock.elementMapId)
+        , test "concatMap"
+            (Mock.builtinMap [(Mock.a, Mock.a), (Mock.b, Mock.b)])
+            (Application Mock.concatMapId)
+        ]
+    , testGroup "Set"
+        [ test "unitSet"
+            (Mock.builtinSet [])
+            (Application Mock.unitSetId)
+        , test "elementSet"
+            (Mock.builtinSet [Mock.a])
+            (Application Mock.elementSetId)
+        , test "concatSet"
+            (Mock.builtinSet [Mock.a, Mock.b])
+            (Application Mock.concatSetId)
+        ]
+    , testGroup "List"
+        [ test "unitList"
+            (Mock.builtinList [])
+            (Application Mock.unitListId)
+        , test "elementList"
+            (Mock.builtinList [Mock.a])
+            (Application Mock.elementListId)
+        , test "concatList"
+            (Mock.builtinList [Mock.a, Mock.b])
+            (Application Mock.concatListId)
+        ]
     ]
+  where
+    test name termLike axiomIdentifier =
+        testGroup name
+            [ matches name termLike axiomIdentifier
+            , matches ceilName
+                (TermLike.mkCeil_ termLike)
+                (Ceil axiomIdentifier)
+            ]
+      where
+        ceilName = "ceil " <> name
 
 match
     :: GHC.HasCallStack
@@ -55,7 +96,7 @@ match
     -> TestTree
 match name input expect =
     testCase name
-    $ assertEqualWithExplanation "" expect
+    $ assertEqual "" expect
     $ matchAxiomIdentifier input
 
 matches

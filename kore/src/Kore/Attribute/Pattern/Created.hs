@@ -47,6 +47,9 @@ instance Hashable Created where
 
 instance Debug Created
 
+instance Diff Created where
+    diffPrec = diffPrecIgnore
+
 instance Pretty Created where
     pretty (Created maybeCallStack) =
         maybe "" go getCallStackAtHead

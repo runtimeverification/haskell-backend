@@ -48,6 +48,10 @@ instance SOP.HasDatatypeInfo (Implies sort child)
 
 instance (Debug sort, Debug child) => Debug (Implies sort child)
 
+instance
+    ( Debug sort, Debug child, Diff sort, Diff child )
+    => Diff (Implies sort child)
+
 instance Unparse child => Unparse (Implies Sort child) where
     unparse Implies { impliesSort, impliesFirst, impliesSecond } =
         "\\implies"

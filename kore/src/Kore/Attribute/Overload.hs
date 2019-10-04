@@ -29,6 +29,8 @@ instance SOP.HasDatatypeInfo Overload
 
 instance Debug Overload
 
+instance Diff Overload
+
 instance Semigroup Overload where
     (<>) a@(Overload (Just _)) _ = a
     (<>) _                     b = b

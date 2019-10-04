@@ -67,6 +67,8 @@ instance SOP.HasDatatypeInfo Smtlib
 
 instance Debug Smtlib
 
+instance Diff Smtlib
+
 -- | Kore identifier representing the @smtlib@ attribute symbol.
 smtlibId :: Id
 smtlibId = "smtlib"

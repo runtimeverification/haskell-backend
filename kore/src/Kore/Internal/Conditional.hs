@@ -105,6 +105,10 @@ instance SOP.HasDatatypeInfo (Conditional variable child)
 instance (Debug variable, Debug child) => Debug (Conditional variable child)
 
 instance
+    ( Debug variable, Debug child, Diff variable, Diff child, Ord variable )
+    => Diff (Conditional variable child)
+
+instance
     (Hashable child, Hashable variable) =>
     Hashable (Conditional variable child)
 
@@ -301,11 +305,11 @@ fromSingleSubstitution
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> Conditional variable ()
-fromSingleSubstitution pair =
+fromSingleSubstitution (variable, termLike) =
     Conditional
         { term = ()
         , predicate = Predicate.makeTruePredicate
-        , substitution = Substitution.wrap [pair]
+        , substitution = Substitution.singleton variable termLike
         }
 
 {- | Combine the predicate with the conditions of the first argument.

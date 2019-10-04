@@ -37,6 +37,8 @@ instance SOP.HasDatatypeInfo HeatCool
 
 instance Debug HeatCool
 
+instance Diff HeatCool
+
 instance NFData HeatCool
 
 instance Default HeatCool where

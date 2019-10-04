@@ -47,6 +47,8 @@ instance SOP.HasDatatypeInfo ApplicationSorts
 
 instance Debug ApplicationSorts
 
+instance Diff ApplicationSorts
+
 applicationSorts :: [Sort] -> Sort -> ApplicationSorts
 applicationSorts = ApplicationSorts
 

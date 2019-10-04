@@ -1,7 +1,6 @@
 module Test.Kore.Step.SMT.Evaluator where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -34,11 +33,10 @@ import Kore.Syntax.Variable
     ( Variable
     )
 
-import Test.Kore.Comparators ()
 import Test.Kore.Predicate.Predicate ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 contradictoryPredicate :: Syntax.Predicate Variable
 contradictoryPredicate =
@@ -57,11 +55,11 @@ test_evaluableSyntaxPredicate =
     [ testCase "refutes false predicate" $ do
         let expected = Just False
         actual <- evaluatePredicate makeFalsePredicate
-        assertEqualWithExplanation "false refuted to false" expected actual
+        assertEqual "false refuted to false" expected actual
     , testCase "refutes predicate" $ do
         let expected = Just False
         actual <- evaluatePredicate contradictoryPredicate
-        assertEqualWithExplanation "x<0 and x>=0 refuted to false"
+        assertEqual "x<0 and x>=0 refuted to false"
             expected actual
     ]
 
@@ -74,7 +72,7 @@ test_evaluableConditional =
             , predicate = makeFalsePredicate
             , substitution = mempty
             }
-        assertEqualWithExplanation "false refuted to false" expected actual
+        assertEqual "false refuted to false" expected actual
     , testCase "refutes predicate" $ do
         let expected = Just False
         actual <- evaluateConditional Conditional
@@ -82,7 +80,7 @@ test_evaluableConditional =
             , predicate = contradictoryPredicate
             , substitution = mempty
             }
-        assertEqualWithExplanation "x<0 and x>=0 refuted to false"
+        assertEqual "x<0 and x>=0 refuted to false"
             expected actual
     ]
 
@@ -110,7 +108,7 @@ test_evaluableMultiOr =
                     }
                 ]
             )
-        assertEqualWithExplanation "false refuted to false" expected actual
+        assertEqual "false refuted to false" expected actual
     , testCase "refutes predicate" $ do
         let expected = MultiOr.make
                 [ Conditional
@@ -133,7 +131,7 @@ test_evaluableMultiOr =
                     }
                 ]
             )
-        assertEqualWithExplanation "x<0 and x>=0 refuted to false"
+        assertEqual "x<0 and x>=0 refuted to false"
             expected actual
     ]
 

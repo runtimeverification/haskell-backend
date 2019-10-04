@@ -3,11 +3,6 @@ module Test.Kore.Step.Simplification.Next
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -23,14 +18,13 @@ import Kore.Step.Simplification.Next
     ( simplify
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_nextSimplification :: [TestTree]
 test_nextSimplification =
     [ testCase "Next evaluates to Next"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkNext Mock.a
@@ -51,7 +45,7 @@ test_nextSimplification =
             )
         )
     , testCase "Next collapses or"
-        (assertEqualWithExplanation ""
+        (assertEqual ""
             (OrPattern.fromPatterns
                 [ Conditional
                     { term =

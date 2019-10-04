@@ -59,7 +59,7 @@ simplifyPredicatesWithSmt predicate' unsimplified = do
             return resimplified
     filteredWrappedPatterns <-
         SMT.Evaluator.filterMultiOr simplifiedWrappedPatterns
-    return (Conditional.term <$> filteredWrappedPatterns)
+    return (MultiOr.filterOr (Conditional.term <$> filteredWrappedPatterns))
   where
     conditionalAsTerm
         :: Pattern variable -> Conditional variable (Pattern variable)

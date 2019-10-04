@@ -33,6 +33,8 @@ instance SOP.HasDatatypeInfo Trusted
 
 instance Debug Trusted
 
+instance Diff Trusted
+
 instance NFData Trusted
 
 instance Default Trusted where

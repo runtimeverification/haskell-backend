@@ -56,6 +56,12 @@ instance
     Debug (Forall sort variable child)
 
 instance
+    ( Debug sort, Debug variable, Debug child
+    , Diff sort, Diff variable, Diff child
+    )
+    => Diff (Forall sort variable child)
+
+instance
     (SortedVariable variable, Unparse variable, Unparse child) =>
     Unparse (Forall Sort variable child)
   where

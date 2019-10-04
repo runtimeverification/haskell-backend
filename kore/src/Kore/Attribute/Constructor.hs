@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Constructor
 
 instance Debug Constructor
 
+instance Diff Constructor
+
 -- | Kore identifier representing the @constructor@ attribute symbol.
 constructorId :: Id
 constructorId = "constructor"

@@ -33,6 +33,8 @@ instance SOP.HasDatatypeInfo ProductionID
 
 instance Debug ProductionID
 
+instance Diff ProductionID
+
 instance NFData ProductionID
 
 instance Default ProductionID where

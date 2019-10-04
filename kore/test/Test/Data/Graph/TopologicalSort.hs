@@ -2,18 +2,12 @@ module Test.Data.Graph.TopologicalSort
     (test_topologicalSort) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( assertEqual
-    , testCase
-    )
 
 import qualified Data.Map as Map
 
 import Data.Graph.TopologicalSort
 
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_topologicalSort :: [TestTree]
 test_topologicalSort =
@@ -68,7 +62,7 @@ test_topologicalSort =
                 )
       in
         testCase "Three nodes, one lower than the others"
-            (assertInList "" [Right [2, 1, 3], Right [2, 3, 1]] sorted)
+            (assertEqual "" (Right [2, 3, 1]) sorted)
     , testCase "Three nodes, total order"
         (assertEqual ""
             (Right [3, 2, 1])
@@ -98,7 +92,7 @@ test_topologicalSort =
         )
     , testCase "Simple cycle"
         (assertEqual ""
-            (Left (ToplogicalSortCycles [1]))
+            (Left (TopologicalSortCycles [1]))
             (topologicalSort
                 (Map.fromList
                     [ (1, [1])
@@ -109,7 +103,7 @@ test_topologicalSort =
         )
     , testCase "Long cycle"
         (assertEqual ""
-            (Left (ToplogicalSortCycles [1, 2, 3]))
+            (Left (TopologicalSortCycles [1, 2, 3]))
             (topologicalSort
                 (Map.fromList
                     [ (1, [2])
@@ -122,7 +116,7 @@ test_topologicalSort =
         )
     , testCase "Cycle not starting at the first visited node"
         (assertEqual ""
-            (Left (ToplogicalSortCycles [2, 3]))
+            (Left (TopologicalSortCycles [2, 3]))
             (topologicalSort
                 (Map.fromList
                     [ (1, [2])

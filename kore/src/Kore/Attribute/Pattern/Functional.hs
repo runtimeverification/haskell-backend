@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Functional
 
 instance Debug Functional
 
+instance Diff Functional
+
 instance NFData Functional
 
 instance Hashable Functional

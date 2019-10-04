@@ -44,6 +44,8 @@ instance SOP.HasDatatypeInfo StringLiteral
 
 instance Debug StringLiteral
 
+instance Diff StringLiteral
+
 instance Unparse StringLiteral where
     unparse = Pretty.dquotes . Pretty.pretty . escapeStringT . getStringLiteral
     unparse2 = unparse
