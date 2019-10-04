@@ -175,7 +175,7 @@ test_patternAttributes =
                 dv :: DomainValue Sort Symbol
                 dv = DomainValue
                         { domainValueSort = Mock.testSort
-                        , domainValueChild = Mock.aSymbol
+                        , domainValueChild = undefined
                         }
             assertEqual "DomainValueF is constructor-like-top"
                 True
