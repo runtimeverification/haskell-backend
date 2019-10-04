@@ -165,6 +165,8 @@ constr11Id :: Id
 constr11Id = testId "constr11"
 constr20Id :: Id
 constr20Id = testId "constr20"
+constrFunct20TestMapId :: Id
+constrFunct20TestMapId = testId "constrFunct20TestMap"
 function20MapTestId :: Id
 function20MapTestId = testId "function20MapTest"
 functional00Id :: Id
@@ -356,6 +358,11 @@ constr11Symbol = symbol constr11Id [testSort] testSort & constructor
 
 constr20Symbol :: Symbol
 constr20Symbol = symbol constr20Id [testSort, testSort] testSort & constructor
+
+constrFunct20TestMapSymbol :: Symbol
+constrFunct20TestMapSymbol =
+    symbol constrFunct20TestMapId [testSort, mapSort] testSort
+    & constructor & function
 
 function20MapTestSymbol :: Symbol
 function20MapTestSymbol =
@@ -745,6 +752,14 @@ constr20
     -> TermLike variable
 constr20 arg1 arg2 = Internal.mkApplySymbol constr20Symbol [arg1, arg2]
 
+constrFunct20TestMap
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> TermLike variable
+constrFunct20TestMap arg1 arg2 =
+    Internal.mkApplySymbol constrFunct20TestMapSymbol [arg1, arg2]
+
 function20MapTest
     :: InternalVariable variable
     => GHC.HasCallStack
@@ -1084,6 +1099,7 @@ symbols =
     , constr10Symbol
     , constr11Symbol
     , constr20Symbol
+    , constrFunct20TestMapSymbol
     , function20MapTestSymbol
     , functional00Symbol
     , functional01Symbol
