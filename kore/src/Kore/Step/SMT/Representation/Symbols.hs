@@ -124,11 +124,10 @@ builtinDeclaration
         , AST.Symbol
             { smtFromSortArgs = emptySortArgsToSmt (SMT.Atom smtName)
             , declaration =
-                AST.SymbolDeclaredIndirectly AST.IndirectSymbolDeclaration
+                AST.SymbolBuiltin AST.IndirectSymbolDeclaration
                     { name = AST.AlreadyEncoded smtName
-                    , sorts = map
-                        AST.SortReference
-                        (sentenceSymbolResultSort : sentenceSymbolSorts)
+                    , resultSort = AST.SortReference sentenceSymbolResultSort
+                    , argumentSorts = map AST.SortReference sentenceSymbolSorts
                     }
             }
         )
@@ -182,11 +181,10 @@ constructorDeclaration
             { smtFromSortArgs =
                 emptySortArgsToSmt (SMT.Atom $ AST.encode encodedName)
             , declaration =
-                AST.SymbolDeclaredIndirectly AST.IndirectSymbolDeclaration
+                AST.SymbolConstructor AST.IndirectSymbolDeclaration
                     { name = encodedName
-                    , sorts = map
-                        AST.SortReference
-                        (sentenceSymbolResultSort : sentenceSymbolSorts)
+                    , resultSort = AST.SortReference sentenceSymbolResultSort
+                    , argumentSorts = map AST.SortReference sentenceSymbolSorts
                     }
             }
         )
