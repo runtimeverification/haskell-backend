@@ -171,11 +171,11 @@ below.
 ```
 <modules_+>
   ::= <module>
-    | <module> <modules+>
+    | <module> <modules_+>
 
 <sentences_>
   ::= ""
-    | <sentence> <sentences>
+    | <sentence> <sentences_>
 
 <patterns>
   ::= ""
