@@ -36,6 +36,9 @@ import Kore.Internal.TermLike
     , TermLikeF (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Predicate.Predicate
+    ( isPredicate
+    )
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -185,7 +188,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
-        assertSimplifiedResults $ tracer termLike $
+        assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
         let doNotSimplify =
                 Exception.assert (TermLike.isSimplified termLike)
                 return (OrPattern.fromTermLike termLike)
@@ -259,6 +262,28 @@ simplifyInternal term predicate = simplifyInternalWorker term
                     , (Pretty.indent 4 . Pretty.vsep)
                         (unparse <$> unsimplified)
                     , "Expected all patterns to be fully simplified."
+                    ]
+
+        assertTermNotPredicate getResults = do
+            results <- getResults
+            let
+                -- The term of a result should never be any predicate other than
+                -- Top or Bottom.
+                hasPredicateTerm Conditional { term = term' }
+                  | isTop term' || isBottom term' = False
+                  | otherwise                     = isPredicate term'
+                unsimplified =
+                    filter hasPredicateTerm $ OrPattern.toPatterns results
+            if null unsimplified
+                then return results
+                else (error . show . Pretty.vsep)
+                    [ "Incomplete simplification!"
+                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 4 (unparse termLike)
+                    , Pretty.indent 2 "unsimplified results:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> unsimplified)
+                    , "Expected all predicates to be removed from the term."
                     ]
 
     refreshBinder
