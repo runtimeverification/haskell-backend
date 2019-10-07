@@ -176,8 +176,12 @@ by the SMT.
 data KoreSymbolDeclaration sort name
     = SymbolDeclaredDirectly !(AST.FunctionDeclaration sort name)
     -- ^ Normal symbol declaration
-    | SymbolDeclaredIndirectly !(IndirectSymbolDeclaration sort name)
-    -- ^ Symbol declared in a different way (e.g. builtin or constructor).
+    | SymbolBuiltin !(IndirectSymbolDeclaration sort name)
+    -- ^ Builtins should not be declared to the SMT.
+    -- The IndirectSymbolDeclaration value holds dependencies on other sorts
+    -- and debug information.
+    | SymbolConstructor !(IndirectSymbolDeclaration sort name)
+    -- ^ Constructors are declared to the SMT when declaring the sort.
     -- The IndirectSymbolDeclaration value holds dependencies on other sorts
     -- and debug information.
     deriving (Eq, GHC.Generic, Ord, Show)
@@ -197,7 +201,8 @@ instance
 data IndirectSymbolDeclaration sort name =
     IndirectSymbolDeclaration
         { name :: !name
-        , sorts :: ![sort]
+        , resultSort :: !sort
+        , argumentSorts :: ![sort]
         }
     deriving (Eq, GHC.Generic, Ord, Show)
 
