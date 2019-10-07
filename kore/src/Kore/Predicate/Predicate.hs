@@ -226,6 +226,12 @@ makeMultipleAndPredicate =
     -- 'and' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
 
+{- | Flatten a 'Predicate' with 'And' at the top.
+
+'getMultiAndPredicate' is the inverse of 'makeMultipleAndPredicate', up to
+associativity.
+
+ -}
 getMultiAndPredicate
     :: Predicate variable
     -> [Predicate variable]
