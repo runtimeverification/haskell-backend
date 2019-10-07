@@ -48,6 +48,7 @@ import Data.Functor.Contravariant
 import Data.Maybe
     ( fromJust
     )
+import qualified Data.Profunctor as Profunctor
 import Data.Set
     ( Set
     )
@@ -270,6 +271,7 @@ data SomeEntry where
 
 instance Entry LogMessage where
     severity LogMessage { severity } = severity
+    displayEntry _ = mempty
     inScope _ _ = True
 
 class Monad m => MonadLog m where
@@ -286,12 +288,27 @@ instance Monad m => MonadLog (LoggerT m) where
     scope _ = id
 
 instance MonadLog m => WithLog LogMessage (LoggerT m) where
-    -- TODO: Stuck here. I can't see how to write this instance with `MonadLog`
-    -- but maybe I'm not seeing it
-    askLogAction = fmap (contramap toEntry) $ ask
+    askLogAction :: LoggerT m (LogAction (LoggerT m) LogMessage)
+    askLogAction = LoggerT . ReaderT $ pure . go
+      where
+        go :: LogAction m SomeEntry -> LogAction (LoggerT m) LogMessage
+        go (LogAction fn) = LogAction $ Monad.Trans.lift . fn . toEntry
     {-# INLINE askLogAction #-}
 
-    localLogAction locally = LoggerT . local locally . getLoggerT
+    localLogAction
+        :: (forall n. LogAction n LogMessage -> LogAction n LogMessage)
+        -> LoggerT m a
+        -> LoggerT m a
+    localLogAction locally (LoggerT (ReaderT la)) =
+        LoggerT . ReaderT $ la . go locally
+      where
+        go
+            :: (LogAction n LogMessage -> LogAction n LogMessage)
+            -> (LogAction n SomeEntry -> LogAction n SomeEntry)
+        go =
+            Profunctor.dimap
+                (contramap toEntry)
+                (contramap (fromJust . fromEntry))
     {-# INLINE localLogAction #-}
 
 instance MonadTrans LoggerT where
