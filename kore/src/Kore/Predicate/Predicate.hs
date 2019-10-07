@@ -41,6 +41,7 @@ module Kore.Predicate.Predicate
     , singleSubstitutionToPredicate
     , stringFromPredicate
     , substitutionToPredicate
+    , coerceSort
     , fromPredicate
     , fromSubstitution
     , unwrapPredicate
@@ -184,6 +185,18 @@ fromPredicate
     -> Predicate variable
     -> TermLike variable
 fromPredicate sort (GenericPredicate p) = TermLike.forceSort sort p
+
+{- | Change a 'Predicate' from one 'Sort' to another.
+
+This is a safe operation because predicates are flexibly sorted.
+
+ -}
+coerceSort
+    :: (SortedVariable variable, Unparse variable)
+    => Sort
+    -> Predicate variable
+    -> Predicate variable
+coerceSort sort = fmap (TermLike.forceSort sort)
 
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
