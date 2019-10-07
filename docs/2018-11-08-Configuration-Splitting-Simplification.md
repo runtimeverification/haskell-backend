@@ -91,40 +91,18 @@ We assume that `φ(X)` and `α(Z)` are function-like formulae.
 
 ```
 φ(X) ∧ (¬ ∃ Z. α(Z))
-    =  φ(X) ∧ (¬ ∃ Z. α(Z))
-    =  φ(X) ∧ ⌈φ(X) ∧ (¬ ∃ Z. α(Z))⌉ -- since φ(x) is function-like
-    =  φ(X) ∧ ⌈φ(X) ∧ (∀ Z. ¬α(Z))⌉  -- ¬ ∃ = ∀ ¬
-    =  φ(X) ∧ ⌈∀ Z. (φ(X) ∧ ¬α(Z))⌉  -- since φt(x) does not depend on Z
-    =  φ(X) ∧ (∀ Z. ⌈φ(X) ∧ ¬α(Z)⌉)  -- proven below
-    =  ∀ Z. φ(X) ∧ ⌈φ(X) ∧ ¬α(Z)⌉  -- FOL
+    =  φ(X) ∧ (∀ Z. ¬α(Z))           -- ¬ ∃ = ∀ ¬
+    =  ∀ Z. (φ(X) ∧ ¬α(Z))           -- φ(X) not depending on Z
+    =  ∀ Z. (φ(X) ∧ ⌈φ(X) ∧ ¬α(Z)⌉)  -- φ(x) is function-like
     =  ∀ Z. (φ(X) ∧ ⌈φ(X)⌉ ∧ ¬⌈φ(X) ∧ α(Z)⌉) -- proven below
     =  ∀ Z. (φ(X) ∧ ¬⌈φ(X) ∧ α(Z)⌉)
-    =  φ(X) ∧ (∀ Z. ¬⌈φ(X) ∧ α(Z)⌉)
-    =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉)
+    =  φ(X) ∧ (∀ Z. ¬⌈φ(X) ∧ α(Z)⌉)  -- φ(X) not depending on Z
+    =  φ(X) ∧ (¬ ∃ Z. ⌈φ(X) ∧ α(Z)⌉) -- ¬ ∃ = ∀ ¬
 ```
 
 
 ### Missing details
 
-
-#### `⌈φ ∧ ∀ Z.α(Z)⌉ = ∀ Z. ⌈φ ∧ α(Z)⌉`
-
-for any function-like formula `φ` and for any ML formula `α(Z)`.
-
-__Proof:__
-```
-⌈φ ∧ ∀ Z.α(Z)⌉
-    = ∃ x. x ∈ (φ ∧ ∀ Z.α(Z))
-    = ∃ x. x ∈ φ ∧ x ∈ (∀ Z.α(Z)) // distributivity of ∧ 
-    = ∃ x. x = φ ∧ x ∈ (∀ Z.α(Z))  // φ is function-like
-    = ∃ x. x = φ ∧ ∀ Z.x ∈ α(Z)  // properties of membership
-    = (∃ x. x = φ) ∧ ∀ Z.φ ∈ α(Z) // substitution
-    = ∀ Z.(∃ x. x = φ) ∧ φ ∈ α(Z)  // FOL
-    = ∀ Z.∃ x. (x = φ ∧ x ∈ α(Z)) // reverse substitution 
-    = ∀ Z.∃ x. (x ∈ φ ∧ x ∈ α(Z)) 
-    = ∀ Z.∃ x. x ∈ (φ ∧ α(Z)) 
-    = ∀ Z.⌈φ ∧ α(Z)⌉ 
-```
 
 #### `⌈φ ∧ ¬β⌉ = ⌈φ⌉ ∧ ¬⌈φ ∧ β⌉`
 

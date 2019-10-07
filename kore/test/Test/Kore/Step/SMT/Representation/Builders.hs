@@ -123,20 +123,26 @@ unresolvedIndirectSort name =
 
 unresolvedConstructorSymbolMap
     :: Kore.Id
+    -> Kore.Sort
     -> [Kore.Sort]
     -> (Kore.Id, AST.UnresolvedSymbol)
-unresolvedConstructorSymbolMap identifier sorts =
-    (identifier, unresolvedConstructorSymbol identifier sorts)
+unresolvedConstructorSymbolMap identifier resultSort argumentSorts =
+    ( identifier
+    , unresolvedConstructorSymbol identifier resultSort argumentSorts
+    )
 
 unresolvedConstructorSymbol
-    :: Kore.Id -> [Kore.Sort] -> AST.UnresolvedSymbol
-unresolvedConstructorSymbol identifier sorts =
+    :: Kore.Id -> Kore.Sort -> [Kore.Sort] -> AST.UnresolvedSymbol
+unresolvedConstructorSymbol identifier resultSort argumentSorts =
     AST.Symbol
         { smtFromSortArgs = const $ const $ Just
             $ AST.Atom (AST.encode encodable)
-        , declaration = AST.SymbolDeclaredIndirectly
+        , declaration = AST.SymbolConstructor
             AST.IndirectSymbolDeclaration
-                { name = encodable, sorts = map AST.SortReference sorts }
+                { name = encodable
+                , resultSort = AST.SortReference resultSort
+                , argumentSorts = map AST.SortReference argumentSorts
+                }
         }
   where
     encodable = AST.encodable identifier
@@ -170,20 +176,22 @@ unresolvedSmtlibSymbol encodedName inputSorts resultSort =
 unresolvedSmthookSymbolMap
     :: Kore.Id
     -> Text
+    -> Kore.Sort
     -> [Kore.Sort]
     -> (Kore.Id, AST.UnresolvedSymbol)
-unresolvedSmthookSymbolMap identifier encodedName sorts =
-    (identifier, unresolvedSmthookSymbol encodedName sorts)
+unresolvedSmthookSymbolMap identifier encodedName resultSort argumentSorts =
+    (identifier, unresolvedSmthookSymbol encodedName resultSort argumentSorts)
 
 unresolvedSmthookSymbol
-    :: Text -> [Kore.Sort] -> AST.UnresolvedSymbol
-unresolvedSmthookSymbol encodedName sorts =
+    :: Text -> Kore.Sort -> [Kore.Sort] -> AST.UnresolvedSymbol
+unresolvedSmthookSymbol encodedName resultSort argumentSorts =
     AST.Symbol
         { smtFromSortArgs = const $ const $ Just
             $ AST.Atom encodedName
-        , declaration = AST.SymbolDeclaredIndirectly
+        , declaration = AST.SymbolBuiltin
             AST.IndirectSymbolDeclaration
                 { name = AST.AlreadyEncoded encodedName
-                , sorts = map AST.SortReference sorts
+                , resultSort = AST.SortReference resultSort
+                , argumentSorts = map AST.SortReference argumentSorts
                 }
         }

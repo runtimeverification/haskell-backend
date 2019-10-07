@@ -206,7 +206,7 @@ debugConstr (SOP.Infix name _ precInfix) (K x :* K y :* Nil) =
 debugConstr (SOP.Record name fields) args =
     K $ \precOut ->
         parens (precOut >= precRecord)
-        . Pretty.align . Pretty.nest 4 . Pretty.group
+        . Pretty.align . Pretty.group
         $ mconcat
             [ Pretty.pretty name
             , Pretty.line

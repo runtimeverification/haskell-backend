@@ -92,19 +92,22 @@ normalizeSubstitution substitution = do
                 (TopologicalSortResult (UnifiedVariable variable))
         topologicalSortConverted =
             case topologicalSort (Set.toList <$> allDependencies) of
-                Left (ToplogicalSortCycles vars) ->
+                Left (TopologicalSortCycles vars) ->
                     case nonSimplifiableSortResult of
-                        Left (ToplogicalSortCycles nonSimplifiableCycle)
+                        Left (TopologicalSortCycles nonSimplifiableCycle)
                           | all isVariable
-                              (mapMaybe
-                                  (`Map.lookup` substitution)
-                                  nonSimplifiableCycle
-                              ) ->
-                              error "Impossible: order on variables should prevent only-variable-cycles"
+                            (mapMaybe
+                                (`Map.lookup` substitution)
+                                nonSimplifiableCycle
+                            ) ->
+                            error
+                                (  "Impossible: order on variables should "
+                                ++ "prevent only-variable-cycles"
+                                )
                           | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
-                              Right (SetCtorCycle nonSimplifiableCycle)
+                            Right (SetCtorCycle nonSimplifiableCycle)
                           | otherwise ->
-                              Right (MixedCtorCycle nonSimplifiableCycle)
+                            Right (MixedCtorCycle nonSimplifiableCycle)
                         Right _ ->
                             Left (NonCtorCircularVariableDependency vars)
                 Right result -> Right (Sorted result)
