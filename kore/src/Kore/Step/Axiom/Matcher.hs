@@ -669,8 +669,9 @@ matchNormalizedAc
 matchNormalizedAc pushValue pushElement wrapTermLike normalized1 normalized2
   | length concrete1 <= length concrete2
   , length abstract1 <= length abstract2
-  , length opaque1 < 2
   = do
+    -- Match concrete elements and abstract elements, respectively.
+    -- Assign excess elements to the framing variable.
     let concrete3 = Map.difference concrete2 concrete1
         abstract3 = take (length abstract2 - length abstract1) abstract2
         normalized3 =
