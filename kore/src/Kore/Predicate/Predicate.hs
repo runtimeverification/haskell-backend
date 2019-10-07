@@ -464,6 +464,14 @@ freeVariables = TermLike.freeVariables . unwrapPredicate
 isSimplified :: Predicate variable -> Bool
 isSimplified (GenericPredicate termLike) = TermLike.isSimplified termLike
 
+{- | Mark a 'Predicate' as fully simplified.
+
+The pattern is fully simplified if we do not know how to simplify it any
+further. The simplifier reserves the right to skip any pattern which is marked,
+so do not mark any pattern unless you are certain it cannot be further
+simplified.
+
+ -}
 markSimplified :: Predicate variable -> Predicate variable
 markSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.markSimplified termLike)

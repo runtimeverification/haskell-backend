@@ -938,6 +938,14 @@ externalizeFreshVariables termLike =
 isSimplified :: TermLike variable -> Bool
 isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
 
+{- | Mark a 'TermLike' as fully simplified.
+
+The pattern is fully simplified if we do not know how to simplify it any
+further. The simplifier reserves the right to skip any pattern which is marked,
+so do not mark any pattern unless you are certain it cannot be further
+simplified.
+
+ -}
 markSimplified :: TermLike variable -> TermLike variable
 markSimplified (Recursive.project -> attrs :< termLikeF) =
     Recursive.embed

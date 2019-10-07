@@ -24,7 +24,12 @@ import Kore.Variables.UnifiedVariable
 
 {- | A pattern is 'Simplified' if it has run through the simplifier.
 
-All patterns are assumed un-simplified until marked otherwise.
+The simplifier runs until we do not know how to simplify a pattern any more. A
+pattern 'isSimplified' if re-applying the simplifier would return the same
+pattern.
+
+All patterns are assumed un-simplified until marked otherwise, so that
+'isSimplified' is reset by any substitution under the pattern.
 
  -}
 newtype Simplified = Simplified { isSimplified :: Bool }
