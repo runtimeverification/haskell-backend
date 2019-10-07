@@ -76,6 +76,3 @@ allow-newer: true
 # compiler-check: newer-minor
 
 local-bin-path: ./.build/kore/bin
-
-ghc-options:
-  "$locals": -Rghc-timing
