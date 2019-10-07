@@ -230,7 +230,10 @@ rewriteImplies =
 expectTwoAxioms :: [Pattern Variable]
 expectTwoAxioms =
     [ pure (mkElemVar $ v1 Mock.testSort)
-    , Pattern.top
+    , Pattern.fromTermLike
+        $ mkImplies
+            (mkElemVar $ v1 Mock.testSort)
+            (mkElemVar $ v1 Mock.testSort)
     ]
 
 actualTwoAxioms :: IO [Pattern Variable]
