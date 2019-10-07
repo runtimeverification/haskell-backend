@@ -6,26 +6,21 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Created
     ( Created (..)
-    , hasKnownCreator
     ) where
 
 import Control.DeepSeq
 import Data.Hashable
     ( Hashable (hashWithSalt)
     )
-import qualified Data.Maybe as Maybe
-import Data.Text.Prettyprint.Doc
-    ( Pretty
+import Data.Maybe
+    ( listToMaybe
     )
 import Data.Text.Prettyprint.Doc
-    ( Doc
+    ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import GHC.Generics
-import GHC.Stack
-    ( SrcLoc (..)
-    )
 import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
@@ -37,9 +32,6 @@ import Kore.Debug
 -- constructors in 'Kore.Internal.TermLike'.
 newtype Created = Created { getCreated :: Maybe GHC.CallStack }
     deriving (Generic, Show)
-
-hasKnownCreator :: Created -> Bool
-hasKnownCreator = Maybe.isJust . getCallStackHead
 
 instance Eq Created where
     (==) _ _ = True
@@ -59,33 +51,19 @@ instance Diff Created where
     diffPrec = diffPrecIgnore
 
 instance Pretty Created where
-    pretty =
-        maybe "" go . getCallStackHead
+    pretty (Created maybeCallStack) =
+        maybe "" go getCallStackAtHead
       where
         go (name, loc) =
             Pretty.hsep
                 [ "/* Created by"
                 , Pretty.angles $ Pretty.pretty name
                 , "at"
-                , prettySrcLoc loc
+                , Pretty.pretty $ GHC.prettySrcLoc loc
                 , "*/"
                 ]
-
-getCallStackHead :: Created -> Maybe (String, SrcLoc)
-getCallStackHead Created { getCreated } =
-    GHC.getCallStack <$> getCreated >>= Maybe.listToMaybe
-
-prettySrcLoc :: SrcLoc -> Doc ann
-prettySrcLoc srcLoc =
-    mconcat
-        [ Pretty.pretty srcLocFile
-        , Pretty.colon
-        , Pretty.pretty srcLocStartLine
-        , Pretty.colon
-        , Pretty.pretty srcLocStartCol
-        ]
-  where
-    SrcLoc { srcLocFile, srcLocStartLine, srcLocStartCol } = srcLoc
+        getCallStackAtHead =
+            GHC.getCallStack <$> maybeCallStack >>= listToMaybe
 
 instance Functor pat => Synthetic Created pat where
     synthetic = const (Created Nothing)
