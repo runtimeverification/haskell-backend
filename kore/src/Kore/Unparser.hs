@@ -308,22 +308,16 @@ unparseAssoc'
     -> Doc ann    -- ^ identity element
     -> [Doc ann]  -- ^ arguments
     -> Doc ann
-unparseAssoc' oper ident =
-    worker
-  where
-    worker [ ] = ident
-    worker [x] = x
-    worker (x:xs) =
-        mconcat
-            ( worker' x xs
-            : line'
-            : replicate (length xs) rparen
-            )
-
-    worker' x [] = indent 4 x
-    worker' x (y:rest) =
-        mconcat
-            [ oper <> lparen <> line'
-            , indent 4 x <> comma <> line
-            , worker' y rest
-            ]
+unparseAssoc' _ ident [] = ident
+unparseAssoc' _ _ [x] = x
+unparseAssoc' oper ident (x:y:rest)
+  | null rest = oper <> arguments' [x, y]
+  | otherwise =
+    (group . mconcat)
+        [ oper
+        , lparen <> line'
+        , indent 4 x
+        , comma <> line
+        , unparseAssoc' oper ident (y : rest)
+        , line' <> rparen
+        ]
