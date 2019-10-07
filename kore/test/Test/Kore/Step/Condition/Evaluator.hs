@@ -83,7 +83,7 @@ p, q :: TermLike Variable
 p = vBool (testId "p")
 q = vBool (testId "q")
 
-assertRefuted :: Syntax.Predicate Variable -> Assertion
+assertRefuted :: HasCallStack => Syntax.Predicate Variable -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <- Test.runSimplifier testEnv $ SMT.Evaluator.decidePredicate prop

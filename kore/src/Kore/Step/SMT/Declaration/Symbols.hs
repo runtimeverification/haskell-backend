@@ -14,7 +14,7 @@ import qualified Data.Foldable as Foldable
 
 import qualified Kore.Step.SMT.AST as AST
     ( Declarations (Declarations)
-    , KoreSymbolDeclaration (SymbolDeclaredDirectly, SymbolDeclaredIndirectly)
+    , KoreSymbolDeclaration (SymbolBuiltin, SymbolConstructor, SymbolDeclaredDirectly)
     , SmtDeclarations
     , SmtKoreSymbolDeclaration
     , SmtSymbol
@@ -39,5 +39,7 @@ declareKoreSymbolDeclaration
     (AST.SymbolDeclaredDirectly declaration)
   =
     SMT.declareFun_ declaration
-declareKoreSymbolDeclaration (AST.SymbolDeclaredIndirectly _) =
+declareKoreSymbolDeclaration (AST.SymbolBuiltin _) =
+    return ()
+declareKoreSymbolDeclaration (AST.SymbolConstructor _) =
     return ()

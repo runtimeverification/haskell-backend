@@ -76,7 +76,7 @@ test_symbolParsing =
             `with` constructorAxiom "S" [("C", [])]
         )
         [ inDeclarations
-            (unresolvedConstructorSymbolMap (testId "C") [koreSort "S"])
+            (unresolvedConstructorSymbolMap (testId "C") (koreSort "S") [])
         , smtForSymbolIs "C" "|HB_C|"
         ]
     , testsForModule "Definition with complex constructor-based sorts"
@@ -92,11 +92,12 @@ test_symbolParsing =
             `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
         )
         [ inDeclarations
-            (unresolvedConstructorSymbolMap (testId "C") [koreSort "S"])
+            (unresolvedConstructorSymbolMap (testId "C") (koreSort "S") [])
         , inDeclarations
             (unresolvedConstructorSymbolMap
                 (testId "D")
-                [koreSort "S", koreSort "T"]
+                (koreSort "S")
+                [koreSort "T"]
             )
         , smtForSymbolIs "C" "|HB_C|"
         , smtForSymbolIs "D" "|HB_D|"
@@ -123,7 +124,7 @@ test_symbolParsing =
         )
         [ inDeclarations
             (unresolvedSmthookSymbolMap
-                (testId "minus") "-" [koreSort "Integer", koreSort "Integer"]
+                (testId "minus") "-" (koreSort "Integer") [ koreSort "Integer"]
             )
         , smtForSymbolIs "minus" "-"
         ]
