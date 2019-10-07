@@ -209,7 +209,7 @@ makeMultipleAndPredicate
     => [Predicate variable]
     -> Predicate variable
 makeMultipleAndPredicate =
-    foldr makeAndPredicate makeTruePredicate . nub
+    foldl' makeAndPredicate makeTruePredicate . nub
     -- 'and' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
 
