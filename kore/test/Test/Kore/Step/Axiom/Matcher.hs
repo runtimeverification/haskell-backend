@@ -37,6 +37,7 @@ import Kore.Internal.OrPredicate
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Predicate
     ( Conditional (..)
+    , Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
@@ -920,6 +921,45 @@ test_matching_Map =
         , (ElemVar yInt, mkElemVar vInt)
         , (ElemVar mMap, mkMap [] [mkElemVar m'Map])
         ]
+    , matches "x |-> y  x' |-> y'  m:Map matches u |-> v  u' |-> v'  m':Map"
+        (mkMap
+            [ (mkElemVar xInt, mkElemVar yInt)
+            , (mkElemVar x'Int, mkElemVar y'Int)
+            ]
+            [mkElemVar mMap]
+        )
+        (mkMap
+            [ (mkElemVar uInt , mkElemVar vInt )
+            , (mkElemVar u'Int, mkElemVar v'Int)
+            ]
+            [mkElemVar m'Map]
+        )
+        [ (ElemVar xInt, mkElemVar uInt)
+        , (ElemVar yInt, mkElemVar vInt)
+        , (ElemVar x'Int, mkElemVar u'Int)
+        , (ElemVar y'Int, mkElemVar v'Int)
+        , (ElemVar mMap, mkMap [] [mkElemVar m'Map])
+        ]
+    ,
+        let
+            framed =
+                mkMap
+                    [(mkElemVar u'Int, mkElemVar v'Int)]
+                    [mkElemVar m'Map]
+        in
+            matches' "x |-> y  m:Map matches u |-> v  u' |-> v'  m':Map"
+                (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
+                (mkMap
+                    [ (mkElemVar uInt , mkElemVar vInt )
+                    , (mkElemVar u'Int, mkElemVar v'Int)
+                    ]
+                    [mkElemVar m'Map]
+                )
+                (Predicate.fromPredicate $ makeCeilPredicate framed)
+                [ (ElemVar xInt, mkElemVar uInt)
+                , (ElemVar yInt, mkElemVar vInt)
+                , (ElemVar mMap, framed)
+                ]
     , matches "(x:Int, [x:Int -> y:Int] m:Map) matches (0, [0 -> 1, 1 -> 2])"
         (mkPair (mkElemVar xInt) (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap]))
         (mkPair (mkInt 0   ) (mkMap [(mkInt 0, mkInt 1), (mkInt 1, mkInt 2)] []))
@@ -929,13 +969,18 @@ test_matching_Map =
         ]
     ]
 
-uInt, vInt, xInt, yInt, zInt, mMap, m'Map :: ElementVariable Variable
+uInt, u'Int, vInt, v'Int, xInt, x'Int, yInt, y'Int, zInt, mMap, m'Map
+    :: ElementVariable Variable
 mMap = elemVarS (testId "mMap") Test.mapSort
 m'Map = elemVarS (testId "m'Map") Test.mapSort
 uInt = elemVarS (testId "uInt") Test.intSort
+u'Int = elemVarS (testId "u'Int") Test.intSort
 vInt = elemVarS (testId "vInt") Test.intSort
+v'Int = elemVarS (testId "v'Int") Test.intSort
 xInt = elemVarS (testId "xInt") Test.intSort
+x'Int = elemVarS (testId "x'Int") Test.intSort
 yInt = elemVarS (testId "yInt") Test.intSort
+y'Int = elemVarS (testId "y'Int") Test.intSort
 zInt = elemVarS (testId "zInt") Test.intSort
 
 mkInt :: Integer -> TermLike Variable
@@ -1002,22 +1047,36 @@ doesn'tMatch = withMatch (assertBool "" . isUnsupportedPatterns)
             Left (UnificationError (UnsupportedPatterns !_ !_ !_)) -> True
             _ -> False
 
+matches'
+    :: GHC.HasCallStack
+    => TestName
+    -> TermLike Variable
+    -> TermLike Variable
+    -> Predicate Variable
+    -> UnwrappedSubstitution
+    -> TestTree
+matches' comment term1 term2 predicate' substs =
+    matchesAux comment term1 term2 (Just (predicate', substs))
+
 matches
     :: GHC.HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
-    -> [(UnifiedVariable.UnifiedVariable Variable, TermLike Variable)]
+    -> UnwrappedSubstitution
     -> TestTree
 matches comment term1 term2 substs =
-    matchesAux comment term1 term2 (Just substs)
+    matchesAux comment term1 term2 (Just (Predicate.top, substs))
+
+type UnwrappedSubstitution =
+    [(UnifiedVariable.UnifiedVariable Variable, TermLike Variable)]
 
 matchesAux
     :: GHC.HasCallStack
     => TestName
     -> TermLike Variable
     -> TermLike Variable
-    -> Maybe [(UnifiedVariable.UnifiedVariable Variable, TermLike Variable)]
+    -> Maybe (Predicate Variable, UnwrappedSubstitution)
     -> TestTree
 matchesAux comment term1 term2 expect =
     withMatch check comment term1 term2
@@ -1025,8 +1084,9 @@ matchesAux comment term1 term2 expect =
     solution =
         case expect of
             Nothing -> OrPredicate.bottom
-            Just substs ->
+            Just (predicate', substs) ->
                 OrPredicate.fromPredicate
+                $ Predicate.andCondition predicate'
                 $ Predicate.fromSubstitution
                 $ Substitution.unsafeWrap substs
     check (Left _) = assertFailure "Expected matching solution."
