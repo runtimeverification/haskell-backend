@@ -19,6 +19,9 @@ import Control.Monad.Except
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
+import Data.Functor
+    ( (<&>)
+    )
 import Data.Functor.Const
 import Data.Functor.Foldable
     ( Base
@@ -155,11 +158,6 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
             (getNonSimplifiableDependencies interestingVariables)
             substitution
 
-    sortedSubstitution
-        :: [UnifiedVariable variable]
-        -> [(UnifiedVariable variable, TermLike variable)]
-    sortedSubstitution = fmap (variableToSubstitution substitution)
-
     normalize'
         :: [UnifiedVariable variable]
         -> Predicate variable
@@ -169,17 +167,7 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
         Predicate.fromSubstitution . Substitution.unsafeWrap
         $ backSubstitute sorted
       where
-        sorted = sortedSubstitution order
-
-variableToSubstitution
-    :: (Ord variable, Show variable)
-    => Map (UnifiedVariable variable) (TermLike variable)
-    -> UnifiedVariable variable
-    -> (UnifiedVariable variable, TermLike variable)
-variableToSubstitution varToPattern var =
-    case Map.lookup var varToPattern of
-        Just patt -> (var, patt)
-        Nothing   -> error ("variable " ++ show var ++ " not found.")
+        sorted = order <&> \v -> (v, (Map.!) substitution v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 
