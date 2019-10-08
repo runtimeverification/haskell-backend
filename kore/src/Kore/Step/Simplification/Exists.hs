@@ -44,7 +44,6 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
     )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
     ( Substitution
@@ -134,7 +133,7 @@ makeEvaluate
     -> simplifier (OrPattern variable)
 makeEvaluate variable original
   = fmap OrPattern.fromPatterns $ Branch.gather $ do
-    normalized <- Substitution.normalize original
+    normalized <- simplifyPredicate original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->
