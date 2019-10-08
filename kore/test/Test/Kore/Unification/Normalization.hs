@@ -1,4 +1,4 @@
-module Test.Kore.Unification.SubstitutionNormalization
+module Test.Kore.Unification.Normalization
     (test_substitutionNormalization) where
 
 import Test.Tasty
@@ -19,8 +19,8 @@ import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
     )
+import Kore.Unification.Normalization
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.SubstitutionNormalization
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )

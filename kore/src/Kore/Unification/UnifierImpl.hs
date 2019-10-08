@@ -43,13 +43,13 @@ import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Error
     ( substitutionToUnifyOrSubError
     )
+import Kore.Unification.Normalization
+    ( normalizeSubstitution
+    )
 import Kore.Unification.Substitution
     ( Substitution
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.SubstitutionNormalization
-    ( normalizeSubstitution
-    )
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable

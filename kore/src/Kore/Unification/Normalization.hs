@@ -1,14 +1,9 @@
-{-|
-Module      : Kore.Unification.SubstitutionNormalization
-Description : Normalization for substitutions resulting from unification, so
-              that they can be safely used on the unified term.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
-module Kore.Unification.SubstitutionNormalization
+module Kore.Unification.Normalization
     ( normalizeSubstitution
     ) where
 
