@@ -37,15 +37,11 @@ import qualified Data.Set as Set
 import Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate
-    ( Conditional (..)
-    , Predicate
+    ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeTruePredicate
-    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
@@ -187,11 +183,7 @@ normalizeSortedSubstitution
     -> [(UnifiedVariable variable, TermLike variable)]
     -> Predicate variable
 normalizeSortedSubstitution [] result _ =
-    Conditional
-        { term = ()
-        , predicate = makeTruePredicate
-        , substitution = Substitution.unsafeWrap result
-        }
+    Predicate.fromSubstitution $ Substitution.unsafeWrap result
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
     result
