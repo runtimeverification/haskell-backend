@@ -155,7 +155,7 @@ normalizeSubstitution' substitution = do
         -> Predicate variable
     normalizeSortedSubstitution' order
       | any (not . isSatisfiableSubstitution) sorted = Predicate.bottom
-      | otherwise = normalizeSortedSubstitution sorted mempty
+      | otherwise = backSubstitute sorted mempty
       where
         sorted = dropTrivialSubstitutions $ sortedSubstitution order
 
@@ -178,23 +178,30 @@ variableToSubstitution varToPattern var =
         Just patt -> (var, patt)
         Nothing   -> error ("variable " ++ show var ++ " not found.")
 
-{- |
+{- | Apply a topologically sorted list of substitutions to itself.
+
+Apply the substitutions in order so that finally no substitution in the list
+depends on any other. The substitution must be topologically sorted.
+
+No substitution variable may appear in its own assignment.
+Every substitution must be satisfiable, see 'isSatisfiableSubstitution'.
+
  -}
-normalizeSortedSubstitution
+backSubstitute
     :: SimplifierVariable variable
     => [(UnifiedVariable variable, TermLike variable)]
     -- ^ Sorted substitution
     -> [(UnifiedVariable variable, TermLike variable)]
     -- ^ Partial (intermediate) result
     -> Predicate variable
-normalizeSortedSubstitution [] result =
+backSubstitute [] result =
     Predicate.fromSubstitution $ Substitution.unsafeWrap result
-normalizeSortedSubstitution ((var, varPattern) : unprocessed) substitution =
+backSubstitute ((var, varPattern) : unprocessed) substitution =
     let
         substitutedVarPattern =
             TermLike.substitute (Map.fromList substitution) varPattern
     in
-        normalizeSortedSubstitution unprocessed
+        backSubstitute unprocessed
         $ (var, substitutedVarPattern) : substitution
 
 isTrivialSubstitution
