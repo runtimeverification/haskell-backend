@@ -88,11 +88,19 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
         Left (TopologicalSortCycles cycleVariables) ->
             case topologicalSort nonSimplifiableDependencies of
                 Left (TopologicalSortCycles cycleVariables')
-                  | all isRenaming cycleVariables' -> renamingCycle
-                  | all isSetVar cycleVariables' -> setCtorCycle cycleVariables'
-                  | otherwise -> mixedCtorCycle cycleVariables'
+                  | all isRenaming cycleVariables' ->
+                    -- All substitutions in the cycle are variable-only renaming
+                    -- substitutions.
+                    renamingCycle
+                  | all isSetVar cycleVariables' ->
+                    -- All variables in the cycle are set variables.
+                    setCtorCycle cycleVariables'
+                  | otherwise ->
+                    mixedCtorCycle cycleVariables'
                 Right _ ->
-                    Left (SimplifiableCycle cycleVariables)
+                    -- Removing the non-simplifiable dependencies removed the
+                    -- cycle, therefore the cycle is simplifiable.
+                    simplifiableCycle cycleVariables
         Right order -> pure (Sorted order)
     case topologicalSortResult of
         MixedCtorCycle _  -> pure Predicate.bottom
@@ -111,11 +119,14 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
             "Impossible: order on variables should prevent \
             \variable-only cycles!"
 
-    setCtorCycle nonSimplifiableCycle =
-        pure (SetCtorCycle nonSimplifiableCycle)
+    setCtorCycle variables =
+        pure (SetCtorCycle variables)
 
-    mixedCtorCycle nonSimplifiableCycle =
-        pure (MixedCtorCycle nonSimplifiableCycle)
+    mixedCtorCycle variables =
+        pure (MixedCtorCycle variables)
+
+    simplifiableCycle variables =
+        Left (SimplifiableCycle variables)
 
     assignBottom
         :: Map (UnifiedVariable variable) (TermLike variable)
