@@ -37,8 +37,6 @@ termLikeChildGen patternSort =
             ()
               | patternSort == stringMetaSort ->
                 mkStringLiteral . getStringLiteral <$> stringLiteralGen
-              | patternSort == charMetaSort ->
-                mkCharLiteral . getCharLiteral <$> charLiteralGen
               | otherwise ->
                 Gen.choice
                     [ mkElemVar <$> elementVariableGen patternSort

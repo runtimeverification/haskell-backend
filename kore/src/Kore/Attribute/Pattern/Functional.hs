@@ -182,11 +182,6 @@ instance Synthetic Functional (Const StringLiteral) where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 
--- | A 'CharLiteral' pattern is always 'Functional'.
-instance Synthetic Functional (Const CharLiteral) where
-    synthetic = const (Functional True)
-    {-# INLINE synthetic #-}
-
 -- | An 'Inhabitant' pattern is never 'Functional'.
 instance Synthetic Functional Inhabitant where
     synthetic = const (Functional False)

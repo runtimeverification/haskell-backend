@@ -379,7 +379,6 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
     , (BothT,   \_ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
     , (BothT,   \_ _ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ _ -> charLiteralAndEqualsAssumesDifferent, "charLiteralAndEqualsAssumesDifferent")
     , (AndT,    \_ _ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
@@ -1001,29 +1000,6 @@ stringLiteralAndEqualsAssumesDifferent
     second@(StringLiteral_ _)
   = Monad.Trans.lift $ cannotUnifyDomainValues first second
 stringLiteralAndEqualsAssumesDifferent _ _ = empty
-
-{-| Unify two literal characters.
-
-The two patterns are assumed to be inequal; therefore this case always returns
-@\\bottom@.
-
-See also: 'equalAndEquals'
-
- -}
-charLiteralAndEqualsAssumesDifferent
-    :: Eq variable
-    => SortedVariable variable
-    => Unparse variable
-    => MonadUnify unifier
-    => GHC.HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier a
-charLiteralAndEqualsAssumesDifferent
-    first@(CharLiteral_ _)
-    second@(CharLiteral_ _)
-  = Monad.Trans.lift $ cannotUnifyDomainValues first second
-charLiteralAndEqualsAssumesDifferent _ _ = empty
 
 {- | Unify any two function patterns.
 
