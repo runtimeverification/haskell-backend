@@ -55,14 +55,11 @@ import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
     )
+import Kore.Unification.Substitution
+    ( UnwrappedSubstitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
-
-data TopologicalSortResult variable
-  = MixedCtorCycle ![variable]
-  | SetCtorCycle ![variable]
-  | Sorted ![variable]
-  deriving (Show)
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
@@ -93,9 +90,14 @@ normalizeSubstitution substitution =
       where
         (variables, _) = unzip denormalized
 
-type UnwrappedSubstitution variable =
-    [(UnifiedVariable variable, TermLike variable)]
+{- | The result of /normalizing/ a substitution.
 
+'normalized' holds the part of the substitution was normalized successfully.
+
+'denormalized' holds the part of the substitution which was not normalized
+because it contained simplifiable cycles.
+
+ -}
 data Normalization variable =
     Normalization
         { normalized, denormalized :: !(UnwrappedSubstitution variable) }
@@ -110,10 +112,20 @@ instance Semigroup (Normalization variable) where
 instance Monoid (Normalization variable) where
     mempty = Normalization mempty mempty
 
+{- | 'normalize' a substitution as far as possible.
+
+The substitution is given as a 'Map', so there can be no duplicates.
+
+The result is @Nothing@ if the substitution is not satisfiable, for example
+because it contains pairs such as @x = \\bottom@ or because it contains
+constructor cycles with element variables.
+
+ -}
 normalize
     ::  forall variable
     .   SubstitutionVariable variable
     =>  Map (UnifiedVariable variable) (TermLike variable)
+    -- ^ De-duplicated substitution
     ->  Maybe (Normalization variable)
 normalize (dropTrivialSubstitutions -> substitution) =
     case topologicalSort allDependencies of
