@@ -31,11 +31,10 @@ import qualified Kore.Predicate.Predicate as Syntax
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Substitution
-    ( normalize
-    )
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
+import Kore.Unification.UnifierImpl as Unification
+import Kore.Unification.Unify as Unifier
 import Kore.Unparser
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
@@ -91,7 +90,7 @@ simplifyPartial
         Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
     -- for \bottom because patternOr is an OrPattern.
-    scatter (eraseTerm <$> patternOr)
+    Branch.scatter (eraseTerm <$> patternOr)
   where
     eraseTerm conditional
       | TopBottom.isTop (Pattern.term conditional)
@@ -101,3 +100,30 @@ simplifyPartial
             [ "Expecting a \\top term, but found:"
             , unparse conditional
             ]
+
+-- | Normalize the substitution.
+normalize
+    :: forall variable term simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    => Conditional variable term
+    -> BranchT simplifier (Conditional variable term)
+normalize Conditional { term, predicate, substitution } = do
+    -- We collect all the results here because we should promote the
+    -- substitution to the predicate when there is an error on *any* branch.
+    results <-
+        Monad.Trans.lift
+        $ Unifier.runUnifierT
+        $ Unification.normalizeOnce
+            Conditional { term = (), predicate, substitution }
+    case results of
+        Right normal -> Branch.scatter (applyTerm <$> normal)
+        Left _ ->
+            return Conditional
+                { term
+                , predicate =
+                    Syntax.Predicate.makeAndPredicate predicate
+                    $ Syntax.Predicate.fromSubstitution substitution
+                , substitution = mempty
+                }
+  where
+    applyTerm predicated = predicated { term }
