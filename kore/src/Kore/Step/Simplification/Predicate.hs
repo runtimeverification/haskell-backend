@@ -66,33 +66,21 @@ simplify times initial = do
     let Conditional { term = (), predicate, substitution } = normalized
         substitution' = Substitution.toMap substitution
         predicate' = Syntax.Predicate.substitute substitution' predicate
-    -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
-    -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
-    -- This was needed because, when we need to simplify 'requires' clauses,
-    -- this needs to run more than once.
-    if predicate' == predicate && times > 1
-        then return initial
-        else localPredicateSimplifier $ do
-            simplified <- simplifyPartial predicate'
+    simplified <- simplifyPartial predicate'
+    TopBottom.guardAgainstBottom simplified
 
-            let Conditional { substitution = simplifiedSubstitution } =
-                    simplified
+    let merged = simplified <> Predicate.fromSubstitution substitution
+    let Conditional { substitution = simplifiedSubstitution } = simplified
+    -- TODO(virgil): Optimize. Since both substitution and
+    -- simplifiedSubstitution have distinct variables, it is
+    -- enough to check that, say, simplifiedSubstitution's
+    -- variables are not among substitution's variables.
+    assertDistinctVariables substitution simplifiedSubstitution
 
-            if not (Predicate.hasSubstitution simplified)
-                then return simplified { substitution }
-                else do
-                    -- TODO(virgil): Optimize. Since both substitution and
-                    -- simplifiedSubstitution have distinct variables, it is
-                    -- enough to check that, say, simplifiedSubstitution's
-                    -- variables are not among substitution's variables.
-                    assertDistinctVariables substitution simplifiedSubstitution
-                    let merged = simplified <> Predicate.fromSubstitution substitution
-                    TopBottom.guardAgainstBottom merged
-                    simplify (times + 1) merged
-  where
-    substitutionSimplifier = PredicateSimplifier (simplify (times + 1))
-    localPredicateSimplifier =
-        localSimplifierPredicate (const substitutionSimplifier)
+    -- This check is no good: the substitution might have denormalized parts!
+    if not (Predicate.hasSubstitution simplified) || times > 16
+        then normalize merged
+        else simplify (times + 1) merged
 
 assertDistinctVariables
     :: forall variable m
