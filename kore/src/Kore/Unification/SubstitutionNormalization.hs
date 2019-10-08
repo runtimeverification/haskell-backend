@@ -155,7 +155,7 @@ normalizeSubstitution' substitution = do
         -> Predicate variable
     normalizeSortedSubstitution' order
       | any (not . isSatisfiableSubstitution) sorted = Predicate.bottom
-      | otherwise = backSubstitute sorted mempty
+      | otherwise = backSubstitute sorted
       where
         sorted = dropTrivialSubstitutions $ sortedSubstitution order
 
@@ -188,21 +188,28 @@ Every substitution must be satisfiable, see 'isSatisfiableSubstitution'.
 
  -}
 backSubstitute
-    :: SimplifierVariable variable
+    :: forall variable
+    .  SimplifierVariable variable
     => [(UnifiedVariable variable, TermLike variable)]
     -- ^ Sorted substitution
-    -> [(UnifiedVariable variable, TermLike variable)]
-    -- ^ Partial (intermediate) result
     -> Predicate variable
-backSubstitute [] result =
-    Predicate.fromSubstitution $ Substitution.unsafeWrap result
-backSubstitute ((var, varPattern) : unprocessed) substitution =
-    let
-        substitutedVarPattern =
-            TermLike.substitute (Map.fromList substitution) varPattern
-    in
-        backSubstitute unprocessed
-        $ (var, substitutedVarPattern) : substitution
+backSubstitute = worker []
+  where
+    worker
+        :: [(UnifiedVariable variable, TermLike variable)]
+        -- ^ Partial (intermediate) result
+        -> [(UnifiedVariable variable, TermLike variable)]
+        -- ^ Sorted substitution
+        -> Predicate variable
+    worker result [] =
+        Predicate.fromSubstitution $ Substitution.unsafeWrap result
+    worker substitution ((var, varPattern) : unprocessed) =
+        let
+            substitutedVarPattern =
+                TermLike.substitute (Map.fromList substitution) varPattern
+            substitution' = (var, substitutedVarPattern) : substitution
+        in
+            worker substitution' unprocessed
 
 isTrivialSubstitution
     :: Eq variable
