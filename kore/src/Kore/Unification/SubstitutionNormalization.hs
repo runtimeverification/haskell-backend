@@ -15,7 +15,7 @@ module Kore.Unification.SubstitutionNormalization
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad.Except
     ( ExceptT (..)
-    , throwError
+    , liftEither
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
@@ -80,13 +80,13 @@ normalizeSubstitution
     .  (MonadSimplify m, SimplifierVariable variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
-normalizeSubstitution = normalizeSubstitution'
+normalizeSubstitution = liftEither . normalizeSubstitution'
 
 normalizeSubstitution'
-    :: forall m variable
-    .  (MonadSimplify m, SimplifierVariable variable)
+    :: forall variable
+    .  SimplifierVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
-    -> ExceptT SubstitutionError m (Predicate variable)
+    -> Either SubstitutionError (Predicate variable)
 normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
     let
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
@@ -121,9 +121,9 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
             nonSimplifiableSortResult =
                 topologicalSort nonSimplifiableDependencies
     case topologicalSortConverted of
-        Left err -> throwError err
-        Right (MixedCtorCycle _) -> return Predicate.bottom
-        Right (Sorted vars) -> return $ normalize' vars
+        Left err -> Left err
+        Right (MixedCtorCycle _) -> pure Predicate.bottom
+        Right (Sorted vars) -> pure $ normalize' vars
         Right (SetCtorCycle vars) ->
             let substitution' = Foldable.foldl' assignBottom substitution vars
             in normalizeSubstitution' substitution'
