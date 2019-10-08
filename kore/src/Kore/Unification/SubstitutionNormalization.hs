@@ -155,7 +155,10 @@ normalizeSubstitution' substitution = do
         :: [UnifiedVariable variable]
         -> Predicate variable
     normalizeSortedSubstitution' s =
-        normalizeSortedSubstitution (sortedSubstitution s) mempty
+        let
+            sorted = dropTrivialSubstitutions $ sortedSubstitution s
+        in
+            normalizeSortedSubstitution sorted mempty
 
     makeRhsBottom
         :: (UnifiedVariable variable -> Bool)
@@ -198,6 +201,19 @@ normalizeSortedSubstitution
               in normalizeSortedSubstitution
                   unprocessed
                   ((var, substitutedVarPattern) : substitution)
+
+isTrivialSubstitution
+    :: Eq variable
+    => (UnifiedVariable variable, TermLike variable)
+    -> Bool
+isTrivialSubstitution (variable, Var_ variable') = variable == variable'
+isTrivialSubstitution _ = False
+
+dropTrivialSubstitutions
+    :: Eq variable
+    => [(UnifiedVariable variable, TermLike variable)]
+    -> [(UnifiedVariable variable, TermLike variable)]
+dropTrivialSubstitutions = filter (not . isTrivialSubstitution)
 
 {- | Calculate the dependencies of a substitution.
 
