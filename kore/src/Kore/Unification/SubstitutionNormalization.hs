@@ -17,6 +17,8 @@ import Control.Monad.Except
     ( ExceptT (..)
     , throwError
     )
+import qualified Control.Monad.State.Strict as State
+import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Functor.Foldable
     ( Base
@@ -193,23 +195,14 @@ backSubstitute
     => [(UnifiedVariable variable, TermLike variable)]
     -- ^ Sorted substitution
     -> Predicate variable
-backSubstitute = worker []
+backSubstitute sorted =
+    Predicate.fromSubstitution . Substitution.unsafeWrap
+    $ State.execState (Foldable.traverse_ worker sorted) []
   where
-    worker
-        :: [(UnifiedVariable variable, TermLike variable)]
-        -- ^ Partial (intermediate) result
-        -> [(UnifiedVariable variable, TermLike variable)]
-        -- ^ Sorted substitution
-        -> Predicate variable
-    worker result [] =
-        Predicate.fromSubstitution $ Substitution.unsafeWrap result
-    worker substitution ((var, varPattern) : unprocessed) =
-        let
-            substitutedVarPattern =
-                TermLike.substitute (Map.fromList substitution) varPattern
-            substitution' = (var, substitutedVarPattern) : substitution
-        in
-            worker substitution' unprocessed
+    worker (variable, termLike) = do
+        substitution <- State.get
+        let termLike' = TermLike.substitute (Map.fromList substitution) termLike
+        State.modify' $ (:) (variable, termLike')
 
 isTrivialSubstitution
     :: Eq variable
