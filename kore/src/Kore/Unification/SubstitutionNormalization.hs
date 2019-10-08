@@ -81,7 +81,14 @@ normalizeSubstitution
     .  (MonadSimplify m, SimplifierVariable variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
-normalizeSubstitution substitution = do
+normalizeSubstitution = normalizeSubstitution'
+
+normalizeSubstitution'
+    :: forall m variable
+    .  (MonadSimplify m, SimplifierVariable variable)
+    => Map (UnifiedVariable variable) (TermLike variable)
+    -> ExceptT SubstitutionError m (Predicate variable)
+normalizeSubstitution' substitution = do
     let
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
         -- Topological cycles with non-ctors are returned as Left errors.
