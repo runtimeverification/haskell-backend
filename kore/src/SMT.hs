@@ -246,23 +246,13 @@ instance Logger.WithLog Logger.LogMessage NoSMT where
         locally'
             :: Logger.LogAction IO Logger.SomeEntry
             -> Logger.LogAction IO Logger.SomeEntry
-        locally' (Logger.LogAction la) =
+        locally' la@(Logger.LogAction action) =
             Logger.LogAction $ \entry ->
-                case Logger.fromEntry @Logger.LogMessage entry of
-                    Nothing -> la entry
+                case Logger.fromEntry entry of
+                    Nothing -> action entry
                     Just logMessage ->
                         (\(Logger.LogAction f) -> f logMessage)
-                        $ locally (_2 $ Logger.LogAction la)
-            -- _2 :: Logger.LogAction IO Logger.SomeEntry
-            --    -> Logger.LogAction IO Logger.LogMessage
-
-            -- This doesn't work either.
-            -- Profunctor.dimap
-            --     (contramap Logger.toEntry)
-            --     (contramap (Logger.fromEntry @Logger.LogMessage))
-            --     locally
-            --     $ logger
-            --
+                            $ locally (contramap Logger.toEntry la)
 
 instance MonadSMT NoSMT where
     withSolver = id
