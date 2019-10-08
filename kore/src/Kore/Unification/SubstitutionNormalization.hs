@@ -80,15 +80,15 @@ normalizeSubstitution
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution substitution = do
-    normalized <- liftEither $ normalizeSubstitution' substitution
+    normalized <- liftEither $ normalize substitution
     return $ fromMaybe Predicate.bottom normalized
 
-normalizeSubstitution'
+normalize
     :: forall variable
     .  SimplifierVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> Either SubstitutionError (Maybe (Predicate variable))
-normalizeSubstitution' (dropTrivialSubstitutions -> substitution) =
+normalize (dropTrivialSubstitutions -> substitution) =
     case topologicalSort allDependencies of
         Right order -> pure . Just $ normalize' order
         Left _ ->
@@ -120,7 +120,7 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) =
 
     setCtorCycle variables = do
         let substitution' = Foldable.foldl' assignBottom substitution variables
-        normalizeSubstitution' substitution'
+        normalize substitution'
 
     mixedCtorCycle _ = pure Nothing
 
