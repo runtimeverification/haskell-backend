@@ -25,7 +25,6 @@ import Test.Kore.Parser
 test_koreParser :: [TestTree]
 test_koreParser =
     [ testGroup "objectSortParser" objectSortParserTests
-    , testGroup "metaSortConverter" metaSortConverterTests
     , testGroup "objectSortListParser" objectSortListParserTests
     , testGroup "objectSortVariableParser" objectSortVariableParserTests
     , testGroup
@@ -71,7 +70,7 @@ test_koreParser =
 
 objectSortParserTests :: [TestTree]
 objectSortParserTests =
-    parseTree objectSortParser
+    parseTree sortParser
         [ success "var" $
             SortVariableSort ( SortVariable (testId "var") )
         , success "sort1{}" $
@@ -107,19 +106,9 @@ objectSortParserTests =
         , FailureWithoutMessage ["var1, var2", "var1{var1 var2}"]
         ]
 
-metaSortConverterTests :: [TestTree]
-metaSortConverterTests =
-    parseTree metaSortParser
-        [ success "#Char{}" charMetaSort
-        , success "#String{}" stringMetaSort
-        , FailureWithoutMessage
-            [ "var1, var2", "var1{var1 var2}"
-            ]
-        ]
-
 objectSortListParserTests :: [TestTree]
 objectSortListParserTests =
-    parseTree (inParenthesesListParser objectSortParser)
+    parseTree (inParenthesesListParser sortParser)
         [ success "()" []
         , success "(var)"
             [ sortVariableSort "var" ]
@@ -215,7 +204,7 @@ objectSymbolParserTests =
 
 variableParserTests :: [TestTree]
 variableParserTests =
-    parseTree singletonVariableParser
+    parseTree elementVariableParser
         [ success "v:s"
             $ ElementVariable Variable
                 { variableName = testId "v"

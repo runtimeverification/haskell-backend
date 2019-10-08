@@ -62,12 +62,6 @@ test_patternAttributes =
                     levelShow
                     (FunctionalStringLiteral (StringLiteral "10"))
                 )
-            assertEqual "FunctionalCharLiteral"
-                (FunctionalCharLiteral (CharLiteral 'a'))
-                (Proof.Functional.mapVariables
-                    levelShow
-                    (FunctionalCharLiteral (CharLiteral 'a'))
-                )
         )
     , testCase "isConstructorLikePattern"
         (do
@@ -113,15 +107,6 @@ test_patternAttributes =
                 (isConstructorLikePattern
                     Mock.metadataTools
                     str
-                )
-            let
-                chr :: TermLike Variable
-                chr = mkCharLiteral 'a'
-            assertEqual "char literals are constructor-like"
-                (Right [ConstructorLikeProof])
-                (isConstructorLikePattern
-                    Mock.metadataTools
-                    chr
                 )
             let
                 dv :: TermLike Variable
@@ -207,15 +192,6 @@ test_patternAttributes =
                     $ undefined :< StringLiteralF sl
                 )
             let
-                cl :: Const CharLiteral b
-                cl = Const ( CharLiteral { getCharLiteral = 'a' } )
-            assertEqual "CharLiteralF is constructor-like-top"
-                True
-                (isConstructorLikeTop
-                    Mock.metadataTools
-                    $ undefined :< CharLiteralF cl
-                )
-            let
                 a :: And Sort Symbol
                 a = And
                         { andSort = Mock.testSort
@@ -281,16 +257,6 @@ test_patternAttributes =
                 (isConstructorModuloLikePattern
                     Mock.metadataTools
                     str
-                )
-            let
-                chr :: TermLike Variable
-                chr = mkCharLiteral 'a'
-            assertEqual
-                "char literals are constructor-modulo-like"
-                (Right [ConstructorLikeProof])
-                (isConstructorModuloLikePattern
-                    Mock.metadataTools
-                    chr
                 )
             let
                 dv :: TermLike Variable

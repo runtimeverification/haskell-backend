@@ -8,10 +8,10 @@ build:
 	$(stack) build $(package)
 
 build-dirty:
-	$(stack) build --ghc-options=-fforce-recomp --pedantic $(package)
+	$(stack) build --ghc-options=-fforce-recomp --pedantic $(package) --work-dir pedantic
 
 run:
-	$(stack) build --pedantic --fast && $(stack) exec -- $(package)
+	$(stack) build --pedantic --fast --work-dir pedantic && $(stack) exec -- $(package)
 
 install:
 	$(stack) install
@@ -29,7 +29,10 @@ test-ghci:
 	$(stack) ghci $(package):test:$(package)-test
 
 pedantic:
-	$(stack) build --haddock --no-haddock-deps --coverage --bench --no-run-benchmarks --test --no-run-tests --pedantic
+	$(stack) build --haddock --no-haddock-deps --bench --no-run-benchmarks --test --no-run-tests --pedantic --work-dir pedantic
+
+coverage:
+	$(stack) test --coverage --work-dir coverage
 
 ghcid:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-exec"

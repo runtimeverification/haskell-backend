@@ -384,8 +384,6 @@ verifyBasePattern (_ :< patternF) =
             Internal.RewritesF <$> verifyRewrites rewrites
         Syntax.StringLiteralF str ->
             Internal.StringLiteralF <$> verifyStringLiteral str
-        Syntax.CharLiteralF char ->
-            Internal.CharLiteralF <$> verifyCharLiteral char
         Syntax.TopF top ->
             Internal.TopF <$> verifyTop top
         Syntax.VariableF (Const variable) ->
@@ -705,11 +703,6 @@ verifyStringLiteral
     -> PatternVerifier (Const StringLiteral Verified.Pattern)
 verifyStringLiteral = sequence
 
-verifyCharLiteral
-    :: Const CharLiteral (PatternVerifier Verified.Pattern)
-    -> PatternVerifier (Const CharLiteral Verified.Pattern)
-verifyCharLiteral = sequence
-
 verifyVariableDeclaration
     :: UnifiedVariable Variable -> PatternVerifier VerifySuccess
 verifyVariableDeclaration variable = do
@@ -826,7 +819,6 @@ patternNameForContext (NuF _) = "\\nu"
 patternNameForContext (OrF _) = "\\or"
 patternNameForContext (RewritesF _) = "\\rewrites"
 patternNameForContext (StringLiteralF _) = "<string>"
-patternNameForContext (CharLiteralF _) = "<char>"
 patternNameForContext (TopF _) = "\\top"
 patternNameForContext (VariableF (Const (ElemVar variable))) =
     "element variable '" <> variableNameForContext (getElementVariable variable) <> "'"

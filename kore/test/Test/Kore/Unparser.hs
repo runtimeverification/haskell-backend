@@ -159,17 +159,6 @@ test_unparse =
             )
             "[\\top{#CharList{}}()]"
         , unparseTest
-            (Attributes
-                { getAttributes =
-                    [ asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
-                    , asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
-                    ]
-                }::Attributes
-            )
-            "[''', ''']"
-        , unparseTest
             (Pattern.andCondition
                 (Pattern.topOf Mock.topSort)
                 (Predicate.fromSubstitution $ Substitution.wrap
@@ -199,11 +188,9 @@ test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Object testId" $ roundtrip idGen idParser
+        [ testProperty "Generic testId" $ roundtrip idGen idParser
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
-        , testProperty "CharLiteral" $
-            roundtrip charLiteralGen charLiteralParser
         , testProperty "Object Symbol" $
             roundtrip symbolGen symbolParser
         , testProperty "Object Alias" $
@@ -211,7 +198,7 @@ test_parse =
         , testProperty "Object SortVariable" $
             roundtrip sortVariableGen sortVariableParser
         , testProperty "Object Sort" $
-            roundtrip (standaloneGen sortGen) objectSortParser
+            roundtrip (standaloneGen sortGen) sortParser
         , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $
