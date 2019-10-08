@@ -46,13 +46,12 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
     )
+import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 
 data TopologicalSortResult variable
@@ -154,11 +153,11 @@ normalizeSubstitution' substitution = do
     normalizeSortedSubstitution'
         :: [UnifiedVariable variable]
         -> Predicate variable
-    normalizeSortedSubstitution' s =
-        let
-            sorted = dropTrivialSubstitutions $ sortedSubstitution s
-        in
-            normalizeSortedSubstitution sorted mempty
+    normalizeSortedSubstitution' order
+      | any (not . isSatisfiableSubstitution) sorted = Predicate.bottom
+      | otherwise = normalizeSortedSubstitution sorted mempty
+      where
+        sorted = dropTrivialSubstitutions $ sortedSubstitution order
 
     makeRhsBottom
         :: (UnifiedVariable variable -> Bool)
@@ -190,17 +189,13 @@ normalizeSortedSubstitution
     -> Predicate variable
 normalizeSortedSubstitution [] result =
     Predicate.fromSubstitution $ Substitution.unsafeWrap result
-normalizeSortedSubstitution
-    ((var, varPattern) : unprocessed)
-    substitution
-  = case (var, Cofree.tailF (Recursive.project varPattern)) of
-        (UnifiedVariable.ElemVar _, BottomF _) -> Predicate.bottom
-        _ -> let
-              substitutedVarPattern =
-                  TermLike.substitute (Map.fromList substitution) varPattern
-              in normalizeSortedSubstitution
-                  unprocessed
-                  ((var, substitutedVarPattern) : substitution)
+normalizeSortedSubstitution ((var, varPattern) : unprocessed) substitution =
+    let
+        substitutedVarPattern =
+            TermLike.substitute (Map.fromList substitution) varPattern
+    in
+        normalizeSortedSubstitution unprocessed
+        $ (var, substitutedVarPattern) : substitution
 
 isTrivialSubstitution
     :: Eq variable
@@ -214,6 +209,12 @@ dropTrivialSubstitutions
     => [(UnifiedVariable variable, TermLike variable)]
     -> [(UnifiedVariable variable, TermLike variable)]
 dropTrivialSubstitutions = filter (not . isTrivialSubstitution)
+
+isSatisfiableSubstitution
+    :: (UnifiedVariable variable, TermLike variable)
+    -> Bool
+isSatisfiableSubstitution (variable, termLike) =
+    not $ isElemVar variable && isBottom termLike
 
 {- | Calculate the dependencies of a substitution.
 
