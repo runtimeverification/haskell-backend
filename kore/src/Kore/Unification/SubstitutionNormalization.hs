@@ -128,7 +128,7 @@ normalizeSubstitution' substitution = do
         Left err -> throwError err
         Right (MixedCtorCycle _) -> return Predicate.bottom
         Right (Sorted vars) -> lift $ normalizeSortedSubstitution' vars
-        Right (SetCtorCycle vars) -> normalizeSubstitution
+        Right (SetCtorCycle vars) -> normalizeSubstitution'
             $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
   where
     isVariable :: TermLike variable -> Bool
