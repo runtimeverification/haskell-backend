@@ -15,7 +15,6 @@ module Kore.Unification.SubstitutionNormalization
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad.Except
     ( ExceptT (..)
-    , lift
     , throwError
     )
 import Data.Functor.Const
@@ -127,7 +126,7 @@ normalizeSubstitution' substitution = do
     case topologicalSortConverted of
         Left err -> throwError err
         Right (MixedCtorCycle _) -> return Predicate.bottom
-        Right (Sorted vars) -> lift $ normalizeSortedSubstitution' vars
+        Right (Sorted vars) -> return $ normalizeSortedSubstitution' vars
         Right (SetCtorCycle vars) -> normalizeSubstitution'
             $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
   where
@@ -161,7 +160,7 @@ normalizeSubstitution' substitution = do
 
     normalizeSortedSubstitution'
         :: [UnifiedVariable variable]
-        -> m (Predicate variable)
+        -> Predicate variable
     normalizeSortedSubstitution' s =
         normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
 
@@ -185,13 +184,13 @@ variableToSubstitution varToPattern var =
         Nothing   -> error ("variable " ++ show var ++ " not found.")
 
 normalizeSortedSubstitution
-    :: (Monad m, SimplifierVariable variable)
+    :: SimplifierVariable variable
     => [(UnifiedVariable variable, TermLike variable)]
     -> [(UnifiedVariable variable, TermLike variable)]
     -> [(UnifiedVariable variable, TermLike variable)]
-    -> m (Predicate variable)
+    -> Predicate variable
 normalizeSortedSubstitution [] result _ =
-    return Conditional
+    Conditional
         { term = ()
         , predicate = makeTruePredicate
         , substitution = Substitution.unsafeWrap result
@@ -201,7 +200,7 @@ normalizeSortedSubstitution
     result
     substitution
   = case (var, Cofree.tailF (Recursive.project varPattern)) of
-        (UnifiedVariable.ElemVar _, BottomF _) -> return Predicate.bottom
+        (UnifiedVariable.ElemVar _, BottomF _) -> Predicate.bottom
         (rvar, VariableF (Const var'))
           | rvar == var' ->
             normalizeSortedSubstitution unprocessed result substitution
