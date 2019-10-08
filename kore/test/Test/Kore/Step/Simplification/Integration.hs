@@ -196,13 +196,13 @@ test_simplificationIntegration =
                 )
                 initial
         assertEqual "" expect actual
-    , testCase "aaa function application with top predicate" $ do
+    , testCase "function application with top predicate" $ do
         let requirement =
                 makeEqualsPredicate (Mock.f (mkElemVar Mock.x)) (Mock.g Mock.b)
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
-                    { term = Mock.g Mock.a
+                    { term = Mock.functionalConstr11 $ Mock.g Mock.a
                     , predicate = requirement
                     , substitution = mempty
                     }
@@ -225,21 +225,20 @@ test_simplificationIntegration =
                     { term =
                         mkExists
                             Mock.z
-                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            (Mock.functionalConstr11
+                                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                            )
                     , predicate = requirement
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-    , testCase "aaa function application with top predicate (variable capture)" $ do
+    , testCase "simplification with top predicate (variable capture)" $ do
         let requirement =
                 makeEqualsPredicate (Mock.f (mkElemVar Mock.x)) (Mock.g Mock.b)
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
-                    { term =
-                        mkExists
-                            Mock.x
-                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    { term = mkExists Mock.var_x_0 (mkElemVar Mock.var_x_0)
                     , predicate = requirement
                     , substitution = mempty
                     }
@@ -259,10 +258,100 @@ test_simplificationIntegration =
                     )
                 )
                 Conditional
-                    { term =
-                        mkExists
-                            Mock.x
-                            (Mock.functionalConstr10 (mkElemVar Mock.x))
+                    { term = mkExists Mock.x (mkElemVar Mock.x)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    , testCase "simplification with top predicate (set variable capture)" $ do
+        let requirement =
+                makeEqualsPredicate (Mock.f (mkSetVar Mock.setX)) (Mock.g Mock.b)
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkNu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ axiom
+                                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = mkNu Mock.setX (mkSetVar Mock.setX)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    , testCase "simplification with top predicate (set variable capture)" $ do
+        let requirement =
+                makeEqualsPredicate (Mock.f (mkSetVar Mock.setX)) (Mock.g Mock.b)
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkMu Mock.var_setX_0 (mkSetVar Mock.var_setX_0)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ axiom
+                                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = mkMu Mock.setX (mkSetVar Mock.setX)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+    , testCase "simplification with top predicate (variable capture)" $ do
+        let requirement =
+                makeEqualsPredicate (Mock.f (mkElemVar Mock.x)) (Mock.g Mock.b)
+            expect =
+                OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkForall Mock.var_x_0 (mkElemVar Mock.var_x_0)
+                    , predicate = requirement
+                    , substitution = mempty
+                    }
+                ]
+        actual <-
+            evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [ (AxiomIdentifier.Application Mock.functionalConstr10Id
+                          , [ axiom
+                                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                                (Mock.g Mock.a)
+                                requirement
+                            ]
+                          )
+                        ]
+                    )
+                )
+                Conditional
+                    { term = mkForall Mock.x (mkElemVar Mock.x)
                     , predicate = requirement
                     , substitution = mempty
                     }

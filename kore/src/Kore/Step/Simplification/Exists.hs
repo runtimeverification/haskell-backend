@@ -300,10 +300,11 @@ splitSubstitution variable substitution =
         maybe (Right dependent) Left
         $ Map.lookup (ElemVar variable) (Substitution.toMap dependent)
 
-{- | Existentially quantify the variable an 'Pattern'.
+{- | Existentially quantify the variable in a 'Pattern'.
 
-The substitution is assumed to depend on the quantified variable. The quantifier
-is lowered onto the 'term' or 'predicate' alone, or omitted, if possible.
+The substitution is assumed to not depend on the quantified variable.
+The quantifier is lowered onto the 'term' or 'predicate' alone, or omitted,
+if possible.
 
  -}
 quantifyPattern

@@ -14,16 +14,25 @@ import Control.Comonad.Trans.Cofree
     )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
+import Data.Functor.Identity
+import qualified Data.Map as Map
+import Data.Maybe
+    ( fromJust
+    )
+import qualified Data.Set as Set
 
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
     )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -103,7 +112,14 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
-
+import qualified Kore.Substitute as Substitute
+import qualified Kore.Variables.Binding as Binding
+import Kore.Variables.Fresh
+    ( refreshVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -136,7 +152,10 @@ simplifyToOr term predicate =
 
 simplifyInternal
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .   (SimplifierVariable variable
+        , Substitute.SubstitutionVariable variable
+        , MonadSimplify simplifier
+        )
     => TermLike variable
     -> Predicate variable
     -> simplifier (OrPattern variable)
@@ -145,6 +164,9 @@ simplifyInternal term predicate = simplifyInternalWorker term
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
         Nothing -> id
         Just identifier -> Profiler.identifierSimplification identifier
+
+    predicateFreeVars =
+        FreeVariables.getFreeVariables $ Predicate.freeVariables predicate
 
     simplifyChildren
         :: Traversable t
@@ -171,8 +193,10 @@ simplifyInternal term predicate = simplifyInternalWorker term
                 Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->
                 Equals.simplify predicate =<< simplifyChildren equalsF
-            ExistsF existsF ->
-                Exists.simplify =<< simplifyChildren existsF
+            ExistsF _ ->
+                let _ :< ExistsF existsF' = Recursive.project . fromJust
+                        $ refreshBinder termLike
+                in  Exists.simplify =<< simplifyChildren existsF'
             IffF iffF ->
                 Iff.simplify =<< simplifyChildren iffF
             ImpliesF impliesF ->
@@ -187,10 +211,19 @@ simplifyInternal term predicate = simplifyInternalWorker term
             DomainValueF domainValueF ->
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
-            ForallF forallF -> Forall.simplify <$> simplifyChildren forallF
+            ForallF _ ->
+                let _ :< ForallF forallF' = Recursive.project . fromJust
+                        $ refreshBinder termLike
+                in  Forall.simplify <$> simplifyChildren forallF'
             InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
-            MuF muF -> Mu.simplify <$> simplifyChildren muF
-            NuF nuF -> Nu.simplify <$> simplifyChildren nuF
+            MuF _ ->
+                let _ :< MuF muF' = Recursive.project . fromJust
+                        $ refreshBinder termLike
+                in  Mu.simplify <$> simplifyChildren muF'
+            NuF _ ->
+                let _ :< NuF nuF' = Recursive.project . fromJust
+                        $ refreshBinder termLike
+                in  Nu.simplify <$> simplifyChildren nuF'
             -- TODO(virgil): Move next up through patterns.
             NextF nextF -> Next.simplify <$> simplifyChildren nextF
             OrF orF -> Or.simplify <$> simplifyChildren orF
@@ -204,3 +237,34 @@ simplifyInternal term predicate = simplifyInternalWorker term
                 return $ CharLiteral.simplify (getConst charLiteralF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
+
+    refreshBinder :: TermLike variable -> Maybe (TermLike variable)
+    refreshBinder termLike =
+        runIdentity <$> Binding.matchWith Binding.traverseBinder worker termLike
+      where
+        worker
+            :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
+            -> Identity
+                (Binding.Binder (UnifiedVariable variable) (TermLike variable))
+        worker binder@Binding.Binder { binderVariable, binderChild }
+          | binderVariable `Set.member` predicateFreeVars = do
+            let existsFreeVars =
+                    FreeVariables.getFreeVariables
+                    $ TermLike.freeVariables binderChild
+                fresh =
+                    fromJust
+                    $ refreshVariable
+                        (predicateFreeVars <> existsFreeVars)
+                        binderVariable
+                freshChild =
+                    TermLike.substitute
+                        (Map.singleton
+                            binderVariable
+                            (TermLike.mkVar fresh)
+                        )
+                        binderChild
+            return Binding.Binder
+                { binderVariable = fresh
+                , binderChild = freshChild
+                }
+          | otherwise = return binder
