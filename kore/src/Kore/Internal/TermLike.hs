@@ -472,13 +472,17 @@ instance NFData variable => NFData (TermLike variable) where
 instance SortedVariable variable => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project freshVarTerm of
-            (attrs :< pat) ->
-                Pretty.pretty (getCreated attrs) <> unparse pat
+            (attrs :< termLikeF)
+              | hasKnownCreator created ->
+                Pretty.sep [Pretty.pretty created, unparse termLikeF]
+              | otherwise ->
+                unparse termLikeF
+              where
+                Attribute.Pattern { created } = attrs
       where
         freshVarTerm =
             externalizeFreshVariables
             $ mapVariables toVariable term
-        getCreated = (Lens.^. Lens.Product.field @"created")
 
     unparse2 term =
         case Recursive.project freshVarTerm of
