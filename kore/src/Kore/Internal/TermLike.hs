@@ -16,6 +16,7 @@ module Kore.Internal.TermLike
     , isFunctionalPattern
     , isDefinedPattern
     , freeVariables
+    , refreshVariables
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -207,6 +208,10 @@ import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import Kore.Attribute.Synthetic
@@ -252,7 +257,10 @@ import Kore.Unparser
     )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
-import Kore.Variables.Fresh
+import qualified Kore.Variables.Fresh as Fresh
+    ( nextVariable
+    , refreshVariables
+    )
 import Kore.Variables.UnifiedVariable
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
@@ -625,6 +633,21 @@ hasFreeVariable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
 
+refreshVariables
+    :: Substitute.SubstitutionVariable variable
+    => FreeVariables variable
+    -> TermLike variable
+    -> TermLike variable
+refreshVariables
+    (FreeVariables.getFreeVariables -> avoid)
+    term
+  =
+    substitute subst term
+  where
+    rename = Fresh.refreshVariables avoid originalFreeVariables
+    originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
+    subst = mkVar <$> rename
+
 {- | Is the 'TermLike' a function pattern?
  -}
 isFunctionPattern :: TermLike variable -> Bool
@@ -836,7 +859,7 @@ externalizeFreshVariables termLike =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
         $ fmap Variable.externalizeFreshVariable
-        <$> iterate (fmap nextVariable) variable
+        <$> iterate (fmap Fresh.nextVariable) variable
       where
         wouldCapture var = isFreeVariable var avoiding
 
