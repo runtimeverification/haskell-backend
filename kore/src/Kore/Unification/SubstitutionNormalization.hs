@@ -84,7 +84,7 @@ normalizeSubstitution'
     .  (MonadSimplify m, SimplifierVariable variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
-normalizeSubstitution' substitution = do
+normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
     let
         -- | Do a `topologicalSort` of variables using the `dependencies` Map.
         -- Topological cycles with non-ctors are returned as Left errors.
@@ -213,16 +213,20 @@ backSubstitute sorted =
 
 isTrivialSubstitution
     :: Eq variable
-    => (UnifiedVariable variable, TermLike variable)
+    => UnifiedVariable variable
+    -> TermLike variable
     -> Bool
-isTrivialSubstitution (variable, Var_ variable') = variable == variable'
-isTrivialSubstitution _ = False
+isTrivialSubstitution variable =
+    \case
+        Var_ variable' -> variable == variable'
+        _              -> False
 
 dropTrivialSubstitutions
     :: Eq variable
-    => [(UnifiedVariable variable, TermLike variable)]
-    -> [(UnifiedVariable variable, TermLike variable)]
-dropTrivialSubstitutions = filter (not . isTrivialSubstitution)
+    => Map (UnifiedVariable variable) (TermLike variable)
+    -> Map (UnifiedVariable variable) (TermLike variable)
+dropTrivialSubstitutions =
+    Map.filterWithKey $ \k v -> not $ isTrivialSubstitution k v
 
 isSatisfiableSubstitution
     :: (UnifiedVariable variable, TermLike variable)
