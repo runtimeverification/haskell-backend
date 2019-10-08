@@ -63,6 +63,9 @@ import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Internal.Conditional
+    ( Conditional
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -331,13 +334,15 @@ emptyPredicateSimplifier = PredicateSimplifier return
 
  -}
 simplifyPredicate
-    :: forall variable simplifier
+    :: forall variable term simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
-    -> BranchT simplifier (Predicate variable)
-simplifyPredicate predicate = do
+    => Conditional variable term
+    -> BranchT simplifier (Conditional variable term)
+simplifyPredicate conditional = do
+    let (term, predicate) = Conditional.splitTerm conditional
     PredicateSimplifier simplify <- askSimplifierPredicate
-    simplify predicate
+    predicate' <- simplify predicate
+    pure $ Conditional.withCondition term predicate'
 
 -- * Builtin and axiom simplifiers
 
