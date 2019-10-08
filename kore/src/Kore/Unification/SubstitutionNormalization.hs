@@ -92,7 +92,7 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
                   | all isSetVar cycleVariables' -> setCtorCycle cycleVariables'
                   | otherwise -> mixedCtorCycle cycleVariables'
                 Right _ ->
-                    Left (NonCtorCircularVariableDependency cycleVariables)
+                    Left (SimplifiableCycle cycleVariables)
         Right order -> pure (Sorted order)
     case topologicalSortResult of
         MixedCtorCycle _  -> pure Predicate.bottom
