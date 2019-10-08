@@ -31,9 +31,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 import Data.Set
     ( Set
     )
@@ -57,7 +54,6 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
-import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
 
 data TopologicalSortResult variable
   = MixedCtorCycle ![variable]
@@ -88,51 +84,34 @@ normalizeSubstitution'
     => Map (UnifiedVariable variable) (TermLike variable)
     -> Either SubstitutionError (Predicate variable)
 normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
-    let
-        -- | Do a `topologicalSort` of variables using the `dependencies` Map.
-        -- Topological cycles with non-ctors are returned as Left errors.
-        -- Non-simplifiable cycles are returned as Right Nothing.
-        topologicalSortConverted
-            :: Either
-                SubstitutionError
-                (TopologicalSortResult (UnifiedVariable variable))
-        topologicalSortConverted =
-            case topologicalSort allDependencies of
-                Left (TopologicalSortCycles vars) ->
-                    case nonSimplifiableSortResult of
-                        Left (TopologicalSortCycles nonSimplifiableCycle)
-                          | all isVariable
-                            (mapMaybe
-                                (`Map.lookup` substitution)
-                                nonSimplifiableCycle
-                            ) ->
-                            error
-                                (  "Impossible: order on variables should "
-                                ++ "prevent only-variable-cycles"
-                                )
-                          | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
-                            Right (SetCtorCycle nonSimplifiableCycle)
-                          | otherwise ->
-                            Right (MixedCtorCycle nonSimplifiableCycle)
-                        Right _ ->
-                            Left (NonCtorCircularVariableDependency vars)
-                Right result -> Right (Sorted result)
-          where
-            nonSimplifiableSortResult =
-                topologicalSort nonSimplifiableDependencies
-    case topologicalSortConverted of
-        Left err -> Left err
-        Right (MixedCtorCycle _) -> pure Predicate.bottom
-        Right (Sorted vars) -> pure $ normalize' vars
-        Right (SetCtorCycle vars) ->
+    topologicalSortResult <- case topologicalSort allDependencies of
+        Left (TopologicalSortCycles cycleVariables) ->
+            case topologicalSort nonSimplifiableDependencies of
+                Left (TopologicalSortCycles nonSimplifiableCycle)
+                  | all isRenaming nonSimplifiableCycle -> renamingCycle
+                  | all isSetVar nonSimplifiableCycle ->
+                    pure (SetCtorCycle nonSimplifiableCycle)
+                  | otherwise ->
+                    pure (MixedCtorCycle nonSimplifiableCycle)
+                Right _ ->
+                    Left (NonCtorCircularVariableDependency cycleVariables)
+        Right order -> pure (Sorted order)
+    case topologicalSortResult of
+        MixedCtorCycle _  -> pure Predicate.bottom
+        Sorted vars       -> pure $ normalize' vars
+        SetCtorCycle vars ->
             let substitution' = Foldable.foldl' assignBottom substitution vars
             in normalizeSubstitution' substitution'
   where
-    isVariable :: TermLike variable -> Bool
-    isVariable term =
-        case Cofree.tailF (Recursive.project term) of
-            VariableF _ -> True
-            _ -> False
+    isRenaming variable =
+        case substitution Map.! variable of
+            Var_ _ -> True
+            _      -> False
+
+    renamingCycle =
+        error
+            "Impossible: order on variables should prevent \
+            \variable-only cycles!"
 
     assignBottom
         :: Map (UnifiedVariable variable) (TermLike variable)

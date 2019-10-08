@@ -120,7 +120,7 @@ test_substitutionNormalization =
             varx1 = x1 Mock.testSort
         assertErrorIO
             (assertSubstring ""
-                "order on variables should prevent only-variable-cycles"
+                "order on variables should prevent variable-only cycles"
             )
             (runNormalizeSubstitution
                 [ (ElemVar var1, mkElemVar varx1)
@@ -133,7 +133,7 @@ test_substitutionNormalization =
             varx1 = Mock.makeTestUnifiedVariable "@x"
         assertErrorIO
             (assertSubstring ""
-                "order on variables should prevent only-variable-cycles"
+                "order on variables should prevent variable-only cycles"
             )
             (runNormalizeSubstitution
                 [ (var1, mkVar varx1)
