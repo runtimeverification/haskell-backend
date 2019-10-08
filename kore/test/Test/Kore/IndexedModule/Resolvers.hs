@@ -179,12 +179,12 @@ test_resolvers =
     , testCase "meta sort"
         (assertEqual ""
             (Right (def :: Attribute.Sort, SentenceSort
-                { sentenceSortName = charMetaId
+                { sentenceSortName = stringMetaId
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
                 }
             ))
-            (resolveSort testIndexedModule charMetaId)
+            (resolveSort testIndexedModule stringMetaId)
         )
     , testCase "object symbol"
         (assertEqual ""
@@ -297,8 +297,8 @@ test_resolvers =
         )
     ]
   where
-    charMetaId :: Id
-    charMetaId = charMetaSortId
+    stringMetaId :: Id
+    stringMetaId = stringMetaSortId
 
 
 test_resolver_undefined_messages :: TestTree

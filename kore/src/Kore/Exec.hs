@@ -33,9 +33,9 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Bifunctor as Bifunctor
-    ( second
+    ( first
+    , second
     )
-import qualified Data.Bifunctor as Bifunctor
 import Data.Coerce
     ( Coercible
     , coerce
@@ -49,6 +49,9 @@ import Data.Maybe
     )
 import Data.Text
     ( Text
+    )
+import GHC.Stack
+    ( HasCallStack
     )
 import Kore.Step.Rule.Simplify
     ( simplifyOnePathRuleLhs
@@ -70,6 +73,9 @@ import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
 import qualified Kore.IndexedModule.IndexedModule as IndexedModule
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
@@ -142,6 +148,9 @@ import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Claim
     , verify
+    )
+import Kore.Unparser
+    ( unparseToText
     )
 import SMT
     ( MonadSMT
@@ -517,6 +526,12 @@ data InitializedProver =
         , claims :: ![OnePathRule Variable]
         }
 
+data MaybeChanged a = Changed !a | Unchanged !a
+
+fromMaybeChanged :: MaybeChanged a -> a
+fromMaybeChanged (Changed a) = a
+fromMaybeChanged (Unchanged a) = a
+
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver
     :: forall simplifier a
@@ -530,9 +545,11 @@ initializeProver definitionModule specModule within =
     $ \initialized -> do
         tools <- Simplifier.askMetadataTools
         let Initialized { rewriteRules } = initialized
-            specClaims =
+            changedSpecClaims
+                :: [(Attribute.Axiom, MaybeChanged (OnePathRule Variable))]
+            changedSpecClaims =
                 map
-                    (Bifunctor.second $ expandOnePathSingleConstructors tools)
+                    (Bifunctor.second $ expandClaim tools)
                     (extractOnePathClaims specModule)
             mapMSecond
                 :: Monad m
@@ -546,6 +563,14 @@ initializeProver definitionModule specModule within =
             simplifyToList rules = do
                 simplified <- simplifyOnePathRuleLhs rules
                 return (MultiAnd.extractPatterns simplified)
+
+        Log.withLogScope (Log.Scope "ExpandedClaim")
+            $ mapM_ (logChangedClaim . snd) changedSpecClaims
+
+        let specClaims :: [(Attribute.Axiom, OnePathRule Variable)]
+            specClaims =
+                map (Bifunctor.second fromMaybeChanged) changedSpecClaims
+
         simplifiedSpecClaims <-
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
@@ -556,6 +581,25 @@ initializeProver definitionModule specModule within =
             claims = fmap makeClaim specAxioms
             initializedProver = InitializedProver { axioms, claims}
         within initializedProver
+  where
+    expandClaim
+        :: SmtMetadataTools attributes
+        -> OnePathRule Variable
+        -> MaybeChanged (OnePathRule Variable)
+    expandClaim tools claim =
+        if claim /= expanded
+            then Changed expanded
+            else Unchanged claim
+      where
+        expanded = expandOnePathSingleConstructors tools claim
+
+    logChangedClaim
+        :: HasCallStack
+        => MaybeChanged (OnePathRule Variable)
+        -> simplifier ()
+    logChangedClaim (Changed claim) =
+        Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
+    logChangedClaim (Unchanged _) = return ()
 
 evalProver
     ::  ( Log.WithLog Log.LogMessage smt
