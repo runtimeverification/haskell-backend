@@ -82,9 +82,6 @@ normalizeSubstitution
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution = normalizeSubstitution'
 
-data Normalization variable term =
-    Normalization { normalized, denormalized :: !(Map variable term) }
-
 normalizeSubstitution'
     :: forall m variable
     .  (MonadSimplify m, SimplifierVariable variable)
