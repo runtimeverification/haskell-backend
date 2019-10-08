@@ -185,6 +185,8 @@ variableToSubstitution varToPattern var =
 Apply the substitutions in order so that finally no substitution in the list
 depends on any other. The substitution must be topologically sorted.
 
+The post-condition of this function depends on the following pre-conditions,
+which are not enforced:
 No substitution variable may appear in its own assignment.
 Every substitution must be satisfiable, see 'isSatisfiableSubstitution'.
 
@@ -193,18 +195,20 @@ backSubstitute
     :: forall variable
     .  SimplifierVariable variable
     => [(UnifiedVariable variable, TermLike variable)]
-    -- ^ Sorted substitution
+    -- ^ Topologically-sorted substitution
     -> Predicate variable
 backSubstitute sorted =
-    Predicate.fromSubstitution . Substitution.unsafeWrap
-    $ State.execState (Foldable.traverse_ worker sorted) []
+    Predicate.fromSubstitution . Substitution.unsafeWrap . Map.toList
+    $ State.execState (Foldable.traverse_ worker sorted) mempty
   where
     worker (variable, termLike) = do
         termLike' <- applySubstitution termLike
-        State.modify' $ (:) (variable, termLike')
+        insertSubstitution variable termLike'
+    insertSubstitution variable termLike =
+        State.modify' $ Map.insert variable termLike
     applySubstitution termLike = do
         substitution <- State.get
-        return $ TermLike.substitute (Map.fromList substitution) termLike
+        return $ TermLike.substitute substitution termLike
 
 isTrivialSubstitution
     :: Eq variable
