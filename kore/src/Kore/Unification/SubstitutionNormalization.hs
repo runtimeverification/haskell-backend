@@ -87,12 +87,10 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
     topologicalSortResult <- case topologicalSort allDependencies of
         Left (TopologicalSortCycles cycleVariables) ->
             case topologicalSort nonSimplifiableDependencies of
-                Left (TopologicalSortCycles nonSimplifiableCycle)
-                  | all isRenaming nonSimplifiableCycle -> renamingCycle
-                  | all isSetVar nonSimplifiableCycle ->
-                    pure (SetCtorCycle nonSimplifiableCycle)
-                  | otherwise ->
-                    pure (MixedCtorCycle nonSimplifiableCycle)
+                Left (TopologicalSortCycles cycleVariables')
+                  | all isRenaming cycleVariables' -> renamingCycle
+                  | all isSetVar cycleVariables' -> setCtorCycle cycleVariables'
+                  | otherwise -> mixedCtorCycle cycleVariables'
                 Right _ ->
                     Left (NonCtorCircularVariableDependency cycleVariables)
         Right order -> pure (Sorted order)
@@ -112,6 +110,12 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
         error
             "Impossible: order on variables should prevent \
             \variable-only cycles!"
+
+    setCtorCycle nonSimplifiableCycle =
+        pure (SetCtorCycle nonSimplifiableCycle)
+
+    mixedCtorCycle nonSimplifiableCycle =
+        pure (MixedCtorCycle nonSimplifiableCycle)
 
     assignBottom
         :: Map (UnifiedVariable variable) (TermLike variable)
