@@ -200,9 +200,11 @@ backSubstitute sorted =
     $ State.execState (Foldable.traverse_ worker sorted) []
   where
     worker (variable, termLike) = do
-        substitution <- State.get
-        let termLike' = TermLike.substitute (Map.fromList substitution) termLike
+        termLike' <- applySubstitution termLike
         State.modify' $ (:) (variable, termLike')
+    applySubstitution termLike = do
+        substitution <- State.get
+        return $ TermLike.substitute (Map.fromList substitution) termLike
 
 isTrivialSubstitution
     :: Eq variable
