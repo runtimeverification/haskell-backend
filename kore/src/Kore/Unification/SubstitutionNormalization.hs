@@ -155,7 +155,7 @@ normalizeSubstitution' substitution = do
         :: [UnifiedVariable variable]
         -> Predicate variable
     normalizeSortedSubstitution' s =
-        normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
+        normalizeSortedSubstitution (sortedSubstitution s) mempty
 
     makeRhsBottom
         :: (UnifiedVariable variable -> Bool)
@@ -176,29 +176,27 @@ variableToSubstitution varToPattern var =
         Just patt -> (var, patt)
         Nothing   -> error ("variable " ++ show var ++ " not found.")
 
+{- |
+ -}
 normalizeSortedSubstitution
     :: SimplifierVariable variable
     => [(UnifiedVariable variable, TermLike variable)]
+    -- ^ Sorted substitution
     -> [(UnifiedVariable variable, TermLike variable)]
-    -> [(UnifiedVariable variable, TermLike variable)]
+    -- ^ Partial (intermediate) result
     -> Predicate variable
-normalizeSortedSubstitution [] result _ =
+normalizeSortedSubstitution [] result =
     Predicate.fromSubstitution $ Substitution.unsafeWrap result
 normalizeSortedSubstitution
     ((var, varPattern) : unprocessed)
-    result
     substitution
   = case (var, Cofree.tailF (Recursive.project varPattern)) of
         (UnifiedVariable.ElemVar _, BottomF _) -> Predicate.bottom
-        (rvar, VariableF (Const var'))
-          | rvar == var' ->
-            normalizeSortedSubstitution unprocessed result substitution
         _ -> let
               substitutedVarPattern =
                   TermLike.substitute (Map.fromList substitution) varPattern
               in normalizeSortedSubstitution
                   unprocessed
-                  ((var, substitutedVarPattern) : result)
                   ((var, substitutedVarPattern) : substitution)
 
 {- | Calculate the dependencies of a substitution.
