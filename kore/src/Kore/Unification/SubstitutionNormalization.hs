@@ -18,6 +18,7 @@ import Control.Monad.Except
     , throwError
     )
 import qualified Control.Monad.State.Strict as State
+import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Functor.Foldable
     ( Base
@@ -119,15 +120,23 @@ normalizeSubstitution' substitution = do
     case topologicalSortConverted of
         Left err -> throwError err
         Right (MixedCtorCycle _) -> return Predicate.bottom
-        Right (Sorted vars) -> return $ normalizeSortedSubstitution' vars
-        Right (SetCtorCycle vars) -> normalizeSubstitution'
-            $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
+        Right (Sorted vars) -> return $ normalize' vars
+        Right (SetCtorCycle vars) ->
+            let substitution' = Foldable.foldl' assignBottom substitution vars
+            in normalizeSubstitution' substitution'
   where
     isVariable :: TermLike variable -> Bool
     isVariable term =
         case Cofree.tailF (Recursive.project term) of
             VariableF _ -> True
             _ -> False
+
+    assignBottom
+        :: Map (UnifiedVariable variable) (TermLike variable)
+        -> UnifiedVariable variable
+        -> Map (UnifiedVariable variable) (TermLike variable)
+    assignBottom subst variable =
+        Map.adjust (mkBottom . termLikeSort) variable subst
 
     interestingVariables :: Set (UnifiedVariable variable)
     interestingVariables = Map.keysSet substitution
@@ -151,25 +160,16 @@ normalizeSubstitution' substitution = do
         -> [(UnifiedVariable variable, TermLike variable)]
     sortedSubstitution = fmap (variableToSubstitution substitution)
 
-    normalizeSortedSubstitution'
+    normalize'
         :: [UnifiedVariable variable]
         -> Predicate variable
-    normalizeSortedSubstitution' order
+    normalize' order
       | any (not . isSatisfiableSubstitution) sorted = Predicate.bottom
       | otherwise =
         Predicate.fromSubstitution . Substitution.unsafeWrap
         $ backSubstitute sorted
       where
-        sorted = dropTrivialSubstitutions $ sortedSubstitution order
-
-    makeRhsBottom
-        :: (UnifiedVariable variable -> Bool)
-        -> UnifiedVariable variable
-        -> TermLike variable
-        -> TermLike variable
-    makeRhsBottom test var rhs
-      | test var  = TermLike.mkBottom (termLikeSort rhs)
-      | otherwise = rhs
+        sorted = sortedSubstitution order
 
 variableToSubstitution
     :: (Ord variable, Show variable)
