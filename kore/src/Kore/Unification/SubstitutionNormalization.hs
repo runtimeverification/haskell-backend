@@ -97,7 +97,7 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
                 SubstitutionError
                 (TopologicalSortResult (UnifiedVariable variable))
         topologicalSortConverted =
-            case topologicalSort (Set.toList <$> allDependencies) of
+            case topologicalSort allDependencies of
                 Left (TopologicalSortCycles vars) ->
                     case nonSimplifiableSortResult of
                         Left (TopologicalSortCycles nonSimplifiableCycle)
@@ -119,7 +119,7 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
                 Right result -> Right (Sorted result)
           where
             nonSimplifiableSortResult =
-                topologicalSort (Set.toList <$> nonSimplifiableDependencies)
+                topologicalSort nonSimplifiableDependencies
     case topologicalSortConverted of
         Left err -> throwError err
         Right (MixedCtorCycle _) -> return Predicate.bottom
@@ -144,19 +144,23 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
     interestingVariables :: Set (UnifiedVariable variable)
     interestingVariables = Map.keysSet substitution
 
+    getDependencies' =
+        getDependencies interestingVariables
+
     allDependencies
-        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
+        :: Map (UnifiedVariable variable) [UnifiedVariable variable]
     allDependencies =
-        Map.mapWithKey
-            (getDependencies interestingVariables)
-            substitution
+        Map.map Set.toList
+        $ Map.mapWithKey getDependencies' substitution
+
+    getNonSimplifiableDependencies' =
+        getNonSimplifiableDependencies interestingVariables
 
     nonSimplifiableDependencies
-        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
+        :: Map (UnifiedVariable variable) [UnifiedVariable variable]
     nonSimplifiableDependencies =
-        Map.mapWithKey
-            (getNonSimplifiableDependencies interestingVariables)
-            substitution
+        Map.map Set.toList
+        $ Map.mapWithKey getNonSimplifiableDependencies' substitution
 
     normalize'
         :: [UnifiedVariable variable]
