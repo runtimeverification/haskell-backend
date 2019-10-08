@@ -15,8 +15,6 @@ module Kore.Step.Simplification.Predicate
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
-import qualified Data.Foldable as Foldable
-import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Branch
@@ -32,16 +30,11 @@ import qualified Kore.Predicate.Predicate as Syntax
     , unwrapPredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-    ( substitute
-    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Substitution
     ( normalize
     )
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Substitution
-    ( Substitution
-    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 
@@ -61,47 +54,23 @@ simplify
     => Int
     -> Predicate variable
     -> BranchT simplifier (Predicate variable)
-simplify times initial = do
-    normalized <- normalize initial
-    let Conditional { term = (), predicate, substitution } = normalized
-        substitution' = Substitution.toMap substitution
-        predicate' = Syntax.Predicate.substitute substitution' predicate
-    simplified <- simplifyPartial predicate'
-    TopBottom.guardAgainstBottom simplified
-
-    let merged = simplified <> Predicate.fromSubstitution substitution
-    let Conditional { substitution = simplifiedSubstitution } = simplified
-    -- TODO(virgil): Optimize. Since both substitution and
-    -- simplifiedSubstitution have distinct variables, it is
-    -- enough to check that, say, simplifiedSubstitution's
-    -- variables are not among substitution's variables.
-    assertDistinctVariables substitution simplifiedSubstitution
-
-    -- This check is no good: the substitution might have denormalized parts!
-    if not (Predicate.hasSubstitution simplified) || times > 16
-        then normalize merged
-        else simplify (times + 1) merged
-
-assertDistinctVariables
-    :: forall variable m
-    .   ( Ord variable
-        , Unparse variable
-        , Monad m
-        )
-    => Substitution variable
-    -> Substitution variable
-    -> m ()
-assertDistinctVariables subst1 subst2
-  | null intersection = return ()
-  | otherwise =
-    (error . show . Pretty.vsep)
-        [ "Duplicated variables:"
-        , Pretty.indent 4 . Pretty.vsep $ unparse <$> intersection
-        ]
+simplify times0 initial = normalize initial >>= worker times0
   where
-    intersection = Foldable.toList $ Set.intersection vars1 vars2
-    vars1 = Substitution.variables subst1
-    vars2 = Substitution.variables subst2
+    worker times Conditional { term = (), predicate, substitution } = do
+        let substitution' = Substitution.toMap substitution
+            predicate' = Syntax.Predicate.substitute substitution' predicate
+        simplified <- simplifyPartial predicate'
+        TopBottom.guardAgainstBottom simplified
+        let merged = simplified <> Predicate.fromSubstitution substitution
+        normalized <- normalize merged
+        if fullySimplified normalized
+            then return normalized
+            else worker (times + 1) normalized
+
+    fullySimplified Conditional { predicate, substitution } =
+        Syntax.Predicate.isFreeOf predicate variables
+      where
+        variables = Substitution.variables substitution
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.
 
