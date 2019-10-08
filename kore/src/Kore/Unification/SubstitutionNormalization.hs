@@ -83,31 +83,25 @@ normalizeSubstitution'
     .  SimplifierVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> Either SubstitutionError (Predicate variable)
-normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
-    topologicalSortResult <- case topologicalSort allDependencies of
-        Left (TopologicalSortCycles cycleVariables) ->
+normalizeSubstitution' (dropTrivialSubstitutions -> substitution) =
+    case topologicalSort allDependencies of
+        Right order -> pure $ normalize' order
+        Left _ ->
             case topologicalSort nonSimplifiableDependencies of
-                Left (TopologicalSortCycles cycleVariables')
-                  | all isRenaming cycleVariables' ->
+                Right variables ->
+                    -- Removing the non-simplifiable dependencies removed the
+                    -- cycle, therefore the cycle is simplifiable.
+                    simplifiableCycle variables
+                Left (TopologicalSortCycles variables)
+                  | all isRenaming variables ->
                     -- All substitutions in the cycle are variable-only renaming
                     -- substitutions.
                     renamingCycle
-                  | all isSetVar cycleVariables' ->
+                  | all isSetVar variables ->
                     -- All variables in the cycle are set variables.
-                    setCtorCycle cycleVariables'
+                    setCtorCycle variables
                   | otherwise ->
-                    mixedCtorCycle cycleVariables'
-                Right _ ->
-                    -- Removing the non-simplifiable dependencies removed the
-                    -- cycle, therefore the cycle is simplifiable.
-                    simplifiableCycle cycleVariables
-        Right order -> pure (Sorted order)
-    case topologicalSortResult of
-        MixedCtorCycle _  -> pure Predicate.bottom
-        Sorted vars       -> pure $ normalize' vars
-        SetCtorCycle vars ->
-            let substitution' = Foldable.foldl' assignBottom substitution vars
-            in normalizeSubstitution' substitution'
+                    mixedCtorCycle variables
   where
     isRenaming variable =
         case substitution Map.! variable of
@@ -119,11 +113,12 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) = do
             "Impossible: order on variables should prevent \
             \variable-only cycles!"
 
-    setCtorCycle variables =
-        pure (SetCtorCycle variables)
+    setCtorCycle variables = do
+        let substitution' = Foldable.foldl' assignBottom substitution variables
+        normalizeSubstitution' substitution'
 
-    mixedCtorCycle variables =
-        pure (MixedCtorCycle variables)
+    mixedCtorCycle _ =
+        pure Predicate.bottom
 
     simplifiableCycle variables =
         Left (SimplifiableCycle variables)
