@@ -48,9 +48,8 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
+import Kore.Substitute
+    ( SubstitutionVariable
     )
 import Kore.TopBottom
 import Kore.Unification.Error
@@ -77,7 +76,7 @@ x = f(x) or something equivalent).
 -}
 normalizeSubstitution
     :: forall m variable
-    .  (MonadSimplify m, SimplifierVariable variable)
+    .  (Monad m, SubstitutionVariable variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution substitution =
@@ -113,7 +112,7 @@ instance Monoid (Normalization variable) where
 
 normalize
     ::  forall variable
-    .   SimplifierVariable variable
+    .   SubstitutionVariable variable
     =>  Map (UnifiedVariable variable) (TermLike variable)
     ->  Maybe (Normalization variable)
 normalize (dropTrivialSubstitutions -> substitution) =
@@ -207,7 +206,7 @@ Every substitution must be satisfiable, see 'isSatisfiableSubstitution'.
  -}
 backSubstitute
     :: forall variable
-    .  SimplifierVariable variable
+    .  SubstitutionVariable variable
     => UnwrappedSubstitution variable
     -- ^ Topologically-sorted substitution
     -> UnwrappedSubstitution variable
