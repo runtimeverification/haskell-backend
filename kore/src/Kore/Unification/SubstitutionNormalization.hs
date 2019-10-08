@@ -16,6 +16,7 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad.Except
     ( ExceptT (..)
     , liftEither
+    , throwError
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
@@ -86,7 +87,10 @@ normalizeSubstitution substitution = do
         pure
         $ Predicate.fromSubstitution
         $ Substitution.unsafeWrap normalized
-      | otherwise = undefined
+      | otherwise =
+        throwError (SimplifiableCycle variables)
+      where
+        (variables, _) = unzip denormalized
 
 type UnwrappedSubstitution variable =
     [(UnifiedVariable variable, TermLike variable)]
