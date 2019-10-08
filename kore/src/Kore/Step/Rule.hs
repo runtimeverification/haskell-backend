@@ -42,7 +42,6 @@ import Control.Exception
     ( assert
     )
 import qualified Data.Default as Default
-import qualified Data.Foldable as Foldable
 import Data.Map.Strict
     ( Map
     )

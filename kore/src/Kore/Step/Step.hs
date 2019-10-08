@@ -425,7 +425,7 @@ checkFunctionLikeResults
     -> Pattern (Target variable)
     -> unifier (Results variable)
     -> unifier (Results variable)
-checkFunctionLikeResults Rule.SimplificationContext initial unifier =
+checkFunctionLikeResults Rule.SimplificationContext _ unifier =
     unifier
 checkFunctionLikeResults _ initial unifier = do
     results <- Step.results <$> unifier

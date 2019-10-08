@@ -320,8 +320,7 @@ test_applyRewriteRule_ =
         assertEqual "" expect actual
 
     , testCase "Apply non-function-like rule in parallel" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = mkElemVar Mock.x }] ]
+        let
             initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
         result <- Exception.try $ applyRewriteRule_
                                     applyRewriteRulesParallel
@@ -332,8 +331,7 @@ test_applyRewriteRule_ =
             Right _ -> assertFailure "Expected error"
 
     , testCase "Apply list containing non-function-like rule in parallel" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = mkElemVar Mock.x }] ]
+        let
             initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
         result <- Exception.try $ applyRewriteRules_
                                     applyRewriteRulesParallel
@@ -342,10 +340,9 @@ test_applyRewriteRule_ =
         case result of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-            
+
     , testCase "Apply non-function-like rule in sequence" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = mkElemVar Mock.x }] ]
+        let
             initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
         result <- Exception.try $ applyRewriteRule_
                                     applyRewriteRulesSequence
@@ -356,8 +353,7 @@ test_applyRewriteRule_ =
             Right _ -> assertFailure "Expected error"
 
     , testCase "Apply list containing non-function-like rule in sequence" $ do
-        let expect = Right
-                [ OrPattern.fromPatterns [initial { term = mkElemVar Mock.x }] ]
+        let
             initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
         result <- Exception.try $ applyRewriteRules_
                                     applyRewriteRulesSequence
@@ -366,7 +362,7 @@ test_applyRewriteRule_ =
         case result of
             Left (Exception.ErrorCall _) -> return ()
             Right _ -> assertFailure "Expected error"
-    
+
     , testCase "symbol clash" $ do
         let expect = Right mempty
             fx = Mock.functionalConstr10 (mkElemVar Mock.x)
