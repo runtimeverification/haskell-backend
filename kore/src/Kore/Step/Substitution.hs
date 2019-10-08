@@ -67,7 +67,8 @@ normalize Conditional { term, predicate, substitution } = do
     results <-
         Monad.Trans.lift
         $ Monad.Unify.runUnifierT
-        $ normalizeExcept Conditional { term = (), predicate, substitution }
+        $ Unification.normalizeOnce
+            Conditional { term = (), predicate, substitution }
     case results of
         Right normal -> scatter (applyTerm <$> normal)
         Left _ ->

@@ -26,6 +26,7 @@ import Kore.Internal.Pattern
     , Predicate
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     , unwrapPredicate
@@ -35,7 +36,7 @@ import qualified Kore.Predicate.Predicate as Syntax.Predicate
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutions
+    ( normalize
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
@@ -60,27 +61,24 @@ simplify
     => Int
     -> Predicate variable
     -> BranchT simplifier (Predicate variable)
-simplify
-    times
-    initialValue@Conditional { predicate, substitution }
-  = do
-    let substitution' = Substitution.toMap substitution
-        substitutedPredicate =
-            Syntax.Predicate.substitute substitution' predicate
+simplify times initial = do
+    normalized <- normalize initial
+    let Conditional { term = (), predicate, substitution } = normalized
+        substitution' = Substitution.toMap substitution
+        predicate' = Syntax.Predicate.substitute substitution' predicate
     -- TODO(Vladimir): This is an ugly hack that fixes EVM execution. Should
     -- probably be fixed in 'Kore.Step.Simplification.Pattern'.
     -- This was needed because, when we need to simplify 'requires' clauses,
     -- this needs to run more than once.
-    if substitutedPredicate == predicate && times > 1
-        then return initialValue
+    if predicate' == predicate && times > 1
+        then return initial
         else localPredicateSimplifier $ do
-            simplified <- simplifyPartial substitutedPredicate
+            simplified <- simplifyPartial predicate'
 
-            let Conditional { predicate = simplifiedPredicate } = simplified
-                Conditional { substitution = simplifiedSubstitution } =
+            let Conditional { substitution = simplifiedSubstitution } =
                     simplified
 
-            if Substitution.null simplifiedSubstitution
+            if not (Predicate.hasSubstitution simplified)
                 then return simplified { substitution }
                 else do
                     -- TODO(virgil): Optimize. Since both substitution and
@@ -88,12 +86,9 @@ simplify
                     -- enough to check that, say, simplifiedSubstitution's
                     -- variables are not among substitution's variables.
                     assertDistinctVariables substitution simplifiedSubstitution
-                    mergedPredicate <-
-                        mergePredicatesAndSubstitutions
-                            [simplifiedPredicate]
-                            [substitution, simplifiedSubstitution]
-                    TopBottom.guardAgainstBottom mergedPredicate
-                    return mergedPredicate
+                    let merged = simplified <> Predicate.fromSubstitution substitution
+                    TopBottom.guardAgainstBottom merged
+                    simplify (times + 1) merged
   where
     substitutionSimplifier = PredicateSimplifier (simplify (times + 1))
     localPredicateSimplifier =
