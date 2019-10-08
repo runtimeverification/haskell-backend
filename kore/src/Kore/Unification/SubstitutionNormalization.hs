@@ -18,7 +18,6 @@ import Control.Monad.Except
     , throwError
     )
 import qualified Control.Monad.State.Strict as State
-import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Functor.Foldable
     ( Base
@@ -157,7 +156,9 @@ normalizeSubstitution' substitution = do
         -> Predicate variable
     normalizeSortedSubstitution' order
       | any (not . isSatisfiableSubstitution) sorted = Predicate.bottom
-      | otherwise = backSubstitute sorted
+      | otherwise =
+        Predicate.fromSubstitution . Substitution.unsafeWrap
+        $ backSubstitute sorted
       where
         sorted = dropTrivialSubstitutions $ sortedSubstitution order
 
@@ -196,14 +197,14 @@ backSubstitute
     .  SimplifierVariable variable
     => [(UnifiedVariable variable, TermLike variable)]
     -- ^ Topologically-sorted substitution
-    -> Predicate variable
+    -> [(UnifiedVariable variable, TermLike variable)]
 backSubstitute sorted =
-    Predicate.fromSubstitution . Substitution.unsafeWrap . Map.toList
-    $ State.execState (Foldable.traverse_ worker sorted) mempty
+    (flip State.evalState mempty) (traverse worker sorted)
   where
     worker (variable, termLike) = do
         termLike' <- applySubstitution termLike
         insertSubstitution variable termLike'
+        return (variable, termLike')
     insertSubstitution variable termLike =
         State.modify' $ Map.insert variable termLike
     applySubstitution termLike = do
