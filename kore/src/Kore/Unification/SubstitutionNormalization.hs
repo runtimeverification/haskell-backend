@@ -31,6 +31,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 import Data.Set
     ( Set
     )
@@ -76,16 +79,18 @@ normalizeSubstitution
     .  (MonadSimplify m, SimplifierVariable variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
-normalizeSubstitution = liftEither . normalizeSubstitution'
+normalizeSubstitution substitution = do
+    normalized <- liftEither $ normalizeSubstitution' substitution
+    return $ fromMaybe Predicate.bottom normalized
 
 normalizeSubstitution'
     :: forall variable
     .  SimplifierVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
-    -> Either SubstitutionError (Predicate variable)
+    -> Either SubstitutionError (Maybe (Predicate variable))
 normalizeSubstitution' (dropTrivialSubstitutions -> substitution) =
     case topologicalSort allDependencies of
-        Right order -> pure $ normalize' order
+        Right order -> pure . Just $ normalize' order
         Left _ ->
             case topologicalSort nonSimplifiableDependencies of
                 Right variables ->
@@ -118,7 +123,7 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) =
         normalizeSubstitution' substitution'
 
     mixedCtorCycle _ =
-        pure Predicate.bottom
+        pure . Just $ Predicate.bottom
 
     simplifiableCycle variables =
         Left (SimplifiableCycle variables)
