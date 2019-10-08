@@ -12,14 +12,17 @@ module Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad.Except
     ( ExceptT (..)
-    , liftEither
     , throwError
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
+import qualified Data.Function as Function
 import Data.Functor
     ( (<&>)
     )
@@ -77,9 +80,8 @@ normalizeSubstitution
     .  (MonadSimplify m, SimplifierVariable variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> ExceptT SubstitutionError m (Predicate variable)
-normalizeSubstitution substitution = do
-    normalized <- liftEither $ normalize substitution
-    maybe bottom fromNormalization normalized
+normalizeSubstitution substitution =
+    maybe bottom fromNormalization $ normalize substitution
   where
     bottom = return Predicate.bottom
     fromNormalization Normalization { normalized, denormalized }
@@ -99,11 +101,21 @@ data Normalization variable =
     Normalization
         { normalized, denormalized :: !(UnwrappedSubstitution variable) }
 
+instance Semigroup (Normalization variable) where
+    (<>) a b =
+        Normalization
+            { normalized = Function.on (<>) normalized a b
+            , denormalized = Function.on (<>) denormalized a b
+            }
+
+instance Monoid (Normalization variable) where
+    mempty = Normalization mempty mempty
+
 normalize
     ::  forall variable
     .   SimplifierVariable variable
     =>  Map (UnifiedVariable variable) (TermLike variable)
-    ->  Either SubstitutionError (Maybe (Normalization variable))
+    ->  Maybe (Normalization variable)
 normalize (dropTrivialSubstitutions -> substitution) =
     case topologicalSort allDependencies of
         Right order -> sorted order
@@ -138,10 +150,13 @@ normalize (dropTrivialSubstitutions -> substitution) =
         let substitution' = Foldable.foldl' assignBottom substitution variables
         normalize substitution'
 
-    mixedCtorCycle _ = pure Nothing
+    mixedCtorCycle _ = empty
 
-    simplifiableCycle variables =
-        Left (SimplifiableCycle variables)
+    simplifiableCycle (Set.fromList -> variables) = do
+        let denormalized = Map.toList $ Map.restrictKeys substitution variables
+            substitution' = Map.withoutKeys substitution variables
+        normalization <- normalize substitution'
+        pure $ normalization <> mempty { denormalized }
 
     assignBottom
         :: Map (UnifiedVariable variable) (TermLike variable)
@@ -172,10 +187,10 @@ normalize (dropTrivialSubstitutions -> substitution) =
         $ Map.mapWithKey getNonSimplifiableDependencies' substitution
 
     sorted order
-      | any (not . isSatisfiableSubstitution) substitution' = pure Nothing
+      | any (not . isSatisfiableSubstitution) substitution' = empty
       | otherwise = do
         let normalized = backSubstitute substitution'
-        (pure . Just) Normalization { normalized, denormalized = mempty }
+        pure Normalization { normalized, denormalized = mempty }
       where
         substitution' = order <&> \v -> (v, (Map.!) substitution v)
 
