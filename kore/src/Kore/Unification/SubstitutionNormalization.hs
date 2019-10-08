@@ -122,8 +122,7 @@ normalizeSubstitution' (dropTrivialSubstitutions -> substitution) =
         let substitution' = Foldable.foldl' assignBottom substitution variables
         normalizeSubstitution' substitution'
 
-    mixedCtorCycle _ =
-        pure . Just $ Predicate.bottom
+    mixedCtorCycle _ = pure Nothing
 
     simplifiableCycle variables =
         Left (SimplifiableCycle variables)
