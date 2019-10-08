@@ -434,7 +434,7 @@ data Config claim m = Config
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures
-    , logger  :: MVar (Logger.LogAction IO Logger.LogMessage)
+    , logger  :: MVar (Logger.LogAction IO Logger.SomeEntry)
     -- ^ Logger function, see 'logging'.
     , outputFile :: OutputFile
     -- ^ Output resulting pattern to this file.

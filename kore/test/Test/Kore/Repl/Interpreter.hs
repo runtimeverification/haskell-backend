@@ -674,7 +674,7 @@ mkState axioms claims claim =
     graph' = emptyExecutionGraph claim
 
 mkConfig
-    :: MVar (Logger.LogAction IO Logger.LogMessage)
+    :: MVar (Logger.LogAction IO Logger.SomeEntry)
     -> Config Claim Simplifier
 mkConfig logger =
     Config

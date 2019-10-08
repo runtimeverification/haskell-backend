@@ -414,7 +414,7 @@ liftSimplifierWithLogger
     => MonadSimplify m
     => MonadIO m
     => Monad.Trans.MonadTrans t
-    => MVar (Logger.LogAction IO Logger.LogMessage)
+    => MVar (Logger.LogAction IO Logger.SomeEntry)
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
