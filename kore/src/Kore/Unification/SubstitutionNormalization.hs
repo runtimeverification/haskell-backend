@@ -31,9 +31,6 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 import Data.Set
     ( Set
     )
@@ -81,16 +78,31 @@ normalizeSubstitution
     -> ExceptT SubstitutionError m (Predicate variable)
 normalizeSubstitution substitution = do
     normalized <- liftEither $ normalize substitution
-    return $ fromMaybe Predicate.bottom normalized
+    maybe bottom fromNormalization normalized
+  where
+    bottom = return Predicate.bottom
+    fromNormalization Normalization { normalized, denormalized }
+      | null denormalized =
+        pure
+        $ Predicate.fromSubstitution
+        $ Substitution.unsafeWrap normalized
+      | otherwise = undefined
+
+type UnwrappedSubstitution variable =
+    [(UnifiedVariable variable, TermLike variable)]
+
+data Normalization variable =
+    Normalization
+        { normalized, denormalized :: !(UnwrappedSubstitution variable) }
 
 normalize
-    :: forall variable
-    .  SimplifierVariable variable
-    => Map (UnifiedVariable variable) (TermLike variable)
-    -> Either SubstitutionError (Maybe (Predicate variable))
+    ::  forall variable
+    .   SimplifierVariable variable
+    =>  Map (UnifiedVariable variable) (TermLike variable)
+    ->  Either SubstitutionError (Maybe (Normalization variable))
 normalize (dropTrivialSubstitutions -> substitution) =
     case topologicalSort allDependencies of
-        Right order -> pure . Just $ normalize' order
+        Right order -> sorted order
         Left _ ->
             case topologicalSort nonSimplifiableDependencies of
                 Right variables ->
@@ -155,16 +167,13 @@ normalize (dropTrivialSubstitutions -> substitution) =
         Map.map Set.toList
         $ Map.mapWithKey getNonSimplifiableDependencies' substitution
 
-    normalize'
-        :: [UnifiedVariable variable]
-        -> Predicate variable
-    normalize' order
-      | any (not . isSatisfiableSubstitution) sorted = Predicate.bottom
-      | otherwise =
-        Predicate.fromSubstitution . Substitution.unsafeWrap
-        $ backSubstitute sorted
+    sorted order
+      | any (not . isSatisfiableSubstitution) substitution' = pure Nothing
+      | otherwise = do
+        let normalized = backSubstitute substitution'
+        (pure . Just) Normalization { normalized, denormalized = mempty }
       where
-        sorted = order <&> \v -> (v, (Map.!) substitution v)
+        substitution' = order <&> \v -> (v, (Map.!) substitution v)
 
 {- | Apply a topologically sorted list of substitutions to itself.
 
@@ -180,9 +189,9 @@ Every substitution must be satisfiable, see 'isSatisfiableSubstitution'.
 backSubstitute
     :: forall variable
     .  SimplifierVariable variable
-    => [(UnifiedVariable variable, TermLike variable)]
+    => UnwrappedSubstitution variable
     -- ^ Topologically-sorted substitution
-    -> [(UnifiedVariable variable, TermLike variable)]
+    -> UnwrappedSubstitution variable
 backSubstitute sorted =
     (flip State.evalState mempty) (traverse worker sorted)
   where
