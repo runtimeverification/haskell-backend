@@ -115,7 +115,6 @@ builtinFunctions =
 evalKEq
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Bool
-    -> PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -125,7 +124,7 @@ evalKEq
         (Attribute.Pattern variable)
         (TermLike variable)
     -> simplifier (AttemptedAxiom variable)
-evalKEq true _ _ _ (valid :< app) =
+evalKEq true _ _ (valid :< app) =
     case applicationChildren of
         [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
@@ -163,8 +162,7 @@ evalKEq true _ _ _ (valid :< app) =
 evalKIte
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => PredicateSimplifier simplifier
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions
     -> CofreeF
@@ -172,7 +170,7 @@ evalKIte
         (Attribute.Pattern variable)
         (TermLike variable)
     -> simplifier (AttemptedAxiom variable)
-evalKIte _ _ _ (_ :< app) =
+evalKIte _ _ (_ :< app) =
     case app of
         Application { applicationChildren = [expr, t1, t2] } ->
             evalIte expr t1 t2

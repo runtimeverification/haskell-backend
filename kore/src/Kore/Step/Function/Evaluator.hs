@@ -104,7 +104,6 @@ evaluateApplication
     (evaluateSortInjection -> application)
   = finishT $ do
     Foldable.for_ canMemoize recallOrPattern
-    substitutionSimplifier <- Trans.lift $ Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
@@ -127,7 +126,6 @@ evaluateApplication
 
         maybeEvaluatedSimplifier =
             maybeEvaluatePattern
-                substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
                 childrenPredicate
@@ -192,8 +190,7 @@ evaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier simplifier
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -207,7 +204,6 @@ evaluatePattern
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
-    substitutionSimplifier
     simplifier
     axiomIdToEvaluator
     configurationPredicate
@@ -218,7 +214,6 @@ evaluatePattern
     fromMaybe
         (return defaultValue)
         (maybeEvaluatePattern
-            substitutionSimplifier
             simplifier
             axiomIdToEvaluator
             childrenPredicate
@@ -237,8 +232,7 @@ maybeEvaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier simplifier
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -251,7 +245,6 @@ maybeEvaluatePattern
     -> Predicate variable
     -> Maybe (simplifier (OrPattern variable))
 maybeEvaluatePattern
-    substitutionSimplifier
     simplifier
     axiomIdToEvaluator
     childrenPredicate
@@ -265,7 +258,6 @@ maybeEvaluatePattern
             Just . tracing $ do
                 result <- Profile.axiomEvaluation identifier $
                     evaluator
-                        substitutionSimplifier
                         simplifier
                         axiomIdToEvaluator
                         patt

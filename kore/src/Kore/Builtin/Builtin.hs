@@ -166,7 +166,6 @@ import Kore.Step.Simplification.Simplify
     , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
     , BuiltinAndAxiomSimplifierMap
     , MonadSimplify
-    , PredicateSimplifier
     , TermLikeSimplifier
     , applicationAxiomSimplifier
     )
@@ -295,7 +294,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ _ = pure NotApplicable
+    notImplemented0 _ _ _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 
@@ -782,15 +781,14 @@ functionEvaluator impl =
     evaluator
         :: SimplifierVariable variable
         => MonadSimplify simplifier
-        => PredicateSimplifier simplifier
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator _ simplifier _axiomIdToSimplifier (valid :< app) =
+    evaluator simplifier _axiomIdToSimplifier (valid :< app) =
         impl simplifier resultSort applicationChildren
       where
         Application { applicationChildren } = app

@@ -191,7 +191,7 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkElemVar Mock.x))
@@ -1112,13 +1112,12 @@ mapVariables =
 mockEvaluator
     :: Monad simplifier
     => AttemptedAxiom variable
-    -> PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ _ _ = return evaluation
 
 -- ---------------------------------------------------------------------
 -- * Definition

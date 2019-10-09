@@ -369,8 +369,7 @@ newtype BuiltinAndAxiomSimplifier =
     BuiltinAndAxiomSimplifier
         (  forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier simplifier
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Predicate variable
@@ -390,10 +389,8 @@ runBuiltinAndAxiomSimplifier
     termLike
   = do
     simplifierAxioms <- askSimplifierAxioms
-    simplifierPredicate <- askSimplifierPredicate
     simplifierTermLike <- askSimplifierTermLike
     simplifier
-        simplifierPredicate
         simplifierTermLike
         simplifierAxioms
         termLike
@@ -536,8 +533,7 @@ purePatternAxiomEvaluator p =
 applicationAxiomSimplifier
     ::  (  forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier simplifier
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application Symbol)
@@ -552,17 +548,15 @@ applicationAxiomSimplifier applicationSimplifier =
     helper
         :: forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier simplifier
-        -> TermLikeSimplifier
+        => TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
-    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike _ =
+    helper simplifier axiomIdToSimplifier termLike _ =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) ->
                 applicationSimplifier
-                    substitutionSimplifier
                     simplifier
                     axiomIdToSimplifier
                     (valid :< p)
