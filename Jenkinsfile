@@ -40,6 +40,11 @@ pipeline {
               ./scripts/docs.sh
             '''
           }
+          post {
+            success {
+              archiveArtifacts 'haskell_documentation/**'
+            }
+          }
         }
         stage('Executables') {
           steps {
@@ -58,6 +63,7 @@ pipeline {
       }
       post {
         always {
+          archiveArtifacts 'coverage_report/**'
           junit 'kore/test-results.xml'
         }
       }
