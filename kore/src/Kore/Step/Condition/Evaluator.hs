@@ -39,7 +39,7 @@ simplify
     -- to predicates. Even better, delete this one and use Predicate.simplify.
 simplify predicate = do
     simplifiedPredicates <-
-        Branch.gather . Predicate.simplify 0
+        Branch.gather . Predicate.simplify
         $ Predicate.fromPredicate predicate
     return
         ( Predicate.fromPredicate

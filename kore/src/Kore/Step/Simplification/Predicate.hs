@@ -41,22 +41,21 @@ import Kore.Unparser
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
 create :: PredicateSimplifier
-create = PredicateSimplifier (simplify 0)
+create = PredicateSimplifier simplify
 
 {- | Simplify a 'Predicate'.
 
 @simplify@ applies the substitution to the predicate and simplifies the
-result. The result is re-simplified once.
+result. The result is re-simplified until it stabilizes.
 
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Int
-    -> Predicate variable
+    => Predicate variable
     -> BranchT simplifier (Predicate variable)
-simplify times0 initial = normalize initial >>= worker times0
+simplify initial = normalize initial >>= worker
   where
-    worker times Conditional { term = (), predicate, substitution } = do
+    worker Conditional { term = (), predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Syntax.Predicate.substitute substitution' predicate
         simplified <- simplifyPartial predicate'
@@ -65,7 +64,7 @@ simplify times0 initial = normalize initial >>= worker times0
         normalized <- normalize merged
         if fullySimplified normalized
             then return normalized
-            else worker (times + 1) normalized
+            else worker normalized
 
     fullySimplified Conditional { predicate, substitution } =
         Syntax.Predicate.isFreeOf predicate variables

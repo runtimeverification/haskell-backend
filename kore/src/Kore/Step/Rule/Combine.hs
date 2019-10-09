@@ -171,10 +171,8 @@ mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
     BranchT.gather $ do
         Conditional {term = (), predicate, substitution} <-
-            Predicate.simplify 0
-                (Predicate.fromPredicate
-                    (makeAndPredicate firstRequires mergedPredicate)
-                )
+            Predicate.simplify . Predicate.fromPredicate
+            $ makeAndPredicate firstRequires mergedPredicate
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of
             Nothing -> return predicate
