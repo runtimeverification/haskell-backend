@@ -35,7 +35,6 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.DomainValue
 import Kore.Syntax.Equals
 import Kore.Syntax.Exists
@@ -82,7 +81,6 @@ data PatternF variable child
     | TopF           !(Top Sort child)
     | InhabitantF    !(Inhabitant child)
     | StringLiteralF !(Const StringLiteral child)
-    | CharLiteralF   !(Const CharLiteral child)
     | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
@@ -158,7 +156,6 @@ traverseVariables traversing =
         OrF orP -> pure (OrF orP)
         RewritesF rewP -> pure (RewritesF rewP)
         StringLiteralF strP -> pure (StringLiteralF strP)
-        CharLiteralF charP -> pure (CharLiteralF charP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
   where

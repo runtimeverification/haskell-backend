@@ -10,7 +10,6 @@ module Kore.Syntax
     , module Kore.Syntax.Application
     , module Kore.Syntax.Bottom
     , module Kore.Syntax.Ceil
-    , module Kore.Syntax.CharLiteral
     , module Kore.Syntax.DomainValue
     , module Kore.Syntax.Equals
     , module Kore.Syntax.Exists
@@ -41,7 +40,6 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
-import Kore.Syntax.CharLiteral
 -- TODO (thomas.tuegel): export Kore.Syntax.Definition here
 import Kore.Syntax.DomainValue
 import Kore.Syntax.ElementVariable

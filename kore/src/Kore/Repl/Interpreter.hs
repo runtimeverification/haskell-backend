@@ -871,8 +871,10 @@ tryAxiomClaimWorker mode ref = do
         -> TermLike Variable
         -> ReplM claim m ()
     runUnifier' first second =
-        runUnifier first second
+        runUnifier first' second
         >>= tell . formatUnificationMessage
+      where
+        first' = TermLike.refreshVariables (TermLike.freeVariables second) first
 
     extractLeftPattern :: Either axiom claim -> TermLike Variable
     extractLeftPattern = left . either coerce coerce
