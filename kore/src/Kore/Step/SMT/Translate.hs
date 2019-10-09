@@ -22,6 +22,7 @@ import Control.Applicative
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( MaybeT
+    , hoistMaybe
     )
 import Control.Monad.Counter
     ( CounterT
@@ -51,7 +52,8 @@ import Kore.IndexedModule.MetadataTools
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
 import Kore.Step.SMT.Resolvers
-    ( translateSymbol
+    ( translateSort
+    , translateSymbol
     )
 import Kore.Unparser
 import SMT
@@ -124,7 +126,6 @@ translatePredicate translateUninterpreted predicate =
             RewritesF _ -> empty
             VariableF _ -> empty
             StringLiteralF _ -> empty
-            CharLiteralF _ -> empty
             InhabitantF _ -> empty
 
     translatePredicateAnd And { andFirst, andSecond } =
@@ -251,6 +252,9 @@ translatePredicate translateUninterpreted predicate =
               | builtinSort == Builtin.Bool.sort -> translateBool pat
               | builtinSort == Builtin.Int.sort -> translateInt pat
             _ -> case Cofree.tailF $ Recursive.project pat of
+                    VariableF _ -> do
+                        smtSort <- hoistMaybe $ translateSort sort
+                        translateUninterpreted smtSort pat
                     ApplySymbolF app -> translateApplication app
                     _ -> empty
       where

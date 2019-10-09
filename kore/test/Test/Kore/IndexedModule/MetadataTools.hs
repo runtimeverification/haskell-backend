@@ -74,11 +74,12 @@ testSubsorts =
             DoNotVerifyAttributes
             Builtin.koreVerifiers
             testSubsortDefinition
-    meta :: MetadataTools () Attribute.Symbol
+    meta :: MetadataTools () () Attribute.Symbol
     meta =
         extractMetadataTools
             (moduleIndex Map.! testObjectModuleName)
-            (const ())
+            (const Map.empty)
+            (const $ const ())
 
 
 testSubsortDefinition :: ParsedDefinition
@@ -109,7 +110,7 @@ testSubsortModule =
         SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVariable "R"]
             , sentenceAxiomPattern =
-                Builtin.externalizePattern (mkTop sortVarR)
+                Builtin.externalize (mkTop sortVarR)
             , sentenceAxiomAttributes = Attributes
                 [subsortAttribute subSort superSort]
             }

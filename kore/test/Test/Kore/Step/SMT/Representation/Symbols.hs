@@ -1,7 +1,6 @@
 module Test.Kore.Step.SMT.Representation.Symbols where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
@@ -10,6 +9,7 @@ import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
 import qualified Kore.Builtin.Int as Int
+import Kore.Debug
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
@@ -60,7 +60,7 @@ import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers
 import Test.Kore.With
     ( with
     )
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_symbolParsing :: [TestTree]
 test_symbolParsing =
@@ -76,7 +76,7 @@ test_symbolParsing =
             `with` constructorAxiom "S" [("C", [])]
         )
         [ inDeclarations
-            (unresolvedConstructorSymbolMap (testId "C") [koreSort "S"])
+            (unresolvedConstructorSymbolMap (testId "C") (koreSort "S") [])
         , smtForSymbolIs "C" "|HB_C|"
         ]
     , testsForModule "Definition with complex constructor-based sorts"
@@ -92,11 +92,12 @@ test_symbolParsing =
             `with` constructorAxiom "S" [("C", []), ("D", ["T"])]
         )
         [ inDeclarations
-            (unresolvedConstructorSymbolMap (testId "C") [koreSort "S"])
+            (unresolvedConstructorSymbolMap (testId "C") (koreSort "S") [])
         , inDeclarations
             (unresolvedConstructorSymbolMap
                 (testId "D")
-                [koreSort "S", koreSort "T"]
+                (koreSort "S")
+                [koreSort "T"]
             )
         , smtForSymbolIs "C" "|HB_C|"
         , smtForSymbolIs "D" "|HB_D|"
@@ -123,7 +124,7 @@ test_symbolParsing =
         )
         [ inDeclarations
             (unresolvedSmthookSymbolMap
-                (testId "minus") "-" [koreSort "Integer", koreSort "Integer"]
+                (testId "minus") "-" (koreSort "Integer") [ koreSort "Integer"]
             )
         , smtForSymbolIs "minus" "-"
         ]
@@ -131,7 +132,7 @@ test_symbolParsing =
   where
     inDeclarations
         ::  ( HasCallStack
-            , EqualWithExplanation (AST.Symbol sort name)
+            , Diff (AST.Symbol sort name)
             )
         => (Kore.Id, AST.Symbol sort name)
         -> AST.Declarations sort symbol name

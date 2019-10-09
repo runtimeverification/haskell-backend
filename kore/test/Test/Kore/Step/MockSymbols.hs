@@ -14,7 +14,7 @@ module Test.Kore.Step.MockSymbols where
    * one-element functions are called f, g, h.
    * constructors are called "constr<n><k>" where n is the arity and k is used
      to differentiate between them (both are one-digit).
-   * functional constructors are called "functionallConstr<n><k>"
+   * functional constructors are called "functionalConstr<n><k>"
    * functional symbols are called "functional<n><k>"
    * symbols without any special attribute are called "plain<n><k>"
    * variables are called x, y, z...
@@ -41,6 +41,9 @@ import Kore.Attribute.Hook
     )
 import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Concat as Attribute
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors
+    )
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
@@ -114,8 +117,12 @@ eId :: Id
 eId = testId "e"
 fId :: Id
 fId = testId "f"
+fSort0Id :: Id
+fSort0Id = testId "fSort0"
 gId :: Id
 gId = testId "g"
+gSort0Id :: Id
+gSort0Id = testId "gSort0"
 hId :: Id
 hId = testId "h"
 cfId :: Id
@@ -278,8 +285,14 @@ eSymbol = symbol eId [] testSort & functional & constructor
 fSymbol :: Symbol
 fSymbol = symbol fId [testSort] testSort & function
 
+fSort0Symbol :: Symbol
+fSort0Symbol = symbol fSort0Id [testSort0] testSort0 & function
+
 gSymbol :: Symbol
 gSymbol = symbol gId [testSort] testSort & function
+
+gSort0Symbol :: Symbol
+gSort0Symbol = symbol gSort0Id [testSort0] testSort0 & function
 
 hSymbol :: Symbol
 hSymbol = symbol hId [testSort] testSort & function
@@ -519,6 +532,8 @@ anywhereSymbol =
         (typed @Attribute.Symbol . typed @Attribute.Anywhere)
         (Attribute.Anywhere True)
 
+var_x_0 :: ElementVariable Variable
+var_x_0 = ElementVariable $ Variable (testId "x") (Just (Element 0)) testSort
 var_x_1 :: ElementVariable Variable
 var_x_1 = ElementVariable $ Variable (testId "x") (Just (Element 1)) testSort
 var_y_1 :: ElementVariable Variable
@@ -530,7 +545,7 @@ x = ElementVariable $ Variable (testId "x") mempty testSort
 setX :: SetVariable Variable
 setX = SetVariable $ Variable (testId "@x") mempty testSort
 x0 :: ElementVariable Variable
-x0 = ElementVariable $ Variable (testId "x") mempty testSort0
+x0 = ElementVariable $ Variable (testId "x0") mempty testSort0
 y :: ElementVariable Variable
 y = ElementVariable $ Variable (testId "y") mempty testSort
 setY :: SetVariable Variable
@@ -539,6 +554,8 @@ z :: ElementVariable Variable
 z = ElementVariable $ Variable (testId "z") mempty testSort
 t :: ElementVariable Variable
 t = ElementVariable $ Variable (testId "t") mempty testSort
+u :: ElementVariable Variable
+u = ElementVariable $ Variable (testId "u") mempty testSort
 m :: ElementVariable Variable
 m = ElementVariable $ Variable (testId "m") mempty mapSort
 xSet :: ElementVariable Variable
@@ -635,6 +652,14 @@ f, g, h
 f arg = Internal.mkApplySymbol fSymbol [arg]
 g arg = Internal.mkApplySymbol gSymbol [arg]
 h arg = Internal.mkApplySymbol hSymbol [arg]
+
+fSort0, gSort0
+    :: InternalVariable variable
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+fSort0 arg = Internal.mkApplySymbol fSort0Symbol [arg]
+gSort0 arg = Internal.mkApplySymbol gSort0Symbol [arg]
 
 cf :: InternalVariable variable => TermLike variable
 cf = Internal.mkApplySymbol cfSymbol []
@@ -1035,7 +1060,9 @@ symbols =
     , dSymbol
     , eSymbol
     , fSymbol
+    , fSort0Symbol
     , gSymbol
+    , gSort0Symbol
     , hSymbol
     , cfSymbol
     , cfSort0Symbol
@@ -1167,9 +1194,6 @@ sortAttributesMapping =
         )
 
     -- Also add attributes for the implicitly defined sorts.
-    ,   ( charMetaSort
-        , Default.def
-        )
     ,   ( stringMetaSort
         , Default.def { Attribute.hook = Hook (Just "STRING.String") }
         )
@@ -1205,9 +1229,10 @@ smtConstructor symbolId argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom encodedId)))
         , declaration =
-            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+            SMT.SymbolConstructor SMT.IndirectSymbolDeclaration
                 { name = encodableId
-                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                , resultSort = SMT.SortReference resultSort
+                , argumentSorts = map SMT.SortReference argumentSorts
                 }
         }
   where
@@ -1220,9 +1245,10 @@ smtBuiltinSymbol builtin argumentSorts resultSort =
     SMT.Symbol
         { smtFromSortArgs = const (const (Just (SMT.Atom builtin)))
         , declaration =
-            SMT.SymbolDeclaredIndirectly SMT.IndirectSymbolDeclaration
+            SMT.SymbolBuiltin SMT.IndirectSymbolDeclaration
                 { name = SMT.AlreadyEncoded builtin
-                , sorts = map SMT.SortReference (resultSort : argumentSorts)
+                , resultSort = SMT.SortReference resultSort
+                , argumentSorts = map SMT.SortReference argumentSorts
                 }
         }
 
@@ -1252,57 +1278,26 @@ smtUnresolvedDeclarations = SMT.Declarations
         , (boolSortId, builtinZeroarySmtSort SMT.tBool)
         ]
     , symbols = Map.fromList
-        [ (aId, smtConstructor aId [] testSort)
-        , ( aSort0Id, smtConstructor aSort0Id [] testSort1)
+        [ ( aSort0Id, smtConstructor aSort0Id [] testSort1)
         , ( aSort1Id, smtConstructor aSort1Id [] testSort1)
         , ( aSubsortId, smtConstructor aSubsortId [] subSort)
         , ( aSubOthersortId, smtConstructor aSubOthersortId [] subSubsort)
         , ( aSubSubsortId, smtConstructor aSubSubsortId [] subSubsort)
         , ( aTopSortId, smtConstructor aTopSortId [] topSort)
         , ( aOtherSortId, smtConstructor aOtherSortId [] otherSort)
-        , ( bId, smtConstructor bId [] testSort)
         , ( bSort0Id, smtConstructor bSort0Id [] testSort0)
-        , ( cId, smtConstructor cId [] testSort)
-        , ( dId, smtConstructor dId [] testSort)
-        , ( eId, smtConstructor eId [] testSort)
-        , ( constr00Id, smtConstructor constr00Id [] testSort)
-        , ( constr10Id, smtConstructor constr10Id [testSort] testSort)
-        , ( constr11Id, smtConstructor constr11Id [testSort] testSort)
-        , ( constr20Id, smtConstructor constr20Id [testSort, testSort] testSort)
-        ,   ( functionalConstr10Id
-            , smtConstructor functionalConstr10Id [testSort] testSort
-            )
-        ,   ( functionalConstr11Id
-            , smtConstructor functionalConstr11Id [testSort] testSort
-            )
-        ,   ( functionalConstr12Id
-            , smtConstructor functionalConstr12Id [testSort] testSort
-            )
-        ,   ( functionalConstr20Id
-            , smtConstructor functionalConstr20Id [testSort, testSort] testSort
-            )
-        ,   ( functionalConstr21Id
-            , smtConstructor functionalConstr21Id [testSort, testSort] testSort
-            )
-        ,   ( functionalConstr30Id
-            , smtConstructor
-                functionalConstr30Id
-                [testSort, testSort, testSort]
-                testSort
-            )
-        ,   ( functionalTopConstr20Id
-            , smtConstructor
-                functionalTopConstr21Id [testSort, testSort] testSort
-            )
-        ,   ( functionalTopConstr21Id
-            , smtConstructor
-                functionalTopConstr21Id [testSort, testSort] testSort
-            )
         , ( lessIntId, smtBuiltinSymbol "<" [intSort, intSort] boolSort)
         , ( greaterEqIntId, smtBuiltinSymbol ">=" [intSort, intSort] boolSort)
         , ( sigmaId, smtConstructor sigmaId [testSort, testSort] testSort)
         ]
     }
+
+sortConstructors :: Map.Map Id Attribute.Constructors
+sortConstructors = Map.fromList
+    [
+    -- TODO(virgil): testSort has constructors, it should have a
+    -- constructor-based definition. The same for others.
+    ]
 
 testSortId :: Id
 testSortId = testId "testSort"
@@ -1517,6 +1512,7 @@ emptyMetadataTools =
         [] -- sortAttributesMapping
         [] -- subsorts
         emptySmtDeclarations
+        Map.empty -- sortConstructors
 
 metadataTools :: GHC.HasCallStack => SmtMetadataTools Attribute.Symbol
 metadataTools =
@@ -1526,6 +1522,7 @@ metadataTools =
         subsorts
         headSortsMapping
         smtDeclarations
+        sortConstructors
 
 termLikeSimplifier :: TermLikeSimplifier
 termLikeSimplifier = Simplifier.create

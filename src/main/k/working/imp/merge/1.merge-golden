@@ -1,0 +1,40 @@
+\rewrites{SortGeneratedTopCell{}}(
+    \and{SortGeneratedTopCell{}}(
+        Lbl'-LT-'generatedTop'-GT-'{}(
+            Lbl'-LT-'T'-GT-'{}(
+                Lbl'-LT-'k'-GT-'{}(
+                    kseq{}(
+                        inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                        VarDotVar2:SortK{}
+                    )
+                ),
+                Lbl'-LT-'state'-GT-'{}(
+                    Lbl'Unds'Map'Unds'{}(
+                        Lbl'UndsPipe'-'-GT-Unds'{}(
+                            inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                            VarI:SortKItem{}
+                        ),
+                        VarDotVar3:SortMap{}
+                    )
+                )
+            ),
+            VarDotVar0:SortGeneratedCounterCell{}
+        ),
+        \top{SortGeneratedTopCell{}}()
+    ),
+    Lbl'-LT-'generatedTop'-GT-'{}(
+        Lbl'-LT-'T'-GT-'{}(
+            Lbl'-LT-'k'-GT-'{}(kseq{}(VarI:SortKItem{}, VarDotVar2:SortK{})),
+            Lbl'-LT-'state'-GT-'{}(
+                Lbl'Unds'Map'Unds'{}(
+                    Lbl'UndsPipe'-'-GT-Unds'{}(
+                        inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                        VarI:SortKItem{}
+                    ),
+                    VarDotVar3:SortMap{}
+                )
+            )
+        ),
+        VarDotVar0:SortGeneratedCounterCell{}
+    )
+)

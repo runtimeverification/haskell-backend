@@ -1,10 +1,12 @@
 module Test.Kore.Step.SMT.Representation.Sorts where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
+    )
+import qualified Kore.Attribute.Sort.ConstructorsBuilder as Attribute.Constructors
+    ( indexBySort
     )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
@@ -60,7 +62,7 @@ import qualified Test.Kore.Step.SMT.Representation.Helpers as Helpers
 import Test.Kore.With
     ( with
     )
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_sortParsing :: [TestTree]
 test_sortParsing =
@@ -68,7 +70,6 @@ test_sortParsing =
         (indexModule $ emptyModule "m")
         [declarationsAre
             (emptyDeclarations
-                `with` unresolvedSortMap "#Char"
                 `with` unresolvedSortMap "#String"
             )
         ]
@@ -77,8 +78,7 @@ test_sortParsing =
             `with` sortDeclaration "S"
             `with` sortDeclaration "T"
         )
-        [ inDeclarations (unresolvedSortMap "#Char")
-        , inDeclarations (unresolvedSortMap "S")
+        [ inDeclarations (unresolvedSortMap "S")
         , inDeclarations (unresolvedSortMap "T")
         , smtForSortIs "S" "|HB_S|"
         , smtForSortIs "T" "|HB_T|"
@@ -91,8 +91,7 @@ test_sortParsing =
                 (symbolDeclaration "C" "S" [] `with` [functional, constructor])
             `with` constructorAxiom "S" [("C", [])]
         )
-        [ inDeclarations (unresolvedSortMap "#Char")
-        , inDeclarations
+        [ inDeclarations
             (unresolvedDataMap "S"
                 `with` unresolvedSortConstructor "C"
             )
@@ -135,7 +134,7 @@ test_sortParsing =
   where
     inDeclarations
         ::  ( HasCallStack
-            , EqualWithExplanation (AST.Sort sort symbol name)
+            , Diff (AST.Sort sort symbol name)
             )
         => (Kore.Id, AST.Sort sort symbol name)
         -> AST.Declarations sort symbol name
@@ -150,4 +149,6 @@ testsForModule
         ]
     -> TestTree
 testsForModule name =
-    Helpers.testsForModule name buildRepresentations
+    Helpers.testsForModule name build
+  where
+    build m = buildRepresentations m (Attribute.Constructors.indexBySort m)

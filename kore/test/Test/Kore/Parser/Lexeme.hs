@@ -6,7 +6,6 @@ import Test.Tasty
     )
 
 import Kore.Parser.Lexeme
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.Definition
 import Kore.Syntax.StringLiteral
 
@@ -24,11 +23,10 @@ test_koreLexeme =
     , testGroup "inSquareBracketsParser" inSquareBracketsParserTests
     , testGroup "keywordBasedParsers" keywordBasedParsersTests
     , testGroup "mlLexemeParser" mlLexemeParserTests
-    , testGroup "moduleNameParser" moduleNameParserTests
+    , testGroup "moduleNameIdParser" moduleNameIdParserTests
     , testGroup "parenPairParser" parenPairParserTests
     , testGroup "skipWhitespace" skipWhitespaceTests
     , testGroup "stringLiteralParser" stringLiteralParserTests
-    , testGroup "charLiteralParser" charLiteralParserTests
     ]
 
 colonParserTests :: [TestTree]
@@ -47,7 +45,7 @@ commaParserTests =
 
 curlyPairParserTests :: [TestTree]
 curlyPairParserTests =
-    parseTree (curlyPairParser idParser moduleNameParser)
+    parseTree (curlyPairParser idParser moduleNameIdParser)
         [ success "{a,B}" (testId "a", ModuleName "B")
         , success "{ a , B } " (testId "a", ModuleName "B")
         , success "{/**/a/**/,/**/B/**/}/**/" (testId "a", ModuleName "B")
@@ -59,7 +57,7 @@ curlyPairParserTests =
 
 idParserTests :: [TestTree]
 idParserTests =
-    parseTree idParser
+    parseTree symbolIdParser
         [ success "A" (testId "A")
         , success "a" (testId "a")
         , success "abc" (testId "abc")
@@ -173,9 +171,9 @@ mlLexemeParserTests =
     , FailureWithoutMessage ["", "Hello", " hello"]
     ]
 
-moduleNameParserTests :: [TestTree]
-moduleNameParserTests =
-    parseTree moduleNameParser
+moduleNameIdParserTests :: [TestTree]
+moduleNameIdParserTests =
+    parseTree moduleNameIdParser
         [ success "A" (ModuleName "A")
         , success "A-" (ModuleName "A-")
         , success "A2" (ModuleName "A2")
@@ -189,7 +187,7 @@ moduleNameParserTests =
 
 parenPairParserTests :: [TestTree]
 parenPairParserTests =
-    parseTree (parenPairParser idParser moduleNameParser)
+    parseTree (parenPairParser idParser moduleNameIdParser)
         [ success "(a,B)" (testId "a", ModuleName "B")
         , success "( a , B ) " (testId "a", ModuleName "B")
         , success "(/**/a/**/,/**/B/**/)/**/" (testId "a", ModuleName "B")
@@ -280,8 +278,7 @@ stringLiteralParserTests =
                     , "1 | \"\DEL\""
                     , "  |  ^"
                     , "unexpected delete"
-                    , "expecting '\"', escape sequence, \
-                      \or printable ASCII character"
+                    , "expecting '\"' or printable ASCII character"
                     ]
             }
         , Failure FailureTest
@@ -320,105 +317,6 @@ stringLiteralParserTests =
             }
         , FailureWithoutMessage
             [ "", "'a'", "\"\\z\"", "\"\\xzf\"", "\"\\u123\"", "\"\\U1234567\""
-            ]
-        ]
-
-charLiteralParserTests :: [TestTree]
-charLiteralParserTests =
-    parseTree charLiteralParser
-        [ success "'a'" (CharLiteral 'a')
-        , success "'''" (CharLiteral '\'')
-        , success "'\\\"'" (CharLiteral '\"')
-        , success "'\\f'" (CharLiteral '\12')
-        , success "'\\n'" (CharLiteral '\10')
-        , success "'\\r'" (CharLiteral '\13')
-        , success "'\\t'" (CharLiteral '\9')
-        , success "'\\u1ABC'" (CharLiteral '\6844')
-        , success "'\\u1abc'" (CharLiteral '\6844')
-        , success "'\\U000120FF'" (CharLiteral '\73983')
-        , success "'\\U000120ff'" (CharLiteral '\73983')
-        , success "'\\xFF'" (CharLiteral '\xFF')
-        , success "'\\xff'" (CharLiteral '\xFF')
-        , Failure FailureTest
-            { failureInput = "'\DEL'"
-            , failureExpected =
-                unlines
-                    [ "<test-string>:1:2:"
-                    , "  |"
-                    , "1 | '\DEL'"
-                    , "  |  ^"
-                    , "unexpected delete"
-                    , "expecting escape sequence or printable ASCII character"
-                    ]
-            }
-        , Failure FailureTest
-            { failureInput = "'\\xF'"
-            , failureExpected =
-                unlines
-                    [ "<test-string>:1:5:"
-                    , "  |"
-                    , "1 | '\\xF'"
-                    , "  |     ^"
-                    , "unexpected '''"
-                    , "expecting hexadecimal digit"
-                    ]
-            }
-        , Failure FailureTest
-            { failureInput = "'\\xFr'"
-            , failureExpected =
-                unlines
-                    [ "<test-string>:1:5:"
-                    , "  |"
-                    , "1 | '\\xFr'"
-                    , "  |     ^"
-                    , "unexpected 'r'"
-                    , "expecting hexadecimal digit"
-                    ]
-            }
-        , invalidEscape "'\\?'"
-        , invalidEscape "'\\a'"
-        , invalidEscape "'\\b'"
-        , invalidEscape "'\\v'"
-        , invalidEscape "'\\377'"
-        , invalidEscape "'\\77'"
-        , Failure FailureTest
-            { failureInput = "'\\uD800'"
-            , failureExpected =
-                unlines
-                    [ "<test-string>:1:8:"
-                    , "  |"
-                    , "1 | '\\uD800'"
-                    , "  |        ^"
-                    , illegalSurrogate "D800"
-                    ]
-            }
-        , Failure FailureTest
-            { failureInput = "'\\UFFFFFFFF'"
-            , failureExpected =
-                unlines
-                    [ "<test-string>:1:12:"
-                    , "  |"
-                    , "1 | '\\UFFFFFFFF'"
-                    , "  |            ^"
-                    , unrepresentableCode "FFFFFFFF"
-                    ]
-            }
-        , Failure FailureTest
-            { failureInput = "''"
-            , failureExpected =
-                unlines
-                    [ "<test-string>:1:3:"
-                    , "  |"
-                    , "1 | ''"
-                    , "  |   ^"
-                    , "unexpected end of input"
-                    , "expecting '''"
-                    ]
-            }
-        , FailureWithoutMessage
-            [ "", "'\\z'", "'\\xzf'", "'\\u123'", "'\\U1234567'"
-            , "'\\U000120FFa'", "'\\xFr'", "'\\77a'", "'\\u1ABCa'"
-            , "'ab'"
             ]
         ]
 

@@ -9,6 +9,9 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
+import Control.Comonad.Trans.Cofree
+    ( CofreeF ((:<))
+    )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 
@@ -18,6 +21,15 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+    ( TermLike
+    , TermLikeF (..)
+    )
+import qualified Kore.Profiler.Profile as Profiler
+    ( identifierSimplification
+    )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+    ( matchAxiomIdentifier
+    )
 import qualified Kore.Step.Simplification.And as And
     ( simplify
     )
@@ -31,9 +43,6 @@ import qualified Kore.Step.Simplification.Builtin as Builtin
     ( simplify
     )
 import qualified Kore.Step.Simplification.Ceil as Ceil
-    ( simplify
-    )
-import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
     ( simplify
     )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
@@ -92,6 +101,7 @@ import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
 
+
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
 
@@ -129,6 +139,10 @@ simplifyInternal
     -> simplifier (OrPattern variable)
 simplifyInternal term predicate = simplifyInternalWorker term
   where
+    tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
+        Nothing -> id
+        Just identifier -> Profiler.identifierSimplification identifier
+
     simplifyChildren
         :: Traversable t
         => t (TermLike variable)
@@ -136,6 +150,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
+        tracer termLike $
         let doNotSimplify = return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
@@ -182,7 +197,5 @@ simplifyInternal term predicate = simplifyInternalWorker term
             --
             StringLiteralF stringLiteralF ->
                 return $ StringLiteral.simplify (getConst stringLiteralF)
-            CharLiteralF charLiteralF ->
-                return $ CharLiteral.simplify (getConst charLiteralF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)

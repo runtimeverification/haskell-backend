@@ -183,7 +183,7 @@ parseKoreLogOptions =
         option
             (maybeReader parseTypeString)
             $ long "log"
-            <> help "Log type: None, StdOut, FileText"
+            <> help "Log type: none, stdout, filetext"
     parseTypeString =
         \case
             "none"     -> pure LogNone
@@ -194,7 +194,7 @@ parseKoreLogOptions =
         option
             (maybeReader parseSeverity)
             $ long "log-level"
-            <> help "Log level: Debug, Info, Warning, Error, or Critical"
+            <> help "Log level: debug, info, warning, error, or critical"
     parseSeverity =
         \case
             "debug"    -> pure Debug

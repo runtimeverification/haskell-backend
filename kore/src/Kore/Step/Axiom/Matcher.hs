@@ -194,8 +194,6 @@ matchEqualHeads
 -- Terminal patterns
 matchEqualHeads (Pair (StringLiteral_ string1) (StringLiteral_ string2)) =
     Monad.guard (string1 == string2)
-matchEqualHeads (Pair (CharLiteral_ char1) (CharLiteral_ char2)) =
-    Monad.guard (char1 == char2)
 matchEqualHeads (Pair (BuiltinInt_ int1) (BuiltinInt_ int2)) =
     Monad.guard (int1 == int2)
 matchEqualHeads (Pair (BuiltinBool_ bool1) (BuiltinBool_ bool2)) =

@@ -48,6 +48,7 @@ module SMT
     ) where
 
 import Control.Concurrent.MVar
+import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens hiding
     ( makeLenses
     )
@@ -97,7 +98,7 @@ import Data.Text
 import qualified Kore.Logger as Logger
 import Kore.Profiler.Data
     ( MonadProfiler (..)
-    , profileDurationStartStop
+    , profileEvent
     )
 import ListT
     ( ListT
@@ -271,7 +272,9 @@ instance MonadSMT NoSMT where
     check = return Unknown
 
 instance MonadProfiler NoSMT where
-    profileDuration = profileDurationStartStop
+    profile a action = do
+        configuration <- profileConfiguration
+        profileEvent configuration a action
 
 deriving instance MonadUnliftIO NoSMT
 
@@ -382,11 +385,12 @@ instance (MonadSMT m, Monoid w) => MonadSMT (AccumT w m) where
     withSolver = mapAccumT withSolver
     {-# INLINE withSolver #-}
 
-instance MonadIO m => MonadProfiler (SmtT m)
+instance (MonadIO m) => MonadProfiler (SmtT m)
   where
-    profileDuration a action =
-        SmtT (profileDurationStartStop a (runSmtT action))
-    {-# INLINE profileDuration #-}
+    profile a action = do
+        configuration <- profileConfiguration
+        SmtT (profileEvent configuration a (runSmtT action))
+    {-# INLINE profile #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 
@@ -473,11 +477,11 @@ stopSolver mvar = do
 
 -- | Run an external SMT solver.
 runSMT :: Config -> Logger -> SMT a -> IO a
-runSMT config logger SmtT { runSmtT } = do
-    solver <- newSolver config logger
-    a <- runReaderT runSmtT solver
-    stopSolver solver
-    return a
+runSMT config logger SmtT { runSmtT } =
+    Exception.bracket
+        (newSolver config logger)
+        stopSolver
+        (runReaderT runSmtT)
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars

@@ -6,21 +6,18 @@ License     : NCSA
 module Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     , simplify
-    , simplifyPredicate
     ) where
 
-import qualified Control.Monad.Trans.Class as Monad.Trans
-
 import Branch
-import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern Exists_
     )
@@ -28,17 +25,11 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Step.Condition.Evaluator as Predicate
-    ( simplify
-    )
 import qualified Kore.Step.Merging.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
-    , simplifyTerm
-    )
-import Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutions
+    , simplifyConditionalTermToOr
     )
 
 simplifyAndRemoveTopExists
@@ -66,32 +57,10 @@ simplify
         )
     => Pattern variable
     -> simplifier (OrPattern variable)
-simplify pattern'@Conditional { term } = do
-    simplifiedTerm <- simplifyTerm term
-    orPatterns <-
-        Branch.gather
-        $ traverse
-            (Pattern.mergeWithPredicate $ Pattern.withoutTerm pattern')
-            simplifiedTerm
-    return (MultiOr.mergeAll orPatterns)
-
-{-| Simplifies the predicate inside an 'Pattern'.
--}
-simplifyPredicate
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
-    => Pattern variable
-    -- ^ The condition to be evaluated.
-    -> BranchT simplifier (Pattern variable)
-simplifyPredicate Conditional {term, predicate, substitution} = do
-    evaluated <- Monad.Trans.lift $ Predicate.simplify predicate
-    let Conditional { predicate = evaluatedPredicate } = evaluated
-        Conditional { substitution = evaluatedSubstitution } = evaluated
-    merged <-
-        mergePredicatesAndSubstitutions
-            [evaluatedPredicate]
-            [substitution, evaluatedSubstitution]
-    -- TODO(virgil): Do I need to re-evaluate the predicate?
-    return $ Pattern.withCondition term merged
+simplify pattern' = do
+    orSimplifiedTerms <- simplifyConditionalTermToOr predicate term
+    fmap OrPattern.fromPatterns . Branch.gather $ do
+        simplifiedTerm <- Branch.scatter orSimplifiedTerms
+        Pattern.mergeWithPredicate predicate simplifiedTerm
+  where
+    (term, predicate) = Conditional.splitTerm pattern'

@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Defined
 
 instance Debug Defined
 
+instance Diff Defined
+
 instance NFData Defined
 
 instance Hashable Defined
@@ -176,11 +178,6 @@ instance Synthetic Defined (Top sort) where
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
 instance Synthetic Defined (Const StringLiteral) where
-    synthetic = const (Defined True)
-    {-# INLINE synthetic #-}
-
--- | A 'CharLiteral' pattern is always 'Defined'.
-instance Synthetic Defined (Const CharLiteral) where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 

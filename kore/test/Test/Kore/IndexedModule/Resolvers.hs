@@ -37,16 +37,16 @@ objectS1 = simpleSort (SortName "s1")
 
 objectA :: SentenceSymbol ParsedPattern
 objectA =
-    Builtin.externalizePattern
+    Builtin.externalize
     <$> TermLike.mkSymbol_ (testId "a") [] objectS1
 
 -- Two variations on a constructor axiom for 'objectA'.
 axiomA, axiomA' :: SentenceAxiom ParsedPattern
 axiomA =
-    fmap Builtin.externalizePattern
+    fmap Builtin.externalize
     $ TermLike.mkAxiom_ $ TermLike.applySymbol_ objectA []
 axiomA' =
-    fmap Builtin.externalizePattern
+    fmap Builtin.externalize
     $ TermLike.mkAxiom [sortVariableR]
     $ TermLike.mkForall x
     $ TermLike.mkEquals sortR (TermLike.mkElemVar x)
@@ -58,17 +58,17 @@ axiomA' =
 
 objectB :: SentenceAlias ParsedPattern
 objectB =
-    fmap Builtin.externalizePattern
+    fmap Builtin.externalize
     $ TermLike.mkAlias_ (testId "b") objectS1 [] $ TermLike.mkTop objectS1
 
 metaA :: SentenceSymbol ParsedPattern
 metaA =
-    Builtin.externalizePattern
+    Builtin.externalize
     <$> TermLike.mkSymbol_ (testId "#a") [] stringMetaSort
 
 metaB :: SentenceAlias ParsedPattern
 metaB =
-    fmap Builtin.externalizePattern
+    fmap Builtin.externalize
     $ TermLike.mkAlias_ (testId "#b") stringMetaSort []
     $ TermLike.mkTop stringMetaSort
 
@@ -179,12 +179,12 @@ test_resolvers =
     , testCase "meta sort"
         (assertEqual ""
             (Right (def :: Attribute.Sort, SentenceSort
-                { sentenceSortName = charMetaId
+                { sentenceSortName = stringMetaId
                 , sentenceSortParameters = []
                 , sentenceSortAttributes = Attributes []
                 }
             ))
-            (resolveSort testIndexedModule charMetaId)
+            (resolveSort testIndexedModule stringMetaId)
         )
     , testCase "object symbol"
         (assertEqual ""
@@ -292,13 +292,13 @@ test_resolvers =
     , testCase "sort indexed axioms"
         (assertEqual ""
             (List.sortOn Data.Ord.Down [axiomA, axiomA'])
-            (fmap Builtin.externalizePattern . getIndexedSentence
+            (fmap Builtin.externalize . getIndexedSentence
                 <$> indexedModuleAxioms testIndexedObjectModule)
         )
     ]
   where
-    charMetaId :: Id
-    charMetaId = charMetaSortId
+    stringMetaId :: Id
+    stringMetaId = stringMetaSortId
 
 
 test_resolver_undefined_messages :: TestTree

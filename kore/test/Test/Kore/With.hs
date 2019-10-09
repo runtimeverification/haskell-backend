@@ -10,10 +10,27 @@ import Data.List
     ( foldl'
     )
 import qualified Data.List as List
+import Data.List.NonEmpty
+    ( NonEmpty ((:|))
+    )
+import qualified Data.List.NonEmpty as NonEmpty
+    ( cons
+    , reverse
+    )
 import qualified Data.Map.Strict as Map
 
 import Kore.Attribute.Attributes
     ( AttributePattern
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors (Constructors)
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors
+    ( Constructor (Constructor)
+    , ConstructorLike (..)
+    )
+import qualified Kore.Attribute.Sort.Constructors as Attribute.Constructors.Constructor
+    ( Constructor (..)
     )
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.TermLike
@@ -102,6 +119,9 @@ class With a b where
     with :: a -> b -> a
 
 newtype Attribute = Attribute { getAttribute :: AttributePattern }
+
+instance (With b c) => With (a->b) (a->c) where
+    with fb fc = \a -> fb a `with` fc a
 
 instance With [a] a where
     with as a = a : as
@@ -286,16 +306,18 @@ instance With AST.UnresolvedSymbol Kore.Sort where
 instance With AST.UnresolvedKoreSymbolDeclaration Kore.Sort where
     with (AST.SymbolDeclaredDirectly _) _ =
         error "Cannot add sorts to SymbolDeclaredDirectly."
-    with (AST.SymbolDeclaredIndirectly declaration) sort =
-        AST.SymbolDeclaredIndirectly (declaration `with` sort)
+    with (AST.SymbolBuiltin declaration) sort =
+        AST.SymbolBuiltin (declaration `with` sort)
+    with (AST.SymbolConstructor declaration) sort =
+        AST.SymbolConstructor (declaration `with` sort)
 
 instance With AST.UnresolvedIndirectSymbolDeclaration Kore.Sort where
     with
-        s@AST.IndirectSymbolDeclaration {sorts}
+        s@AST.IndirectSymbolDeclaration {argumentSorts}
         sort
       = s
-        { AST.IndirectSymbolDeclaration.sorts =
-            sorts `with` AST.SortReference sort
+        { AST.IndirectSymbolDeclaration.argumentSorts =
+            argumentSorts `with` AST.SortReference sort
         }
 
 newtype ConcreteElement =
@@ -415,3 +437,37 @@ instance Ord child
         [OpaqueSet child]
   where
     with = foldl' with
+
+instance With Attribute.Constructors Attribute.Constructors.ConstructorLike
+  where
+    with (Attribute.Constructors Nothing) constructorLike =
+        Attribute.Constructors (Just (constructorLike :| []))
+    with
+        (Attribute.Constructors (Just constructors))
+        constructorLike
+      = Attribute.Constructors
+        $ Just
+        $ nonEmptyAppend constructorLike constructors
+
+instance With Attribute.Constructors.ConstructorLike Kore.Sort
+  where
+    with
+        (Attribute.Constructors.ConstructorLikeConstructor constructor) sort
+      =
+        Attribute.Constructors.ConstructorLikeConstructor
+            (constructor `with` sort)
+    with
+        Attribute.Constructors.ConstructorLikeInjection _sort
+      =
+        error "Cannot add sort to injection."
+
+
+instance With Attribute.Constructors.Constructor Kore.Sort
+  where
+    with
+        c@(Attribute.Constructors.Constructor {sorts}) sort
+      =
+        c{Attribute.Constructors.Constructor.sorts = sorts ++ [sort]}
+
+nonEmptyAppend :: a -> NonEmpty a -> NonEmpty a
+nonEmptyAppend a = NonEmpty.reverse . NonEmpty.cons a . NonEmpty.reverse

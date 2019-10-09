@@ -205,7 +205,7 @@ test_sortUsage =
         (ExpectedErrorMessage $ noSort "#s")
         (ErrorStack ["sort '#s' (<test data>)", "(<test data>)"])
         (TestedSort (simpleSort (SortName "#s")))
-        (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
+        (SortActualThatIsDeclared (simpleSortActual (SortName "#String")))
         (NamePrefix "#internal")
     , successTestsForMetaSort
         (CommonDescription "Referencing simple sort")
@@ -219,7 +219,7 @@ test_sortUsage =
             }
         )
         (TestedSort (sortVariableSort "#s"))
-        (SortActualThatIsDeclared (simpleSortActual (SortName "#Char")))
+        (SortActualThatIsDeclared (simpleSortActual (SortName "#String")))
         (NamePrefix "#internal")
     , testsForObjectSort
         (CommonDescription "Referencing parametrized sort")
@@ -577,7 +577,7 @@ unfilteredTestExamplesForSort
                             aliasName
                             sort
                             sortVariables
-                            (Builtin.externalizePattern $ mkTop sort)
+                            (Builtin.externalize $ mkTop sort)
                         )
                     : additionalSentences
                     )
@@ -604,7 +604,7 @@ unfilteredTestExamplesForSort
                             sort
                             additionalSort
                             sortVariables
-                            (Builtin.externalizePattern $ mkTop additionalSort)
+                            (Builtin.externalize $ mkTop additionalSort)
                         )
                     : additionalSentences
                     )

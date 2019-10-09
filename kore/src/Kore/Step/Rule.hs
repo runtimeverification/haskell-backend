@@ -25,21 +25,27 @@ module Kore.Step.Rule
     , extractOnePathClaims
     , extractAllPathClaims
     , extractImplicationClaims
+    , applySubstitution
     , mkRewriteAxiom
     , mkEqualityAxiom
     , mkCeilAxiom
     , refreshRulePattern
     , onePathRuleToPattern
+    , isFreeOf
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
     ) where
 
+import Control.Exception
+    ( assert
+    )
 import qualified Data.Default as Default
 import Data.Map.Strict
     ( Map
     )
 import Data.Maybe
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -49,23 +55,79 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import GHC.Stack
+    ( HasCallStack
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
+    ( FreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Priority
+    ( getPriority
+    )
 import Kore.Debug
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
+import Kore.Internal.Alias
+    ( Alias (..)
+    )
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike
+    ( pattern And_
+    , pattern ApplyAlias_
+    , pattern Ceil_
+    , pattern Equals_
+    , pattern Forall_
+    , pattern Implies_
+    , pattern Not_
+    , pattern Rewrites_
+    , TermLike
+    , mkAnd
+    , mkApplyAlias
+    , mkAxiom
+    , mkAxiom_
+    , mkCeil
+    , mkEquals
+    , mkImplies
+    , mkRewrites
+    , mkTop
+    , mkTop_
+    , mkVar
+    , termLikeSort
+    )
+import qualified Kore.Internal.TermLike as TermLike
+import Kore.Internal.Variable
+    ( InternalVariable
+    )
 import Kore.Predicate.Predicate
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
+import Kore.Sort
+    ( Sort (..)
+    , SortVariable (SortVariable)
+    )
+import Kore.Substitute
+    ( SubstitutionVariable
+    )
 import qualified Kore.Syntax.Definition as Syntax
+import Kore.Syntax.Id
+    ( AstLocation (..)
+    , Id (..)
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unification.Substitution
+    ( Substitution
+    )
+import qualified Kore.Unification.Substitution as Substitution
+    ( toMap
+    , variables
+    )
 import Kore.Unparser
     ( Unparse
     , unparse
@@ -84,6 +146,7 @@ newtype AxiomPatternError = AxiomPatternError ()
  -}
 data RulePattern variable = RulePattern
     { left  :: !(TermLike variable)
+    , antiLeft :: !(Maybe (TermLike variable))
     , right :: !(TermLike variable)
     , requires :: !(Predicate variable)
     , ensures :: !(Predicate variable)
@@ -101,11 +164,13 @@ instance SOP.HasDatatypeInfo (RulePattern variable)
 
 instance Debug variable => Debug (RulePattern variable)
 
+instance (Debug variable, Diff variable) => Diff (RulePattern variable)
+
 instance
-    (SortedVariable variable, Unparse variable) =>
+    (Ord variable, SortedVariable variable, Unparse variable) =>
     Pretty (RulePattern variable)
   where
-    pretty rulePattern'@(RulePattern _ _ _ _ _) =
+    pretty rulePattern'@(RulePattern _ _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
             , Pretty.indent 4 (unparse left)
@@ -119,6 +184,10 @@ instance
       where
         RulePattern { left, right, requires, ensures } = rulePattern'
 
+instance TopBottom (RulePattern variable) where
+    isTop _ = False
+    isBottom _ = False
+
 rulePattern
     :: InternalVariable variable
     => TermLike variable
@@ -127,6 +196,7 @@ rulePattern
 rulePattern left right =
     RulePattern
         { left
+        , antiLeft = Nothing
         , right
         , requires = Predicate.makeTruePredicate
         , ensures  = Predicate.makeTruePredicate
@@ -157,16 +227,18 @@ instance SOP.HasDatatypeInfo (RewriteRule variable)
 
 instance Debug variable => Debug (RewriteRule variable)
 
+instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
+
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
     => Unparse (RewriteRule variable)
   where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
-        unparse $ mkImplies
+        unparse $ mkRewrites
             (mkAnd left (Predicate.unwrapPredicate requires))
             right
     unparse2 (RewriteRule RulePattern { left, right, requires } ) =
-        unparse2 $ mkImplies
+        unparse2 $ mkRewrites
             (mkAnd left (Predicate.unwrapPredicate requires))
             right
 
@@ -223,12 +295,18 @@ instance SOP.HasDatatypeInfo (OnePathRule variable)
 
 instance Debug variable => Debug (OnePathRule variable)
 
+instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
+
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
     => Unparse (OnePathRule variable)
   where
     unparse = unparse . onePathRuleToPattern
     unparse2 = unparse2 . onePathRuleToPattern
+
+instance TopBottom (OnePathRule variable) where
+    isTop _ = False
+    isBottom _ = False
 
 {-  | All-Path-Claim rule pattern.
 -}
@@ -238,6 +316,17 @@ newtype AllPathRule variable =
 deriving instance Eq variable => Eq (AllPathRule variable)
 deriving instance Ord variable => Ord (AllPathRule variable)
 deriving instance Show variable => Show (AllPathRule variable)
+
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (AllPathRule variable)
+  where
+    unparse = unparse . allPathRuleToPattern
+    unparse2 = unparse2 . allPathRuleToPattern
+
+instance TopBottom (AllPathRule variable) where
+    isTop _ = False
+    isBottom _ = False
 
 {- | Sum type to distinguish rewrite axioms (used for stepping)
 from function axioms (used for functional simplification).
@@ -383,27 +472,75 @@ onePathRuleToPattern
     => Unparse variable
     => OnePathRule variable
     -> TermLike variable
-onePathRuleToPattern (OnePathRule rulePatt) =
-    mkImplies
+onePathRuleToPattern
+    ( OnePathRule
+        (RulePattern left antiLeft right requires ensures _)
+    )
+  =
+    assert (antiLeft == Nothing)
+    $ mkRewrites
         ( mkAnd
-            (Predicate.unwrapPredicate . requires $ rulePatt)
-            (left rulePatt)
+            (Predicate.unwrapPredicate requires)
+            left
         )
-       ( mkApplyAlias
+        ( mkApplyAlias
             (wEF sort)
             [mkAnd
-                (Predicate.unwrapPredicate . ensures $ rulePatt)
-                (right rulePatt)
+                (Predicate.unwrapPredicate ensures)
+                right
             ]
-       )
+        )
   where
     sort :: Sort
-    sort = termLikeSort . right $ rulePatt
+    sort = termLikeSort right
 
 wEF :: Sort -> Alias (TermLike Variable)
 wEF sort = Alias
     { aliasConstructor = Id
         { getId = weakExistsFinally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = []
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
+
+allPathRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => AllPathRule variable
+    -> TermLike variable
+allPathRuleToPattern
+    ( AllPathRule
+        (RulePattern left antiLeft right requires ensures _)
+    )
+  =
+    assert (antiLeft == Nothing)
+    $ mkImplies
+        ( mkAnd
+            (Predicate.unwrapPredicate requires)
+            left
+        )
+        ( mkApplyAlias
+            (wAF sort)
+            [mkAnd
+                (Predicate.unwrapPredicate ensures)
+                right
+            ]
+        )
+  where
+    sort :: Sort
+    sort = termLikeSort right
+
+wAF :: Sort -> Alias (TermLike Variable)
+wAF sort = Alias
+    { aliasConstructor = Id
+        { getId = weakAlwaysFinally
         , idLocation = AstLocationNone
         }
     , aliasParams = []
@@ -424,7 +561,23 @@ patternToAxiomPattern
     :: Attribute.Axiom
     -> TermLike Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-patternToAxiomPattern attributes pat =
+patternToAxiomPattern attributes pat
+  | isJust . getPriority . Attribute.priority $ attributes =
+    case pat of
+        Rewrites_ _
+            (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
+            (And_ _ ensures rhs) ->
+                        pure $ RewriteAxiomPattern $ RewriteRule RulePattern
+                            { left = lhs
+                            , antiLeft = Just antiLeft
+                            , right = rhs
+                            , requires = Predicate.wrapPredicate requires
+                            , ensures = Predicate.wrapPredicate ensures
+                            , attributes
+                            }
+        _ -> koreFail $ "rule is ill-formed with respect \
+                        \ to the priority attribute."
+  | otherwise =
     case pat of
         -- normal rewrite axioms
         -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
@@ -432,6 +585,7 @@ patternToAxiomPattern attributes pat =
         Rewrites_ _ (And_ _ requires lhs) (And_ _ ensures rhs) ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.wrapPredicate ensures
@@ -442,6 +596,7 @@ patternToAxiomPattern attributes pat =
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
             pure $ constructor RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.wrapPredicate ensures
@@ -452,6 +607,7 @@ patternToAxiomPattern attributes pat =
             -- TODO (traiansf): ensure that _ensures is \top
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
                 , ensures = Predicate.makeTruePredicate
@@ -461,6 +617,7 @@ patternToAxiomPattern attributes pat =
         Equals_ _ _ lhs rhs ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = lhs
+                , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.makeTruePredicate
                 , ensures = Predicate.makeTruePredicate
@@ -470,6 +627,7 @@ patternToAxiomPattern attributes pat =
         ceil@(Ceil_ _ resultSort _) ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
                 { left = ceil
+                , antiLeft = Nothing
                 , right = mkTop resultSort
                 , requires = Predicate.makeTruePredicate
                 , ensures = Predicate.makeTruePredicate
@@ -482,6 +640,7 @@ patternToAxiomPattern attributes pat =
             | isModalSymbol op ->
                 pure $ ImplicationAxiomPattern $ ImplicationRule RulePattern
                     { left = lhs
+                    , antiLeft = Nothing
                     , right = rhs
                     , requires = Predicate.makeTruePredicate
                     , ensures = Predicate.makeTruePredicate
@@ -562,23 +721,28 @@ refreshRulePattern
     => FreeVariables variable  -- ^ Variables to avoid
     -> RulePattern variable
     -> (Renaming variable, RulePattern variable)
-refreshRulePattern (FreeVariables.getFreeVariables -> avoid) rule1 =
+refreshRulePattern
+    (FreeVariables.getFreeVariables -> avoid)
+    rule1@(RulePattern _ _ _ _ _ _)
+  =
     let rename = refreshVariables avoid originalFreeVariables
         subst = mkVar <$> rename
         left' = TermLike.substitute subst left
+        antiLeft' = TermLike.substitute subst <$> antiLeft
         right' = TermLike.substitute subst right
         requires' = Predicate.substitute subst requires
         ensures' = Predicate.substitute subst ensures
         rule2 =
             rule1
                 { left = left'
+                , antiLeft = antiLeft'
                 , right = right'
                 , requires = requires'
                 , ensures = ensures'
                 }
     in (rename, rule2)
   where
-    RulePattern { left, right, requires, ensures } = rule1
+    RulePattern { left, antiLeft, right, requires, ensures } = rule1
     originalFreeVariables =
         FreeVariables.getFreeVariables
         $ Kore.Step.Rule.freeVariables rule1
@@ -589,11 +753,22 @@ freeVariables
     :: Ord variable
     => RulePattern variable
     -> FreeVariables variable
-freeVariables RulePattern { left, right, requires, ensures } =
-    TermLike.freeVariables left
-    <> TermLike.freeVariables right
-    <> Predicate.freeVariables requires
-    <> Predicate.freeVariables ensures
+freeVariables rule@(RulePattern _ _ _ _ _ _) = case rule of
+    RulePattern { left, antiLeft, right, requires, ensures } ->
+        TermLike.freeVariables left
+        <> maybe (FreeVariables Set.empty) TermLike.freeVariables antiLeft
+        <> TermLike.freeVariables right
+        <> Predicate.freeVariables requires
+        <> Predicate.freeVariables ensures
+
+isFreeOf
+    :: Ord variable
+    => RulePattern variable
+    -> Set.Set (UnifiedVariable variable)
+    -> Bool
+isFreeOf rule =
+    Set.disjoint (getFreeVariables $ freeVariables rule)
+
 
 {- | Apply the given function to all variables in a 'RulePattern'.
  -}
@@ -602,34 +777,55 @@ mapVariables
     => (variable1 -> variable2)
     -> RulePattern variable1
     -> RulePattern variable2
-mapVariables mapping rule1 =
+mapVariables mapping rule1@(RulePattern _ _ _ _ _ _) =
     rule1
         { left = TermLike.mapVariables mapping left
+        , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
         , right = TermLike.mapVariables mapping right
         , requires = Predicate.mapVariables mapping requires
         , ensures = Predicate.mapVariables mapping ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rule1
+    RulePattern { left, antiLeft, right, requires, ensures } = rule1
 
 
-{- | Traverse the predicate from the top down and apply substitutions.
-
-The 'freeVariables' annotation is used to avoid traversing subterms that
-contain none of the targeted variables.
-
+{- | Apply the substitution to the rule.
  -}
 substitute
     :: SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
     -> RulePattern variable
     -> RulePattern variable
-substitute subst rulePattern' =
+substitute subst rulePattern'@(RulePattern _ _ _ _ _ _) =
     rulePattern'
         { left = TermLike.substitute subst left
+        , antiLeft = TermLike.substitute subst <$> antiLeft
         , right = TermLike.substitute subst right
         , requires = Predicate.substitute subst requires
         , ensures = Predicate.substitute subst ensures
         }
   where
-    RulePattern { left, right, requires, ensures } = rulePattern'
+    RulePattern { left, antiLeft, right, requires, ensures } = rulePattern'
+
+{-| Applies a substitution to a rule and checks that it was fully applied,
+i.e. there is no substitution variable left in the rule.
+-}
+applySubstitution
+    ::  ( HasCallStack
+        , Ord variable
+        , SubstitutionVariable variable
+        )
+    => Substitution variable
+    -> RulePattern variable
+    -> RulePattern variable
+applySubstitution substitution rule =
+    if finalRule `isFreeOf` substitutedVariables
+        then finalRule
+        else error
+            (  "Substituted variables not removed from the rule, cannot throw "
+            ++ "substitution away."
+            )
+  where
+    subst = Substitution.toMap substitution
+    finalRule = substitute subst rule
+    substitutedVariables = Substitution.variables substitution

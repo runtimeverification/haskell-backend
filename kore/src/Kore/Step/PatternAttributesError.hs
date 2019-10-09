@@ -15,6 +15,10 @@ module Kore.Step.PatternAttributesError
     , TotalError (..)
     ) where
 
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Kore.Debug
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -28,7 +32,15 @@ data FunctionError
     | NonFunctionPattern
     -- ^ The pattern is neither an application pattern nor one of the basic
     -- pattern types (e.g. domain values).
-    deriving (Eq, Show)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic FunctionError
+
+instance SOP.HasDatatypeInfo FunctionError
+
+instance Debug FunctionError
+
+instance Diff FunctionError
 
 {-| An error explaining why a pattern is not composed of functional heads and
 things like StringLiteral, DomainValue and variables.
@@ -39,7 +51,15 @@ data FunctionalError
     | NonFunctionalPattern
     -- ^ The pattern is neither an application pattern nor one of the basic
     -- pattern types (e.g. domain values).
-    deriving (Eq, Show)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic FunctionalError
+
+instance SOP.HasDatatypeInfo FunctionalError
+
+instance Debug FunctionalError
+
+instance Diff FunctionalError
 
 {-| An error explaining why a pattern is not composed of constructor-like heads
 and things like StringLiteral, DomainValue and variables.
@@ -47,7 +67,15 @@ and things like StringLiteral, DomainValue and variables.
 data ConstructorLikeError
     = NonConstructorLikeHead
     -- ^ The pattern was the application of a non-functional head to something
-    deriving (Eq, Show)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic ConstructorLikeError
+
+instance SOP.HasDatatypeInfo ConstructorLikeError
+
+instance Debug ConstructorLikeError
+
+instance Diff ConstructorLikeError
 
 {-| An error explaining why a pattern is not composed of total heads and
 things like StringLiteral, DomainValue and variables.
@@ -58,4 +86,12 @@ data TotalError
     | NonTotalPattern
     -- ^ The pattern is neither an application pattern nor one of the basic
     -- pattern types (e.g. domain values).
-    deriving (Eq, Show)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic TotalError
+
+instance SOP.HasDatatypeInfo TotalError
+
+instance Debug TotalError
+
+instance Diff TotalError

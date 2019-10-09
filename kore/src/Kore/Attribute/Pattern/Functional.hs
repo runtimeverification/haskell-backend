@@ -39,6 +39,8 @@ instance SOP.HasDatatypeInfo Functional
 
 instance Debug Functional
 
+instance Diff Functional
+
 instance NFData Functional
 
 instance Hashable Functional
@@ -177,11 +179,6 @@ instance Synthetic Functional (Const (UnifiedVariable variable)) where
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
 instance Synthetic Functional (Const StringLiteral) where
-    synthetic = const (Functional True)
-    {-# INLINE synthetic #-}
-
--- | A 'CharLiteral' pattern is always 'Functional'.
-instance Synthetic Functional (Const CharLiteral) where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 

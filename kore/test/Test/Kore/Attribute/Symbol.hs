@@ -33,8 +33,6 @@ import Kore.Error
     )
 import Kore.Syntax.Pattern
 
-import Test.Kore.Comparators ()
-
 parse
     :: [AttributePattern]
     -> Either (Error ParseError) StepperAttributes

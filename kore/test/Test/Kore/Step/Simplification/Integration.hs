@@ -5,17 +5,8 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
-import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
-
-import Data.Default
-    ( Default (..)
-    )
 import qualified Data.Map.Strict as Map
+import Test.Tasty
 
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
@@ -42,11 +33,10 @@ import Kore.Step.Axiom.Registry
     ( axiomPatternsToEvaluators
     )
 import Kore.Step.Rule
-    ( EqualityRule (EqualityRule)
-    , RulePattern (RulePattern)
+    ( rulePattern
     )
-import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+import Kore.Step.Rule
+    ( EqualityRule (EqualityRule)
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -58,10 +48,9 @@ import Kore.Variables.UnifiedVariable
     )
 
 import Test.Kore
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_simplificationIntegration :: [TestTree]
 test_simplificationIntegration =
@@ -100,7 +89,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testCase "owise condition - owise case" $ do
         let expect = OrPattern.fromPatterns [Pattern.top]
@@ -137,7 +126,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
      , testCase "map-like simplification" $ do
         let expect =
@@ -170,7 +159,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "map function, non-matching" $ do
         let
             initial =
@@ -183,29 +172,25 @@ test_simplificationIntegration =
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ EqualityRule RulePattern
-                                    { left =
-                                        Mock.function20MapTest
-                                            (Mock.concatMap
-                                                (Mock.elementMap
-                                                    (mkElemVar Mock.x)
-                                                    (mkElemVar Mock.y)
-                                                )
-                                                (mkElemVar Mock.m)
+                            ,   [ EqualityRule $ rulePattern
+                                    (Mock.function20MapTest
+                                        (Mock.concatMap
+                                            (Mock.elementMap
+                                                (mkElemVar Mock.x)
+                                                (mkElemVar Mock.y)
                                             )
-                                            (mkElemVar Mock.x)
-                                    , right = mkElemVar Mock.y
-                                    , requires = makeTruePredicate
-                                    , ensures = makeTruePredicate
-                                    , attributes = def
-                                    }
+                                            (mkElemVar Mock.m)
+                                        )
+                                        (mkElemVar Mock.x)
+                                    )
+                                    (mkElemVar Mock.y)
                                 ]
                             )
                         ]
                     )
                 )
                 initial
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the identity function and `#ceil(x/y) => y != 0`
     , testCase "function application introduces definedness condition" $ do
         let testSortVariable = SortVariableSort $ SortVariable (testId "s")
@@ -229,32 +214,25 @@ test_simplificationIntegration =
                 ( axiomPatternsToEvaluators
                     ( Map.fromList
                         [ (AxiomIdentifier.Application Mock.fIntId
-                          , [ EqualityRule RulePattern
-                                { left = Mock.fInt (mkElemVar Mock.xInt)
-                                , right = mkElemVar Mock.xInt
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+                          , [ EqualityRule $ rulePattern
+                                (Mock.fInt (mkElemVar Mock.xInt))
+                                (mkElemVar Mock.xInt)
                             ]
                           )
                         , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
-                          , [ EqualityRule RulePattern
-                                { left =
-                                    mkCeil testSortVariable
+                          , [ EqualityRule $ rulePattern
+                                (mkCeil testSortVariable
                                     $ Mock.tdivInt
                                         (mkElemVar Mock.xInt)
                                         (mkElemVar Mock.yInt)
-                                , right =
-                                    mkCeil testSortVariable
+                                )
+                                (mkCeil testSortVariable
                                     . mkNot
                                     $ mkEquals testSortVariable
                                         (mkElemVar Mock.yInt)
                                         (Mock.builtinInt 0)
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+
+                                )
                             ]
 
                           )
@@ -270,7 +248,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "exists variable equality" $ do
         let
             expect = OrPattern.top
@@ -285,7 +263,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "exists variable equality reverse" $ do
         let
             expect = OrPattern.top
@@ -300,21 +278,21 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     , testCase "exists variable equality" $ do
         actual <-
             evaluateWithAxioms Map.empty
             $ Pattern.fromTermLike
             $ mkExists Mock.x
             $ mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y)
-        assertEqualWithExplanation "" OrPattern.top actual
+        assertEqual "" OrPattern.top actual
     , testCase "exists variable equality reverse" $ do
         actual <-
             evaluateWithAxioms Map.empty
             $ Pattern.fromTermLike
             $ mkExists Mock.x
             $ mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x)
-        assertEqualWithExplanation "" OrPattern.top actual
+        assertEqual "" OrPattern.top actual
     , testCase "new variable quantification" $ do
         let
             expect = OrPattern.fromPatterns
@@ -328,13 +306,9 @@ test_simplificationIntegration =
             evaluateWithAxioms
                 (axiomPatternsToEvaluators $ Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cfId
-                        ,   [ EqualityRule RulePattern
-                                { left = Mock.cf
-                                , right = Mock.f (mkElemVar Mock.x)
-                                , requires = makeTruePredicate
-                                , ensures = makeTruePredicate
-                                , attributes = def
-                                }
+                        ,   [ EqualityRule $ rulePattern
+                                Mock.cf
+                                (Mock.f (mkElemVar Mock.x))
                             ]
                         )
                     ]
@@ -344,7 +318,7 @@ test_simplificationIntegration =
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
     ]
 
 test_substitute :: [TestTree]
@@ -375,7 +349,7 @@ test_substitute =
                         (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                     )
                 )
-        assertEqualWithExplanation
+        assertEqual
             "Expected substitution under unary functional constructor"
             expect
             actual
@@ -404,7 +378,7 @@ test_substitute =
                         (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                     )
                 )
-        assertEqualWithExplanation "Expected substitution" expect actual
+        assertEqual "Expected substitution" expect actual
     ]
 
 test_substituteMap :: [TestTree]
@@ -433,7 +407,7 @@ test_substituteMap =
                     (Mock.functionalConstr20 (mkElemVar Mock.x) testMapX)
                     (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                 )
-        assertEqualWithExplanation
+        assertEqual
             "Expected substitution applied to Map elements"
             expect
             actual
@@ -467,7 +441,7 @@ test_substituteList =
                     (Mock.functionalConstr20 (mkElemVar Mock.x) testListX)
                     (Mock.functionalConstr20 Mock.a (mkElemVar Mock.y))
                 )
-        assertEqualWithExplanation
+        assertEqual
             "Expected substitution applied to List elements"
             expect
             actual

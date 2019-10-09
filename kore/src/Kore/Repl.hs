@@ -74,7 +74,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.Verification
 import Kore.Syntax.Variable
 import Kore.Unification.Procedure
     ( unificationProcedure
@@ -149,7 +149,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , omit       = mempty
             , labels     = Map.empty
             , aliases    = Map.empty
-            , logging    = (Logger.Debug, NoLogging)
+            , logging    = (Logger.Debug, mempty, NoLogging)
             }
 
     config :: Config claim m

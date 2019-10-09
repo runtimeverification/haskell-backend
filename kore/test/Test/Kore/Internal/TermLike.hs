@@ -3,15 +3,19 @@ module Test.Kore.Internal.TermLike where
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Control.Monad.Reader as Reader
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Data.Sup
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (FreeVariables)
+    )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
+    ( refreshVariable
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -20,10 +24,9 @@ import Kore.Internal.ApplicationSorts
 import Test.Kore hiding
     ( symbolGen
     )
-import Test.Kore.Comparators ()
 import Test.Kore.Internal.Symbol
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 import Test.Terse
 
 termLikeGen :: Hedgehog.Gen (TermLike Variable)
@@ -39,8 +42,6 @@ termLikeChildGen patternSort =
             ()
               | patternSort == stringMetaSort ->
                 mkStringLiteral . getStringLiteral <$> stringLiteralGen
-              | patternSort == charMetaSort ->
-                mkCharLiteral . getCharLiteral <$> charLiteralGen
               | otherwise ->
                 Gen.choice
                     [ mkElemVar <$> elementVariableGen patternSort
@@ -125,7 +126,7 @@ termLikeChildGen patternSort =
 test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Replaces target variable"
-        (assertEqualWithExplanation
+        (assertEqual
             "Expected substituted variable"
             (mkElemVar Mock.z)
             (substitute
@@ -135,7 +136,7 @@ test_substitute =
         )
 
     , testCase "Replaces target variable (SetVariable)"
-        (assertEqualWithExplanation
+        (assertEqual
             "Expected substituted variable"
             (mkElemVar Mock.z)
             (substitute
@@ -148,7 +149,7 @@ test_substitute =
         )
 
     , testCase "Replaces target variable in subterm (SetVariable)"
-        (assertEqualWithExplanation
+        (assertEqual
             "Expected substituted variable"
             (Mock.functionalConstr10 (mkElemVar Mock.z))
             (substitute
@@ -161,7 +162,7 @@ test_substitute =
         )
 
     , testCase "Ignores non-target variable"
-        (assertEqualWithExplanation
+        (assertEqual
             "Expected original non-target variable"
             (mkElemVar Mock.y)
             (substitute
@@ -172,7 +173,7 @@ test_substitute =
 
     , testGroup "Ignores patterns without children" $
         let ignoring mkPredicate =
-                assertEqualWithExplanation
+                assertEqual
                     "Expected no substitution"
                     expect actual
               where
@@ -188,7 +189,7 @@ test_substitute =
 
     , testGroup "Ignores shadowed variables" $
         let ignoring mkQuantifier =
-                assertEqualWithExplanation
+                assertEqual
                     "Expected shadowed variable to be ignored"
                     expect actual
               where
@@ -204,7 +205,7 @@ test_substitute =
 
     , testGroup "Renames quantified variables to avoid capture" $
         let renaming mkQuantifier =
-                assertEqualWithExplanation
+                assertEqual
                     "Expected quantified variable to be renamed"
                     expect actual
               where
@@ -258,6 +259,29 @@ test_externalizeFreshVariables =
         ]
     becomes original expected =
         equals (externalizeFreshVariables original) expected
+
+test_refreshVariables :: [TestTree]
+test_refreshVariables =
+    [ (Mock.a, [Mock.x]) `becomes` Mock.a
+        $ "Does not rename symbols"
+    , (xTerm, []) `becomes` xTerm
+        $ "No used variable"
+    , (xTerm, [Mock.y]) `becomes` xTerm
+        $ "No renaming if variable not used"
+    , (xTerm, [Mock.x]) `becomes` mkElemVar x_0
+        $ "Renames used variable"
+    , (Mock.f xTerm, [Mock.x]) `becomes` Mock.f (mkElemVar x_0)
+        $ "Renames under symbol"
+    ]
+  where
+    xTerm = mkElemVar Mock.x
+    becomes (term, vars) expected =
+        equals
+            (refreshVariables
+                (FreeVariables (Set.fromList (map ElemVar vars)))
+                term
+            )
+            expected
 
 x :: ElementVariable Variable
 x = Mock.x

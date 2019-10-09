@@ -202,7 +202,7 @@ constructorAxiom sortName constructors =
     SentenceAxiomSentence SentenceAxiom
         { sentenceAxiomParameters = []
         , sentenceAxiomPattern =
-            Builtin.externalizePattern
+            Builtin.externalize
             $ foldr mkOr (mkBottom sort) constructorAssertions
         , sentenceAxiomAttributes = Attributes []
         }

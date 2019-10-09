@@ -55,6 +55,8 @@ instance SOP.HasDatatypeInfo (Definition sentence)
 
 instance Debug sentence => Debug (Definition sentence)
 
+instance (Debug sentence, Diff sentence) => Diff (Definition sentence)
+
 instance Unparse sentence => Unparse (Definition sentence) where
     unparse Definition { definitionAttributes, definitionModules } =
         Pretty.vsep

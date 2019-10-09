@@ -4,7 +4,6 @@ module Test.Kore.Step.Substitution
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import qualified Data.Foldable as Foldable
 
@@ -19,9 +18,6 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import Kore.Step.Substitution
-    ( mergePredicatesAndSubstitutionsExcept
-    )
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
@@ -30,10 +26,9 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_normalize :: [TestTree]
 test_normalize =
@@ -45,7 +40,7 @@ test_normalize =
     , testCase "∃ y z. x = σ(y, z)" $ do
         let expect = Predicate.fromPredicate existsPredicate
         actual <- normalizeExcept expect
-        assertEqualWithExplanation
+        assertEqual
             "Expected original result"
             (Right $ MultiOr.make [expect])
             actual
@@ -55,7 +50,7 @@ test_normalize =
                 Predicate.fromPredicate
                 $ Syntax.Predicate.makeNotPredicate existsPredicate
         actual <- normalizeExcept expect
-        assertEqualWithExplanation
+        assertEqual
             "Expected original result"
             (Right $ MultiOr.make [expect])
             actual
@@ -87,7 +82,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 Mock.a
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor normalization with variables"
@@ -107,7 +102,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkElemVar Mock.y)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Double constructor is bottom"
@@ -124,7 +119,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 Mock.a)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Double constructor is bottom with variables"
@@ -132,8 +127,8 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
                     "Unknown unification case."
-                    (mkElemVar Mock.y)
                     (Mock.constr10 (mkElemVar Mock.y))
+                    (mkElemVar Mock.y)
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -144,7 +139,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.constr10 (mkElemVar Mock.y))
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of function"
@@ -175,7 +170,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.f Mock.a)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of function with variables"
@@ -195,7 +190,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.f (mkElemVar Mock.y))
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor and constructor of functional symbol"
@@ -215,7 +210,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (Mock.functional10 (mkElemVar Mock.y))
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Constructor circular dependency?"
@@ -223,8 +218,8 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let expect = Left $ UnificationError $ unsupportedPatterns
                     "Unknown unification case."
-                    (mkElemVar Mock.y)
                     (Mock.constr10 (mkElemVar Mock.x))
+                    (mkElemVar Mock.y)
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -235,7 +230,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.constr10 (mkElemVar Mock.x)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Non-ctor circular dependency"
@@ -256,7 +251,7 @@ test_mergeAndNormalizeSubstitutions =
                         , Mock.f (mkElemVar Mock.x)
                         )
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicates actual
 
     , testCase "Normalizes substitution"
@@ -273,7 +268,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ (ElemVar Mock.x, Mock.constr10 Mock.a)
                     , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                     ]
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
 
     , testCase "Predicate from normalizing substitution"
@@ -297,7 +292,7 @@ test_mergeAndNormalizeSubstitutions =
                             , (ElemVar Mock.x, Mock.constr10 Mock.cg)
                             ]
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
 
     , testCase "Normalizes substitution and substitutes in predicate"
@@ -326,7 +321,7 @@ test_mergeAndNormalizeSubstitutions =
                             , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                             ]
                         }
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
             assertNormalizedPredicatesMulti actual
     ]
 
@@ -337,8 +332,10 @@ merge
 merge s1 s2 =
     Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
-    $ mergePredicatesAndSubstitutionsExcept [] $ Substitution.wrap <$> [s1, s2]
+    $ mergeSubstitutionsExcept $ Substitution.wrap <$> [s1, s2]
   where
+    mergeSubstitutionsExcept =
+        Substitution.normalizeExcept . Predicate.fromSubstitution . mconcat
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]

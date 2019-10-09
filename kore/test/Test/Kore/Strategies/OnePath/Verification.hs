@@ -3,23 +3,12 @@ module Test.Kore.Strategies.OnePath.Verification
     ) where
 
 import Test.Tasty
-    ( TestTree
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
-import Control.Monad.Trans.Except
-    ( runExceptT
-    )
 import Data.Default
     ( def
     )
 import Data.Limit
     ( Limit (..)
-    )
-import Numeric.Natural
-    ( Natural
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
@@ -39,18 +28,13 @@ import Kore.Predicate.Predicate
 import Kore.Step.Rule
     ( OnePathRule (..)
     , RewriteRule (..)
-    , RulePattern (RulePattern)
-    )
-import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+    , RulePattern (..)
     )
 import Kore.Strategies.Goal
-import qualified Kore.Strategies.OnePath.Verification as OnePath
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Kore.Strategies.Common
+import Test.Tasty.HUnit.Ext
 
 test_onePathVerification :: [TestTree]
 test_onePathVerification =
@@ -62,7 +46,7 @@ test_onePathVerification =
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Runs one step" $ do
@@ -78,7 +62,7 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "Returns first failing claim" $ do
@@ -89,7 +73,7 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left . Pattern.fromTermLike $ Mock.b)
             actual
     , testCase "Verifies one claim" $ do
@@ -100,7 +84,7 @@ test_onePathVerification =
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Trusted claim cannot prove itself" $ do
@@ -112,7 +96,7 @@ test_onePathVerification =
             [ simpleTrustedClaim Mock.a Mock.b
             , simpleClaim Mock.a Mock.b
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Verifies one claim multiple steps" $ do
@@ -126,7 +110,7 @@ test_onePathVerification =
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleClaim Mock.a Mock.c]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Verifies one claim stops early" $ do
@@ -140,7 +124,7 @@ test_onePathVerification =
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleClaim Mock.a Mock.c]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Verifies one claim with branching" $ do
@@ -158,7 +142,7 @@ test_onePathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
-        assertEqualWithExplanation "" (Right ()) actual
+        assertEqual "" (Right ()) actual
     , testCase "Partial verification failure" $ do
         -- Axiom: constr11(a) => b
         -- Axiom: constr10(x) => constr11(x)
@@ -172,7 +156,7 @@ test_onePathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
@@ -197,7 +181,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "fails first of two claims" $ do
@@ -216,7 +200,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.e
             , simpleClaim Mock.d Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
     , testCase "fails second of two claims" $ do
@@ -235,7 +219,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
     , testCase "second proves first but fails" $ do
@@ -252,7 +236,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "first proves second but fails" $ do
@@ -269,7 +253,7 @@ test_onePathVerification =
             [ simpleClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
     , testCase "trusted second proves first" $ do
@@ -286,7 +270,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleTrustedClaim Mock.b Mock.c
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "trusted first proves second" $ do
@@ -303,7 +287,7 @@ test_onePathVerification =
             [ simpleTrustedClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Right ())
             actual
     , testCase "Prefers using claims for rewriting" $ do
@@ -325,8 +309,23 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.e
             ]
-        assertEqualWithExplanation ""
+        assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
+            actual
+    , testCase "Provable using one-path; not provable using all-path" $ do
+        -- Axioms:
+        --     a => b
+        --     a => c
+        -- Claim: a => b
+        -- Expected: success
+        actual <- runVerification
+            (Limit 5)
+            [ simpleAxiom Mock.a Mock.b
+            , simpleAxiom Mock.a Mock.c
+            ]
+            [ simpleClaim Mock.a Mock.b ]
+        assertEqual ""
+            (Right ())
             actual
     ]
 
@@ -335,7 +334,7 @@ simpleAxiom
     -> TermLike Variable
     -> Rule (OnePathRule Variable)
 simpleAxiom left right =
-    Rule $ simpleRewrite left right
+    OnePathRewriteRule $ simpleRewrite left right
 
 simpleClaim
     :: TermLike Variable
@@ -352,41 +351,10 @@ simpleTrustedClaim left right =
     OnePathRule
     $ RulePattern
             { left = left
+            , antiLeft = Nothing
             , right = right
             , requires = makeTruePredicate
             , ensures = makeTruePredicate
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }
-
-simpleRewrite
-    :: TermLike Variable
-    -> TermLike Variable
-    -> RewriteRule Variable
-simpleRewrite left right =
-    RewriteRule RulePattern
-        { left = left
-        , right = right
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
-        , attributes = def
-        }
-
-runVerification
-    :: OnePath.Claim claim
-    => Show claim
-    => Show (Rule claim)
-    => Limit Natural
-    -> [Rule claim]
-    -> [claim]
-    -> IO (Either (Pattern Variable) ())
-runVerification stepLimit axioms claims =
-    runSimplifier mockEnv
-    $ runExceptT
-    $ OnePath.verify
-        (OnePath.defaultStrategy claims axioms)
-        (map applyStepLimit . selectUntrusted $ claims)
-  where
-    mockEnv = Mock.env
-    applyStepLimit claim = (claim, stepLimit)
-    selectUntrusted = filter (not . isTrusted)

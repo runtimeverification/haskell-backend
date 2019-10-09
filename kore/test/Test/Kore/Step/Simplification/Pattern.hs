@@ -4,7 +4,6 @@ module Test.Kore.Step.Simplification.Pattern
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
 
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -18,10 +17,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Pattern as Pattern
 
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_Pattern_simplify :: [TestTree]
 test_Pattern_simplify =
@@ -33,7 +31,7 @@ test_Pattern_simplify =
     becomes original expect name =
         testCase name $ do
             actual <- simplify original
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
 test_Pattern_simplifyAndRemoveTopExists :: [TestTree]
 test_Pattern_simplifyAndRemoveTopExists =
@@ -49,7 +47,7 @@ test_Pattern_simplifyAndRemoveTopExists =
     becomes original expect name =
         testCase name $ do
             actual <- simplifyAndRemoveTopExists original
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
     unquantified = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
     existential = termLike (mkExists Mock.x unquantified)
     multiexistential = termLike (mkExists Mock.y (mkExists Mock.x unquantified))

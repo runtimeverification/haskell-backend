@@ -126,13 +126,13 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
 import Kore.Strategies.ProofState
     ( ProofState (Goal)
     , ProofStateTransformer (ProofStateTransformer)
     , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState.DoNotUse
+import Kore.Strategies.Verification
 import Kore.Syntax.Variable
     ( Variable
     )
@@ -418,9 +418,10 @@ liftSimplifierWithLogger
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
-   (severity, logType) <- logging <$> get
+   (severity, logScope, logType) <- logging <$> get
    (textLogger, maybeHandle) <- logTypeToLogger logType
-   let logger = Logger.makeKoreLogger severity mempty textLogger
+   let scopes = unLogScope logScope
+       logger = Logger.makeKoreLogger severity scopes textLogger
    _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
    result <- Monad.Trans.lift simplifier
    maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
@@ -610,6 +611,7 @@ createOnePathClaim (claim, cpattern) =
     Rule.OnePathRule
     $ Rule.RulePattern
         { left = cpattern
+        , antiLeft = Nothing
         , right = Rule.right . coerce $ claim
         , requires = Predicate.makeTruePredicate
         , ensures = Rule.ensures . coerce $ claim

@@ -71,18 +71,6 @@ test_patternVerifier =
         (DeclaredSort anotherSort)
         [objectSortSentence, anotherSortSentence]
         NeedsInternalDefinitions
-    , successTestsForMetaPattern "Simple meta pattern"
-        (simpleExistsPattern metaVariable' metaSort1)
-        (NamePrefix "#dummy")
-        (TestedPatternSort metaSort1)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        -- TODO: Here we should be able to use NoRestrict,
-        -- at least in some cases.
-        NeedsInternalDefinitions
     , failureTestsForObjectPattern "Object pattern - sort not defined"
         (ExpectedErrorMessage $ noSort "ObjectSort")
         (ErrorStack
@@ -118,7 +106,7 @@ test_patternVerifier =
             { existsSort = objectSort
             , existsVariable = objectVariable'
             , existsChild =
-                Builtin.externalizePattern $ Internal.mkElemVar anotherVariable
+                Builtin.externalize $ Internal.mkElemVar anotherVariable
             }
         )
         (NamePrefix "dummy")
@@ -148,7 +136,7 @@ test_patternVerifier =
         )
         (MuF Mu
             { muVariable = objectSetVariable'
-            , muChild = Builtin.externalizePattern $
+            , muChild = Builtin.externalize $
                 Internal.mkSetVar anotherSetVariable
             }
         )
@@ -178,7 +166,7 @@ test_patternVerifier =
         )
         (NuF Nu
             { nuVariable = objectSetVariable'
-            , nuChild = Builtin.externalizePattern $
+            , nuChild = Builtin.externalize $
                 Internal.mkSetVar anotherSetVariable
             }
         )
@@ -223,23 +211,6 @@ test_patternVerifier =
         (DeclaredSort anotherSort)
         [objectSortSentence, anotherSortSentence]
         NeedsInternalDefinitions
-    , failureTestsForMetaPattern "Meta pattern - sort not defined"
-        (ExpectedErrorMessage $ noSort "#InvalidMetaSort")
-        (ErrorStack
-            [ "\\exists '#MetaVariable' (<test data>)"
-            , "sort '#InvalidMetaSort' (<test data>)"
-            , "(<test data>)"
-            ]
-        )
-        (simpleExistsPattern metaVariable' invalidMetaSort)
-        (NamePrefix "#dummy")
-        (TestedPatternSort metaSort1)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        NeedsInternalDefinitions
     , failureTestsForObjectPattern "Object pattern - sort not matched"
         (ExpectedErrorMessage
             "Expecting sort 'anotherSort2{}' but got 'ObjectSort{}'.")
@@ -257,23 +228,6 @@ test_patternVerifier =
         , anotherSortSentence
         , anotherObjectSortSentence2
         ]
-        NeedsInternalDefinitions
-    , failureTestsForMetaPattern "Meta pattern - sort not matched"
-        (ExpectedErrorMessage
-            "Expecting sort '#Char{}' but got '#String{}'.")
-        (ErrorStack
-            [ "\\exists '#MetaVariable' (<test data>)"
-            , "(<test data>, <test data>)"
-            ]
-        )
-        (simpleExistsPattern metaVariable' anotherMetaSort2)
-        (NamePrefix "#dummy")
-        (TestedPatternSort metaSort1)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
         NeedsInternalDefinitions
     , successTestsForObjectPattern "Application pattern - symbol"
         (applicationPatternWithChildren
@@ -383,18 +337,6 @@ test_patternVerifier =
         , objectAliasSentence
         ]
         NeedsInternalDefinitions
-    , failureTestsForMetaPattern "Meta pattern - wrong argument count"
-        (ExpectedErrorMessage "Expected 1 operands, but got 0.")
-        (ErrorStack ["symbol or alias '#MetaSymbol' (<test data>)"])
-        (applicationPatternWithChildren metaSymbolName [])
-        (NamePrefix "#dummy")
-        (TestedPatternSort metaSort1)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        [ metaSymbolSentence ]
-        NeedsInternalDefinitions
     , failureTestsForObjectPattern "Application pattern - too few sorts"
         (ExpectedErrorMessage
             "Application uses less sorts than the declaration.")
@@ -452,57 +394,6 @@ test_patternVerifier =
         (DeclaredSort anotherSort)
         [ objectSortSentence, anotherSortSentence ]
         NeedsInternalDefinitions
-    , successTestsForMetaPattern "Meta pattern - unquantified variable"
-        (VariableF $ Const $ ElemVar metaVariable')
-        (NamePrefix "#dummy")
-        (TestedPatternSort metaSort1)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        NeedsInternalDefinitions
-    , successTestsForMetaPattern "Simple string pattern"
-        (StringLiteralF (Const $ StringLiteral "MetaString"))
-        (NamePrefix "#dummy")
-        (TestedPatternSort stringMetaSort)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        -- TODO: Here we should be able to use NoRestrict,
-        -- at least in some cases.
-        NeedsInternalDefinitions
-    , successTestsForMetaPattern "Simple char pattern"
-        (CharLiteralF $ Const $ CharLiteral 'c')
-        (NamePrefix "#dummy")
-        (TestedPatternSort charMetaSort)
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        -- TODO: Here we should be able to use NoRestrict,
-        -- at least in some cases.
-        NeedsInternalDefinitions
-    , failureTestsForMetaPattern "String pattern - sort not matched"
-        (ExpectedErrorMessage
-            "Expecting sort '#Char{}' but got '#String{}'.")
-        (ErrorStack
-            [ "(<test data>, <implicitly defined entity>)" ]
-        )
-        (StringLiteralF (Const $ StringLiteral "MetaString"))
-        (NamePrefix "#dummy")
-        (TestedPatternSort (updateAstLocation charMetaSort AstLocationTest))
-        (SortVariablesThatMustBeDeclared [])
-        (SortVariablesThatMustBeDeclared [])
-        (DeclaredSort anotherMetaSort)
-        (VariableOfDeclaredSort dummyMetaVariable)
-        []
-        -- TODO: Here we should be able to use NoRestrict,
-        -- at least in some cases.
-        NeedsSortedParent
     , successTestsForObjectPattern "Bottom pattern"
         (BottomF Bottom {bottomSort = objectSort})
         (NamePrefix "dummy")
@@ -540,7 +431,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "abcd"  -- Not a decimal integer
             }
         )
@@ -554,7 +445,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "-256"
             }
         )
@@ -568,7 +459,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "1024"
             }
         )
@@ -582,7 +473,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "+128"
             }
         )
@@ -609,7 +500,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "untrue"  -- Not a BOOL.Bool
             }
         )
@@ -623,7 +514,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "true"
             }
         )
@@ -637,7 +528,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = boolSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "false"
             }
         )
@@ -659,7 +550,7 @@ test_patternVerifier =
         (DomainValueF DomainValue
             { domainValueSort = intSort
             , domainValueChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkStringLiteral "1"  -- Not a decimal integer
             }
         )
@@ -678,32 +569,20 @@ test_patternVerifier =
     objectVariable' = variable objectVariableName objectSort
     objectSetVariable' = setVariable objectVariableName objectSort
     objectSortSentence = simpleSortSentence objectSortName
-    metaSort1 = updateAstLocation stringMetaSort AstLocationTest
-    metaVariable' = variable (VariableName "#MetaVariable") metaSort1
-    dummyMetaSort = updateAstLocation charMetaSort AstLocationTest
-    dummyMetaVariable = variable (VariableName "#otherVariable") dummyMetaSort
     anotherSortName = SortName "anotherSort"
     anotherSort :: Sort
     anotherSort = simpleSort anotherSortName
     anotherVariable = variable objectVariableName anotherSort
     anotherSetVariable = setVariable objectVariableName anotherSort
     anotherSortSentence = simpleSortSentence anotherSortName
-    anotherMetaSort = updateAstLocation stringMetaSort AstLocationTest
     anotherObjectSortName2 = SortName "anotherSort2"
     anotherObjectSort2 :: Sort
     anotherObjectSort2 = simpleSort anotherObjectSortName2
     anotherObjectSortSentence2 = simpleSortSentence anotherObjectSortName2
-    invalidMetaSort :: Sort
-    invalidMetaSort = simpleSort (SortName "#InvalidMetaSort")
-    anotherMetaSort2 = updateAstLocation charMetaSort AstLocationTest
     objectSymbolName = SymbolName "ObjectSymbol"
     objectSymbolSentence =
         objectSymbolSentenceWithArguments
             objectSymbolName objectSort [anotherObjectSort2]
-    metaSymbolName = SymbolName "#MetaSymbol"
-    metaSymbolSentence =
-        symbolSentenceWithArguments
-            metaSymbolName metaSort1 [anotherMetaSort2]
     objectAliasName = AliasName "ObjectAlias"
     objectAliasNameAsSymbol = SymbolName "ObjectAlias"
     objectAliasSentence =
@@ -795,7 +674,7 @@ test_verifyBinder =
     testVerifyBinder name expect =
         testCase name $ do
             let
-                original = Builtin.externalizePattern expect
+                original = Builtin.externalize expect
                 verifier = verifyStandalonePattern Nothing original
                 Right actual = runPatternVerifier context verifier
             assertEqual "" expect actual
@@ -867,45 +746,6 @@ successTestsForObjectPattern
             (dummySortSentences ++ sentences)
             patternRestrict
 
-successTestsForMetaPattern
-    :: HasCallStack
-    => String
-    -> PatternF Variable ParsedPattern
-    -> NamePrefix
-    -> TestedPatternSort
-    -> SortVariablesThatMustBeDeclared
-    -> SortVariablesThatMustBeDeclared
-    -> DeclaredSort
-    -> VariableOfDeclaredSort
-    -> [ParsedSentence]
-    -> PatternRestrict
-    -> TestTree
-successTestsForMetaPattern
-    description
-    testedPattern
-    namePrefix
-    testedSort
-    sortVariables
-    objectSortVariables
-    anotherSort
-    dummyVariable
-    sentences
-    patternRestrict
-  =
-    successTestDataGroup description testData
-  where
-    testData =
-        genericPatternInAllContexts
-            testedPattern
-            namePrefix
-            testedSort
-            sortVariables
-            objectSortVariables
-            anotherSort
-            dummyVariable
-            sentences
-            patternRestrict
-
 failureTestsForObjectPattern
     :: HasCallStack
     => String
@@ -962,53 +802,6 @@ failureTestsForObjectPattern
             (dummySortSentence : sentences)
             patternRestrict
 
-failureTestsForMetaPattern
-    :: HasCallStack
-    => String
-    -> ExpectedErrorMessage
-    -> ErrorStack
-    -> PatternF Variable ParsedPattern
-    -> NamePrefix
-    -> TestedPatternSort
-    -> SortVariablesThatMustBeDeclared
-    -> SortVariablesThatMustBeDeclared
-    -> DeclaredSort
-    -> VariableOfDeclaredSort
-    -> [ParsedSentence]
-    -> PatternRestrict
-    -> TestTree
-failureTestsForMetaPattern
-    description
-    errorMessage
-    errorStackSuffix
-    testedPattern
-    namePrefix
-    testedSort
-    sortVariables
-    objectSortVariables
-    anotherSort
-    dummyVariable
-    sentences
-    patternRestrict
-  =
-    failureTestDataGroup
-        description
-        errorMessage
-        errorStackSuffix
-        testData
-  where
-    testData =
-        genericPatternInAllContexts
-            testedPattern
-            namePrefix
-            testedSort
-            sortVariables
-            objectSortVariables
-            anotherSort
-            dummyVariable
-            sentences
-            patternRestrict
-
 genericPatternInAllContexts
     :: PatternF Variable ParsedPattern
     -> NamePrefix
@@ -1055,7 +848,7 @@ genericPatternInAllContexts
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild =
-                Builtin.externalizePattern $ Internal.mkElemVar anotherVariable
+                Builtin.externalize $ Internal.mkElemVar anotherVariable
             }
     anotherVariable =
         ElementVariable Variable
@@ -1109,7 +902,7 @@ objectPatternInAllContexts
             { existsSort = testedSort
             , existsVariable = anotherVariable
             , existsChild =
-                Builtin.externalizePattern
+                Builtin.externalize
                 $ Internal.mkElemVar anotherVariable
             }
     anotherVariable =
@@ -1190,7 +983,7 @@ patternsInAllContexts
                         ]
                     }
             , sentenceAliasRightPattern =
-                Builtin.externalizePattern $ Internal.mkTop anotherSort
+                Builtin.externalize $ Internal.mkTop anotherSort
             , sentenceAliasAttributes = Attributes []
             }
 
@@ -1519,7 +1312,8 @@ testsForUnifiedPatternInTopLevelContext
         sortVariables
 
 testsForUnifiedPatternInTopLevelGenericContext
-    :: NamePrefix
+    :: HasCallStack
+    => NamePrefix
     -> DeclaredSort
     -> SortVariablesThatMustBeDeclared
     -> [ParsedSentence]

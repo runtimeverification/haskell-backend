@@ -41,6 +41,8 @@ instance SOP.HasDatatypeInfo (Top sort child)
 
 instance Debug sort => Debug (Top sort child)
 
+instance (Debug sort, Diff sort) => Diff (Top sort child)
+
 instance Unparse (Top Sort child) where
     unparse Top { topSort } = "\\top" <> parameters [topSort] <> noArguments
 

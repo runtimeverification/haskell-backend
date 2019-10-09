@@ -38,6 +38,8 @@ instance SOP.HasDatatypeInfo Function
 
 instance Debug Function
 
+instance Diff Function
+
 instance NFData Function
 
 instance Hashable Function
@@ -138,11 +140,6 @@ instance Synthetic Function (Top sort) where
 
 -- | A 'StringLiteral' pattern is always 'Function'.
 instance Synthetic Function (Const StringLiteral) where
-    synthetic = const (Function True)
-    {-# INLINE synthetic #-}
-
--- | A 'CharLiteral' pattern is always 'Function'.
-instance Synthetic Function (Const CharLiteral) where
     synthetic = const (Function True)
     {-# INLINE synthetic #-}
 

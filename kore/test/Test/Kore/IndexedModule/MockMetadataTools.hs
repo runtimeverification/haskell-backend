@@ -9,6 +9,7 @@ module Test.Kore.IndexedModule.MockMetadataTools
     , sortInjectionAttributes
     ) where
 
+import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
@@ -22,6 +23,9 @@ import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Injective
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Sort.Constructors as Attribute
+    ( Constructors
+    )
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol
 import Kore.IndexedModule.MetadataTools
@@ -43,6 +47,9 @@ import qualified Kore.Step.SMT.AST as SMT.AST
 import Kore.Syntax.Application
     ( SymbolOrAlias (..)
     )
+import Kore.Syntax.Id
+    ( Id
+    )
 
 makeMetadataTools
     :: HasCallStack
@@ -51,8 +58,11 @@ makeMetadataTools
     -> [(Sort, Sort)]
     -> [(SymbolOrAlias, ApplicationSorts)]
     -> SMT.AST.SmtDeclarations
+    -> Map.Map Id Attribute.Constructors
     -> SmtMetadataTools StepperAttributes
-makeMetadataTools attr sortTypes isSubsortOf sorts declarations =
+makeMetadataTools
+    attr sortTypes isSubsortOf sorts declarations sortConstructors
+  =
     MetadataTools
         { sortAttributes = caseBasedFunction sortTypes
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
@@ -73,6 +83,7 @@ makeMetadataTools attr sortTypes isSubsortOf sorts declarations =
         , isOverloading = const (const False)
         , isOverloaded = const False
         , smtData = declarations
+        , sortConstructors
         }
 
 caseBasedFunction
@@ -92,9 +103,7 @@ functionalAttributes = defaultAttributes { functional = Functional True }
 constructorAttributes :: StepperAttributes
 constructorAttributes =
     defaultSymbolAttributes
-        { constructor = Constructor True
-        , injective = Injective True
-        }
+        { constructor = Constructor True }
 
 constructorFunctionalAttributes :: StepperAttributes
 constructorFunctionalAttributes =

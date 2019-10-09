@@ -1,12 +1,6 @@
 module Test.Kore.Step.Simplification.AndTerms where
 
 import Test.Tasty
-    ( TestTree
-    , testGroup
-    )
-import Test.Tasty.HUnit
-    ( testCase
-    )
 
 import Control.Error
     ( MaybeT (..)
@@ -69,10 +63,9 @@ import Kore.Variables.UnifiedVariable
     )
 
 import Test.Kore
-import Test.Kore.Comparators ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
-import Test.Tasty.HUnit.Extensions
+import Test.Tasty.HUnit.Ext
 
 test_andTermsSimplification :: [TestTree]
 test_andTermsSimplification =
@@ -85,7 +78,7 @@ test_andTermsSimplification =
                         , substitution = mempty
                         }
             actual <- simplifyUnify fOfA mkTop_
-            assertEqualWithExplanation "" ([expected], Just [expected]) actual
+            assertEqual "" ([expected], Just [expected]) actual
 
         , testCase "\\and{s}(\\top{s}(), f{}(a))" $ do
             let expected =
@@ -95,7 +88,7 @@ test_andTermsSimplification =
                         , substitution = mempty
                         }
             actual <- simplifyUnify mkTop_ fOfA
-            assertEqualWithExplanation "" ([expected], Just [expected]) actual
+            assertEqual "" ([expected], Just [expected]) actual
 
         , testCase "\\and{s}(f{}(a), \\bottom{s}())" $ do
             let expect =
@@ -103,7 +96,7 @@ test_andTermsSimplification =
                     , Just [Pattern.bottom]
                     )
             actual <- simplifyUnify fOfA mkBottom_
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "\\and{s}(\\bottom{s}(), f{}(a))" $ do
             let expect =
@@ -111,7 +104,7 @@ test_andTermsSimplification =
                     , Just [Pattern.bottom]
                     )
             actual <- simplifyUnify mkBottom_ fOfA
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testCase "equal patterns and" $ do
@@ -122,7 +115,7 @@ test_andTermsSimplification =
                     , substitution = mempty
                     }
         actual <- simplifyUnify fOfA fOfA
-        assertEqualWithExplanation "" ([expect], Just [expect]) actual
+        assertEqual "" ([expect], Just [expect]) actual
 
     , testGroup "variable function and"
         [ testCase "\\and{s}(x:s, f{}(a))" $ do
@@ -134,7 +127,7 @@ test_andTermsSimplification =
                             Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
                         }
             actual <- simplifyUnify (mkElemVar Mock.x) fOfA
-            assertEqualWithExplanation "" ([expect], Just [expect]) actual
+            assertEqual "" ([expect], Just [expect]) actual
 
         , testCase "\\and{s}(f{}(a), x:s)" $ do
             let expect =
@@ -145,7 +138,7 @@ test_andTermsSimplification =
                             Substitution.unsafeWrap [(ElemVar Mock.x, fOfA)]
                         }
             actual <- simplifyUnify fOfA (mkElemVar Mock.x)
-            assertEqualWithExplanation "" ([expect], Just [expect]) actual
+            assertEqual "" ([expect], Just [expect]) actual
         ]
 
     , testGroup "injective head and"
@@ -159,7 +152,7 @@ test_andTermsSimplification =
             actual <-
                 simplifyUnify
                     (Mock.injective10 fOfA) (Mock.injective10 gOfA)
-            assertEqualWithExplanation "" ([expect], Just [expect]) actual
+            assertEqual "" ([expect], Just [expect]) actual
         , testCase "same head, same child" $ do
             let expected =
                     Conditional
@@ -170,7 +163,7 @@ test_andTermsSimplification =
             actual <-
                 simplifyUnify
                     (Mock.injective10 fOfA) (Mock.injective10 fOfA)
-            assertEqualWithExplanation "" ([expected], Just [expected]) actual
+            assertEqual "" ([expected], Just [expected]) actual
         , testCase "different head" $ do
             let expect =
                     (   [ Conditional
@@ -187,7 +180,7 @@ test_andTermsSimplification =
             actual <-
                 simplifyUnify
                     (Mock.injective10 fOfA) (Mock.injective11 gOfA)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testGroup "sort injection and"
@@ -203,7 +196,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.sortInjection10 Mock.cfSort0)
                     (Mock.sortInjection10 Mock.cgSort0)
-            assertEqualWithExplanation "" ([expect], Just [expect]) actual
+            assertEqual "" ([expect], Just [expect]) actual
         , testCase "same head, same child" $ do
             let expect =
                     Conditional
@@ -216,14 +209,14 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.sortInjection10 Mock.cfSort0)
                     (Mock.sortInjection10 Mock.cfSort0)
-            assertEqualWithExplanation "" ([expect], Just [expect]) actual
+            assertEqual "" ([expect], Just [expect]) actual
         , testCase "different head, not subsort" $ do
             let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
                     (Mock.sortInjection0ToTop Mock.plain00Sort0)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         , testCase "different head, subsort first" $ do
             let expect =
                     (   [ Conditional
@@ -245,7 +238,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         , testCase "different head, subsort second" $ do
             let expect =
                     (   [ Conditional
@@ -267,35 +260,35 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
                     (Mock.sortInjectionSubSubToTop Mock.plain00SubSubsort)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         , testCase "different head constructors not subsort" $ do
             let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     (Mock.sortInjection10 Mock.aSort0)
                     (Mock.sortInjection11 Mock.aSort1)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         , testCase "different head constructors subsort" $ do
             let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
                     (Mock.sortInjectionSubSubToTop Mock.aSubSubsort)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         , testCase "different head constructors common subsort" $ do
             let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     (Mock.sortInjectionOtherToTop Mock.aOtherSort)
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         , testCase "different head constructors common subsort reversed" $ do
             let expect = ([], Just [])
             actual <-
                 simplifyUnify
                     (Mock.sortInjectionSubToTop Mock.aSubsort)
                     (Mock.sortInjectionOtherToTop Mock.aOtherSort)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testGroup "constructor and"
@@ -312,7 +305,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.constr10 Mock.cf)
                     (Mock.constr10 Mock.cg)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "same head same child" $ do
             let expect =
@@ -327,7 +320,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.constr10 Mock.cf)
                     (Mock.constr10 Mock.cf)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "different head" $ do
             let expect = ([], Just [])
@@ -335,7 +328,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.constr10 Mock.cf)
                     (Mock.constr11 Mock.cf)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testCase "constructor-sortinjection and" $ do
@@ -344,7 +337,7 @@ test_andTermsSimplification =
             simplifyUnify
                 (Mock.constr10 Mock.cf)
                 (Mock.sortInjection11 Mock.cfSort1)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testGroup "domain value and"
         [ testCase "equal values" $ do
@@ -357,12 +350,12 @@ test_andTermsSimplification =
                             }
                     in ([expected], Just [expected])
             actual <- simplifyUnify aDomainValue aDomainValue
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "different values" $ do
             let expect = ([], Just [])
             actual <- simplifyUnify aDomainValue bDomainValue
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testGroup "string literal and"
@@ -379,7 +372,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (mkStringLiteral "a")
                     (mkStringLiteral "a")
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "different values" $ do
             let expect = ([], Just [])
@@ -387,26 +380,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (mkStringLiteral "a")
                     (mkStringLiteral "b")
-            assertEqualWithExplanation "" expect actual
-        ]
-
-    , testGroup "char literal and"
-        [ testCase "equal values" $ do
-            let expect =
-                    let
-                        expected = Conditional
-                            { term = mkCharLiteral 'a'
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                    in ([expected], Just [expected])
-            actual <- simplifyUnify (mkCharLiteral 'a') (mkCharLiteral 'a')
-            assertEqualWithExplanation "" expect actual
-
-        , testCase "different values" $ do
-            let expect = ([], Just [])
-            actual <- simplifyUnify (mkCharLiteral 'a') (mkCharLiteral 'b')
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testGroup "function and"
@@ -420,7 +394,7 @@ test_andTermsSimplification =
                             }
                     in ([expanded], Just [expanded])
             actual <- simplifyUnify fOfA fOfA
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "not equal values" $ do
             let expect =
@@ -432,7 +406,7 @@ test_andTermsSimplification =
                             }
                     in ([expanded], Just [expanded])
             actual <- simplifyUnify fOfA gOfA
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testGroup "unhandled cases"
@@ -447,7 +421,7 @@ test_andTermsSimplification =
                     , Nothing
                     )
             actual <- simplifyUnify plain0OfA plain1OfA
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "one level deep" $ do
             let expect =
@@ -462,7 +436,7 @@ test_andTermsSimplification =
             actual <-
                 simplifyUnify
                     (Mock.constr10 plain0OfA) (Mock.constr10 plain1OfA)
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "two levels deep" $ do
             let expect =
@@ -480,7 +454,7 @@ test_andTermsSimplification =
                 simplifyUnify
                     (Mock.constr10 (Mock.constr10 plain0OfA))
                     (Mock.constr10 (Mock.constr10 plain1OfA))
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         ]
 
     , testCase "binary constructor of non-specialcased values" $ do
@@ -500,7 +474,7 @@ test_andTermsSimplification =
             simplifyUnify
                 (Mock.functionalConstr20 plain0OfA plain0OfB)
                 (Mock.functionalConstr20 plain1OfA plain1OfB)
-        assertEqualWithExplanation "" expect actual
+        assertEqual "" expect actual
 
     , testGroup "builtin Map domain"
         [ testCase "concrete Map, same keys" $ do
@@ -516,7 +490,7 @@ test_andTermsSimplification =
                 unify
                     (Mock.builtinMap [(Mock.a, Mock.b)])
                     (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "concrete Map, different keys" $ do
             let expect = Just []
@@ -524,7 +498,7 @@ test_andTermsSimplification =
                 unify
                     (Mock.builtinMap [(Mock.a, Mock.b)])
                     (Mock.builtinMap [(Mock.b, mkElemVar Mock.x)])
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "concrete Map with framed Map" $ do
             let expect = Just
@@ -545,7 +519,7 @@ test_andTermsSimplification =
                         (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
                         (mkElemVar Mock.m)
                     )
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "concrete Map with framed Map" $ do
             let expect = Just
@@ -566,7 +540,7 @@ test_andTermsSimplification =
                         (mkElemVar Mock.m)
                         (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
                     )
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "framed Map with concrete Map" $ do
             let expect = Just
@@ -587,7 +561,7 @@ test_andTermsSimplification =
                         (mkElemVar Mock.m)
                     )
                     (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "framed Map with concrete Map" $ do
             let expect = Just
@@ -608,7 +582,7 @@ test_andTermsSimplification =
                         (Mock.builtinMap [(Mock.a, mkElemVar Mock.x)])
                     )
                     (Mock.builtinMap [(Mock.a, fOfA), (Mock.b, fOfB)])
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "concrete Map with element+unit" $ do
             let expect = Just
@@ -628,7 +602,7 @@ test_andTermsSimplification =
                         (Mock.elementMap (mkElemVar Mock.x) (mkElemVar Mock.y))
                         Mock.unitMap
                     )
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
         , testCase "map elem key inj splitting" $ do
             let
                 expected = Just
@@ -659,7 +633,7 @@ test_andTermsSimplification =
                     (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
                     (mkElemVar Mock.y)
                 )
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
         , testCase "map elem value inj splitting" $ do
             let
                 key = Mock.a
@@ -687,7 +661,7 @@ test_andTermsSimplification =
                     (mkElemVar Mock.y)
                     (Mock.sortInjection Mock.testSort (mkElemVar Mock.xSubSort))
                 )
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
         , testCase "map concat key inj splitting" $ do
             let
                 expected = Just
@@ -722,7 +696,7 @@ test_andTermsSimplification =
                     )
                     (mkElemVar Mock.m)
                 )
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
         , testCase "map elem value inj splitting" $ do
             let
                 expected = Just
@@ -757,7 +731,7 @@ test_andTermsSimplification =
                     )
                     (mkElemVar Mock.m)
                 )
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
         -- TODO: Add tests with non-trivial predicates.
         ]
 
@@ -776,14 +750,14 @@ test_andTermsSimplification =
                         }
                     ]
             actual <- unify term1 term1
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "[same head, different head]" $ do
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
                 expect = Just []
             actual <- unify term3 term4
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "[a] `concat` x /\\ [a, b] " $ do
             let x = elemVarS "x" Mock.listSort
@@ -799,14 +773,14 @@ test_andTermsSimplification =
                         }
                     ]
             actual <- unify term5 term6
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "different lengths" $ do
             let term7 = Mock.builtinList [Mock.a, Mock.a]
                 term8 = Mock.builtinList [Mock.a]
                 expect = Just [Pattern.bottom]
             actual <- unify term7 term8
-            assertEqualWithExplanation "" expect actual
+            assertEqual "" expect actual
 
         , testCase "fallback for external List symbols" $ do
             let expectTerm = mkAnd rhs lhs
@@ -820,7 +794,7 @@ test_andTermsSimplification =
                 lhs = Mock.concatList (Mock.elementList x) l
                 rhs = Mock.builtinList [Mock.a, Mock.b]
             actual <- unify lhs rhs
-            assertEqualWithExplanation "" (Just [expect]) actual
+            assertEqual "" (Just [expect]) actual
 
         -- TODO: Add tests with non-trivial unifications and predicates.
         ]
@@ -842,7 +816,7 @@ test_andTermsSimplification =
                     Mock.unitSet
                 )
                 (Mock.builtinSet [Mock.a])
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
         ,  testCase "handles set ambiguity" $ do
             let
                 expected1 =
@@ -869,7 +843,7 @@ test_andTermsSimplification =
                     (mkElemVar Mock.xSet)
                 )
                 (Mock.builtinSet [Mock.a, Mock.b])
-            assertEqualWithExplanation "" (Just [expected1, expected2]) actual
+            assertEqual "" (Just [expected1, expected2]) actual
         , testCase "set elem inj splitting" $ do
             let
                 expected = Just
@@ -891,7 +865,7 @@ test_andTermsSimplification =
                 (Mock.builtinSet
                     [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
                 )
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
         , testCase "set concat inj splitting" $ do
             let
                 expected = Just
@@ -919,7 +893,7 @@ test_andTermsSimplification =
                 (Mock.builtinSet
                     [Mock.sortInjection Mock.testSort Mock.aSubSubsort]
                 )
-            assertEqualWithExplanation "" expected actual
+            assertEqual "" expected actual
         , testCase "set concat 2 inj splitting" $ do
             let
                 testSet =
@@ -955,7 +929,7 @@ test_andTermsSimplification =
                     )
                 )
                 testSet
-            assertEqualWithExplanation "" (Just expected) actual
+            assertEqual "" (Just expected) actual
         ]
     , testGroup "alias expansion"
         [ testCase "alias() vs top" $ do
@@ -996,7 +970,7 @@ test_andTermsSimplification =
                 alias = mkAlias' "alias1" x $ Mock.injective10 fOfA
                 left = applyAlias' alias $ mkTop Mock.testSort
             actual <- simplifyUnify left $ Mock.injective10 gOfA
-            assertEqualWithExplanation "" ([expect], Just [expect]) actual
+            assertEqual "" ([expect], Just [expect]) actual
         , testGroup "unhandled cases with aliases"
             [ testCase "top level" $ do
                 let
@@ -1013,7 +987,7 @@ test_andTermsSimplification =
                     alias = mkAlias' "alias1" x $ plain0OfA
                     left = applyAlias' alias $ mkTop Mock.testSort
                 actual <- simplifyUnify left plain1OfA
-                assertEqualWithExplanation "" expect actual
+                assertEqual "" expect actual
 
             , testCase "one level deep" $ do
                 let
@@ -1030,7 +1004,7 @@ test_andTermsSimplification =
                     alias = mkAlias' "alias1" x $ Mock.constr10 plain0OfA
                     left = applyAlias' alias $ mkTop Mock.testSort
                 actual <- simplifyUnify left $ Mock.constr10 plain1OfA
-                assertEqualWithExplanation "" expect actual
+                assertEqual "" expect actual
             ]
         ]
     ]
@@ -1053,7 +1027,7 @@ applyAlias' alias arg = applyAlias alias [] [arg]
 
 assertExpectTop :: ([Pattern Variable], Maybe [Pattern Variable]) -> IO ()
 assertExpectTop =
-    assertEqualWithExplanation "" ([Pattern.top], Just [Pattern.top])
+    assertEqual "" ([Pattern.top], Just [Pattern.top])
 
 test_equalsTermsSimplification :: [TestTree]
 test_equalsTermsSimplification =
@@ -1067,7 +1041,7 @@ test_equalsTermsSimplification =
                     }
                 ]
         actual <- simplifyEquals Map.empty (mkElemVar Mock.x) Mock.cf
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "handles ambiguity" $ do
         let
             expected = Just
@@ -1090,6 +1064,7 @@ test_equalsTermsSimplification =
                             (AxiomIdentifier.Application Mock.cfId)
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cf
+                            , antiLeft = Nothing
                             , right =
                                 mkOr
                                     (mkAnd
@@ -1115,7 +1090,7 @@ test_equalsTermsSimplification =
                     )
                 ]
         actual <- simplifyEquals simplifiers (mkElemVar Mock.x) Mock.cf
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "handles multiple ambiguity" $ do
         let
             expected = Just
@@ -1166,6 +1141,7 @@ test_equalsTermsSimplification =
                             (AxiomIdentifier.Application Mock.cfId)
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cf
+                            , antiLeft = Nothing
                             , right =
                                 mkOr
                                     (mkAnd
@@ -1193,6 +1169,7 @@ test_equalsTermsSimplification =
                             (AxiomIdentifier.Application Mock.cgId)
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cg
+                            , antiLeft = Nothing
                             , right =
                                 mkOr
                                     (mkAnd
@@ -1221,7 +1198,7 @@ test_equalsTermsSimplification =
             simplifiers
             (Mock.functionalConstr20 (mkElemVar Mock.x) (mkElemVar Mock.var_x_1))
             (Mock.functionalConstr20 Mock.cf Mock.cg)
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     , testCase "handles set ambiguity" $ do
         let
             asInternal set =
@@ -1248,7 +1225,7 @@ test_equalsTermsSimplification =
             Map.empty
             (Mock.concatSet (Mock.elementSet (mkElemVar Mock.x)) (mkElemVar Mock.xSet))
             (asInternal (Set.fromList [Mock.a, Mock.b]))
-        assertEqualWithExplanation "" expected actual
+        assertEqual "" expected actual
     ]
 
 fOfA :: TermLike Variable

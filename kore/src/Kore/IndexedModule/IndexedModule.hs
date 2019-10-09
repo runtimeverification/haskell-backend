@@ -112,8 +112,7 @@ in the current module are included.
 It also contains the imported modules as 'IndexedModule's and all the other
 module data in raw-ish form.
 
-All 'IndexedModule' instances should either be returned by
-'indexedModuleWithMetaSorts' or they should start from an instance created by
+All 'IndexedModule' instances should be returned by
 'indexedModuleWithDefaultImports'.
 -}
 -- TODO (thomas.tuegel): Consider splitting IndexedModule into separate sort,
@@ -567,4 +566,4 @@ implicitNames =
     $ Set.insert predicateSortId implicitSortNames
 
 implicitSortNames :: Set Id
-implicitSortNames = Set.fromList [charMetaSortId, stringMetaSortId]
+implicitSortNames = Set.fromList [stringMetaSortId]

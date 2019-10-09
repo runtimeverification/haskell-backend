@@ -86,6 +86,8 @@ instance SOP.HasDatatypeInfo Attributes
 
 instance Debug Attributes
 
+instance Diff Attributes
+
 deriving instance Semigroup Attributes
 
 deriving instance Monoid Attributes

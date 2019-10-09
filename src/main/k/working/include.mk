@@ -25,6 +25,9 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.kprove: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
+%.kmerge: %.merge $(DEFINITION) $(KORE_EXEC)
+	$(KORE_EXEC) --definition $(DEFINITION) --merge-rules $<
+
 %.search.final.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
 
@@ -48,10 +51,13 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-one-step
 
 %.kbmc.output: $(DEFINITION) $(KORE_EXEC)
-	$(KBMC) $(KPROVE_OPTS) --raw-spec $(basename $*).k -d . -m VERIFICATION --depth $(subst ., ,$(suffix $*)) --output-file $@ || exit 0
+	$(KBMC) $(KPROVE_OPTS) --debug --raw-spec $(basename $*).k -d . -m VERIFICATION --depth $(subst ., ,$(suffix $*)) --output-file $@ || exit 0
 
 %.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
+
+%.merge-output: %.merge $(DEFINITION) $(KORE_EXEC)
+	$(KORE_EXEC) $(DEFINITION) --module $(MODULE_NAME) --merge-rules $< --output $@
 
 %.repl.output: % $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE) --output-file $@
@@ -59,7 +65,13 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.test: %.output
 	diff -u $<.golden $<
 
+%.merge-test: %.merge-output
+	diff -u $(basename $<).merge-golden $<
+
 %.output.golden: %.output
 	mv $< $<.golden
+
+%.merge-golden: %.merge-output
+	mv $< $(basename $<).merge-golden
 
 .PHONY: test-k test golden clean %.test %.krun

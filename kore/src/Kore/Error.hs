@@ -35,6 +35,10 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+
+import Kore.Debug
 
 {-|'Error' represents a Kore error with a stacktrace-like context.
 
@@ -44,7 +48,15 @@ data Error a = Error
     { errorContext :: ![String]
     , errorError   :: !String
     }
-    deriving (Eq, Show)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic (Error a)
+
+instance SOP.HasDatatypeInfo (Error a)
+
+instance Debug (Error a)
+
+instance Diff (Error a)
 
 {-|'printError' provides a one-line representation of a string. -}
 printError :: Error a -> String

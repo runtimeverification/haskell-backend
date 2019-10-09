@@ -35,6 +35,8 @@ instance SOP.HasDatatypeInfo Memo
 
 instance Debug Memo
 
+instance Diff Memo
+
 -- | Kore identifier representing the @memo@ attribute symbol.
 memoId :: Id
 memoId = "memo"

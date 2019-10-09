@@ -29,10 +29,12 @@ module Kore.Repl.Data
     , runUnifierWithExplanation
     , StepResult(..)
     , LogType (..)
+    , LogScope (..)
     , ReplScript (..)
     , ReplMode (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
+    , makeLogScope
     ) where
 
 import Control.Applicative
@@ -68,6 +70,7 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -85,7 +88,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Strategy as Strategy
 import Kore.Strategies.Goal
-import Kore.Strategies.OnePath.Verification
+import Kore.Strategies.Verification
     ( CommonProofState
     )
 import Kore.Syntax.Variable
@@ -174,6 +177,17 @@ data LogType
     | LogToFile !FilePath
     deriving (Eq, Show)
 
+newtype LogScope =
+    LogScope
+    { unLogScope :: Set.Set Logger.Scope }
+    deriving (Eq, Show, Semigroup, Monoid)
+
+makeLogScope :: [String] -> LogScope
+makeLogScope scopes =
+    LogScope
+    . Set.fromList
+    $ fmap (Logger.Scope . Text.pack) scopes
+
 data RuleReference
     = ByIndex (Either AxiomIndex ClaimIndex)
     | ByName RuleName
@@ -240,7 +254,7 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
-    | Log Logger.Severity LogType
+    | Log Logger.Severity LogScope LogType
     -- ^ Setup the Kore logger.
     | Exit
     -- ^ Exit the repl.
@@ -326,12 +340,17 @@ helpText =
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
     \proof-status                          shows status for each claim\n\
-    \log <severity> <type>                 configures the logging outout\n\
-                                           \<severity> can be debug, info,\
+    \log <severity> [<scope>] <type>       configures the logging output\n\
+    \                                      <severity> can be debug, info,\
                                            \ warning, error, or critical\n\
-    \                                      <type> can be NoLogging,\
-                                           \ LogToStdOut,\
-                                           \ or LogToFile filename\n\
+    \                                      [<scope>] is the list of scopes\
+                                           \ separated by white spaces or\
+                                           \ commas, e.g. '[scope1, scope2]';\n\
+    \                                      these scopes are used for filtering\
+                                           \ the logged information, for example,\
+                                           \ '[]' will log all scopes\n\
+    \                                      <type> can be 'none', 'stdout',\
+                                           \ or 'file filename'\n\
     \exit                                  exits the repl\
     \\n\
     \Available modifiers:\n\
@@ -412,8 +431,8 @@ data ReplState claim = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
-    , logging :: (Logger.Severity, LogType)
-    -- ^ The log level and log type decide what gets logged and where.
+    , logging :: (Logger.Severity, LogScope, LogType)
+    -- ^ The log level, log scopes and log type decide what gets logged and where.
     }
     deriving (GHC.Generic)
 

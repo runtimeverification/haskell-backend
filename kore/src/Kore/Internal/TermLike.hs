@@ -16,6 +16,7 @@ module Kore.Internal.TermLike
     , isFunctionalPattern
     , isDefinedPattern
     , freeVariables
+    , refreshVariables
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -59,7 +60,6 @@ module Kore.Internal.TermLike
     , mkSetVar
     , mkElemVar
     , mkStringLiteral
-    , mkCharLiteral
     , mkSort
     , mkSortVariable
     , mkInhabitant
@@ -117,7 +117,6 @@ module Kore.Internal.TermLike
     , pattern ElemVar_
     , pattern SetVar_
     , pattern StringLiteral_
-    , pattern CharLiteral_
     , pattern Evaluated_
     -- * Re-exports
     , module Kore.Internal.Variable
@@ -128,12 +127,11 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.Id
     , CofreeF (..), Comonad (..)
     , Sort (..), SortActual (..), SortVariable (..)
-    , charMetaSort, stringMetaSort
+    , stringMetaSort
     , module Kore.Syntax.And
     , module Kore.Syntax.Application
     , module Kore.Syntax.Bottom
     , module Kore.Syntax.Ceil
-    , module Kore.Syntax.CharLiteral
     , module Kore.Syntax.DomainValue
     , module Kore.Syntax.Equals
     , module Kore.Syntax.Exists
@@ -163,14 +161,7 @@ import Control.DeepSeq
     ( NFData (..)
     )
 import qualified Control.Lens as Lens
-import Control.Lens.Combinators
-    ( coerced
-    , to
-    , _head
-    )
-import Control.Lens.Prism
-    ( _Just
-    )
+import qualified Control.Lens.Combinators as Lens.Combinators
 import Control.Monad.Reader
     ( Reader
     )
@@ -192,7 +183,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
     ( Identity (..)
     )
-import Data.Generics.Product
+import qualified Data.Generics.Product as Lens.Product
 import Data.Hashable
 import Data.Map.Strict
     ( Map
@@ -217,6 +208,10 @@ import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import Kore.Attribute.Synthetic
@@ -232,7 +227,6 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.Definition hiding
     ( Alias
     , Symbol
@@ -263,7 +257,10 @@ import Kore.Unparser
     )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
-import Kore.Variables.Fresh
+import qualified Kore.Variables.Fresh as Fresh
+    ( nextVariable
+    , refreshVariables
+    )
 import Kore.Variables.UnifiedVariable
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
@@ -280,6 +277,8 @@ instance SOP.Generic (Evaluated child)
 instance SOP.HasDatatypeInfo (Evaluated child)
 
 instance Debug child => Debug (Evaluated child)
+
+instance (Debug child, Diff child) => Diff (Evaluated child)
 
 instance Hashable child => Hashable (Evaluated child)
 
@@ -326,7 +325,6 @@ data TermLikeF variable child
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
-    | CharLiteralF   !(Const CharLiteral child)
     | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
@@ -344,16 +342,18 @@ instance SOP.HasDatatypeInfo (TermLikeF variable child)
 instance (Debug child, Debug variable) => Debug (TermLikeF variable child)
 
 instance
-    (Hashable child, Hashable variable) =>
-    Hashable (TermLikeF variable child)
+    ( Debug child, Debug variable, Diff child, Diff variable )
+    => Diff (TermLikeF variable child)
+
+instance
+    (Hashable child, Hashable variable)
+    => Hashable (TermLikeF variable child)
 
 instance (NFData child, NFData variable) => NFData (TermLikeF variable child)
 
 instance
-    ( SortedVariable variable, Unparse variable
-    , Unparse child
-    ) =>
-    Unparse (TermLikeF variable child)
+    ( SortedVariable variable, Unparse variable, Unparse child )
+    => Unparse (TermLikeF variable child)
   where
     unparse = Unparser.unparseGeneric
     unparse2 = Unparser.unparse2Generic
@@ -407,7 +407,6 @@ traverseVariablesF traversing =
         OrF orP -> pure (OrF orP)
         RewritesF rewP -> pure (RewritesF rewP)
         StringLiteralF strP -> pure (StringLiteralF strP)
-        CharLiteralF charP -> pure (CharLiteralF charP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
@@ -440,9 +439,21 @@ instance SOP.HasDatatypeInfo (TermLike variable)
 
 instance Debug variable => Debug (TermLike variable)
 
+instance (Debug variable, Diff variable) => Diff (TermLike variable) where
+    diffPrec
+        termLike1@(Recursive.project -> attrs1 :< termLikeF1)
+        termLike2@(Recursive.project -> _      :< termLikeF2)
+      =
+        -- If the patterns differ, do not display the difference in the
+        -- attributes, which would overload the user with redundant information.
+        diffPrecGeneric
+            (Recursive.embed (attrs1 :< termLikeF1))
+            (Recursive.embed (attrs1 :< termLikeF2))
+        <|> diffPrecGeneric termLike1 termLike2
+
 instance
-    (Eq variable, Eq (TermLikeF variable (TermLike variable))) =>
-    Eq (TermLike variable)
+    (Eq variable, Eq (TermLikeF variable (TermLike variable)))
+    => Eq (TermLike variable)
   where
     (==)
         (Recursive.project -> _ :< pat1)
@@ -450,8 +461,8 @@ instance
       = pat1 == pat2
 
 instance
-    (Ord variable, Ord (TermLikeF variable (TermLike variable))) =>
-    Ord (TermLike variable)
+    (Ord variable, Ord (TermLikeF variable (TermLike variable)))
+    => Ord (TermLike variable)
   where
     compare
         (Recursive.project -> _ :< pat1)
@@ -469,30 +480,17 @@ instance NFData variable => NFData (TermLike variable) where
 instance SortedVariable variable => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project freshVarTerm of
-            (attrs :< pat) ->
-                Pretty.vsep
-                    $ catMaybes
-                        [ attrs Lens.^? getCallStackHead
-                        , Just $ unparse pat
-                        ]
+            (attrs :< termLikeF)
+              | hasKnownCreator created ->
+                Pretty.sep [Pretty.pretty created, unparse termLikeF]
+              | otherwise ->
+                unparse termLikeF
+              where
+                Attribute.Pattern { created } = attrs
       where
         freshVarTerm =
             externalizeFreshVariables
             $ mapVariables toVariable term
-        showCreated (name, loc) =
-            Pretty.hsep
-                [ "// Created by"
-                , Pretty.angles $ Pretty.pretty name
-                , "at"
-                , Pretty.pretty $ GHC.prettySrcLoc loc
-                ]
-        getCallStackHead =
-            field @"created"
-                . coerced
-                . _Just
-                . to GHC.getCallStack
-                . _head
-                . to showCreated
 
     unparse2 term =
         case Recursive.project freshVarTerm of
@@ -603,8 +601,8 @@ extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes = extract . getTermLike
 
 instance
-    (Ord variable, SortedVariable variable, Show variable) =>
-    Binding (TermLike variable)
+    (Ord variable, SortedVariable variable, Show variable)
+    => Binding (TermLike variable)
   where
     type VariableType (TermLike variable) = UnifiedVariable variable
 
@@ -634,6 +632,21 @@ hasFreeVariable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
+
+refreshVariables
+    :: Substitute.SubstitutionVariable variable
+    => FreeVariables variable
+    -> TermLike variable
+    -> TermLike variable
+refreshVariables
+    (FreeVariables.getFreeVariables -> avoid)
+    term
+  =
+    substitute subst term
+  where
+    rename = Fresh.refreshVariables avoid originalFreeVariables
+    originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
+    subst = mkVar <$> rename
 
 {- | Is the 'TermLike' a function pattern?
  -}
@@ -846,7 +859,7 @@ externalizeFreshVariables termLike =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
         $ fmap Variable.externalizeFreshVariable
-        <$> iterate (fmap nextVariable) variable
+        <$> iterate (fmap Fresh.nextVariable) variable
       where
         wouldCapture var = isFreeVariable var avoiding
 
@@ -1022,7 +1035,6 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 ApplyAliasF _ -> illSorted
                 BuiltinF _ -> illSorted
                 DomainValueF _ -> illSorted
-                CharLiteralF _ -> illSorted
                 StringLiteralF _ -> illSorted
                 VariableF _ -> illSorted
                 InhabitantF _ -> illSorted
@@ -1067,7 +1079,7 @@ updateCallStack
     -> TermLike variable
 updateCallStack = Lens.set created callstack
   where
-    created = coerced . _extract . field @"created"
+    created = Lens.Combinators.coerced . _extract . Lens.Product.field @"created"
     callstack =
         Created . Just . GHC.popCallStack . GHC.popCallStack $ GHC.callStack
 
@@ -1795,17 +1807,6 @@ mkStringLiteral
 mkStringLiteral =
     updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
 
-{- | Construct a 'CharLiteral' pattern.
- -}
-mkCharLiteral
-    :: GHC.HasCallStack
-    => Ord variable
-    => SortedVariable variable
-    => Char
-    -> TermLike variable
-mkCharLiteral =
-    updateCallStack . synthesize . CharLiteralF . Const . CharLiteral
-
 mkInhabitant
     :: GHC.HasCallStack
     => Ord variable
@@ -2111,8 +2112,6 @@ pattern SetVar_ :: SetVariable variable -> TermLike variable
 
 pattern StringLiteral_ :: Text -> TermLike variable
 
-pattern CharLiteral_ :: Char -> TermLike variable
-
 pattern Evaluated_ :: TermLike variable -> TermLike variable
 
 pattern And_ andSort andFirst andSecond <-
@@ -2253,9 +2252,6 @@ pattern ElemVar_ elemVariable <- Var_ (ElemVar elemVariable)
 
 pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
-
-pattern CharLiteral_ char <-
-    (Recursive.project -> _ :< CharLiteralF (Const (CharLiteral char)))
 
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))

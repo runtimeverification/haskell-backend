@@ -17,16 +17,15 @@ module Kore.Proof.Functional
 import Data.Hashable
     ( Hashable
     )
-import GHC.Generics
-    ( Generic
-    )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
+import Kore.Debug
 import Kore.Internal.TermLike
     ( Builtin
     , Symbol
     )
 import Kore.Sort
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.DomainValue
 import Kore.Syntax.StringLiteral
 
@@ -52,15 +51,17 @@ data FunctionalProof variable
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     | FunctionalStringLiteral StringLiteral
     -- ^A string literal is the repeated application of functional constructors.
-    | FunctionalCharLiteral CharLiteral
-    -- ^A char literal is a functional constructor without arguments.
-  deriving Generic
-
-deriving instance Eq variable => Eq (FunctionalProof variable)
-deriving instance Ord variable => Ord (FunctionalProof variable)
-deriving instance Show variable => Show (FunctionalProof variable)
+  deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable variable => Hashable (FunctionalProof variable)
+
+instance SOP.Generic (FunctionalProof variable)
+
+instance SOP.HasDatatypeInfo (FunctionalProof variable)
+
+instance Debug variable => Debug (FunctionalProof variable)
+
+instance (Debug variable, Diff variable) => Diff (FunctionalProof variable)
 
 -- |'FunctionProof' is used for providing arguments that a pattern is
 -- function-like.  Currently we only support arguments stating that a
@@ -98,7 +99,15 @@ deriving instance Show variable => Show (TotalProof variable)
 -- |Used for providing arguments that a pattern is made of constructor-like
 -- elements.
 data ConstructorLikeProof = ConstructorLikeProof
-  deriving (Eq, Show)
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic ConstructorLikeProof
+
+instance SOP.HasDatatypeInfo ConstructorLikeProof
+
+instance Debug ConstructorLikeProof
+
+instance Diff ConstructorLikeProof
 
 mapVariables
     :: (variable1 -> variable2)
@@ -111,4 +120,3 @@ mapVariables mapping =
         FunctionalDomainValue value -> FunctionalDomainValue value
         FunctionalHead symbol -> FunctionalHead symbol
         FunctionalStringLiteral string -> FunctionalStringLiteral string
-        FunctionalCharLiteral char -> FunctionalCharLiteral char
