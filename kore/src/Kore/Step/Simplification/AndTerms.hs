@@ -17,6 +17,7 @@ module Kore.Step.Simplification.AndTerms
     , TermSimplifier
     , TermTransformationOld
     , cannotUnifyDistinctDomainValues
+    , functionAnd
     ) where
 
 import Control.Applicative
@@ -75,6 +76,7 @@ import Kore.Predicate.Predicate
     , makeNotPredicate
     , makeTruePredicate
     )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.PatternAttributes
     ( isConstructorLikeTop
     )
@@ -144,13 +146,10 @@ termEqualsAnd
     => TermLike variable
     -> TermLike variable
     -> MaybeT (BranchT simplifier) (Pattern variable)
-termEqualsAnd
-    p1
-    p2
-  = MaybeT
-    $   either missingCase BranchT.scatter
-        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker p1 p2)
+termEqualsAnd p1 p2 =
+    MaybeT $ run $ maybeTermEqualsWorker p1 p2
   where
+    run it = (runUnifierT . runMaybeT) it >>= either missingCase BranchT.scatter
     missingCase = const (return Nothing)
 
     maybeTermEqualsWorker
@@ -187,7 +186,9 @@ termEqualsAnd
         equalsPredicate =
             Conditional
                 { term = mkTop_
-                , predicate = makeEqualsPredicate first second
+                , predicate =
+                    Syntax.Predicate.markSimplified
+                    $ makeEqualsPredicate first second
                 , substitution = mempty
                 }
 
@@ -1013,16 +1014,16 @@ functionAnd
     => TermLike variable
     -> TermLike variable
     -> Maybe (Pattern variable)
-functionAnd
-    first
-    second
+functionAnd first second
   | isFunctionPattern first, isFunctionPattern second =
     return Conditional
         { term = first  -- different for Equals
         -- Ceil predicate not needed since first being
         -- bottom will make the entire term bottom. However,
         -- one must be careful to not just drop the term.
-        , predicate = makeEqualsPredicate first second
+        , predicate =
+            Syntax.Predicate.markSimplified
+            $ makeEqualsPredicate first second
         , substitution = mempty
         }
   | otherwise = empty

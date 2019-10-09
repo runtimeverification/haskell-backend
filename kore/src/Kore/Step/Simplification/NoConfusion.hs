@@ -62,7 +62,13 @@ equalInjectiveHeadsAndEquals
     Monad.Trans.lift $ do
         children <- Monad.zipWithM termMerger firstChildren secondChildren
         let merged = Foldable.foldMap Pattern.withoutTerm children
-            term = mkApplySymbol firstHead (Pattern.term <$> children)
+            -- TODO (thomas.tuegel): This is tricky!
+            -- Unifying the symbol's children may have produced new patterns
+            -- which allow evaluating the symbol. It is possible this pattern
+            -- is not actually fully simplified!
+            term =
+                (markSimplified . mkApplySymbol firstHead)
+                    (Pattern.term <$> children)
         return (Pattern.withCondition term merged)
   where
     isFirstInjective = Symbol.isInjective firstHead

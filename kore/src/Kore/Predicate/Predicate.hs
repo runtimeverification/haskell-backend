@@ -33,6 +33,8 @@ module Kore.Predicate.Predicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
+    , isSimplified
+    , markSimplified
     , freeVariables
     , isFreeOf
     , Kore.Predicate.Predicate.freeElementVariables
@@ -40,7 +42,6 @@ module Kore.Predicate.Predicate
     , Kore.Predicate.Predicate.mapVariables
     , singleSubstitutionToPredicate
     , stringFromPredicate
-    , substitutionToPredicate
     , coerceSort
     , fromPredicate
     , fromSubstitution
@@ -82,6 +83,8 @@ import Kore.Error
     )
 import Kore.Internal.TermLike hiding
     ( freeVariables
+    , isSimplified
+    , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
@@ -500,6 +503,21 @@ freeVariables
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
+isSimplified :: Predicate variable -> Bool
+isSimplified (GenericPredicate termLike) = TermLike.isSimplified termLike
+
+{- | Mark a 'Predicate' as fully simplified.
+
+The pattern is fully simplified if we do not know how to simplify it any
+further. The simplifier reserves the right to skip any pattern which is marked,
+so do not mark any pattern unless you are certain it cannot be further
+simplified.
+
+ -}
+markSimplified :: Predicate variable -> Predicate variable
+markSimplified (GenericPredicate termLike) =
+    GenericPredicate (TermLike.markSimplified termLike)
+
 isFreeOf
     :: Ord variable
     => Predicate variable
@@ -523,27 +541,14 @@ hasFreeVariable
 hasFreeVariable variable =
     isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
 
-{- | 'substitutionToPredicate' transforms a substitution in a predicate.
-
-An empty substitution list returns a true predicate. A non-empty substitution
-returns a conjunction of variable/substitution equalities.
-
--}
-substitutionToPredicate
-    :: InternalVariable variable
-    => Substitution variable
-    -> Predicate variable
-substitutionToPredicate =
-    makeMultipleAndPredicate
-    . fmap singleSubstitutionToPredicate
-    . Substitution.unwrap
-
 singleSubstitutionToPredicate
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (TermLike.mkVar var) patt
+    -- markSimplified because this should only be called when we don't know what
+    -- to do with a substitution.
+    markSimplified $ makeEqualsPredicate (TermLike.mkVar var) patt
 
 {- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
 
@@ -555,7 +560,10 @@ fromSubstitution
     :: InternalVariable variable
     => Substitution variable
     -> Predicate variable
-fromSubstitution = substitutionToPredicate
+fromSubstitution =
+    makeMultipleAndPredicate
+    . fmap singleSubstitutionToPredicate
+    . Substitution.unwrap
 
 {- | Traverse the predicate from the top down and apply substitutions.
 
