@@ -18,6 +18,7 @@ module Kore.Internal.TermLike
     , isFunctionalPattern
     , isDefinedPattern
     , freeVariables
+    , refreshVariables
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -61,7 +62,6 @@ module Kore.Internal.TermLike
     , mkSetVar
     , mkElemVar
     , mkStringLiteral
-    , mkCharLiteral
     , mkSort
     , mkSortVariable
     , mkInhabitant
@@ -119,7 +119,6 @@ module Kore.Internal.TermLike
     , pattern ElemVar_
     , pattern SetVar_
     , pattern StringLiteral_
-    , pattern CharLiteral_
     , pattern Evaluated_
     -- * Re-exports
     , module Kore.Internal.Variable
@@ -130,12 +129,11 @@ module Kore.Internal.TermLike
     , module Kore.Syntax.Id
     , CofreeF (..), Comonad (..)
     , Sort (..), SortActual (..), SortVariable (..)
-    , charMetaSort, stringMetaSort
+    , stringMetaSort
     , module Kore.Syntax.And
     , module Kore.Syntax.Application
     , module Kore.Syntax.Bottom
     , module Kore.Syntax.Ceil
-    , module Kore.Syntax.CharLiteral
     , module Kore.Syntax.DomainValue
     , module Kore.Syntax.Equals
     , module Kore.Syntax.Exists
@@ -212,6 +210,10 @@ import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
@@ -228,7 +230,6 @@ import Kore.Syntax.And
 import Kore.Syntax.Application
 import Kore.Syntax.Bottom
 import Kore.Syntax.Ceil
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.Definition hiding
     ( Alias
     , Symbol
@@ -259,7 +260,10 @@ import Kore.Unparser
     )
 import qualified Kore.Unparser as Unparser
 import Kore.Variables.Binding
-import Kore.Variables.Fresh
+import qualified Kore.Variables.Fresh as Fresh
+    ( nextVariable
+    , refreshVariables
+    )
 import Kore.Variables.UnifiedVariable
 
 {- | @Evaluated@ wraps patterns which are fully evaluated.
@@ -328,7 +332,6 @@ data TermLikeF variable child
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
-    | CharLiteralF   !(Const CharLiteral child)
     | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
@@ -412,7 +415,6 @@ traverseVariablesF traversing =
         OrF orP -> pure (OrF orP)
         RewritesF rewP -> pure (RewritesF rewP)
         StringLiteralF strP -> pure (StringLiteralF strP)
-        CharLiteralF charP -> pure (CharLiteralF charP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
@@ -486,13 +488,17 @@ instance NFData variable => NFData (TermLike variable) where
 instance SortedVariable variable => Unparse (TermLike variable) where
     unparse term =
         case Recursive.project freshVarTerm of
-            (attrs :< pat) ->
-                Pretty.pretty (getCreated attrs) <> unparse pat
+            (attrs :< termLikeF)
+              | hasKnownCreator created ->
+                Pretty.sep [Pretty.pretty created, unparse termLikeF]
+              | otherwise ->
+                unparse termLikeF
+              where
+                Attribute.Pattern { created } = attrs
       where
         freshVarTerm =
             externalizeFreshVariables
             $ mapVariables toVariable term
-        getCreated = (Lens.^. Lens.Product.field @"created")
 
     unparse2 term =
         case Recursive.project freshVarTerm of
@@ -634,6 +640,21 @@ hasFreeVariable
     -> TermLike variable
     -> Bool
 hasFreeVariable variable = isFreeVariable variable . freeVariables
+
+refreshVariables
+    :: Substitute.SubstitutionVariable variable
+    => FreeVariables variable
+    -> TermLike variable
+    -> TermLike variable
+refreshVariables
+    (FreeVariables.getFreeVariables -> avoid)
+    term
+  =
+    substitute subst term
+  where
+    rename = Fresh.refreshVariables avoid originalFreeVariables
+    originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
+    subst = mkVar <$> rename
 
 {- | Is the 'TermLike' a function pattern?
  -}
@@ -846,7 +867,7 @@ externalizeFreshVariables termLike =
         head  -- 'head' is safe because 'iterate' creates an infinite list
         $ dropWhile wouldCapture
         $ fmap Variable.externalizeFreshVariable
-        <$> iterate (fmap nextVariable) variable
+        <$> iterate (fmap Fresh.nextVariable) variable
       where
         wouldCapture var = isFreeVariable var avoiding
 
@@ -1038,7 +1059,6 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 ApplyAliasF _ -> illSorted
                 BuiltinF _ -> illSorted
                 DomainValueF _ -> illSorted
-                CharLiteralF _ -> illSorted
                 StringLiteralF _ -> illSorted
                 VariableF _ -> illSorted
                 InhabitantF _ -> illSorted
@@ -1813,17 +1833,6 @@ mkStringLiteral
 mkStringLiteral =
     updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
 
-{- | Construct a 'CharLiteral' pattern.
- -}
-mkCharLiteral
-    :: GHC.HasCallStack
-    => Ord variable
-    => SortedVariable variable
-    => Char
-    -> TermLike variable
-mkCharLiteral =
-    updateCallStack . synthesize . CharLiteralF . Const . CharLiteral
-
 mkInhabitant
     :: GHC.HasCallStack
     => Ord variable
@@ -2129,8 +2138,6 @@ pattern SetVar_ :: SetVariable variable -> TermLike variable
 
 pattern StringLiteral_ :: Text -> TermLike variable
 
-pattern CharLiteral_ :: Char -> TermLike variable
-
 pattern Evaluated_ :: TermLike variable -> TermLike variable
 
 pattern And_ andSort andFirst andSecond <-
@@ -2271,9 +2278,6 @@ pattern ElemVar_ elemVariable <- Var_ (ElemVar elemVariable)
 
 pattern StringLiteral_ str <-
     (Recursive.project -> _ :< StringLiteralF (Const (StringLiteral str)))
-
-pattern CharLiteral_ char <-
-    (Recursive.project -> _ :< CharLiteralF (Const (CharLiteral char)))
 
 pattern Evaluated_ child <-
     (Recursive.project -> _ :< EvaluatedF (Evaluated child))

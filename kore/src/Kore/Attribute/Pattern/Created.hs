@@ -6,21 +6,26 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.Created
     ( Created (..)
+    , hasKnownCreator
     ) where
 
 import Control.DeepSeq
 import Data.Hashable
     ( Hashable (hashWithSalt)
     )
-import Data.Maybe
-    ( listToMaybe
-    )
+import qualified Data.Maybe as Maybe
 import Data.Text.Prettyprint.Doc
     ( Pretty
+    )
+import Data.Text.Prettyprint.Doc
+    ( Doc
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import GHC.Generics
+import GHC.Stack
+    ( SrcLoc (..)
+    )
 import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
@@ -32,6 +37,9 @@ import Kore.Debug
 -- constructors in 'Kore.Internal.TermLike'.
 newtype Created = Created { getCreated :: Maybe GHC.CallStack }
     deriving (Generic, Show)
+
+hasKnownCreator :: Created -> Bool
+hasKnownCreator = Maybe.isJust . getCallStackHead
 
 instance Eq Created where
     (==) _ _ = True
@@ -51,19 +59,33 @@ instance Diff Created where
     diffPrec = diffPrecIgnore
 
 instance Pretty Created where
-    pretty (Created maybeCallStack) =
-        maybe "" go getCallStackAtHead
+    pretty =
+        maybe "" go . getCallStackHead
       where
         go (name, loc) =
             Pretty.hsep
                 [ "/* Created by"
                 , Pretty.angles $ Pretty.pretty name
                 , "at"
-                , Pretty.pretty $ GHC.prettySrcLoc loc
+                , prettySrcLoc loc
                 , "*/"
                 ]
-        getCallStackAtHead =
-            GHC.getCallStack <$> maybeCallStack >>= listToMaybe
+
+getCallStackHead :: Created -> Maybe (String, SrcLoc)
+getCallStackHead Created { getCreated } =
+    GHC.getCallStack <$> getCreated >>= Maybe.listToMaybe
+
+prettySrcLoc :: SrcLoc -> Doc ann
+prettySrcLoc srcLoc =
+    mconcat
+        [ Pretty.pretty srcLocFile
+        , Pretty.colon
+        , Pretty.pretty srcLocStartLine
+        , Pretty.colon
+        , Pretty.pretty srcLocStartCol
+        ]
+  where
+    SrcLoc { srcLocFile, srcLocStartLine, srcLocStartCol } = srcLoc
 
 instance Functor pat => Synthetic Created pat where
     synthetic = const (Created Nothing)

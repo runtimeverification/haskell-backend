@@ -385,25 +385,6 @@ test_andTermsSimplification =
             assertEqual "" expect actual
         ]
 
-    , testGroup "char literal and"
-        [ testCase "equal values" $ do
-            let expect =
-                    let
-                        expected = Conditional
-                            { term = mkCharLiteral 'a'
-                            , predicate = makeTruePredicate
-                            , substitution = mempty
-                            }
-                    in ([expected], Just [expected])
-            actual <- simplifyUnify (mkCharLiteral 'a') (mkCharLiteral 'a')
-            assertEqual "" expect actual
-
-        , testCase "different values" $ do
-            let expect = ([], Just [])
-            actual <- simplifyUnify (mkCharLiteral 'a') (mkCharLiteral 'b')
-            assertEqual "" expect actual
-        ]
-
     , testGroup "function and"
         [ testCase "equal values" $ do
             let expect =

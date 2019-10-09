@@ -167,7 +167,7 @@ instance Debug variable => Debug (RulePattern variable)
 instance (Debug variable, Diff variable) => Diff (RulePattern variable)
 
 instance
-    (SortedVariable variable, Unparse variable) =>
+    (Ord variable, SortedVariable variable, Unparse variable) =>
     Pretty (RulePattern variable)
   where
     pretty rulePattern'@(RulePattern _ _ _ _ _ _) =

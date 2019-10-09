@@ -566,4 +566,4 @@ implicitNames =
     $ Set.insert predicateSortId implicitSortNames
 
 implicitSortNames :: Set Id
-implicitSortNames = Set.fromList [charMetaSortId, stringMetaSortId]
+implicitSortNames = Set.fromList [stringMetaSortId]

@@ -26,7 +26,6 @@ import Kore.Internal.TermLike
     , Symbol
     )
 import Kore.Sort
-import Kore.Syntax.CharLiteral
 import Kore.Syntax.DomainValue
 import Kore.Syntax.StringLiteral
 
@@ -52,8 +51,6 @@ data FunctionalProof variable
     -- https://arxiv.org/pdf/1705.06312.pdf#subsection.5.4
     | FunctionalStringLiteral StringLiteral
     -- ^A string literal is the repeated application of functional constructors.
-    | FunctionalCharLiteral CharLiteral
-    -- ^A char literal is a functional constructor without arguments.
   deriving (Eq, GHC.Generic, Ord, Show)
 
 instance Hashable variable => Hashable (FunctionalProof variable)
@@ -123,4 +120,3 @@ mapVariables mapping =
         FunctionalDomainValue value -> FunctionalDomainValue value
         FunctionalHead symbol -> FunctionalHead symbol
         FunctionalStringLiteral string -> FunctionalStringLiteral string
-        FunctionalCharLiteral char -> FunctionalCharLiteral char
