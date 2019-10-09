@@ -5,6 +5,7 @@ License     : NCSA
 
 module Kore.Step.Simplification.ExpandAlias
     ( expandAlias
+    , substituteWorker
     ) where
 
 import Control.Error

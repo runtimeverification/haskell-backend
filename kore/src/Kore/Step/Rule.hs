@@ -110,6 +110,9 @@ import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
     )
+import Kore.Step.Simplification.ExpandAlias
+    ( substituteWorker
+    )
 import Kore.Substitute
     ( SubstitutionVariable
     )
@@ -562,7 +565,7 @@ patternToAxiomPattern
     -> TermLike Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 patternToAxiomPattern attributes pat
-  | isJust . getPriority . Attribute.priority $ attributes =
+  | isJust . getPriority . Attribute.priority $ attributes = do
     case pat of
         Rewrites_ _
             (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
@@ -591,6 +594,13 @@ patternToAxiomPattern attributes pat
                 , ensures = Predicate.wrapPredicate ensures
                 , attributes
                 }
+        Rewrites_ _ (ApplyAlias_ alias params) rhs ->
+            case substituteWorker alias params of
+               And_ _ requires lhs ->
+                   patternToAxiomPattern
+                       attributes
+                       (mkRewrites (mkAnd requires lhs) rhs)
+               _ -> koreFail "LHS alias of rule is ill-formed."
         -- Reachability claims
         Implies_ _ (And_ _ requires lhs) (ApplyAlias_ op [And_ _ ensures rhs])
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
