@@ -115,10 +115,13 @@ import Kore.Unparser
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> Predicate variable
-    -> simplifier (Pattern variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  TermLike variable
+    ->  Predicate variable
+    ->  simplifier (Pattern variable)
 simplify patt predicate = do
     orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)
@@ -127,10 +130,13 @@ simplify patt predicate = do
 'OrPattern'.
 -}
 simplifyToOr
-    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Predicate variable
+    ->  TermLike variable
+    ->  simplifier (OrPattern variable)
 simplifyToOr term predicate =
     localSimplifierTermLike (const simplifier)
         . simplifyInternal predicate
@@ -139,11 +145,14 @@ simplifyToOr term predicate =
     simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
-    :: forall variable simplifier
-    .  (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> Predicate variable
-    -> simplifier (OrPattern variable)
+    ::  forall variable simplifier
+    .   ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  TermLike variable
+    ->  Predicate variable
+    ->  simplifier (OrPattern variable)
 simplifyInternal term predicate = simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of

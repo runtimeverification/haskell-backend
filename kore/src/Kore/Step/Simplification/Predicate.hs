@@ -57,10 +57,13 @@ result. The result is re-simplified once.
 
 -}
 simplify
-    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
-    => Int
-    -> Predicate variable
-    -> BranchT simplifier (Predicate variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Int
+    ->  Predicate variable
+    ->  BranchT simplifier (Predicate variable)
 simplify
     times
     initialValue@Conditional { predicate, substitution }
@@ -130,9 +133,12 @@ See also: 'simplify'
 
 -}
 simplifyPartial
-    :: (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify simplifier)
-    => Syntax.Predicate variable
-    -> BranchT simplifier (Predicate variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Syntax.Predicate variable
+    ->  BranchT simplifier (Predicate variable)
 simplifyPartial predicate = do
     patternOr <-
         Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
