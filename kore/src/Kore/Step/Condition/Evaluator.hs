@@ -20,12 +20,10 @@ import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import qualified Kore.Step.Simplification.Predicate as Predicate
-    ( simplify
-    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
+    , simplifyPredicate
     )
 
 {- | Attempt to simplify a predicate. -}
@@ -39,7 +37,7 @@ simplify
     -- to predicates. Even better, delete this one and use Predicate.simplify.
 simplify predicate = do
     simplifiedPredicates <-
-        Branch.gather . Predicate.simplify
+        Branch.gather . simplifyPredicate
         $ Predicate.fromPredicate predicate
     return
         ( Predicate.fromPredicate
