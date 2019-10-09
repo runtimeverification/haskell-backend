@@ -79,6 +79,9 @@ import qualified Kore.Internal.Predicate as IPredicate
 import Kore.Internal.TermLike
     ( TermLike
     )
+import Kore.Logger.ErrorBracket
+    ( ErrorBracket
+    )
 import qualified Kore.Logger.Output as Logger
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -472,6 +475,8 @@ newtype UnifierWithExplanation m a =
 deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
+
+deriving instance ErrorBracket m => ErrorBracket (UnifierWithExplanation m)
 
 instance Logger.WithLog Logger.LogMessage m
     => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)

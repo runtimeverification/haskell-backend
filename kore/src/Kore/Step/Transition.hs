@@ -34,6 +34,9 @@ import qualified Data.Sequence as Seq
 import Data.Typeable
     ( Typeable
     )
+import Kore.Logger.ErrorBracket
+    ( ErrorBracket (..)
+    )
 
 import Kore.Logger
     ( WithLog (..)
@@ -107,6 +110,8 @@ instance MonadReader e m => MonadReader e (TransitionT rule m) where
 deriving instance MonadSMT m => MonadSMT (TransitionT rule m)
 
 deriving instance MonadProfiler m => MonadProfiler (TransitionT rule m)
+
+deriving instance ErrorBracket m => ErrorBracket (TransitionT rule m)
 
 deriving instance MonadSimplify m => MonadSimplify (TransitionT rule m)
 

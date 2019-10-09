@@ -90,6 +90,9 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import Kore.Internal.TermLike
+import Kore.Logger.ErrorBracket
+    ( ErrorBracket (..)
+    )
 import Kore.Logger.Output
     ( KoreLogOptions (..)
     , LogMessage
@@ -475,7 +478,8 @@ loadRuleIds fileName = do
         )
 
 type MonadExecute exe =
-    ( MonadIO exe
+    ( ErrorBracket exe
+    , MonadIO exe
     , MonadProfiler exe
     , MonadSMT exe
     , MonadUnliftIO exe

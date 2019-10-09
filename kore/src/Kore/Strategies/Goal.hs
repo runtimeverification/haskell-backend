@@ -51,6 +51,9 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( mkAnd
     )
+import Kore.Logger.ErrorBracket
+    ( withErrorMessage
+    )
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
@@ -94,6 +97,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
+    , unparseToText
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar)
@@ -486,12 +490,16 @@ removeDestination
     => Coercible goal (RulePattern variable)
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal = do
-    let destination = getDestination goal
-        configuration = getConfiguration goal
-        removal = removalPredicate destination configuration
+removeDestination goal = errorBracket $ do
+    let removal = removalPredicate destination configuration
         result = Conditional.andPredicate configuration removal
     pure $ makeRuleFromPatterns result destination
+  where
+    destination = getDestination goal
+    configuration = getConfiguration goal
+
+    errorBracket =
+        withErrorMessage ("configuration=" <> unparseToText configuration)
 
 simplify
     :: MonadSimplify m
@@ -500,9 +508,7 @@ simplify
     => Coercible goal (RulePattern variable)
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = do
-    let destination = getDestination goal
-        configuration = getConfiguration goal
+simplify goal = errorBracket $ do
     configs <-
         Monad.Trans.lift
         $ simplifyAndRemoveTopExists configuration
@@ -513,6 +519,12 @@ simplify goal = do
             let simplifiedRules =
                     fmap (`makeRuleFromPatterns` destination) filteredConfigs
             Foldable.asum (pure <$> simplifiedRules)
+  where
+    destination = getDestination goal
+    configuration = getConfiguration goal
+
+    errorBracket =
+        withErrorMessage ("configuration=" <> unparseToText configuration)
 
 isTriviallyValid
     :: SimplifierVariable variable
@@ -546,11 +558,8 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = do
-    let destination = getDestination goal
-        configuration :: Pattern variable
-        configuration = getConfiguration goal
-        rewrites = coerce <$> rules
+derivePar rules goal = errorBracket $ do
+    let rewrites = coerce <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -587,6 +596,13 @@ derivePar rules goal = do
             results' <-
                 traverseConfigs (mapRules onePathResults)
             Result.transitionResults results'
+  where
+    destination = getDestination goal
+    configuration :: Pattern variable
+    configuration = getConfiguration goal
+
+    errorBracket =
+        withErrorMessage ("configuration=" <> unparseToText configuration)
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
@@ -602,10 +618,8 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = do
-    let destination = getDestination goal
-        configuration = getConfiguration goal
-        rewrites = coerce <$> rules
+deriveSeq rules goal = errorBracket $ do
+    let rewrites = coerce <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -642,6 +656,12 @@ deriveSeq rules goal = do
             results' <-
                 traverseConfigs (mapRules onePathResults)
             Result.transitionResults results'
+  where
+    destination = getDestination goal
+    configuration = getConfiguration goal
+
+    errorBracket =
+        withErrorMessage ("configuration=" <> unparseToText configuration)
 
 makeRuleFromPatterns
     :: forall rule variable

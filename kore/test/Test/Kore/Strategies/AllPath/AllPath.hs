@@ -26,6 +26,9 @@ import Kore.Logger
     ( LogMessage (..)
     , WithLog (..)
     )
+import Kore.Logger.ErrorBracket
+    ( ErrorBracket (..)
+    )
 import Kore.Profiler.Data
     ( Configuration (..)
     , Destination (..)
@@ -448,6 +451,9 @@ instance MonadProfiler AllPathIdentity where
             , logEvaluation = False
             , logSmt = False
             }
+
+instance ErrorBracket AllPathIdentity where
+    withErrorMessage _ = id
 
 instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined

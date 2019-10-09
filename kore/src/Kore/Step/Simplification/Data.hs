@@ -49,6 +49,9 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.Logger
+import Kore.Logger.ErrorBracket
+    ( ErrorBracket (..)
+    )
 import Kore.Profiler.Data
     ( MonadProfiler (profile)
     )
@@ -111,7 +114,19 @@ instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
         SimplifierT (profile event (runSimplifierT duration))
     {-# INLINE profile #-}
 
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
+instance (ErrorBracket m) => ErrorBracket (SimplifierT m)
+  where
+    withErrorMessage message action =
+        SimplifierT (withErrorMessage message (runSimplifierT action))
+    {-# INLINE withErrorMessage #-}
+
+instance
+    ( ErrorBracket m
+    , MonadUnliftIO m
+    , MonadSMT m
+    , MonadProfiler m
+    , WithLog LogMessage m
+    )
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools
@@ -179,7 +194,7 @@ evalSimplifier
     :: forall smt a
     .  GHC.HasCallStack
     => WithLog LogMessage smt
-    => (MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
+    => (ErrorBracket smt, MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
     => VerifiedModule Attribute.Symbol Attribute.Axiom
     -> SimplifierT smt a
     -> smt a
