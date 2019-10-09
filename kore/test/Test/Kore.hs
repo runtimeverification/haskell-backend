@@ -49,6 +49,14 @@ import Data.Text
 import qualified Data.Text as Text
 
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (ApplicationSorts)
+    )
+import qualified Kore.Internal.ApplicationSorts as ApplicationSorts.DoNotUse
+import qualified Kore.Internal.Symbol as Internal
+    ( Symbol (Symbol)
+    )
+import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Internal.TermLike as TermLike hiding
     ( Alias
     , Symbol
@@ -77,6 +85,8 @@ data Context =
     Context
         { objectVariables :: ![UnifiedVariable Variable]
         , objectSortVariables :: ![SortVariable]
+        , symbols :: !(Maybe [Internal.Symbol])
+        , sorts :: !(Maybe [Sort])
         }
 
 emptyContext :: Context
@@ -84,6 +94,8 @@ emptyContext =
     Context
         { objectVariables = []
         , objectSortVariables = []
+        , symbols = Nothing
+        , sorts = Nothing
         }
 
 standaloneGen :: Gen a -> Hedgehog.Gen a
@@ -176,9 +188,16 @@ sortActualGen =
 
 sortGen :: Gen Sort
 sortGen = do
-    Context { objectSortVariables } <- Reader.ask
-    sortGenWorker objectSortVariables
+    Context { sorts } <- Reader.ask
+    case sorts of
+        Nothing -> randomSort
+        Just allowedSorts -> Gen.element allowedSorts
   where
+    randomSort :: Gen Sort
+    randomSort = do
+        Context { objectSortVariables } <- Reader.ask
+        sortGenWorker objectSortVariables
+
     sortGenWorker :: [SortVariable] -> Gen Sort
     sortGenWorker =
         \case
@@ -294,10 +313,43 @@ applicationGen
     :: (Sort -> Gen child)
     -> Sort
     -> Gen (Application SymbolOrAlias child)
-applicationGen childGen _ =
-    Application
-        <$> Gen.small symbolOrAliasGen
-        <*> couple (Gen.small (childGen =<< sortGen))
+applicationGen childGen sort = do
+    Context {symbols} <- Reader.ask
+    case symbols of
+        Nothing -> randomApplication
+        Just allowedSymbols ->
+            applicationFromList (filter (hasResultSort sort) allowedSymbols)
+  where
+    randomApplication =
+        Application
+            <$> Gen.small symbolOrAliasGen
+            <*> couple (Gen.small (childGen =<< sortGen))
+
+    applicationFromList [] = randomApplication
+    applicationFromList symbols = do
+        Internal.Symbol
+            { symbolConstructor
+            , symbolParams
+            , symbolSorts = ApplicationSorts {applicationSortsOperands}
+            } <- Gen.element symbols
+        case symbolParams of
+            [] -> do
+                children <- mapM childGen applicationSortsOperands
+                return Application
+                    { applicationSymbolOrAlias = SymbolOrAlias
+                        { symbolOrAliasConstructor = symbolConstructor
+                        , symbolOrAliasParams = []
+                        }
+                    , applicationChildren = children
+                    }
+            _ -> randomApplication
+
+    hasResultSort
+        expectedSort
+        Internal.Symbol
+            {symbolSorts = ApplicationSorts {applicationSortsResult}}
+      =
+        expectedSort == applicationSortsResult
 
 bottomGen :: Sort -> Gen (Bottom Sort child)
 bottomGen = topBottomGen Bottom

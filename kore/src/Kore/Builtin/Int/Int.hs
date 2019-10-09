@@ -7,6 +7,7 @@ License     : NCSA
 module Kore.Builtin.Int.Int
     ( sort
     , asTermLike
+    , asBuiltin
     , asInternal
     , asPattern
     , asPartialPattern
@@ -72,7 +73,14 @@ asInternal
     -> TermLike variable
 asInternal builtinIntSort builtinIntValue =
     TermLike.fromConcrete . TermLike.markSimplified . mkBuiltin
-    $ Domain.BuiltinInt Domain.InternalInt
+    $ asBuiltin builtinIntSort builtinIntValue
+
+asBuiltin
+    :: Sort  -- ^ resulting sort
+    -> Integer  -- ^ builtin value to render
+    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
+asBuiltin builtinIntSort builtinIntValue =
+    Domain.BuiltinInt Domain.InternalInt
         { builtinIntSort
         , builtinIntValue
         }

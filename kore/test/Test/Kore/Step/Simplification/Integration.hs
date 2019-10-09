@@ -7,7 +7,11 @@ module Test.Kore.Step.Simplification.Integration
 
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
+import Hedgehog
+    ( forAll
+    )
 import Test.Tasty
+
 
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
@@ -55,6 +59,9 @@ import Kore.Variables.UnifiedVariable
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.SMT
+    ( testPropertyWithSolver
+    )
 import Test.Tasty.HUnit.Ext
 
 test_simplificationIntegration :: [TestTree]
@@ -645,6 +652,13 @@ test_substituteList =
     ]
   where
     mkDomainBuiltinList = Mock.builtinList
+
+test_simpliesToSimplified :: TestTree
+test_simpliesToSimplified =
+    testPropertyWithSolver "simplify returns simplified pattern" $ do
+        term <- forAll termLikeGen
+        simplified <- simplify term
+        (===) expect actual
 
 evaluate :: Pattern Variable -> IO (OrPattern Variable)
 evaluate = evaluateWithAxioms Map.empty
