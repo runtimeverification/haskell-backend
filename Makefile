@@ -34,8 +34,8 @@ haddock:
 		rm haddock.log; \
 	fi
 
-haskell_documentation: haddock
-	cp -r $$($(STACK_HADDOCK) path --local-doc-root) haskell_documentation
+kore-haddock.tar.gz: haddock
+	tar -cf kore-haddock.tar.gz $$($(STACK_HADDOCK) path --local-doc-root)
 
 all: kore k-frontend
 
@@ -47,8 +47,8 @@ test-kore:
 		--test --bench --no-run-benchmarks \
 		--ta --xml=test-results.xml
 
-coverage_report: test-kore
-	cp -r $$($(STACK_TEST) path --local-hpc-root) coverage_report
+kore-hpc.tar.gz: test-kore
+	tar -cf kore-hpc.tar.gz $$($(STACK_TEST) path --local-hpc-root)
 
 test-k:
 	$(MAKE) --directory src/main/k/working test-k

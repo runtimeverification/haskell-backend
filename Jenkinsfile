@@ -42,7 +42,7 @@ pipeline {
           }
           post {
             success {
-              archiveArtifacts 'haskell_documentation/**'
+              archiveArtifacts 'kore-haddock.tar.gz'
             }
           }
         }
@@ -63,7 +63,7 @@ pipeline {
       }
       post {
         always {
-          archiveArtifacts 'coverage_report/**'
+          archiveArtifacts 'kore-hpc.tar.gz'
           junit 'kore/test-results.xml'
         }
       }

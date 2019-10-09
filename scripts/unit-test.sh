@@ -6,4 +6,4 @@ export TOP=${TOP:-$(git rev-parse --show-toplevel)}
 export PATH="$(stack path --local-bin)${PATH:+:$PATH}"
 
 MAKE="make -O -j --directory $TOP"
-$MAKE coverage_report "$@"
+$MAKE kore-hpc.tar.gz "$@"
