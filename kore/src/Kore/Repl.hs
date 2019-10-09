@@ -94,7 +94,7 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
-    -> MVar (Logger.LogAction IO Logger.LogMessage)
+    -> MVar (Logger.LogAction IO Logger.SomeEntry)
     -> ReplScript
     -- ^ optional script
     -> ReplMode

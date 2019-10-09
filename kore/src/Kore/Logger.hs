@@ -335,7 +335,7 @@ instance Monad m => MonadLog (LoggerT m) where
     logM _ = pure ()
     scope _ = id
 
-instance MonadLog m => WithLog LogMessage (LoggerT m) where
+instance Monad m => WithLog LogMessage (LoggerT m) where
     askLogAction :: LoggerT m (LogAction (LoggerT m) LogMessage)
     askLogAction = LoggerT . ReaderT $ pure . go
       where
