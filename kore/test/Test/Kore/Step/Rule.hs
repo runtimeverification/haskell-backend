@@ -77,7 +77,7 @@ axiomPatternsUnitTests =
                 )
                 (Rule.fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
             )
-        , testCase "aliasI1 => I2:AInt"
+        , testCase "alias as rule LHS: ruleLHS => I2:AInt"
             (assertEqual ""
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
@@ -88,7 +88,7 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (Rule.fromSentence $ mkRewriteAxiom applyAliasI1 varI2 Nothing)
+                (Rule.fromSentence $ mkRewriteAxiom applyAliasLHS varI2 Nothing)
             )
         ,   let
                 axiom1, axiom2 :: Verified.Sentence
@@ -329,23 +329,6 @@ varI1 =
         , variableSort = sortAInt
         }
 
-applyAliasI1 =
-    mkApplyAlias aliasI1 []
-  where
-    aliasI1 =
-        Alias
-            { aliasConstructor = testId "AliasI1"
-            , aliasParams = []
-            , aliasSorts =
-                ApplicationSorts
-                    { applicationSortsOperands = []
-                    , applicationSortsResult = sortAInt
-                    }
-            , aliasLeft = []
-            , aliasRight =
-                mkAnd (mkTop sortAInt) varI1
-            }
-
 varI2 =
     mkElemVar $ ElementVariable Variable
         { variableName = testId "VarI2"
@@ -366,6 +349,25 @@ varStateCell =
         , variableCounter = mempty
         , variableSort = sortStateCell
         }
+
+applyAliasLHS :: TermLike Variable
+applyAliasLHS =
+    mkApplyAlias ruleLHS []
+  where
+    ruleLHS =
+        Alias
+            { aliasConstructor = testId "RuleLHS"
+            , aliasParams = []
+            , aliasSorts =
+                ApplicationSorts
+                    { applicationSortsOperands = []
+                    , applicationSortsResult = sortAInt
+                    }
+            , aliasLeft = []
+            , aliasRight =
+                mkAnd (mkTop sortAInt) varI1
+            }
+
 
 extractIndexedModule
     :: Text
