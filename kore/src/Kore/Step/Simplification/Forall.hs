@@ -40,9 +40,7 @@ simplify
     :: InternalVariable variable
     => Forall Sort variable (OrPattern variable)
     -> OrPattern variable
-simplify
-    Forall { forallVariable, forallChild }
-  =
+simplify Forall { forallVariable, forallChild } =
     simplifyEvaluated forallVariable forallChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
@@ -81,4 +79,6 @@ makeEvaluate variable patt
   | Pattern.isTop patt    = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom
   | otherwise =
-    Pattern.fromTermLike $ mkForall variable $ Pattern.toTermLike patt
+    Pattern.fromTermLike
+    $ markSimplified . mkForall variable
+    $ Pattern.toTermLike patt
