@@ -69,10 +69,6 @@ instance Synthetic Simplified (Const StringLiteral) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
-instance Synthetic Simplified (Const CharLiteral) where
-    synthetic = alwaysSimplified
-    {-# INLINE synthetic #-}
-
 instance Synthetic Simplified (Const (UnifiedVariable variable)) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
@@ -146,7 +142,12 @@ instance Synthetic Simplified (Rewrites sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Builtin sort) where
-    synthetic = notSimplified
+    synthetic (BuiltinInt    _) = Simplified True
+    synthetic (BuiltinBool   _) = Simplified True
+    synthetic (BuiltinString _) = Simplified True
+    synthetic (BuiltinMap    _) = Simplified False
+    synthetic (BuiltinList   _) = Simplified False
+    synthetic (BuiltinSet    _) = Simplified False
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified Inhabitant where
