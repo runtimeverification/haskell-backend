@@ -8,8 +8,17 @@ module Kore.Step.Axiom.Evaluate
     ) where
 
 import qualified Control.Monad as Monad
+import Control.Monad.Trans.Maybe
+    ( runMaybeT
+    )
 import qualified Data.Foldable as Foldable
 import Data.Function
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Sequence as Seq
+    ( zipWith
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
@@ -42,14 +51,10 @@ import qualified Kore.Step.Rule as RulePattern
     )
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
-    ( AttemptedAxiom
+    ( AttemptedAxiom (..)
     , AttemptedAxiomResults (..)
     , MonadSimplify
     , SimplifierVariable
-    )
-import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
-    ( AttemptedAxiom (..)
-    , maybeNotApplicable
     )
 import Kore.Step.Step
     ( UnificationProcedure (..)
@@ -57,6 +62,9 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Variables.Fresh
+import Kore.Variables.Target
+    ( Target (..)
+    )
 
 evaluateAxioms
     :: forall variable simplifier
@@ -66,16 +74,27 @@ evaluateAxioms
     -> TermLike variable
     -> Syntax.Predicate variable
     -> simplifier (AttemptedAxiom variable)
-evaluateAxioms
+evaluateAxioms a b c d = resultsToAttemptedAxiom <$> evaluateAxioms' a b c d
+-- ^ TODO (andrei.burdusa): remove this
+
+evaluateAxioms'
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    => StepContext
+    -> [EqualityRule Variable]
+    -> TermLike variable
+    -> Syntax.Predicate variable
+    -> simplifier (Result.Results (Step.UnifiedRule (Target variable)) (Pattern variable))
+evaluateAxioms'
     context
     definitionRules
     patt
     predicate
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete patt)
-  = return AttemptedAxiom.NotApplicable
+  = return $ Result.Results mempty mempty
   | otherwise
-  = AttemptedAxiom.maybeNotApplicable $ do
+  = maybeResults $ do
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
@@ -98,23 +117,31 @@ evaluateAxioms
         keepResultUnchanged = id
         introduceDefinedness = flip Pattern.andCondition
         markRemainderEvaluated = fmap TermLike.mkEvaluated
+        rules = Result.appliedRule <$> Result.results result
 
     simplifiedResults <-
-        OrPattern.simplifyPredicatesWithSmt
-           predicate (Step.gatherResults result)
+        traverse (OrPattern.simplifyPredicatesWithSmt predicate)
+            ((fmap Result.result . Result.results) result)
 
     simplifiedRemainders <-
         OrPattern.simplifyPredicatesWithSmt
             predicate (Step.remainders result)
 
-    Monad.guard (not $ null simplifiedResults)
+    let
+        returnedResults = zipResult rules simplifiedResults
 
-    return AttemptedAxiomResults
-        { results = simplifiedResults
-        , remainders = simplifiedRemainders
-        }
+    Monad.guard $ (not . Foldable.null . Foldable.fold . fmap Result.result) returnedResults
+
+    return Result.Results
+            { results = returnedResults
+            , remainders = simplifiedRemainders
+            }
 
   where
+    maybeResults = fmap (fromMaybe (Result.Results mempty mempty)) . runMaybeT
+
+    zipResult = Seq.zipWith Result.Result
+
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete
         . Attribute.Axiom.concrete
@@ -146,3 +173,16 @@ evaluateAxioms
 
     unificationProcedure =
         UnificationProcedure (ignoreUnificationErrors matchIncremental)
+
+resultsToAttemptedAxiom
+    :: (Ord variable)
+    => Result.Results rule (Pattern variable)
+    -> AttemptedAxiom variable
+resultsToAttemptedAxiom
+    (Result.Results results remainders)
+  | null results'
+    = NotApplicable
+  | otherwise
+    = Applied $ AttemptedAxiomResults results' remainders
+  where
+    results' = Foldable.fold $ fmap Result.result results
