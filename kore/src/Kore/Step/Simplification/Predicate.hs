@@ -40,7 +40,7 @@ import Kore.Unparser
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
-create :: PredicateSimplifier
+create :: MonadSimplify simplifier => PredicateSimplifier simplifier
 create = PredicateSimplifier simplify
 
 {- | Simplify a 'Predicate'.

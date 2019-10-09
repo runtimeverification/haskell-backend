@@ -104,7 +104,7 @@ evaluateApplication
     (evaluateSortInjection -> application)
   = finishT $ do
     Foldable.for_ canMemoize recallOrPattern
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
+    substitutionSimplifier <- Trans.lift $ Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
@@ -192,7 +192,7 @@ evaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier
+    => PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -237,7 +237,7 @@ maybeEvaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier
+    => PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap

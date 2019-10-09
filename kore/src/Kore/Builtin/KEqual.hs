@@ -115,7 +115,7 @@ builtinFunctions =
 evalKEq
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Bool
-    -> PredicateSimplifier
+    -> PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
@@ -163,7 +163,7 @@ evalKEq true _ _ _ (valid :< app) =
 evalKIte
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => PredicateSimplifier
+    => PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from symbol IDs to defined functions

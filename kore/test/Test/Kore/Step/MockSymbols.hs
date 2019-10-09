@@ -1530,10 +1530,11 @@ termLikeSimplifier = Simplifier.create
 axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 axiomSimplifiers = Map.empty
 
-predicateSimplifier :: PredicateSimplifier
+predicateSimplifier
+    :: MonadSimplify simplifier => PredicateSimplifier simplifier
 predicateSimplifier = Simplifier.Predicate.create
 
-env :: Applicative simplifier => Env simplifier
+env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
         { metadataTools = Test.Kore.Step.MockSymbols.metadataTools

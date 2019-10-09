@@ -141,11 +141,12 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         Monad.Morph.hoist (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
 
-    askSimplifierPredicate :: m PredicateSimplifier
+    askSimplifierPredicate :: m (PredicateSimplifier m)
     default askSimplifierPredicate
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
-        => m PredicateSimplifier
-    askSimplifierPredicate = Monad.Trans.lift askSimplifierPredicate
+        => m (PredicateSimplifier m)
+    askSimplifierPredicate =
+        liftPredicateSimplifier <$> Monad.Trans.lift askSimplifierPredicate
     {-# INLINE askSimplifierPredicate #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
@@ -301,17 +302,28 @@ termLikeSimplifier simplifier =
 'Predicate's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSimplifier =
+newtype PredicateSimplifier monad =
     PredicateSimplifier
         { getPredicateSimplifier
-            :: forall variable m
-            .  (SimplifierVariable variable, MonadSimplify m)
+            :: forall variable
+            .  SimplifierVariable variable
             => Predicate variable
-            -> BranchT m (Predicate variable)
+            -> BranchT monad (Predicate variable)
         }
 
-emptyPredicateSimplifier :: PredicateSimplifier
+emptyPredicateSimplifier :: Monad monad => PredicateSimplifier monad
 emptyPredicateSimplifier = PredicateSimplifier return
+
+liftPredicateSimplifier
+    :: (Monad monad, MonadTrans trans, Monad (trans monad))
+    => PredicateSimplifier monad
+    -> PredicateSimplifier (trans monad)
+liftPredicateSimplifier (PredicateSimplifier simplifier) =
+    PredicateSimplifier $ \predicate -> do
+        results <-
+            Monad.Trans.lift . Monad.Trans.lift
+            $ Branch.gather $ simplifier predicate
+        Branch.scatter results
 
 {- | Use a 'PredicateSimplifier' to simplify a 'Predicate'.
 
@@ -323,7 +335,7 @@ simplifyPredicate
     -> BranchT simplifier (Conditional variable term)
 simplifyPredicate conditional = do
     let (term, predicate) = Conditional.splitTerm conditional
-    PredicateSimplifier simplify <- askSimplifierPredicate
+    PredicateSimplifier simplify <- Monad.Trans.lift askSimplifierPredicate
     predicate' <- simplify predicate
     pure $ Conditional.withCondition term predicate'
 
@@ -357,7 +369,7 @@ newtype BuiltinAndAxiomSimplifier =
     BuiltinAndAxiomSimplifier
         (  forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier
+        => PredicateSimplifier simplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
@@ -522,30 +534,30 @@ purePatternAxiomEvaluator p =
 'Application'.
 -}
 applicationAxiomSimplifier
-    ::  (  forall variable m
-        .  (SimplifierVariable variable, MonadSimplify m)
-        => PredicateSimplifier
+    ::  (  forall variable simplifier
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
+        => PredicateSimplifier simplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
-        -> m (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
         )
     -> BuiltinAndAxiomSimplifier
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
     helper
-        :: forall variable m
-        .  (SimplifierVariable variable, MonadSimplify m)
-        => PredicateSimplifier
+        :: forall variable simplifier
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
+        => PredicateSimplifier simplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
         -> Predicate variable
-        -> m (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
     helper substitutionSimplifier simplifier axiomIdToSimplifier termLike _ =
         case Recursive.project termLike of
             (valid :< ApplySymbolF p) ->

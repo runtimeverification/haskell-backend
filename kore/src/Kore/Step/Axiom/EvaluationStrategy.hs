@@ -105,7 +105,7 @@ totalDefinitionEvaluation rules =
     totalDefinitionEvaluationWorker
         :: forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier
+        => PredicateSimplifier simplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
@@ -155,7 +155,7 @@ evaluateBuiltin
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
-    -> PredicateSimplifier
+    -> PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -197,7 +197,7 @@ applyFirstSimplifierThatWorks
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
-    -> PredicateSimplifier
+    -> PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators

@@ -1112,7 +1112,7 @@ mapVariables =
 mockEvaluator
     :: Monad simplifier
     => AttemptedAxiom variable
-    -> PredicateSimplifier
+    -> PredicateSimplifier simplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
@@ -1193,7 +1193,8 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier :: PredicateSimplifier
+testSubstitutionSimplifier
+    :: MonadSimplify simplifier => PredicateSimplifier simplifier
 testSubstitutionSimplifier = Simplifier.Predicate.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap

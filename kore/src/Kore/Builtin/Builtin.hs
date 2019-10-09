@@ -782,7 +782,7 @@ functionEvaluator impl =
     evaluator
         :: SimplifierVariable variable
         => MonadSimplify simplifier
-        => PredicateSimplifier
+        => PredicateSimplifier simplifier
         -> TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> CofreeF
