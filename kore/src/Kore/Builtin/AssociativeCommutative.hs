@@ -1293,7 +1293,8 @@ unifyEqualsElementLists
             first
             second
         Just remainderTerm -> case opaque of
-            Var_ _ -> do
+            Var_ _
+              | TermLike.isFunctionPattern remainderTerm -> do
                 opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
                 let
                     (opaqueTerm, opaquePredicate) =
@@ -1304,7 +1305,7 @@ unifyEqualsElementLists
             _ -> (error . unlines)
                 [ "Unification case that should be handled somewhere else:"
                 , "attempting normalized unification with a non-variable opaque"
-                , "term could lead to infinite loops."
+                , "term or non-function maps could lead to infinite loops."
                 , "first=" ++ unparseToString first
                 , "second=" ++ unparseToString second
                 ]
