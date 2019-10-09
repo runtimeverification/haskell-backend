@@ -86,11 +86,6 @@ import Data.Functor.Contravariant
     )
 import Data.Generics.Product
 import Data.Limit
-import Data.Maybe
-    ( fromJust
-    , fromMaybe
-    )
-import qualified Data.Profunctor as Profunctor
 import Data.Text
     ( Text
     )

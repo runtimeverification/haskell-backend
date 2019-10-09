@@ -328,7 +328,7 @@ instance Entry LogMessage where
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
-    scope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
+    localScope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
@@ -338,10 +338,10 @@ newtype LoggerT m a =
 instance Monad m => MonadLog (LoggerT m) where
     logM entry =
         LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
-    scope f (LoggerT (ReaderT reader)) =
+    localScope f (LoggerT (ReaderT logActionReader)) =
         LoggerT . ReaderT
             $ \(LogAction logAction) ->
-                reader . LogAction
+                logActionReader . LogAction
                     $ \entry ->
                         case fromEntry entry of
                             Nothing -> logAction entry

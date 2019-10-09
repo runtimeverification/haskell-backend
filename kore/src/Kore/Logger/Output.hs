@@ -41,18 +41,11 @@ import Control.Monad.Reader
     ( runReaderT
     )
 import qualified Control.Monad.Trans as Trans
-import Data.Foldable
-    ( fold
-    )
-import qualified Data.Foldable as Fold
 import Data.Functor
     ( void
     )
 import Data.Functor.Contravariant
     ( contramap
-    )
-import Data.List
-    ( intersperse
     )
 import Data.Set
     ( Set
@@ -66,11 +59,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Lazy as Text.Lazy
-import Data.Text.Lazy.Builder
-    ( Builder
-    )
-import qualified Data.Text.Lazy.Builder as Builder
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Time.Clock
@@ -84,12 +72,6 @@ import Data.Time.LocalTime
     ( LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
-    )
-import qualified GHC.Stack
-    ( CallStack
-    , getCallStack
-    , popCallStack
-    , prettyCallStack
     )
 import Options.Applicative
     ( Parser
