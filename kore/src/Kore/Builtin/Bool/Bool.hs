@@ -50,7 +50,7 @@ asInternal
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    (mkBuiltin . Domain.BuiltinBool)
+    (markSimplified . mkBuiltin . Domain.BuiltinBool)
         Domain.InternalBool
             { builtinBoolSort
             , builtinBoolValue

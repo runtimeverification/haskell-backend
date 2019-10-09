@@ -30,7 +30,7 @@ simplify
 simplify builtin =
     MultiOr.filterOr $ do
         child <- simplifyDomainValue builtin
-        return (mkDomainValue <$> child)
+        return (markSimplified . mkDomainValue <$> child)
 
 simplifyDomainValue
     :: InternalVariable variable

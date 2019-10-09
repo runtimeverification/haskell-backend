@@ -12,6 +12,7 @@ import Control.Exception
     , evaluate
     )
 import qualified Data.Bifunctor as Bifunctor
+import qualified Data.Foldable as Foldable
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -74,6 +75,9 @@ a5 = Mock.cf
 
 a :: TermLike Variable
 a = Mock.a
+
+b :: TermLike Variable
+b = Mock.b
 
 f :: TermLike Variable -> TermLike Variable
 f = Mock.constr10
@@ -183,14 +187,18 @@ andSimplifySuccess term1 term2 results = do
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
-    assertEqual message expect subst'
+    assertEqual (message expect subst') expect subst'
   where
-    message =
+    message expected actual =
         (show . Pretty.vsep)
             [ "Unifying term:"
             , Pretty.indent 4 (unparse term1)
             , "with term:"
             , Pretty.indent 4 (unparse term2)
+            , "expected="
+            , Pretty.indent 4 (Foldable.fold (map unparse expected))
+            , "actual="
+            , Pretty.indent 4 (Foldable.fold (map unparse actual))
             ]
 
 andSimplifyFailure
@@ -512,7 +520,104 @@ test_unification =
                 $ [(ElemVar $ ElementVariable $ V 1, var' 2)]
             )
         )
-
+    , let constr = Mock.functionalConstr10
+      in testCase "framed Map with concrete Map" $
+            andSimplifySuccess
+                (UnificationTerm
+                    (Mock.concatMap
+                        (Mock.builtinMap [(a, mkElemVar Mock.x)])
+                        (mkElemVar Mock.m)
+                    )
+                )
+                (UnificationTerm
+                    (Mock.builtinMap [(a, constr a), (b, constr b)])
+                )
+                [ UnificationResult
+                    { term =
+                        Mock.builtinMap [(a, constr a) , (b, constr b)]
+                    , predicate = Syntax.Predicate.makeTruePredicate
+                    , substitution =
+                        [ ("x", constr a)
+                        , ("m", Mock.builtinMap [(Mock.b, constr b)])
+                        ]
+                    }
+                ]
+    , let
+        constr = Mock.functionalConstr10
+        constr20 = Mock.constrFunct20TestMap
+        x = mkElemVar Mock.x
+        y = mkElemVar Mock.y
+      in testCase "key outside of map" $
+            andSimplifySuccess
+                (UnificationTerm
+                    (constr20
+                        y
+                        (Mock.concatMap
+                            (Mock.builtinMap [(y, x)])
+                            (mkElemVar Mock.m)
+                        )
+                    )
+                )
+                (UnificationTerm
+                    (constr20
+                        Mock.a
+                        (Mock.builtinMap [(a, constr a), (b, constr b)])
+                    )
+                )
+                [ UnificationResult
+                    { term =
+                        constr20
+                            Mock.a
+                            (Mock.builtinMap [(a, constr a), (b, constr b)])
+                    , predicate = Syntax.Predicate.makeTruePredicate
+                    , substitution =
+                        [ ("x", constr a)
+                        , ("y", a)
+                        , ("m", Mock.builtinMap [(Mock.b, constr b)])
+                        ]
+                    }
+                ]
+    , let
+        constr = Mock.functionalConstr10
+        constr20 = Mock.constrFunct20TestMap
+        x = mkElemVar Mock.x
+        y = mkElemVar Mock.y
+      in testCase "zzzkey outside of map, symbolic opaque terms" $
+            andSimplifySuccess
+                (UnificationTerm
+                    (constr20
+                        y
+                        (Mock.concatMap
+                            (Mock.builtinMap [(y, x)])
+                            (mkElemVar Mock.m)
+                        )
+                    )
+                )
+                (UnificationTerm
+                    (constr20
+                        Mock.a
+                        (Mock.concatMap
+                            (Mock.builtinMap [(a, constr a)])
+                            (mkElemVar Mock.xMap)
+                        )
+                    )
+                )
+                [ UnificationResult
+                    { term =
+                        constr20
+                            Mock.a
+                            (Mock.concatMap
+                                (Mock.builtinMap [(y, x)])
+                                (mkElemVar Mock.m)
+                            )
+                    , predicate = Syntax.Predicate.makeTruePredicate
+                    , substitution =
+                        [ ("x", constr a)
+                        , ("y", a)
+                        , ("m", (mkElemVar Mock.xMap))
+                        ]
+                    }
+                ]
     ]
 
 test_evaluated :: [TestTree]

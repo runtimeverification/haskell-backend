@@ -20,9 +20,7 @@ simplify
     :: InternalVariable variable
     => Nu variable (OrPattern variable)
     -> OrPattern variable
-simplify
-    Nu { nuVariable, nuChild }
-  = makeEvaluate nuVariable <$> nuChild
+simplify Nu { nuVariable, nuChild } = makeEvaluate nuVariable <$> nuChild
 
 {-| evaluates a 'Nu' given its two 'Pattern' children.
 
@@ -34,4 +32,6 @@ makeEvaluate
     -> Pattern variable
     -> Pattern variable
 makeEvaluate variable patt =
-    Pattern.fromTermLike $ mkNu variable $ Pattern.toTermLike patt
+    Pattern.fromTermLike
+    $ (if Pattern.isSimplified patt then markSimplified else id) . mkNu variable
+    $ Pattern.toTermLike patt
