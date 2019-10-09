@@ -60,10 +60,10 @@ import qualified Kore.Step.Rule as RulePattern
     , freeVariables
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
-import qualified Kore.Step.Simplification.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
+    , simplifyPredicate
     )
 import qualified Kore.Step.SMT.Evaluator as SMT
     ( evaluate
@@ -171,7 +171,7 @@ mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
     BranchT.gather $ do
         Conditional {term = (), predicate, substitution} <-
-            Predicate.simplify . Predicate.fromPredicate
+            simplifyPredicate . Predicate.fromPredicate
             $ makeAndPredicate firstRequires mergedPredicate
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of
