@@ -148,15 +148,6 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     askSimplifierPredicate = Monad.Trans.lift askSimplifierPredicate
     {-# INLINE askSimplifierPredicate #-}
 
-    localSimplifierPredicate
-        :: (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
-    default localSimplifierPredicate
-        :: (MFunctor t, MonadSimplify n, m ~ t n)
-        => (PredicateSimplifier -> PredicateSimplifier) -> m a -> m a
-    localSimplifierPredicate locally =
-        Monad.Morph.hoist (localSimplifierPredicate locally)
-    {-# INLINE localSimplifierPredicate #-}
-
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
     default askSimplifierAxioms
         :: (MonadTrans t, MonadSimplify n, m ~ t n)
@@ -189,10 +180,6 @@ instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
         mapAccumT (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
 
-    localSimplifierPredicate locally =
-        mapAccumT (localSimplifierPredicate locally)
-    {-# INLINE localSimplifierPredicate #-}
-
     localSimplifierAxioms locally =
         mapAccumT (localSimplifierAxioms locally)
     {-# INLINE localSimplifierAxioms #-}
@@ -207,10 +194,6 @@ instance MonadSimplify m => MonadSimplify (ListT m) where
     localSimplifierTermLike locally =
         mapListT (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
-
-    localSimplifierPredicate locally =
-        mapListT (localSimplifierPredicate locally)
-    {-# INLINE localSimplifierPredicate #-}
 
     localSimplifierAxioms locally =
         mapListT (localSimplifierAxioms locally)

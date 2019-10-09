@@ -128,11 +128,6 @@ instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
     askSimplifierPredicate = asks simplifierPredicate
     {-# INLINE askSimplifierPredicate #-}
 
-    localSimplifierPredicate locally =
-        local $ \env@Env { simplifierPredicate } ->
-            env { simplifierPredicate = locally simplifierPredicate }
-    {-# INLINE localSimplifierPredicate #-}
-
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
 

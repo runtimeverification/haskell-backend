@@ -454,7 +454,6 @@ instance MonadSimplify AllPathIdentity where
     askSimplifierTermLike = undefined
     localSimplifierTermLike = undefined
     askSimplifierPredicate = undefined
-    localSimplifierPredicate = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined
