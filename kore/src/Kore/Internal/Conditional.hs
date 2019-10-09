@@ -225,9 +225,9 @@ instance
             (unparse <$> termLikeSubstitution)
       where
         sort = termLikeSort term
-        termLikePredicate = Predicate.fromPredicate sort predicate
+        termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
-            Predicate.fromPredicate sort
+            Predicate.coerceSort sort
             .  singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 
@@ -239,9 +239,9 @@ instance
             (unparse2 <$> termLikeSubstitution)
       where
         sort = termLikeSort term
-        termLikePredicate = Predicate.fromPredicate sort predicate
+        termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
-            Predicate.fromPredicate sort
+            Predicate.coerceSort sort
             .  singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 

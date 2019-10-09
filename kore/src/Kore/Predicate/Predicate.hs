@@ -41,6 +41,7 @@ module Kore.Predicate.Predicate
     , singleSubstitutionToPredicate
     , stringFromPredicate
     , substitutionToPredicate
+    , coerceSort
     , fromPredicate
     , fromSubstitution
     , unwrapPredicate
@@ -118,8 +119,21 @@ instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isTop (GenericPredicate patt) = isTop patt
     isBottom (GenericPredicate patt) = isBottom patt
 
-instance Unparse pattern' => Unparse (GenericPredicate pattern') where
-    unparse (GenericPredicate pattern') = unparse pattern'
+instance
+    (Ord variable, SortedVariable variable)
+    => Unparse (GenericPredicate (TermLike variable))
+  where
+    unparse predicate =
+        unparseAssoc'
+            ("\\and" <> parameters [sort])
+            (unparse (mkTop sort :: TermLike variable))
+            (worker <$> getMultiAndPredicate predicate)
+      where
+        worker (GenericPredicate termLike) = unparse termLike
+        sort =
+            termLikeSort termLike
+          where
+            GenericPredicate termLike = predicate
     unparse2 (GenericPredicate pattern') = unparse2 pattern'
 
 
@@ -172,6 +186,18 @@ fromPredicate
     -> TermLike variable
 fromPredicate sort (GenericPredicate p) = TermLike.forceSort sort p
 
+{- | Change a 'Predicate' from one 'Sort' to another.
+
+This is a safe operation because predicates are flexibly sorted.
+
+ -}
+coerceSort
+    :: (SortedVariable variable, Unparse variable)
+    => Sort
+    -> Predicate variable
+    -> Predicate variable
+coerceSort sort = fmap (TermLike.forceSort sort)
+
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
 pattern PredicateFalse :: Predicate variable
@@ -199,6 +225,22 @@ makeMultipleAndPredicate =
     foldl' makeAndPredicate makeTruePredicate . nub
     -- 'and' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
+
+{- | Flatten a 'Predicate' with 'And' at the top.
+
+'getMultiAndPredicate' is the inverse of 'makeMultipleAndPredicate', up to
+associativity.
+
+ -}
+getMultiAndPredicate
+    :: Predicate variable
+    -> [Predicate variable]
+getMultiAndPredicate original@(GenericPredicate termLike) =
+    case termLike of
+        And_ _ left right ->
+            concatMap (getMultiAndPredicate . GenericPredicate) [left, right]
+        _ -> [original]
+
 
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
