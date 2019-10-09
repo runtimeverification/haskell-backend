@@ -17,7 +17,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Functor.Identity
 import qualified Data.Map as Map
 import Data.Maybe
-    ( fromJust
+    ( fromMaybe
     )
 import qualified Data.Set as Set
 
@@ -194,8 +194,10 @@ simplifyInternal term predicate = simplifyInternalWorker term
             EqualsF equalsF ->
                 Equals.simplify predicate =<< simplifyChildren equalsF
             ExistsF _ ->
-                let _ :< ExistsF existsF' = Recursive.project . fromJust
-                        $ refreshBinder termLike
+                let _ :< ExistsF existsF' = Recursive.project
+                        . fromMaybe
+                            (error "refresh binder should work on all binders")
+                            $ refreshBinder termLike
                 in  Exists.simplify =<< simplifyChildren existsF'
             IffF iffF ->
                 Iff.simplify =<< simplifyChildren iffF
@@ -212,17 +214,23 @@ simplifyInternal term predicate = simplifyInternalWorker term
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
             ForallF _ ->
-                let _ :< ForallF forallF' = Recursive.project . fromJust
-                        $ refreshBinder termLike
+                let _ :< ForallF forallF' = Recursive.project
+                        . fromMaybe
+                            (error "refresh binder should work on all binders")
+                            $ refreshBinder termLike
                 in  Forall.simplify <$> simplifyChildren forallF'
             InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
             MuF _ ->
-                let _ :< MuF muF' = Recursive.project . fromJust
-                        $ refreshBinder termLike
+                let _ :< MuF muF' = Recursive.project
+                        . fromMaybe
+                            (error "refresh binder should work on all binders")
+                            $ refreshBinder termLike
                 in  Mu.simplify <$> simplifyChildren muF'
             NuF _ ->
-                let _ :< NuF nuF' = Recursive.project . fromJust
-                        $ refreshBinder termLike
+                let _ :< NuF nuF' = Recursive.project
+                        . fromMaybe
+                            (error "refresh binder should work on all binders")
+                            $ refreshBinder termLike
                 in  Nu.simplify <$> simplifyChildren nuF'
             -- TODO(virgil): Move next up through patterns.
             NextF nextF -> Next.simplify <$> simplifyChildren nextF
@@ -252,10 +260,10 @@ simplifyInternal term predicate = simplifyInternalWorker term
                     FreeVariables.getFreeVariables
                     $ TermLike.freeVariables binderChild
                 fresh =
-                    fromJust
-                    $ refreshVariable
-                        (predicateFreeVars <> existsFreeVars)
-                        binderVariable
+                    fromMaybe (error "guard above ensures result <> Nothing")
+                        $ refreshVariable
+                            (predicateFreeVars <> existsFreeVars)
+                            binderVariable
                 freshChild =
                     TermLike.substitute
                         (Map.singleton
