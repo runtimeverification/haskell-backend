@@ -71,11 +71,11 @@ asInternal
     -> Integer  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinIntSort builtinIntValue =
-    (TermLike.fromConcrete . mkBuiltin . Domain.BuiltinInt)
-        Domain.InternalInt
-            { builtinIntSort
-            , builtinIntValue
-            }
+    TermLike.fromConcrete . TermLike.markSimplified . mkBuiltin
+    $ Domain.BuiltinInt Domain.InternalInt
+        { builtinIntSort
+        , builtinIntValue
+        }
 
 {- | Render an 'Integer' as a domain value pattern of the given sort.
 
