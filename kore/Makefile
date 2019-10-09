@@ -54,4 +54,15 @@ dev-deps:
 tags:
 	hasktags -e .
 
-.PHONY : build build-dirty run install ghci test test-ghci ghcid dev-deps
+.PHONY: \
+	build \
+	run \
+	install \
+	ghci \
+	test \
+	testp \
+	pedantic \
+	coverage \
+	ghcid \
+	hoogle \
+	tags
