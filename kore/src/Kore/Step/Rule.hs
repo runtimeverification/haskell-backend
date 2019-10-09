@@ -111,7 +111,7 @@ import Kore.Sort
     , SortVariable (SortVariable)
     )
 import Kore.Step.Simplification.ExpandAlias
-    ( substituteWorker
+    ( substituteInAlias
     )
 import Kore.Substitute
     ( SubstitutionVariable
@@ -565,7 +565,7 @@ patternToAxiomPattern
     -> TermLike Variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
 patternToAxiomPattern attributes pat
-  | isJust . getPriority . Attribute.priority $ attributes = do
+  | isJust . getPriority . Attribute.priority $ attributes =
     case pat of
         Rewrites_ _
             (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
@@ -578,8 +578,8 @@ patternToAxiomPattern attributes pat
                             , ensures = Predicate.wrapPredicate ensures
                             , attributes
                             }
-        _ -> koreFail $ "rule is ill-formed with respect \
-                        \ to the priority attribute."
+        _ -> koreFail "Rule is ill-formed with respect\
+                      \ to the priority attribute."
   | otherwise =
     case pat of
         -- normal rewrite axioms
@@ -595,7 +595,7 @@ patternToAxiomPattern attributes pat
                 , attributes
                 }
         Rewrites_ _ (ApplyAlias_ alias params) rhs ->
-            case substituteWorker alias params of
+            case substituteInAlias alias params of
                And_ _ requires lhs ->
                    patternToAxiomPattern
                        attributes
