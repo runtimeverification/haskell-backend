@@ -544,6 +544,8 @@ x :: ElementVariable Variable
 x = ElementVariable $ Variable (testId "x") mempty testSort
 setX :: SetVariable Variable
 setX = SetVariable $ Variable (testId "@x") mempty testSort
+var_setX_0 :: SetVariable Variable
+var_setX_0 = SetVariable $ Variable (testId "@x") (Just (Element 0)) testSort
 x0 :: ElementVariable Variable
 x0 = ElementVariable $ Variable (testId "x0") mempty testSort0
 y :: ElementVariable Variable
