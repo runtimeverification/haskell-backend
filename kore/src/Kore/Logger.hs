@@ -30,6 +30,7 @@ module Kore.Logger
 
 import Colog
     ( LogAction (..)
+    , (<&)
     )
 import qualified Control.Monad.Except as Except
 import Control.Monad.IO.Class
@@ -332,8 +333,16 @@ newtype LoggerT m a =
     deriving (MonadIO)
 
 instance Monad m => MonadLog (LoggerT m) where
-    logM _ = pure ()
-    scope _ = id
+    logM entry =
+        LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+    scope f (LoggerT (ReaderT reader)) =
+        LoggerT . ReaderT
+            $ \(LogAction logAction) ->
+                reader . LogAction
+                    $ \entry ->
+                        case fromEntry entry of
+                            Nothing -> logAction entry
+                            Just entry' -> logAction $ toEntry $ f entry'
 
 instance Monad m => WithLog LogMessage (LoggerT m) where
     askLogAction :: LoggerT m (LogAction (LoggerT m) LogMessage)
