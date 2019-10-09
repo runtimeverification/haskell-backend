@@ -54,9 +54,6 @@ import qualified Kore.Step.Simplification.Builtin as Builtin
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( simplify
     )
-import qualified Kore.Step.Simplification.CharLiteral as CharLiteral
-    ( simplify
-    )
 import qualified Kore.Step.Simplification.DomainValue as DomainValue
     ( simplify
     )
@@ -241,8 +238,6 @@ simplifyInternal term predicate = simplifyInternalWorker term
             --
             StringLiteralF stringLiteralF ->
                 return $ StringLiteral.simplify (getConst stringLiteralF)
-            CharLiteralF charLiteralF ->
-                return $ CharLiteral.simplify (getConst charLiteralF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
 

@@ -65,8 +65,7 @@ test_symbolParsing =
                 -- symbol declarations map.
 
                 , sorts = Map.fromList
-                    [ ("#Char", astSortDeclaration "#Char")
-                    , ("S", astSortDeclaration "S")
+                    [ ("S", astSortDeclaration "S")
                     , ("#String", astSortDeclaration "#String")
                     ]
                 }

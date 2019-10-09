@@ -138,13 +138,6 @@ test_matcherEqualHeads =
                 (mkEquals_ (Mock.plain10 (mkElemVar Mock.y)) (Mock.plain10 Mock.a))
         assertEqual "" expect actual
 
-    , testCase "CharLiteral" $ do
-        actual <-
-            matchDefinition
-                (mkCharLiteral 'a')
-                (mkCharLiteral 'a')
-        assertEqual "" topOrPredicate actual
-
     , testCase "Builtin" $ do
         actual <-
             matchDefinition

@@ -3,6 +3,6 @@
 module TEST-EXCEPTION-3
 
   axiom{S}
-    'X:S []
+    "X:S []
 
 endmodule []

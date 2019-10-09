@@ -4,7 +4,6 @@ module Test.Kore
     , standaloneGen
     , idGen
     , stringLiteralGen
-    , charLiteralGen
     , symbolGen
     , aliasGen
     , sortVariableGen
@@ -135,9 +134,6 @@ setVarIdGen = testId <$> fmap ("@" <>) objectIdGen
 
 stringLiteralGen :: MonadGen m => m StringLiteral
 stringLiteralGen = StringLiteral <$> Gen.text (Range.linear 0 256) charGen
-
-charLiteralGen :: MonadGen m => m CharLiteral
-charLiteralGen = CharLiteral <$> charGen
 
 charGen :: MonadGen m => m Char
 charGen =
@@ -408,8 +404,6 @@ korePatternChildGen patternSort' =
             ()
               | patternSort' == stringMetaSort ->
                 korePatternGenStringLiteral
-              | patternSort' == charMetaSort ->
-                korePatternGenCharLiteral
               | otherwise ->
                 Gen.choice [korePatternGenVariable, korePatternGenDomainValue]
       | otherwise =
@@ -429,10 +423,6 @@ korePatternChildGen patternSort' =
     korePatternGenStringLiteral =
         asParsedPattern . Syntax.StringLiteralF . Const
         <$> stringLiteralGen
-
-    korePatternGenCharLiteral :: Gen ParsedPattern
-    korePatternGenCharLiteral =
-        asParsedPattern . Syntax.CharLiteralF . Const <$> charLiteralGen
 
     korePatternGenDomainValue :: Gen ParsedPattern
     korePatternGenDomainValue =

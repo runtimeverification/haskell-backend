@@ -128,7 +128,6 @@ instance
             RewritesF Rewrites { rewritesSort } ->
                 locationFromAst rewritesSort
             StringLiteralF _ -> AstLocationUnknown
-            CharLiteralF _ -> AstLocationUnknown
             TopF Top { topSort } -> locationFromAst topSort
             VariableF (Const variable) -> locationFromAst variable
             InhabitantF Inhabitant { inhSort } -> locationFromAst inhSort

@@ -21,6 +21,10 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
+import Kore.Predicate.Predicate
+    ( makeCeilPredicate
+    , makeMultipleAndPredicate
+    )
 import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Unification.Substitution as Substitution
@@ -159,16 +163,18 @@ test_unparse =
             )
             "[\\top{#CharList{}}()]"
         , unparseTest
-            (Attributes
-                { getAttributes =
-                    [ asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
-                    , asParsedPattern $ CharLiteralF $ Const
-                        CharLiteral { getCharLiteral = '\'' }
-                    ]
-                }::Attributes
+            (makeMultipleAndPredicate @Variable
+                [ makeCeilPredicate Mock.a
+                , makeCeilPredicate Mock.b
+                , makeCeilPredicate Mock.c
+                ]
             )
-            "[''', ''']"
+            "\\and{_PREDICATE{}}(\n\
+            \    \\ceil{testSort{}, _PREDICATE{}}(a{}()),\n\
+            \\\and{_PREDICATE{}}(\n\
+            \    \\ceil{testSort{}, _PREDICATE{}}(b{}()),\n\
+            \    \\ceil{testSort{}, _PREDICATE{}}(c{}())\n\
+            \))"
         , unparseTest
             (Pattern.andCondition
                 (Pattern.topOf Mock.topSort)
@@ -193,17 +199,52 @@ test_unparse =
             \        \\equals{testSort{}, topSort{}}(z:testSort{}, c{}())\n\
             \    ))\n\
             \))"
+        , unparseTest
+            (Pattern.andCondition
+                (Pattern.topOf Mock.topSort)
+                (Predicate.andCondition
+                    (Predicate.fromPredicate $ makeMultipleAndPredicate
+                        [ makeCeilPredicate Mock.a
+                        , makeCeilPredicate Mock.b
+                        , makeCeilPredicate Mock.c
+                        ]
+                    )
+                    (Predicate.fromSubstitution $ Substitution.wrap
+                        [ (ElemVar Mock.x, Mock.a)
+                        , (ElemVar Mock.y, Mock.b)
+                        , (ElemVar Mock.z, Mock.c)
+                        ]
+                    )
+                )
+            )
+            "\\and{topSort{}}(\n\
+            \    /* term: */\n\
+            \    \\top{topSort{}}(),\n\
+            \\\and{topSort{}}(\n\
+            \    /* predicate: */\n\
+            \    \\and{topSort{}}(\n\
+            \        \\ceil{testSort{}, topSort{}}(a{}()),\n\
+            \    \\and{topSort{}}(\n\
+            \        \\ceil{testSort{}, topSort{}}(b{}()),\n\
+            \        \\ceil{testSort{}, topSort{}}(c{}())\n\
+            \    )),\n\
+            \    /* substitution: */\n\
+            \    \\and{topSort{}}(\n\
+            \        \\equals{testSort{}, topSort{}}(x:testSort{}, a{}()),\n\
+            \    \\and{topSort{}}(\n\
+            \        \\equals{testSort{}, topSort{}}(y:testSort{}, b{}()),\n\
+            \        \\equals{testSort{}, topSort{}}(z:testSort{}, c{}())\n\
+            \    ))\n\
+            \))"
         ]
 
 test_parse :: TestTree
 test_parse =
     testGroup
         "Parse"
-        [ testProperty "Object testId" $ roundtrip idGen idParser
+        [ testProperty "Generic testId" $ roundtrip idGen idParser
         , testProperty "StringLiteral" $
             roundtrip stringLiteralGen stringLiteralParser
-        , testProperty "CharLiteral" $
-            roundtrip charLiteralGen charLiteralParser
         , testProperty "Object Symbol" $
             roundtrip symbolGen symbolParser
         , testProperty "Object Alias" $
@@ -211,7 +252,7 @@ test_parse =
         , testProperty "Object SortVariable" $
             roundtrip sortVariableGen sortVariableParser
         , testProperty "Object Sort" $
-            roundtrip (standaloneGen sortGen) objectSortParser
+            roundtrip (standaloneGen sortGen) sortParser
         , testProperty "ParsedPattern" $
             roundtrip korePatternGen korePatternParser
         , testProperty "Attributes" $
