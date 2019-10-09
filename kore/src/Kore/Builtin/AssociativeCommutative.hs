@@ -175,6 +175,8 @@ class
         :: TermLike variable
         -> Maybe (normalized (TermLike Concrete) (TermLike variable))
 
+    isSimplifiedValue :: Domain.Value normalized (TermLike variable) -> Bool
+
 instance TermWrapper Domain.NormalizedMap where
     {- | Render a 'NormalizedMap' as a Domain.Builtin.
 
@@ -239,6 +241,8 @@ instance TermWrapper Domain.NormalizedMap where
             , opaque = [patt]
             }
 
+    isSimplifiedValue = TermLike.isSimplified . Domain.getMapValue
+
 instance TermWrapper Domain.NormalizedSet where
     {- | Render a 'NormalizedSet' as a Domain.Builtin.
 
@@ -301,6 +305,8 @@ instance TermWrapper Domain.NormalizedSet where
             , concreteElements = Map.empty
             , opaque = [patt]
             }
+
+    isSimplifiedValue Domain.SetValue = True
 
 {- | Wrapper for terms that keeps the "concrete" vs "with variable" distinction
 after converting @TermLike Concrete@ to @TermLike variable@.
@@ -732,8 +738,27 @@ unifyEqualsNormalized
     renormalized <- normalize1 normalizedTerm
 
     let unifierTerm :: TermLike variable
-        unifierTerm =
-            TermLike.markSimplified $ asInternal tools sort1 renormalized
+        unifierTerm = markSimplified $ asInternal tools sort1 renormalized
+
+        markSimplified
+          | all TermLike.isSimplified opaque
+          , all TermLike.isSimplified abstractKeys
+          , all isSimplifiedValue abstractValues
+          , all TermLike.isSimplified concreteKeys
+          , all isSimplifiedValue concreteValues
+          = TermLike.markSimplified
+          | otherwise
+          = id
+          where
+            unwrapped = Domain.unwrapAc renormalized
+            Domain.NormalizedAc { opaque } = unwrapped
+            (abstractKeys, abstractValues) =
+                (unzip . map Domain.unwrapElement)
+                    (Domain.elementsWithVariables unwrapped)
+            (concreteKeys, concreteValues) =
+                (unzip . Map.toList)
+                    (Domain.concreteElements unwrapped)
+
     return (unifierTerm `withCondition` unifierPredicate)
   where
     sort1 = termLikeSort first
