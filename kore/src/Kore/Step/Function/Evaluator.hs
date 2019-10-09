@@ -41,7 +41,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
     , merge
-    , mergeAll
     )
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -72,9 +71,6 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import qualified Kore.Step.Simplification.Conditional as Conditional
-    ( simplifyPredicate
-    )
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -383,12 +379,13 @@ reevaluateFunctions
     -- ^ Function evaluation result.
     -> simplifier (OrPattern variable)
 reevaluateFunctions rewriting = do
-    pattOr <- simplifyTerm (Pattern.term rewriting)
-    mergedPatt <-
-        OrPattern.mergeWithPredicate (Pattern.withoutTerm rewriting) pattOr
-    orResults <-
-        BranchT.gather $ traverse Conditional.simplifyPredicate mergedPatt
-    return (MultiOr.mergeAll orResults)
+    let (rewritingTerm, rewritingPredicate) = Pattern.splitTerm rewriting
+    simplifiedTerms <- simplifyTerm rewritingTerm
+    merged <- OrPattern.mergeWithPredicate rewritingPredicate simplifiedTerms
+    orResults <- BranchT.gather $ do
+        simplifiedTerm <- BranchT.scatter merged
+        simplifyPredicate simplifiedTerm
+    return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
