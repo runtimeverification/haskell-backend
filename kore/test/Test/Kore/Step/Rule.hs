@@ -29,6 +29,9 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import Kore.Internal.TermLike hiding
     ( freeVariables
     )
@@ -37,7 +40,9 @@ import Kore.Step.Rule hiding
     ( freeVariables
     )
 import qualified Kore.Step.Rule as Rule
-import Kore.Syntax.Definition
+import Kore.Syntax.Definition hiding
+    ( Alias (..)
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -71,6 +76,19 @@ axiomPatternsUnitTests =
                     }
                 )
                 (Rule.fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
+            )
+        , testCase "aliasI1 => I2:AInt"
+            (assertEqual ""
+                (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
+                    { left = varI1
+                    , antiLeft = Nothing
+                    , right = varI2
+                    , requires = Predicate.wrapPredicate (mkTop sortAInt)
+                    , ensures = Predicate.wrapPredicate (mkTop sortAInt)
+                    , attributes = def
+                    }
+                )
+                (Rule.fromSentence $ mkRewriteAxiom applyAliasI1 varI2 Nothing)
             )
         ,   let
                 axiom1, axiom2 :: Verified.Sentence
@@ -310,6 +328,23 @@ varI1 =
         , variableCounter = mempty
         , variableSort = sortAInt
         }
+
+applyAliasI1 =
+    mkApplyAlias aliasI1 []
+  where
+    aliasI1 =
+        Alias
+            { aliasConstructor = testId "AliasI1"
+            , aliasParams = []
+            , aliasSorts =
+                ApplicationSorts
+                    { applicationSortsOperands = []
+                    , applicationSortsResult = sortAInt
+                    }
+            , aliasLeft = []
+            , aliasRight =
+                mkAnd (mkTop sortAInt) varI1
+            }
 
 varI2 =
     mkElemVar $ ElementVariable Variable
