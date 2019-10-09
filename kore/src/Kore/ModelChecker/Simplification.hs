@@ -17,7 +17,17 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike
+    ( ElementVariable
+    , pattern Forall_
+    , pattern Implies_
+    , TermLike
+    , mkAnd
+    , mkCeil_
+    , mkElemVar
+    , mkNot
+    )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyAndRemoveTopExists

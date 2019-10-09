@@ -577,7 +577,8 @@ termBottomEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termBottomEquals predicate first second = bottomTermEquals predicate second first
+termBottomEquals predicate first second =
+    bottomTermEquals predicate second first
 
 {- | Unify a variable with a function pattern.
 
@@ -713,7 +714,7 @@ sortInjectionAndEqualsAssumesDifferentHeads termMerger first second = do
                         first
                         second
                     empty
-                else do
+                else
                     return $ applyInjection injectionHead <$> merged
           where
             SortInjectionMatch { firstChild, secondChild } = sortInjectionMatch

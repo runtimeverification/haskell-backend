@@ -9,8 +9,13 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Data.Sup
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (FreeVariables)
+    )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
+    ( refreshVariable
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -254,6 +259,29 @@ test_externalizeFreshVariables =
         ]
     becomes original expected =
         equals (externalizeFreshVariables original) expected
+
+test_refreshVariables :: [TestTree]
+test_refreshVariables =
+    [ (Mock.a, [Mock.x]) `becomes` Mock.a
+        $ "Does not rename symbols"
+    , (xTerm, []) `becomes` xTerm
+        $ "No used variable"
+    , (xTerm, [Mock.y]) `becomes` xTerm
+        $ "No renaming if variable not used"
+    , (xTerm, [Mock.x]) `becomes` mkElemVar x_0
+        $ "Renames used variable"
+    , (Mock.f xTerm, [Mock.x]) `becomes` Mock.f (mkElemVar x_0)
+        $ "Renames under symbol"
+    ]
+  where
+    xTerm = mkElemVar Mock.x
+    becomes (term, vars) expected =
+        equals
+            (refreshVariables
+                (FreeVariables (Set.fromList (map ElemVar vars)))
+                term
+            )
+            expected
 
 x :: ElementVariable Variable
 x = Mock.x
