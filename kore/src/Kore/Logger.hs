@@ -320,15 +320,15 @@ instance Entry LogMessage where
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
     shouldLog minSeverity currentScope LogMessage { severity, scope } =
         severity >= minSeverity && scope `member` currentScope
-      where
-      member :: [Scope] -> Set Scope -> Bool
-      member s set
-        | Set.null set = True
-        | otherwise    = Fold.any (`Set.member` set) s
+     where
+       member :: [Scope] -> Set Scope -> Bool
+       member s set
+         | Set.null set = True
+         | otherwise    = Fold.any (`Set.member` set) s
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
-    localScope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
+    logScope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
@@ -338,7 +338,7 @@ newtype LoggerT m a =
 instance Monad m => MonadLog (LoggerT m) where
     logM entry =
         LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
-    localScope f (LoggerT (ReaderT logActionReader)) =
+    logScope f (LoggerT (ReaderT logActionReader)) =
         LoggerT . ReaderT
             $ \(LogAction logAction) ->
                 logActionReader . LogAction

@@ -108,19 +108,19 @@ data KoreLogOptions = KoreLogOptions
     }
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
-data SomeEntityWithTimestamp = SomeEntityWithTimestamp SomeEntry LocalTime
+data WithTimestamp = WithTimestamp SomeEntry LocalTime
 
-instance Pretty.Pretty SomeEntityWithTimestamp where
-    pretty (SomeEntityWithTimestamp entity time) =
+instance Pretty.Pretty WithTimestamp where
+    pretty (WithTimestamp entity time) =
         Pretty.brackets formattedTime <> Pretty.pretty entity
       where
         formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q" time
 
-instance Entry SomeEntityWithTimestamp where
+instance Entry WithTimestamp where
     shouldLog
         minSeverity
         currentScope
-        (SomeEntityWithTimestamp (SomeEntry entry) _)
+        (WithTimestamp (SomeEntry entry) _)
       = shouldLog minSeverity currentScope entry
 
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
@@ -217,10 +217,10 @@ makeKoreLogger minSeverity currentScope logToText =
         . Colog.cmapM addTimeStamp
         $ contramap messageToText logToText
   where
-    addTimeStamp :: SomeEntry -> m SomeEntityWithTimestamp
+    addTimeStamp :: SomeEntry -> m WithTimestamp
     addTimeStamp msg =
-        SomeEntityWithTimestamp msg <$> getLocalTime
-    messageToText :: SomeEntityWithTimestamp -> Text
+        WithTimestamp msg <$> getLocalTime
+    messageToText :: WithTimestamp -> Text
     messageToText =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
