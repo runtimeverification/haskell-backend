@@ -15,8 +15,6 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
-    ( top
-    )
 import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
@@ -375,27 +373,39 @@ test_ceilSimplification =
                 , domainValueChild = mkStringLiteral "a"
                 }
         assertEqual "ceil(1)" expected actual
-    , testCase "ceil with map domain value" $ do
-        -- maps assume that their keys are relatively functional, so
-        -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
-        let
-            expected = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate =
-                        makeAndPredicate
-                            (makeCeilPredicate fOfB)
-                            (makeCeilPredicate gOfB)
-                    , substitution = mempty
-                    }
-                ]
-        actual <- makeEvaluate
-            Conditional
-                { term = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
-                , predicate = makeTruePredicate
-                , substitution = mempty
-                }
-        assertEqual "ceil(map)" expected actual
+    , testGroup "Builtin.Map"
+        [ testCase "concrete partial keys" $ do
+            -- maps assume that their keys are relatively functional, so
+            -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
+            let original = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
+                expected =
+                    OrPattern.fromPattern . Pattern.fromPredicate
+                    . Predicate.fromPredicate
+                    $ makeAndPredicate
+                        (makeCeilPredicate fOfB)
+                        (makeCeilPredicate gOfB)
+            actual <- makeEvaluate $ Pattern.fromTermLike original
+            assertEqual "" expected actual
+        , testCase "abstract keys" $ do
+            let original =
+                    Mock.builtinMap [(mkElemVar Mock.x, mkElemVar Mock.y)]
+                expected = OrPattern.top
+            actual <- makeEvaluate $ Pattern.fromTermLike original
+            assertEqual "" expected actual
+        , testCase "abstract keys with frame" $ do
+            let original =
+                    Mock.framedMap
+                        [(mkElemVar Mock.x, mkElemVar Mock.y)]
+                        [Mock.m]
+                expected =
+                    OrPattern.fromPattern . Pattern.fromPredicate
+                    . Predicate.fromPredicate . makeCeilPredicate
+                    $ Mock.framedMap
+                        [(mkElemVar Mock.x, mkElemVar Mock.y)]
+                        [Mock.m]
+            actual <- makeEvaluate $ Pattern.fromTermLike original
+            assertEqual "" expected actual
+        ]
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)
         let
