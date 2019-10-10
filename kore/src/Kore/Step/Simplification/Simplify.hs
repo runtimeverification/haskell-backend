@@ -21,7 +21,6 @@ module Kore.Step.Simplification.Simplify
     , emptyTermLikeSimplifier
     -- * Builtin and axiom simplifiers
     , BuiltinAndAxiomSimplifier (..)
-    , runBuiltinAndAxiomSimplifier
     , BuiltinAndAxiomSimplifierMap
     , AttemptedAxiom (..)
     , isApplicable, isNotApplicable
@@ -369,39 +368,14 @@ axioms, together with a proof certifying that it was simplified correctly
 -}
 newtype BuiltinAndAxiomSimplifier =
     -- TODO (thomas.tuegel): Rename me!
-    -- TODO (thomas.tuegel): Remove extra arguments.
     BuiltinAndAxiomSimplifier
-        (  forall variable simplifier
-        .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
-        -> Predicate variable
-        -> simplifier (AttemptedAxiom variable)
-        )
-
-runBuiltinAndAxiomSimplifier
-    :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => BuiltinAndAxiomSimplifier
-    -> Predicate variable
-    -> TermLike variable
-    -> simplifier (AttemptedAxiom variable)
-runBuiltinAndAxiomSimplifier
-    (BuiltinAndAxiomSimplifier simplifier)
-    predicate
-    termLike
-  = do
-    simplifierAxioms <- askSimplifierAxioms
-    simplifierPredicate <- askSimplifierPredicate
-    simplifierTermLike <- askSimplifierTermLike
-    simplifier
-        simplifierPredicate
-        simplifierTermLike
-        simplifierAxioms
-        termLike
-        predicate
+        { runBuiltinAndAxiomSimplifier
+            ::  forall variable simplifier
+            .  (SimplifierVariable variable, MonadSimplify simplifier)
+            => TermLike variable
+            -> Predicate variable
+            -> simplifier (AttemptedAxiom variable)
+        }
 
 {-|A type to abstract away the mapping from symbol identifiers to
 their corresponding evaluators.
@@ -540,10 +514,7 @@ purePatternAxiomEvaluator p =
 applicationAxiomSimplifier
     ::  (  forall variable m
         .  (SimplifierVariable variable, MonadSimplify m)
-        => PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> CofreeF
+        => CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
@@ -556,19 +527,11 @@ applicationAxiomSimplifier applicationSimplifier =
     helper
         :: forall variable m
         .  (SimplifierVariable variable, MonadSimplify m)
-        => PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
+        => TermLike variable
         -> Predicate variable
         -> m (AttemptedAxiom variable)
-    helper substitutionSimplifier simplifier axiomIdToSimplifier termLike _ =
+    helper termLike _ =
         case Recursive.project termLike of
-            (valid :< ApplySymbolF p) ->
-                applicationSimplifier
-                    substitutionSimplifier
-                    simplifier
-                    axiomIdToSimplifier
-                    (valid :< p)
+            (valid :< ApplySymbolF p) -> applicationSimplifier (valid :< p)
             _ -> error
                 ("Expected an application pattern, but got: " ++ show termLike)

@@ -72,20 +72,16 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier
-        (\_ _ _ term predicate ->
-            evaluateAxioms rules term (Predicate.toPredicate predicate)
-        )
+    BuiltinAndAxiomSimplifier $ \term predicate ->
+        evaluateAxioms rules term (Predicate.toPredicate predicate)
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
     :: EqualityRule Variable
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
-    BuiltinAndAxiomSimplifier
-        (\_ _ _ term predicate ->
-            evaluateAxioms [rule] term (Predicate.toPredicate predicate)
-        )
+    BuiltinAndAxiomSimplifier $ \term predicate ->
+        evaluateAxioms [rule] term (Predicate.toPredicate predicate)
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -105,13 +101,10 @@ totalDefinitionEvaluation rules =
     totalDefinitionEvaluationWorker
         :: forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => PredicateSimplifier
-        -> TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
+        => TermLike variable
         -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker _ _ _ term predicate = do
+    totalDefinitionEvaluationWorker term predicate = do
         result <- evaluateAxioms rules term (Predicate.toPredicate predicate)
         if AttemptedAxiom.hasRemainders result
             then return AttemptedAxiom.NotApplicable
@@ -155,28 +148,16 @@ evaluateBuiltin
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     patt
     predicate
   = do
-    result <-
-        builtinEvaluator
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            patt
-            predicate
+    result <- builtinEvaluator patt predicate
     case result of
         AttemptedAxiom.NotApplicable
           | App_ appHead children <- patt
@@ -197,31 +178,18 @@ applyFirstSimplifierThatWorks
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
-    -> PredicateSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
-    substitutionSimplifier
-    simplifier
-    axiomIdToSimplifier
     patt
     predicate
   = do
-    applicationResult <-
-        evaluator
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
-            patt
-            predicate
+    applicationResult <- evaluator patt predicate
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -272,8 +240,5 @@ applyFirstSimplifierThatWorks
         applyFirstSimplifierThatWorks
             evaluators
             multipleResults
-            substitutionSimplifier
-            simplifier
-            axiomIdToSimplifier
             patt
             predicate
