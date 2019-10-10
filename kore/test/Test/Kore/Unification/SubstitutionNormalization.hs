@@ -4,7 +4,6 @@ module Test.Kore.Unification.SubstitutionNormalization
 
 import Test.Tasty
 
-import qualified Control.Monad.Except as Except
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
@@ -28,7 +27,6 @@ import Kore.Variables.UnifiedVariable
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 data NormalizationResult
@@ -219,14 +217,11 @@ runNormalizeSubstitution
     :: [(UnifiedVariable Variable, TermLike Variable)]
     -> IO NormalizationResult
 runNormalizeSubstitution substitution = do
-    normalizedSubstitution <-
-        runSimplifier Mock.env
-        $ Except.runExceptT
-        $ normalizeSubstitution (Map.fromList substitution)
-    case normalizedSubstitution of
+    case normalizeSubstitution (Map.fromList substitution) of
         Left err -> return (Error err)
         Right predicate
           | isBottom predicate -> return SubstitutionBottom
-          | otherwise -> return . Substitution
-              . Substitution.unwrap . Conditional.substitution
-              $ predicate
+          | otherwise ->
+            return . Substitution
+            . Substitution.unwrap . Conditional.substitution
+            $ predicate

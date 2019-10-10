@@ -17,8 +17,7 @@ import Control.Applicative
     )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad.Except
-    ( ExceptT (..)
-    , throwError
+    ( throwError
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
@@ -72,10 +71,10 @@ Returns an error when the substitution is not normalizable (i.e. it contains
 x = f(x) or something equivalent).
 -}
 normalizeSubstitution
-    :: forall m variable
-    .  (Monad m, SubstitutionVariable variable)
+    :: forall variable
+    .  SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
-    -> ExceptT SubstitutionError m (Predicate variable)
+    -> Either SubstitutionError (Predicate variable)
 normalizeSubstitution substitution =
     maybe bottom fromNormalization $ normalize substitution
   where
