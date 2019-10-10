@@ -12,6 +12,8 @@ module Kore.Internal.TermLike
     , Evaluated (..)
     , Builtin
     , extractAttributes
+    , isSimplified
+    , markSimplified
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
@@ -214,6 +216,7 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
+import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
@@ -294,6 +297,10 @@ instance Synthetic syn Evaluated where
     synthetic = getEvaluated
     {-# INLINE synthetic #-}
 
+instance {-# OVERLAPS #-} Synthetic Pattern.Simplified Evaluated where
+    synthetic = const (Pattern.Simplified True)
+    {-# INLINE synthetic #-}
+
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
 
@@ -333,6 +340,7 @@ data TermLikeF variable child
         ( Synthetic (FreeVariables variable), Synthetic Sort
         , Synthetic Pattern.Functional, Synthetic Pattern.Function
         , Synthetic Pattern.Defined
+        , Synthetic Pattern.Simplified
         ) via (Generically1 (TermLikeF variable))
 
 instance SOP.Generic (TermLikeF variable child)
@@ -948,6 +956,22 @@ externalizeFreshVariables termLike =
     asVariable :: UnifiedVariable variable -> variable
     asVariable = foldMapVariable id
 
+isSimplified :: TermLike variable -> Bool
+isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
+
+{- | Mark a 'TermLike' as fully simplified.
+
+The pattern is fully simplified if we do not know how to simplify it any
+further. The simplifier reserves the right to skip any pattern which is marked,
+so do not mark any pattern unless you are certain it cannot be further
+simplified.
+
+ -}
+markSimplified :: TermLike variable -> TermLike variable
+markSimplified (Recursive.project -> attrs :< termLikeF) =
+    Recursive.embed
+        (attrs { Attribute.simplified = Pattern.Simplified True } :< termLikeF)
+
 -- | Get the 'Sort' of a 'TermLike' from the 'Attribute.Pattern' annotation.
 termLikeSort :: TermLike variable -> Sort
 termLikeSort = Attribute.patternSort . extractAttributes
@@ -1334,7 +1358,8 @@ mkBottom
     => SortedVariable variable
     => Sort
     -> TermLike variable
-mkBottom bottomSort = updateCallStack $ synthesize (BottomF Bottom { bottomSort })
+mkBottom bottomSort =
+    updateCallStack $ synthesize (BottomF Bottom { bottomSort })
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
 
@@ -1749,7 +1774,8 @@ mkTop
     => SortedVariable variable
     => Sort
     -> TermLike variable
-mkTop topSort = updateCallStack $ synthesize (TopF Top { topSort })
+mkTop topSort =
+    updateCallStack $ synthesize (TopF Top { topSort })
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
 

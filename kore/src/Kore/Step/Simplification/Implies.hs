@@ -18,7 +18,7 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
@@ -135,7 +135,8 @@ makeEvaluateImpliesNonBool
         [ Conditional
             { term = firstTerm
             , predicate =
-                Syntax.Predicate.makeImpliesPredicate
+                Syntax.Predicate.markSimplified
+                $ Syntax.Predicate.makeImpliesPredicate
                     (Syntax.Predicate.makeAndPredicate
                         firstPredicate
                         (Syntax.Predicate.fromSubstitution firstSubstitution)
@@ -148,10 +149,12 @@ makeEvaluateImpliesNonBool
             }
         ]
   | otherwise =
+    -- TODO (thomas.tuegel): Maybe this should be an error?
     OrPattern.fromPatterns
         [ Conditional
             { term =
-                mkImplies
+                TermLike.markSimplified
+                $ mkImplies
                     (Pattern.toTermLike pattern1)
                     (Pattern.toTermLike pattern2)
             , predicate = Syntax.Predicate.makeTruePredicate

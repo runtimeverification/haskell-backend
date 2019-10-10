@@ -289,14 +289,14 @@ test_predicate =
                     (mkElemVar $ a Mock.testSort)
                     (mkElemVar $ b Mock.testSort)
         )
-    , testCase "substitutionToPredicate"
+    , testCase "fromSubstitution"
         ( do
             assertEqual "null substitutions is top"
                 makeTruePredicate
-                (substitutionToPredicate mempty :: Predicate Variable)
+                (fromSubstitution mempty :: Predicate Variable)
             assertEqual "a = b"
                 (makeAndPredicate pr1 makeTruePredicate)
-                (substitutionToPredicate $ Substitution.wrap
+                (fromSubstitution $ Substitution.wrap
                     [(ElemVar $ a Mock.testSort, mkElemVar $ b Mock.testSort)]
                 )
         )

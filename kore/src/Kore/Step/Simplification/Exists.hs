@@ -218,10 +218,7 @@ makeEvaluateBoundLeft
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundLeft
-    variable
-    boundTerm
-    normalized
+makeEvaluateBoundLeft variable boundTerm normalized
   = withoutFreeVariable (ElemVar variable) boundTerm $ do
         let
             boundSubstitution = Map.singleton (ElemVar variable) boundTerm
@@ -253,11 +250,7 @@ makeEvaluateBoundRight
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundRight
-    variable
-    freeSubstitution
-    normalized
-  = do
+makeEvaluateBoundRight variable freeSubstitution normalized = do
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern
   where
@@ -300,10 +293,11 @@ splitSubstitution variable substitution =
         maybe (Right dependent) Left
         $ Map.lookup (ElemVar variable) (Substitution.toMap dependent)
 
-{- | Existentially quantify the variable an 'Pattern'.
+{- | Existentially quantify the variable in a 'Pattern'.
 
-The substitution is assumed to depend on the quantified variable. The quantifier
-is lowered onto the 'term' or 'predicate' alone, or omitted, if possible.
+The substitution is assumed to not depend on the quantified variable.
+The quantifier is lowered onto the 'term' or 'predicate' alone, or omitted,
+if possible.
 
  -}
 quantifyPattern
@@ -319,10 +313,12 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     , "variable=" ++ unparseToString variable
     , "patt=" ++ unparseToString original
     ]
-  | quantifyTerm = mkExists variable <$> original
+  | quantifyTerm = markSimplified . mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
-    $ Predicate.fromPredicate
+    $ Predicate.fromPredicate . Syntax.Predicate.markSimplified
+    -- TODO (thomas.tuegel): This may not be fully simplified: we have not used
+    -- the And simplifier on the predicate.
     $ Syntax.Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where

@@ -19,7 +19,7 @@ target
 *.fls
 *.tix
 *.toc
-.stack-work
+.stack-work*
 .*.swp
 .*.swo
 tags
@@ -30,9 +30,7 @@ tags
 .dir-locals.el
 *.prof
 .kprove-*
-.stack-work-haddock
 /coverage_report
 /haskell_documentation
-.stack-work-test
 test-results.xml
 .directory
