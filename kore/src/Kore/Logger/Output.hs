@@ -111,8 +111,8 @@ data KoreLogOptions = KoreLogOptions
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
 
 instance Pretty.Pretty WithTimestamp where
-    pretty (WithTimestamp entity time) =
-        Pretty.brackets formattedTime <> Pretty.pretty entity
+    pretty (WithTimestamp entry time) =
+        Pretty.brackets formattedTime <> Pretty.pretty entry
       where
         formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q" time
 
