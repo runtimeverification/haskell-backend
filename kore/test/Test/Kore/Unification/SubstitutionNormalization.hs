@@ -248,6 +248,10 @@ test_normalize =
             [(x, f (mkVar x)), (y, a)]
             [(y, a)]
             [(x, f (mkVar x))]
+        , test "length 1, beside unrelated substitutions"
+            [(x, f (mkVar x)), (y, g (mkVar z)), (z, b)]
+            [(z, b), (y, g b)]
+            [(x, f (mkVar x))]
         , test "length 1, with constructor"
             [(x, (constr1 . f) (mkVar x))]
             []
@@ -281,6 +285,10 @@ test_normalize =
         , test "length 1, beside unrelated substitution"
             [(xs, f (mkVar xs)), (ys, a)]
             [(ys, a)]
+            [(xs, f (mkVar xs))]
+        , test "length 1, beside unrelated substitutions"
+            [(xs, f (mkVar xs)), (y, g (mkVar z)), (z, b)]
+            [(z, b), (y, g b)]
             [(xs, f (mkVar xs))]
         , test "length 2, alone"
             [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
