@@ -14,7 +14,7 @@ module Kore.Step.Simplification.Simplify
     -- * Predicate simplifiers
     , PredicateSimplifier (..)
     , emptyPredicateSimplifier
-    , simplifyPredicate
+    , liftPredicateSimplifier
     -- * Term simplifiers
     , TermLikeSimplifier
     , termLikeSimplifier
@@ -141,13 +141,24 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         Monad.Morph.hoist (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
 
-    askSimplifierPredicate :: m (PredicateSimplifier m)
-    default askSimplifierPredicate
-        :: (MonadTrans t, MonadSimplify n, m ~ t n)
-        => m (PredicateSimplifier m)
-    askSimplifierPredicate =
-        liftPredicateSimplifier <$> Monad.Trans.lift askSimplifierPredicate
-    {-# INLINE askSimplifierPredicate #-}
+    simplifyPredicate
+        :: SimplifierVariable variable
+        => Conditional variable term
+        -> BranchT m (Conditional variable term)
+    default simplifyPredicate
+        ::  ( SimplifierVariable variable
+            , MonadTrans trans
+            , MonadSimplify n
+            , m ~ trans n
+            )
+        =>  Conditional variable term
+        ->  BranchT m (Conditional variable term)
+    simplifyPredicate conditional = do
+        results <-
+            Monad.Trans.lift . Monad.Trans.lift
+            $ Branch.gather $ simplifyPredicate conditional
+        Branch.scatter results
+    {-# INLINE simplifyPredicate #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
     default askSimplifierAxioms
@@ -324,20 +335,6 @@ liftPredicateSimplifier (PredicateSimplifier simplifier) =
             Monad.Trans.lift . Monad.Trans.lift
             $ Branch.gather $ simplifier predicate
         Branch.scatter results
-
-{- | Use a 'PredicateSimplifier' to simplify a 'Predicate'.
-
- -}
-simplifyPredicate
-    :: forall variable term simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Conditional variable term
-    -> BranchT simplifier (Conditional variable term)
-simplifyPredicate conditional = do
-    let (term, predicate) = Conditional.splitTerm conditional
-    PredicateSimplifier simplify <- Monad.Trans.lift askSimplifierPredicate
-    predicate' <- simplify predicate
-    pure $ Conditional.withCondition term predicate'
 
 -- * Builtin and axiom simplifiers
 

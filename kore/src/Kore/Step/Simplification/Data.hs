@@ -125,8 +125,10 @@ instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
             env { simplifierTermLike = locally simplifierTermLike }
     {-# INLINE localSimplifierTermLike #-}
 
-    askSimplifierPredicate = asks simplifierPredicate
-    {-# INLINE askSimplifierPredicate #-}
+    simplifyPredicate conditional = do
+        PredicateSimplifier simplify <- asks simplifierPredicate
+        simplify conditional
+    {-# INLINE simplifyPredicate #-}
 
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
