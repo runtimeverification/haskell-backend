@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Internal.Predicate
     ( Predicate
     , isSimplified
+    , markSimplified
     , eraseConditionalTerm
     , top
     , topTODO
@@ -45,6 +46,10 @@ type Predicate variable = Conditional variable ()
 
 isSimplified :: Predicate variable -> Bool
 isSimplified = Syntax.Predicate.isSimplified . Conditional.predicate
+
+markSimplified :: Predicate variable -> Predicate variable
+markSimplified conditional@Conditional { predicate } =
+    conditional { predicate = Syntax.Predicate.markSimplified predicate }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Predicate'.
 eraseConditionalTerm
