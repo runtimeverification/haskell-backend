@@ -28,4 +28,6 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/simple-arithmetic-spec.k.prove
+make -j8 TEST_SYMBOLIC_BACKEND=haskell \
+     tests/proofs/simple-arithmetic-spec.k.prove \
+     tests/proofs/loops-spec.k.prove

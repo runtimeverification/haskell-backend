@@ -41,7 +41,7 @@ simplify
 simplify builtin =
     MultiOr.filterOr $ do
         child <- simplifyBuiltin builtin
-        return (mkBuiltin <$> child)
+        return (markSimplified . mkBuiltin <$> child)
 
 simplifyBuiltin
     :: InternalVariable variable

@@ -12,18 +12,30 @@ module Kore.Step.Simplification.TermLike
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
+import qualified Control.Exception as Exception
+import qualified Control.Lens.Combinators as Lens
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
+import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Stack as GHC
 
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
     )
+import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -100,7 +112,17 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
-
+import qualified Kore.Substitute as Substitute
+import Kore.Unparser
+    ( unparse
+    )
+import qualified Kore.Variables.Binding as Binding
+import Kore.Variables.Fresh
+    ( refreshVariable
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -108,10 +130,13 @@ import qualified Kore.Step.Simplification.Variable as Variable
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> Predicate variable
-    -> simplifier (Pattern variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  TermLike variable
+    ->  Predicate variable
+    ->  simplifier (Pattern variable)
 simplify patt predicate = do
     orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)
@@ -120,10 +145,13 @@ simplify patt predicate = do
 'OrPattern'.
 -}
 simplifyToOr
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Predicate variable
+    ->  TermLike variable
+    ->  simplifier (OrPattern variable)
 simplifyToOr term predicate =
     localSimplifierTermLike (const simplifier)
         . simplifyInternal predicate
@@ -132,16 +160,23 @@ simplifyToOr term predicate =
     simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
-    :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> Predicate variable
-    -> simplifier (OrPattern variable)
+    ::  forall variable simplifier
+    .   ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , Substitute.SubstitutionVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  TermLike variable
+    ->  Predicate variable
+    ->  simplifier (OrPattern variable)
 simplifyInternal term predicate = simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
         Nothing -> id
         Just identifier -> Profiler.identifierSimplification identifier
+
+    predicateFreeVars =
+        FreeVariables.getFreeVariables $ Predicate.freeVariables predicate
 
     simplifyChildren
         :: Traversable t
@@ -150,8 +185,10 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
-        tracer termLike $
-        let doNotSimplify = return (OrPattern.fromTermLike termLike)
+        assertSimplifiedResults $ tracer termLike $
+        let doNotSimplify =
+                Exception.assert (TermLike.isSimplified termLike)
+                return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
             -- Unimplemented cases
@@ -168,8 +205,9 @@ simplifyInternal term predicate = simplifyInternalWorker term
                 Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->
                 Equals.simplify predicate =<< simplifyChildren equalsF
-            ExistsF existsF ->
-                Exists.simplify =<< simplifyChildren existsF
+            ExistsF exists ->
+                let fresh = Lens.over Binding.existsBinder refreshBinder exists
+                in  Exists.simplify =<< simplifyChildren fresh
             IffF iffF ->
                 Iff.simplify =<< simplifyChildren iffF
             ImpliesF impliesF ->
@@ -184,10 +222,16 @@ simplifyInternal term predicate = simplifyInternalWorker term
             DomainValueF domainValueF ->
                 DomainValue.simplify <$> simplifyChildren domainValueF
             FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
-            ForallF forallF -> Forall.simplify <$> simplifyChildren forallF
+            ForallF forall ->
+                let fresh = Lens.over Binding.forallBinder refreshBinder forall
+                in  Forall.simplify <$> simplifyChildren fresh
             InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
-            MuF muF -> Mu.simplify <$> simplifyChildren muF
-            NuF nuF -> Nu.simplify <$> simplifyChildren nuF
+            MuF mu ->
+                let fresh = Lens.over Binding.muBinder refreshBinder mu
+                in  Mu.simplify <$> simplifyChildren fresh
+            NuF nu ->
+                let fresh = Lens.over Binding.nuBinder refreshBinder nu
+                in  Nu.simplify <$> simplifyChildren fresh
             -- TODO(virgil): Move next up through patterns.
             NextF nextF -> Next.simplify <$> simplifyChildren nextF
             OrF orF -> Or.simplify <$> simplifyChildren orF
@@ -199,3 +243,46 @@ simplifyInternal term predicate = simplifyInternalWorker term
                 return $ StringLiteral.simplify (getConst stringLiteralF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
+      where
+        assertSimplifiedResults getResults = do
+            results <- getResults
+            let unsimplified =
+                    filter (not . Pattern.isSimplified)
+                    $ OrPattern.toPatterns results
+            if null unsimplified
+                then return results
+                else (error . show . Pretty.vsep)
+                    [ "Incomplete simplification!"
+                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 4 (unparse termLike)
+                    , Pretty.indent 2 "unsimplified results:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> unsimplified)
+                    , "Expected all patterns to be fully simplified."
+                    ]
+
+    refreshBinder
+        :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
+        -> Binding.Binder (UnifiedVariable variable) (TermLike variable)
+    refreshBinder binder@Binding.Binder { binderVariable, binderChild }
+      | binderVariable `Set.member` predicateFreeVars =
+        let existsFreeVars =
+                FreeVariables.getFreeVariables
+                $ TermLike.freeVariables binderChild
+            fresh =
+                fromMaybe (error "guard above ensures result <> Nothing")
+                    $ refreshVariable
+                        (predicateFreeVars <> existsFreeVars)
+                        binderVariable
+            freshChild =
+                TermLike.substitute
+                    (Map.singleton
+                        binderVariable
+                        (TermLike.mkVar fresh)
+                    )
+                    binderChild
+        in Binding.Binder
+            { binderVariable = fresh
+            , binderChild = freshChild
+            }
+      | otherwise = binder

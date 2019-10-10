@@ -24,6 +24,7 @@ import GHC.Stack
     )
 
 import Branch
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Predicate
     ( Conditional (..)
     , Predicate
@@ -71,14 +72,16 @@ normalize Conditional { term, predicate, substitution } = do
             Conditional { term = (), predicate, substitution }
     case results of
         Right normal -> scatter (applyTerm <$> normal)
-        Left _ ->
-            return Conditional
-                { term
-                , predicate =
-                    Syntax.Predicate.makeAndPredicate predicate
+        Left _ -> do
+            let combined =
+                    Predicate.fromPredicate
+                    . Syntax.Predicate.markSimplified
+                    $ Syntax.Predicate.makeAndPredicate predicate
+                    -- TODO (thomas.tuegel): Promoting the entire substitution
+                    -- to the predicate is a problem. We should only promote the
+                    -- part which has cyclic dependencies.
                     $ Syntax.Predicate.fromSubstitution substitution
-                , substitution = mempty
-                }
+            return (Conditional.withCondition term combined)
   where
     applyTerm predicated = predicated { term }
 

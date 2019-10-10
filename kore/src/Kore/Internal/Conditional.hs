@@ -226,9 +226,9 @@ instance
             (unparse <$> termLikeSubstitution)
       where
         sort = termLikeSort term
-        termLikePredicate = Predicate.fromPredicate sort predicate
+        termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
-            Predicate.fromPredicate sort
+            Predicate.coerceSort sort
             .  singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 
@@ -240,9 +240,9 @@ instance
             (unparse2 <$> termLikeSubstitution)
       where
         sort = termLikeSort term
-        termLikePredicate = Predicate.fromPredicate sort predicate
+        termLikePredicate = Predicate.coerceSort sort predicate
         termLikeSubstitution =
-            Predicate.fromPredicate sort
+            Predicate.coerceSort sort
             .  singleSubstitutionToPredicate
             <$> Substitution.unwrap substitution
 
@@ -347,7 +347,7 @@ a 'PredicateSubstition' into only a 'Predicate'; i.e. when @term ~ ()@,
 @toPredicate@ is also used to extract the 'Predicate' and 'Substitution' while
 discarding the 'term'.
 
-See also: 'substitutionToPredicate'.
+See also: 'Predicate.fromSubstitution'.
 
 -}
 toPredicate

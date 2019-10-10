@@ -11,7 +11,6 @@ module Kore.Unification.UnifierImpl
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import Control.Error
 import Control.Monad
     ( foldM
     )
@@ -42,16 +41,13 @@ import Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Error
-    ( substitutionToUnifyOrSubError
-    )
-import Kore.Unification.Normalization
-    ( normalizeSubstitution
-    )
 import Kore.Unification.Substitution
     ( Substitution
     )
 import qualified Kore.Unification.Substitution as Substitution
+import Kore.Unification.SubstitutionNormalization
+    ( normalizeSubstitution
+    )
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
@@ -230,9 +226,7 @@ normalizeOnce Conditional { term, predicate, substitution } = do
         }
   where
     normalizeSubstitution' =
-        Unifier.lowerExceptT
-        . withExceptT substitutionToUnifyOrSubError
-        . normalizeSubstitution
+        either Unifier.throwSubstitutionError return . normalizeSubstitution
 
 normalizeExcept
     ::  forall unifier variable term

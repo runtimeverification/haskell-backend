@@ -53,6 +53,7 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
+import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Attribute.Pattern as Attribute
@@ -224,7 +225,7 @@ instance MonadSimplify m => MonadSimplify (Strict.StateT s m)
 newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable m
-        . (SimplifierVariable variable, MonadSimplify m)
+        . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => Predicate variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
@@ -242,7 +243,8 @@ The pattern is considered as an isolated term without extra initial conditions.
  -}
 simplifyTerm
     :: forall variable simplifier
-    .   ( SimplifierVariable variable
+    .   ( GHC.HasCallStack
+        , SimplifierVariable variable
         , MonadSimplify simplifier
         )
     => TermLike variable
@@ -253,7 +255,8 @@ simplifyTerm = simplifyConditionalTermToOr Predicate.top
  -}
 simplifyConditionalTermToOr
     :: forall variable simplifier
-    .   ( SimplifierVariable variable
+    .   ( GHC.HasCallStack
+        , SimplifierVariable variable
         , MonadSimplify simplifier
         )
     => Predicate variable
@@ -267,7 +270,8 @@ simplifyConditionalTermToOr predicate termLike = do
  -}
 simplifyConditionalTerm
     :: forall variable simplifier
-    .   ( SimplifierVariable variable
+    .   ( GHC.HasCallStack
+        , SimplifierVariable variable
         , MonadSimplify simplifier
         )
     => Predicate variable
@@ -285,7 +289,7 @@ simplification, but only attaches it unmodified to the final result.
  -}
 termLikeSimplifier
     ::  ( forall variable m
-        . (SimplifierVariable variable, MonadSimplify m)
+        . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => Predicate variable
         -> TermLike variable
         -> m (OrPattern variable)
@@ -296,7 +300,7 @@ termLikeSimplifier simplifier =
   where
     termLikeSimplifierWorker
         :: forall variable m
-        .  (SimplifierVariable variable, MonadSimplify m)
+        .  (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
         => Predicate variable
         -> TermLike variable
         -> BranchT m (Pattern variable)

@@ -308,7 +308,7 @@ proveWithRepl
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> MVar (Log.LogAction IO Log.LogMessage)
+    -> MVar (Log.LogAction IO Log.SomeEntry)
     -> Repl.Data.ReplScript
     -- ^ Optional script
     -> Repl.Data.ReplMode

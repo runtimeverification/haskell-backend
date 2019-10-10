@@ -16,6 +16,7 @@ module Kore.Step.Simplification.Predicate
 
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
@@ -52,9 +53,12 @@ result. The result is re-simplified until it stabilizes.
 
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Conditional variable term
-    -> BranchT simplifier (Conditional variable term)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Conditional variable term
+    ->  BranchT simplifier (Conditional variable term)
 simplify initial = normalize initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
@@ -82,12 +86,13 @@ See also: 'simplify'
 
 -}
 simplifyPartial
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Syntax.Predicate variable
-    -> BranchT simplifier (Predicate variable)
-simplifyPartial
-    predicate
-  = do
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Syntax.Predicate variable
+    ->  BranchT simplifier (Predicate variable)
+simplifyPartial predicate = do
     patternOr <-
         Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to explicitly check
