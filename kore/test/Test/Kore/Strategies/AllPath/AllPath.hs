@@ -3,6 +3,10 @@ module Test.Kore.Strategies.AllPath.AllPath where
 import Test.Tasty
 
 import Control.Applicative
+import Control.Monad.Catch
+    ( MonadCatch (catch)
+    , MonadThrow (throwM)
+    )
 import qualified Data.Foldable as Foldable
 import Data.Function
     ( (&)
@@ -448,6 +452,12 @@ instance MonadProfiler AllPathIdentity where
             , logEvaluation = False
             , logSmt = False
             }
+
+instance MonadThrow AllPathIdentity where
+    throwM _ = error "Unimplemented"
+
+instance MonadCatch AllPathIdentity where
+    catch action _handler = action
 
 instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined

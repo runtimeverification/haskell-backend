@@ -26,6 +26,9 @@ import Control.Error.Util
     ( note
     )
 import qualified Control.Monad as Monad
+import Control.Monad.Catch
+    ( MonadCatch
+    )
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
@@ -244,7 +247,11 @@ execGetExitCode indexedModule strategy' finalTerm =
 
 -- | Symbolic search
 search
-    :: (Log.WithLog Log.LogMessage smt, MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadProfiler smt
+        , MonadSMT smt
+        , MonadUnliftIO smt
+        )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
@@ -276,6 +283,7 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 -- | Proving a spec given as a module containing rules to be proven
 prove
     ::  ( Log.WithLog Log.LogMessage smt
+        , MonadCatch smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
