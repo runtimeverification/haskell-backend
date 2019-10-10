@@ -5,6 +5,7 @@ License     : NCSA
 
 module Kore.Step.Simplification.ExpandAlias
     ( expandAlias
+    , substituteInAlias
     ) where
 
 import Control.Error
@@ -66,18 +67,18 @@ expandSingleAlias
     -> Maybe (TermLike variable)
 expandSingleAlias =
     \case
-        ApplyAlias_ alias children -> pure $ substituteWorker alias children
+        ApplyAlias_ alias children -> pure $ substituteInAlias alias children
         _ -> Nothing
 
 -- TODO(Vladimir): Check aliases such that the intersection of alias variables
 -- with the *bounded* variables in the rhs is empty (because we can't currently
 -- handle things like \mu.
-substituteWorker
+substituteInAlias
     :: SubstitutionVariable variable
     => Alias (TermLike Variable)
     -> [TermLike variable]
     -> TermLike variable
-substituteWorker Alias { aliasLeft, aliasRight } children =
+substituteInAlias Alias { aliasLeft, aliasRight } children =
     assert (length aliasLeft == length children)
         $ substitute
             substitutionMap

@@ -110,6 +110,9 @@ import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
     )
+import Kore.Step.Simplification.ExpandAlias
+    ( substituteInAlias
+    )
 import Kore.Substitute
     ( SubstitutionVariable
     )
@@ -575,8 +578,8 @@ patternToAxiomPattern attributes pat
                             , ensures = Predicate.wrapPredicate ensures
                             , attributes
                             }
-        _ -> koreFail $ "rule is ill-formed with respect \
-                        \ to the priority attribute."
+        _ -> koreFail "Rule is ill-formed with respect\
+                      \ to the priority attribute."
   | otherwise =
     case pat of
         -- normal rewrite axioms
@@ -591,6 +594,13 @@ patternToAxiomPattern attributes pat
                 , ensures = Predicate.wrapPredicate ensures
                 , attributes
                 }
+        Rewrites_ _ (ApplyAlias_ alias params) rhs ->
+            case substituteInAlias alias params of
+               And_ _ requires lhs ->
+                   patternToAxiomPattern
+                       attributes
+                       (mkRewrites (mkAnd requires lhs) rhs)
+               _ -> koreFail "LHS alias of rule is ill-formed."
         -- Reachability claims
         Implies_ _ (And_ _ requires lhs) (ApplyAlias_ op [And_ _ ensures rhs])
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
