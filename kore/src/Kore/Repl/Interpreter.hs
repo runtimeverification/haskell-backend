@@ -57,7 +57,6 @@ import Control.Monad.RWS.Strict
     ( MonadWriter
     , RWST
     , ask
-    , asks
     , lift
     , runRWST
     , tell
