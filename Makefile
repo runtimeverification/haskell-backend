@@ -35,7 +35,9 @@ haddock:
 	fi
 
 kore-haddock.tar.gz: haddock
-	tar -cf kore-haddock.tar.gz $$($(STACK_HADDOCK) path --local-doc-root)
+	cp -r $$($(STACK_HADDOCK) path --local-doc-root) kore-haddock
+	tar -cf kore-haddock.tar.gz kore-haddock
+	rm -fr kore-haddock
 
 all: kore k-frontend
 
@@ -48,7 +50,9 @@ test-kore:
 		--ta --xml=test-results.xml
 
 kore-hpc.tar.gz: test-kore
-	tar -cf kore-hpc.tar.gz $$($(STACK_TEST) path --local-hpc-root)
+	cp -r $$($(STACK_TEST) path --local-hpc-root) kore-hpc
+	tar -cf kore-hpc.tar.gz kore-hpc
+	rm -fr kore-hpc
 
 test-k:
 	$(MAKE) --directory src/main/k/working test-k
