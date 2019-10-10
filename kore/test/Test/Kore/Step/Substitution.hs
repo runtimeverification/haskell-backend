@@ -179,7 +179,7 @@ test_mergeAndNormalizeSubstitutions =
             let
                 expect =
                     Left $ SubstitutionError
-                        (NonCtorCircularVariableDependency [ElemVar Mock.y])
+                        (SimplifiableCycle [ElemVar Mock.y])
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -199,7 +199,7 @@ test_mergeAndNormalizeSubstitutions =
             let
                 expect =
                     Left $ SubstitutionError
-                        (NonCtorCircularVariableDependency [ElemVar Mock.y])
+                        (SimplifiableCycle [ElemVar Mock.y])
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -239,7 +239,7 @@ test_mergeAndNormalizeSubstitutions =
             let expect =
                     Left
                     $ SubstitutionError
-                    $ NonCtorCircularVariableDependency
+                    $ SimplifiableCycle
                         [ ElemVar Mock.x, ElemVar Mock.y ]
             actual <-
                 merge
