@@ -323,8 +323,8 @@ mapLocalFunction mapping la@(LogAction action) =
         case fromEntry entry of
             Nothing -> action entry
             Just logMessage ->
-                (\(LogAction f) -> f logMessage)
-                    $ mapping (contramap toEntry la)
+                let LogAction f = mapping $ contramap toEntry la
+                in f logMessage
 
 instance Entry LogMessage where
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool

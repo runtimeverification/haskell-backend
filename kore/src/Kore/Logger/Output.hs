@@ -214,17 +214,18 @@ makeKoreLogger
     -> LogAction m SomeEntry
 makeKoreLogger minSeverity currentScope logToText =
     Colog.cfilter (withSomeEntry (shouldLog minSeverity currentScope))
-        . Colog.cmapM addTimeStamp
+        . Colog.cmapM withTimestamp
         $ contramap messageToText logToText
   where
-    addTimeStamp :: SomeEntry -> m WithTimestamp
-    addTimeStamp msg =
-        WithTimestamp msg <$> getLocalTime
     messageToText :: WithTimestamp -> Text
     messageToText =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         . Pretty.pretty
+
+-- | Adds the current timestamp to a log entry.
+withTimestamp :: MonadIO io => SomeEntry -> io WithTimestamp
+withTimestamp msg = WithTimestamp msg <$> getLocalTime
 
 -- Helper to get the local time in 'MonadIO'.
 getLocalTime :: MonadIO m => m LocalTime
