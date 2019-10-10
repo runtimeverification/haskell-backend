@@ -1,5 +1,6 @@
 module Test.Kore.Unification.SubstitutionNormalization
-    (test_substitutionNormalization) where
+    ( test_substitutionNormalization
+    ) where
 
 import Test.Tasty
 
@@ -31,10 +32,10 @@ import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 data NormalizationResult
-  = Substitution ![(UnifiedVariable Variable, TermLike Variable)]
-  | SubstitutionBottom
-  | Error !SubstitutionError
-  deriving (GHC.Generic, Show)
+    = Substitution ![(UnifiedVariable Variable, TermLike Variable)]
+    | SubstitutionBottom
+    | Error !SubstitutionError
+    deriving (GHC.Generic, Show)
 
 instance SOP.Generic NormalizationResult
 
