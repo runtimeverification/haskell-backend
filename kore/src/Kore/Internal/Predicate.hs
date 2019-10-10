@@ -5,6 +5,7 @@ License     : NCSA
 -}
 module Kore.Internal.Predicate
     ( Predicate
+    , isSimplified
     , eraseConditionalTerm
     , top
     , topTODO
@@ -41,6 +42,9 @@ import Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.
 type Predicate variable = Conditional variable ()
+
+isSimplified :: Predicate variable -> Bool
+isSimplified = Syntax.Predicate.isSimplified . Conditional.predicate
 
 -- | Erase the @Conditional@ 'term' to yield a 'Predicate'.
 eraseConditionalTerm
@@ -99,7 +103,7 @@ freeVariables = Conditional.freeVariables (const mempty)
 @toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
 a 'PredicateSubstition' into only a 'Predicate'.
 
-See also: 'substitutionToPredicate'.
+See also: 'Syntax.Predicate.fromSubstitution'.
 
 -}
 toPredicate

@@ -29,6 +29,9 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
 import Kore.Internal.TermLike hiding
     ( freeVariables
     )
@@ -37,7 +40,9 @@ import Kore.Step.Rule hiding
     ( freeVariables
     )
 import qualified Kore.Step.Rule as Rule
-import Kore.Syntax.Definition
+import Kore.Syntax.Definition hiding
+    ( Alias (..)
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -71,6 +76,23 @@ axiomPatternsUnitTests =
                     }
                 )
                 (Rule.fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
+            )
+        , testCase "alias as rule LHS"
+            (assertEqual ""
+                ( Right $ RewriteAxiomPattern $ RewriteRule RulePattern
+                    { left = varI1
+                    , antiLeft = Nothing
+                    , right = varI2
+                    , requires = Predicate.wrapPredicate (mkTop sortAInt)
+                    , ensures = Predicate.wrapPredicate (mkTop sortAInt)
+                    , attributes = def
+                    }
+                )
+                (Rule.fromSentence . SentenceAxiomSentence . mkAxiom_ $
+                    mkRewrites
+                        applyAliasLHS
+                        (mkAnd (mkTop sortAInt) varI2)
+                )
             )
         ,   let
                 axiom1, axiom2 :: Verified.Sentence
@@ -331,6 +353,25 @@ varStateCell =
         , variableCounter = mempty
         , variableSort = sortStateCell
         }
+
+applyAliasLHS :: TermLike Variable
+applyAliasLHS =
+    mkApplyAlias ruleLHS []
+  where
+    ruleLHS =
+        Alias
+            { aliasConstructor = testId "RuleLHS"
+            , aliasParams = []
+            , aliasSorts =
+                ApplicationSorts
+                    { applicationSortsOperands = []
+                    , applicationSortsResult = sortAInt
+                    }
+            , aliasLeft = []
+            , aliasRight =
+                mkAnd (mkTop sortAInt) varI1
+            }
+
 
 extractIndexedModule
     :: Text

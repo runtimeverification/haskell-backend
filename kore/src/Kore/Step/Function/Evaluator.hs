@@ -54,7 +54,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
@@ -151,7 +151,10 @@ evaluateApplication
 
     termLike = synthesize (ApplySymbolF application)
     unevaluated =
-        OrPattern.fromPattern $ Pattern.withCondition termLike childrenPredicate
+        OrPattern.fromPattern
+        $ Pattern.withCondition
+            (TermLike.markSimplified termLike)
+            childrenPredicate
 
     canMemoize
       | Symbol.isMemo symbol

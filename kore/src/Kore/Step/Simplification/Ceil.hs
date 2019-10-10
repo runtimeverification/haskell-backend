@@ -58,6 +58,7 @@ import Kore.Predicate.Predicate
     ( makeCeilPredicate
     , makeTruePredicate
     )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Function.Evaluator as Axiom
     ( evaluatePattern
     )
@@ -192,27 +193,29 @@ makeEvaluateTerm
                                         child
 
       | otherwise = do
-            substitutionSimplifier <- Simplifier.askSimplifierPredicate
-            simplifier <- Simplifier.askSimplifierTermLike
-            axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
-            evaluation <- Axiom.evaluatePattern
-                substitutionSimplifier
-                simplifier
-                axiomIdToEvaluator
-                configurationPredicate
-                Conditional
-                    { term = ()
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                (mkCeil_ term)
-                (OrPattern.fromPattern Conditional
-                    { term = mkTop_
-                    , predicate = makeCeilPredicate term
-                    , substitution = mempty
-                    }
-                )
-            return (fmap toPredicate evaluation)
+        substitutionSimplifier <- Simplifier.askSimplifierPredicate
+        simplifier <- Simplifier.askSimplifierTermLike
+        axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
+        evaluation <- Axiom.evaluatePattern
+            substitutionSimplifier
+            simplifier
+            axiomIdToEvaluator
+            configurationPredicate
+            Conditional
+                { term = ()
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            (mkCeil_ term)
+            (OrPattern.fromPattern Conditional
+                { term = mkTop_
+                , predicate =
+                    Syntax.Predicate.markSimplified
+                    $ makeCeilPredicate term
+                , substitution = mempty
+                }
+            )
+        return (fmap toPredicate evaluation)
 
     toPredicate Conditional {term = Top_ _, predicate, substitution} =
         Conditional {term = (), predicate, substitution}
@@ -247,10 +250,8 @@ makeEvaluateBuiltin
         (makeEvaluateNormalizedAc predicate (Domain.unwrapAc builtinAcChild))
   where
     unsimplified =
-        OrPredicate.fromPredicate
-            (Predicate.fromPredicate
-                (makeCeilPredicate (mkBuiltin patt))
-            )
+        OrPredicate.fromPredicate . Predicate.fromPredicate
+        $ Syntax.Predicate.markSimplified . makeCeilPredicate $ mkBuiltin patt
 makeEvaluateBuiltin predicate (Domain.BuiltinList l) = do
     children <- mapM (makeEvaluateTerm predicate) (Foldable.toList l)
     let

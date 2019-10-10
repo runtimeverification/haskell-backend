@@ -12,6 +12,7 @@ module Kore.Step.Simplification.TermLike
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
+import qualified Control.Exception as Exception
 import qualified Control.Lens.Combinators as Lens
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
@@ -20,6 +21,8 @@ import Data.Maybe
     ( fromMaybe
     )
 import qualified Data.Set as Set
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.OrPattern
@@ -110,6 +113,9 @@ import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
 import qualified Kore.Substitute as Substitute
+import Kore.Unparser
+    ( unparse
+    )
 import qualified Kore.Variables.Binding as Binding
 import Kore.Variables.Fresh
     ( refreshVariable
@@ -124,10 +130,13 @@ import Kore.Variables.UnifiedVariable
 {-|'simplify' simplifies a `TermLike`, returning a 'Pattern'.
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => TermLike variable
-    -> Predicate variable
-    -> simplifier (Pattern variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  TermLike variable
+    ->  Predicate variable
+    ->  simplifier (Pattern variable)
 simplify patt predicate = do
     orPatt <- simplifyToOr predicate patt
     return (OrPattern.toPattern orPatt)
@@ -136,10 +145,13 @@ simplify patt predicate = do
 'OrPattern'.
 -}
 simplifyToOr
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
-    -> TermLike variable
-    -> simplifier (OrPattern variable)
+    ::  ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Predicate variable
+    ->  TermLike variable
+    ->  simplifier (OrPattern variable)
 simplifyToOr term predicate =
     localSimplifierTermLike (const simplifier)
         . simplifyInternal predicate
@@ -148,14 +160,15 @@ simplifyToOr term predicate =
     simplifier = termLikeSimplifier simplifyToOr
 
 simplifyInternal
-    :: forall variable simplifier
-    .   (SimplifierVariable variable
+    ::  forall variable simplifier
+    .   ( GHC.HasCallStack
+        , SimplifierVariable variable
         , Substitute.SubstitutionVariable variable
         , MonadSimplify simplifier
         )
-    => TermLike variable
-    -> Predicate variable
-    -> simplifier (OrPattern variable)
+    =>  TermLike variable
+    ->  Predicate variable
+    ->  simplifier (OrPattern variable)
 simplifyInternal term predicate = simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
@@ -172,8 +185,10 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
-        tracer termLike $
-        let doNotSimplify = return (OrPattern.fromTermLike termLike)
+        assertSimplifiedResults $ tracer termLike $
+        let doNotSimplify =
+                Exception.assert (TermLike.isSimplified termLike)
+                return (OrPattern.fromTermLike termLike)
             (_ :< termLikeF) = Recursive.project termLike
         in case termLikeF of
             -- Unimplemented cases
@@ -228,6 +243,23 @@ simplifyInternal term predicate = simplifyInternalWorker term
                 return $ StringLiteral.simplify (getConst stringLiteralF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
+      where
+        assertSimplifiedResults getResults = do
+            results <- getResults
+            let unsimplified =
+                    filter (not . Pattern.isSimplified)
+                    $ OrPattern.toPatterns results
+            if null unsimplified
+                then return results
+                else (error . show . Pretty.vsep)
+                    [ "Incomplete simplification!"
+                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 4 (unparse termLike)
+                    , Pretty.indent 2 "unsimplified results:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> unsimplified)
+                    , "Expected all patterns to be fully simplified."
+                    ]
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
