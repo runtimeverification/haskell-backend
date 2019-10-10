@@ -246,7 +246,7 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 
 --------------------------------------------------------------------------------
 
-type Logger = Logger.LogAction IO Logger.LogMessage
+type Logger = Logger.LogAction IO Logger.SomeEntry
 
 -- | An interactive solver process.
 data Solver = Solver
@@ -285,13 +285,17 @@ debug :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
 debug Solver { logger } scope a =
     logger Colog.<& message
   where
-    message = Logger.LogMessage a Logger.Debug ("SimpleSMT" : scope) callStack
+    message =
+        Logger.SomeEntry
+            $ Logger.LogMessage a Logger.Debug ("SimpleSMT" : scope) callStack
 
 warn :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
 warn Solver { logger } scope a =
     logger Colog.<& message
   where
-    message = Logger.LogMessage a Logger.Warning ("SimpleSMT" : scope) callStack
+    message =
+        Logger.SomeEntry
+            $ Logger.LogMessage a Logger.Warning ("SimpleSMT" : scope) callStack
 
 send :: Solver -> SExpr -> IO ()
 send solver@Solver { hIn } command' = do

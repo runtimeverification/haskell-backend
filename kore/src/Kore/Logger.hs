@@ -22,10 +22,16 @@ module Kore.Logger
     , liftLogAction
     , hoistLogAction
     , LoggerT (..)
+    , SomeEntry (..)
+    , withSomeEntry
+    , Entry (..)
+    , MonadLog (..)
+    , mapLocalFunction
     ) where
 
 import Colog
     ( LogAction (..)
+    , (<&)
     )
 import qualified Control.Monad.Except as Except
 import Control.Monad.IO.Class
@@ -42,19 +48,34 @@ import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Reader
+import qualified Data.Foldable as Fold
 import Data.Functor.Contravariant
     ( contramap
     )
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 import Data.String
     ( IsString
     )
 import Data.Text
     ( Text
     )
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
+    ( Typeable
+    )
+import qualified Data.Typeable
+    ( cast
+    )
 import GHC.Stack
     ( CallStack
     , HasCallStack
     , callStack
+    , getCallStack
+    , popCallStack
+    , prettyCallStack
     )
 import Prelude hiding
     ( log
@@ -81,10 +102,16 @@ data Severity
     -- ^ Used before shutting down the application.
     deriving (Show, Read, Eq, Ord)
 
+instance Pretty.Pretty Severity where
+    pretty = Pretty.pretty . show
+
 -- | Logging scope, used by 'LogMessage'.
 newtype Scope = Scope
     { unScope :: Text
     } deriving (Eq, Ord, Read, Show, Semigroup, Monoid, IsString)
+
+instance Pretty.Pretty Scope where
+    pretty = Pretty.pretty . unScope
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
@@ -98,6 +125,31 @@ data LogMessage = LogMessage
     , callstack :: !CallStack
     -- ^ call stack of the message, when available
     }
+
+instance Pretty.Pretty LogMessage where
+    pretty LogMessage {message, severity, scope, callstack} =
+        Pretty.hsep
+            [ Pretty.brackets (Pretty.pretty severity)
+            , Pretty.brackets (prettyScope scope)
+            , ":"
+            , Pretty.pretty message
+            , Pretty.brackets (formatCallstack callstack)
+            ]
+      where
+        prettyScope :: [Scope] -> Pretty.Doc ann
+        prettyScope =
+            mconcat
+                . zipWith (<>) ("" : repeat ".")
+                . fmap Pretty.pretty
+        formatCallstack :: GHC.Stack.CallStack -> Pretty.Doc ann
+        formatCallstack cs
+          | length (getCallStack cs) <= 1 = mempty
+          | otherwise                               = callStackToBuilder cs
+        callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
+        callStackToBuilder =
+            Pretty.pretty
+            . prettyCallStack
+            . popCallStack
 
 -- TODO (thomas.tuegel): Use TypeFamilies instead of MultiParamTypeClasses here.
 class Monad m => WithLog msg m where
@@ -240,18 +292,87 @@ withLogScope newScope = localLogAction (contramap appendScope)
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
+class (Typeable entry, Pretty.Pretty entry) => Entry entry where
+    toEntry :: entry -> SomeEntry
+    toEntry = SomeEntry
+
+    fromEntry :: SomeEntry -> Maybe entry
+    fromEntry (SomeEntry entry) = Data.Typeable.cast entry
+
+    shouldLog :: Severity -> Set Scope -> entry -> Bool
+
+data SomeEntry where
+    SomeEntry :: Entry entry => entry -> SomeEntry
+
+instance Pretty.Pretty SomeEntry where
+    pretty (SomeEntry entry) = Pretty.pretty entry
+
+withSomeEntry
+    :: (forall entry. Entry entry => entry -> a)
+    -> SomeEntry
+    -> a
+withSomeEntry f (SomeEntry entry) = f entry
+
+mapLocalFunction
+    :: forall m
+    .  (LogAction m LogMessage -> LogAction m LogMessage)
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+mapLocalFunction mapping la@(LogAction action) =
+    LogAction $ \entry ->
+        case fromEntry entry of
+            Nothing -> action entry
+            Just logMessage ->
+                let LogAction f = mapping $ contramap toEntry la
+                in f logMessage
+
+instance Entry LogMessage where
+    shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
+    shouldLog minSeverity currentScope LogMessage { severity, scope } =
+        severity >= minSeverity && scope `member` currentScope
+     where
+       member :: [Scope] -> Set Scope -> Bool
+       member s set
+         | Set.null set = True
+         | otherwise    = Fold.any (`Set.member` set) s
+
+class Monad m => MonadLog m where
+    logM :: Entry entry => entry -> m ()
+    logScope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
+
 newtype LoggerT m a =
-    LoggerT { getLoggerT :: ReaderT (LogAction m LogMessage) m a }
+    LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
     deriving (Functor, Applicative, Monad)
     deriving (MonadIO)
+
+instance Monad m => MonadLog (LoggerT m) where
+    logM entry =
+        LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
+    logScope f (LoggerT (ReaderT logActionReader)) =
+        LoggerT . ReaderT
+            $ \(LogAction logAction) ->
+                logActionReader . LogAction
+                    $ \entry ->
+                        case fromEntry entry of
+                            Nothing -> logAction entry
+                            Just entry' -> logAction $ toEntry $ f entry'
+
+instance Monad m => WithLog LogMessage (LoggerT m) where
+    askLogAction :: LoggerT m (LogAction (LoggerT m) LogMessage)
+    askLogAction = LoggerT . ReaderT $ pure . go
+      where
+        go :: LogAction m SomeEntry -> LogAction (LoggerT m) LogMessage
+        go (LogAction fn) = LogAction $ Monad.Trans.lift . fn . toEntry
+    {-# INLINE askLogAction #-}
+
+    localLogAction
+        :: (forall n. LogAction n LogMessage -> LogAction n LogMessage)
+        -> LoggerT m a
+        -> LoggerT m a
+    localLogAction locally (LoggerT (ReaderT la)) =
+        LoggerT . ReaderT $ la . mapLocalFunction locally
+    {-# INLINE localLogAction #-}
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
     {-# INLINE lift #-}
-
-instance Monad m => WithLog LogMessage (LoggerT m) where
-    askLogAction = LoggerT . fmap liftLogAction $ ask
-    {-# INLINE askLogAction #-}
-
-    localLogAction locally = LoggerT . local locally . getLoggerT
-    {-# INLINE localLogAction #-}

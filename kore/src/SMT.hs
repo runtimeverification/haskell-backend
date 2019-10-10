@@ -81,6 +81,9 @@ import Control.Monad.Trans.Accum
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import qualified Control.Monad.Trans.Maybe as Maybe
+import Data.Functor.Contravariant
+    ( contramap
+    )
 import Data.Generics.Product
 import Data.Limit
 import Data.Text
@@ -221,8 +224,20 @@ runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 
 instance Logger.WithLog Logger.LogMessage NoSMT where
-    askLogAction = NoSMT (Logger.hoistLogAction liftIO <$> Reader.ask)
-    localLogAction locally = NoSMT . Reader.local locally . getNoSMT
+    askLogAction =
+        NoSMT . Reader.asks
+            $ contramap Logger.toEntry
+            . Logger.hoistLogAction liftIO
+    localLogAction
+        :: forall a
+        .   (  forall n
+            .  Logger.LogAction n Logger.LogMessage
+            -> Logger.LogAction n Logger.LogMessage
+            )
+        -> NoSMT a
+        -> NoSMT a
+    localLogAction locally (NoSMT (ReaderT ra)) =
+        NoSMT $ ReaderT $ \logger -> ra $ Logger.mapLocalFunction locally logger
 
 instance MonadSMT NoSMT where
     withSolver = id
@@ -286,13 +301,21 @@ instance (MonadIO m, MonadUnliftIO m)
     => Logger.WithLog Logger.LogMessage (SmtT m)
   where
     askLogAction =
-        withSolverT' (return . hoistLogAction . SimpleSMT.logger)
+        withSolverT'
+            $ return
+            . hoistLogAction
+            . contramap Logger.toEntry
+            . SimpleSMT.logger
       where
         hoistLogAction = Logger.hoistLogAction (SmtT . liftIO)
 
     localLogAction mapping (SmtT action) =
         withSolverT' $ \solver -> do
-            let solver' = Lens.over (field @"logger") mapping solver
+            let solver' =
+                    Lens.over
+                        (field @"logger")
+                        (Logger.mapLocalFunction mapping)
+                        solver
             runReaderT action =<< liftIO (newMVar solver')
 
 instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
