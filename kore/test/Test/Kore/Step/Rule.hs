@@ -77,9 +77,9 @@ axiomPatternsUnitTests =
                 )
                 (Rule.fromSentence $ mkRewriteAxiom varI1 varI2 Nothing)
             )
-        , testCase "alias as rule LHS: ruleLHS => I2:AInt"
+        , testCase "alias as rule LHS"
             (assertEqual ""
-                (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
+                ( Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
                     , right = varI2
@@ -88,7 +88,11 @@ axiomPatternsUnitTests =
                     , attributes = def
                     }
                 )
-                (Rule.fromSentence $ mkRewriteAxiom applyAliasLHS varI2 Nothing)
+                (Rule.fromSentence . SentenceAxiomSentence . mkAxiom_ $
+                    mkRewrites
+                        applyAliasLHS
+                        (mkAnd (mkTop sortAInt) varI2)
+                )
             )
         ,   let
                 axiom1, axiom2 :: Verified.Sentence
