@@ -17,7 +17,6 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
-    , isSimplified
     )
 import Kore.Internal.TermLike
     ( pattern Exists_
@@ -58,13 +57,10 @@ simplify
         )
     => Pattern variable
     -> simplifier (OrPattern variable)
-simplify pattern' =
-    if isSimplified pattern'
-       then return . OrPattern.fromPattern $ pattern'
-       else do
-           orSimplifiedTerms <- simplifyConditionalTermToOr predicate term
-           fmap OrPattern.fromPatterns . Branch.gather $ do
-               simplifiedTerm <- Branch.scatter orSimplifiedTerms
-               Pattern.mergeWithPredicate predicate simplifiedTerm
+simplify pattern' = do
+    orSimplifiedTerms <- simplifyConditionalTermToOr predicate term
+    fmap OrPattern.fromPatterns . Branch.gather $ do
+        simplifiedTerm <- Branch.scatter orSimplifiedTerms
+        Pattern.mergeWithPredicate predicate simplifiedTerm
   where
     (term, predicate) = Conditional.splitTerm pattern'

@@ -169,7 +169,10 @@ simplifyInternal
     =>  TermLike variable
     ->  Predicate variable
     ->  simplifier (OrPattern variable)
-simplifyInternal term predicate = simplifyInternalWorker term
+simplifyInternal term predicate =
+    if TermLike.isSimplified term
+       then return . OrPattern.fromTermLike $ term
+       else simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
         Nothing -> id
