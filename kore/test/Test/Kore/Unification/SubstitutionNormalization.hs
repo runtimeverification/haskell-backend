@@ -1,17 +1,20 @@
+{-# LANGUAGE OverloadedLists #-}
+
 module Test.Kore.Unification.SubstitutionNormalization
-    ( test_substitutionNormalization
+    ( test_normalizeSubstitution
     ) where
 
 import Test.Tasty
 
-import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
+import GHC.Exts
+    ( IsList (..)
+    )
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import qualified Kore.Internal.Pattern as Conditional
-import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.TopBottom
     ( isBottom
@@ -19,13 +22,15 @@ import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
     )
+import Kore.Unification.Substitution
+    ( UnwrappedSubstitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
@@ -35,6 +40,13 @@ data NormalizationResult
     | Error !SubstitutionError
     deriving (GHC.Generic, Show)
 
+instance IsList NormalizationResult where
+    type Item NormalizationResult =
+        (UnifiedVariable Variable, TermLike Variable)
+
+    fromList = Substitution
+    toList = undefined
+
 instance SOP.Generic NormalizationResult
 
 instance SOP.HasDatatypeInfo NormalizationResult
@@ -43,175 +55,156 @@ instance Debug NormalizationResult
 
 instance Diff NormalizationResult
 
-test_substitutionNormalization :: [TestTree]
-test_substitutionNormalization =
-    [ testCase "Empty substitution" $
-        assertEqual "" (Substitution [])
-            =<< runNormalizeSubstitution []
-    , testCase "Simple substitution" $
-        assertEqual ""
-            (Substitution [(ElemVar $ v1 Mock.testSort, mkTop_)])
-            =<< runNormalizeSubstitution [(ElemVar $ v1 Mock.testSort, mkTop_)]
-    , testCase "Simple unnormalized substitution" $
-        assertEqual ""
-            (Substitution
-                [ (ElemVar $ v1 Mock.testSort, mkTop Mock.testSort)
-                , (ElemVar $ x1 Mock.testSort, mkTop Mock.testSort)
-                ]
-            )
-            =<< runNormalizeSubstitution
-                [ (ElemVar $ v1 Mock.testSort, mkElemVar $ x1 Mock.testSort)
-                , (ElemVar $ x1 Mock.testSort, mkTop Mock.testSort)
-                ]
-    , testCase "Unnormalized substitution with 'and'" $
-        assertEqual ""
-            (Substitution
-                [   ( ElemVar $ v1 Mock.testSort
-                    , mkAnd mkTop_ (mkTop Mock.testSort)
-                    )
-                , (ElemVar $ x1 Mock.testSort, mkTop Mock.testSort)
-                ]
-            )
-            =<< runNormalizeSubstitution
-                [   (ElemVar $ v1 Mock.testSort
-                    , mkAnd (mkElemVar $ x1 Mock.testSort) mkTop_
-                    )
-                ,   (ElemVar $ x1 Mock.testSort, mkTop Mock.testSort)
-                ]
-    , testCase "Simplest cycle" $ do
-        let var1 = v1 Mock.testSort
-        assertEqual "" (Substitution [])
-            =<< runNormalizeSubstitution
-                [(ElemVar var1, mkElemVar $ v1 Mock.testSort)]
-    , testCase "Cycle with extra substitution" $ do
-        let
-            var1 = v1 Mock.testSort
-            varx1 = x1 Mock.testSort
-        assertEqual ""
-            (Substitution [(ElemVar varx1, mkElemVar var1)])
-            =<< runNormalizeSubstitution
-                    [ (ElemVar var1, mkElemVar var1)
-                    , (ElemVar varx1, mkElemVar var1)
-                    ]
-    , testCase "SetVariable Simplest cycle" $ do
-        let var1 = Mock.makeTestUnifiedVariable "@x"
-        assertEqual "" (Substitution [])
-            =<< runNormalizeSubstitution [(var1, mkVar var1)]
-    , testCase "SetVariable Cycle with extra substitution" $ do
-        let
-            var1 = Mock.makeTestUnifiedVariable "@v"
-            varx1 = Mock.makeTestUnifiedVariable "@x"
-        assertEqual ""
-            (Substitution [(varx1, mkVar var1)])
-            =<< runNormalizeSubstitution
-                    [ (var1, mkVar var1)
-                    , (varx1, mkVar var1)
-                    ]
-    , testCase "Function cycle" $ do
-        let var1 = v1 Mock.testSort
-        assertEqual ""
-            (Error (SimplifiableCycle [ElemVar var1]))
-            =<< runNormalizeSubstitution
-                [ (ElemVar  var1 , mkApplySymbol f [mkElemVar var1] ) ]
-    , testCase "onlyThisLength 2 cycle" $ do
-        let
-            var1 = v1 Mock.testSort
-            varx1 = x1 Mock.testSort
-        assertErrorIO
-            (assertSubstring ""
-                "order on variables should prevent variable-only cycles"
-            )
-            (runNormalizeSubstitution
-                [ (ElemVar var1, mkElemVar varx1)
-                , (ElemVar varx1, mkElemVar var1)
-                ]
-            )
-     , testCase "SetVariable Length 2 cycle" $ do
-        let
-            var1 = Mock.makeTestUnifiedVariable "@v"
-            varx1 = Mock.makeTestUnifiedVariable "@x"
-        assertErrorIO
-            (assertSubstring ""
-                "order on variables should prevent variable-only cycles"
-            )
-            (runNormalizeSubstitution
-                [ (var1, mkVar varx1)
-                , (varx1, mkVar var1)
-                ]
-            )
-     , testCase "Cycle with 'and'" $ do
-        let
-            var1 = v1 Mock.testSort
-            varx1 = x1 Mock.testSort
-        assertEqual ""
-            (Error
-                (SimplifiableCycle
-                    [ElemVar var1, ElemVar varx1]
-                )
-            )
-            =<< runNormalizeSubstitution
-                [ (ElemVar var1, mkAnd (mkElemVar varx1) mkTop_)
-                , (ElemVar varx1, mkAnd (mkElemVar var1) mkTop_)
-                ]
-     , testCase "SetVariable Cycle with 'and'" $ do
-        let
-            var1 = Mock.makeTestUnifiedVariable "@v"
-            varx1 = Mock.makeTestUnifiedVariable "@x"
-        assertEqual ""
-            (Error
-              (SimplifiableCycle [var1, varx1])
-            )
-            =<< runNormalizeSubstitution
-                [ (var1, mkAnd (mkVar varx1) mkTop_)
-                , (varx1, mkAnd (mkVar var1) mkTop_)
-                ]
-    , testCase "Length 2 non-ctor cycle" $ do
-        let
-            var1 = v1 Mock.testSort
-            varx1 = x1 Mock.testSort
-        assertEqual ""
-            (Error
-                (SimplifiableCycle [ElemVar var1, ElemVar varx1]
-                )
-            )
-            =<< runNormalizeSubstitution
-                [ (ElemVar var1, mkApplySymbol f [mkElemVar varx1])
-                , (ElemVar varx1, mkElemVar var1)
-                ]
-    , testCase "Constructor cycle" $
-        assertEqual "" SubstitutionBottom
-            =<< runNormalizeSubstitution
-                [ (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.x)) ]
-    , testCase "SetVariable Constructor cycle" $ do
-        let var1 = Mock.makeTestUnifiedVariable "@x"
-        assertEqual ""
-            (Substitution [(var1, mkBottom Mock.testSort)])
-            =<< runNormalizeSubstitution
-                [ (var1, Mock.constr10 (mkVar var1)) ]
-    , testCase "Constructor with side function cycle" $
-        assertEqual "" SubstitutionBottom
-            =<< runNormalizeSubstitution
-                [ ( ElemVar Mock.x
-                  , Mock.constr20 (Mock.f (mkElemVar Mock.x)) (mkElemVar Mock.x)
-                  )
-                ]
-    , testCase "Constructor with function cycle" $
-        assertEqual ""
-            (Error (SimplifiableCycle [ElemVar Mock.x]))
-            =<< runNormalizeSubstitution
-                [ (ElemVar Mock.x, Mock.constr10 (Mock.f (mkElemVar Mock.x))) ]
+test_normalizeSubstitution :: [TestTree]
+test_normalizeSubstitution =
+    [ test "empty substitution"
+        []
+        []
+    , test "normalized substitution"
+        [(y, a)]
+        [(y, a)]
+    , test "unnormalized substitution, variable-only"
+        [(y, mkVar x), (x, a)]
+        [(x, a), (y, a)]
+    , test "unnormalized substitution, variable under symbol"
+        [(y, sigma (mkVar x) b), (x, a)]
+        [(x, a), (y, sigma a b)]
+    , testGroup "element-variable-only cycle"
+        [ test "length 1, alone"
+            [(x, mkVar x)]
+            []
+        , test "length 1, beside related substitution"
+            [(x, mkVar x), (z, mkVar x)]
+            [(z, mkVar x)]
+        , test "length 1, beside unrelated substitution"
+            [(x, mkVar x), (z, a)]
+            [(z, a)]
+        , testCase "length 2" $ assertVariableOnlyCycle
+            $ runNormalizeSubstitution [(x, mkVar y), (y, mkVar x)]
+        ]
+    , testGroup "set-variable-only cycle"
+        [ test "length 1, alone"
+            [(xs, mkVar xs)]
+            []
+        , test "length 1, beside related substitution"
+            [(xs, mkVar xs), (ys, mkVar xs)]
+            [(ys, mkVar xs)]
+        , test "length 1, beside unrelated substitution"
+            [(xs, mkVar xs), (z, a)]
+            [(z, a)]
+        , testCase "length 2" $ assertVariableOnlyCycle
+            $ runNormalizeSubstitution [(xs, mkVar ys), (ys, mkVar xs)]
+        ]
+    , testGroup "element variable simplifiable cycle"
+        [ testError "length 1, alone"
+            [(x, f (mkVar x))]
+            [x]
+        , testError "length 1, beside related substitution"
+            [(x, f (mkVar x)), (y, mkVar x)]
+            [x]
+        , testError "length 1, beside unrelated substitution"
+            [(x, f (mkVar x)), (y, a)]
+            [x]
+        , testError "length 1, with constructor"
+            [(x, (constr1 . f) (mkVar x))]
+            [x]
+        , testError "length 2, alone"
+            [(x, f (mkVar y)), (y, g (mkVar x))]
+            [x, y]
+        , testError "length 2, beside related substitution"
+            [(x, f (mkVar y)), (y, g (mkVar x)), (z, mkVar y)]
+            [x, y]
+        , testError "length 2, beside unrelated substitution"
+            [(x, f (mkVar y)), (y, g (mkVar x)), (z, a)]
+            [x, y]
+        , testError "length 2, with And"
+            [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
+            [x, y]
+        ]
+    , testGroup "set variable simplifiable cycle"
+        [ testError "length 1, alone"
+            [(xs, f (mkVar xs))]
+            [xs]
+        , testError "length 1, beside related substitution"
+            [(xs, f (mkVar xs)), (ys, mkVar xs)]
+            [xs]
+        , testError "length 1, beside unrelated substitution"
+            [(xs, f (mkVar xs)), (ys, a)]
+            [xs]
+        , testError "length 2, alone"
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+            [xs, ys]
+        , testError "length 2, beside related substitution"
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs)), (z, mkVar ys)]
+            [xs, ys]
+        , testError "length 2, beside unrelated substitution"
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs)), (z, a)]
+            [xs, ys]
+        , testError "length 2, with And"
+            [(xs, mkAnd (mkVar ys) a), (ys, mkAnd (mkVar xs) b)]
+            [xs, ys]
+        ]
+    , testGroup "element variable non-simplifiable cycle"
+        [ testBottom "alone"
+            [(x, constr1 (mkVar x))]
+        , testBottom "beside simplifiable cycle"
+            [(x, sigma (f (mkVar x)) (mkVar x))]
+        ]
+    , testGroup "set variable non-simplifiable cycle"
+        [ test "alone"
+            [(xs, constr1 (mkVar xs))]
+            [(xs, mkBottom testSort)]
+        , test "beside unrelated substitution"
+            [(xs, constr1 (mkVar xs)), (z, a)]
+            [(z, a), (xs, mkBottom testSort)]
+        , test "beside related substitution"
+            [(xs, constr1 (mkVar xs)), (ys, f (mkVar xs))]
+            [(xs, mkBottom testSort), (ys, f (mkBottom testSort))]
+        ]
     ]
   where
-    v1 :: Sort -> ElementVariable Variable
-    v1 = ElementVariable . Variable (testId "v1") mempty
-    x1 :: Sort -> ElementVariable Variable
-    x1 = ElementVariable . Variable (testId "x1") mempty
-    f = Symbol
-        { symbolConstructor = testId "f"
-        , symbolParams = []
-        , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts [Mock.testSort] Mock.testSort
-        }
+    test
+        :: TestName
+        -> UnwrappedSubstitution Variable
+        -> NormalizationResult
+        -> TestTree
+    test testName input expect =
+        testCase testName $ do
+            actual <- runNormalizeSubstitution input
+            assertEqual "" expect actual
+
+    testBottom testName input =
+        test testName input SubstitutionBottom
+
+    testError testName input variables =
+        test testName input $ Error $ SimplifiableCycle variables
+
+x, y, z, xs, ys :: UnifiedVariable Variable
+x = ElemVar Mock.x
+y = ElemVar Mock.y
+z = ElemVar Mock.z
+xs = SetVar Mock.setX
+ys = SetVar Mock.setY
+
+a, b :: TermLike Variable
+a = Mock.a
+b = Mock.b
+
+f, g, constr1 :: TermLike Variable -> TermLike Variable
+f = Mock.f
+g = Mock.g
+constr1 = Mock.constr10
+
+sigma :: TermLike Variable -> TermLike Variable -> TermLike Variable
+sigma = Mock.sigma
+
+testSort :: Sort
+testSort = Mock.testSort
+
+assertVariableOnlyCycle :: IO a -> IO ()
+assertVariableOnlyCycle =
+    assertErrorIO $ assertSubstring ""
+        "order on variables should prevent variable-only cycles"
 
 runNormalizeSubstitution
     :: [(UnifiedVariable Variable, TermLike Variable)]
