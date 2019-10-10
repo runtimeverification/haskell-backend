@@ -143,22 +143,22 @@ normalize
 normalize (dropTrivialSubstitutions -> substitution) =
     case topologicalSort allDependencies of
         Right order -> sorted order
-        Left _ ->
+        Left (TopologicalSortCycles cycleVariables) ->
             case topologicalSort nonSimplifiableDependencies of
-                Right variables ->
+                Right _ ->
                     -- Removing the non-simplifiable dependencies removed the
                     -- cycle, therefore the cycle is simplifiable.
-                    simplifiableCycle variables
-                Left (TopologicalSortCycles variables)
-                  | all isRenaming variables ->
+                    simplifiableCycle cycleVariables
+                Left (TopologicalSortCycles cycleVariables')
+                  | all isRenaming cycleVariables' ->
                     -- All substitutions in the cycle are variable-only renaming
                     -- substitutions.
                     renamingCycle
-                  | all isSetVar variables ->
+                  | all isSetVar cycleVariables' ->
                     -- All variables in the cycle are set variables.
-                    setCtorCycle variables
+                    setCtorCycle cycleVariables'
                   | otherwise ->
-                    mixedCtorCycle variables
+                    mixedCtorCycle cycleVariables'
   where
     isRenaming variable =
         case substitution Map.! variable of
