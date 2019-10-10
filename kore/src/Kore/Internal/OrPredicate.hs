@@ -5,6 +5,8 @@ License     : NCSA
 -}
 module Kore.Internal.OrPredicate
     ( OrPredicate
+    , isSimplified
+    , toPredicates
     , fromPredicates
     , fromPredicate
     , bottom
@@ -24,7 +26,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike hiding
+    ( isSimplified
+    )
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
@@ -37,6 +41,9 @@ import Kore.TopBottom
 {-| The disjunction of 'Predicate'.
 -}
 type OrPredicate variable = MultiOr (Predicate variable)
+
+isSimplified :: OrPredicate variable -> Bool
+isSimplified = all Predicate.isSimplified
 
 {- | A "disjunction" of one 'Predicate'.
  -}
@@ -83,6 +90,9 @@ isFalse = isBottom
 -}
 isTrue :: Ord variable => OrPredicate variable -> Bool
 isTrue = isTop
+
+toPredicates :: OrPredicate variable -> [Predicate variable]
+toPredicates = Foldable.toList
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
