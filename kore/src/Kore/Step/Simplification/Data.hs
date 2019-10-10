@@ -111,7 +111,12 @@ instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
         SimplifierT (profile event (runSimplifierT duration))
     {-# INLINE profile #-}
 
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
+instance
+    ( MonadUnliftIO m
+    , MonadSMT m
+    , MonadProfiler m
+    , WithLog LogMessage m
+    )
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools

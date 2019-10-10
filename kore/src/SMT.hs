@@ -218,7 +218,7 @@ class Monad m => MonadSMT m where
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: ReaderT Logger IO a }
-    deriving (Functor, Applicative, Monad, MonadIO)
+    deriving (Functor, Applicative, Monad, MonadCatch, MonadIO, MonadThrow)
 
 runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
