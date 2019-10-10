@@ -89,9 +89,6 @@ import Data.Limit
 import Data.Text
     ( Text
     )
-import Kore.Logger.ErrorBracket
-    ( ErrorBracket (..)
-    )
 
 import qualified Kore.Logger as Logger
 import Kore.Profiler.Data
@@ -221,7 +218,7 @@ class Monad m => MonadSMT m where
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: ReaderT Logger IO a }
-    deriving (Functor, Applicative, Monad, MonadIO)
+    deriving (Functor, Applicative, Monad, MonadCatch, MonadIO, MonadThrow)
 
 runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
@@ -258,10 +255,6 @@ instance MonadProfiler NoSMT where
     profile a action = do
         configuration <- profileConfiguration
         profileEvent configuration a action
-
-instance ErrorBracket NoSMT where
-    withErrorMessage message action =
-        NoSMT (withErrorMessage message (getNoSMT action))
 
 deriving instance MonadUnliftIO NoSMT
 
@@ -378,11 +371,6 @@ instance (MonadIO m) => MonadProfiler (SmtT m)
         configuration <- profileConfiguration
         SmtT (profileEvent configuration a (runSmtT action))
     {-# INLINE profile #-}
-
-instance ErrorBracket m => ErrorBracket (SmtT m) where
-    withErrorMessage message =
-        SmtT . withErrorMessage message . runSmtT
-    {-# INLINE withErrorMessage #-}
 
 instance MonadSMT m => MonadSMT (IdentityT m)
 

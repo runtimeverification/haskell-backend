@@ -40,9 +40,6 @@ import Kore.Logger
     ( LogMessage
     , WithLog (..)
     )
-import Kore.Logger.ErrorBracket
-    ( ErrorBracket (..)
-    )
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -121,8 +118,6 @@ deriving instance WithLog LogMessage m => WithLog LogMessage (UnifierT m)
 deriving instance MonadSMT m => MonadSMT (UnifierT m)
 
 deriving instance MonadProfiler m => MonadProfiler (UnifierT m)
-
-deriving instance ErrorBracket m => ErrorBracket (UnifierT m)
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierT m)
 

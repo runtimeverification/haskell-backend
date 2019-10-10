@@ -83,9 +83,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Internal.Variable
 import Kore.Logger
-import Kore.Logger.ErrorBracket
-    ( ErrorBracket
-    )
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     )
@@ -115,7 +112,7 @@ type SimplifierVariable variable = SubstitutionVariable variable
 type TermSimplifier variable m =
     TermLike variable -> TermLike variable -> m (Pattern variable)
 
-class (WithLog LogMessage m, MonadSMT m, MonadProfiler m, ErrorBracket m)
+class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
     => MonadSimplify m
   where
     -- | Retrieve the 'MetadataTools' for the Kore context.

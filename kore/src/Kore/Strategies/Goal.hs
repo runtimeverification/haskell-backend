@@ -22,22 +22,28 @@ module Kore.Strategies.Goal
 import Control.Applicative
     ( Alternative (..)
     )
-import qualified Data.Foldable as Foldable
-import Data.Maybe
-    ( mapMaybe
+import Control.Monad.Catch
+    ( MonadCatch
+    , onException
     )
-import qualified Generics.SOP as SOP
-import GHC.Generics as GHC
-
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Coerce
     ( Coercible
     , coerce
     )
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
+import Data.Maybe
+    ( mapMaybe
+    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Generics.SOP as SOP
+import GHC.Generics as GHC
 
+import Debug
+    ( formatExceptionInfo
+    )
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
@@ -50,9 +56,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( mkAnd
-    )
-import Kore.Logger.ErrorBracket
-    ( withErrorMessage
     )
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
@@ -136,7 +139,7 @@ class Goal goal where
     type ProofState goal a
 
     transitionRule
-        :: MonadSimplify m
+        :: (MonadCatch m, MonadSimplify m)
         => Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -484,7 +487,7 @@ allPathFollowupStep claims axioms =
 
 -- | Remove the destination of the goal.
 removeDestination
-    :: MonadSimplify m
+    :: (MonadCatch m, MonadSimplify m)
     => Goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
@@ -498,11 +501,14 @@ removeDestination goal = errorBracket $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-    errorBracket =
-        withErrorMessage ("configuration=" <> unparseToText configuration)
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 simplify
-    :: MonadSimplify m
+    :: (MonadCatch m, MonadSimplify m)
     => Goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
@@ -523,8 +529,11 @@ simplify goal = errorBracket $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-    errorBracket =
-        withErrorMessage ("configuration=" <> unparseToText configuration)
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 isTriviallyValid
     :: SimplifierVariable variable
@@ -547,7 +556,7 @@ isTrusted =
 -- | Apply 'Rule's to the goal in parallel.
 derivePar
     :: forall m goal variable
-    .  MonadSimplify m
+    .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => SimplifierVariable variable
@@ -601,13 +610,16 @@ derivePar rules goal = errorBracket $ do
     configuration :: Pattern variable
     configuration = getConfiguration goal
 
-    errorBracket =
-        withErrorMessage ("configuration=" <> unparseToText configuration)
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
     :: forall m goal variable
-    .  MonadSimplify m
+    .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => SimplifierVariable variable
@@ -660,8 +672,11 @@ deriveSeq rules goal = errorBracket $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-    errorBracket =
-        withErrorMessage ("configuration=" <> unparseToText configuration)
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 makeRuleFromPatterns
     :: forall rule variable

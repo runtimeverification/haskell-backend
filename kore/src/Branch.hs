@@ -26,9 +26,6 @@ import qualified Data.Foldable as Foldable
 import Data.Typeable
 
 import Kore.Logger
-import Kore.Logger.ErrorBracket
-    ( ErrorBracket (..)
-    )
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     )
@@ -87,8 +84,6 @@ deriving instance WithLog msg m => WithLog msg (BranchT m)
 deriving instance MonadSMT m => MonadSMT (BranchT m)
 
 deriving instance MonadProfiler m => MonadProfiler (BranchT m)
-
-deriving instance ErrorBracket m => ErrorBracket (BranchT m)
 
 mapBranchT :: Monad m => (forall x. m x -> m x) -> BranchT m a -> BranchT m a
 mapBranchT f (BranchT listT) = BranchT (ListT.mapListT f listT)

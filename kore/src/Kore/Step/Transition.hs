@@ -18,6 +18,10 @@ module Kore.Step.Transition
     ) where
 
 import Control.Applicative
+import Control.Monad.Catch
+    ( MonadCatch (catch)
+    , MonadThrow (throwM)
+    )
 import Control.Monad.Except
     ( MonadError (..)
     )
@@ -33,9 +37,6 @@ import Data.Sequence
 import qualified Data.Sequence as Seq
 import Data.Typeable
     ( Typeable
-    )
-import Kore.Logger.ErrorBracket
-    ( ErrorBracket (..)
     )
 
 import Kore.Logger
@@ -111,9 +112,17 @@ deriving instance MonadSMT m => MonadSMT (TransitionT rule m)
 
 deriving instance MonadProfiler m => MonadProfiler (TransitionT rule m)
 
-deriving instance ErrorBracket m => ErrorBracket (TransitionT rule m)
-
 deriving instance MonadSimplify m => MonadSimplify (TransitionT rule m)
+
+instance MonadThrow m => MonadThrow (TransitionT rule m) where
+    throwM = Monad.Trans.lift . throwM
+
+instance MonadCatch m => MonadCatch (TransitionT rule m) where
+    catch action handler =
+        Monad.Trans.lift (catch action' handler') >>= scatter
+      where
+        action' = runTransitionT action
+        handler' e = runTransitionT (handler e)
 
 runTransitionT :: Monad m => TransitionT rule m a -> m [(a, Seq rule)]
 runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)

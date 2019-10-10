@@ -26,6 +26,9 @@ import Control.Error.Util
     ( note
     )
 import qualified Control.Monad as Monad
+import Control.Monad.Catch
+    ( MonadCatch
+    )
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
@@ -93,9 +96,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Log
-import Kore.Logger.ErrorBracket
-    ( ErrorBracket
-    )
 import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Predicate.Predicate
     ( makeMultipleOrPredicate
@@ -185,8 +185,7 @@ data Execution =
 
 -- | Symbolic execution
 exec
-    ::  ( ErrorBracket smt
-        , Log.WithLog Log.LogMessage smt
+    ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
         , MonadUnliftIO smt
@@ -222,8 +221,7 @@ exec verifiedModule strategy initialTerm =
 
 -- | Project the value of the exit cell, if it is present.
 execGetExitCode
-    ::  ( ErrorBracket smt
-        , Log.WithLog Log.LogMessage smt
+    ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
         , MonadUnliftIO smt
@@ -251,8 +249,7 @@ execGetExitCode indexedModule strategy' finalTerm =
 
 -- | Symbolic search
 search
-    ::  ( ErrorBracket smt
-        , Log.WithLog Log.LogMessage smt
+    ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
         , MonadUnliftIO smt
@@ -287,8 +284,8 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
-    ::  ( ErrorBracket smt
-        , Log.WithLog Log.LogMessage smt
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadCatch smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
@@ -337,8 +334,7 @@ proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
 
 -- | Bounded model check a spec given as a module containing rules to be checked
 boundedModelCheck
-    ::  ( ErrorBracket smt
-        , Log.WithLog Log.LogMessage smt
+    ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
         , MonadUnliftIO smt
@@ -367,8 +363,7 @@ boundedModelCheck limit definitionModule specModule searchOrder =
 
 -- | Rule merging
 mergeRules
-    ::  ( ErrorBracket smt
-        , Log.WithLog Log.LogMessage smt
+    ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
         , MonadUnliftIO smt
@@ -615,8 +610,7 @@ initializeProver definitionModule specModule within =
     logChangedClaim (Unchanged _) = return ()
 
 evalProver
-    ::  ( ErrorBracket smt
-        , Log.WithLog Log.LogMessage smt
+    ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
