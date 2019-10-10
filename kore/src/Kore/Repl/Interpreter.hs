@@ -463,7 +463,8 @@ proveSteps n = do
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
 proveStepsF
     :: Claim claim
-    => Monad m
+    => MonadSimplify m
+    => MonadIO m
     => Natural
     -- ^ maximum number of steps to perform
     -> ReplM claim m ()
@@ -1088,7 +1089,8 @@ performStepNoBranching =
 recursiveForcedStep
     :: Claim claim
     => axiom ~ Rule claim
-    => Monad m
+    => MonadSimplify m
+    => MonadIO m
     => Natural
     -> ExecutionGraph axiom
     -> ReplNode
@@ -1096,13 +1098,12 @@ recursiveForcedStep
 recursiveForcedStep n graph node
   | n == 0    = return graph
   | otherwise = do
-      ReplState { claims , axioms , claim } <- get
-      stepper <- asks stepper
-      graph'@Strategy.ExecutionGraph { graph = gr } <-
-          lift $ stepper claim claims axioms graph node
-      case Graph.suc gr (unReplNode node) of
-          [] -> return graph'
-          xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
+    ReplState { claims, axioms } <- get
+    (graph', result) <- runStepper' claims axioms node
+    case result of
+        NoResult -> return graph'
+        SingleResult sr -> (recursiveForcedStep $ n-1) graph' sr
+        BranchResult xs -> foldM (recursiveForcedStep $ n-1) graph' xs
 
 -- | Display a rule as a String.
 showRewriteRule
