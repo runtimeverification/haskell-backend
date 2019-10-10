@@ -81,6 +81,14 @@ pipeline {
           ./scripts/integration-kevm.sh
         '''
       }
+      post {
+        success {
+          archiveArtifact 'evm-semantics/add0.json'
+          archiveArtifact 'evm-semantics/pop1.json'
+          archiveArtifact 'evm-semantics/sumTo10.json'
+          archiveArtifact 'evm-semantics/sum-to-n-spec.json'
+        }
+      }
     }
     stage('Integration: KWASM') {
       options {
@@ -90,6 +98,11 @@ pipeline {
         sh '''
           ./scripts/integration-kwasm.sh
         '''
+      }
+      post {
+        success {
+          archiveArtifact 'wasm-semantics/simple-arithmetic-spec.json'
+        }
       }
     }
     stage('Update K Submodules') {
