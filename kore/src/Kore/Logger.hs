@@ -26,6 +26,7 @@ module Kore.Logger
     , withSomeEntry
     , Entry (..)
     , MonadLog (..)
+    , mapLocalFunction
     ) where
 
 import Colog
@@ -51,10 +52,6 @@ import qualified Data.Foldable as Fold
 import Data.Functor.Contravariant
     ( contramap
     )
-import Data.Maybe
-    ( fromJust
-    )
-import qualified Data.Profunctor as Profunctor
 import Data.Set
     ( Set
     )
@@ -316,6 +313,19 @@ withSomeEntry
     -> a
 withSomeEntry f (SomeEntry entry) = f entry
 
+mapLocalFunction
+    :: forall m
+    .  (LogAction m LogMessage -> LogAction m LogMessage)
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+mapLocalFunction mapping la@(LogAction action) =
+    LogAction $ \entry ->
+        case fromEntry entry of
+            Nothing -> action entry
+            Just logMessage ->
+                (\(LogAction f) -> f logMessage)
+                    $ mapping (contramap toEntry la)
+
 instance Entry LogMessage where
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
     shouldLog minSeverity currentScope LogMessage { severity, scope } =
@@ -360,15 +370,7 @@ instance Monad m => WithLog LogMessage (LoggerT m) where
         -> LoggerT m a
         -> LoggerT m a
     localLogAction locally (LoggerT (ReaderT la)) =
-        LoggerT . ReaderT $ la . go locally
-      where
-        go
-            :: (LogAction n LogMessage -> LogAction n LogMessage)
-            -> (LogAction n SomeEntry -> LogAction n SomeEntry)
-        go =
-            Profunctor.dimap
-                (contramap toEntry)
-                (contramap (fromJust . fromEntry))
+        LoggerT . ReaderT $ la . mapLocalFunction locally
     {-# INLINE localLogAction #-}
 
 instance MonadTrans LoggerT where

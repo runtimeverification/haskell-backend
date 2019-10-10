@@ -237,22 +237,7 @@ instance Logger.WithLog Logger.LogMessage NoSMT where
         -> NoSMT a
         -> NoSMT a
     localLogAction locally (NoSMT (ReaderT ra)) =
-        NoSMT $ ReaderT $ \logger -> ra $ mapLocalFunction locally logger
-
-mapLocalFunction
-    :: forall m
-    .   (  Logger.LogAction m Logger.LogMessage
-        -> Logger.LogAction m Logger.LogMessage
-        )
-    -> Logger.LogAction m Logger.SomeEntry
-    -> Logger.LogAction m Logger.SomeEntry
-mapLocalFunction mapping la@(Logger.LogAction action) =
-    Logger.LogAction $ \entry ->
-        case Logger.fromEntry entry of
-            Nothing -> action entry
-            Just logMessage ->
-                (\(Logger.LogAction f) -> f logMessage)
-                    $ mapping (contramap Logger.toEntry la)
+        NoSMT $ ReaderT $ \logger -> ra $ Logger.mapLocalFunction locally logger
 
 instance MonadSMT NoSMT where
     withSolver = id
@@ -329,7 +314,7 @@ instance (MonadIO m, MonadUnliftIO m)
             let solver' =
                     Lens.over
                         (field @"logger")
-                        (mapLocalFunction mapping)
+                        (Logger.mapLocalFunction mapping)
                         solver
             runReaderT action =<< liftIO (newMVar solver')
 
