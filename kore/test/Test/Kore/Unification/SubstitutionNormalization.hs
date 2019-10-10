@@ -2,16 +2,22 @@
 
 module Test.Kore.Unification.SubstitutionNormalization
     ( test_normalizeSubstitution
+    , test_normalize
     ) where
 
 import Test.Tasty
 
+import qualified Data.List as List
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import GHC.Exts
     ( IsList (..)
     )
 import qualified GHC.Generics as GHC
+import qualified GHC.Stack as GHC
 
 import Kore.Debug
 import qualified Kore.Internal.Pattern as Conditional
@@ -178,6 +184,181 @@ test_normalizeSubstitution =
 
     testError testName input variables =
         test testName input $ Error $ SimplifiableCycle variables
+
+test_normalize :: [TestTree]
+test_normalize =
+    [ test "empty substitution"
+        []
+        []
+        []
+    , test "normalized substitution"
+        [(y, a)]
+        [(y, a)]
+        []
+    , test "unnormalized substitution, variable-only"
+        [(y, mkVar x), (x, a)]
+        [(x, a), (y, a)]
+        []
+    , test "unnormalized substitution, variable under symbol"
+        [(y, sigma (mkVar x) b), (x, a)]
+        [(x, a), (y, sigma a b)]
+        []
+    , testGroup "element-variable-only cycle"
+        [ test "length 1, alone"
+            [(x, mkVar x)]
+            []
+            []
+        , test "length 1, beside related substitution"
+            [(x, mkVar x), (z, mkVar x)]
+            [(z, mkVar x)]
+            []
+        , test "length 1, beside unrelated substitution"
+            [(x, mkVar x), (z, a)]
+            [(z, a)]
+            []
+        , testCase "length 2" $ assertVariableOnlyCycle
+            $ runNormalizeSubstitution [(x, mkVar y), (y, mkVar x)]
+        ]
+    , testGroup "set-variable-only cycle"
+        [ test "length 1, alone"
+            [(xs, mkVar xs)]
+            []
+            []
+        , test "length 1, beside related substitution"
+            [(xs, mkVar xs), (ys, mkVar xs)]
+            [(ys, mkVar xs)]
+            []
+        , test "length 1, beside unrelated substitution"
+            [(xs, mkVar xs), (z, a)]
+            [(z, a)]
+            []
+        , testCase "length 2" $ assertVariableOnlyCycle
+            $ runNormalizeSubstitution [(xs, mkVar ys), (ys, mkVar xs)]
+        ]
+    , testGroup "element variable simplifiable cycle"
+        [ test "length 1, alone"
+            [(x, f (mkVar x))]
+            []
+            [(x, f (mkVar x))]
+        , test "length 1, beside related substitution"
+            [(x, f (mkVar x)), (y, mkVar x)]
+            [(y, mkVar x)]
+            [(x, f (mkVar x))]
+        , test "length 1, beside unrelated substitution"
+            [(x, f (mkVar x)), (y, a)]
+            [(y, a)]
+            [(x, f (mkVar x))]
+        , test "length 1, with constructor"
+            [(x, (constr1 . f) (mkVar x))]
+            []
+            [(x, (constr1 . f) (mkVar x))]
+        , test "length 2, alone"
+            [(x, f (mkVar y)), (y, g (mkVar x))]
+            []
+            [(x, f (mkVar y)), (y, g (mkVar x))]
+        , test "length 2, beside related substitution"
+            [(x, f (mkVar y)), (y, g (mkVar x)), (z, mkVar y)]
+            [(z, mkVar y)]
+            [(x, f (mkVar y)), (y, g (mkVar x))]
+        , test "length 2, beside unrelated substitution"
+            [(x, f (mkVar y)), (y, g (mkVar x)), (z, a)]
+            [(z, a)]
+            [(x, f (mkVar y)), (y, g (mkVar x))]
+        , test "length 2, with And"
+            [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
+            []
+            [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
+        ]
+    , testGroup "set variable simplifiable cycle"
+        [ test "length 1, alone"
+            [(xs, f (mkVar xs))]
+            []
+            [(xs, f (mkVar xs))]
+        , test "length 1, beside related substitution"
+            [(xs, f (mkVar xs)), (ys, mkVar xs)]
+            [(ys, mkVar xs)]
+            [(xs, f (mkVar xs))]
+        , test "length 1, beside unrelated substitution"
+            [(xs, f (mkVar xs)), (ys, a)]
+            [(ys, a)]
+            [(xs, f (mkVar xs))]
+        , test "length 2, alone"
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+            []
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+        , test "length 2, beside related substitution"
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs)), (z, mkVar ys)]
+            [(z, mkVar ys)]
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+        , test "length 2, beside unrelated substitution"
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs)), (z, a)]
+            [(z, a)]
+            [(xs, f (mkVar ys)), (ys, g (mkVar xs))]
+        , test "length 2, with And"
+            [(xs, mkAnd (mkVar ys) a), (ys, mkAnd (mkVar xs) b)]
+            []
+            [(xs, mkAnd (mkVar ys) a), (ys, mkAnd (mkVar xs) b)]
+        ]
+    , testGroup "element variable non-simplifiable cycle"
+        [ testBottom "alone"
+            [(x, constr1 (mkVar x))]
+        , testBottom "beside simplifiable cycle"
+            [(x, sigma (f (mkVar x)) (mkVar x))]
+        ]
+    , testGroup "set variable non-simplifiable cycle"
+        [ test "alone"
+            [(xs, constr1 (mkVar xs))]
+            [(xs, mkBottom testSort)]
+            []
+        , test "beside unrelated substitution"
+            [(xs, constr1 (mkVar xs)), (z, a)]
+            [(xs, mkBottom testSort), (z, a)]
+            []
+        , test "beside related substitution"
+            [(xs, constr1 (mkVar xs)), (ys, f (mkVar xs))]
+            [(xs, mkBottom testSort), (ys, f (mkBottom testSort))]
+            []
+        ]
+    ]
+  where
+    test
+        :: GHC.HasCallStack
+        => TestName
+        -> Map (UnifiedVariable Variable) (TermLike Variable)
+        -- ^ Test input
+        -> UnwrappedSubstitution Variable
+        -- ^ Expected normalized output
+        -> UnwrappedSubstitution Variable
+        -- ^ Expected denormalized output
+        -> TestTree
+    test testName input normalized denormalized =
+        testGroup testName
+            [ testCase "normalize" $ do
+                let actual = normalize input
+                let expect = Normalization { normalized, denormalized }
+                assertEqual "" (Just expect) actual
+            , testCase "normalizeSubstitution" $ do
+                actual <- runNormalizeSubstitution (Map.toList input)
+                let expect
+                      | null denormalized = Substitution (List.sort normalized)
+                      | otherwise =
+                          Error $ SimplifiableCycle (fst <$> denormalized)
+                assertEqual "" expect actual
+            ]
+    testBottom
+        :: TestName
+        -> Map (UnifiedVariable Variable) (TermLike Variable)
+        -- ^ Test input
+        -> TestTree
+    testBottom testName input =
+        testGroup testName
+            [ testCase "normalize" $ do
+                let actual = normalize input
+                assertEqual "" Nothing actual
+            , testCase "normalizeSubstitution" $ do
+                actual <- runNormalizeSubstitution (Map.toList input)
+                assertEqual "" SubstitutionBottom actual
+            ]
 
 x, y, z, xs, ys :: UnifiedVariable Variable
 x = ElemVar Mock.x

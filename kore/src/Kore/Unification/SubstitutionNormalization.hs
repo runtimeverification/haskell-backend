@@ -10,6 +10,8 @@ Portability : portable
 -}
 module Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
+    , Normalization (..)
+    , normalize
     ) where
 
 import Control.Applicative
@@ -38,8 +40,11 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Data.Graph.TopologicalSort
+import Debug
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate
     ( Predicate
@@ -100,6 +105,15 @@ because it contained simplifiable cycles.
 data Normalization variable =
     Normalization
         { normalized, denormalized :: !(UnwrappedSubstitution variable) }
+    deriving GHC.Generic
+
+instance SOP.Generic (Normalization variable)
+
+instance SOP.HasDatatypeInfo (Normalization variable)
+
+instance Debug variable => Debug (Normalization variable)
+
+instance (Debug variable, Diff variable) => Diff (Normalization variable)
 
 instance Semigroup (Normalization variable) where
     (<>) a b =
