@@ -75,13 +75,13 @@ import Kore.Internal.Pattern
     , Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike as TermLike
 import Kore.Internal.TermLike
     ( SubstitutionVariable
     , Symbol
     , TermLike
     , TermLikeF (..)
     )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Logger
 import Kore.Profiler.Data
