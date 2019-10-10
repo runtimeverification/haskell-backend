@@ -81,7 +81,6 @@ import Kore.Internal.TermLike
     , TermLike
     , TermLikeF (..)
     )
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Logger
 import Kore.Profiler.Data
@@ -265,12 +264,9 @@ simplifyConditionalTermToOr
     => Predicate variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
-simplifyConditionalTermToOr predicate termLike =
-    if TermLike.isSimplified termLike
-       then return . OrPattern.fromTermLike $ termLike
-       else do
-           results <- gather $ simplifyConditionalTerm predicate termLike
-           return (OrPattern.fromPatterns results)
+simplifyConditionalTermToOr predicate termLike = do
+    results <- gather $ simplifyConditionalTerm predicate termLike
+    return (OrPattern.fromPatterns results)
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}

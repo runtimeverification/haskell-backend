@@ -39,9 +39,9 @@ test_simplify =
         $ "\\bottom"
     , [equals]           `simplifiesTo` [quantifyPredicate equals]
         $ "\\equals"
-    , [substForX]        `simplifiesTo` [top]
+    , [substForX]        `simplifiesTo` [topOf Mock.testSort]
         $ "discharge substitution"
-    , [substToX]         `simplifiesTo` [top]
+    , [substToX]         `simplifiesTo` [topOf Mock.testSort]
         $ "discharge reverse substitution"
     , [substOfX]         `simplifiesTo` [quantifySubstitution substOfX]
         $ "substitution"
