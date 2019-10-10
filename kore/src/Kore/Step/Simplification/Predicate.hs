@@ -48,14 +48,16 @@ create = PredicateSimplifier simplify
 @simplify@ applies the substitution to the predicate and simplifies the
 result. The result is re-simplified until it stabilizes.
 
+@simplify@ accepts any @term@, but the 'Conditional' 'term' is not simplified.
+
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
-    -> BranchT simplifier (Predicate variable)
+    => Conditional variable term
+    -> BranchT simplifier (Conditional variable term)
 simplify initial = normalize initial >>= worker
   where
-    worker Conditional { term = (), predicate, substitution } = do
+    worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Syntax.Predicate.substitute substitution' predicate
         simplified <- simplifyPartial predicate'
@@ -63,8 +65,8 @@ simplify initial = normalize initial >>= worker
         let merged = simplified <> Predicate.fromSubstitution substitution
         normalized <- normalize merged
         if fullySimplified normalized
-            then return normalized
-            else worker normalized
+            then return normalized { term }
+            else worker normalized { term }
 
     fullySimplified Conditional { predicate, substitution } =
         Syntax.Predicate.isFreeOf predicate variables

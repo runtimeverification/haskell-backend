@@ -305,10 +305,10 @@ that it applies the substitution on the predicate.
 newtype PredicateSimplifier monad =
     PredicateSimplifier
         { getPredicateSimplifier
-            :: forall variable
+            :: forall variable term
             .  SimplifierVariable variable
-            => Predicate variable
-            -> BranchT monad (Predicate variable)
+            => Conditional variable term
+            -> BranchT monad (Conditional variable term)
         }
 
 emptyPredicateSimplifier :: Monad monad => PredicateSimplifier monad
