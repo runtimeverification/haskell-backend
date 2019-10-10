@@ -40,11 +40,6 @@ pipeline {
               ./scripts/docs.sh
             '''
           }
-          post {
-            success {
-              archiveArtifacts 'kore-haddock.tar.gz'
-            }
-          }
         }
         stage('Executables') {
           steps {
