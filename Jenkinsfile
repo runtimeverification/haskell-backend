@@ -91,6 +91,11 @@ pipeline {
           ./scripts/integration-kwasm.sh
         '''
       }
+      post {
+        success {
+          archiveArtifact 'profile.json'
+        }
+      }
     }
     stage('Update K Submodules') {
       when { branch 'master' }
@@ -108,9 +113,6 @@ pipeline {
                     , message: "Build failure: ${env.BUILD_URL}"
         }
       }
-    }
-    success {
-      archiveArtifact 'profile.json'
     }
   }
 }
