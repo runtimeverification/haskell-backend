@@ -9,6 +9,9 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
+import Debug.Trace
+import Kore.Unparser
+
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
@@ -185,64 +188,86 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyChildren = traverse simplifyInternalWorker
 
     simplifyInternalWorker termLike =
-        assertSimplifiedResults $ tracer termLike $
-        let doNotSimplify =
-                Exception.assert (TermLike.isSimplified termLike)
-                return (OrPattern.fromTermLike termLike)
-            (_ :< termLikeF) = Recursive.project termLike
-        in case termLikeF of
-            -- Unimplemented cases
-            ApplyAliasF _ -> doNotSimplify
-            -- Do not simplify evaluated patterns.
-            EvaluatedF  _ -> doNotSimplify
-            --
-            AndF andF ->
-                And.simplify =<< simplifyChildren andF
-            ApplySymbolF applySymbolF ->
-                Application.simplify predicate
-                    =<< simplifyChildren applySymbolF
-            CeilF ceilF ->
-                Ceil.simplify predicate =<< simplifyChildren ceilF
-            EqualsF equalsF ->
-                Equals.simplify predicate =<< simplifyChildren equalsF
-            ExistsF exists ->
-                let fresh = Lens.over Binding.existsBinder refreshBinder exists
-                in  Exists.simplify =<< simplifyChildren fresh
-            IffF iffF ->
-                Iff.simplify =<< simplifyChildren iffF
-            ImpliesF impliesF ->
-                Implies.simplify =<< simplifyChildren impliesF
-            InF inF ->
-                In.simplify predicate =<< simplifyChildren inF
-            NotF notF ->
-                Not.simplify =<< simplifyChildren notF
-            --
-            BottomF bottomF -> Bottom.simplify <$> simplifyChildren bottomF
-            BuiltinF builtinF -> Builtin.simplify <$> simplifyChildren builtinF
-            DomainValueF domainValueF ->
-                DomainValue.simplify <$> simplifyChildren domainValueF
-            FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
-            ForallF forall ->
-                let fresh = Lens.over Binding.forallBinder refreshBinder forall
-                in  Forall.simplify <$> simplifyChildren fresh
-            InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
-            MuF mu ->
-                let fresh = Lens.over Binding.muBinder refreshBinder mu
-                in  Mu.simplify <$> simplifyChildren fresh
-            NuF nu ->
-                let fresh = Lens.over Binding.nuBinder refreshBinder nu
-                in  Nu.simplify <$> simplifyChildren fresh
-            -- TODO(virgil): Move next up through patterns.
-            NextF nextF -> Next.simplify <$> simplifyChildren nextF
-            OrF orF -> Or.simplify <$> simplifyChildren orF
-            RewritesF rewritesF ->
-                Rewrites.simplify <$> simplifyChildren rewritesF
-            TopF topF -> Top.simplify <$> simplifyChildren topF
-            --
-            StringLiteralF stringLiteralF ->
-                return $ StringLiteral.simplify (getConst stringLiteralF)
-            VariableF variableF ->
-                return $ Variable.simplify (getConst variableF)
+        if TermLike.isSimplified termLike
+            then
+                trace
+                    ( "\nDEBUG: already simplified:\n"
+                    <> "\nTerm is simplified "
+                        <> show (TermLike.isSimplified termLike) <> " :\n"
+                        <> unparseToString termLike
+                    <> "\nPredicate is simplified "
+                        <> show (Predicate.isSimplified predicate) <> " :\n"
+                        <> unparseToString predicate
+                    ) $
+                return . OrPattern.fromTermLike $ termLike
+            else
+                trace
+                    ( "\nDEBUG: not simplified:"
+                    <> "\nTerm is simplified "
+                        <> show (TermLike.isSimplified termLike) <> " :\n"
+                        <> unparseToString termLike
+                    <> "\nPredicate is simplified "
+                        <> show (Predicate.isSimplified predicate) <> " :\n"
+                        <> unparseToString predicate
+                    ) $
+                assertSimplifiedResults $ tracer termLike $
+                let doNotSimplify =
+                        Exception.assert (TermLike.isSimplified termLike)
+                        return (OrPattern.fromTermLike termLike)
+                    (_ :< termLikeF) = Recursive.project termLike
+                in case termLikeF of
+                    -- Unimplemented cases
+                    ApplyAliasF _ -> doNotSimplify
+                    -- Do not simplify evaluated patterns.
+                    EvaluatedF  _ -> doNotSimplify
+                    --
+                    AndF andF ->
+                        And.simplify =<< simplifyChildren andF
+                    ApplySymbolF applySymbolF ->
+                        Application.simplify predicate
+                            =<< simplifyChildren applySymbolF
+                    CeilF ceilF ->
+                        Ceil.simplify predicate =<< simplifyChildren ceilF
+                    EqualsF equalsF ->
+                        Equals.simplify predicate =<< simplifyChildren equalsF
+                    ExistsF exists ->
+                        let fresh = Lens.over Binding.existsBinder refreshBinder exists
+                        in  Exists.simplify =<< simplifyChildren fresh
+                    IffF iffF ->
+                        Iff.simplify =<< simplifyChildren iffF
+                    ImpliesF impliesF ->
+                        Implies.simplify =<< simplifyChildren impliesF
+                    InF inF ->
+                        In.simplify predicate =<< simplifyChildren inF
+                    NotF notF ->
+                        Not.simplify =<< simplifyChildren notF
+                    --
+                    BottomF bottomF -> Bottom.simplify <$> simplifyChildren bottomF
+                    BuiltinF builtinF -> Builtin.simplify <$> simplifyChildren builtinF
+                    DomainValueF domainValueF ->
+                        DomainValue.simplify <$> simplifyChildren domainValueF
+                    FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
+                    ForallF forall ->
+                        let fresh = Lens.over Binding.forallBinder refreshBinder forall
+                        in  Forall.simplify <$> simplifyChildren fresh
+                    InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
+                    MuF mu ->
+                        let fresh = Lens.over Binding.muBinder refreshBinder mu
+                        in  Mu.simplify <$> simplifyChildren fresh
+                    NuF nu ->
+                        let fresh = Lens.over Binding.nuBinder refreshBinder nu
+                        in  Nu.simplify <$> simplifyChildren fresh
+                    -- TODO(virgil): Move next up through patterns.
+                    NextF nextF -> Next.simplify <$> simplifyChildren nextF
+                    OrF orF -> Or.simplify <$> simplifyChildren orF
+                    RewritesF rewritesF ->
+                        Rewrites.simplify <$> simplifyChildren rewritesF
+                    TopF topF -> Top.simplify <$> simplifyChildren topF
+                    --
+                    StringLiteralF stringLiteralF ->
+                        return $ StringLiteral.simplify (getConst stringLiteralF)
+                    VariableF variableF ->
+                        return $ Variable.simplify (getConst variableF)
       where
         assertSimplifiedResults getResults = do
             results <- getResults

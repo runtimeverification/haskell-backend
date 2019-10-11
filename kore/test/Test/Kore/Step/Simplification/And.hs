@@ -4,6 +4,9 @@ module Test.Kore.Step.Simplification.And
 
 import Test.Tasty
 
+import Debug.Trace
+import Kore.Unparser
+
 import Kore.Internal.MultiOr
     ( MultiOr (MultiOr)
     )
@@ -13,6 +16,7 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
@@ -95,6 +99,10 @@ test_andSimplification =
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution = mempty
                         }
+            traceM
+                $ "\nAnd test: fOfXExpanded is simplified = "
+                <> show (Pattern.isSimplified fOfXExpanded) <> " :\n"
+                <> unparseToString fOfXExpanded
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 

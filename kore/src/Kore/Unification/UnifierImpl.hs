@@ -9,6 +9,8 @@ module Kore.Unification.UnifierImpl
     , normalizeExcept
     ) where
 
+import Debug.Trace
+
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
 import Control.Monad
@@ -221,11 +223,13 @@ normalizeExcept Conditional { term, predicate, substitution } = do
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
+    -- TODO: this call to simplifPredicate throws an error
     simplified <- Branch.alternate $ Simplifier.simplifyPredicate Conditional
         { term = ()
         , predicate = mergedPredicate
         , substitution = normalizedSubstitution
         }
+    traceM "\n!!!!!!!!!!!!!!!debug!!!!!!!!!!!!!!!!!\n"
     return simplified { term }
   where
     normalizeSubstitution' =
