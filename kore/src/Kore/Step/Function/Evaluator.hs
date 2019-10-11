@@ -159,7 +159,11 @@ evaluateApplication
     canMemoize
       | Symbol.isMemo symbol
       , isTop childrenPredicate
-      , isTop configurationPredicate
+      -- We do not need to check the configuration predicate here: it cannot
+      -- constrain the children because we require that they are all
+      -- concrete. If we ever relax the constraint on the children, then we need
+      -- to re-enable this check.
+      -- , isTop configurationPredicate
       = traverse asConcrete application
       | otherwise
       = Nothing
