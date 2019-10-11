@@ -332,7 +332,7 @@ test_applyRewriteRule_ =
                 -- b=h(b) in the predicate.
                 Left
                 $ SubstitutionError
-                $ NonCtorCircularVariableDependency [ElemVar Mock.y]
+                $ SimplifiableCycle [ElemVar Mock.y]
             initial =
                 Conditional
                     { term =
