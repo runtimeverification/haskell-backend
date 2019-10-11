@@ -37,12 +37,14 @@ make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-intera
 
 for each in \
     tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
-    tests/ethereum-tests/VMTests/vmArithmeticTest/pop1.json \
+    tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json \
     tests/interactive/sumTo10.evm
 do
-    command time -o "$KEVM_DIR/kevm-time.json" -a -f "{ \"$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+    command time -o "$TOP/profile.json" -a \
+        -f "{ \"evm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
         make TEST_CONCRETE_BACKEND=haskell "$each".run-interactive
 done
 
-command time -o "$KEVM_DIR/kevm-time.json" -a -f "{ \"sum-to-n-spec.k\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+command time -o "$TOP/profile.json" -a \
+    -f "{ \"src/main/k/evm-semantics/sum-to-n/sum-to-n-spec.k\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
     make -C "$TOP/src/main/k/evm-semantics/sum-to-n" sum-to-n-spec.kprove.diff

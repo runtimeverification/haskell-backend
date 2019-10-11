@@ -28,8 +28,11 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-command time -o "$KWASM_DIR/simple-arithmetic-spec.json" -f '{ "user_sec": %U, "resident_kbytes": %M }' \
-    make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/simple-arithmetic-spec.k.prove
-
-command time -o "$KWASM_DIR/loops-spec.json" -f '{ "user_sec": %U, "resident_kbytes": %M }' \
-    make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/loops-spec.k.prove
+for each in \
+    tests/proofs/simple-arithmetic-spec.k.prove \
+    tests/proofs/loops-spec.k.prove
+do
+    command time -o "$TOP/profile.json" -a \
+        -f "{ \"wasm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+        make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/simple-arithmetic-spec.k.prove
+done

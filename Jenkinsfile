@@ -81,11 +81,6 @@ pipeline {
           ./scripts/integration-kevm.sh
         '''
       }
-      post {
-        success {
-          archiveArtifact 'evm-semantics/kevm-time.json'
-        }
-      }
     }
     stage('Integration: KWASM') {
       options {
@@ -95,11 +90,6 @@ pipeline {
         sh '''
           ./scripts/integration-kwasm.sh
         '''
-      }
-      post {
-        success {
-          archiveArtifact 'wasm-semantics/simple-arithmetic-spec.json'
-        }
       }
     }
     stage('Update K Submodules') {
@@ -118,6 +108,9 @@ pipeline {
                     , message: "Build failure: ${env.BUILD_URL}"
         }
       }
+    }
+    success {
+      archiveArtifact 'profile.json'
     }
   }
 }
