@@ -34,8 +34,7 @@ import qualified Control.Lens as Lens hiding
     ( makeLenses
     )
 import Control.Monad
-    ( foldM
-    , void
+    ( void
     )
 import Control.Monad.Extra
     ( ifM
@@ -468,10 +467,8 @@ proveStepsF
     -- ^ maximum number of steps to perform
     -> ReplM claim m ()
 proveStepsF n = do
-    graph  <- getExecutionGraph
     node   <- Lens.use (field @"node")
-    graph' <- recursiveForcedStep n graph node
-    updateExecutionGraph graph'
+    recursiveForcedStep n node
 
 -- | Loads a script from a file.
 loadScript
@@ -1091,18 +1088,18 @@ recursiveForcedStep
     => MonadSimplify m
     => MonadIO m
     => Natural
-    -> ExecutionGraph axiom
     -> ReplNode
-    -> ReplM claim m (ExecutionGraph axiom)
-recursiveForcedStep n graph node
-  | n == 0    = return graph
+    -> ReplM claim m ()
+recursiveForcedStep n node
+  | n == 0    = pure ()
   | otherwise = do
     ReplState { claims, axioms } <- get
-    (graph', result) <- runStepper' claims axioms node
+    (graph, result) <- runStepper' claims axioms node
+    updateExecutionGraph graph
     case result of
-        NoResult -> return graph'
-        SingleResult sr -> (recursiveForcedStep $ n-1) graph' sr
-        BranchResult xs -> foldM (recursiveForcedStep $ n-1) graph' xs
+        NoResult -> pure ()
+        SingleResult sr -> (recursiveForcedStep $ n-1) sr
+        BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
 
 -- | Display a rule as a String.
 showRewriteRule
