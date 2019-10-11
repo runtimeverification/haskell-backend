@@ -35,14 +35,14 @@ make build-haskell -B
 
 make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-search
 
-command time -o "$KEVM_DIR/add0.json" -f '{ "user_sec": %U, "resident_kbytes": %M }' \
-    make TEST_CONCRETE_BACKEND=haskell tests/ethereum-tests/VMTests/vmArithmeticTest/add0.run-interactive
+for each in \
+    tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
+    tests/ethereum-tests/VMTests/vmArithmeticTest/pop1.json \
+    tests/interactive/sumTo10.evm
+do
+    command time -o "$KEVM_DIR/kevm-time.json" -a -f "{ \"$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+        make TEST_CONCRETE_BACKEND=haskell "$each".run-interactive
+done
 
-command time -o "$KEVM_DIR/pop1.json" -f '{ "user_sec": %U, "resident_kbytes": %M }' \
-    make TEST_CONCRETE_BACKEND=haskell tests/ethereum-tests/VMTests/vmArithmeticTest/pop1.run-interactive
-
-command time -o "$KEVM_DIR/sumTo10.json" -f '{ "user_sec": %U, "resident_kbytes": %M }' \
-    make TEST_CONCRETE_BACKEND=haskell tests/interactive/sumTo10.run-interactive
-
-command time -o "$KEVM_DIR/sum-to-n-spec.json" -f '{ "user_sec": %U, "resident_kbytes": %M }' \
+command time -o "$KEVM_DIR/kevm-time.json" -a -f "{ \"sum-to-n-spec.k\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
     make -C "$TOP/src/main/k/evm-semantics/sum-to-n" sum-to-n-spec.kprove.diff

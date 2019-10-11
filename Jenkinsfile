@@ -83,10 +83,7 @@ pipeline {
       }
       post {
         success {
-          archiveArtifact 'evm-semantics/add0.json'
-          archiveArtifact 'evm-semantics/pop1.json'
-          archiveArtifact 'evm-semantics/sumTo10.json'
-          archiveArtifact 'evm-semantics/sum-to-n-spec.json'
+          archiveArtifact 'evm-semantics/kevm-time.json'
         }
       }
     }
