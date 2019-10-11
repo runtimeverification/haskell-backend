@@ -110,7 +110,7 @@ pipeline {
       }
     }
     success {
-      archiveArtifact 'profile.json'
+      archiveArtifacts 'profile.json'
     }
   }
 }
