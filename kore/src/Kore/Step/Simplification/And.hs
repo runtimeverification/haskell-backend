@@ -177,6 +177,7 @@ makeEvaluateNonBool
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
+    -- TODO: call comes from normalize here
     normalized <- Substitution.normalize merged
     return (applyAndIdempotence <$> normalized)
         { predicate = applyAndIdempotence <$> Conditional.predicate normalized }
