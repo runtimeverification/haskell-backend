@@ -190,27 +190,27 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyInternalWorker termLike =
         if TermLike.isSimplified termLike
             then
-                trace
-                    ( "\nDEBUG: already simplified:\n"
-                    <> "\nTerm is simplified "
-                        <> show (TermLike.isSimplified termLike) <> " :\n"
-                        <> unparseToString termLike
-                    <> "\nPredicate is simplified "
-                        <> show (Predicate.isSimplified predicate) <> " :\n"
-                        <> unparseToString predicate
-                    ) $
+                --trace
+                --    ( "\nDEBUG: already simplified:\n"
+                --    <> "\nTerm is simplified "
+                --        <> show (TermLike.isSimplified termLike) <> " :\n"
+                --        <> unparseToString termLike
+                --    <> "\nPredicate is simplified "
+                --        <> show (Predicate.isSimplified predicate) <> " :\n"
+                --        <> unparseToString predicate
+                --    ) $
                 return . OrPattern.fromTermLike $ termLike
             else
-                trace
-                    ( "\nDEBUG: not simplified:"
-                    <> "\nTerm is simplified "
-                        <> show (TermLike.isSimplified termLike) <> " :\n"
-                        <> unparseToString termLike
-                    <> "\nPredicate is simplified "
-                        <> show (Predicate.isSimplified predicate) <> " :\n"
-                        <> unparseToString predicate
-                    ) $
-                assertSimplifiedResults $ tracer termLike $
+                --trace
+                --    ( "\nDEBUG: not simplified:"
+                --    <> "\nTerm is simplified "
+                --        <> show (TermLike.isSimplified termLike) <> " :\n"
+                --        <> unparseToString termLike
+                --    <> "\nPredicate is simplified "
+                --        <> show (Predicate.isSimplified predicate) <> " :\n"
+                --        <> unparseToString predicate
+                --    )
+                -- assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =
                         Exception.assert (TermLike.isSimplified termLike)
                         return (OrPattern.fromTermLike termLike)
@@ -269,22 +269,22 @@ simplifyInternal term predicate = simplifyInternalWorker term
                     VariableF variableF ->
                         return $ Variable.simplify (getConst variableF)
       where
-        assertSimplifiedResults getResults = do
-            results <- getResults
-            let unsimplified =
-                    filter (not . Pattern.isSimplified)
-                    $ OrPattern.toPatterns results
-            if null unsimplified
-                then return results
-                else (error . show . Pretty.vsep)
-                    [ "Incomplete simplification!"
-                    , Pretty.indent 2 "input:"
-                    , Pretty.indent 4 (unparse termLike)
-                    , Pretty.indent 2 "unsimplified results:"
-                    , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> unsimplified)
-                    , "Expected all patterns to be fully simplified."
-                    ]
+       -- assertSimplifiedResults getResults = do
+       --     results <- getResults
+       --     let unsimplified =
+       --             filter (not . Pattern.isSimplified)
+       --             $ OrPattern.toPatterns results
+       --     if null unsimplified
+       --         then return results
+       --         else (error . show . Pretty.vsep)
+       --             [ "Incomplete simplification!"
+       --             , Pretty.indent 2 "input:"
+       --             , Pretty.indent 4 (unparse termLike)
+       --             , Pretty.indent 2 "unsimplified results:"
+       --             , (Pretty.indent 4 . Pretty.vsep)
+       --                 (unparse <$> unsimplified)
+       --             , "Expected all patterns to be fully simplified."
+       --             ]
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)

@@ -229,7 +229,7 @@ normalizeExcept Conditional { term, predicate, substitution } = do
         , predicate = mergedPredicate
         , substitution = normalizedSubstitution
         }
-    traceM "\n!!!!!!!!!!!!!!!debug!!!!!!!!!!!!!!!!!\n"
+    -- traceM "\n!!!!!!!!!!!!!!!debug!!!!!!!!!!!!!!!!!\n"
     return simplified { term }
   where
     normalizeSubstitution' =

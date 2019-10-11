@@ -22,6 +22,7 @@ import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Predicate
@@ -29,6 +30,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
+    , isSimplified
     , unwrapPredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
@@ -139,12 +141,15 @@ simplifyPartial
         )
     =>  Syntax.Predicate variable
     ->  BranchT simplifier (Predicate variable)
-simplifyPartial predicate = do
-    patternOr <-
-        Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
-    -- Despite using Monad.Trans.lift above, we do not need to explicitly check
-    -- for \bottom because patternOr is an OrPattern.
-    scatter (eraseTerm <$> patternOr)
+simplifyPartial predicate =
+    if Syntax.isSimplified predicate
+        then return $ Conditional.fromPredicate predicate
+        else do
+            patternOr <-
+                Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
+            -- Despite using Monad.Trans.lift above, we do not need to explicitly check
+            -- for \bottom because patternOr is an OrPattern.
+            scatter (eraseTerm <$> patternOr)
   where
     eraseTerm conditional
       | TopBottom.isTop (Pattern.term conditional)
