@@ -247,7 +247,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
         assertSimplifiedResults getResults = do
             results <- getResults
             let unsimplified =
-                    filter (not . Pattern.isSimplified)
+                    filter (not . TermLike.isSimplified . Pattern.term)
                     $ OrPattern.toPatterns results
             if null unsimplified
                 then return results
