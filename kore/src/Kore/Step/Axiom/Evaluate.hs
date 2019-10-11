@@ -7,10 +7,12 @@ module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
     ) where
 
+import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
 import Control.Monad.Trans.Maybe
     ( runMaybeT
     )
+import Data.Generics.Product
 import qualified Data.Foldable as Foldable
 import Data.Function
 import Data.Maybe
@@ -84,7 +86,7 @@ evaluateAxioms'
     -> [EqualityRule Variable]
     -> TermLike variable
     -> Syntax.Predicate variable
-    -> simplifier (Result.Results (Step.UnifiedRule (Target variable)) (Pattern variable))
+    -> simplifier (Step.Results variable)
 evaluateAxioms'
     context
     definitionRules
@@ -92,7 +94,7 @@ evaluateAxioms'
     predicate
   | any ruleIsConcrete definitionRules
   , not (TermLike.isConcrete patt)
-  = return $ Result.Results mempty mempty
+  = return mempty
   | otherwise
   = maybeResults $ do
     let
@@ -120,15 +122,17 @@ evaluateAxioms'
         rules = Result.appliedRule <$> Result.results result
 
     simplifiedResults <-
-        traverse (OrPattern.simplifyPredicatesWithSmt predicate)
-            ((fmap Result.result . Result.results) result)
+        Lens.traverseOf (field @"results" . Lens.mapped . field @"result") 
+            (OrPattern.simplifyPredicatesWithSmt predicate)
+            result
 
     simplifiedRemainders <-
-        OrPattern.simplifyPredicatesWithSmt
-            predicate (Step.remainders result)
+        Lens.traverseOf (field @"remainders") 
+            (OrPattern.simplifyPredicatesWithSmt predicate)
+            simplifiedResults
 
     let
-        returnedResults = zipResult rules simplifiedResults
+        returnedResults = simplifiedResults
 
     Monad.guard $ (not . Foldable.null . Foldable.fold . fmap Result.result) returnedResults
 

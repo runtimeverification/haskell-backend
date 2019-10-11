@@ -58,7 +58,7 @@ test_evaluateAxioms =
     , doesn'tApply "F(x) => G(x) doesn't apply to F(top)"
         [axiom_ (f x) (g x)]
         (f mkTop_, makeTruePredicate)
-     , applies "F(x) => G(x) [concrete] apply to F(a)"
+    , applies "F(x) => G(x) [concrete] apply to F(a)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f a, makeTruePredicate)
         [Pattern.fromTermLike $ g a]

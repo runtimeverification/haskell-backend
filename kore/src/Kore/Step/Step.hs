@@ -401,12 +401,9 @@ finalizeRulesParallel
 finalizeRulesParallel initial unifiedRules = do
     let initialCondition = Conditional.withoutTerm initial
     results <-
-        Foldable.fold
-        <$> traverse (finalizeRule initialCondition) unifiedRules
-    let unifications =
-            MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
-        remainder =
-            Predicate.fromPredicate (Remainder.remainder' unifications)
+        Foldable.fold <$> traverse (finalizeRule initialCondition) unifiedRules
+    let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
+        remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
     remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
     return Step.Results
         { results = Seq.fromList results
