@@ -85,6 +85,7 @@ import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.GraphViz as Graph
+import qualified Data.GraphViz.Attributes.Complete as Graph.Attr
 import Data.IORef
     ( IORef
     , modifyIORef
@@ -1182,7 +1183,10 @@ showDotGraph len =
 
 saveDotGraph
     :: Coercible axiom (RulePattern Variable)
-    => Int -> InnerGraph axiom -> FilePath -> IO ()
+    => Int
+    -> InnerGraph axiom
+    -> FilePath
+    -> IO ()
 saveDotGraph len gr file =
     withExistingDirectory file saveGraphImg
   where
@@ -1190,7 +1194,8 @@ saveDotGraph len gr file =
     saveGraphImg path =
         void
         . Graph.runGraphviz
-            (Graph.graphToDot (graphParams len) gr) Graph.Jpeg
+            (Graph.graphToDot (graphParams len) gr)
+            Graph.Jpeg
         $ path <> ".jpeg"
 
 graphParams
@@ -1204,7 +1209,13 @@ graphParams
          CommonProofState
 graphParams len = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
-        [Graph.textLabel (ruleIndex l len)]
+        [ Graph.textLabel (ruleIndex l len)]
+    , Graph.fmtNode = \(node, proofState) ->
+        [ Graph.Attr.Color
+            $ case proofState of
+                ProofState.DoNotUse.Proven -> toColorList green
+                _                          -> []
+        ]
     }
   where
     ruleIndex lbl ln =
@@ -1224,6 +1235,8 @@ graphParams len = Graph.nonClusteredParams
                     . getNameText
                     $ rule
                     )
+    toColorList col = [Graph.Attr.WC col (Just 1.0)]
+    green = Graph.Attr.RGB 0 200 0
 
 showAliasError :: AliasError -> String
 showAliasError =
