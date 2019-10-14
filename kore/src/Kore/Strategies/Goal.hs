@@ -22,22 +22,28 @@ module Kore.Strategies.Goal
 import Control.Applicative
     ( Alternative (..)
     )
-import qualified Data.Foldable as Foldable
-import Data.Maybe
-    ( mapMaybe
+import Control.Monad.Catch
+    ( MonadCatch
+    , onException
     )
-import qualified Generics.SOP as SOP
-import GHC.Generics as GHC
-
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Coerce
     ( Coercible
     , coerce
     )
 import qualified Data.Default as Default
+import qualified Data.Foldable as Foldable
+import Data.Maybe
+    ( mapMaybe
+    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Generics.SOP as SOP
+import GHC.Generics as GHC
 
+import Debug
+    ( formatExceptionInfo
+    )
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
@@ -94,6 +100,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
+    , unparseToText
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar)
@@ -132,7 +139,7 @@ class Goal goal where
     type ProofState goal a
 
     transitionRule
-        :: MonadSimplify m
+        :: (MonadCatch m, MonadSimplify m)
         => Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -480,29 +487,34 @@ allPathFollowupStep claims axioms =
 
 -- | Remove the destination of the goal.
 removeDestination
-    :: MonadSimplify m
+    :: (MonadCatch m, MonadSimplify m)
     => Goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal = do
-    let destination = getDestination goal
-        configuration = getConfiguration goal
-        removal = removalPredicate destination configuration
+removeDestination goal = errorBracket $ do
+    let removal = removalPredicate destination configuration
         result = Conditional.andPredicate configuration removal
     pure $ makeRuleFromPatterns result destination
+  where
+    destination = getDestination goal
+    configuration = getConfiguration goal
+
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 simplify
-    :: MonadSimplify m
+    :: (MonadCatch m, MonadSimplify m)
     => Goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = do
-    let destination = getDestination goal
-        configuration = getConfiguration goal
+simplify goal = errorBracket $ do
     configs <-
         Monad.Trans.lift
         $ simplifyAndRemoveTopExists configuration
@@ -513,6 +525,15 @@ simplify goal = do
             let simplifiedRules =
                     fmap (`makeRuleFromPatterns` destination) filteredConfigs
             Foldable.asum (pure <$> simplifiedRules)
+  where
+    destination = getDestination goal
+    configuration = getConfiguration goal
+
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 isTriviallyValid
     :: SimplifierVariable variable
@@ -535,7 +556,7 @@ isTrusted =
 -- | Apply 'Rule's to the goal in parallel.
 derivePar
     :: forall m goal variable
-    .  MonadSimplify m
+    .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => SimplifierVariable variable
@@ -546,11 +567,8 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = do
-    let destination = getDestination goal
-        configuration :: Pattern variable
-        configuration = getConfiguration goal
-        rewrites = coerce <$> rules
+derivePar rules goal = errorBracket $ do
+    let rewrites = coerce <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -587,11 +605,21 @@ derivePar rules goal = do
             results' <-
                 traverseConfigs (mapRules onePathResults)
             Result.transitionResults results'
+  where
+    destination = getDestination goal
+    configuration :: Pattern variable
+    configuration = getConfiguration goal
+
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
     :: forall m goal variable
-    .  MonadSimplify m
+    .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => SimplifierVariable variable
@@ -602,10 +630,8 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = do
-    let destination = getDestination goal
-        configuration = getConfiguration goal
-        rewrites = coerce <$> rules
+deriveSeq rules goal = errorBracket $ do
+    let rewrites = coerce <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -642,6 +668,15 @@ deriveSeq rules goal = do
             results' <-
                 traverseConfigs (mapRules onePathResults)
             Result.transitionResults results'
+  where
+    destination = getDestination goal
+    configuration = getConfiguration goal
+
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
 
 makeRuleFromPatterns
     :: forall rule variable
