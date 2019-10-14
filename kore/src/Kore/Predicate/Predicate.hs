@@ -15,6 +15,7 @@ module Kore.Predicate.Predicate
     , compactPredicatePredicate
     , isFalse
     , makePredicate
+    , isPredicate
     , makeAndPredicate
     , makeMultipleAndPredicate
     , makeCeilPredicate
@@ -53,6 +54,7 @@ module Kore.Predicate.Predicate
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Either as Either
 import Data.Functor.Foldable
     ( Base
     )
@@ -489,6 +491,14 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
                 (Left . pure)
                     (makeInPredicate inContainedChild inContainingChild)
             _ -> Right projected
+
+{- | Is the 'TermLike' a predicate?
+
+See also: 'makePredicate'
+
+ -}
+isPredicate :: InternalVariable variable => TermLike variable -> Bool
+isPredicate = Either.isRight . makePredicate
 
 {- | Replace all variables in a @Predicate@ using the provided mapping.
 -}
