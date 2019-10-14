@@ -22,7 +22,6 @@ module Kore.Internal.Predicate
     , Kore.Internal.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
-    , Conditional.hasSubstitution
     , Conditional.andCondition
     ) where
 
