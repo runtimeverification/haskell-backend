@@ -40,6 +40,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( isPredicate
     )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -191,7 +192,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
-        if TermLike.isSimplified termLike && not (Kore.Predicate.Predicate.isPredicate termLike)
+        if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
             then
                 return . OrPattern.fromTermLike $ termLike
             else
