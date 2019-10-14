@@ -1210,9 +1210,9 @@ graphParams
 graphParams len = Graph.nonClusteredParams
     { Graph.fmtEdge = \(_, _, l) ->
         [ Graph.textLabel (ruleIndex l len)]
-    , Graph.fmtNode = \(node, proofState) ->
+    , Graph.fmtNode = \(_, ps) ->
         [ Graph.Attr.Color
-            $ case proofState of
+            $ case ps of
                 ProofState.DoNotUse.Proven -> toColorList green
                 _                          -> []
         ]
