@@ -49,16 +49,18 @@ create = PredicateSimplifier simplify
 @simplify@ applies the substitution to the predicate and simplifies the
 result. The result is re-simplified until it stabilizes.
 
-@simplify@ accepts any @term@, but the 'Conditional' 'term' is not simplified.
+The 'term' of 'Conditional' may be any type; it passes through @simplify@
+unmodified.
 
 -}
 simplify
-    ::  ( GHC.HasCallStack
+    ::  forall simplifier variable any
+    .   ( GHC.HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Conditional variable term
-    ->  BranchT simplifier (Conditional variable term)
+    =>  Conditional variable any
+    ->  BranchT simplifier (Conditional variable any)
 simplify initial = normalize initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
