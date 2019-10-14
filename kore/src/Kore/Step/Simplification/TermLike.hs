@@ -277,6 +277,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
                         (unparse <$> unsimplified)
                     , "Expected all patterns to be fully simplified."
                     ]
+
         asTermOrPattern
             :: TermLike variable
             -> simplifier (OrPattern variable)

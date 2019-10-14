@@ -15,8 +15,6 @@ module Kore.Step.Simplification.And
     , And (..)
     ) where
 
-import Debug.Trace
-
 import Control.Applicative
     ( Alternative (empty)
     )

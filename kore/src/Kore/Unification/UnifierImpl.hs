@@ -10,8 +10,6 @@ module Kore.Unification.UnifierImpl
     , normalizeExcept
     ) where
 
-import Debug.Trace
-
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad
     ( foldM

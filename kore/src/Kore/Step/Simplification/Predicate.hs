@@ -20,7 +20,6 @@ import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Predicate

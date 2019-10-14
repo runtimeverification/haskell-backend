@@ -49,8 +49,6 @@ import Kore.Unification.Unify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
 
-import Debug.Trace
-
 newtype PredicateMerger variable m =
     PredicateMerger
     (  [Syntax.Predicate variable]
