@@ -125,6 +125,10 @@ test_normalize =
             [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
             []
             [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
+        , test "two cycles"
+            [(x, f (mkVar x)), (y, g (mkVar y)), (z, c)]
+            [(z, c)]
+            [(x, f (mkVar x)), (y, g (mkVar y))]
         ]
     , testGroup "set variable simplifiable cycle"
         [ test "length 1, alone"
@@ -159,7 +163,15 @@ test_normalize =
             [(xs, mkAnd (mkVar ys) a), (ys, mkAnd (mkVar xs) b)]
             []
             [(xs, mkAnd (mkVar ys) a), (ys, mkAnd (mkVar xs) b)]
+        , test "two cycles"
+            [(xs, f (mkVar xs)), (ys, g (mkVar ys)), (z, c)]
+            [(z, c)]
+            [(xs, f (mkVar xs)), (ys, g (mkVar ys))]
         ]
+    , test "two simplifiable cycles, set and element variables"
+        [(xs, f (mkVar xs)), (y, g (mkVar y)), (z, c)]
+        [(z, c)]
+        [(y, g (mkVar y)), (xs, f (mkVar xs))]
     , testGroup "element variable non-simplifiable cycle"
         [ testBottom "alone"
             [(x, constr1 (mkVar x))]
@@ -238,9 +250,10 @@ z = ElemVar Mock.z
 xs = SetVar Mock.setX
 ys = SetVar Mock.setY
 
-a, b :: TermLike Variable
+a, b, c :: TermLike Variable
 a = Mock.a
 b = Mock.b
+c = Mock.c
 
 f, g, constr1 :: TermLike Variable -> TermLike Variable
 f = Mock.f
