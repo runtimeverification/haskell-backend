@@ -18,6 +18,7 @@ module Kore.Internal.Conditional
     , toPredicate
     , Kore.Internal.Conditional.mapVariables
     , isNormalized
+    , hasSubstitution
     ) where
 
 import Control.Comonad
@@ -391,3 +392,6 @@ isNormalized :: Ord variable => Conditional variable term -> Bool
 isNormalized Conditional { predicate, substitution } =
     Substitution.isNormalized substitution
     && Predicate.isFreeOf predicate (Substitution.variables substitution)
+
+hasSubstitution :: Conditional variable term -> Bool
+hasSubstitution Conditional { substitution } = Substitution.null substitution

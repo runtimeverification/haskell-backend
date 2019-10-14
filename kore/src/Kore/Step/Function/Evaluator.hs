@@ -41,7 +41,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
     , merge
-    , mergeAll
     )
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -72,9 +71,6 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import qualified Kore.Step.Simplification.Conditional as Conditional
-    ( simplifyPredicate
-    )
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -108,7 +104,6 @@ evaluateApplication
     (evaluateSortInjection -> application)
   = finishT $ do
     Foldable.for_ canMemoize recallOrPattern
-    substitutionSimplifier <- Simplifier.askSimplifierPredicate
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
@@ -131,7 +126,6 @@ evaluateApplication
 
         maybeEvaluatedSimplifier =
             maybeEvaluatePattern
-                substitutionSimplifier
                 simplifier
                 axiomIdToEvaluator
                 childrenPredicate
@@ -199,8 +193,7 @@ evaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -214,7 +207,6 @@ evaluatePattern
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
-    substitutionSimplifier
     simplifier
     axiomIdToEvaluator
     configurationPredicate
@@ -225,7 +217,6 @@ evaluatePattern
     fromMaybe
         (return defaultValue)
         (maybeEvaluatePattern
-            substitutionSimplifier
             simplifier
             axiomIdToEvaluator
             childrenPredicate
@@ -244,8 +235,7 @@ maybeEvaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => PredicateSimplifier
-    -> TermLikeSimplifier
+    => TermLikeSimplifier
     -- ^ Evaluates functions.
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -258,7 +248,6 @@ maybeEvaluatePattern
     -> Predicate variable
     -> Maybe (simplifier (OrPattern variable))
 maybeEvaluatePattern
-    substitutionSimplifier
     simplifier
     axiomIdToEvaluator
     childrenPredicate
@@ -272,7 +261,6 @@ maybeEvaluatePattern
             Just . tracing $ do
                 result <- Profile.axiomEvaluation identifier $
                     evaluator
-                        substitutionSimplifier
                         simplifier
                         axiomIdToEvaluator
                         patt
@@ -386,12 +374,13 @@ reevaluateFunctions
     -- ^ Function evaluation result.
     -> simplifier (OrPattern variable)
 reevaluateFunctions rewriting = do
-    pattOr <- simplifyTerm (Pattern.term rewriting)
-    mergedPatt <-
-        OrPattern.mergeWithPredicate (Pattern.withoutTerm rewriting) pattOr
-    orResults <-
-        BranchT.gather $ traverse Conditional.simplifyPredicate mergedPatt
-    return (MultiOr.mergeAll orResults)
+    let (rewritingTerm, rewritingPredicate) = Pattern.splitTerm rewriting
+    simplifiedTerms <- simplifyTerm rewritingTerm
+    merged <- OrPattern.mergeWithPredicate rewritingPredicate simplifiedTerms
+    orResults <- BranchT.gather $ do
+        simplifiedTerm <- BranchT.scatter merged
+        simplifyPredicate simplifiedTerm
+    return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.
 -}

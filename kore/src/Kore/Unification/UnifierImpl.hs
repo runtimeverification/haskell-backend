@@ -6,13 +6,13 @@ License     : NCSA
 module Kore.Unification.UnifierImpl
     ( simplifyAnds
     , deduplicateSubstitution
+    , normalizeOnce
     , normalizeExcept
     ) where
 
 import Debug.Trace
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
-import Control.Error
 import Control.Monad
     ( foldM
     )
@@ -28,6 +28,7 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 
 import qualified Branch
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Conditional (..)
@@ -42,9 +43,6 @@ import Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
-import Kore.Unification.Error
-    ( substitutionToUnifyOrSubError
-    )
 import Kore.Unification.Substitution
     ( Substitution
     )
@@ -192,7 +190,7 @@ deduplicateSubstitution =
             . map sortRenamedVariable
             $ Substitution.unwrap substitution
 
-normalizeExcept
+normalizeOnce
     ::  forall unifier variable term
     .   ( SimplifierVariable variable
         , MonadUnify unifier
@@ -200,7 +198,7 @@ normalizeExcept
         )
     => Conditional variable term
     -> unifier (Conditional variable term)
-normalizeExcept Conditional { term, predicate, substitution } = do
+normalizeOnce Conditional { term, predicate, substitution } = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
     deduplicated <- deduplicateSubstitution substitution
@@ -223,16 +221,25 @@ normalizeExcept Conditional { term, predicate, substitution } = do
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
-    -- TODO: this call to simplifPredicate throws an error
-    simplified <- Branch.alternate $ Simplifier.simplifyPredicate Conditional
-        { term = ()
+    return Conditional
+        { term
         , predicate = mergedPredicate
         , substitution = normalizedSubstitution
         }
-    -- traceM "\n!!!!!!!!!!!!!!!debug!!!!!!!!!!!!!!!!!\n"
-    return simplified { term }
   where
     normalizeSubstitution' =
-        Unifier.lowerExceptT
-        . withExceptT substitutionToUnifyOrSubError
-        . normalizeSubstitution
+        either Unifier.throwSubstitutionError return . normalizeSubstitution
+
+normalizeExcept
+    ::  forall unifier variable term
+    .   ( SimplifierVariable variable
+        , MonadUnify unifier
+        , WithLog LogMessage unifier
+        )
+    => Conditional variable term
+    -> unifier (Conditional variable term)
+normalizeExcept conditional = do
+    normalized <- normalizeOnce conditional
+    let (term, predicate') = Conditional.splitTerm normalized
+    simplified <- Branch.alternate $ Simplifier.simplifyPredicate predicate'
+    return simplified { term }

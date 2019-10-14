@@ -106,25 +106,25 @@ substitutions.
 data SubstitutionError =
     forall variable.
     InternalVariable variable =>
-    NonCtorCircularVariableDependency [UnifiedVariable variable]
+    SimplifiableCycle [UnifiedVariable variable]
     -- ^ the circularity path may pass through non-constructors: maybe solvable.
 
 instance Debug SubstitutionError where
-    debugPrec (NonCtorCircularVariableDependency variables) prec =
+    debugPrec (SimplifiableCycle variables) prec =
         (if (prec >= 10) then Pretty.parens else id)
-        $ "NonCtorCircularVariableDependency" Pretty.<+> debugPrec variables 10
+        $ "SimplifiableCycle" Pretty.<+> debugPrec variables 10
 
 instance Diff SubstitutionError where
     diffPrec = diffPrecIgnore
 
 instance Show SubstitutionError where
-    showsPrec prec (NonCtorCircularVariableDependency variables) =
+    showsPrec prec (SimplifiableCycle variables) =
         showParen (prec >= 10)
-        $ showString "NonCtorCircularVariableDependency "
+        $ showString "SimplifiableCycle "
         . showList variables
 
 instance Pretty SubstitutionError where
-    pretty (NonCtorCircularVariableDependency vars) =
+    pretty (SimplifiableCycle vars) =
         Pretty.vsep
         ( "Non-constructor circular variable dependency:"
         : (unparse <$> vars)

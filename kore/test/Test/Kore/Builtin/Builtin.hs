@@ -175,7 +175,8 @@ indexedModule =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier :: PredicateSimplifier
+testSubstitutionSimplifier
+    :: MonadSimplify simplifier => PredicateSimplifier simplifier
 testSubstitutionSimplifier = Simplifier.Predicate.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
@@ -184,7 +185,7 @@ testEvaluators = Builtin.koreEvaluators verifiedModule
 testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create
 
-testEnv :: Applicative simplifier => Env simplifier
+testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
         { metadataTools = testMetadataTools

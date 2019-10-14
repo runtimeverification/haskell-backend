@@ -26,6 +26,9 @@ import Control.Error.Util
     ( note
     )
 import qualified Control.Monad as Monad
+import Control.Monad.Catch
+    ( MonadCatch
+    )
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
@@ -140,7 +143,6 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
     , MonadSimplify
-    , PredicateSimplifier (..)
     , TermLikeSimplifier
     )
 import qualified Kore.Step.Strategy as Strategy
@@ -175,7 +177,6 @@ data Initialized = Initialized { rewriteRules :: ![Rewrite] }
 data Execution =
     Execution
         { simplifier :: !TermLikeSimplifier
-        , substitutionSimplifier :: !PredicateSimplifier
         , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
         , executionGraph :: !ExecutionGraph
         }
@@ -246,7 +247,11 @@ execGetExitCode indexedModule strategy' finalTerm =
 
 -- | Symbolic search
 search
-    :: (Log.WithLog Log.LogMessage smt, MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadProfiler smt
+        , MonadSMT smt
+        , MonadUnliftIO smt
+        )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
@@ -278,6 +283,7 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 -- | Proving a spec given as a module containing rules to be proven
 prove
     ::  ( Log.WithLog Log.LogMessage smt
+        , MonadCatch smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
@@ -310,7 +316,7 @@ proveWithRepl
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> MVar (Log.LogAction IO Log.LogMessage)
+    -> MVar (Log.LogAction IO Log.SomeEntry)
     -> Repl.Data.ReplScript
     -- ^ Optional script
     -> Repl.Data.ReplMode
@@ -488,7 +494,6 @@ execute verifiedModule strategy inputPattern =
     $ initialize verifiedModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
         simplifier <- Simplifier.askSimplifierTermLike
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
         axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         simplifiedPatterns <-
             Pattern.simplify (Pattern.fromTermLike inputPattern)
@@ -503,7 +508,6 @@ execute verifiedModule strategy inputPattern =
         executionGraph <- runStrategy' initialPattern
         return Execution
             { simplifier
-            , substitutionSimplifier
             , axiomIdToSimplifier
             , executionGraph
             }

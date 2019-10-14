@@ -70,7 +70,7 @@ data Env simplifier =
     Env
         { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
         , simplifierTermLike  :: !TermLikeSimplifier
-        , simplifierPredicate :: !PredicateSimplifier
+        , simplifierPredicate :: !(PredicateSimplifier simplifier)
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         , memo                :: !(Memo.Self simplifier)
         }
@@ -111,7 +111,12 @@ instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
         SimplifierT (profile event (runSimplifierT duration))
     {-# INLINE profile #-}
 
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
+instance
+    ( MonadUnliftIO m
+    , MonadSMT m
+    , MonadProfiler m
+    , WithLog LogMessage m
+    )
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools
@@ -125,13 +130,10 @@ instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
             env { simplifierTermLike = locally simplifierTermLike }
     {-# INLINE localSimplifierTermLike #-}
 
-    askSimplifierPredicate = asks simplifierPredicate
-    {-# INLINE askSimplifierPredicate #-}
-
-    localSimplifierPredicate locally =
-        local $ \env@Env { simplifierPredicate } ->
-            env { simplifierPredicate = locally simplifierPredicate }
-    {-# INLINE localSimplifierPredicate #-}
+    simplifyPredicate conditional = do
+        PredicateSimplifier simplify <- asks simplifierPredicate
+        simplify conditional
+    {-# INLINE simplifyPredicate #-}
 
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}

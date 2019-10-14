@@ -414,18 +414,18 @@ liftSimplifierWithLogger
     => MonadSimplify m
     => MonadIO m
     => Monad.Trans.MonadTrans t
-    => MVar (Logger.LogAction IO Logger.LogMessage)
+    => MVar (Logger.LogAction IO Logger.SomeEntry)
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
-   (severity, logScope, logType) <- logging <$> get
-   (textLogger, maybeHandle) <- logTypeToLogger logType
-   let scopes = unLogScope logScope
-       logger = Logger.makeKoreLogger severity scopes textLogger
-   _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
-   result <- Monad.Trans.lift simplifier
-   maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
-   pure result
+    (severity, logScope, logType) <- logging <$> get
+    (textLogger, maybeHandle) <- logTypeToLogger logType
+    let scopes = unLogScope logScope
+        logger = Logger.makeKoreLogger severity scopes textLogger
+    _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
+    result <- Monad.Trans.lift simplifier
+    maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
+    pure result
   where
     logTypeToLogger
         :: LogType
@@ -479,13 +479,15 @@ runStepper' claims axioms node = do
     gph <- getExecutionGraph
     gr@Strategy.ExecutionGraph { graph = innerGraph } <-
         liftSimplifierWithLogger mvar $ stepper claim claims axioms gph node
-    pure . (,) gr $ case Graph.suc innerGraph (unReplNode node) of
-        []       -> NoResult
-        [single] -> case getNodeState innerGraph single of
-                        Nothing -> NoResult
-                        Just (StuckNode, _) -> NoResult
-                        _ -> SingleResult . ReplNode $ single
-        nodes    -> BranchResult $ fmap ReplNode nodes
+    pure . (,) gr
+        $ case Graph.suc innerGraph (unReplNode node) of
+            []       -> NoResult
+            [single] ->
+                case getNodeState innerGraph single of
+                    Nothing -> NoResult
+                    Just (StuckNode, _) -> NoResult
+                    _ -> SingleResult . ReplNode $ single
+            nodes -> BranchResult $ fmap ReplNode nodes
 
 runUnifier
     :: MonadState (ReplState claim) (t m)
