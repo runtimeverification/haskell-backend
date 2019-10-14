@@ -15,6 +15,9 @@ module Kore.Strategies.Verification
     , toRule
     ) where
 
+import Control.Monad.Catch
+    ( MonadCatch
+    )
 import Control.Monad.Except
     ( ExceptT
     )
@@ -95,7 +98,7 @@ verify
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => Show (Rule claim)
-    => MonadSimplify m
+    => (MonadCatch m, MonadSimplify m)
     => [Strategy (Prim claim)]
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
@@ -106,7 +109,7 @@ verify strategy' =
 
 verifyClaim
     :: forall claim m
-    .  MonadSimplify m
+    .  (MonadCatch m, MonadSimplify m)
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
@@ -148,7 +151,7 @@ verifyClaim
 -- execution graph by inserting this step.
 verifyClaimStep
     :: forall claim m
-    .  MonadSimplify m
+    .  (MonadCatch m, MonadSimplify m)
     => Claim claim
     => claim
     -- ^ claim that is being proven
@@ -192,7 +195,7 @@ verifyClaimStep
 
 transitionRule'
     :: forall claim m
-    .  MonadSimplify m
+    .  (MonadCatch m, MonadSimplify m)
     => Claim claim
     => Pattern Variable
     -> Prim claim

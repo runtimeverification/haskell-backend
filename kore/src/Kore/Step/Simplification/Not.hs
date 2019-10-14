@@ -150,7 +150,8 @@ makeEvaluatePredicate
   = Conditional
         { term = ()
         , predicate =
-            makeNotPredicate
+            Syntax.Predicate.markSimplified
+            $ makeNotPredicate
             $ makeAndPredicate predicate
             $ Syntax.Predicate.fromSubstitution substitution
         , substitution = mempty

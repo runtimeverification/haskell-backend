@@ -253,9 +253,7 @@ unifyRules
 unifyRules unificationProcedure initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        unified <- unifyRule unificationProcedure initial rule
-        checkSubstitutionCoverage initial unified
-        return unified
+        unifyRule unificationProcedure initial rule
 
 {- | Apply the initial conditions to the results of rule unification.
 
@@ -373,17 +371,19 @@ finalizeRule
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => Predicate (Target variable)
+    => Pattern (Target variable)
     -- ^ Initial conditions
     -> UnifiedRule (Target variable)
     -- ^ Rewriting axiom
     -> unifier [Result variable]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
-finalizeRule initialCondition unifiedRule =
+finalizeRule initial unifiedRule =
     Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
+        let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
+        checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
         let result = unwrapAndQuantifyConfiguration <$> final
@@ -399,9 +399,7 @@ finalizeRulesParallel
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
 finalizeRulesParallel initial unifiedRules = do
-    let initialCondition = Conditional.withoutTerm initial
-    results <-
-        Foldable.fold <$> traverse (finalizeRule initialCondition) unifiedRules
+    results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
     remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
@@ -454,12 +452,14 @@ finalizeRulesSequence initial unifiedRules
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
   where
+    initialTerm = Conditional.term initial
     finalizeRuleSequence'
         :: UnifiedRule (Target variable)
         -> State.StateT (Predicate (Target variable)) unifier [Result variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
-        results <- Monad.Trans.lift $ finalizeRule remainder unifiedRule
+        let remainderPattern = Conditional.withCondition initialTerm remainder
+        results <- Monad.Trans.lift $ finalizeRule remainderPattern unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
                 Predicate.fromPredicate

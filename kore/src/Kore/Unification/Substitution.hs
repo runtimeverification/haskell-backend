@@ -10,6 +10,7 @@ Portability : portable
 
 module Kore.Unification.Substitution
     ( Substitution
+    , UnwrappedSubstitution
     , unwrap
     , toMap
     , fromMap
@@ -76,8 +77,6 @@ import Kore.Variables.Fresh
     ( FreshVariable
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 {- | @Substitution@ represents a collection @[xᵢ=φᵢ]@ of substitutions.
 
@@ -151,6 +150,9 @@ instance Ord variable => Semigroup (Substitution variable) where
 instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
+type UnwrappedSubstitution variable =
+    [(UnifiedVariable variable, TermLike variable)]
+
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
     :: Ord variable
@@ -213,13 +215,16 @@ unsafeWrap =
     NormalizedSubstitution . List.foldl' insertNormalized Map.empty
   where
     insertNormalized subst (var, termLike) =
-        -- The variable must not occur in the substitution,
+        -- The variable must not occur in the substitution
         Exception.assert (Map.notMember var subst)
         -- or in the right-hand side of this or any other substitution,
         $ Exception.assert (not $ occurs termLike)
         $ Exception.assert (not $ any occurs subst)
-        -- and this substitution must not depend on any substitution variable.
+        -- this substitution must not depend on any substitution variable,
         $ Exception.assert (not $ any depends $ Map.keys subst)
+        -- and if this is an element variable substitution, the substitution
+        -- must be defined.
+        $ Exception.assert (not $ isElemVar var && isBottom termLike)
         $ Map.insert var termLike subst
       where
         occurs = TermLike.hasFreeVariable var

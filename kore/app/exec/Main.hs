@@ -4,6 +4,9 @@ import Control.Applicative
     ( Alternative (..)
     , optional
     )
+import Control.Monad.Catch
+    ( MonadCatch
+    )
 import Control.Monad.IO.Class
     ( MonadIO
     )
@@ -475,7 +478,8 @@ loadRuleIds fileName = do
         )
 
 type MonadExecute exe =
-    ( MonadIO exe
+    ( MonadCatch exe
+    , MonadIO exe
     , MonadProfiler exe
     , MonadSMT exe
     , MonadUnliftIO exe

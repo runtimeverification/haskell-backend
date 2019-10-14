@@ -16,6 +16,8 @@ module Debug
     , diffPrecEq
     , diffPrecGeneric
     , diffPrecIgnore
+    -- * Exceptions
+    , formatExceptionInfo
     ) where
 
 import Control.Comonad.Trans.Cofree
@@ -46,6 +48,9 @@ import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
+import qualified Data.Text as Text
+    ( unpack
+    )
 import Data.Text.Prettyprint.Doc
     ( Doc
     , (<+>)
@@ -57,6 +62,9 @@ import Data.Typeable
     )
 import Data.Void
     ( Void
+    )
+import Debug.Trace
+    ( traceM
     )
 import Generics.SOP
     ( All
@@ -74,6 +82,11 @@ import Generics.SOP
     , SOP (..)
     )
 import qualified Generics.SOP as SOP
+import GHC.Stack
+    ( HasCallStack
+    , callStack
+    , prettyCallStack
+    )
 import qualified GHC.Stack as GHC
 import Numeric.Natural
     ( Natural
@@ -579,3 +592,11 @@ instance (Debug a, Debug b, Diff a, Diff b) => Diff (Either a b)
 -- | Assume all functions are the same because we cannot compare them.
 instance Diff (a -> b) where
     diffPrec = diffPrecIgnore
+
+formatExceptionInfo :: (HasCallStack, Monad m) => Text -> m ()
+formatExceptionInfo message = do
+    traceM "------------------"
+    traceM (prettyCallStack callStack)
+    traceM ""
+    traceM (Text.unpack message)
+    traceM "------------------"

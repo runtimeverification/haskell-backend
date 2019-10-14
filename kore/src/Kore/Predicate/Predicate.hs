@@ -33,6 +33,8 @@ module Kore.Predicate.Predicate
     , makeOrPredicate
     , makeMultipleOrPredicate
     , makeTruePredicate
+    , isSimplified
+    , markSimplified
     , freeVariables
     , isFreeOf
     , Kore.Predicate.Predicate.freeElementVariables
@@ -40,7 +42,7 @@ module Kore.Predicate.Predicate
     , Kore.Predicate.Predicate.mapVariables
     , singleSubstitutionToPredicate
     , stringFromPredicate
-    , substitutionToPredicate
+    , coerceSort
     , fromPredicate
     , fromSubstitution
     , unwrapPredicate
@@ -81,6 +83,8 @@ import Kore.Error
     )
 import Kore.Internal.TermLike hiding
     ( freeVariables
+    , isSimplified
+    , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
@@ -118,8 +122,21 @@ instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isTop (GenericPredicate patt) = isTop patt
     isBottom (GenericPredicate patt) = isBottom patt
 
-instance Unparse pattern' => Unparse (GenericPredicate pattern') where
-    unparse (GenericPredicate pattern') = unparse pattern'
+instance
+    (Ord variable, SortedVariable variable)
+    => Unparse (GenericPredicate (TermLike variable))
+  where
+    unparse predicate =
+        unparseAssoc'
+            ("\\and" <> parameters [sort])
+            (unparse (mkTop sort :: TermLike variable))
+            (worker <$> getMultiAndPredicate predicate)
+      where
+        worker (GenericPredicate termLike) = unparse termLike
+        sort =
+            termLikeSort termLike
+          where
+            GenericPredicate termLike = predicate
     unparse2 (GenericPredicate pattern') = unparse2 pattern'
 
 
@@ -172,6 +189,18 @@ fromPredicate
     -> TermLike variable
 fromPredicate sort (GenericPredicate p) = TermLike.forceSort sort p
 
+{- | Change a 'Predicate' from one 'Sort' to another.
+
+This is a safe operation because predicates are flexibly sorted.
+
+ -}
+coerceSort
+    :: (SortedVariable variable, Unparse variable)
+    => Sort
+    -> Predicate variable
+    -> Predicate variable
+coerceSort sort = fmap (TermLike.forceSort sort)
+
 {-|'PredicateFalse' is a pattern for matching 'bottom' predicates.
 -}
 pattern PredicateFalse :: Predicate variable
@@ -199,6 +228,22 @@ makeMultipleAndPredicate =
     foldl' makeAndPredicate makeTruePredicate . nub
     -- 'and' is idempotent so we eliminate duplicates
     -- TODO: This is O(n^2), consider doing something better.
+
+{- | Flatten a 'Predicate' with 'And' at the top.
+
+'getMultiAndPredicate' is the inverse of 'makeMultipleAndPredicate', up to
+associativity.
+
+ -}
+getMultiAndPredicate
+    :: Predicate variable
+    -> [Predicate variable]
+getMultiAndPredicate original@(GenericPredicate termLike) =
+    case termLike of
+        And_ _ left right ->
+            concatMap (getMultiAndPredicate . GenericPredicate) [left, right]
+        _ -> [original]
+
 
 {-| 'makeMultipleOrPredicate' combines a list of Predicates with 'or',
 doing some simplification.
@@ -458,6 +503,21 @@ freeVariables
     -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
+isSimplified :: Predicate variable -> Bool
+isSimplified (GenericPredicate termLike) = TermLike.isSimplified termLike
+
+{- | Mark a 'Predicate' as fully simplified.
+
+The pattern is fully simplified if we do not know how to simplify it any
+further. The simplifier reserves the right to skip any pattern which is marked,
+so do not mark any pattern unless you are certain it cannot be further
+simplified.
+
+ -}
+markSimplified :: Predicate variable -> Predicate variable
+markSimplified (GenericPredicate termLike) =
+    GenericPredicate (TermLike.markSimplified termLike)
+
 isFreeOf
     :: Ord variable
     => Predicate variable
@@ -481,27 +541,14 @@ hasFreeVariable
 hasFreeVariable variable =
     isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
 
-{- | 'substitutionToPredicate' transforms a substitution in a predicate.
-
-An empty substitution list returns a true predicate. A non-empty substitution
-returns a conjunction of variable/substitution equalities.
-
--}
-substitutionToPredicate
-    :: InternalVariable variable
-    => Substitution variable
-    -> Predicate variable
-substitutionToPredicate =
-    makeMultipleAndPredicate
-    . fmap singleSubstitutionToPredicate
-    . Substitution.unwrap
-
 singleSubstitutionToPredicate
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> Predicate variable
 singleSubstitutionToPredicate (var, patt) =
-    makeEqualsPredicate (TermLike.mkVar var) patt
+    -- markSimplified because this should only be called when we don't know what
+    -- to do with a substitution.
+    markSimplified $ makeEqualsPredicate (TermLike.mkVar var) patt
 
 {- | @fromSubstitution@ constructs a 'Predicate' equivalent to 'Substitution'.
 
@@ -513,7 +560,10 @@ fromSubstitution
     :: InternalVariable variable
     => Substitution variable
     -> Predicate variable
-fromSubstitution = substitutionToPredicate
+fromSubstitution =
+    makeMultipleAndPredicate
+    . fmap singleSubstitutionToPredicate
+    . Substitution.unwrap
 
 {- | Traverse the predicate from the top down and apply substitutions.
 

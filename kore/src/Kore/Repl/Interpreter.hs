@@ -34,8 +34,7 @@ import qualified Control.Lens as Lens hiding
     ( makeLenses
     )
 import Control.Monad
-    ( foldM
-    , void
+    ( void
     )
 import Control.Monad.Extra
     ( ifM
@@ -57,7 +56,6 @@ import Control.Monad.RWS.Strict
     ( MonadWriter
     , RWST
     , ask
-    , asks
     , lift
     , runRWST
     , tell
@@ -463,15 +461,14 @@ proveSteps n = do
 -- than 'n' steps if the proof is stuck or completed in less than 'n' steps.
 proveStepsF
     :: Claim claim
-    => Monad m
+    => MonadSimplify m
+    => MonadIO m
     => Natural
     -- ^ maximum number of steps to perform
     -> ReplM claim m ()
 proveStepsF n = do
-    graph  <- getExecutionGraph
     node   <- Lens.use (field @"node")
-    graph' <- recursiveForcedStep n graph node
-    updateExecutionGraph graph'
+    recursiveForcedStep n node
 
 -- | Loads a script from a file.
 loadScript
@@ -871,8 +868,10 @@ tryAxiomClaimWorker mode ref = do
         -> TermLike Variable
         -> ReplM claim m ()
     runUnifier' first second =
-        runUnifier first second
+        runUnifier first' second
         >>= tell . formatUnificationMessage
+      where
+        first' = TermLike.refreshVariables (TermLike.freeVariables second) first
 
     extractLeftPattern :: Either axiom claim -> TermLike Variable
     extractLeftPattern = left . either coerce coerce
@@ -1086,21 +1085,21 @@ performStepNoBranching =
 recursiveForcedStep
     :: Claim claim
     => axiom ~ Rule claim
-    => Monad m
+    => MonadSimplify m
+    => MonadIO m
     => Natural
-    -> ExecutionGraph axiom
     -> ReplNode
-    -> ReplM claim m (ExecutionGraph axiom)
-recursiveForcedStep n graph node
-  | n == 0    = return graph
+    -> ReplM claim m ()
+recursiveForcedStep n node
+  | n == 0    = pure ()
   | otherwise = do
-      ReplState { claims , axioms , claim } <- get
-      stepper <- asks stepper
-      graph'@Strategy.ExecutionGraph { graph = gr } <-
-          lift $ stepper claim claims axioms graph node
-      case Graph.suc gr (unReplNode node) of
-          [] -> return graph'
-          xs -> foldM (recursiveForcedStep $ n-1) graph' (fmap ReplNode xs)
+    ReplState { claims, axioms } <- get
+    (graph, result) <- runStepper' claims axioms node
+    updateExecutionGraph graph
+    case result of
+        NoResult -> pure ()
+        SingleResult sr -> (recursiveForcedStep $ n-1) sr
+        BranchResult xs -> Foldable.traverse_ (recursiveForcedStep (n-1)) xs
 
 -- | Display a rule as a String.
 showRewriteRule

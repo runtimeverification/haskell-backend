@@ -41,18 +41,11 @@ import Control.Monad.Reader
     ( runReaderT
     )
 import qualified Control.Monad.Trans as Trans
-import Data.Foldable
-    ( fold
-    )
-import qualified Data.Foldable as Fold
 import Data.Functor
     ( void
     )
 import Data.Functor.Contravariant
     ( contramap
-    )
-import Data.List
-    ( intersperse
     )
 import Data.Set
     ( Set
@@ -66,11 +59,8 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Lazy as Text.Lazy
-import Data.Text.Lazy.Builder
-    ( Builder
-    )
-import qualified Data.Text.Lazy.Builder as Builder
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Time.Clock
     ( getCurrentTime
     )
@@ -82,12 +72,6 @@ import Data.Time.LocalTime
     ( LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
-    )
-import GHC.Stack
-    ( CallStack
-    , getCallStack
-    , popCallStack
-    , prettyCallStack
     )
 import Options.Applicative
     ( Parser
@@ -124,14 +108,27 @@ data KoreLogOptions = KoreLogOptions
     }
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
-data LogMessageWithTimestamp = LogMessageWithTimestamp LogMessage LocalTime
+data WithTimestamp = WithTimestamp SomeEntry LocalTime
+
+instance Pretty.Pretty WithTimestamp where
+    pretty (WithTimestamp entry time) =
+        Pretty.brackets formattedTime <> Pretty.pretty entry
+      where
+        formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q" time
+
+instance Entry WithTimestamp where
+    shouldLog
+        minSeverity
+        currentScope
+        (WithTimestamp (SomeEntry entry) _)
+      = shouldLog minSeverity currentScope entry
 
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
 -- the CPS style because some outputters require cleanup (e.g. files).
 withLogger
     :: Trans.MonadIO m
     => KoreLogOptions
-    -> (LogAction m LogMessage -> IO a)
+    -> (LogAction m SomeEntry -> IO a)
     -> IO a
 withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
@@ -175,7 +172,6 @@ parseKoreLogOptions =
             "stdout"   -> pure LogStdErr
             "filetext" -> pure LogFileText
             _          -> Nothing
-
     parseLevel =
         option
             (maybeReader parseSeverity)
@@ -189,7 +185,6 @@ parseKoreLogOptions =
             "error"    -> pure Error
             "critical" -> pure Critical
             _          -> Nothing
-
     parseScope =
         option
             parseCommaSeparatedScopes
@@ -216,56 +211,21 @@ makeKoreLogger
     => Severity
     -> Set Scope
     -> LogAction m Text
-    -> LogAction m LogMessage
-makeKoreLogger severity scopeSet logToText =
-    Colog.cfilter
-        (\(LogMessage _ logSeverity logScope _) ->
-            logSeverity >= severity && logScope `member` scopeSet
-        )
-    . Colog.cmapM addTimeStamp
-    $ contramap messageToText logToText
+    -> LogAction m SomeEntry
+makeKoreLogger minSeverity currentScope logToText =
+    Colog.cfilter (withSomeEntry (shouldLog minSeverity currentScope))
+        . Colog.cmapM withTimestamp
+        $ contramap messageToText logToText
   where
-    addTimeStamp :: LogMessage -> m LogMessageWithTimestamp
-    addTimeStamp msg =
-        LogMessageWithTimestamp msg <$> getLocalTime
+    messageToText :: WithTimestamp -> Text
+    messageToText =
+        Pretty.renderStrict
+        . Pretty.layoutPretty Pretty.defaultLayoutOptions
+        . Pretty.pretty
 
-    messageToText :: LogMessageWithTimestamp -> Text
-    messageToText
-        (LogMessageWithTimestamp
-                (LogMessage message severity' scope callstack)
-            localTime
-        )
-            = Text.Lazy.toStrict . Builder.toLazyText
-                $ "["
-                <> Builder.fromString (show severity')
-                <> "] ["
-                <> formatLocalTime "%Y-%m-%d %H:%M:%S%Q" localTime
-                <> "] ["
-                <> scopeToBuilder scope
-                <> "]: "
-                <> Builder.fromText message
-                <> " ["
-                <> formatCallStack callstack
-                <> "]"
-
-    scopeToBuilder :: [Scope] -> Builder
-    scopeToBuilder =
-        fold
-            . intersperse "."
-            . fmap (Builder.fromText . unScope)
-
-    formatCallStack :: CallStack -> Builder
-    formatCallStack cs
-        | length (getCallStack cs) <= 1 = mempty
-        | otherwise                    = callStackToBuilder cs
-
-    callStackToBuilder :: CallStack -> Builder
-    callStackToBuilder = Builder.fromString . prettyCallStack . popCallStack
-
-    member :: [Scope] -> Set Scope -> Bool
-    member s set
-      | Set.null set = True
-      | otherwise    = Fold.any (`Set.member` set) s
+-- | Adds the current timestamp to a log entry.
+withTimestamp :: MonadIO io => SomeEntry -> io WithTimestamp
+withTimestamp msg = WithTimestamp msg <$> getLocalTime
 
 -- Helper to get the local time in 'MonadIO'.
 getLocalTime :: MonadIO m => m LocalTime
@@ -279,7 +239,7 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stderrLogger :: MonadIO m => Severity -> Set Scope -> LogAction m LogMessage
+stderrLogger :: MonadIO m => Severity -> Set Scope -> LogAction m SomeEntry
 stderrLogger logLevel logScopes =
     makeKoreLogger logLevel logScopes Colog.logTextStderr
 
