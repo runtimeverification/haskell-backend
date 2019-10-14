@@ -40,10 +40,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( isPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
-    )
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -195,12 +191,9 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
-        if TermLike.isSimplified termLike
+        if TermLike.isSimplified termLike && not (Kore.Predicate.Predicate.isPredicate termLike)
             then
-                either
-                    (const $ asTermOrPattern termLike)
-                    asPredicateOrPattern
-                    $ Syntax.Predicate.makePredicate termLike
+                return . OrPattern.fromTermLike $ termLike
             else
                 assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =
@@ -277,17 +270,6 @@ simplifyInternal term predicate = simplifyInternalWorker term
                         (unparse <$> unsimplified)
                     , "Expected all patterns to be fully simplified."
                     ]
-
-        asTermOrPattern
-            :: TermLike variable
-            -> simplifier (OrPattern variable)
-        asTermOrPattern = return . OrPattern.fromTermLike
-
-        asPredicateOrPattern
-            :: Syntax.Predicate variable
-            -> simplifier (OrPattern variable)
-        asPredicateOrPattern =
-            return . OrPattern.fromPattern . Pattern.fromSyntaxPredicate
 
         assertTermNotPredicate getResults = do
             results <- getResults
