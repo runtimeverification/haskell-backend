@@ -1,0 +1,1 @@
+Error in module 'TEST-HOOKS-CTOR' -> symbol 'sym' declaration (./test/resources//test-hooks-ctor.kore 8:10): Cannot define constructor 'sym' for hooked sort 'S{}'.
