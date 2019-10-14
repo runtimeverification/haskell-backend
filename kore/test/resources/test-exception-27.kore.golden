@@ -1,0 +1,5 @@
+./test/resources//test-exception-27.kore:5:3:
+  |
+5 |   /a
+  |   ^
+Keyword Based Parsers - unexpected character.
