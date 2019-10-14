@@ -109,5 +109,8 @@ pipeline {
         }
       }
     }
+    success {
+      archiveArtifacts 'profile.json'
+    }
   }
 }
