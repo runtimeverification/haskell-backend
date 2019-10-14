@@ -1,0 +1,1 @@
+Error in module 'INT' -> hooked-sort 'Int' declaration (./test/resources//test-int-2.kore 15:17): Expected 0 sort parameters, found 1
