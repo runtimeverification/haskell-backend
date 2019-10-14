@@ -8,6 +8,7 @@ module Kore.Step.Simplification.Substitution
     ( SubstitutionSimplifier (..)
     , simplification
     , unification
+    , fromNormalization
     ) where
 
 import Control.Error
@@ -100,19 +101,25 @@ simplification =
 
     normalize1 Predicate.Conditional { predicate, substitution } = do
         let deduplicated = Map.fromList $ Substitution.unwrap substitution
-        case normalize deduplicated of
-            Nothing -> return Predicate.bottom
-            Just Normalization { normalized, denormalized } ->
-                return $ predicate' <> substitution'
-                where
-                predicate' =
-                    Predicate.fromPredicate
-                    . Syntax.Predicate.makeAndPredicate predicate
-                    . Syntax.Predicate.fromSubstitution
-                    $ Substitution.wrap denormalized
-                substitution' =
-                    Predicate.fromSubstitution
-                    $ Substitution.unsafeWrap normalized
+            normalized =
+                maybe Predicate.bottom fromNormalization
+                $ normalize deduplicated
+        return $ Predicate.fromPredicate predicate <> normalized
+
+fromNormalization
+    :: SubstitutionVariable variable
+    => Normalization variable
+    -> Predicate variable
+fromNormalization Normalization { normalized, denormalized } =
+    predicate' <> substitution'
+  where
+    predicate' =
+        Predicate.fromPredicate
+        . Syntax.Predicate.fromSubstitution
+        $ Substitution.wrap denormalized
+    substitution' =
+        Predicate.fromSubstitution
+        $ Substitution.unsafeWrap normalized
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
