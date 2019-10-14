@@ -99,10 +99,10 @@ test_andSimplification =
                         , predicate = makeEqualsPredicate fOfX gOfX
                         , substitution = mempty
                         }
-            traceM
-                $ "\nAnd test: fOfXExpanded is simplified = "
-                <> show (Pattern.isSimplified fOfXExpanded) <> " :\n"
-                <> unparseToString fOfXExpanded
+            -- traceM
+            --     $ "\nAnd test: fOfXExpanded is simplified = "
+            --     <> show (Pattern.isSimplified fOfXExpanded) <> " :\n"
+            --     <> unparseToString fOfXExpanded
             actual <- evaluatePatterns fOfXExpanded gOfXExpanded
             assertEqual "" (OrPattern.fromPatterns [expect]) actual
 

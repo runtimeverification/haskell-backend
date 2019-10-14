@@ -28,6 +28,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -39,6 +40,7 @@ import Kore.Internal.TermLike
     , TermLikeF (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -155,10 +157,10 @@ simplifyToOr
     =>  Predicate variable
     ->  TermLike variable
     ->  simplifier (OrPattern variable)
-simplifyToOr term predicate =
+simplifyToOr predicate term =
     localSimplifierTermLike (const simplifier)
-        . simplifyInternal predicate
-        $ term
+        . simplifyInternal term
+        $ predicate
   where
     simplifier = termLikeSimplifier simplifyToOr
 
@@ -173,6 +175,9 @@ simplifyInternal
     ->  Predicate variable
     ->  simplifier (OrPattern variable)
 simplifyInternal term predicate = simplifyInternalWorker term
+    --if TermLike.isSimplified term
+    --    then return . OrPattern.fromTermLike $ term
+    --    else simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
         Nothing -> id
@@ -187,30 +192,17 @@ simplifyInternal term predicate = simplifyInternalWorker term
         -> simplifier (t (OrPattern variable))
     simplifyChildren = traverse simplifyInternalWorker
 
+    simplifyInternalWorker
+        :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
-        if TermLike.isSimplified termLike
-            then
-                --trace
-                --    ( "\nDEBUG: already simplified:\n"
-                --    <> "\nTerm is simplified "
-                --        <> show (TermLike.isSimplified termLike) <> " :\n"
-                --        <> unparseToString termLike
-                --    <> "\nPredicate is simplified "
-                --        <> show (Predicate.isSimplified predicate) <> " :\n"
-                --        <> unparseToString predicate
-                --    ) $
-                return . OrPattern.fromTermLike $ termLike
-            else
-                --trace
-                --    ( "\nDEBUG: not simplified:"
-                --    <> "\nTerm is simplified "
-                --        <> show (TermLike.isSimplified termLike) <> " :\n"
-                --        <> unparseToString termLike
-                --    <> "\nPredicate is simplified "
-                --        <> show (Predicate.isSimplified predicate) <> " :\n"
-                --        <> unparseToString predicate
-                --    )
-                -- assertSimplifiedResults $ tracer termLike $
+          if TermLike.isSimplified termLike
+              then
+                case Syntax.Predicate.makePredicate termLike of
+                    Right predicateTerm ->
+                        return . OrPattern.fromPattern . Pattern.fromPredicate . Predicate.fromPredicate $ predicateTerm
+                    Left _ -> return . OrPattern.fromTermLike $ termLike
+              else
+                assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =
                         Exception.assert (TermLike.isSimplified termLike)
                         return (OrPattern.fromTermLike termLike)
@@ -226,7 +218,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
                     ApplySymbolF applySymbolF ->
                         Application.simplify predicate
                             =<< simplifyChildren applySymbolF
-                    CeilF ceilF ->
+                    CeilF ceilF -> do
                         Ceil.simplify predicate =<< simplifyChildren ceilF
                     EqualsF equalsF ->
                         Equals.simplify predicate =<< simplifyChildren equalsF
@@ -269,22 +261,22 @@ simplifyInternal term predicate = simplifyInternalWorker term
                     VariableF variableF ->
                         return $ Variable.simplify (getConst variableF)
       where
-       -- assertSimplifiedResults getResults = do
-       --     results <- getResults
-       --     let unsimplified =
-       --             filter (not . Pattern.isSimplified)
-       --             $ OrPattern.toPatterns results
-       --     if null unsimplified
-       --         then return results
-       --         else (error . show . Pretty.vsep)
-       --             [ "Incomplete simplification!"
-       --             , Pretty.indent 2 "input:"
-       --             , Pretty.indent 4 (unparse termLike)
-       --             , Pretty.indent 2 "unsimplified results:"
-       --             , (Pretty.indent 4 . Pretty.vsep)
-       --                 (unparse <$> unsimplified)
-       --             , "Expected all patterns to be fully simplified."
-       --             ]
+        assertSimplifiedResults getResults = do
+            results <- getResults
+            let unsimplified =
+                    filter (not . TermLike.isSimplified . Pattern.term)
+                    $ OrPattern.toPatterns results
+            if null unsimplified
+                then return results
+                else (error . show . Pretty.vsep)
+                    [ "Incomplete simplification!"
+                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 4 (unparse termLike)
+                    , Pretty.indent 2 "unsimplified results:"
+                    , (Pretty.indent 4 . Pretty.vsep)
+                        (unparse <$> unsimplified)
+                    , "Expected all patterns to be fully simplified."
+                    ]
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
