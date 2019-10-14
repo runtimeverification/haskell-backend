@@ -224,4 +224,9 @@ evaluateAxioms
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms (termLike, predicate) =
     runSimplifier Mock.env
-    $ Kore.evaluateAxioms FunctionEvaluationContext axioms termLike predicate
+    $ fmap Kore.resultsToAttemptedAxiom
+        $ Kore.evaluateAxioms
+            FunctionEvaluationContext
+            axioms
+            termLike
+            predicate

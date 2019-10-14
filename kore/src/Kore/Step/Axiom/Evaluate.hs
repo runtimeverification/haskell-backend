@@ -5,22 +5,13 @@ License     : NCSA
 -}
 module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
+    , resultsToAttemptedAxiom
     ) where
 
 import Control.Lens.Combinators as Lens
-import qualified Control.Monad as Monad
-import Control.Monad.Trans.Maybe
-    ( runMaybeT
-    )
-import Data.Generics.Product
 import qualified Data.Foldable as Foldable
 import Data.Function
-import Data.Maybe
-    ( fromMaybe
-    )
-import Data.Sequence as Seq
-    ( zipWith
-    )
+import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
@@ -64,9 +55,6 @@ import Kore.Step.Step
 import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Variables.Fresh
-import Kore.Variables.Target
-    ( Target (..)
-    )
 
 evaluateAxioms
     :: forall variable simplifier
@@ -75,20 +63,9 @@ evaluateAxioms
     -> [EqualityRule Variable]
     -> TermLike variable
     -> Syntax.Predicate variable
-    -> simplifier (AttemptedAxiom variable)
-evaluateAxioms a b c d = resultsToAttemptedAxiom <$> evaluateAxioms' a b c d
--- ^ TODO (andrei.burdusa): remove this
-
-evaluateAxioms'
-    :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => StepContext
-    -> [EqualityRule Variable]
-    -> TermLike variable
-    -> Syntax.Predicate variable
     -> simplifier (Step.Results variable)
-evaluateAxioms'
-    context
+evaluateAxioms
+    _
     definitionRules
     patt
     predicate
@@ -96,16 +73,15 @@ evaluateAxioms'
   , not (TermLike.isConcrete patt)
   = return mempty
   | otherwise
-  = maybeResults $ do
+  = do
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
-    results <- applyRules expanded (map unwrapEqualityRule definitionRules)
-    Monad.guard (any Result.hasResults results)
-    mapM_ rejectNarrowing results
+    results <- rejectList (Foldable.any Step.isNarrowingResult . Result.results)
+                <$> applyRules expanded (map unwrapEqualityRule definitionRules)
 
     ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
     let
@@ -119,33 +95,22 @@ evaluateAxioms'
         keepResultUnchanged = id
         introduceDefinedness = flip Pattern.andCondition
         markRemainderEvaluated = fmap TermLike.mkEvaluated
-        rules = Result.appliedRule <$> Result.results result
 
-    simplifiedResults <-
-        Lens.traverseOf (field @"results" . Lens.mapped . field @"result") 
+    simplifiedResult <-
+        Lens.traverseOf (field @"results" . Lens.traversed . field @"result")
             (OrPattern.simplifyPredicatesWithSmt predicate)
             result
-
-    simplifiedRemainders <-
-        Lens.traverseOf (field @"remainders") 
-            (OrPattern.simplifyPredicatesWithSmt predicate)
-            simplifiedResults
+            >>= Lens.traverseOf (field @"remainders")
+                (OrPattern.simplifyPredicatesWithSmt predicate)
 
     let
-        returnedResults = simplifiedResults
+        Result.Results { results = returnedResults } = simplifiedResult
 
-    Monad.guard $ (not . Foldable.null . Foldable.fold . fmap Result.result) returnedResults
-
-    return Result.Results
-            { results = returnedResults
-            , remainders = simplifiedRemainders
-            }
+    if (Foldable.null . Foldable.fold . fmap Result.result) returnedResults
+        then return mempty
+        else return simplifiedResult
 
   where
-    maybeResults = fmap (fromMaybe (Result.Results mempty mempty)) . runMaybeT
-
-    zipResult = Seq.zipWith Result.Result
-
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete
         . Attribute.Axiom.concrete
@@ -155,14 +120,14 @@ evaluateAxioms'
     unwrapEqualityRule (EqualityRule rule) =
         RulePattern.mapVariables fromVariable rule
 
-    rejectNarrowing (Result.results -> results) =
-        (Monad.guard . not) (Foldable.any Step.isNarrowingResult results)
+    rejectList p as
+      | Foldable.any p as = []
+      | otherwise = as
 
     applyRules
         (Step.toConfigurationVariables -> initial)
         rules
-      = Monad.Unify.maybeUnifierT
-        $ Step.checkFunctionLikeResults context initial
+      = Monad.Unify.listUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =

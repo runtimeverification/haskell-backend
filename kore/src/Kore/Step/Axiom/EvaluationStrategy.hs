@@ -28,6 +28,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -47,6 +48,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
+import qualified Kore.Step.Step as Step
 import Kore.Unparser
     ( unparse
     )
@@ -72,12 +74,17 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ term predicate ->
-            evaluateAxioms
-                FunctionEvaluationContext
-                rules
-                term
-                (Predicate.toPredicate predicate)
+        (\_ _ _ term predicate -> do
+            let ea = evaluateAxioms
+                        FunctionEvaluationContext
+                        rules
+                        term
+                        (Predicate.toPredicate predicate)
+            res <- Step.checkFunctionLikeResults
+                    FunctionEvaluationContext
+                    (Step.toConfigurationVariables (Pattern.fromTermLike term))
+                    ea
+            return $ resultsToAttemptedAxiom res
         )
 
 -- | Create an evaluator from a single simplification rule.
@@ -86,12 +93,17 @@ simplificationEvaluation
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ term predicate ->
-            evaluateAxioms
-                SimplificationContext
-                [rule]
-                term
-                (Predicate.toPredicate predicate)
+        (\_ _ _ term predicate -> do
+            let ea = evaluateAxioms
+                        SimplificationContext
+                        [rule]
+                        term
+                        (Predicate.toPredicate predicate)
+            res <- Step.checkFunctionLikeResults
+                    SimplificationContext
+                    (Step.toConfigurationVariables (Pattern.fromTermLike term))
+                    ea
+            return $ resultsToAttemptedAxiom res
         )
 
 {-| Creates an evaluator that choses the result of the first evaluator that

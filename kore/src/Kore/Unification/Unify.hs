@@ -7,6 +7,7 @@ module Kore.Unification.Unify
     ( MonadUnify (..), SimplifierVariable
     , UnifierT (..)
     , throwUnificationOrSubstitutionError
+    , listUnifierT
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT
@@ -23,6 +24,9 @@ import Control.Monad
 import qualified Control.Monad.Except as Error
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
+    )
+import Data.Either
+    ( fromRight
     )
 import Data.Text.Prettyprint.Doc
     ( Doc
@@ -169,3 +173,8 @@ runUnifierT = runExceptT . BranchT.gather . getUnifierT
  -}
 maybeUnifierT :: MonadSimplify m => UnifierT m a -> MaybeT m [a]
 maybeUnifierT = hushT . BranchT.gather . getUnifierT
+
+{- | Run a 'Unifier', returning empty list upon error.
+ -}
+listUnifierT :: MonadSimplify m => UnifierT m a -> m [a]
+listUnifierT = fmap (fromRight []) . runUnifierT

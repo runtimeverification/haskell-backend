@@ -413,7 +413,6 @@ finalizeRulesParallel initial unifiedRules = do
 checkFunctionLikeResults
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
     => Rule.StepContext
