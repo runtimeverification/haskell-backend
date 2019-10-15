@@ -5,11 +5,12 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
+import qualified Control.Lens as Lens
 import qualified Data.Default as Default
+import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import Test.Tasty
 
-import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Simplification
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.Map as Map
@@ -496,10 +497,8 @@ simplificationRulePattern
     -> TermLike variable
     -> RulePattern variable
 simplificationRulePattern left right =
-    patt
-        { attributes = (attributes patt)
-            { Attribute.simplification = Simplification True}
-        }
+    patt Lens.& Lens.set (field @"attributes" . field @"simplification")
+        (Simplification True)
   where
     patt = rulePattern left right
 
