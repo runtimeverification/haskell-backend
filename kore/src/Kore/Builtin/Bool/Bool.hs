@@ -28,8 +28,25 @@ import Data.Text
     )
 
 import qualified Kore.Domain.Builtin as Domain
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( fromTermLike
+    )
 import Kore.Internal.TermLike
+    ( DomainValue (DomainValue)
+    , InternalVariable
+    , Sort
+    , TermLike
+    , mkBuiltin
+    , mkDomainValue
+    , mkStringLiteral
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
+import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 
 {- | Builtin name of the @Bool@ sort.
  -}
@@ -50,7 +67,7 @@ asInternal
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    (markSimplified . mkBuiltin . Domain.BuiltinBool)
+    (TermLike.markSimplified . mkBuiltin . Domain.BuiltinBool)
         Domain.InternalBool
             { builtinBoolSort
             , builtinBoolValue

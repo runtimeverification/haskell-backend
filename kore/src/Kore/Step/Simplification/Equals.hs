@@ -367,6 +367,7 @@ makeEvaluateTermsToPredicate first second configurationPredicate
                 secondCeilNegation = makeNotPredicate secondCeil
                 ceilNegationAnd =
                     makeAndPredicate firstCeilNegation secondCeilNegation
+                -- TODO: Simplify this.
             return $ MultiOr.merge
                 predicatedOr
                 (OrPredicate.fromPredicate

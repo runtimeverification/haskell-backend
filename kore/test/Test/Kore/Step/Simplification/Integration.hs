@@ -486,7 +486,7 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-    , testCase "zzzIff simplification" $ do
+    , testCase "Iff simplification" $ do
         let expected = OrPattern.fromPatterns
                 [Conditional
                     { term = mkNot Mock.bSort0
@@ -497,6 +497,21 @@ test_simplificationIntegration =
         actual <- evaluate
             Conditional
                 { term = mkIff (Mock.bSort0) mkBottom_
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "" expected actual
+    , testCase "zzzRewrite simplification" $ do
+        let expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkRewrites (mkElemVar Mock.x) mkBottom_
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                ]
+        actual <- evaluate
+            Conditional
+                { term = mkRewrites (mkElemVar Mock.x) mkBottom_
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
