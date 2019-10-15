@@ -1,0 +1,5 @@
+./test/resources//test-string-4.kore:1:11:
+  |
+1 | [key{}("\07777")]
+  |           ^
+expecting escape sequence

@@ -30,7 +30,6 @@ import Kore.Predicate.Predicate
     )
 import Kore.Step.Rule
 import qualified Kore.Step.Simplification.Pattern as Pattern
-import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
@@ -122,6 +121,5 @@ simplifyPattern
     -> simplifier (OrPattern variable)
 simplifyPattern termLike =
     Simplifier.localSimplifierTermLike (const Simplifier.create)
-    $ Simplifier.localSimplifierPredicate (const Predicate.create)
     $ Simplifier.localSimplifierAxioms (const mempty)
     $ Pattern.simplify (Pattern.fromTermLike termLike)

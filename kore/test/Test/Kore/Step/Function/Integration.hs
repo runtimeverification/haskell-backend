@@ -17,6 +17,7 @@ import Data.Map
 import qualified Data.Map as Map
 import Data.Maybe
 import Data.Proxy
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import Prelude hiding
     ( succ
     )
@@ -89,6 +90,7 @@ import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
+import Kore.Unparser
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -189,7 +191,7 @@ test_functionIntegration =
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
                         (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ _ -> notApplicableAxiomEvaluator)
+                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkElemVar Mock.x))
@@ -411,9 +413,7 @@ test_functionIntegration =
         let expect =
                 Conditional
                     { term = Mock.a
-                    , predicate =
-                        makeCeilPredicate
-                            (Mock.plain10 Mock.cf)
+                    , predicate = makeCeilPredicate (Mock.plain10 Mock.cf)
                     , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.var_x_1, Mock.cf)
                         , (ElemVar Mock.var_y_1, Mock.b)
@@ -444,7 +444,14 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqual "" expect actual
+        let message =
+                (show . Pretty.vsep)
+                    [ "Expected:"
+                    , Pretty.indent 4 (unparse expect)
+                    , "but found:"
+                    , Pretty.indent 4 (unparse actual)
+                    ]
+        assertEqual message expect actual
 
     , testCase "Evaluates only simplifications." $ do
         let expect =
@@ -1105,13 +1112,12 @@ mapVariables =
 mockEvaluator
     :: Monad simplifier
     => AttemptedAxiom variable
-    -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ _ _ = return evaluation
 
 -- ---------------------------------------------------------------------
 -- * Definition
@@ -1186,7 +1192,8 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier :: PredicateSimplifier
+testSubstitutionSimplifier
+    :: MonadSimplify simplifier => PredicateSimplifier simplifier
 testSubstitutionSimplifier = Simplifier.Predicate.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap

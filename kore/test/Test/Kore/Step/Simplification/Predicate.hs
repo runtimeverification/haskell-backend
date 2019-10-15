@@ -290,7 +290,7 @@ makeEvaluator
     -> BuiltinAndAxiomSimplifier
 makeEvaluator mapping =
     BuiltinAndAxiomSimplifier
-    $ const $ const $ const $ simpleEvaluator mapping
+    $ const $ const $ simpleEvaluator mapping
 
 simpleEvaluator
     :: (SimplifierVariable variable, MonadSimplify simplifier)

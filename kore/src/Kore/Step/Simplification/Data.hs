@@ -70,7 +70,7 @@ data Env simplifier =
     Env
         { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
         , simplifierTermLike  :: !TermLikeSimplifier
-        , simplifierPredicate :: !PredicateSimplifier
+        , simplifierPredicate :: !(PredicateSimplifier simplifier)
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         , memo                :: !(Memo.Self simplifier)
         }
@@ -130,13 +130,10 @@ instance
             env { simplifierTermLike = locally simplifierTermLike }
     {-# INLINE localSimplifierTermLike #-}
 
-    askSimplifierPredicate = asks simplifierPredicate
-    {-# INLINE askSimplifierPredicate #-}
-
-    localSimplifierPredicate locally =
-        local $ \env@Env { simplifierPredicate } ->
-            env { simplifierPredicate = locally simplifierPredicate }
-    {-# INLINE localSimplifierPredicate #-}
+    simplifyPredicate conditional = do
+        PredicateSimplifier simplify <- asks simplifierPredicate
+        simplify conditional
+    {-# INLINE simplifyPredicate #-}
 
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}

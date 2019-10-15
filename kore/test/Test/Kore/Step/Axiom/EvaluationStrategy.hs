@@ -34,9 +34,6 @@ import Kore.Step.Rule
     ( EqualityRule (EqualityRule)
     , RulePattern (RulePattern)
     )
-import qualified Kore.Step.Simplification.Predicate as Predicate
-    ( create
-    )
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
     ( create
     )
@@ -548,7 +545,7 @@ test_builtinEvaluation =
 
 failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier $ \_ _ _ _ _ ->
+    BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluatorWithRequires
@@ -603,11 +600,9 @@ evaluateWithPredicate
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifier Mock.env
     $ simplifier
-        substitutionSimplifier
         patternSimplifier
         Map.empty
         term
         (Predicate.fromPredicate predicate)
   where
-    substitutionSimplifier = Predicate.create
     patternSimplifier = Simplifier.create
