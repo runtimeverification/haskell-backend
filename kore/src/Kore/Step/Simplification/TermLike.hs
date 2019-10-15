@@ -9,6 +9,9 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
+import Debug.Trace
+import Kore.Unparser
+
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
@@ -193,9 +196,11 @@ simplifyInternal term predicate = simplifyInternalWorker term
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
         if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
-            then
+            then do
+                traceM $ "\nAlready simplified\n" <> unparseToString termLike
                 return . OrPattern.fromTermLike $ termLike
             else
+                --assertSimplifiedSimplified .
                 assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =
                         Exception.assert (TermLike.isSimplified termLike)
@@ -293,6 +298,20 @@ simplifyInternal term predicate = simplifyInternalWorker term
                         (unparse <$> unsimplified)
                     , "Expected all predicates to be removed from the term."
                     ]
+
+        --assertSimplifiedSimplified getResults = do
+        --    afterSimplf <- getResults
+        --    if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike) && ((OrPattern.fromTermLike termLike) /= afterSimplf)
+        --                then (error . show . Pretty.vsep)
+        --                    [ "BAD"
+        --                    , Pretty.indent 2 "input:"
+        --                    , Pretty.indent 4 (unparse termLike)
+        --                    , Pretty.indent 2 "simplified results:"
+        --                    , (Pretty.indent 4 . Pretty.vsep)
+        --                        (unparse <$> OrPattern.toPatterns afterSimplf)
+        --                    , "Expected all predicates to be removed from the term."
+        --                    ]
+        --                else getResults
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)

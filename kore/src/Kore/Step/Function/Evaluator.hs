@@ -12,6 +12,9 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
+import Debug.Trace
+import Kore.Unparser
+
 import Control.Error
     ( ExceptT
     , exceptT
@@ -295,7 +298,10 @@ maybeEvaluatePattern
                         childrenPredicate
                         flattened
                 case merged of
-                    AttemptedAxiom.NotApplicable -> return defaultValue
+                    AttemptedAxiom.NotApplicable -> do
+                        --traceM $ "\n\nPredicate\n" <> unparseToString configurationPredicate
+                        --traverse (traceM . unparseToString) $ OrPattern.toPatterns defaultValue
+                        return defaultValue
                     AttemptedAxiom.Applied attemptResults ->
                         return $ MultiOr.merge results remainders
                       where
