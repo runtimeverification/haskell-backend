@@ -7,6 +7,9 @@ module Test.Kore.Step.Simplification.Integration
 
 import qualified Control.Lens as Lens
 import qualified Data.Default as Default
+import Data.Function
+    ( (&)
+    )
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import Test.Tasty
@@ -497,7 +500,7 @@ simplificationRulePattern
     -> TermLike variable
     -> RulePattern variable
 simplificationRulePattern left right =
-    patt Lens.& Lens.set (field @"attributes" . field @"simplification")
+    patt & Lens.set (field @"attributes" . field @"simplification")
         (Simplification True)
   where
     patt = rulePattern left right
