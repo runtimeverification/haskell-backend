@@ -22,6 +22,7 @@ module Kore.Internal.Pattern
     , Kore.Internal.Pattern.freeVariables
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
+    , markSimplified
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -93,6 +94,11 @@ fromPredicateSorted sort = (<$) (mkTop sort)
 isSimplified :: Pattern variable -> Bool
 isSimplified (splitTerm -> (t, p)) =
     TermLike.isSimplified t && Predicate.isSimplified p
+
+markSimplified :: Pattern variable -> Pattern variable
+markSimplified (splitTerm -> (term, predicate)) =
+    (TermLike.markSimplified term)
+    `Conditional.withCondition` (Predicate.markSimplified predicate)
 
 freeVariables
     :: Ord variable
