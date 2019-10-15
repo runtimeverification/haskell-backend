@@ -45,6 +45,8 @@ data ProofState a
     -- ^ We already rewrote the goal this step.
     | Proven
     -- ^ The parent goal was proven.
+    | Error String
+    -- ^ TODO: this type isn't quite right. Also, add some description.
     deriving (Eq, Show, Ord, Functor, GHC.Generic)
 
 instance Hashable goal => Hashable (ProofState goal)
@@ -63,14 +65,15 @@ Returns 'Nothing' if there is no remaining unproven goal.
 
  -}
 extractUnproven :: ProofState a -> Maybe a
-extractUnproven (Goal t)    = Just t
+extractUnproven (Goal t)          = Just t
 extractUnproven (GoalRewritten t) = Just t
 extractUnproven (GoalRemainder t) = Just t
-extractUnproven Proven      = Nothing
+extractUnproven Proven            = Nothing
+extractUnproven (Error _)         = Nothing
 
 extractGoalRem :: ProofState a -> Maybe a
 extractGoalRem (GoalRemainder t) = Just t
-extractGoalRem _           = Nothing
+extractGoalRem _                 = Nothing
 
 data ProofStateTransformer a val =
     ProofStateTransformer
@@ -78,6 +81,7 @@ data ProofStateTransformer a val =
         , goalRemainderTransformer :: a -> val
         , goalRewrittenTransformer :: a -> val
         , provenValue :: val
+        , proofError :: String -> val
         }
 
 {- | Catamorphism for 'ProofState'
@@ -92,10 +96,12 @@ proofState
         , goalRemainderTransformer
         , goalRewrittenTransformer
         , provenValue
+        , proofError
         }
   =
     \case
-        Goal goal -> goalTransformer goal
+        Goal goal          -> goalTransformer goal
         GoalRemainder goal -> goalRemainderTransformer goal
         GoalRewritten goal -> goalRewrittenTransformer goal
-        Proven -> provenValue
+        Proven             -> provenValue
+        Error s            -> proofError s

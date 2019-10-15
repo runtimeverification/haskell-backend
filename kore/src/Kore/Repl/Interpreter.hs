@@ -842,6 +842,7 @@ tryAxiomClaimWorker mode ref = do
                         , goalTransformer    = runUnifier' first . term
                         , goalRemainderTransformer = runUnifier' first . term
                         , goalRewrittenTransformer = runUnifier' first . term
+                        , proofError = \s -> putStrLn' $"Proof error: " <> s
                         }
                     second
 
@@ -1119,7 +1120,7 @@ showRewriteRule rule =
         :: RulePattern Variable
         -> SourceLocation
     extractSourceAndLocation
-        (RulePattern { Axiom.attributes }) =
+        RulePattern { Axiom.attributes } =
             Attribute.sourceLocation attributes
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
@@ -1138,6 +1139,9 @@ unparseStrategy omitList =
         , goalRewrittenTransformer =
             makeKoreReplOutput . unparseToString . fmap hide
         , provenValue = makeAuxReplOutput "Reached bottom"
+        , proofError =
+            \s -> makeAuxReplOutput $ "Error: \n" <> s
+
         }
   where
     hide :: TermLike Variable -> TermLike Variable

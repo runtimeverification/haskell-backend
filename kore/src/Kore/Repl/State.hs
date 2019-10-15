@@ -513,6 +513,7 @@ getNodeState graph node =
             , goalRemainderTransformer = const . Just $ StuckNode
             , goalRewrittenTransformer = const . Just $ UnevaluatedNode
             , provenValue = Nothing
+            , proofError = const Nothing
             }
         . Graph.lab'
         . Graph.context graph
@@ -528,6 +529,7 @@ nodeToPattern graph node =
         , goalRemainderTransformer = Just . toTermLike
         , goalRewrittenTransformer = Just . toTermLike
         , provenValue = Nothing
+        , proofError = const Nothing
         }
     . Graph.lab'
     . Graph.context graph
