@@ -74,7 +74,7 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ term predicate -> do
+        (\_ _ term predicate -> do
             let ea = evaluateAxioms
                         FunctionEvaluationContext
                         rules
@@ -93,7 +93,7 @@ simplificationEvaluation
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier
-        (\_ _ _ term predicate -> do
+        (\_ _ term predicate -> do
             let ea = evaluateAxioms
                         SimplificationContext
                         [rule]
@@ -105,6 +105,42 @@ simplificationEvaluation rule =
                     ea
             return $ resultsToAttemptedAxiom res
         )
+
+{- | Creates an evaluator for a function from all the rules that define it.
+
+The function is not applied (@totalDefinitionEvaluation@ returns
+'AttemptedAxiom.NotApplicable') if the supplied rules do not match the entire
+input.
+
+See also: 'definitionEvaluation'
+
+-}
+
+totalDefinitionEvaluation
+    :: [EqualityRule Variable]
+    -> BuiltinAndAxiomSimplifier
+totalDefinitionEvaluation rules =
+    BuiltinAndAxiomSimplifier totalDefinitionEvaluationWorker
+  where
+    totalDefinitionEvaluationWorker
+        :: forall variable simplifier
+        .  (SimplifierVariable variable, MonadSimplify simplifier)
+        => TermLikeSimplifier
+        -> BuiltinAndAxiomSimplifierMap
+        -> TermLike variable
+        -> Predicate variable
+        -> simplifier (AttemptedAxiom variable)
+    totalDefinitionEvaluationWorker _ _ term predicate = do
+        result0 <- evaluateAxioms
+                    FunctionEvaluationContext
+                    rules
+                    term
+                    (Predicate.toPredicate predicate)
+        let 
+            result = resultsToAttemptedAxiom result0
+        if hasRemainders result
+            then return AttemptedAxiom.NotApplicable
+            else return result
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
