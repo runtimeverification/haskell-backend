@@ -1574,7 +1574,7 @@ env =
 generatorContext :: ConsistentKore.Context
 generatorContext =
     ConsistentKore.Context
-        { allSymbols = symbols
+        { allSymbols = filter doesNotHaveArguments symbols
         , allAliases = []
         , allSorts = map fst sortAttributesMapping
         , allowedElementVariables = Set.empty
@@ -1595,3 +1595,5 @@ generatorContext =
         , maybeStringBuiltinSort = Just stringSort
         , metadataTools = metadataTools
         }
+  where
+    doesNotHaveArguments Symbol {symbolParams} = null symbolParams
