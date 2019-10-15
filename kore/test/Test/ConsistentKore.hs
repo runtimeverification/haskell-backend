@@ -373,24 +373,22 @@ unaryQuantifiedElementOperatorGenerator builder = do
     worker variable context childGenerator childSort =
         withContext context $ builder variable <$> childGenerator childSort
 
-unaryQuantifiedSetOperatorGenerator
+muNuOperatorGenerator
     :: (SetVariable Variable -> TermLike Variable -> TermLike Variable)
     -> Gen TermGenerator
-unaryQuantifiedSetOperatorGenerator builder = do
-    context <- Reader.ask
-    variableSort <- sortGen
-    quantifiedVariable <- setVariableGen variableSort
+muNuOperatorGenerator builder =
     return TermGenerator
         { arity = 1
         , sort = AnySort
-        , generator =
-            worker
-                quantifiedVariable
-                (addQuantifiedSetVariable quantifiedVariable context)
+        , generator = worker
         }
   where
-    worker variable context childGenerator childSort =
-        withContext context $ builder variable <$> childGenerator childSort
+    worker childGenerator childSort = do
+        context <- Reader.ask
+        quantifiedVariable <- setVariableGen childSort
+        withContext (addQuantifiedSetVariable quantifiedVariable context) $ do
+            child <- childGenerator childSort
+            return (builder quantifiedVariable child)
 
 binaryFreeSortOperatorGenerator
     :: (Sort -> TermLike Variable -> TermLike Variable -> TermLike Variable)
@@ -456,13 +454,13 @@ inGenerator :: Gen TermGenerator
 inGenerator = binaryFreeSortOperatorGenerator mkIn
 
 muGenerator :: Gen TermGenerator
-muGenerator = unaryQuantifiedSetOperatorGenerator mkMu
+muGenerator = muNuOperatorGenerator mkMu
 
 notGenerator :: Gen TermGenerator
 notGenerator = unaryOperatorGenerator mkNot
 
 nuGenerator :: Gen TermGenerator
-nuGenerator = unaryQuantifiedSetOperatorGenerator mkNu
+nuGenerator = muNuOperatorGenerator mkNu
 
 orGenerator :: Gen TermGenerator
 orGenerator = binaryOperatorGenerator mkOr
