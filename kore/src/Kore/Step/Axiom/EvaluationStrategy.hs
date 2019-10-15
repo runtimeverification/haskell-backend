@@ -11,6 +11,7 @@ module Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
     , simplificationEvaluation
+    , totalDefinitionEvaluation
     , firstFullEvaluation
     , simplifierWithFallback
     ) where
