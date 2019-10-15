@@ -144,7 +144,6 @@ evaluateBuiltin
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
-    -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
@@ -153,7 +152,6 @@ evaluateBuiltin
     -> simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
-    substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     patt
@@ -161,7 +159,6 @@ evaluateBuiltin
   = do
     result <-
         builtinEvaluator
-            substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             patt
@@ -186,19 +183,17 @@ applyFirstSimplifierThatWorks
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
-    -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
-    substitutionSimplifier
     simplifier
     axiomIdToSimplifier
     patt
@@ -206,7 +201,6 @@ applyFirstSimplifierThatWorks
   = do
     applicationResult <-
         evaluator
-            substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             patt
@@ -261,7 +255,6 @@ applyFirstSimplifierThatWorks
         applyFirstSimplifierThatWorks
             evaluators
             multipleResults
-            substitutionSimplifier
             simplifier
             axiomIdToSimplifier
             patt

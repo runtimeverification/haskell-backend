@@ -143,7 +143,6 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
     , MonadSimplify
-    , PredicateSimplifier (..)
     , TermLikeSimplifier
     )
 import qualified Kore.Step.Strategy as Strategy
@@ -178,7 +177,6 @@ data Initialized = Initialized { rewriteRules :: ![Rewrite] }
 data Execution =
     Execution
         { simplifier :: !TermLikeSimplifier
-        , substitutionSimplifier :: !PredicateSimplifier
         , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
         , executionGraph :: !ExecutionGraph
         }
@@ -496,7 +494,6 @@ execute verifiedModule strategy inputPattern =
     $ initialize verifiedModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
         simplifier <- Simplifier.askSimplifierTermLike
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
         axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         simplifiedPatterns <-
             Pattern.simplify (Pattern.fromTermLike inputPattern)
@@ -511,7 +508,6 @@ execute verifiedModule strategy inputPattern =
         executionGraph <- runStrategy' initialPattern
         return Execution
             { simplifier
-            , substitutionSimplifier
             , axiomIdToSimplifier
             , executionGraph
             }

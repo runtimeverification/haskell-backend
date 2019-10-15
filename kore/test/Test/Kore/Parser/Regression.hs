@@ -57,7 +57,8 @@ regressionTestsInputFiles :: String -> IO [InputFileName]
 regressionTestsInputFiles dir = do
     files <-
         withCurrentDirectory
-            (Paths.dataFileName ".") (findByExtension [".kore"] dir)
+            (Paths.dataFileName ".")
+            (findByExtension [".kore"] dir)
     return (map InputFileName files)
 
 regressionTestFromInputFile :: InputFileName -> TestTree
@@ -124,4 +125,4 @@ withCurrentDirectory dir go =
 
 test_regression :: IO [TestTree]
 test_regression =
-    regressionTests <$> regressionTestsInputFiles "../src/test/resources/"
+    regressionTests <$> regressionTestsInputFiles "./test/resources/"

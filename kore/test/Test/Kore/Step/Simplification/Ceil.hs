@@ -514,14 +514,12 @@ appliedMockEvaluator result =
 mockEvaluator
     :: MonadSimplify simplifier
     => AttemptedAxiom variable
-    -> PredicateSimplifier
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ _ =
-    return evaluation
+mockEvaluator evaluation _ _ _ _ = return evaluation
 
 mapVariables
     ::  ( FreshVariable variable
