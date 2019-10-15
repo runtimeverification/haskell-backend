@@ -136,7 +136,7 @@ totalDefinitionEvaluation rules =
                     rules
                     term
                     (Predicate.toPredicate predicate)
-        let 
+        let
             result = resultsToAttemptedAxiom result0
         if hasRemainders result
             then return AttemptedAxiom.NotApplicable
