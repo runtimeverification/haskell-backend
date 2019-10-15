@@ -221,7 +221,7 @@ test_equalsSimplification_Or_Pattern =
                                 [ definedF
                                 , definedG
                                 , makeImpliesPredicate
-                                    definedG
+                                    definedGWithSubstitution
                                     (makeEqualsPredicate Mock.cf Mock.cg)
                                 , makeImpliesPredicate
                                     definedH

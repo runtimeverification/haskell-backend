@@ -54,9 +54,6 @@ import qualified Kore.Internal.Predicate as Predicate
     ( bottom
     , fromSubstitution
     )
-import qualified Kore.Step.Condition.Evaluator as Predicate
-    ( simplify
-    )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( evaluate
@@ -161,9 +158,7 @@ matchWith e1 e2 = do
                     , Conditional.predicate e2
                     ]
                     [ Conditional.substitution predSubst ]
-            simplified <-
-                Monad.Trans.lift
-                $ Predicate.simplify $ Conditional.predicate merged
+            let simplified = merged
             smtEvaluation <-
                 Monad.Trans.lift $ SMT.Evaluator.evaluate simplified
             case smtEvaluation of

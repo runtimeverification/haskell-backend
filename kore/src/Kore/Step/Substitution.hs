@@ -68,7 +68,8 @@ normalize Conditional { term, predicate, substitution } = do
     results <-
         Monad.Trans.lift
         $ Monad.Unify.runUnifierT
-        $ normalizeExcept Conditional { term = (), predicate, substitution }
+        $ Unification.normalizeOnce
+            Conditional { term = (), predicate, substitution }
     case results of
         Right normal -> scatter (applyTerm <$> normal)
         Left _ -> do
@@ -114,7 +115,7 @@ mergePredicatesAndSubstitutions
     -> [Substitution variable]
     -> BranchT simplifier (Predicate variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
-    normalize Conditional
+    simplifyPredicate Conditional
         { term = ()
         , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
         , substitution = Foldable.fold substitutions

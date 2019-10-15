@@ -36,6 +36,7 @@ import Kore.Internal.OrPredicate
 import Kore.Internal.Pattern
     ( Predicate
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
@@ -60,4 +61,9 @@ simplifyEvaluatedMultiPredicate predicates = do
         :: [Predicate variable]
         -> BranchT simplifier (Predicate variable)
     andPredicates predicates' =
-        Substitution.normalize (Foldable.fold predicates')
+        fmap markSimplified
+        $ Substitution.normalize (Foldable.fold predicates')
+      where
+        markSimplified
+          | all Predicate.isSimplified predicates' = Predicate.markSimplified
+          | otherwise = id
