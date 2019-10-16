@@ -125,7 +125,14 @@ evaluateApplication
                 [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
                 , "for symbol:" <+> unparse symbol
                 ]
-          | otherwise = return unevaluated
+          | otherwise =
+              if all TermLike.isSimplified children
+                 then return unevaluated
+                 else
+                    (error . show . Pretty.vsep)
+                        [ "Application children must be simplified:"
+                        , "application term:" <+> unparse (mkApplySymbol symbol children)
+                        ]
 
         maybeEvaluatedSimplifier =
             maybeEvaluatePattern
@@ -144,6 +151,7 @@ evaluateApplication
     finishT = exceptT return return
 
     Application { applicationSymbolOrAlias = symbol } = application
+    Application { applicationChildren = children } = application
     Symbol { symbolAttributes } = symbol
 
     termLike = synthesize (ApplySymbolF application)
