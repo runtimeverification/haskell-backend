@@ -25,6 +25,7 @@ import Control.Monad
 import Control.Monad.Catch
     ( MonadCatch
     , catch
+    , catchAll
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -227,7 +228,8 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         let node = unReplNode rnode
         if Graph.outdeg (Strategy.graph graph) node == 0
             then
-                catchInterruptWithDefault graph
+                catchEverything graph
+                $ catchInterruptWithDefault graph
                 $ verifyClaimStep claim claims axioms graph node
             else pure graph
 
@@ -235,6 +237,13 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     catchInterruptWithDefault def sa =
         catch sa $ \UserInterrupt -> do
             liftIO $ putStrLn "Step evaluation interrupted."
+            pure def
+
+    catchEverything :: MonadCatch m => MonadIO m => a -> m a -> m a
+    catchEverything def sa =
+        catchAll sa $ \e -> do
+            liftIO $ putStrLn "Stepper evaluation errored."
+            liftIO $ putStrLn (show e)
             pure def
 
     replGreeting :: MonadIO m => m ()
