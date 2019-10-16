@@ -583,7 +583,7 @@ test_unification =
         constr20 = Mock.constrFunct20TestMap
         x = mkElemVar Mock.x
         y = mkElemVar Mock.y
-      in testCase "zzzkey outside of map, symbolic opaque terms" $
+      in testCase "key outside of map, symbolic opaque terms" $
             andSimplifySuccess
                 (UnificationTerm
                     (constr20
