@@ -84,7 +84,7 @@ simplification =
             -- unification error, this will still discard the entire
             -- substitution into the predicate. Fortunately, that seems to be
             -- rare enough to discount for now.
-            Unifier.deduplicateSubstitution substitution
+            Unifier.deduplicateSubstitutionAux substitution
             & Unifier.maybeUnifierT
         OrPredicate.fromPredicates <$> traverse normalize1 deduplicated
       where
@@ -99,11 +99,10 @@ simplification =
                     $ Syntax.Predicate.fromSubstitution substitution
             in maybeT (return unwrapped) return
 
-    normalize1 Predicate.Conditional { predicate, substitution } = do
-        let deduplicated = Map.fromList $ Substitution.unwrap substitution
-            normalized =
+    normalize1 (predicate, substitutions) = do
+        let normalized =
                 maybe Predicate.bottom fromNormalization
-                $ normalize deduplicated
+                $ normalize substitutions
         return $ Predicate.fromPredicate predicate <> normalized
 
 fromNormalization
