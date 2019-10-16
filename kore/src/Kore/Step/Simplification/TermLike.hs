@@ -195,13 +195,12 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
-        if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
-            then do
-                traceM $ "\nAlready simplified\n" <> unparseToString termLike
-                return . OrPattern.fromTermLike $ termLike
-            else
-                --assertSimplifiedSimplified .
-                assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
+        --if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
+        --    then do
+        --        traceM $ "\nAlready simplified\n" <> unparseToString termLike
+        --        return . OrPattern.fromTermLike $ termLike
+        --    else
+                assertSimplifiedSimplified . assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =
                         Exception.assert (TermLike.isSimplified termLike)
                         return (OrPattern.fromTermLike termLike)
@@ -299,19 +298,18 @@ simplifyInternal term predicate = simplifyInternalWorker term
                     , "Expected all predicates to be removed from the term."
                     ]
 
-        --assertSimplifiedSimplified getResults = do
-        --    afterSimplf <- getResults
-        --    if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike) && ((OrPattern.fromTermLike termLike) /= afterSimplf)
-        --                then (error . show . Pretty.vsep)
-        --                    [ "BAD"
-        --                    , Pretty.indent 2 "input:"
-        --                    , Pretty.indent 4 (unparse termLike)
-        --                    , Pretty.indent 2 "simplified results:"
-        --                    , (Pretty.indent 4 . Pretty.vsep)
-        --                        (unparse <$> OrPattern.toPatterns afterSimplf)
-        --                    , "Expected all predicates to be removed from the term."
-        --                    ]
-        --                else getResults
+        assertSimplifiedSimplified getResults = do
+            afterSimplf <- getResults
+            if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike) && ((OrPattern.fromTermLike termLike) /= afterSimplf)
+                        then (error . show . Pretty.vsep)
+                            [ "Term shouldn't have been marked simplified"
+                            , Pretty.indent 2 "input:"
+                            , Pretty.indent 4 (unparse termLike)
+                            , Pretty.indent 2 "simplified results:"
+                            , (Pretty.indent 4 . Pretty.vsep)
+                                (unparse <$> OrPattern.toPatterns afterSimplf)
+                            ]
+                        else getResults
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
