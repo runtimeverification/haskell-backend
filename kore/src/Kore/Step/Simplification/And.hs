@@ -21,10 +21,20 @@ import Control.Applicative
 import Control.Monad
     ( foldM
     )
+import Data.Bifunctor
+    ( bimap
+    )
+import Data.Function
+    ( on
+    )
 import Data.List
     ( foldl1'
     , nub
     )
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 import GHC.Stack
     ( HasCallStack
     )
@@ -43,9 +53,13 @@ import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
     , InternalVariable
+    , pattern Not_
     , Sort
     , TermLike
     , mkAnd
+    , mkBottom
+    , mkNot
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -184,11 +198,42 @@ applyAndIdempotence
     => TermLike variable
     -> TermLike variable
 applyAndIdempotence patt =
-    foldl1' mkAndSimplified (nub (children patt))
+    if contradictions
+        then mkBottom (termLikeSort patt)
+        else
+            foldl1' mkAndSimplified
+                . Set.toList
+                . uncurry Set.union
+                . fmap (Set.mapMonotonic mkNot)
+                $ sets
+
   where
-    children (And_ _ p1 p2) = children p1 ++ children p2
-    children p = [p]
+    sets = splitNotTerms patt
+    setsNotEmpty = (||) `on` Set.null
+    contradictions =
+        (Set.null . uncurry Set.intersection $ sets)
+        && not (uncurry setsNotEmpty sets)
     mkAndSimplified a b
       | TermLike.isSimplified a, TermLike.isSimplified b =
         TermLike.markSimplified $ mkAnd a b
       | otherwise = mkAnd a b
+
+splitNotTerms
+    :: forall variable
+    .  Ord variable
+    => TermLike variable
+    -> (Set (TermLike variable), Set (TermLike variable))
+splitNotTerms = bimap Set.fromList Set.fromList . split ([], []) . children
+  where
+    children :: TermLike variable -> [TermLike variable]
+    children (And_ _ p1 p2) = children p1 ++ children p2
+    children p = [p]
+
+    split
+        :: ([TermLike variable], [TermLike variable])
+        -> [TermLike variable]
+        -> ([TermLike variable], [TermLike variable])
+    split (ps, nps) (Not_ _ x:xs) = split (ps, x : nps) xs
+    split (ps, nps) (x:xs) = split (x : ps, nps) xs
+    split xs [] = xs
+
