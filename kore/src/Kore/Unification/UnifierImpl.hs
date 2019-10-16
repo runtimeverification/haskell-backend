@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Unification.UnifierImpl
     ( simplifyAnds
     , deduplicateSubstitution
+    , deduplicateSubstitutionAux
     , normalizeOnce
     , normalizeExcept
     ) where
@@ -14,7 +15,6 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad
     ( foldM
     )
-import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.List.NonEmpty
     ( NonEmpty (..)
@@ -37,6 +37,9 @@ import Kore.Internal.TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
+    )
+import qualified Kore.Predicate.Predicate as Syntax
+    ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Simplify as Simplifier
@@ -90,48 +93,6 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
         (intermediateTerm, intermediateCondition) =
             Pattern.splitTerm intermediate
 
-{- | Sort variable-renaming substitutions.
-
-Variable-renaming substitutions are sorted so that the greater variable is
-substituted in place of the lesser. Consistent ordering prevents variable-only
-cycles.
-
- -}
-sortRenamedVariable
-    :: InternalVariable variable
-    => (UnifiedVariable variable, TermLike variable)
-    -> (UnifiedVariable variable, TermLike variable)
-sortRenamedVariable (variable1, Var_ variable2)
-  | variable2 < variable1 = (variable2, mkVar variable1)
-sortRenamedVariable subst = subst
-
-{- | Simplify a conjunction of substitutions for the same variable.
-
-Simplify a conjunction of substitutions for the same variable @x@,
-
-@
-x = t₁ ∧ ... ∧ x = tₙ
-@
-
-by unifying the assignments @tᵢ@,
-
-@
-x = (t₁ ∧ ... ∧ tₙ) ∧ ⌈t₁ ∧ ... ∧ tₙ⌉
-@
-
- -}
-deduplicateOnce
-    :: ( SimplifierVariable variable
-       , MonadUnify unifier
-       , WithLog LogMessage unifier
-       )
-    => (UnifiedVariable variable, NonEmpty (TermLike variable))
-    -> unifier (Predicate variable)
-deduplicateOnce (variable, patterns) = do
-    (termLike, simplified) <- Pattern.splitTerm <$> simplifyAnds patterns
-    let substitution' = Predicate.fromSingleSubstitution (variable, termLike)
-    return (substitution' <> simplified)
-
 {- | Simplify a substitution so that each variable occurs only once.
 
 Simplify a conjunction of substitutions,
@@ -156,37 +117,61 @@ deduplicateSubstitution
         )
     => Substitution variable
     -> unifier (Predicate variable)
-deduplicateSubstitution =
-    worker . Predicate.fromSubstitution
+deduplicateSubstitution substitution = do
+    (predicate, substitutions) <- deduplicateSubstitutionAux substitution
+    return
+        $ Predicate.andCondition (Predicate.fromPredicate predicate)
+        $ Predicate.fromSubstitution $ Substitution.fromMap substitutions
+
+deduplicateSubstitutionAux
+    :: forall variable unifier
+    .   ( SimplifierVariable variable
+        , MonadUnify unifier
+        , WithLog LogMessage unifier
+        )
+    =>  Substitution variable
+    ->  unifier
+            ( Syntax.Predicate variable
+            , Map (UnifiedVariable variable) (TermLike variable)
+            )
+deduplicateSubstitutionAux =
+    worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
   where
-    isSingleton (_, _ :| duplicates) = null duplicates
-
-    insertSubstitution
-        :: forall variable1 term
-        .  Ord variable1
-        => Map variable1 (NonEmpty term)
-        -> (variable1, term)
-        -> Map variable1 (NonEmpty term)
-    insertSubstitution multiMap (variable, termLike) =
-        let push = (termLike :|) . maybe [] Foldable.toList
-        in Map.alter (Just . push) variable multiMap
-
-    worker conditional@Conditional { predicate, substitution }
-      | Substitution.isNormalized substitution || all isSingleton substitutions
-      = return conditional
+    worker
+        ::  Syntax.Predicate variable
+        ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
+        ->  unifier
+                ( Syntax.Predicate variable
+                , Map (UnifiedVariable variable) (TermLike variable)
+                )
+    worker predicate substitutions
+      | Just deduplicated <- traverse getSingleton substitutions
+      = return (predicate, deduplicated)
 
       | otherwise = do
-        deduplicated <- Foldable.fold <$> mapM deduplicateOnce substitutions
-        worker (Predicate.fromPredicate predicate <> deduplicated)
+        simplified <- collectConditions <$> traverse simplifyAnds substitutions
+        let -- Substitutions de-duplicated by simplification.
+            substitutions' = toMultiMap $ Conditional.term simplified
+            -- New conditions produced by simplification.
+            Conditional { predicate = predicate' } = simplified
+            predicate'' = Syntax.Predicate.makeAndPredicate predicate predicate'
+            -- New substitutions produced by simplification.
+            Conditional { substitution } = simplified
+            substitutions'' =
+                Map.unionWith (<>) substitutions'
+                $ Substitution.toMultiMap substitution
+        worker predicate'' substitutions''
 
-      where
-        substitutions
-            :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
-        substitutions =
-            Map.toAscList
-            . Foldable.foldl' insertSubstitution Map.empty
-            . map sortRenamedVariable
-            $ Substitution.unwrap substitution
+    getSingleton (t :| []) = Just t
+    getSingleton _         = Nothing
+
+    toMultiMap :: Map key value -> Map key (NonEmpty value)
+    toMultiMap = Map.map (:| [])
+
+    collectConditions
+        :: Map key (Conditional variable term)
+        -> Conditional variable (Map key term)
+    collectConditions = sequenceA
 
 normalizeOnce
     ::  forall unifier variable term
