@@ -86,7 +86,7 @@ simplification =
             -- unification error, this will still discard the entire
             -- substitution into the predicate. Fortunately, that seems to be
             -- rare enough to discount for now.
-            Unifier.deduplicateSubstitutionAux substitution
+            Unifier.deduplicateSubstitution substitution
             & Unifier.maybeUnifierT
         OrPredicate.fromPredicates <$> traverse normalize1 deduplicated
       where
@@ -142,7 +142,7 @@ unification =
         -> unifier (OrPredicate variable)
     worker substitution =
         fmap OrPredicate.fromPredicates . Unifier.gather $ do
-            deduplicated <- Unifier.deduplicateSubstitutionAux substitution
+            deduplicated <- Unifier.deduplicateSubstitution substitution
             normalize1 deduplicated
 
     normalizeSubstitution'

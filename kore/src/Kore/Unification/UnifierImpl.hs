@@ -5,7 +5,7 @@ License     : NCSA
  -}
 module Kore.Unification.UnifierImpl
     ( simplifyAnds
-    , deduplicateSubstitutionAux
+    , deduplicateSubstitution
     , normalizeOnce
     , normalizeExcept
     ) where
@@ -90,7 +90,7 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
         (intermediateTerm, intermediateCondition) =
             Pattern.splitTerm intermediate
 
-deduplicateSubstitutionAux
+deduplicateSubstitution
     :: forall variable unifier
     .   ( SimplifierVariable variable
         , MonadUnify unifier
@@ -101,7 +101,7 @@ deduplicateSubstitutionAux
             ( Syntax.Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
-deduplicateSubstitutionAux =
+deduplicateSubstitution =
     worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
   where
     worker
@@ -152,7 +152,7 @@ normalizeOnce Conditional { term, predicate, substitution } = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
     (deduplicatedPredicate, deduplicatedSubstitution) <-
-        deduplicateSubstitutionAux substitution
+        deduplicateSubstitution substitution
 
     normalized <- normalizeSubstitution' deduplicatedSubstitution
     let
