@@ -20,6 +20,7 @@ module Kore.Internal.Predicate
     , toPredicate
     , freeVariables
     , Kore.Internal.Predicate.mapVariables
+    , fromNormalization
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -37,7 +38,14 @@ import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import Kore.Substitute
+    ( SubstitutionVariable
+    )
 import Kore.Syntax
+import Kore.Unification.Substitution
+    ( Normalization (..)
+    )
+import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 
 -- | A predicate and substitution without an accompanying term.
@@ -122,3 +130,24 @@ mapVariables
     -> Predicate variable1
     -> Predicate variable2
 mapVariables = Conditional.mapVariables (\_ () -> ())
+
+{- | Create a new 'Predicate' from the 'Normalization' of a substitution.
+
+The 'normalized' part becomes the normalized 'substitution', while the
+'denormalized' part is converted into an ordinary 'predicate'.
+
+ -}
+fromNormalization
+    :: SubstitutionVariable variable
+    => Normalization variable
+    -> Predicate variable
+fromNormalization Normalization { normalized, denormalized } =
+    predicate' <> substitution'
+  where
+    predicate' =
+        Conditional.fromPredicate
+        . Syntax.Predicate.fromSubstitution
+        $ Substitution.wrap denormalized
+    substitution' =
+        Conditional.fromSubstitution
+        $ Substitution.unsafeWrap normalized

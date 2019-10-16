@@ -9,6 +9,7 @@ import Test.Tasty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.OrPredicate as OrPredicate
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -185,7 +186,7 @@ test_SubstitutionSimplifier =
                 let SubstitutionSimplifier { simplifySubstitution } =
                         SubstitutionSimplifier.simplification
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
-                let expect = SubstitutionSimplifier.fromNormalization <$> results
+                let expect = Predicate.fromNormalization <$> results
                 assertEqual "" expect (OrPredicate.toPredicates actual)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
@@ -196,7 +197,7 @@ test_SubstitutionSimplifier =
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
-                        Right $ SubstitutionSimplifier.fromNormalization normalization
+                        Right $ Predicate.fromNormalization normalization
                       | otherwise =
                         Left
                         $ SubstitutionError

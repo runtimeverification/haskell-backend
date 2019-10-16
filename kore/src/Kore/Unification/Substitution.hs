@@ -27,6 +27,7 @@ module Kore.Unification.Substitution
     , Kore.Unification.Substitution.freeVariables
     , partition
     , reverseIfRhsIsVar
+    , Normalization (..)
     ) where
 
 import Control.DeepSeq
@@ -446,3 +447,34 @@ variables
     -> Set (UnifiedVariable variable)
 variables (NormalizedSubstitution subst) = Map.keysSet subst
 variables (Substitution subst) = Foldable.foldMap (Set.singleton . fst) subst
+
+{- | The result of /normalizing/ a substitution.
+
+'normalized' holds the part of the substitution was normalized successfully.
+
+'denormalized' holds the part of the substitution which was not normalized
+because it contained simplifiable cycles.
+
+ -}
+data Normalization variable =
+    Normalization
+        { normalized, denormalized :: !(UnwrappedSubstitution variable) }
+    deriving GHC.Generic
+
+instance SOP.Generic (Normalization variable)
+
+instance SOP.HasDatatypeInfo (Normalization variable)
+
+instance Debug variable => Debug (Normalization variable)
+
+instance (Debug variable, Diff variable) => Diff (Normalization variable)
+
+instance Semigroup (Normalization variable) where
+    (<>) a b =
+        Normalization
+            { normalized = Function.on (<>) normalized a b
+            , denormalized = Function.on (<>) denormalized a b
+            }
+
+instance Monoid (Normalization variable) where
+    mempty = Normalization mempty mempty

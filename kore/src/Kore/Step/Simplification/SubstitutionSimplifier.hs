@@ -8,7 +8,6 @@ module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     , simplification
     , unification
-    , fromNormalization
     ) where
 
 import Control.Error
@@ -45,10 +44,8 @@ import Kore.Substitute
 import Kore.Unification.Substitution
     ( Substitution
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
-    ( Normalization (..)
-    , normalize
+    ( normalize
     , normalizeSubstitution
     )
 import qualified Kore.Unification.UnifierImpl as Unifier
@@ -103,24 +100,9 @@ simplification =
 
     normalize1 (predicate, substitutions) = do
         let normalized =
-                maybe Predicate.bottom fromNormalization
+                maybe Predicate.bottom Predicate.fromNormalization
                 $ normalize substitutions
         return $ Predicate.fromPredicate predicate <> normalized
-
-fromNormalization
-    :: SubstitutionVariable variable
-    => Normalization variable
-    -> Predicate variable
-fromNormalization Normalization { normalized, denormalized } =
-    predicate' <> substitution'
-  where
-    predicate' =
-        Predicate.fromPredicate
-        . Syntax.Predicate.fromSubstitution
-        $ Substitution.wrap denormalized
-    substitution' =
-        Predicate.fromSubstitution
-        $ Substitution.unsafeWrap normalized
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
