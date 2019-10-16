@@ -26,6 +26,7 @@ import Data.Maybe
     ( fromMaybe
     )
 
+import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -40,13 +41,14 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( pattern PredicateTrue
-    , makeAndPredicate
     , makeEqualsPredicate
-    , makeNotPredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
+    )
+import qualified Kore.Step.Simplification.AndPredicates as And
+    ( simplifyEvaluatedMultiPredicate
     )
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
     ( termEquals
@@ -63,6 +65,7 @@ import qualified Kore.Step.Simplification.Implies as Implies
     )
 import qualified Kore.Step.Simplification.Not as Not
     ( simplifyEvaluated
+    , simplifyEvaluatedPredicate
     )
 import qualified Kore.Step.Simplification.Or as Or
     ( simplifyEvaluated
@@ -346,30 +349,9 @@ makeEvaluateTermsToPredicate first second configurationPredicate
         Just predicatedOr -> do
             firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
             secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
-            let
-                toPredicateSafe
-                    ps@Conditional {term = (), predicate, substitution}
-                  | Substitution.null substitution =
-                    predicate
-                  | otherwise =
-                    error
-                        (  "Unimplemented: we should split the configuration"
-                        ++ " for or with nonempty substitution."
-                        ++ " input=" ++ show ps
-                        ++ ", first=" ++ show first
-                        ++ ", second=" ++ show second
-                        )
-                firstCeil =
-                    OrPredicate.toPredicate (fmap toPredicateSafe firstCeilOr)
-                secondCeil =
-                    OrPredicate.toPredicate (fmap toPredicateSafe secondCeilOr)
-                firstCeilNegation = makeNotPredicate firstCeil
-                secondCeilNegation = makeNotPredicate secondCeil
-                ceilNegationAnd =
-                    makeAndPredicate firstCeilNegation secondCeilNegation
-                -- TODO: Simplify this.
-            return $ MultiOr.merge
-                predicatedOr
-                (OrPredicate.fromPredicate
-                    $ Predicate.fromPredicate ceilNegationAnd
-                )
+            firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
+            secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
+            ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate
+                (MultiAnd.make [firstCeilNegation, secondCeilNegation])
+
+            return $ MultiOr.merge predicatedOr ceilNegationAnd
