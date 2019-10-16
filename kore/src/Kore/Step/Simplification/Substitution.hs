@@ -20,7 +20,6 @@ import Data.Function
 import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map.Strict as Map
 
 import Kore.Internal.OrPredicate
     ( OrPredicate
@@ -32,6 +31,9 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
+    )
+import qualified Kore.Predicate.Predicate as Syntax
+    ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.Simplification.Simplify
@@ -140,7 +142,7 @@ unification =
         -> unifier (OrPredicate variable)
     worker substitution =
         fmap OrPredicate.fromPredicates . Unifier.gather $ do
-            deduplicated <- Unifier.deduplicateSubstitution substitution
+            deduplicated <- Unifier.deduplicateSubstitutionAux substitution
             normalize1 deduplicated
 
     normalizeSubstitution'
@@ -152,11 +154,12 @@ unification =
         either Unifier.throwSubstitutionError return . normalizeSubstitution
 
     normalize1
-        :: forall variable
-        .  SubstitutionVariable variable
-        => Predicate variable
-        -> unifier (Predicate variable)
-    normalize1 Predicate.Conditional { predicate, substitution } = do
-        let deduplicated = Map.fromList $ Substitution.unwrap substitution
+        ::  forall variable
+        .   SubstitutionVariable variable
+        =>  ( Syntax.Predicate variable
+            , Map (UnifiedVariable variable) (TermLike variable)
+            )
+        ->  unifier (Predicate variable)
+    normalize1 (predicate, deduplicated) = do
         normalized <- normalizeSubstitution' deduplicated
         return $ Predicate.fromPredicate predicate <> normalized
