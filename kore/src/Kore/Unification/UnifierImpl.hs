@@ -5,7 +5,6 @@ License     : NCSA
  -}
 module Kore.Unification.UnifierImpl
     ( simplifyAnds
-    , deduplicateSubstitution
     , deduplicateSubstitutionAux
     , normalizeOnce
     , normalizeExcept
@@ -30,9 +29,7 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Conditional (..)
-    , Predicate
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Logger
     ( LogMessage
@@ -92,36 +89,6 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
       where
         (intermediateTerm, intermediateCondition) =
             Pattern.splitTerm intermediate
-
-{- | Simplify a substitution so that each variable occurs only once.
-
-Simplify a conjunction of substitutions,
-
-@
-x₁ = t₁ ∧ ... ∧ xₙ = tₙ
-@
-
-where some of the @xᵢ@ may be the same so that each variable occurs on the
-left-hand side of only one substitution clause. New substitutions may be
-produced during simplification; @deduplicateSubstitution@ recurses until the
-solution stabilizes.
-
-See also: 'deduplicateOnce'
-
- -}
-deduplicateSubstitution
-    :: forall variable unifier
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
-    => Substitution variable
-    -> unifier (Predicate variable)
-deduplicateSubstitution substitution = do
-    (predicate, substitutions) <- deduplicateSubstitutionAux substitution
-    return
-        $ Predicate.andCondition (Predicate.fromPredicate predicate)
-        $ Predicate.fromSubstitution $ Substitution.fromMap substitutions
 
 deduplicateSubstitutionAux
     :: forall variable unifier
@@ -184,15 +151,8 @@ normalizeOnce
 normalizeOnce Conditional { term, predicate, substitution } = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
-    deduplicated <- deduplicateSubstitution substitution
-    let
-        Conditional { substitution = preDeduplicatedSubstitution } =
-            deduplicated
-        Conditional { predicate = deduplicatedPredicate } = deduplicated
-        -- The substitution is not fully normalized, but it is safe to convert
-        -- to a Map because it has been deduplicated.
-        deduplicatedSubstitution =
-            Map.fromList $ Substitution.unwrap preDeduplicatedSubstitution
+    (deduplicatedPredicate, deduplicatedSubstitution) <-
+        deduplicateSubstitutionAux substitution
 
     normalized <- normalizeSubstitution' deduplicatedSubstitution
     let
