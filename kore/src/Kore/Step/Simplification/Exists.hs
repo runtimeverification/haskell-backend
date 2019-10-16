@@ -26,6 +26,9 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiAnd as MultiAnd
+    ( make
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -33,11 +36,14 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrPredicate as OrPredicate
+    ( fromPredicate
+    )
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-    ( markSimplified
+    ( splitTerm
     )
 import Kore.Internal.Predicate
     ( Predicate
@@ -67,6 +73,9 @@ import Kore.Sort
     )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
+    )
+import qualified Kore.Step.Simplification.AndPredicates as And
+    ( simplifyEvaluatedMultiPredicate
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -279,15 +288,20 @@ makeEvaluateBoundRight
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundRight variable freeSubstitution normalized = do
+    orPredicate <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
+        (MultiAnd.make
+            [   OrPredicate.fromPredicate quantifyPredicate
+            ,   OrPredicate.fromPredicate
+                    (Predicate.fromSubstitution freeSubstitution)
+            ]
+        )
+    predicate <- Branch.scatter orPredicate
+    let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern
   where
-    simplifiedPattern :: Pattern variable
-    simplifiedPattern =
-        Pattern.markSimplified
-        $ Conditional.andCondition
-            (quantifyPattern variable normalized)
-            (Predicate.fromSubstitution freeSubstitution)
+    (quantifyTerm, quantifyPredicate) = Pattern.splitTerm
+        (quantifyPattern variable normalized)
 
 {- | Split the substitution on the given variable.
 

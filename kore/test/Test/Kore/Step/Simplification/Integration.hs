@@ -501,7 +501,7 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
-    , testCase "zzzRewrite simplification" $ do
+    , testCase "Rewrite simplification" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkRewrites (mkElemVar Mock.x) mkBottom_
