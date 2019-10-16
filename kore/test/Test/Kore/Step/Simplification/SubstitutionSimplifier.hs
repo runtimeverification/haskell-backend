@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedLists #-}
 
-module Test.Kore.Step.Simplification.Substitution
+module Test.Kore.Step.Simplification.SubstitutionSimplifier
     ( test_SubstitutionSimplifier
     ) where
 
@@ -10,10 +10,10 @@ import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.TermLike
-import Kore.Step.Simplification.Substitution
+import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
-import qualified Kore.Step.Simplification.Substitution as Substitution
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationOrSubstitutionError (..)
@@ -183,20 +183,20 @@ test_SubstitutionSimplifier =
         testGroup testName
             [ testCase "simplification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        Substitution.simplification
+                        SubstitutionSimplifier.simplification
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
-                let expect = Substitution.fromNormalization <$> results
+                let expect = SubstitutionSimplifier.fromNormalization <$> results
                 assertEqual "" expect (OrPredicate.toPredicates actual)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        Substitution.unification
+                        SubstitutionSimplifier.unification
                 actual <-
                     runSimplifier Mock.env
                     . runUnifierT
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
-                        Right $ Substitution.fromNormalization normalization
+                        Right $ SubstitutionSimplifier.fromNormalization normalization
                       | otherwise =
                         Left
                         $ SubstitutionError

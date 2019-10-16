@@ -4,7 +4,7 @@ License     : NCSA
 
  -}
 
-module Kore.Step.Simplification.Substitution
+module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     , simplification
     , unification

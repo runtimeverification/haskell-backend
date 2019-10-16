@@ -28,6 +28,11 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-make -j8 TEST_SYMBOLIC_BACKEND=haskell \
-     tests/proofs/simple-arithmetic-spec.k.prove \
-     tests/proofs/loops-spec.k.prove
+for each in \
+    tests/proofs/simple-arithmetic-spec.k.prove \
+    tests/proofs/loops-spec.k.prove
+do
+    command time -o "$TOP/profile.json" -a \
+        -f "{ \"wasm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+        make TEST_SYMBOLIC_BACKEND=haskell $each
+done
