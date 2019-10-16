@@ -34,5 +34,5 @@ for each in \
 do
     command time -o "$TOP/profile.json" -a \
         -f "{ \"wasm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
-        make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/simple-arithmetic-spec.k.prove
+        make TEST_SYMBOLIC_BACKEND=haskell $each
 done
