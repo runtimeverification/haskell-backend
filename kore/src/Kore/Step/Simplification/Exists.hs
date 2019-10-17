@@ -22,7 +22,13 @@ import Branch
     ( BranchT
     )
 import qualified Branch
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiAnd as MultiAnd
+    ( make
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -30,15 +36,46 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.OrPredicate as OrPredicate
+    ( fromPredicate
+    )
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( splitTerm
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike as Pattern
+import Kore.Internal.TermLike
+    ( ElementVariable
+    , pattern Equals_
+    , Exists (Exists)
+    , InternalVariable
+    , Sort
+    , TermLike
+    , mkExists
+    , withoutFreeVariable
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( hasFreeVariable
+    , hasFreeVariable
+    , markSimplified
+    , substitute
+    , withoutFreeVariable
+    )
+import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Sort
     ( predicateSort
     )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
+    )
+import qualified Kore.Step.Simplification.AndPredicates as And
+    ( simplifyEvaluatedMultiPredicate
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -140,20 +177,20 @@ makeEvaluate variable original
             makeEvaluateBoundLeft
                 variable
                 boundTerm
-                normalized { substitution = freeSubstitution }
+                normalized { Conditional.substitution = freeSubstitution }
         (Right boundSubstitution, freeSubstitution) -> do
             matched <- Monad.Trans.lift $ matchesToVariableSubstitution
                 variable
-                normalized { substitution = boundSubstitution }
+                normalized { Conditional.substitution = boundSubstitution }
             if matched
                 then return normalized
-                    { predicate = Syntax.Predicate.makeTruePredicate
-                    , substitution = freeSubstitution
+                    { Conditional.predicate = Syntax.Predicate.makeTruePredicate
+                    , Conditional.substitution = freeSubstitution
                     }
                 else makeEvaluateBoundRight
                     variable
                     freeSubstitution
-                    normalized { substitution = boundSubstitution }
+                    normalized { Conditional.substitution = boundSubstitution }
 
 matchesToVariableSubstitution
     :: (SimplifierVariable variable, MonadSimplify simplifier)
@@ -166,7 +203,7 @@ matchesToVariableSubstitution
   | Equals_ _sort1 _sort2 first second <-
         Syntax.Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
-  , not (hasFreeVariable (ElemVar variable) term)
+  , not (TermLike.hasFreeVariable (ElemVar variable) term)
   = do
     matchResult <- runUnifierT $ matchIncremental first second
     case matchResult of
@@ -194,7 +231,7 @@ singleVariableSubstitution
         ]
     [(substVariable, substTerm)]
         | substVariable == ElemVar variable ->
-            Pattern.withoutFreeVariable substVariable substTerm
+            TermLike.withoutFreeVariable substVariable substTerm
                 True
     _ -> False
 singleVariableSubstitution _ _ = False
@@ -223,10 +260,10 @@ makeEvaluateBoundLeft variable boundTerm normalized
             boundSubstitution = Map.singleton (ElemVar variable) boundTerm
             substituted =
                 normalized
-                    { term =
-                        Pattern.substitute boundSubstitution
+                    { Conditional.term =
+                        TermLike.substitute boundSubstitution
                         $ Conditional.term normalized
-                    , predicate =
+                    , Conditional.predicate =
                         Syntax.Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
@@ -244,19 +281,27 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundRight
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: forall variable simplifier
+    . (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundRight variable freeSubstitution normalized = do
+    orPredicate <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
+        (MultiAnd.make
+            [   OrPredicate.fromPredicate quantifyPredicate
+            ,   OrPredicate.fromPredicate
+                    (Predicate.fromSubstitution freeSubstitution)
+            ]
+        )
+    predicate <- Branch.scatter orPredicate
+    let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern
   where
-    simplifiedPattern =
-        Conditional.andCondition
-            (quantifyPattern variable normalized)
-            (Predicate.fromSubstitution freeSubstitution)
+    (quantifyTerm, quantifyPredicate) = Pattern.splitTerm
+        (quantifyPattern variable normalized)
 
 {- | Split the substitution on the given variable.
 
@@ -287,7 +332,7 @@ splitSubstitution variable substitution =
         Substitution.partition hasVariable reversedSubstitution
     hasVariable variable' term =
         ElemVar variable == variable'
-        || Pattern.hasFreeVariable (ElemVar variable) term
+        || TermLike.hasFreeVariable (ElemVar variable) term
     bound =
         maybe (Right dependent) Left
         $ Map.lookup (ElemVar variable) (Substitution.toMap dependent)
@@ -312,7 +357,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     , "variable=" ++ unparseToString variable
     , "patt=" ++ unparseToString original
     ]
-  | quantifyTerm = markSimplified . mkExists variable <$> original
+  | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
     $ Predicate.fromPredicate . Syntax.Predicate.markSimplified
@@ -321,7 +366,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
     $ Syntax.Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
-    quantifyTerm = Pattern.hasFreeVariable (ElemVar variable) term
+    quantifyTerm = TermLike.hasFreeVariable (ElemVar variable) term
     predicate' =
         Syntax.Predicate.makeAndPredicate predicate
         $ Syntax.Predicate.fromSubstitution substitution
