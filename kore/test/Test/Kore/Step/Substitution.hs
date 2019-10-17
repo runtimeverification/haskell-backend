@@ -18,6 +18,7 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
@@ -339,7 +340,7 @@ merge s1 s2 =
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
-normalize = Test.runSimplifierBranch mockEnv . Substitution.normalize
+normalize = Test.runSimplifierBranch mockEnv . Predicate.simplifyPredicate
   where
     mockEnv = Mock.env
 

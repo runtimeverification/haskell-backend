@@ -1,0 +1,1 @@
+Error in module 'INT' -> hooked-symbol 'geInt' declaration (./test/resources//test-int-3.kore 16:19) -> In argument sorts: Expected 2 arguments, found 1

@@ -39,6 +39,7 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
+    , MonadSimplify
     )
 import Kore.Unification.Error
 import Kore.Unification.Procedure
@@ -131,7 +132,7 @@ dv2 =
         , domainValueChild = mkStringLiteral "dv2"
         }
 
-testEnv :: Applicative simplifier => Env simplifier
+testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv = Mock.env
 
 unificationProblem
@@ -582,7 +583,7 @@ test_unification =
         constr20 = Mock.constrFunct20TestMap
         x = mkElemVar Mock.x
         y = mkElemVar Mock.y
-      in testCase "zzzkey outside of map, symbolic opaque terms" $
+      in testCase "key outside of map, symbolic opaque terms" $
             andSimplifySuccess
                 (UnificationTerm
                     (constr20

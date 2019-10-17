@@ -8,8 +8,6 @@ module Kore.Step.Merging.Pattern
     , mergeWithPredicate
     ) where
 
-import qualified Control.Monad.Trans.Class as Monad.Trans
-
 import Branch
     ( BranchT
     )
@@ -23,13 +21,9 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Step.Condition.Evaluator as Predicate
-    ( simplify
-    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Substitution
     ( PredicateMerger (PredicateMerger)
-    , mergePredicatesAndSubstitutions
     )
 
 {-| 'mergeWithPredicate' ands the given predicate-substitution
@@ -45,48 +39,8 @@ mergeWithPredicate
     -> Pattern variable
     -- ^ pattern to which the above should be added.
     -> BranchT simplifier (Pattern variable)
-mergeWithPredicate
-    Conditional
-        { predicate = conditionToMerge
-        , substitution = substitutionToMerge
-        }
-    patt@Conditional
-        { predicate = pattPredicate
-        , substitution = pattSubstitution
-        }
-  = do
-    merged <-
-        mergePredicatesAndSubstitutions
-            [pattPredicate, conditionToMerge]
-            [pattSubstitution, substitutionToMerge]
-    let Conditional { predicate = mergedCondition } = merged
-    evaluatedCondition <- Monad.Trans.lift $ Predicate.simplify mergedCondition
-    let Conditional { substitution = mergedSubstitution } = merged
-    mergeWithEvaluatedCondition
-        patt {substitution = mergedSubstitution}
-        evaluatedCondition
-
-mergeWithEvaluatedCondition
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
-    => Pattern variable
-    -> Predicate variable
-    -> BranchT simplifier (Pattern variable)
-mergeWithEvaluatedCondition
-    Conditional
-        { term = pattTerm
-        , substitution = pattSubstitution
-        }  -- The predicate was already included in the Predicate
-    Conditional
-        { predicate = predPredicate, substitution = predSubstitution }
-  = do
-    merged <-
-        mergePredicatesAndSubstitutions
-            [predPredicate]
-            [pattSubstitution, predSubstitution]
-    return $ Pattern.withCondition pattTerm merged
+mergeWithPredicate condition' pattern' =
+    simplifyPredicate $ Pattern.andCondition pattern' condition'
 
 {-| Ands the given predicate/substitution with the given pattern.
 
