@@ -59,7 +59,9 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Unification.UnifierT as SubstitutionSimplifier
+    ( original
+    )
 import SMT
     ( MonadSMT (..)
     , SmtT (..)

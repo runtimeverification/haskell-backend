@@ -88,7 +88,6 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
@@ -99,6 +98,7 @@ import Kore.Unification.Error
     ( UnificationOrSubstitutionError
     )
 import qualified Kore.Unification.Procedure as Unification
+import qualified Kore.Unification.UnifierT as SubstitutionSimplifier
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString

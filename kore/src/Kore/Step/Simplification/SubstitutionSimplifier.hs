@@ -7,31 +7,49 @@ License     : NCSA
 module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     , simplification
-    , unification
-    , original
     ) where
 
-import Control.Error
-    ( MaybeT
-    , maybeT
+import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Monad
+    ( foldM
     )
 import Data.Function
     ( (&)
     )
+import qualified Data.Functor.Foldable as Recursive
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
+import qualified Data.List.NonEmpty as NonEmpty
 import Data.Map.Strict
     ( Map
     )
+import qualified Data.Map.Strict as Map
 
+import Branch
+    ( BranchT
+    )
+import qualified Branch
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPredicate
     ( OrPredicate
     )
 import qualified Kore.Internal.OrPredicate as OrPredicate
-import Kore.Internal.Predicate
-    ( Predicate
+import Kore.Internal.Pattern
+    ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( TermLike
+    ( And (..)
+    , pattern And_
+    , TermLike
+    , TermLikeF (..)
+    , mkAnd
+    , mkVar
     )
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
@@ -39,22 +57,19 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
+    , simplifyConditionalTerm
     )
 import Kore.Substitute
     ( SubstitutionVariable
     )
+import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
     ( Substitution
     )
+import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
     ( normalize
-    , normalizeSubstitution
     )
-import qualified Kore.Unification.UnifierImpl as Unifier
-import Kore.Unification.UnifierT
-    ( MonadUnify
-    )
-import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -79,15 +94,30 @@ simplification :: MonadSimplify simplifier => SubstitutionSimplifier simplifier
 simplification =
     SubstitutionSimplifier worker
   where
-    worker substitution = maybeUnwrapSubstitution substitution $ do
+    worker substitution = do
         deduplicated <-
             -- TODO (thomas.tuegel): If substitution de-duplication fails with a
             -- unification error, this will still discard the entire
             -- substitution into the predicate. Fortunately, that seems to be
             -- rare enough to discount for now.
-            Unifier.deduplicateSubstitution substitution
-            & Unifier.maybeUnifierT
-        OrPredicate.fromPredicates <$> traverse normalize1 deduplicated
+            deduplicateSubstitution substitution
+            & Branch.gather
+        OrPredicate.fromPredicates
+            <$> traverse (normalize1 . promoteUnsimplified) deduplicated
+
+    isAnd (And_ _ _ _) = True
+    isAnd _            = False
+
+    promoteUnsimplified (predicate, substitutions) =
+        let (unsimplified, simplified) = Map.partition isAnd substitutions
+            predicate' =
+                Syntax.Predicate.makeMultipleAndPredicate
+                . (:) predicate
+                . map mkUnsimplified
+                $ Map.toList unsimplified
+            mkUnsimplified (mkVar -> variable, termLike) =
+                Syntax.Predicate.makeEqualsPredicate variable termLike
+        in (predicate', simplified)
 
     normalize1 (predicate, substitutions) = do
         let normalized =
@@ -95,75 +125,81 @@ simplification =
                 $ normalize substitutions
         return $ Predicate.fromPredicate predicate <> normalized
 
-{- | A 'SubstitutionSimplifier' to use during unification.
-
-If the 'Substitution' cannot be normalized, this simplifier uses
-'Unifier.throwSubstitutionError'.
-
- -}
-unification
-    :: forall unifier
-    .  MonadUnify unifier
-    => SubstitutionSimplifier unifier
-unification =
-    SubstitutionSimplifier worker
+simplifyAnds
+    ::  forall variable simplifier
+    .   ( SubstitutionVariable variable
+        , MonadSimplify simplifier
+        )
+    => NonEmpty (TermLike variable)
+    -> BranchT simplifier (Pattern variable)
+simplifyAnds (NonEmpty.sort -> patterns) = do
+    result <- foldM simplifyAnds' Pattern.top patterns
+    TopBottom.guardAgainstBottom result
+    return result
   where
-    worker
-        :: forall variable
-        .  SubstitutionVariable variable
-        => Substitution variable
-        -> unifier (OrPredicate variable)
-    worker substitution =
-        fmap OrPredicate.fromPredicates . Unifier.gather $ do
-            deduplicated <- Unifier.deduplicateSubstitution substitution
-            normalize1 deduplicated
+    simplifyAnds'
+        :: Pattern variable
+        -> TermLike variable
+        -> BranchT simplifier (Pattern variable)
+    simplifyAnds' intermediate termLike =
+        case Cofree.tailF (Recursive.project termLike) of
+            AndF And { andFirst, andSecond } ->
+                foldM simplifyAnds' intermediate [andFirst, andSecond]
+            _ -> do
+                simplified <-
+                    simplifyConditionalTerm
+                        intermediateCondition
+                        (mkAnd intermediateTerm termLike)
+                return (Pattern.andCondition simplified intermediateCondition)
+      where
+        (intermediateTerm, intermediateCondition) =
+            Pattern.splitTerm intermediate
 
-    normalizeSubstitution'
-        :: forall variable
-        .  SubstitutionVariable variable
-        => Map (UnifiedVariable variable) (TermLike variable)
-        -> unifier (Predicate variable)
-    normalizeSubstitution' =
-        either Unifier.throwSubstitutionError return . normalizeSubstitution
-
-    normalize1
-        ::  forall variable
-        .   SubstitutionVariable variable
-        =>  ( Syntax.Predicate variable
+deduplicateSubstitution
+    :: forall variable simplifier
+    .   ( SubstitutionVariable variable
+        , MonadSimplify simplifier
+        )
+    =>  Substitution variable
+    ->  BranchT simplifier
+            ( Syntax.Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
-        ->  unifier (Predicate variable)
-    normalize1 (predicate, deduplicated) = do
-        normalized <- normalizeSubstitution' deduplicated
-        return $ Predicate.fromPredicate predicate <> normalized
-
-original
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => SubstitutionSimplifier simplifier
-original =
-    SubstitutionSimplifier worker
+deduplicateSubstitution =
+    worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
   where
-    worker substitution = maybeUnwrapSubstitution substitution $ do
-        -- We collect all the results here because we should promote the
-        -- substitution to the predicate when there is an error on *any* branch.
-        results <-
-            Unifier.normalizeOnce (Predicate.fromSubstitution substitution)
-            & Unifier.maybeUnifierT
-        return (OrPredicate.fromPredicates results)
+    worker
+        ::  Syntax.Predicate variable
+        ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
+        ->  BranchT simplifier
+                ( Syntax.Predicate variable
+                , Map (UnifiedVariable variable) (TermLike variable)
+                )
+    worker predicate substitutions
+      | Just deduplicated <- traverse getSingleton substitutions
+      = return (predicate, deduplicated)
 
-maybeUnwrapSubstitution
-    :: (SubstitutionVariable variable, Monad monad)
-    => Substitution variable
-    -> MaybeT monad (OrPredicate variable)
-    -> monad (OrPredicate variable)
-maybeUnwrapSubstitution substitution =
-    let unwrapped =
-            OrPredicate.fromPredicate
-            . Predicate.fromPredicate
-            . Syntax.Predicate.markSimplified
-            -- TODO (thomas.tuegel): Promoting the entire substitution
-            -- to the predicate is a problem. We should only promote the
-            -- part which has cyclic dependencies.
-            $ Syntax.Predicate.fromSubstitution substitution
-    in maybeT (return unwrapped) return
+      | otherwise = do
+        simplified <- collectConditions <$> traverse simplifyAnds substitutions
+        let -- Substitutions de-duplicated by simplification.
+            substitutions' = toMultiMap $ Conditional.term simplified
+            -- New conditions produced by simplification.
+            Conditional { predicate = predicate' } = simplified
+            predicate'' = Syntax.Predicate.makeAndPredicate predicate predicate'
+            -- New substitutions produced by simplification.
+            Conditional { substitution } = simplified
+            substitutions'' =
+                Map.unionWith (<>) substitutions'
+                $ Substitution.toMultiMap substitution
+        worker predicate'' substitutions''
+
+    getSingleton (t :| []) = Just t
+    getSingleton _         = Nothing
+
+    toMultiMap :: Map key value -> Map key (NonEmpty value)
+    toMultiMap = Map.map (:| [])
+
+    collectConditions
+        :: Map key (Conditional variable term)
+        -> Conditional variable (Map key term)
+    collectConditions = sequenceA

@@ -32,8 +32,8 @@ import qualified Kore.Step.Simplification.Predicate as PSSimplifier
     ( create
     )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Unification.Substitution as Substitution
+import qualified Kore.Unification.UnifierT as SubstitutionSimplifier
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )

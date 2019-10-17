@@ -85,12 +85,12 @@ import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.Syntax.Definition hiding
     ( Symbol (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
+import qualified Kore.Unification.UnifierT as SubstitutionSimplifier
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable

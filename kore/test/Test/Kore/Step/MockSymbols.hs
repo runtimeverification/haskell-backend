@@ -72,7 +72,6 @@ import Kore.Step.Simplification.Simplify
     , PredicateSimplifier
     , TermLikeSimplifier
     )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
     ( resolve
@@ -81,6 +80,7 @@ import Kore.Syntax.Application
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.SetVariable
 import Kore.Syntax.Variable
+import qualified Kore.Unification.UnifierT as SubstitutionSimplifier
 import Kore.Variables.UnifiedVariable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT

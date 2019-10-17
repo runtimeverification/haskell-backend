@@ -24,6 +24,9 @@ import Kore.Unification.SubstitutionNormalization
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
+import qualified Kore.Unification.UnifierT as SubstitutionSimplifier
+    ( unification
+    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
