@@ -147,9 +147,8 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
                 foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
                 simplified <-
-                    simplifyConditionalTerm
-                        intermediateCondition
-                        (mkAnd intermediateTerm termLike)
+                    mkAnd intermediateTerm termLike
+                    & simplifyConditionalTerm intermediateCondition
                 return (Pattern.andCondition simplified intermediateCondition)
       where
         (intermediateTerm, intermediateCondition) =
