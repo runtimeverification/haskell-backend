@@ -32,8 +32,8 @@ import qualified Kore.Predicate.Predicate as Syntax
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Substitution
-    ( normalize
+import Kore.Step.Simplification.SubstitutionSimplifier
+    ( SubstitutionSimplifier (..)
     )
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -41,8 +41,12 @@ import Kore.Unparser
 
 {- | Create a 'PredicateSimplifier' using 'simplify'.
 -}
-create :: MonadSimplify simplifier => PredicateSimplifier simplifier
-create = PredicateSimplifier simplify
+create
+    :: MonadSimplify simplifier
+    => SubstitutionSimplifier simplifier
+    -> PredicateSimplifier simplifier
+create substitutionSimplifier =
+    PredicateSimplifier $ simplify substitutionSimplifier
 
 {- | Simplify a 'Predicate'.
 
@@ -59,9 +63,11 @@ simplify
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Conditional variable any
+    =>  SubstitutionSimplifier simplifier
+    ->  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
-simplify initial = normalize initial >>= worker
+simplify SubstitutionSimplifier { simplifySubstitution } initial =
+    normalize initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
@@ -78,6 +84,16 @@ simplify initial = normalize initial >>= worker
         Syntax.Predicate.isFreeOf predicate variables
       where
         variables = Substitution.variables substitution
+
+    normalize
+        ::  forall any'
+        .   Conditional variable any'
+        ->  BranchT simplifier (Conditional variable any')
+    normalize conditional@Conditional { substitution } = do
+        let conditional' = conditional { substitution = mempty }
+        predicates' <- Monad.Trans.lift $ simplifySubstitution substitution
+        predicate' <- Branch.scatter predicates'
+        return $ Conditional.andCondition conditional' predicate'
 
 {- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.
 

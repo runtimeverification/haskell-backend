@@ -72,6 +72,7 @@ import Kore.Step.Simplification.Simplify
     , PredicateSimplifier
     , TermLikeSimplifier
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
     ( resolve
@@ -1550,7 +1551,8 @@ axiomSimplifiers = Map.empty
 
 predicateSimplifier
     :: MonadSimplify simplifier => PredicateSimplifier simplifier
-predicateSimplifier = Simplifier.Predicate.create
+predicateSimplifier =
+    Simplifier.Predicate.create SubstitutionSimplifier.original
 
 env :: MonadSimplify simplifier => Env simplifier
 env =

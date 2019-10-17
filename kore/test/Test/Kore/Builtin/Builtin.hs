@@ -88,6 +88,7 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
@@ -177,7 +178,8 @@ testMetadataTools = MetadataTools.build verifiedModule
 
 testSubstitutionSimplifier
     :: MonadSimplify simplifier => PredicateSimplifier simplifier
-testSubstitutionSimplifier = Simplifier.Predicate.create
+testSubstitutionSimplifier =
+    Simplifier.Predicate.create SubstitutionSimplifier.original
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule

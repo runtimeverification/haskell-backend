@@ -32,6 +32,7 @@ import qualified Kore.Step.Simplification.Predicate as PSSimplifier
     ( create
     )
 import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -276,7 +277,8 @@ runSimplifier patternSimplifierMap predicate =
     $ simplifier predicate
   where
     env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
-    PredicateSimplifier simplifier = PSSimplifier.create
+    PredicateSimplifier simplifier =
+        PSSimplifier.create SubstitutionSimplifier.original
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]

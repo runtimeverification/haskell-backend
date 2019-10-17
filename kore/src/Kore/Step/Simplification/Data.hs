@@ -59,6 +59,7 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import SMT
     ( MonadSMT (..)
     , SmtT (..)
@@ -202,7 +203,7 @@ evalSimplifier verifiedModule simplifier = do
     -- knowledge of the patterns which are internalized.
     earlyMetadataTools = MetadataTools.build verifiedModule
     simplifierTermLike = Simplifier.create
-    simplifierPredicate = Predicate.create
+    simplifierPredicate = Predicate.create SubstitutionSimplifier.original
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 
