@@ -502,7 +502,7 @@ test_simplificationIntegration =
                 ]
         actual <- evaluate
             Conditional
-                { term = mkIff (Mock.bSort0) mkBottom_
+                { term = mkIff Mock.bSort0 mkBottom_
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -518,6 +518,28 @@ test_simplificationIntegration =
         actual <- evaluate
             Conditional
                 { term = mkRewrites (mkElemVar Mock.x) mkBottom_
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "" expected actual
+    , testCase "Forall simplification" $ do
+        let expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkTop_
+                    , predicate =
+                        makeCeilPredicate (mkEvaluated (mkBottom Mock.mapSort))
+                    , substitution = mempty
+                    }
+                ]
+        actual <- evaluate
+            Conditional
+                { term = mkForall
+                    Mock.t
+                    (mkIn
+                        Mock.otherSort
+                        (mkNot (mkBottom Mock.mapSort))
+                        (mkEvaluated mkBottom_)
+                    )
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
