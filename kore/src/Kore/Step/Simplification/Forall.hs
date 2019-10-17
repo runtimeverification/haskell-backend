@@ -65,16 +65,14 @@ import Kore.Variables.UnifiedVariable
 {-|'simplify' simplifies an 'Forall' pattern with an 'OrPattern'
 child.
 
-Right now this has special cases only for top and bottom children.
+Right now this has special cases for (top and bottom children),
+(top and bottom term) and (top and bottom predicate-substitution).
 
 Note that while forall x . phi(x) and [x=alpha] can be simplified
 (it's bottom if x's sort is multivalued and alpha is not the 'x' pattern or
 the identity function applied to the pattern x, or phi(alpha) otherwise),
 we only expect forall usage for symbolic variables, so we won't attempt to
 simplify it this way.
-
-For this reason, we don't even try to see if the variable actually occurs in
-the pattern except for the top/bottom cases.
 -}
 simplify
     :: InternalVariable variable
