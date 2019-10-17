@@ -24,8 +24,8 @@ import Kore.Unification.SubstitutionNormalization
 import Kore.Unification.UnifierT
     ( runUnifierT
     )
-import qualified Kore.Unification.UnifierT as SubstitutionSimplifier
-    ( unification
+import qualified Kore.Unification.UnifierT as Unification
+    ( substitutionSimplifier
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -193,7 +193,7 @@ test_SubstitutionSimplifier =
                 assertEqual "" expect (OrPredicate.toPredicates actual)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        SubstitutionSimplifier.unification
+                        Unification.substitutionSimplifier
                 actual <-
                     runSimplifier Mock.env
                     . runUnifierT

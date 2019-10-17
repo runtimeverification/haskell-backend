@@ -4,9 +4,7 @@ module Kore.Unification.UnifierT
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT
-    -- * Substitution simplifiers
-    , unification
-    , original
+    , substitutionSimplifier
     -- * Re-exports
     , module Kore.Unification.Unify
     ) where
@@ -22,9 +20,6 @@ import qualified Control.Monad.Except as Error
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
-    )
-import Data.Function
-    ( (&)
     )
 import Data.Map.Strict
     ( Map
@@ -52,7 +47,6 @@ import Kore.Logger
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -121,7 +115,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     simplifyPredicate = simplifyPredicate'
       where
         PredicateSimplifier simplifyPredicate' =
-            PredicateSimplifier.create unification
+            PredicateSimplifier.create substitutionSimplifier
     {-# INLINE simplifyPredicate #-}
 
 {- | A 'SubstitutionSimplifier' to use during unification.
@@ -130,11 +124,11 @@ If the 'Substitution' cannot be normalized, this simplifier uses
 'Unifier.throwSubstitutionError'.
 
  -}
-unification
+substitutionSimplifier
     :: forall unifier
     .  MonadUnify unifier
     => SubstitutionSimplifier unifier
-unification =
+substitutionSimplifier =
     SubstitutionSimplifier worker
   where
     worker
@@ -214,29 +208,3 @@ runUnifierT = runExceptT . BranchT.gather . getUnifierT
  -}
 maybeUnifierT :: MonadSimplify m => UnifierT m a -> MaybeT m [a]
 maybeUnifierT = hushT . BranchT.gather . getUnifierT
-
-original
-    :: forall simplifier
-    .  MonadSimplify simplifier
-    => SubstitutionSimplifier simplifier
-original =
-    SubstitutionSimplifier worker
-  where
-    worker substitution = maybeUnwrapSubstitution substitution $ do
-        -- We collect all the results here because we should promote the
-        -- substitution to the predicate when there is an error on *any* branch.
-        results <-
-            UnifierImpl.normalizeOnce (Predicate.fromSubstitution substitution)
-            & maybeUnifierT
-        return (OrPredicate.fromPredicates results)
-
-    maybeUnwrapSubstitution substitution =
-        let unwrapped =
-                OrPredicate.fromPredicate
-                . Predicate.fromPredicate
-                . Syntax.Predicate.markSimplified
-                -- TODO (thomas.tuegel): Promoting the entire substitution
-                -- to the predicate is a problem. We should only promote the
-                -- part which has cyclic dependencies.
-                $ Syntax.Predicate.fromSubstitution substitution
-        in maybeT (return unwrapped) return
