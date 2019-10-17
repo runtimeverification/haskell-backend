@@ -726,7 +726,7 @@ test_applyRewriteRulesParallel =
         --   axiom: constr20(a, y) => y
         -- Expected:
         --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
-        --   remainder: nothing
+        --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
         let
             results =
                 MultiOr.singleton Conditional
