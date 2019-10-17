@@ -21,8 +21,9 @@ module Kore.Step.Step
     , Step.result
     , Step.gatherResults
     , Step.withoutRemainders
+    , assertFunctionLikeResults
+    , recoveryFunctionLikeResults
     , checkSubstitutionCoverage
-    , checkFunctionLikeResults
     , unifyRule
     , unifyRules
     , applyInitialConditions
@@ -79,10 +80,11 @@ import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import Kore.Step.Rule
     ( RewriteRule (..)
-    , RulePattern (RulePattern)
+    , RulePattern (RulePattern, left, requires)
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
@@ -410,23 +412,31 @@ finalizeRulesParallel initial unifiedRules = do
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
 
-checkFunctionLikeResults
+assertFunctionLikeResults
     ::  forall unifier variable
     .   ( SimplifierVariable variable
         , Log.WithLog Log.LogMessage unifier
         )
-    => Rule.StepContext
-    -> Pattern (Target variable)
+    => Pattern (Target variable)
     -> unifier (Results variable)
     -> unifier (Results variable)
-checkFunctionLikeResults Rule.SimplificationContext _ unifier =
-    unifier
-checkFunctionLikeResults _ initial unifier = do
+assertFunctionLikeResults initial unifier = do
     results <- Step.results <$> unifier
     let unifiedRules = Step.appliedRule <$> results
     case checkFunctionLike unifiedRules (term initial) of
         Left err -> error err
         _        -> unifier
+
+recoveryFunctionLikeResults
+    ::  forall unifier variable
+    .   ( SimplifierVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadSimplify unifier
+        )
+    => Pattern (Target variable)
+    -> unifier (Results variable)
+    -> unifier (Results variable)
+recoveryFunctionLikeResults _ = id
 
 finalizeRulesSequence
     ::  forall unifier variable
@@ -480,18 +490,18 @@ checkFunctionLike
 checkFunctionLike unifiedRules term
   | unifiedRules == mempty = pure ()
   | TermLike.isFunctionPattern term =
-        Foldable.traverse_ checkFunctionLikeRule unifiedRules
+    Foldable.traverse_ checkFunctionLikeRule unifiedRules
   | otherwise = Left . show . Pretty.vsep $
-        [ "Expected function-like term, but found:"
-        , Pretty.indent 4 (unparse term)
-        ]
+    [ "Expected function-like term, but found:"
+    , Pretty.indent 4 (unparse term)
+    ]
   where
     checkFunctionLikeRule Conditional { term = RulePattern { left } }
       | TermLike.isFunctionPattern left = return ()
       | otherwise = Left . show . Pretty.vsep $
-            [ "Expected function-like left-hand side of rule, but found:"
-            , Pretty.indent 4 (unparse left)
-            ]
+        [ "Expected function-like left-hand side of rule, but found:"
+        , Pretty.indent 4 (unparse left)
+        ]
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -614,7 +624,7 @@ applyRewriteRulesParallel
     unificationProcedure
     rewriteRules
     (toConfigurationVariables -> initial)
-  = checkFunctionLikeResults Rule.RewriteContext initial
+  = assertFunctionLikeResults initial
     $ applyRulesParallel
         unificationProcedure
         (getRewriteRule <$> rewriteRules)
@@ -668,7 +678,7 @@ applyRewriteRulesSequence
     unificationProcedure
     (toConfigurationVariables -> initialConfig)
     rewriteRules
-  = checkFunctionLikeResults Rule.RewriteContext initialConfig
+  = assertFunctionLikeResults initialConfig
     $ applyRulesSequence
         unificationProcedure
         initialConfig

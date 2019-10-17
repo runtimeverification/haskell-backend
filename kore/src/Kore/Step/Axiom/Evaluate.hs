@@ -36,7 +36,6 @@ import Kore.Step.Remainder
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( EqualityRule (..)
-    , StepContext (..)
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -59,13 +58,11 @@ import Kore.Variables.Fresh
 evaluateAxioms
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => StepContext
-    -> [EqualityRule Variable]
+    => [EqualityRule Variable]
     -> TermLike variable
     -> Syntax.Predicate variable
     -> simplifier (Step.Results variable)
 evaluateAxioms
-    _
     definitionRules
     patt
     predicate
@@ -103,10 +100,9 @@ evaluateAxioms
             >>= Lens.traverseOf (field @"remainders")
                 (OrPattern.simplifyPredicatesWithSmt predicate)
 
-    let
-        Result.Results { results = returnedResults } = simplifiedResult
+    let Result.Results { results = returnedResults } = simplifiedResult
 
-    if (Foldable.null . Foldable.fold . fmap Result.result) returnedResults
+    if (all null . fmap Result.result) returnedResults
         then return mempty
         else return simplifiedResult
 
@@ -124,10 +120,8 @@ evaluateAxioms
       | Foldable.any p as = []
       | otherwise = as
 
-    applyRules
-        (Step.toConfigurationVariables -> initial)
-        rules
-      = Monad.Unify.listUnifierT
+    applyRules (Step.toConfigurationVariables -> initial) rules
+      = Monad.Unify.listUnifier
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =

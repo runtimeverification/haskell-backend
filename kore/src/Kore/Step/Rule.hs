@@ -12,7 +12,6 @@ module Kore.Step.Rule
     , AllPathRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
-    , StepContext (..)
     , allPathGlobally
     , rulePattern
     , isHeatingRule
@@ -840,11 +839,3 @@ applySubstitution substitution rule =
     subst = Substitution.toMap substitution
     finalRule = substitute subst rule
     substitutedVariables = Substitution.variables substitution
-
-{- | Context in which a step is taken
--}
-data StepContext
-  = SimplificationContext
-  | FunctionEvaluationContext
-  | RewriteContext
-  deriving (Show, Eq)

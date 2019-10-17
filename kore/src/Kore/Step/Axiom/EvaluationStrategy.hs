@@ -40,7 +40,6 @@ import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Rule
     ( EqualityRule (..)
-    , StepContext (..)
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -77,12 +76,10 @@ definitionEvaluation rules =
     BuiltinAndAxiomSimplifier
         (\_ _ term predicate -> do
             let ea = evaluateAxioms
-                        FunctionEvaluationContext
                         rules
                         term
                         (Predicate.toPredicate predicate)
-            res <- Step.checkFunctionLikeResults
-                    FunctionEvaluationContext
+            res <- Step.assertFunctionLikeResults
                     (Step.toConfigurationVariables (Pattern.fromTermLike term))
                     ea
             return $ resultsToAttemptedAxiom res
@@ -96,12 +93,10 @@ simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier
         (\_ _ term predicate -> do
             let ea = evaluateAxioms
-                        SimplificationContext
                         [rule]
                         term
                         (Predicate.toPredicate predicate)
-            res <- Step.checkFunctionLikeResults
-                    SimplificationContext
+            res <- Step.recoveryFunctionLikeResults
                     (Step.toConfigurationVariables (Pattern.fromTermLike term))
                     ea
             return $ resultsToAttemptedAxiom res
@@ -116,7 +111,6 @@ input.
 See also: 'definitionEvaluation'
 
 -}
-
 totalDefinitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
@@ -133,12 +127,10 @@ totalDefinitionEvaluation rules =
         -> simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker _ _ term predicate = do
         result0 <- evaluateAxioms
-                    FunctionEvaluationContext
                     rules
                     term
                     (Predicate.toPredicate predicate)
-        let
-            result = resultsToAttemptedAxiom result0
+        let result = resultsToAttemptedAxiom result0
         if hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result

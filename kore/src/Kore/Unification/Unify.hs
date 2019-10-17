@@ -7,7 +7,7 @@ module Kore.Unification.Unify
     ( MonadUnify (..), SimplifierVariable
     , UnifierT (..)
     , throwUnificationOrSubstitutionError
-    , listUnifierT
+    , listUnifier
     , lowerExceptT
     , runUnifierT
     , maybeUnifierT
@@ -176,5 +176,5 @@ maybeUnifierT = hushT . BranchT.gather . getUnifierT
 
 {- | Run a 'Unifier', returning empty list upon error.
  -}
-listUnifierT :: MonadSimplify m => UnifierT m a -> m [a]
-listUnifierT = fmap (fromRight []) . runUnifierT
+listUnifier :: MonadSimplify m => UnifierT m a -> m [a]
+listUnifier = fmap (fromRight []) . runUnifierT
