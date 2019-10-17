@@ -29,7 +29,6 @@ import Data.Function
     )
 import Data.List
     ( foldl1'
-    , nub
     )
 import Data.Set
     ( Set

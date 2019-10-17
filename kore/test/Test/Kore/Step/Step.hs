@@ -726,7 +726,7 @@ test_applyRewriteRulesParallel =
         --   axiom: constr20(a, y) => y
         -- Expected:
         --   rewritten: cg, with ⌈cf⌉ and ⌈cg⌉ and [x=a]
-        --   remainder: constr20(x, cg), with ⌈cf⌉ and ¬(⌈cg⌉ and x=a)
+        --   remainder: nothing
         let
             results =
                 MultiOr.singleton Conditional
@@ -739,22 +739,7 @@ test_applyRewriteRulesParallel =
                         Substitution.wrap
                             [(ElemVar Mock.x, Mock.a)]
                     }
-            remainders =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term =
-                            Mock.functionalConstr20
-                                (mkElemVar Mock.x)
-                                Mock.cg
-                        , predicate =
-                            makeAndPredicate (makeCeilPredicate Mock.cf)
-                            $ makeNotPredicate
-                            $ makeAndPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
-                        , substitution = mempty
-                        }
-                    ]
+            remainders = OrPattern.fromPatterns []
             initialTerm = Mock.functionalConstr20 (mkElemVar Mock.x) Mock.cg
             initial =
                 Conditional
