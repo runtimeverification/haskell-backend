@@ -181,8 +181,5 @@ normalizeExcept
         )
     => Conditional variable term
     -> unifier (Conditional variable term)
-normalizeExcept conditional = do
-    normalized <- normalizeOnce conditional
-    let (term, predicate') = Conditional.splitTerm normalized
-    simplified <- Branch.alternate $ Simplifier.simplifyPredicate predicate'
-    return simplified { term }
+normalizeExcept conditional =
+    Branch.gather (Simplifier.simplifyPredicate conditional) >>= Unifier.scatter
