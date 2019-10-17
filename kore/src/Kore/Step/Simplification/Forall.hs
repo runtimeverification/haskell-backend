@@ -16,8 +16,28 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( bottom
+    , fromTermLike
+    , isBottom
+    , isTop
+    , toTermLike
+    , top
+    )
 import Kore.Internal.TermLike
+    ( ElementVariable
+    , Forall (Forall)
+    , InternalVariable
+    , Sort
+    , mkForall
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
+import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -80,5 +100,6 @@ makeEvaluate variable patt
   | Pattern.isBottom patt = Pattern.bottom
   | otherwise =
     Pattern.fromTermLike
-    $ markSimplified . mkForall variable
+    $ TermLike.markSimplified
+    $ mkForall variable
     $ Pattern.toTermLike patt

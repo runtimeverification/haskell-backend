@@ -17,6 +17,9 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
@@ -66,6 +69,7 @@ makeEvaluateRewrites
     -> OrPattern variable
 makeEvaluateRewrites first second =
     OrPattern.fromTermLike
+    $ TermLike.markSimplified
     $ mkRewrites
         (Pattern.toTermLike first)
         (Pattern.toTermLike second)
