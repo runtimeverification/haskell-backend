@@ -91,7 +91,7 @@ import qualified SMT.SimpleSMT as SMT
 
 import qualified Test.ConsistentKore as ConsistentKore
     ( CollectionSorts (..)
-    , Context (..)
+    , Setup (..)
     )
 import Test.Kore
     ( testId
@@ -1571,14 +1571,14 @@ env =
         , memo = Memo.forgetful
         }
 
-generatorContext :: ConsistentKore.Context
-generatorContext =
-    ConsistentKore.Context
+generatorSetup :: ConsistentKore.Setup
+generatorSetup =
+    ConsistentKore.Setup
         { allSymbols = filter doesNotHaveArguments symbols
         , allAliases = []
         , allSorts = map fst sortAttributesMapping
-        , allowedElementVariables = Set.empty
-        , allowedSetVariables = Set.empty
+        , freeElementVariables = Set.empty
+        , freeSetVariables = Set.empty
         , maybeIntSort = Just intSort
         , maybeBoolSort = Just boolSort
         , maybeListSorts = Just ConsistentKore.CollectionSorts

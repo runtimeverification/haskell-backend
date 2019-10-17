@@ -1,6 +1,6 @@
 module Test.ConsistentKore
     ( CollectionSorts (..)
-    , Context (..)
+    , Setup (..)
     , runTermGen
     , termLikeGen
     ) where
@@ -149,11 +149,16 @@ data CollectionSorts = CollectionSorts
     }
 
 data Context = Context
-    { allSymbols :: ![Internal.Symbol]
+    { availableElementVariables :: !(Set.Set (ElementVariable Variable))
+    , availableSetVariables :: !(Set.Set (SetVariable Variable))
+    }
+
+data Setup = Setup
+    { allSorts :: ![Sort]
+    , allSymbols :: ![Internal.Symbol]
     , allAliases :: ![Internal.Alias (TermLike Variable)]
-    , allSorts :: ![Sort]
-    , allowedElementVariables :: !(Set.Set (ElementVariable Variable))
-    , allowedSetVariables :: !(Set.Set (SetVariable Variable))
+    , freeElementVariables :: !(Set.Set (ElementVariable Variable))
+    , freeSetVariables :: !(Set.Set (SetVariable Variable))
     , maybeIntSort :: !(Maybe Sort)
     , maybeBoolSort :: !(Maybe Sort)
     , maybeListSorts :: !(Maybe CollectionSorts)
@@ -164,26 +169,36 @@ data Context = Context
     , metadataTools :: SmtMetadataTools Attribute.Symbol
     }
 
-type Gen = ReaderT Context Hedgehog.Gen
+type Gen = ReaderT (Setup, Context) Hedgehog.Gen
 
-runTermGen :: Context -> Gen a -> Hedgehog.Gen a
-runTermGen context generator =
-    Reader.runReaderT generator context
+runTermGen :: Setup -> Gen a -> Hedgehog.Gen a
+runTermGen
+    setup@Setup{freeElementVariables, freeSetVariables}
+    generator
+  =
+    Reader.runReaderT generator (setup, context)
+  where
+    context = Context
+        { availableElementVariables = freeElementVariables
+        , availableSetVariables = freeSetVariables
+        }
 
 addQuantifiedSetVariable :: SetVariable Variable -> Context -> Context
 addQuantifiedSetVariable
     variable
-    context@Context {allowedSetVariables}
+    context@Context {availableSetVariables}
   =
-    context {allowedSetVariables = Set.insert variable allowedSetVariables}
+    context {availableSetVariables = Set.insert variable availableSetVariables}
 
 addQuantifiedElementVariable :: ElementVariable Variable -> Context -> Context
 addQuantifiedElementVariable
     variable
-    context@Context {allowedElementVariables}
+    context@Context {availableElementVariables}
   =
     context
-        {allowedElementVariables = Set.insert variable allowedElementVariables}
+        { availableElementVariables =
+            Set.insert variable availableElementVariables
+        }
 
 termLikeGen :: Gen (TermLike Variable)
 termLikeGen = do
@@ -257,8 +272,9 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
 
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do
-    generators <- sequence
-        (   [ andGenerator
+    (setup, _) <- Reader.ask
+    let generators =
+            [ andGenerator
             , bottomGenerator
             , ceilGenerator
             , equalsGenerator
@@ -276,14 +292,13 @@ termGenerators = do
             , topGenerator
             , evaluatedGenerator
             ]
-        )
-    literals <- (keepJusts . sequence)
-        [ maybeStringLiteralGenerator ]
-    dv <- (keepJusts . sequence)
-        [ maybeIntDVGenerator
-        , maybeBoolDVGenerator
-        , maybeStringDVGenerator
-        ]
+        literals = catMaybes
+            [ maybeStringLiteralGenerator setup ]
+        dv = catMaybes
+            [ maybeIntDVGenerator setup
+            , maybeBoolDVGenerator setup
+            , maybeStringDVGenerator setup
+            ]
     variable <- allVariableGenerators
     symbol <- symbolGenerators
     alias <- aliasGenerators
@@ -307,14 +322,18 @@ termGenerators = do
     listSingleton :: a -> [a]
     listSingleton x = [x]
 
-withContext :: Monad m => r -> ReaderT r m a -> ReaderT r m a
-withContext r = Reader.local (const r)
+withContext
+    :: Monad m
+    => Context
+    -> ReaderT (r, Context) m a
+    -> ReaderT (r, Context) m a
+withContext context = Reader.local (\(r, _) -> (r, context))
 
 nullaryFreeSortOperatorGenerator
     :: (Sort -> TermLike Variable)
-    -> Gen TermGenerator
+    -> TermGenerator
 nullaryFreeSortOperatorGenerator builder =
-    return TermGenerator
+    TermGenerator
         { arity = 0
         , sort = AnySort
         , generator = worker
@@ -325,66 +344,61 @@ nullaryFreeSortOperatorGenerator builder =
 
 unaryOperatorGenerator
     :: (TermLike Variable -> TermLike Variable)
-    -> Gen TermGenerator
-unaryOperatorGenerator builder = do
-    context <- Reader.ask
-    return TermGenerator
+    -> TermGenerator
+unaryOperatorGenerator builder =
+    TermGenerator
         { arity = 1
         , sort = AnySort
-        , generator = worker context
+        , generator = worker
         }
   where
-    worker context childGenerator childSort =
-        builder
-            <$> withContext context (childGenerator childSort)
+    worker childGenerator childSort =
+        builder <$> childGenerator childSort
 
 unaryFreeSortOperatorGenerator
     :: (Sort -> TermLike Variable -> TermLike Variable)
-    -> Gen TermGenerator
-unaryFreeSortOperatorGenerator builder = do
-    context <- Reader.ask
-    return TermGenerator
+    -> TermGenerator
+unaryFreeSortOperatorGenerator builder =
+    TermGenerator
         { arity = 1
         , sort = AnySort
-        , generator = worker context
+        , generator = worker
         }
   where
-    worker context childGenerator resultSort = withContext context $ do
+    worker childGenerator resultSort = do
         childSort <- sortGen
         child <- childGenerator childSort
         return (builder resultSort child)
 
 unaryQuantifiedElementOperatorGenerator
     :: (ElementVariable Variable -> TermLike Variable -> TermLike Variable)
-    -> Gen TermGenerator
-unaryQuantifiedElementOperatorGenerator builder = do
-    context <- Reader.ask
-    variableSort <- sortGen
-    quantifiedVariable <- elementVariableGen variableSort
-    return TermGenerator
-        { arity = 1
-        , sort = AnySort
-        , generator =
-            worker
-                quantifiedVariable
-                (addQuantifiedElementVariable quantifiedVariable context)
-        }
-  where
-    worker variable context childGenerator childSort =
-        withContext context $ builder variable <$> childGenerator childSort
-
-muNuOperatorGenerator
-    :: (SetVariable Variable -> TermLike Variable -> TermLike Variable)
-    -> Gen TermGenerator
-muNuOperatorGenerator builder =
-    return TermGenerator
+    -> TermGenerator
+unaryQuantifiedElementOperatorGenerator builder =
+    TermGenerator
         { arity = 1
         , sort = AnySort
         , generator = worker
         }
   where
     worker childGenerator childSort = do
-        context <- Reader.ask
+        (_, context) <- Reader.ask
+        variableSort <- sortGen
+        quantifiedVariable <- elementVariableGen variableSort
+        withContext (addQuantifiedElementVariable quantifiedVariable context)
+            $ builder quantifiedVariable <$> childGenerator childSort
+
+muNuOperatorGenerator
+    :: (SetVariable Variable -> TermLike Variable -> TermLike Variable)
+    -> TermGenerator
+muNuOperatorGenerator builder =
+    TermGenerator
+        { arity = 1
+        , sort = AnySort
+        , generator = worker
+        }
+  where
+    worker childGenerator childSort = do
+        (_, context) <- Reader.ask
         quantifiedVariable <- setVariableGen childSort
         withContext (addQuantifiedSetVariable quantifiedVariable context) $ do
             child <- childGenerator childSort
@@ -392,16 +406,15 @@ muNuOperatorGenerator builder =
 
 binaryFreeSortOperatorGenerator
     :: (Sort -> TermLike Variable -> TermLike Variable -> TermLike Variable)
-    -> Gen TermGenerator
-binaryFreeSortOperatorGenerator builder = do
-    context <- Reader.ask
-    return TermGenerator
+    -> TermGenerator
+binaryFreeSortOperatorGenerator builder =
+    TermGenerator
         { arity = 2
         , sort = AnySort
-        , generator = worker context
+        , generator = worker
         }
   where
-    worker context childGenerator resultSort = withContext context $ do
+    worker childGenerator resultSort = do
         childSort <- sortGen
         child1 <- childGenerator childSort
         child2 <- childGenerator childSort
@@ -409,78 +422,76 @@ binaryFreeSortOperatorGenerator builder = do
 
 binaryOperatorGenerator
     :: (TermLike Variable -> TermLike Variable -> TermLike Variable)
-    -> Gen TermGenerator
-binaryOperatorGenerator builder = do
-    context <- Reader.ask
-    return TermGenerator
+    -> TermGenerator
+binaryOperatorGenerator builder =
+    TermGenerator
         { arity = 2
         , sort = AnySort
-        , generator = worker context
+        , generator = worker
         }
   where
-    worker context childGenerator childSort =
+    worker childGenerator childSort =
         builder
-            <$> withContext context (childGenerator childSort)
-            <*> withContext context (childGenerator childSort)
+            <$> childGenerator childSort
+            <*> childGenerator childSort
 
-andGenerator :: Gen TermGenerator
+andGenerator :: TermGenerator
 andGenerator = binaryOperatorGenerator mkAnd
 
-bottomGenerator :: Gen TermGenerator
+bottomGenerator :: TermGenerator
 bottomGenerator = nullaryFreeSortOperatorGenerator mkBottom
 
-ceilGenerator :: Gen TermGenerator
+ceilGenerator :: TermGenerator
 ceilGenerator = unaryFreeSortOperatorGenerator mkCeil
 
-equalsGenerator :: Gen TermGenerator
+equalsGenerator :: TermGenerator
 equalsGenerator = binaryFreeSortOperatorGenerator mkEquals
 
-existsGenerator :: Gen TermGenerator
+existsGenerator :: TermGenerator
 existsGenerator = unaryQuantifiedElementOperatorGenerator mkExists
 
-floorGenerator :: Gen TermGenerator
+floorGenerator :: TermGenerator
 floorGenerator = unaryFreeSortOperatorGenerator mkFloor
 
-forallGenerator :: Gen TermGenerator
+forallGenerator :: TermGenerator
 forallGenerator = unaryQuantifiedElementOperatorGenerator mkForall
 
-iffGenerator :: Gen TermGenerator
+iffGenerator :: TermGenerator
 iffGenerator = binaryOperatorGenerator mkIff
 
-impliesGenerator :: Gen TermGenerator
+impliesGenerator :: TermGenerator
 impliesGenerator = binaryOperatorGenerator mkImplies
 
-inGenerator :: Gen TermGenerator
+inGenerator :: TermGenerator
 inGenerator = binaryFreeSortOperatorGenerator mkIn
 
-muGenerator :: Gen TermGenerator
+muGenerator :: TermGenerator
 muGenerator = muNuOperatorGenerator mkMu
 
-notGenerator :: Gen TermGenerator
+notGenerator :: TermGenerator
 notGenerator = unaryOperatorGenerator mkNot
 
-nuGenerator :: Gen TermGenerator
+nuGenerator :: TermGenerator
 nuGenerator = muNuOperatorGenerator mkNu
 
-orGenerator :: Gen TermGenerator
+orGenerator :: TermGenerator
 orGenerator = binaryOperatorGenerator mkOr
 
-rewritesGenerator :: Gen TermGenerator
+rewritesGenerator :: TermGenerator
 rewritesGenerator = binaryOperatorGenerator mkRewrites
 
-topGenerator :: Gen TermGenerator
+topGenerator :: TermGenerator
 topGenerator = nullaryFreeSortOperatorGenerator mkTop
 
-evaluatedGenerator :: Gen TermGenerator
+evaluatedGenerator :: TermGenerator
 evaluatedGenerator = unaryOperatorGenerator mkEvaluated
 
-maybeStringLiteralGenerator :: Gen (Maybe TermGenerator)
-maybeStringLiteralGenerator = do
-    Context {maybeStringLiteralSort} <- Reader.ask
+maybeStringLiteralGenerator :: Setup -> Maybe TermGenerator
+maybeStringLiteralGenerator Setup {maybeStringLiteralSort} =
     case maybeStringLiteralSort of
-        Nothing -> return Nothing
+        Nothing -> Nothing
         Just stringSort ->
-            return $ Just TermGenerator
+            Just TermGenerator
                 { arity = 0
                 , sort = SpecificSort stringSort
                 , generator = \_childGenerator resultSort -> do
@@ -508,15 +519,16 @@ _checkAllBuiltinImplemented builtin =
 
 allBuiltinGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 allBuiltinGenerators = do
-    maybeBuiltinGenerators <- sequence
-        [ maybeBoolBuiltinGenerator
-        , maybeIntBuiltinGenerator
-        , maybeListBuiltinGenerator
-        , maybeMapBuiltinGenerator
-        , maybeSetBuiltinGenerator
-        , maybeStringBuiltinGenerator
-        ]
-    let termGeneratorList =
+    (setup, _) <- Reader.ask
+    let maybeBuiltinGenerators =
+            [ maybeBoolBuiltinGenerator setup
+            , maybeIntBuiltinGenerator setup
+            , maybeListBuiltinGenerator setup
+            , maybeMapBuiltinGenerator setup
+            , maybeSetBuiltinGenerator setup
+            , maybeStringBuiltinGenerator setup
+            ]
+        termGeneratorList =
             map toTermGenerator $ catMaybes maybeBuiltinGenerators
     traverse Gen.element (groupBySort termGeneratorList)
   where
@@ -538,18 +550,16 @@ allBuiltinGenerators = do
                     return (mkBuiltin builtin)
             }
 
-maybeStringBuiltinGenerator :: Gen (Maybe BuiltinGenerator)
-maybeStringBuiltinGenerator = do
-    Context { maybeStringBuiltinSort } <- Reader.ask
+maybeStringBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
+maybeStringBuiltinGenerator Setup { maybeStringBuiltinSort } =
     case maybeStringBuiltinSort of
-        Nothing -> return Nothing
+        Nothing -> Nothing
         Just stringSort ->
-            return $ Just
-                BuiltinGenerator
-                    { arity = 0
-                    , sort = SpecificSort stringSort
-                    , generator = stringGenerator stringSort
-                    }
+            Just BuiltinGenerator
+                { arity = 0
+                , sort = SpecificSort stringSort
+                , generator = stringGenerator stringSort
+                }
   where
     stringGenerator
         :: Sort
@@ -559,18 +569,16 @@ maybeStringBuiltinGenerator = do
         value <- stringGen
         return (BuiltinString.asBuiltin stringSort value)
 
-maybeBoolBuiltinGenerator :: Gen (Maybe BuiltinGenerator)
-maybeBoolBuiltinGenerator = do
-    Context { maybeBoolSort } <- Reader.ask
+maybeBoolBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
+maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
     case maybeBoolSort of
-        Nothing -> return Nothing
+        Nothing -> Nothing
         Just boolSort ->
-            return $ Just
-                BuiltinGenerator
-                    { arity = 0
-                    , sort = SpecificSort boolSort
-                    , generator = boolGenerator boolSort
-                    }
+            Just BuiltinGenerator
+                { arity = 0
+                , sort = SpecificSort boolSort
+                , generator = boolGenerator boolSort
+                }
   where
     boolGenerator
         :: Sort
@@ -580,13 +588,12 @@ maybeBoolBuiltinGenerator = do
         value <- Gen.bool
         return (BuiltinBool.asBuiltin boolSort value)
 
-maybeIntBuiltinGenerator :: Gen (Maybe BuiltinGenerator)
-maybeIntBuiltinGenerator = do
-    Context { maybeIntSort } <- Reader.ask
+maybeIntBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
+maybeIntBuiltinGenerator Setup { maybeIntSort } =
     case maybeIntSort of
-        Nothing -> return Nothing
+        Nothing -> Nothing
         Just intSort ->
-            return $ Just BuiltinGenerator
+            Just BuiltinGenerator
                 { arity = 0
                 , sort = SpecificSort intSort
                 , generator = intGenerator intSort
@@ -600,18 +607,16 @@ maybeIntBuiltinGenerator = do
         value <- Gen.integral (Range.constant 0 2000)
         return (BuiltinInt.asBuiltin intSort value)
 
-maybeListBuiltinGenerator :: Gen (Maybe BuiltinGenerator)
-maybeListBuiltinGenerator = do
-    Context { maybeListSorts } <- Reader.ask
+maybeListBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
+maybeListBuiltinGenerator Setup { maybeListSorts } =
     case maybeListSorts of
-        Nothing -> return Nothing
+        Nothing -> Nothing
         Just CollectionSorts {collectionSort, elementSort} ->
-            return $ Just
-                BuiltinGenerator
-                    { arity = 5
-                    , sort = SpecificSort collectionSort
-                    , generator = listGenerator collectionSort elementSort
-                    }
+            Just BuiltinGenerator
+                { arity = 5
+                , sort = SpecificSort collectionSort
+                , generator = listGenerator collectionSort elementSort
+                }
   where
     listGenerator
         :: Sort
@@ -619,53 +624,46 @@ maybeListBuiltinGenerator = do
         -> (Sort -> Gen (TermLike Variable))
         -> Gen (Domain.Builtin (TermLike Concrete) (TermLike Variable))
     listGenerator listSort listElementSort childGenerator = do
-        Context {metadataTools} <- Reader.ask
+        (Setup {metadataTools}, _) <- Reader.ask
         elements <-
             Gen.seq (Range.constant 0 5)
             (childGenerator listElementSort)
         return (BuiltinList.asBuiltin metadataTools listSort elements)
 
 
-maybeMapBuiltinGenerator :: Gen (Maybe BuiltinGenerator)
-maybeMapBuiltinGenerator = do
-    Context { maybeMapSorts } <- Reader.ask
+maybeMapBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
+maybeMapBuiltinGenerator Setup { maybeMapSorts } =
     case maybeMapSorts of
-        Nothing -> return Nothing
+        Nothing -> Nothing
         Just _ -> error "Not implemented yet."
 
-maybeSetBuiltinGenerator :: Gen (Maybe BuiltinGenerator)
-maybeSetBuiltinGenerator = do
-    Context { maybeSetSorts } <- Reader.ask
+maybeSetBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
+maybeSetBuiltinGenerator Setup { maybeSetSorts } =
     case maybeSetSorts of
-        Nothing -> return Nothing
+        Nothing -> Nothing
         Just _ -> error "Not implemented yet."
 
-maybeStringDVGenerator :: Gen (Maybe TermGenerator)
-maybeStringDVGenerator = do
-    Context { maybeStringBuiltinSort } <- Reader.ask
-    return (maybeDVGenerator maybeStringBuiltinSort stringGen)
+maybeStringDVGenerator :: Setup -> Maybe TermGenerator
+maybeStringDVGenerator Setup { maybeStringBuiltinSort } =
+    maybeDVGenerator maybeStringBuiltinSort stringGen
 
 stringGen :: Gen Text
 stringGen = Gen.text (Range.linear 0 64) (Reader.lift Gen.unicode)
 
-maybeIntDVGenerator :: Gen (Maybe TermGenerator)
-maybeIntDVGenerator = do
-    Context { maybeIntSort } <- Reader.ask
-    return
-        (maybeDVGenerator
-            maybeIntSort
-            (Text.pack . show <$> Gen.int (Range.constant 0 2000))
-        )
+maybeIntDVGenerator :: Setup -> Maybe TermGenerator
+maybeIntDVGenerator Setup { maybeIntSort } =
+    maybeDVGenerator
+        maybeIntSort
+        (Text.pack . show <$> Gen.int (Range.constant 0 2000))
 
-maybeBoolDVGenerator :: Gen (Maybe TermGenerator)
-maybeBoolDVGenerator = do
-    Context { maybeBoolSort } <- Reader.ask
-    return (maybeDVGenerator maybeBoolSort (Text.pack . show <$> Gen.bool))
+maybeBoolDVGenerator :: Setup -> Maybe TermGenerator
+maybeBoolDVGenerator Setup { maybeBoolSort } =
+    maybeDVGenerator maybeBoolSort (Text.pack . show <$> Gen.bool)
 
 maybeDVGenerator
     :: Maybe Sort
     -> Gen Text
-    -> Maybe (TermGenerator)
+    -> Maybe TermGenerator
 maybeDVGenerator maybeSort valueGenerator = do
     dvSort <- maybeSort
     return TermGenerator
@@ -686,7 +684,7 @@ maybeDVGenerator maybeSort valueGenerator = do
 
 symbolGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 symbolGenerators = do
-    Context {allSymbols} <- Reader.ask
+    (Setup {allSymbols}, _) <- Reader.ask
     return $ groupBySort (map symbolGenerator allSymbols)
 
 symbolGenerator :: Internal.Symbol -> TermGenerator
@@ -717,7 +715,7 @@ symbolGenerator
 
 aliasGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 aliasGenerators = do
-    Context {allAliases} <- Reader.ask
+    (Setup {allAliases}, _) <- Reader.ask
     return $ groupBySort (map aliasGenerator allAliases)
 
 aliasGenerator :: Internal.Alias (TermLike Variable) -> TermGenerator
@@ -769,9 +767,9 @@ allVariableGenerators = do
 
 elementVariableGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 elementVariableGenerators = do
-    Context {allowedElementVariables} <- Reader.ask
+    (_, Context {availableElementVariables}) <- Reader.ask
     let generators =
-            map generatorForVariable (Set.toList allowedElementVariables)
+            map generatorForVariable (Set.toList availableElementVariables)
         sortToGenerators = groupBySort generators
     traverse Gen.element sortToGenerators
   where
@@ -792,8 +790,8 @@ elementVariableGenerators = do
 
 setVariableGenerators :: Gen (Map.Map SortRequirements TermGenerator)
 setVariableGenerators = do
-    Context {allowedSetVariables} <- Reader.ask
-    let generators = map generatorForVariable (Set.toList allowedSetVariables)
+    (_, Context {availableSetVariables}) <- Reader.ask
+    let generators = map generatorForVariable (Set.toList availableSetVariables)
         sortToGenerators = groupBySort generators
     traverse Gen.element sortToGenerators
   where
@@ -827,7 +825,7 @@ groupBy keyExtractor elements =
 
 sortGen :: Gen Sort
 sortGen = do
-    Context { allSorts } <- Reader.ask
+    (Setup { allSorts }, _) <- Reader.ask
     Gen.element allSorts
 
 setVariableGen :: Sort -> Gen (SetVariable Variable)
@@ -844,6 +842,3 @@ variableGen variableSort = do
         , variableCounter = Nothing
         , variableSort
         }
-
-keepJusts :: Gen [Maybe a] -> Gen [a]
-keepJusts = fmap catMaybes
