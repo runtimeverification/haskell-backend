@@ -59,7 +59,7 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Step.Transition as Transition
 import Kore.Syntax.Variable
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 
 

@@ -102,7 +102,7 @@ import Kore.Unification.Error
     ( unsupportedPatterns
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.Unify as Unify
+import Kore.Unification.UnifierT as Unify
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable

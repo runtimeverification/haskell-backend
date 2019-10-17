@@ -56,7 +56,7 @@ import Kore.Syntax.Sentence
     ( SentenceAlias
     )
 import qualified Kore.Unification.Substitution as Substitution
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     )

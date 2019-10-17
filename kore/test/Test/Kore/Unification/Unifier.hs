@@ -45,7 +45,7 @@ import Kore.Unification.Error
 import Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierImpl
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

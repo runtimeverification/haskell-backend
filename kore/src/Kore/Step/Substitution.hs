@@ -43,11 +43,11 @@ import Kore.Unification.Substitution
     ( Substitution
     )
 import qualified Kore.Unification.UnifierImpl as Unification
+import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
     )
-import qualified Kore.Unification.Unify as Monad.Unify
 
 newtype PredicateMerger variable m =
     PredicateMerger
@@ -67,7 +67,7 @@ normalize Conditional { term, predicate, substitution } = do
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
         Monad.Trans.lift
-        $ Monad.Unify.runUnifierT
+        $ Unifier.runUnifierT
         $ Unification.normalizeOnce
             Conditional { term = (), predicate, substitution }
     case results of

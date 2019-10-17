@@ -22,7 +22,7 @@ import qualified Kore.Step.Simplification.Predicate as Predicate
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )

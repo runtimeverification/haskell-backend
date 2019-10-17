@@ -51,10 +51,10 @@ import Kore.Unification.SubstitutionNormalization
     , normalizeSubstitution
     )
 import qualified Kore.Unification.UnifierImpl as Unifier
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( MonadUnify
     )
-import qualified Kore.Unification.Unify as Unifier
+import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )

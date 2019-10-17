@@ -99,7 +99,7 @@ import Kore.Unification.Error
     ( UnificationOrSubstitutionError
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString
     )

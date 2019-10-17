@@ -21,7 +21,7 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( runUnifierT
     )
 import Kore.Variables.UnifiedVariable
