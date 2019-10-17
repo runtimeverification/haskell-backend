@@ -8,10 +8,12 @@ module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     , simplification
     , unification
+    , original
     ) where
 
 import Control.Error
-    ( maybeT
+    ( MaybeT
+    , maybeT
     )
 import Data.Function
     ( (&)
@@ -77,7 +79,7 @@ simplification :: MonadSimplify simplifier => SubstitutionSimplifier simplifier
 simplification =
     SubstitutionSimplifier worker
   where
-    worker substitution = maybeUnwrapSubstitution $ do
+    worker substitution = maybeUnwrapSubstitution substitution $ do
         deduplicated <-
             -- TODO (thomas.tuegel): If substitution de-duplication fails with a
             -- unification error, this will still discard the entire
@@ -86,17 +88,6 @@ simplification =
             Unifier.deduplicateSubstitution substitution
             & Unifier.maybeUnifierT
         OrPredicate.fromPredicates <$> traverse normalize1 deduplicated
-      where
-        maybeUnwrapSubstitution =
-            let unwrapped =
-                    OrPredicate.fromPredicate
-                    . Predicate.fromPredicate
-                    . Syntax.Predicate.markSimplified
-                    -- TODO (thomas.tuegel): Promoting the entire substitution
-                    -- to the predicate is a problem. We should only promote the
-                    -- part which has cyclic dependencies.
-                    $ Syntax.Predicate.fromSubstitution substitution
-            in maybeT (return unwrapped) return
 
     normalize1 (predicate, substitutions) = do
         let normalized =
@@ -145,3 +136,34 @@ unification =
     normalize1 (predicate, deduplicated) = do
         normalized <- normalizeSubstitution' deduplicated
         return $ Predicate.fromPredicate predicate <> normalized
+
+original
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SubstitutionSimplifier simplifier
+original =
+    SubstitutionSimplifier worker
+  where
+    worker substitution = maybeUnwrapSubstitution substitution $ do
+        -- We collect all the results here because we should promote the
+        -- substitution to the predicate when there is an error on *any* branch.
+        results <-
+            Unifier.normalizeOnce (Predicate.fromSubstitution substitution)
+            & Unifier.maybeUnifierT
+        return (OrPredicate.fromPredicates results)
+
+maybeUnwrapSubstitution
+    :: (SubstitutionVariable variable, Monad monad)
+    => Substitution variable
+    -> MaybeT monad (OrPredicate variable)
+    -> monad (OrPredicate variable)
+maybeUnwrapSubstitution substitution =
+    let unwrapped =
+            OrPredicate.fromPredicate
+            . Predicate.fromPredicate
+            . Syntax.Predicate.markSimplified
+            -- TODO (thomas.tuegel): Promoting the entire substitution
+            -- to the predicate is a problem. We should only promote the
+            -- part which has cyclic dependencies.
+            $ Syntax.Predicate.fromSubstitution substitution
+    in maybeT (return unwrapped) return
