@@ -739,7 +739,22 @@ test_applyRewriteRulesParallel =
                         Substitution.wrap
                             [(ElemVar Mock.x, Mock.a)]
                     }
-            remainders = OrPattern.fromPatterns []
+            remainders =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term =
+                            Mock.functionalConstr20
+                                (mkElemVar Mock.x)
+                                Mock.cg
+                        , predicate =
+                            makeAndPredicate (makeCeilPredicate Mock.cf)
+                            $ makeNotPredicate
+                            $ makeAndPredicate
+                                (makeCeilPredicate Mock.cg)
+                                (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+                        , substitution = mempty
+                        }
+                    ]
             initialTerm = Mock.functionalConstr20 (mkElemVar Mock.x) Mock.cg
             initial =
                 Conditional

@@ -189,50 +189,66 @@ makeEvaluateNonBool
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
     normalized <- Substitution.normalize merged
-    return (applyAndIdempotence <$> normalized)
-        { predicate = applyAndIdempotence <$> Conditional.predicate normalized }
+    return
+        (applyAndIdempotenceAndFindContradictions <$> normalized)
+            { predicate =
+                applyAndIdempotenceAndFindContradictions
+                    <$> Conditional.predicate normalized
+            }
 
-applyAndIdempotence
+applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
-applyAndIdempotence patt =
-    if contradictions
-        then mkBottom (termLikeSort patt)
-        else
+applyAndIdempotenceAndFindContradictions patt =
+    if noContradictions
+        then
             foldl1' mkAndSimplified
                 . Set.toList
-                . uncurry Set.union
-                . fmap (Set.mapMonotonic mkNot)
-                $ sets
+                . Set.union terms
+                . Set.mapMonotonic mkNot
+                $ negatedTerms
+        else mkBottom (termLikeSort patt)
 
   where
-    sets = splitNotTerms patt
-    setsNotEmpty = (||) `on` Set.null
-    contradictions =
-        (Set.null . uncurry Set.intersection $ sets)
-        && not (uncurry setsNotEmpty sets)
+    (terms, negatedTerms) = splitIntoTermsAndNegations patt
+    nullPredicate = ((||) `on` Set.null) terms negatedTerms
+    noContradictions =
+        Set.null (Set.intersection terms negatedTerms) || nullPredicate
     mkAndSimplified a b
       | TermLike.isSimplified a, TermLike.isSimplified b =
         TermLike.markSimplified $ mkAnd a b
       | otherwise = mkAnd a b
 
-splitNotTerms
+splitIntoTermsAndNegations
     :: forall variable
     .  Ord variable
     => TermLike variable
     -> (Set (TermLike variable), Set (TermLike variable))
-splitNotTerms = bimap Set.fromList Set.fromList . split ([], []) . children
+splitIntoTermsAndNegations =
+    bimap Set.fromList Set.fromList
+        . split
+        . children
   where
     children :: TermLike variable -> [TermLike variable]
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
 
-    split
-        :: ([TermLike variable], [TermLike variable])
-        -> [TermLike variable]
-        -> ([TermLike variable], [TermLike variable])
-    split (ps, nps) (Not_ _ x:xs) = split (ps, x : nps) xs
-    split (ps, nps) (x:xs) = split (x : ps, nps) xs
-    split xs [] = xs
+    split :: [TermLike variable] -> ([TermLike variable], [TermLike variable])
+    split = partitionWith termOrNegation
 
+    -- Left is regular term, Right is negation with the Not stripped out.
+    termOrNegation
+        :: TermLike variable
+        -> Either (TermLike variable) (TermLike variable)
+    termOrNegation (Not_ _ t) = Right t
+    termOrNegation t          = Left t
+
+partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
+partitionWith _ [] = ([],[])
+partitionWith f (x:xs) =
+    case f x of
+        Left  b -> (b:bs, cs)
+        Right c -> (bs, c:cs)
+  where
+    (bs,cs) = partitionWith f xs
