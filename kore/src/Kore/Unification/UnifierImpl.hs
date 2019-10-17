@@ -7,7 +7,6 @@ module Kore.Unification.UnifierImpl
     ( simplifyAnds
     , deduplicateSubstitution
     , normalizeOnce
-    , normalizeExcept
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -84,7 +83,7 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
                 foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
                 unified <- termUnification intermediateTerm termLike
-                normalizeExcept
+                Branch.alternate $ Simplifier.simplifyPredicate
                     $ Pattern.andCondition unified intermediateCondition
       where
         (intermediateTerm, intermediateCondition) =
@@ -172,14 +171,3 @@ normalizeOnce Conditional { term, predicate, substitution } = do
   where
     normalizeSubstitution' =
         either Unifier.throwSubstitutionError return . normalizeSubstitution
-
-normalizeExcept
-    ::  forall unifier variable term
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
-    => Conditional variable term
-    -> unifier (Conditional variable term)
-normalizeExcept conditional =
-    Branch.gather (Simplifier.simplifyPredicate conditional) >>= Unifier.scatter

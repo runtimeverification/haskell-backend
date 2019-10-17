@@ -86,14 +86,15 @@ normalize Conditional { term, predicate, substitution } = do
     applyTerm predicated = predicated { term }
 
 normalizeExcept
-    ::  forall unifier variable
+    ::  forall unifier variable term
     .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
-    => Predicate variable
-    -> unifier (Predicate variable)
-normalizeExcept = Unification.normalizeExcept
+    => Conditional variable term
+    -> unifier (Conditional variable term)
+normalizeExcept conditional =
+    Branch.alternate (Simplifier.simplifyPredicate conditional)
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
