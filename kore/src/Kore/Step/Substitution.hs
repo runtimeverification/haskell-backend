@@ -8,11 +8,7 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Substitution
-    ( PredicateMerger (..)
-    , createLiftedPredicatesAndSubstitutionsMerger
-    , createPredicatesAndSubstitutionsMerger
-    , createPredicatesAndSubstitutionsMergerExcept
-    , mergePredicatesAndSubstitutions
+    ( mergePredicatesAndSubstitutions
     , normalize
     , normalizeExcept
     ) where
@@ -47,13 +43,6 @@ import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
-    )
-
-newtype PredicateMerger variable m =
-    PredicateMerger
-    (  [Syntax.Predicate variable]
-    -> [Substitution variable]
-    -> m (Predicate variable)
     )
 
 -- | Normalize the substitution and predicate of 'expanded'.
@@ -121,70 +110,3 @@ mergePredicatesAndSubstitutions predicates substitutions = do
         , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
         , substitution = Foldable.fold substitutions
         }
-
-{-| Creates a 'PredicateMerger' that returns errors on unifications it
-can't handle.
--}
-createPredicatesAndSubstitutionsMergerExcept
-    ::  forall variable unifier
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
-    => PredicateMerger variable unifier
-createPredicatesAndSubstitutionsMergerExcept =
-    PredicateMerger worker
-  where
-    worker
-        :: [Syntax.Predicate variable]
-        -> [Substitution variable]
-        -> unifier (Predicate variable)
-    worker predicates substitutions = do
-        let merged =
-                (Predicate.fromPredicate <$> predicates)
-                <> (Predicate.fromSubstitution <$> substitutions)
-        normalizeExcept (Foldable.fold merged)
-
-{-| Creates a 'PredicateMerger' that creates predicates for
-unifications it can't handle.
--}
-createPredicatesAndSubstitutionsMerger
-    :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => PredicateMerger variable (BranchT simplifier)
-createPredicatesAndSubstitutionsMerger =
-    PredicateMerger worker
-  where
-    worker
-        :: [Syntax.Predicate variable]
-        -> [Substitution variable]
-        -> BranchT simplifier (Predicate variable)
-    worker predicates substitutions = do
-        let merged =
-                (Predicate.fromPredicate <$> predicates)
-                <> (Predicate.fromSubstitution <$> substitutions)
-        normalize (Foldable.fold merged)
-
-{-| Creates a 'PredicateMerger' that creates predicates for
-unifications it can't handle and whose result is in any monad transformer
-over the base monad.
--}
-createLiftedPredicatesAndSubstitutionsMerger
-    ::  forall variable unifier
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
-    => PredicateMerger variable unifier
-createLiftedPredicatesAndSubstitutionsMerger =
-    PredicateMerger worker
-  where
-    worker
-        :: [Syntax.Predicate variable]
-        -> [Substitution variable]
-        -> unifier (Predicate variable)
-    worker predicates substitutions = do
-        let merged =
-                (Predicate.fromPredicate <$> predicates)
-                <> (Predicate.fromSubstitution <$> substitutions)
-        normalizeExcept (Foldable.fold merged)

@@ -18,25 +18,22 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
-import Kore.Internal.Pattern
-    ( Conditional (..)
-    )
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.Predicate as Predicate
     ( Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
-import qualified Kore.Step.Merging.OrPattern as OrPattern
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
 import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
     )
-import Kore.Step.Substitution
-    ( createPredicatesAndSubstitutionsMerger
+import Kore.Step.Simplification.Simplify
+    ( simplifyPredicate
     )
+import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
@@ -73,17 +70,13 @@ unificationProcedure p1 p2
             , "with"
             , Pretty.indent 4 $ unparse p2
             ]
-    pat@Conditional { term } <- termUnification p1 p2
-    if Conditional.isBottom pat
-        then empty
-        else do
-            orCeil <- Ceil.makeEvaluateTerm (Conditional.withoutTerm pat) term
-            orResult <-
-                BranchT.alternate $ OrPattern.mergeWithPredicateAssumesEvaluated
-                    createPredicatesAndSubstitutionsMerger
-                    (Conditional.withoutTerm pat)
-                    orCeil
-            Monad.Unify.scatter orResult
+    pat <- termUnification p1 p2
+    TopBottom.guardAgainstBottom pat
+    let (term, conditions) = Conditional.splitTerm pat
+    orCeil <- Ceil.makeEvaluateTerm conditions term
+    ceil' <- Monad.Unify.scatter orCeil
+    BranchT.alternate . simplifyPredicate
+        $ Conditional.andCondition ceil' conditions
   where
       p1Sort = termLikeSort p1
       p2Sort = termLikeSort p2

@@ -92,11 +92,6 @@ import qualified Kore.Step.Simplification.SimplificationType as SimplificationTy
     ( SimplificationType (..)
     )
 import Kore.Step.Simplification.Simplify as Simplifier
-import Kore.Step.Substitution
-    ( PredicateMerger
-    , createLiftedPredicatesAndSubstitutionsMerger
-    , createPredicatesAndSubstitutionsMergerExcept
-    )
 import Kore.TopBottom
 import Kore.Unification.Error
     ( unsupportedPatterns
@@ -160,10 +155,7 @@ termEqualsAnd p1 p2 =
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
-    maybeTermEqualsWorker =
-        maybeTermEquals
-            createPredicatesAndSubstitutionsMergerExcept
-            termEqualsAndWorker
+    maybeTermEqualsWorker = maybeTermEquals termEqualsAndWorker
 
     termEqualsAndWorker
         :: forall unifier
@@ -198,8 +190,7 @@ maybeTermEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => PredicateMerger variable unifier
-    -> TermSimplifier variable unifier
+    => TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
@@ -240,12 +231,7 @@ termUnification =
     termUnificationWorker pat1 pat2 = do
         let
             maybeTermUnification :: MaybeT unifier (Pattern variable)
-            maybeTermUnification =
-                maybeTermAnd
-                    createPredicatesAndSubstitutionsMergerExcept
-                    termUnificationWorker
-                    pat1
-                    pat2
+            maybeTermUnification = maybeTermAnd termUnificationWorker pat1 pat2
             unsupportedPatternsError =
                 throwUnificationError
                     (unsupportedPatterns
@@ -286,12 +272,7 @@ termAnd p1 p2 =
         -> TermLike variable
         -> unifier (Pattern variable)
     termAndWorker first second = do
-        let maybeTermAnd' =
-                maybeTermAnd
-                    createLiftedPredicatesAndSubstitutionsMerger
-                    termAndWorker
-                    first
-                    second
+        let maybeTermAnd' = maybeTermAnd termAndWorker first second
         patt <- runMaybeT maybeTermAnd'
         return $ fromMaybe andPattern patt
       where
@@ -303,8 +284,7 @@ maybeTermAnd
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => PredicateMerger variable unifier
-    -> TermSimplifier variable unifier
+    => TermSimplifier variable unifier
     -- ^ Used to simplify subterm "and".
     -> TermLike variable
     -> TermLike variable
@@ -362,25 +342,25 @@ andEqualsFunctions
         )
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ m s -> expandAlias (maybeTermAnd m s), "expandAlias")
-    , (AndT,    \_ _ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   \_ _ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \p _ _ _ -> bottomTermEquals p, "bottomTermEquals")
-    , (EqualsT, \p _ _ _ -> termBottomEquals p, "termBottomEquals")
-    , (BothT,   \p t _ _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
-    , (BothT,   \p t _ _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
-    , (BothT,   \_ _ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (BothT,   \_ _ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
-    , (BothT,   \_ t _ s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
-    , (BothT,   \_ _ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   \_ _ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (AndT,    \_ _ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
+    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd s), "expandAlias")
+    , (AndT,    \_ _ _ -> boolAnd, "boolAnd")
+    , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
+    , (EqualsT, \p _ _ -> bottomTermEquals p, "bottomTermEquals")
+    , (EqualsT, \p _ _ -> termBottomEquals p, "termBottomEquals")
+    , (BothT,   \p t _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
+    , (BothT,   \p t _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
+    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
+    , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
+    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
+    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
+    , (BothT,   \_ t s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
+    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
+    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
     mapEqualsFunctions (target, termTransform, name) =
@@ -390,7 +370,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
         :: String
         -> TermTransformation variable unifier
         -> TermTransformation variable unifier
-    logTT fnName termTransformation predicate sType pm ts t1 t2 =
+    logTT fnName termTransformation predicate sType ts t1 t2 =
         mapMaybeT (\getResult -> do
             mresult <- getResult
             case mresult of
@@ -422,7 +402,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
                             ]
                     return mresult
             )
-            $ termTransformation predicate sType pm ts t1 t2
+            $ termTransformation predicate sType ts t1 t2
 
 {- | Construct the conjunction or unification of two terms.
 
@@ -440,15 +420,13 @@ call 'empty' unless given patterns matching their unification case.
 type TermTransformation variable unifier =
        Predicate variable
     -> SimplificationType
-    -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 
 type TermTransformationOld variable unifier =
-       PredicateMerger variable unifier
-    -> TermSimplifier variable unifier
+       TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -464,23 +442,15 @@ maybeTransformTerm
         )
     => GHC.HasCallStack
     => [TermTransformationOld variable unifier]
-    -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
     -- ^ Used to simplify subterm pairs.
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTransformTerm
-    topTransformers
-    predicateMerger
-    childTransformers
-    first
-    second
-  = do
+maybeTransformTerm topTransformers childTransformers first second = do
     Foldable.asum
         (map
             (\f -> f
-                predicateMerger
                 childTransformers
                 first
                 second

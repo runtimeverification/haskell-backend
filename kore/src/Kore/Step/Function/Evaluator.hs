@@ -70,7 +70,6 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.Merging.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -376,10 +375,10 @@ reevaluateFunctions
 reevaluateFunctions rewriting = do
     let (rewritingTerm, rewritingPredicate) = Pattern.splitTerm rewriting
     simplifiedTerms <- simplifyTerm rewritingTerm
-    merged <- OrPattern.mergeWithPredicate rewritingPredicate simplifiedTerms
     orResults <- BranchT.gather $ do
-        simplifiedTerm <- BranchT.scatter merged
-        simplifyPredicate simplifiedTerm
+        simplifiedTerm <- BranchT.scatter simplifiedTerms
+        simplifyPredicate
+            $ Pattern.andCondition simplifiedTerm rewritingPredicate
     return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.
@@ -400,8 +399,12 @@ mergeWithConditionAndSubstitution
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    evaluatedResults <- OrPattern.mergeWithPredicate toMerge results
-    evaluatedRemainders <- OrPattern.mergeWithPredicate toMerge remainders
+    evaluatedResults <- fmap OrPattern.fromPatterns . BranchT.gather $ do
+        result <- BranchT.scatter results
+        simplifyPredicate $ Pattern.andCondition result toMerge
+    evaluatedRemainders <- fmap OrPattern.fromPatterns . BranchT.gather $ do
+        remainder <- BranchT.scatter remainders
+        simplifyPredicate $ Pattern.andCondition remainder toMerge
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = evaluatedResults
         , remainders = evaluatedRemainders
