@@ -24,8 +24,8 @@ import Control.Monad
 import Data.Bifunctor
     ( bimap
     )
-import Data.Function
-    ( on
+import Data.Either
+    ( partitionEithers
     )
 import Data.List
     ( foldl1'
@@ -202,19 +202,12 @@ applyAndIdempotenceAndFindContradictions
     -> TermLike variable
 applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
-        then
-            foldl1' mkAndSimplified
-                . Set.toList
-                . Set.union terms
-                . Set.mapMonotonic mkNot
-                $ negatedTerms
+        then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
         else mkBottom (termLikeSort patt)
 
   where
     (terms, negatedTerms) = splitIntoTermsAndNegations patt
-    nullPredicate = ((||) `on` Set.null) terms negatedTerms
-    noContradictions =
-        Set.null (Set.intersection terms negatedTerms) || nullPredicate
+    noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
     mkAndSimplified a b
       | TermLike.isSimplified a, TermLike.isSimplified b =
         TermLike.markSimplified $ mkAnd a b
@@ -227,28 +220,19 @@ splitIntoTermsAndNegations
     -> (Set (TermLike variable), Set (TermLike variable))
 splitIntoTermsAndNegations =
     bimap Set.fromList Set.fromList
-        . split
+        . partitionWith termOrNegation
         . children
   where
     children :: TermLike variable -> [TermLike variable]
     children (And_ _ p1 p2) = children p1 ++ children p2
     children p = [p]
 
-    split :: [TermLike variable] -> ([TermLike variable], [TermLike variable])
-    split = partitionWith termOrNegation
-
-    -- Left is regular term, Right is negation with the Not stripped out.
+    -- Left is for regular terms, Right is negated terms
     termOrNegation
         :: TermLike variable
         -> Either (TermLike variable) (TermLike variable)
-    termOrNegation (Not_ _ t) = Right t
-    termOrNegation t          = Left t
+    termOrNegation t@(Not_ _ _) = Right t
+    termOrNegation t            = Left t
 
 partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
-partitionWith _ [] = ([],[])
-partitionWith f (x:xs) =
-    case f x of
-        Left  b -> (b:bs, cs)
-        Right c -> (bs, c:cs)
-  where
-    (bs,cs) = partitionWith f xs
+partitionWith f = partitionEithers . fmap f
