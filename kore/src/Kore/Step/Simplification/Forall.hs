@@ -12,6 +12,9 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
+import qualified Kore.Internal.Conditional as Conditional
+    ( withCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -24,8 +27,15 @@ import qualified Kore.Internal.Pattern as Pattern
     , fromTermLike
     , isBottom
     , isTop
+    , splitTerm
     , toTermLike
     , top
+    )
+import qualified Kore.Internal.Predicate as Predicate
+    ( fromPredicate
+    , hasFreeVariable
+    , markSimplified
+    , toPredicate
     )
 import Kore.Internal.TermLike
     ( ElementVariable
@@ -35,9 +45,19 @@ import Kore.Internal.TermLike
     , mkForall
     )
 import qualified Kore.Internal.TermLike as TermLike
-    ( markSimplified
+    ( hasFreeVariable
+    , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Predicate.Predicate
+    ( makeForallPredicate
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable (..)
+    )
 
 -- TODO: Move Forall up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -45,16 +65,14 @@ import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 {-|'simplify' simplifies an 'Forall' pattern with an 'OrPattern'
 child.
 
-Right now this has special cases only for top and bottom children.
+Right now this has special cases for (top and bottom children),
+(top and bottom term) and (top and bottom predicate-substitution).
 
 Note that while forall x . phi(x) and [x=alpha] can be simplified
 (it's bottom if x's sort is multivalued and alpha is not the 'x' pattern or
 the identity function applied to the pattern x, or phi(alpha) otherwise),
 we only expect forall usage for symbolic variables, so we won't attempt to
 simplify it this way.
-
-For this reason, we don't even try to see if the variable actually occurs in
-the pattern except for the top/bottom cases.
 -}
 simplify
     :: InternalVariable variable
@@ -98,8 +116,25 @@ makeEvaluate
 makeEvaluate variable patt
   | Pattern.isTop patt    = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom
+  | not variableInTerm && not variableInPredicate = patt
+  | predicateIsBoolean =
+    TermLike.markSimplified (mkForall variable term)
+    `Conditional.withCondition` predicate
+  | termIsBoolean =
+    term
+    `Conditional.withCondition` Predicate.markSimplified
+        (Predicate.fromPredicate
+            (makeForallPredicate variable (Predicate.toPredicate predicate))
+        )
   | otherwise =
     Pattern.fromTermLike
     $ TermLike.markSimplified
     $ mkForall variable
     $ Pattern.toTermLike patt
+  where
+    (term, predicate) = Pattern.splitTerm patt
+    unifiedVariable = ElemVar variable
+    variableInTerm = TermLike.hasFreeVariable unifiedVariable term
+    variableInPredicate = Predicate.hasFreeVariable unifiedVariable predicate
+    termIsBoolean = isTop term || isBottom term
+    predicateIsBoolean = isTop predicate || isBottom predicate
