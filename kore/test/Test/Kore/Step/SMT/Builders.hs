@@ -1,6 +1,7 @@
 module Test.Kore.Step.SMT.Builders
     ( emptyModule
     , sortDeclaration
+    , hookedSortDeclaration
     , symbolDeclaration
 
     , indexModule
@@ -164,6 +165,17 @@ emptyModule name =
 sortDeclaration :: Text -> ParsedSentence
 sortDeclaration name =
     asSentence
+        (SentenceSort
+            { sentenceSortName = testId name
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            }
+        :: SentenceSort ParsedPattern
+        )
+
+hookedSortDeclaration :: Text -> ParsedSentence
+hookedSortDeclaration name =
+    (asSentence . SentenceHookedSort)
         (SentenceSort
             { sentenceSortName = testId name
             , sentenceSortParameters = []
