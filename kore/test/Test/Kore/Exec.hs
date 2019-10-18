@@ -14,6 +14,9 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
+import Data.Proxy
+    ( Proxy (..)
+    )
 import Data.Set
     ( Set
     )
@@ -26,7 +29,7 @@ import System.Exit
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
+    ( AttributesVerification (VerifyAttributes)
     , verifyAndIndexDefinition
     )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -198,7 +201,7 @@ verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
     Right indexedModules = verifyAndIndexDefinition
-        DoNotVerifyAttributes
+        (VerifyAttributes Proxy Proxy)
         Builtin.koreVerifiers
         definition
     definition = Definition

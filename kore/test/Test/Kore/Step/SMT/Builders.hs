@@ -19,12 +19,15 @@ module Test.Kore.Step.SMT.Builders
     ) where
 
 import qualified Data.Map.Strict as Map
+import Data.Proxy
+    ( Proxy (..)
+    )
 import Data.Text
     ( Text
     )
 
 import Kore.ASTVerifier.AttributesVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
+    ( AttributesVerification (VerifyAttributes)
     )
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
@@ -116,7 +119,7 @@ indexModules moduleName modules =
             )
     perhapsIndexedDefinition =
         verifyAndIndexDefinition
-            DoNotVerifyAttributes  -- TODO: Verify attributes.
+            (VerifyAttributes Proxy Proxy)
             Builtin.koreVerifiers
             Definition
                 { definitionAttributes = Attributes []

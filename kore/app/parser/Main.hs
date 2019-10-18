@@ -39,7 +39,7 @@ import Options.Applicative
 
 import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
+    ( AttributesVerification (VerifyAttributes)
     , defaultAttributesVerification
     , verifyAndIndexDefinition
     )
@@ -206,10 +206,7 @@ mainVerify
             (VerifiedModule StepperAttributes Attribute.Axiom)
         )
 mainVerify willChkAttr definition =
-    let attributesVerification =
-            if willChkAttr
-            then defaultAttributesVerification Proxy Proxy
-            else DoNotVerifyAttributes
+    let attributesVerification = defaultAttributesVerification Proxy Proxy
     in do
       verifyResult <-
           flip runReaderT Logger.emptyLogger
