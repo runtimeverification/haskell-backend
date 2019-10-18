@@ -406,7 +406,7 @@ test_onePathStrategy =
         -- Normal axiom: constr10(b) => c | f(b) >= 0
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual1, _actual2 ] <- runOnePathSteps
+        [ _actual ] <- runOnePathSteps
             (Limit 1)
             (makeRuleFromPatterns
                 (Conditional
@@ -459,17 +459,15 @@ test_onePathStrategy =
                     }
                 )
                 (fromTermLike Mock.a)
-            , ProofState.Proven
             ]
-            [ _actual1
-            , _actual2
+            [ _actual
             ]
     , testCase "Stuck with SMT pruning" $ do
         -- Goal: constr10(b) | f(b) < 0  =>  a
         -- Coinductive axiom: n/a
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Expected: a | f(b) < 0
-        [ _actual1, _actual2 ] <- runOnePathSteps
+        [ _actual ] <- runOnePathSteps
             (Limit 1)
             (makeRuleFromPatterns
                 (Conditional
@@ -512,9 +510,8 @@ test_onePathStrategy =
                     }
                 )
                 (Pattern.fromTermLike Mock.a)
-            , ProofState.Proven
             ]
-            [ _actual1, _actual2 ]
+            [ _actual ]
     ]
 
 simpleRewrite

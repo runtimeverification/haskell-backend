@@ -10,7 +10,7 @@ module Kore.Logger
     ( LogMessage (..)
     , Severity (..)
     , Scope (..)
-    , WithLog (..)
+    , WithLog
     , LogAction (..)
     , log
     , logDebug
@@ -23,6 +23,7 @@ module Kore.Logger
     , hoistLogAction
     , LoggerT (..)
     , SomeEntry (..)
+    , someEntry
     , withSomeEntry
     , Entry (..)
     , defaultShouldLog
@@ -34,21 +35,37 @@ import Colog
     ( LogAction (..)
     , (<&)
     )
+import qualified Control.Lens as Lens
+import Control.Lens.Prism
+    ( Prism
+    )
+import Control.Monad.Except
+    ( ExceptT
+    )
 import qualified Control.Monad.Except as Except
 import Control.Monad.IO.Class
 import Control.Monad.Morph
     ( MFunctor
     )
-import qualified Control.Monad.Morph as Monad.Morph
-import qualified Control.Monad.State.Strict as Strict
+import qualified Control.Monad.Morph as Morph
 import Control.Monad.Trans
     ( MonadTrans
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Accum
+    ( AccumT
+    )
+import qualified Control.Monad.Trans.Accum as Accum
 import Control.Monad.Trans.Identity
+    ( IdentityT
+    )
 import Control.Monad.Trans.Maybe
+    ( MaybeT
+    )
 import Control.Monad.Trans.Reader
+import qualified Control.Monad.Trans.State.Strict as Strict
+    ( StateT
+    )
 import qualified Data.Foldable as Fold
 import Data.Functor.Contravariant
     ( contramap
@@ -83,9 +100,7 @@ import Prelude hiding
     )
 
 import Control.Monad.Counter
-import ListT
-    ( ListT
-    , mapListT
+    ( CounterT
     )
 
 -- | Log level used to describe each log message. It is also used to set the
@@ -152,41 +167,7 @@ instance Pretty.Pretty LogMessage where
             . prettyCallStack
             . popCallStack
 
--- TODO (thomas.tuegel): Use TypeFamilies instead of MultiParamTypeClasses here.
-class Monad m => WithLog msg m where
-    -- | Retrieve the 'LogAction' in scope.
-    askLogAction :: m (LogAction m msg)
-    default askLogAction
-        :: (MonadTrans t, WithLog msg n, m ~ t n) => m (LogAction m msg)
-    askLogAction = liftLogAction <$> Monad.Trans.lift askLogAction
-    {-# INLINE askLogAction #-}
-
-    -- | Modify the 'LogAction' over the scope of an action.
-    localLogAction
-        :: (forall n. LogAction n msg -> LogAction n msg)
-        -> m a
-        -> m a
-    default localLogAction
-        :: (WithLog msg m', MFunctor t, m ~ t m')
-        => (forall n. LogAction n msg -> LogAction n msg)
-        -> m a
-        -> m a
-    localLogAction mapping = Monad.Morph.hoist (localLogAction mapping)
-    {-# INLINE localLogAction #-}
-
-instance (WithLog msg m, Monad m, Monoid w) => WithLog msg (AccumT w m) where
-    localLogAction mapping = mapAccumT (localLogAction mapping)
-    {-# INLINE localLogAction #-}
-
-instance (WithLog msg m, Monad m) => WithLog msg (CounterT m)
-
-instance (WithLog msg m, Monad m) => WithLog msg (IdentityT m)
-
-instance (WithLog msg m, Monad m) => WithLog msg (MaybeT m)
-
-instance (WithLog msg m, Monad m) => WithLog msg (ReaderT r m)
-
-instance (WithLog msg m, Monad m) => WithLog msg (Strict.StateT s m)
+type WithLog msg = MonadLog
 
 -- | 'Monad.Trans.lift' any 'LogAction' into a monad transformer.
 liftLogAction
@@ -203,25 +184,9 @@ hoistLogAction
     -> LogAction n msg
 hoistLogAction f (LogAction logger) = LogAction $ \msg -> f (logger msg)
 
-instance WithLog msg m => WithLog msg (Except.ExceptT e m) where
-    askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
-    {-# INLINE askLogAction #-}
-
-    localLogAction f = Monad.Morph.hoist (localLogAction f)
-    {-# INLINE localLogAction #-}
-
-instance WithLog msg m => WithLog msg (ListT m) where
-    askLogAction = Monad.Trans.lift (liftLogAction <$> askLogAction)
-    {-# INLINE askLogAction #-}
-
-    localLogAction f = mapListT (localLogAction f)
-    {-# INLINE localLogAction #-}
-
 -- | Log any message.
-logMsg :: WithLog msg m => msg -> m ()
-logMsg msg = do
-    logAction <- askLogAction
-    Colog.unLogAction logAction msg
+logMsg :: (Entry msg, WithLog msg m) => msg -> m ()
+logMsg = logM
 
 -- | Logs a message using given 'Severity'.
 log
@@ -285,7 +250,8 @@ withLogScope
     -> m a
     -- ^ continuation / enclosure for the new scope
     -> m a
-withLogScope newScope = localLogAction (contramap appendScope)
+withLogScope newScope =
+    logScope appendScope
   where
     appendScope (LogMessage msg sev scope callstack) =
         LogMessage msg sev (newScope : scope) callstack
@@ -316,6 +282,9 @@ defaultShouldLog severity scope minSeverity currentScope =
       | Set.null set = True
       | otherwise    = Fold.any (`Set.member` set) s
 
+someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
+someEntry = Lens.prism' toEntry fromEntry
+
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
@@ -330,7 +299,37 @@ withSomeEntry f (SomeEntry entry) = f entry
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
+    default logM
+        :: Entry entry
+        => (MonadTrans trans, MonadLog log, m ~ trans log)
+        => entry
+        -> m ()
+    logM = Monad.Trans.lift . logM
+    {-# INLINE logM #-}
+
     logScope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
+    default logScope
+        :: (Entry e1, Entry e2)
+        => (MFunctor trans, MonadLog log, m ~ trans log)
+        => (e1 -> e2)
+        -> m a
+        -> m a
+    logScope locally = Morph.hoist (logScope locally)
+    {-# INLINE logScope #-}
+
+instance (Monoid acc, MonadLog log) => MonadLog (AccumT acc log) where
+    logScope locally = Accum.mapAccumT (logScope locally)
+    {-# INLINE logScope #-}
+
+instance MonadLog log => MonadLog (CounterT log)
+
+instance MonadLog log => MonadLog (ExceptT error log)
+
+instance MonadLog log => MonadLog (IdentityT log)
+
+instance MonadLog log => MonadLog (MaybeT log)
+
+instance MonadLog log => MonadLog (Strict.StateT state log)
 
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
@@ -348,44 +347,6 @@ instance Monad m => MonadLog (LoggerT m) where
                         case fromEntry entry of
                             Nothing -> logAction entry
                             Just entry' -> logAction $ toEntry $ f entry'
-
--- instance (Monad m, WithLog LogMessage m) => MonadLog m where
---     logM entry = do
---         LogAction la <- askLogAction
---         la $ toLogMessage entry
---       where
---         toLogMessage :: Entry entry => entry -> LogMessage
---         toLogMessage = undefined
-
---     logScope :: forall e1 e2 a. Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
---     logScope f = localLogAction (go f)
---       where
---         toLogMessage :: Entry entry => entry -> LogMessage
---         toLogMessage = undefined
---         toEntry' :: LogMessage -> e1
---         toEntry' = undefined
---         go
---             :: (e1 -> e2)
---             -> (forall n. LogAction n LogMessage -> LogAction n LogMessage)
---         go f (LogAction la) =
---             LogAction $ \logMessage ->
---                 la . toLogMessage . f . toEntry' $ logMessage
-
-instance Monad m => WithLog LogMessage (LoggerT m) where
-    askLogAction :: LoggerT m (LogAction (LoggerT m) LogMessage)
-    askLogAction = LoggerT . ReaderT $ pure . go
-      where
-        go :: LogAction m SomeEntry -> LogAction (LoggerT m) LogMessage
-        go (LogAction fn) = LogAction $ Monad.Trans.lift . fn . toEntry
-    {-# INLINE askLogAction #-}
-
-    localLogAction
-        :: (forall n. LogAction n LogMessage -> LogAction n LogMessage)
-        -> LoggerT m a
-        -> LoggerT m a
-    localLogAction locally (LoggerT (ReaderT la)) =
-        LoggerT . ReaderT $ la . mapLocalFunction locally
-    {-# INLINE localLogAction #-}
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
