@@ -24,9 +24,6 @@ import qualified Control.Monad.Except as Error
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
-import Data.Either
-    ( fromRight
-    )
 import Data.Text.Prettyprint.Doc
     ( Doc
     )
