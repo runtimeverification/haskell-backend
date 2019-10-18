@@ -376,7 +376,7 @@ test_andSimplification =
                     , substitution = mempty
                     }
         assertEqual "" (MultiOr [expect]) actual
-    , testCase "zzz Contradictions result in bottom" $ do
+    , testCase "Contradictions result in bottom" $ do
         actual <-
             evaluatePatterns
                 Conditional
