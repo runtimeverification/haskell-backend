@@ -116,12 +116,15 @@ deduplicateSubstitution =
       = return (predicate, deduplicated)
 
       | otherwise = do
-        simplified <- collectConditions <$> traverse simplifyAnds substitutions
+        simplified <-
+            collectConditions
+            <$> traverse simplifyAnds substitutions
         let -- Substitutions de-duplicated by simplification.
             substitutions' = toMultiMap $ Conditional.term simplified
             -- New conditions produced by simplification.
             Conditional { predicate = predicate' } = simplified
-            predicate'' = Syntax.Predicate.makeAndPredicate predicate predicate'
+            predicate'' =
+                Syntax.Predicate.makeAndPredicate predicate predicate'
             -- New substitutions produced by simplification.
             Conditional { substitution } = simplified
             substitutions'' =
