@@ -278,8 +278,7 @@ test_andSimplification =
                         , substitution = mempty
                         }
             actual <-
-                evaluatePatterns
-                    Conditional
+                evaluatePatterns Conditional
                         { term = Mock.constr10 fOfX
                         , predicate = makeTruePredicate
                         , substitution = mempty
@@ -354,6 +353,43 @@ test_andSimplification =
                     ]
                 )
         assertEqual "Distributes or" expect actual
+    , testCase "Predicates are not duplicated" $ do
+        let expect =
+                Conditional
+                    { term = Mock.constr10 fOfX
+                    , predicate =
+                        makeAndPredicate
+                            (makeCeilPredicate fOfX)
+                            (makeEqualsPredicate fOfX gOfX)
+                    , substitution = mempty
+                    }
+        actual <-
+            evaluatePatterns
+                Conditional
+                    { term = Mock.constr10 fOfX
+                    , predicate = makeCeilPredicate fOfX
+                    , substitution = mempty
+                    }
+                Conditional
+                    { term = Mock.constr10 gOfX
+                    , predicate = makeCeilPredicate fOfX
+                    , substitution = mempty
+                    }
+        assertEqual "" (MultiOr [expect]) actual
+    , testCase "zzz Contradictions result in bottom" $ do
+        actual <-
+            evaluatePatterns
+                Conditional
+                    { term = Mock.constr10 fOfX
+                    , predicate = makeCeilPredicate fOfX
+                    , substitution = mempty
+                    }
+                Conditional
+                    { term = Mock.constr10 gOfX
+                    , predicate = mkNot <$> makeCeilPredicate fOfX
+                    , substitution = mempty
+                    }
+        assertEqual "" mempty actual
     ]
   where
     yExpanded = Conditional

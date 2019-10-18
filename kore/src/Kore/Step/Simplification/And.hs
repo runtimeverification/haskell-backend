@@ -190,8 +190,11 @@ makeEvaluateNonBool
         merged = Conditional.andCondition terms initialConditions
     normalized <- Substitution.normalize merged
     return
-        (applyAndIdempotenceAndFindContradictions <$> normalized)
-            { predicate =
+        normalized
+            { term =
+                applyAndIdempotenceAndFindContradictions
+                    (Conditional.term normalized)
+            , predicate =
                 applyAndIdempotenceAndFindContradictions
                     <$> Conditional.predicate normalized
             }
