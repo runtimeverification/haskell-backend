@@ -15,6 +15,9 @@ import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
+import Kore.Internal.MultiOr
+    ( MultiOr (..)
+    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -77,34 +80,39 @@ evaluateAxioms
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
-    results <- rejectList (Foldable.any Step.isNarrowingResult . Result.results)
-                <$> applyRules expanded (map unwrapEqualityRule definitionRules)
+    eitherResults <- (fmap . fmap)
+        (rejectList (Foldable.any Step.isNarrowingResult . Result.results))
+        (applyRules expanded (map unwrapEqualityRule definitionRules))
 
-    ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
-    let
-        result =
-            Result.mergeResults results
-            & Result.mapConfigs
-                keepResultUnchanged
-                ( markRemainderEvaluated
-                . introduceDefinedness ceilChild
-                )
-        keepResultUnchanged = id
-        introduceDefinedness = flip Pattern.andCondition
-        markRemainderEvaluated = fmap TermLike.mkEvaluated
+    case eitherResults of
+        Left _ -> return Result.Results
+                            { results = mempty, remainders = MultiOr [expanded] }
+        Right results -> do
+            ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
+            let
+                result =
+                    Result.mergeResults results
+                    & Result.mapConfigs
+                        keepResultUnchanged
+                        ( markRemainderEvaluated
+                        . introduceDefinedness ceilChild
+                        )
+                keepResultUnchanged = id
+                introduceDefinedness = flip Pattern.andCondition
+                markRemainderEvaluated = fmap TermLike.mkEvaluated
 
-    simplifiedResult <-
-        Lens.traverseOf (field @"results" . Lens.traversed . field @"result")
-            (OrPattern.simplifyPredicatesWithSmt predicate)
-            result
-            >>= Lens.traverseOf (field @"remainders")
-                (OrPattern.simplifyPredicatesWithSmt predicate)
+            simplifiedResult <-
+                Lens.traverseOf (field @"results" . Lens.traversed . field @"result")
+                    (OrPattern.simplifyPredicatesWithSmt predicate)
+                    result
+                    >>= Lens.traverseOf (field @"remainders")
+                        (OrPattern.simplifyPredicatesWithSmt predicate)
 
-    let Result.Results { results = returnedResults } = simplifiedResult
+            let Result.Results { results = returnedResults } = simplifiedResult
 
-    if (all null . fmap Result.result) returnedResults
-        then return mempty
-        else return simplifiedResult
+            if (all null . fmap Result.result) returnedResults
+                then return mempty
+                else return simplifiedResult
 
   where
     ruleIsConcrete =
@@ -121,7 +129,7 @@ evaluateAxioms
       | otherwise = as
 
     applyRules (Step.toConfigurationVariables -> initial) rules
-      = Monad.Unify.listUnifier
+      = Monad.Unify.runUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =
