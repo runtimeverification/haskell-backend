@@ -39,6 +39,7 @@ import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Error
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
@@ -200,10 +201,12 @@ verifiedMyModule
 verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
-    Right indexedModules = verifyAndIndexDefinition
-        (VerifyAttributes Proxy Proxy)
-        Builtin.koreVerifiers
-        definition
+    indexedModules =
+        Kore.Error.assertRight
+        $ verifyAndIndexDefinition
+            (VerifyAttributes Proxy Proxy)
+            Builtin.koreVerifiers
+            definition
     definition = Definition
         { definitionAttributes = Attributes []
         , definitionModules =
@@ -345,8 +348,8 @@ test_execGetExitCode =
 
     myIntSort = SortActualSort $ SortActual myIntSortId []
 
-    intSortDecl :: Verified.SentenceSort
-    intSortDecl = SentenceSort
+    intSortDecl :: Verified.SentenceHook
+    intSortDecl = SentenceHookedSort SentenceSort
         { sentenceSortName = myIntSortId
         , sentenceSortParameters = []
         , sentenceSortAttributes = Attributes [hookAttribute Int.sort]
