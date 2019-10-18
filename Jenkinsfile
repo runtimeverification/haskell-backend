@@ -64,7 +64,7 @@ pipeline {
     }
     stage('Integration: K') {
       options {
-        timeout(time: 16, unit: 'MINUTES')
+        timeout(time: 32, unit: 'MINUTES')
       }
       steps {
         sh '''
