@@ -108,8 +108,7 @@ import System.Clock
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (VerifyAttributes)
-    , defaultAttributesVerification
+    ( defaultAttributesVerification
     , verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
@@ -462,7 +461,7 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    Monad.foldM (\loaded -> verifyDefinitionWithBase loaded) mempty
+    Monad.foldM verifyDefinitionWithBase mempty
     =<< traverse parseDefinition filePaths
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule

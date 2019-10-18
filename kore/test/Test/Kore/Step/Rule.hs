@@ -14,7 +14,7 @@ import Data.Maybe
     ( fromMaybe
     )
 import Data.Proxy
-    (Proxy (..)
+    ( Proxy (..)
     )
 import qualified Data.Set as Set
 import Data.Text
