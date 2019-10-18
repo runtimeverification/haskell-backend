@@ -63,6 +63,8 @@ test_SubstitutionSimplifier =
         [ test "length 1, alone"
             [(xs, mkVar xs)]
             [ mempty ]
+        -- TODO (thomas.tuegel): Enable this test if we ever support this
+        -- unification case.
         -- UnificationError: UnsupportedPatterns
         -- , test "length 1, beside related substitution"
         --     [(xs, mkVar xs), (ys, mkVar xs)]
@@ -113,6 +115,8 @@ test_SubstitutionSimplifier =
         [ test "length 1, alone"
             [(xs, f (mkVar xs))]
             [ Normalization [] [(xs, f (mkVar xs))] ]
+        -- TODO (thomas.tuegel): Enable this test if we ever support this
+        -- unification case.
         -- UnificationError: UnsupportedPatterns
         -- , test "length 1, beside related substitution"
         --     [(xs, f (mkVar xs)), (ys, mkVar xs)]
