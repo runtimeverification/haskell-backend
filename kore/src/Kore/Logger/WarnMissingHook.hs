@@ -14,6 +14,9 @@ import Data.Set
 import Data.Text
     ( Text
     )
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
@@ -23,6 +26,9 @@ import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Logger
+import Kore.Unparser
+    ( unparse
+    )
 
 
 data WarnMissingHook = WarnMissingHook
@@ -31,11 +37,11 @@ data WarnMissingHook = WarnMissingHook
     } deriving (Eq, Typeable)
 
 instance Pretty.Pretty WarnMissingHook where
-    pretty _ = mempty
-            -- (error . show . Pretty.vsep)
-            --     [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
-            --     , "for symbol:" <+> unparse symbol
-            --     ]
+    pretty WarnMissingHook { hook, symbol } =
+        Pretty.vsep
+            [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
+            , "for symbol:" <+> unparse symbol
+            ]
 
 instance Entry WarnMissingHook where
     shouldLog :: Severity -> Set Scope -> WarnMissingHook -> Bool
