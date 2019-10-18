@@ -25,6 +25,7 @@ module Kore.Logger
     , SomeEntry (..)
     , withSomeEntry
     , Entry (..)
+    , defaultShouldLog
     , MonadLog (..)
     , mapLocalFunction
     ) where
@@ -301,6 +302,20 @@ class (Typeable entry, Pretty.Pretty entry) => Entry entry where
 
     shouldLog :: Severity -> Set Scope -> entry -> Bool
 
+instance Entry LogMessage where
+    shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
+    shouldLog minSeverity currentScope LogMessage { severity, scope } =
+        defaultShouldLog severity scope minSeverity currentScope
+
+defaultShouldLog :: Severity -> [Scope] -> Severity -> Set Scope -> Bool
+defaultShouldLog severity scope minSeverity currentScope =
+    severity >= minSeverity && scope `member` currentScope
+  where
+    member :: [Scope] -> Set Scope -> Bool
+    member s set
+      | Set.null set = True
+      | otherwise    = Fold.any (`Set.member` set) s
+
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
@@ -312,29 +327,6 @@ withSomeEntry
     -> SomeEntry
     -> a
 withSomeEntry f (SomeEntry entry) = f entry
-
-mapLocalFunction
-    :: forall m
-    .  (LogAction m LogMessage -> LogAction m LogMessage)
-    -> LogAction m SomeEntry
-    -> LogAction m SomeEntry
-mapLocalFunction mapping la@(LogAction action) =
-    LogAction $ \entry ->
-        case fromEntry entry of
-            Nothing -> action entry
-            Just logMessage ->
-                let LogAction f = mapping $ contramap toEntry la
-                in f logMessage
-
-instance Entry LogMessage where
-    shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
-    shouldLog minSeverity currentScope LogMessage { severity, scope } =
-        severity >= minSeverity && scope `member` currentScope
-     where
-       member :: [Scope] -> Set Scope -> Bool
-       member s set
-         | Set.null set = True
-         | otherwise    = Fold.any (`Set.member` set) s
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
@@ -357,6 +349,28 @@ instance Monad m => MonadLog (LoggerT m) where
                             Nothing -> logAction entry
                             Just entry' -> logAction $ toEntry $ f entry'
 
+-- instance (Monad m, WithLog LogMessage m) => MonadLog m where
+--     logM entry = do
+--         LogAction la <- askLogAction
+--         la $ toLogMessage entry
+--       where
+--         toLogMessage :: Entry entry => entry -> LogMessage
+--         toLogMessage = undefined
+
+--     logScope :: forall e1 e2 a. Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
+--     logScope f = localLogAction (go f)
+--       where
+--         toLogMessage :: Entry entry => entry -> LogMessage
+--         toLogMessage = undefined
+--         toEntry' :: LogMessage -> e1
+--         toEntry' = undefined
+--         go
+--             :: (e1 -> e2)
+--             -> (forall n. LogAction n LogMessage -> LogAction n LogMessage)
+--         go f (LogAction la) =
+--             LogAction $ \logMessage ->
+--                 la . toLogMessage . f . toEntry' $ logMessage
+
 instance Monad m => WithLog LogMessage (LoggerT m) where
     askLogAction :: LoggerT m (LogAction (LoggerT m) LogMessage)
     askLogAction = LoggerT . ReaderT $ pure . go
@@ -376,3 +390,17 @@ instance Monad m => WithLog LogMessage (LoggerT m) where
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
     {-# INLINE lift #-}
+
+mapLocalFunction
+    :: forall m
+    .  (LogAction m LogMessage -> LogAction m LogMessage)
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+mapLocalFunction mapping la@(LogAction action) =
+    LogAction $ \entry ->
+        case fromEntry entry of
+            Nothing -> action entry
+            Just logMessage ->
+                let LogAction f = mapping $ contramap toEntry la
+                in f logMessage
+

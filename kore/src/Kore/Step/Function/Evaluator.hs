@@ -58,6 +58,9 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
+import Kore.Logger.WarnMissingHook
+    ( warnMissingHook
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -117,11 +120,9 @@ evaluateApplication
           -- present, we assume that startup is finished, but we should really
           -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
-          =
-            (error . show . Pretty.vsep)
-                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
-                , "for symbol:" <+> unparse symbol
-                ]
+          = do
+            warnMissingHook hook symbol
+            pure unevaluated
           | otherwise = return unevaluated
 
         maybeEvaluatedSimplifier =
