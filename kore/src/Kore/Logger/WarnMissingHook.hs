@@ -39,7 +39,7 @@ instance Pretty.Pretty WarnMissingHook where
 
 instance Entry WarnMissingHook where
     shouldLog :: Severity -> Set Scope -> WarnMissingHook -> Bool
-    shouldLog minSeverity currentScope WarnMissingHook { hook, symbol } =
+    shouldLog minSeverity currentScope _ =
         defaultShouldLog severity scope minSeverity currentScope
       where
         severity = Warning
