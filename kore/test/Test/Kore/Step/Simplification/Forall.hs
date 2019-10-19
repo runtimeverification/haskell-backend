@@ -11,8 +11,10 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
+    , makeForallPredicate
     , makeTruePredicate
     )
 import qualified Kore.Step.Simplification.Forall as Forall
@@ -127,9 +129,8 @@ test_forallSimplification =
         -- forall x . (t and p and s)
         (assertEqual "forall with substitution"
             Conditional
-                { term =
-                    mkForall Mock.x (mkAnd fOfA (mkCeil_ gOfA))
-                , predicate = makeTruePredicate
+                { term = fOfA
+                , predicate = makeCeilPredicate gOfA
                 , substitution = mempty
                 }
             (makeEvaluate
@@ -141,7 +142,7 @@ test_forallSimplification =
                     }
             )
         )
-    , testCase "forall applied on term if not used elsewhere"
+    , testCase "forall applied when term contains variable, non-bool predicate"
         -- forall x . (t(x) and p and s)
         (assertEqual "forall on term"
             Conditional
@@ -158,13 +159,36 @@ test_forallSimplification =
                     }
             )
         )
-    , testCase "forall applied on predicate if not used elsewhere"
+    , testCase "forall applied when term contains variable, bool predicate"
+        -- forall x . (t(x) and top and top)
+        (assertEqual "forall on term bool predicate"
+            Conditional
+                { term = mkForall Mock.x fOfX
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            (makeEvaluate
+                Mock.x
+                Conditional
+                    { term = fOfX
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+            )
+        )
+    , testCase "forall applied when predicate contains variable, non-bool term"
         -- forall x . (t and p(x) and s)
-        --    = t and (forall x . p(x)) and s
-        --    if t, s do not depend on x.
+        --    = (forall x . (t and p(x) and s)
         (assertEqual "forall on predicate"
             Conditional
-                { term = mkForall Mock.x (mkAnd fOfA (mkCeil_ fOfX))
+                { term = mkForall Mock.x
+                    (mkAnd
+                        (mkAnd
+                            fOfA
+                            (mkCeil_ fOfX)
+                        )
+                        (mkEquals_ (mkElemVar Mock.y) fOfA)
+                    )
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
@@ -173,7 +197,29 @@ test_forallSimplification =
                 Conditional
                     { term = fOfA
                     , predicate = makeCeilPredicate fOfX
-                    , substitution = mempty
+                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                    }
+            )
+        )
+    , testCase "forall applied when predicate contains variable, bool term"
+        -- forall x . (top and p(x) and s)
+        --    = top and (forall x . p(x) and s)
+        (assertEqual "forall on predicate"
+            Conditional
+                { term = mkTop_
+                , predicate = makeForallPredicate Mock.x
+                    (makeAndPredicate
+                        (makeCeilPredicate fOfX)
+                        (makeEqualsPredicate (mkElemVar Mock.y) fOfA)
+                    )
+                , substitution = mempty
+                }
+            (makeEvaluate
+                Mock.x
+                Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate fOfX
+                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
                     }
             )
         )
