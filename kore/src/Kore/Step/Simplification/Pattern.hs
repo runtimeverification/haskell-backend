@@ -32,6 +32,8 @@ import Kore.Step.Simplification.Simplify
     , simplifyConditionalTermToOr
     )
 
+import Debug.Trace
+
 simplifyAndRemoveTopExists
     ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
@@ -39,8 +41,9 @@ simplifyAndRemoveTopExists
         )
     => Pattern variable
     -> simplifier (OrPattern variable)
-simplifyAndRemoveTopExists patt = do
+simplifyAndRemoveTopExists patt = trace "Before simplify" $ do
     simplified <- simplify patt
+    traceM "After simplify"
     return (removeTopExists <$> simplified)
   where
     removeTopExists :: Pattern variable -> Pattern variable

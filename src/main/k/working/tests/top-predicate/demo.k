@@ -17,8 +17,10 @@ module DEMO
   rule if false then _ else E2 => E2
 
   syntax Int ::= f(Int) [function]
-  rule f(X) => 1 
-    requires X <=Int 0
-  rule f(X) => 1 
-    requires X >Int 0
+  rule f(X) => X
+
+  rule X modInt Y => 0
+    requires X <=Int 0 [simplification]
+  // rule X modInt Y => 0
+  //   requires X >Int 0 [simplification]
 endmodule

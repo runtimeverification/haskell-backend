@@ -10,6 +10,15 @@ module Kore.Step.Simplification.TermLike
     ) where
 
 import Debug.Trace
+import Kore.Internal.Symbol
+    ( Symbol (..)
+    )
+import Kore.Syntax.Application
+    ( Application (..)
+    )
+import Kore.Syntax.Id
+    ( Id (..)
+    )
 import Kore.Unparser
 
 import Control.Comonad.Trans.Cofree
@@ -177,7 +186,8 @@ simplifyInternal
     =>  TermLike variable
     ->  Predicate variable
     ->  simplifier (OrPattern variable)
-simplifyInternal term predicate = simplifyInternalWorker term
+simplifyInternal term predicate = --trace ("\n" <> unparseToString term <> "\n") $
+    simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
         Nothing -> id
@@ -195,11 +205,11 @@ simplifyInternal term predicate = simplifyInternalWorker term
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
-        if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
-            then do
-                --traceM $ "\nAlready simplified\n" <> unparseToString termLike
-                return . OrPattern.fromTermLike $ termLike
-            else
+        --if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
+        --    then do
+        --        --traceM $ "\nAlready simplified\n" <> unparseToString termLike
+        --        return . OrPattern.fromTermLike $ termLike
+        --    else
                 --assertSimplifiedSimplified .
                 assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =
@@ -215,9 +225,14 @@ simplifyInternal term predicate = simplifyInternalWorker term
                     AndF andF ->
                         And.simplify =<< simplifyChildren andF
                     ApplySymbolF applySymbolF ->
-                        Application.simplify predicate
-                            =<< simplifyChildren applySymbolF
-                    CeilF ceilF -> do
+                        --if ((getId . symbolConstructor . applicationSymbolOrAlias $ applySymbolF) == "Lbl'Unds'modInt'Unds'")
+                        --   then trace "\nHELLO\n" $
+                        --        Application.simplify predicate
+                        --            =<< simplifyChildren applySymbolF
+                        --   else
+                                Application.simplify predicate
+                                    =<< simplifyChildren applySymbolF
+                    CeilF ceilF ->
                         Ceil.simplify predicate =<< simplifyChildren ceilF
                     EqualsF equalsF ->
                         Equals.simplify predicate =<< simplifyChildren equalsF
@@ -302,7 +317,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
         --assertSimplifiedSimplified getResults = do
         --    afterSimplf <- getResults
         --    if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike) && ((OrPattern.fromTermLike termLike) /= afterSimplf)
-        --                then (error . show . Pretty.vsep)
+        --                then error $ (show . Pretty.vsep)
         --                    [ "Term shouldn't have been marked simplified"
         --                    , Pretty.indent 2 "input:"
         --                    , Pretty.indent 4 (unparse termLike)
@@ -310,6 +325,7 @@ simplifyInternal term predicate = simplifyInternalWorker term
         --                    , (Pretty.indent 4 . Pretty.vsep)
         --                        (unparse <$> OrPattern.toPatterns afterSimplf)
         --                    ]
+        --                    -- <> show termLike
         --                else getResults
 
     refreshBinder

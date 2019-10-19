@@ -1,5 +1,7 @@
 module Main (main) where
 
+import Debug.Trace
+
 import Control.Applicative
     ( Alternative (..)
     , optional
@@ -421,7 +423,9 @@ koreProve execOptions proveOptions = do
     let KoreExecOptions { mainModuleName } = execOptions
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
+    traceM "Before spec syntactic verification"
     specModule <- loadModule specMainModule definition
+    traceM "After spec syntactic verification"
     (exitCode, final) <- execute execOptions mainModule $ do
         let KoreExecOptions { stepLimit } = execOptions
             KoreProveOptions { graphSearch, bmc } = proveOptions

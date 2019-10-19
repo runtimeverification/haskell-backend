@@ -128,6 +128,19 @@ evaluateApplication
           | otherwise =
               if all TermLike.isSimplified children
                  then return unevaluated
+                     --case termLike of
+                     --    App_ symb _ ->
+                     --        if (getId . symbolConstructor) symbol == "Lbl'Unds'modInt'Unds'"
+                     --           then do
+                     --               traceM
+                     --                   $ "\nFrom function evaluator; is simplified: "
+                     --                   <> show (TermLike.isSimplified termLike)
+                     --                   <> "\n"
+                     --                   <> unparseToString termLike <> "\n"
+                     --               return unevaluated
+                     --           else return unevaluated
+                     --    _ -> return unevaluated
+
                  else
                     (error . show . Pretty.vsep)
                         [ "Application children must be simplified:"
