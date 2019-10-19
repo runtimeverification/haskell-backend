@@ -226,7 +226,7 @@ simplifyInternal term predicate = --trace ("\n" <> unparseToString term <> "\n")
                         And.simplify =<< simplifyChildren andF
                     ApplySymbolF applySymbolF ->
                         --if ((getId . symbolConstructor . applicationSymbolOrAlias $ applySymbolF) == "Lbl'Unds'modInt'Unds'")
-                        --   then trace "\nHELLO\n" $
+                        --   then trace "\nDEBUG\n" $
                         --        Application.simplify predicate
                         --            =<< simplifyChildren applySymbolF
                         --   else

@@ -104,7 +104,7 @@ transitionRule =
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
-    transitionSimplify config = trace "Hi it's me weird transitionRule" $
+    transitionSimplify config = trace "Kore.Step transitionRule" $
         do
             configs <- Monad.Trans.lift $
                 Pattern.simplifyAndRemoveTopExists config
