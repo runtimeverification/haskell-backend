@@ -304,8 +304,8 @@ test_functionIntegration =
                     { term = Mock.functional11 (Mock.functional20 Mock.e Mock.e)
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate Mock.cg)
                             (makeCeilPredicate Mock.cf)
+                            (makeCeilPredicate Mock.cg)
                     , substitution = mempty
                     }
         actual <-

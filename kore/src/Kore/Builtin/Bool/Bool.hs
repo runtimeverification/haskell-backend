@@ -5,6 +5,7 @@ License     : NCSA
  -}
 module Kore.Builtin.Bool.Bool
     ( sort
+    , asBuiltin
     , asInternal
     , asTermLike
     , asPattern
@@ -35,7 +36,8 @@ import qualified Kore.Internal.Pattern as Pattern
     ( fromTermLike
     )
 import Kore.Internal.TermLike
-    ( DomainValue (DomainValue)
+    ( Concrete
+    , DomainValue (DomainValue)
     , InternalVariable
     , Sort
     , TermLike
@@ -67,11 +69,18 @@ asInternal
     -> Bool  -- ^ builtin value to render
     -> TermLike variable
 asInternal builtinBoolSort builtinBoolValue =
-    (TermLike.markSimplified . mkBuiltin . Domain.BuiltinBool)
-        Domain.InternalBool
-            { builtinBoolSort
-            , builtinBoolValue
-            }
+    TermLike.markSimplified . mkBuiltin
+    $ asBuiltin builtinBoolSort builtinBoolValue
+
+asBuiltin
+    :: Sort  -- ^ resulting sort
+    -> Bool  -- ^ builtin value to render
+    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
+asBuiltin builtinBoolSort builtinBoolValue =
+    Domain.BuiltinBool Domain.InternalBool
+        { builtinBoolSort
+        , builtinBoolValue
+        }
 
 {- | Render a 'Bool' as a domain value pattern of the given sort.
 
