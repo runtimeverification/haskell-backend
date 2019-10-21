@@ -616,7 +616,6 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        --_ <- error (unlines (unparseToString <$> OrPattern.toPatterns actual))
         assertEqual "" expected actual
     ]
   where

@@ -96,7 +96,7 @@ simplifyEvaluateHalfImplies
   | otherwise =
     case MultiOr.extractPatterns first of
         [firstP] -> return $ makeEvaluateImplies firstP second
-        _ -> distributeEvaluateImplies (OrPattern.toPatterns first) second
+        firstPatterns -> distributeEvaluateImplies firstPatterns second
 
 distributeEvaluateImplies
     :: (MonadSimplify simplifier, SimplifierVariable variable)
