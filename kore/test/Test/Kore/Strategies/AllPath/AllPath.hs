@@ -27,8 +27,7 @@ import GHC.Stack
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Logger
-    ( LogMessage (..)
-    , WithLog (..)
+    ( MonadLog (..)
     )
 import Kore.Profiler.Data
     ( Configuration (..)
@@ -422,9 +421,9 @@ runTransitionRule prim state =
 newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
     deriving (Functor, Applicative, Monad)
 
-instance WithLog LogMessage AllPathIdentity where
-    askLogAction = undefined
-    localLogAction _ = undefined
+instance MonadLog AllPathIdentity where
+    logM = undefined
+    logScope _ = undefined
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined

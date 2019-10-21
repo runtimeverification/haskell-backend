@@ -17,6 +17,9 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
 
 -- TODO: Move Next up in the other simplifiers or something similar. Note
 -- that it messes up top/bottom testing so moving it up must be done
@@ -38,6 +41,7 @@ simplifyEvaluated
     -> OrPattern variable
 simplifyEvaluated simplified =
     OrPattern.fromTermLike
+    $ TermLike.markSimplified
     $ mkNext
     $ Pattern.toTermLike
     $ OrPattern.toPattern simplified

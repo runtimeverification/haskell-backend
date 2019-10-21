@@ -17,7 +17,6 @@ module Kore.Step.Simplification.Ceil
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.List as List
 import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
@@ -30,7 +29,6 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
-import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
@@ -340,16 +338,7 @@ makeEvaluateNormalizedAc
                 -- TODO(virgil): consider eliminating these repeated
                 -- concatenations.
                 (variableTerms ++ concreteTerms)
-        let negateEquality
-                :: OrPredicate variable -> Predicate.Predicate variable
-            negateEquality orPredicate =
-                mergeAnd
-                    (map
-                        Not.makeEvaluatePredicate
-                        (Foldable.toList orPredicate)
-                    )
-        let negations =
-                map (OrPredicate.fromPredicate . negateEquality) equalities
+        negations <- mapM Not.simplifyEvaluatedPredicate equalities
 
         remainingConditions <-
             evaluateDistinct variableTerms concreteTerms
@@ -373,10 +362,6 @@ makeEvaluateNormalizedAc
             -> simplifier [Domain.Value normalized (OrPredicate variable)]
         evaluateWrappers = traverse evaluateWrapper
 
-    mergeAnd :: [Predicate.Predicate variable] -> Predicate.Predicate variable
-    mergeAnd [] = Predicate.top
-    mergeAnd (predicate : predicates) =
-        List.foldl' Conditional.andCondition predicate predicates
 makeEvaluateNormalizedAc
     configurationPredicate
     Domain.NormalizedAc

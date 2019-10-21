@@ -19,6 +19,7 @@ module Kore.Internal.Predicate
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
+    , hasFreeVariable
     , Kore.Internal.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
@@ -28,6 +29,9 @@ module Kore.Internal.Predicate
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
+    )
+import Kore.Attribute.Pattern.FreeVariables
+    ( isFreeVariable
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -40,6 +44,9 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Syntax
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 
 -- | A predicate and substitution without an accompanying term.
 type Predicate variable = Conditional variable ()
@@ -97,6 +104,17 @@ freeVariables
     => Predicate variable
     -> FreeVariables variable
 freeVariables = Conditional.freeVariables (const mempty)
+
+hasFreeVariable
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
+       , SortedVariable variable
+       )
+    => UnifiedVariable variable
+    -> Predicate variable
+    -> Bool
+hasFreeVariable variable = isFreeVariable variable . freeVariables
 
 {- | Extract the set of free set variables from a predicate and substitution.
 

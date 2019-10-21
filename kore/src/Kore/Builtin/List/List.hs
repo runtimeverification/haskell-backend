@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Builtin.List.List
     ( sort
+    , asBuiltin
     , asPattern
     , asInternal
     , asTermLike
@@ -88,7 +89,18 @@ asInternal
     -> Seq (TermLike variable)
     -> TermLike variable
 asInternal tools builtinListSort builtinListChild =
-    (mkBuiltin . Domain.BuiltinList)
+    mkBuiltin (asBuiltin tools builtinListSort builtinListChild)
+
+{- | Render a 'Seq' as a Builtin list pattern.
+-}
+asBuiltin
+    :: InternalVariable variable
+    => SmtMetadataTools Attribute.Symbol
+    -> Sort
+    -> Seq (TermLike variable)
+    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
+asBuiltin tools builtinListSort builtinListChild =
+    Domain.BuiltinList
         Domain.InternalList
             { builtinListSort
             , builtinListUnit =

@@ -47,8 +47,18 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike as TermLike hiding
-    ( isSimplified
+import Kore.Internal.TermLike
+    ( ElementVariable
+    , InternalVariable
+    , Sort
+    , SortedVariable
+    , TermLike
+    , mkAnd
+    , mkBottom
+    , mkBottom_
+    , mkTop
+    , mkTop_
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax

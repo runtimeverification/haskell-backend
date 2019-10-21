@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Builtin.String.String
     ( sort
+    , asBuiltin
     , asInternal
     , asPattern
     , asTermLike
@@ -57,11 +58,18 @@ asInternal
     -> Text  -- ^ builtin value to render
     -> TermLike variable
 asInternal internalStringSort internalStringValue =
-    (TermLike.fromConcrete . mkBuiltin . Domain.BuiltinString)
-        Domain.InternalString
-            { internalStringSort
-            , internalStringValue
-            }
+    TermLike.fromConcrete . mkBuiltin
+    $ asBuiltin internalStringSort internalStringValue
+
+asBuiltin
+    :: Sort  -- ^ resulting sort
+    -> Text  -- ^ builtin value to render
+    -> Domain.Builtin (TermLike Concrete) (TermLike variable)
+asBuiltin internalStringSort internalStringValue =
+    Domain.BuiltinString Domain.InternalString
+        { internalStringSort
+        , internalStringValue
+        }
 
 {- | Render an 'String' as a domain value pattern of the given sort.
 

@@ -24,9 +24,6 @@ module GlobalMain
     , loadModule
     ) where
 
-import Colog
-    ( (<&)
-    )
 import Control.Exception
     ( evaluate
     )
@@ -347,8 +344,7 @@ clockSomethingIO description something = do
     start  <- lift $ getTime Monotonic
     x      <- lift   something
     end    <- lift $ getTime Monotonic
-    logger <- askLogAction
-    logger <& logMessage end start
+    logM $ logMessage end start
     return x
   where
     logMessage end start =
