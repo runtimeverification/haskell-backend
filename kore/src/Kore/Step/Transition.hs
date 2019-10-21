@@ -40,7 +40,7 @@ import Data.Typeable
     )
 
 import Kore.Logger
-    ( WithLog (..)
+    ( MonadLog (..)
     )
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -81,10 +81,10 @@ newtype TransitionT rule m a =
         , Typeable
         )
 
-instance WithLog msg m => WithLog msg (TransitionT rule m) where
-    localLogAction locally =
-        mapTransitionT (localLogAction locally)
-    {-# INLINE localLogAction #-}
+instance MonadLog m => MonadLog (TransitionT rule m) where
+    logScope locally =
+        mapTransitionT (logScope locally)
+    {-# INLINE logScope #-}
 
 instance MonadTrans (TransitionT rule) where
     lift = TransitionT . Monad.Trans.lift . Monad.Trans.lift
