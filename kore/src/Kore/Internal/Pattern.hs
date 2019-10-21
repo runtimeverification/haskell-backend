@@ -7,7 +7,6 @@ Representation of program configurations as conditional patterns.
 module Kore.Internal.Pattern
     ( Pattern
     , fromPredicate
-    , fromSyntaxPredicate
     , fromPredicateSorted
     , toPredicate
     , bottom
@@ -230,13 +229,6 @@ toPredicate
     => Pattern variable
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate
-
-fromSyntaxPredicate
-    :: InternalVariable variable
-    => Syntax.Predicate variable
-    -> Pattern variable
-fromSyntaxPredicate =
-    fromPredicate . Conditional.fromPredicate
 
 splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
 splitTerm = Conditional.splitTerm
