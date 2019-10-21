@@ -1,3 +1,8 @@
+{- |
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+ -}
 module Kore.Unification.UnifierT
     ( UnifierT (..)
     , throwUnificationOrSubstitutionError
