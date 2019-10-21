@@ -86,7 +86,7 @@ evaluateAxioms
 
     case eitherResults of
         Left _ -> return Result.Results
-                            { results = mempty, remainders = MultiOr [expanded] }
+                        { results = mempty, remainders = MultiOr [expanded] }
         Right results -> do
             ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
             let
@@ -102,7 +102,8 @@ evaluateAxioms
                 markRemainderEvaluated = fmap TermLike.mkEvaluated
 
             simplifiedResult <-
-                Lens.traverseOf (field @"results" . Lens.traversed . field @"result")
+                Lens.traverseOf
+                    (field @"results" . Lens.traversed . field @"result")
                     (OrPattern.simplifyPredicatesWithSmt predicate)
                     result
                     >>= Lens.traverseOf (field @"remainders")
