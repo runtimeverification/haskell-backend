@@ -220,7 +220,10 @@ simplifyInternal term predicate =
                         Equals.simplify predicate =<< simplifyChildren equalsF
                     ExistsF exists ->
                         let fresh =
-                                Lens.over Binding.existsBinder refreshBinder exists
+                                Lens.over
+                                    Binding.existsBinder
+                                    refreshBinder
+                                    exists
                         in  Exists.simplify =<< simplifyChildren fresh
                     IffF iffF ->
                         Iff.simplify =<< simplifyChildren iffF
