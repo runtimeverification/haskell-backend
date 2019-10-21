@@ -29,6 +29,10 @@ import Control.Monad.RWS.Class
 import Data.Foldable
 import Data.Typeable
 
+import Kore.Logger
+    ( MonadLog (..)
+    )
+
 {- | The list monad transformer written as a right-associative fold.
 
 This representation is similar to the
@@ -111,6 +115,10 @@ instance Monad m => MonadPlus (ListT m)
 instance MonadTrans ListT where
     lift m = ListT $ \yield next -> m >>= \a -> yield a next
     {-# INLINE lift #-}
+
+instance MonadLog log => MonadLog (ListT log) where
+    logScope locally = mapListT (logScope locally)
+    {-# INLINE logScope #-}
 
 instance MonadReader r m => MonadReader r (ListT m) where
     ask = lift ask

@@ -29,6 +29,7 @@ import Data.Function
 import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
@@ -65,6 +66,10 @@ import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.Simplification.Data
+    ( Env (Env)
+    , MonadSimplify
+    )
+import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
 import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
@@ -85,6 +90,10 @@ import Kore.Variables.UnifiedVariable
 import qualified SMT.AST as SMT
 import qualified SMT.SimpleSMT as SMT
 
+import qualified Test.ConsistentKore as ConsistentKore
+    ( CollectionSorts (..)
+    , Setup (..)
+    )
 import Test.Kore
     ( testId
     )
@@ -1563,3 +1572,30 @@ env =
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         }
+
+generatorSetup :: ConsistentKore.Setup
+generatorSetup =
+    ConsistentKore.Setup
+        { allSymbols = filter doesNotHaveArguments symbols
+        , allAliases = []
+        , allSorts = map fst sortAttributesMapping
+        , freeElementVariables = Set.empty
+        , freeSetVariables = Set.empty
+        , maybeIntSort = Just intSort
+        , maybeBoolSort = Just boolSort
+        , maybeListSorts = Just ConsistentKore.CollectionSorts
+            { collectionSort = listSort
+            , elementSort = testSort
+            }
+        , maybeMapSorts = Nothing
+        -- TODO(virgil): fill the maybeMapSorts field after implementing
+        -- map generators.
+        , maybeSetSorts = Nothing
+        -- TODO(virgil): fill the maybeSetSorts field after implementing
+        -- map generators
+        , maybeStringLiteralSort = Just stringMetaSort
+        , maybeStringBuiltinSort = Just stringSort
+        , metadataTools = metadataTools
+        }
+  where
+    doesNotHaveArguments Symbol {symbolParams} = null symbolParams

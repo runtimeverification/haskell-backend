@@ -132,9 +132,6 @@ makeExpandedApplication symbol children = do
         mergePredicatesAndSubstitutions
             (map Pattern.predicate children)
             (map Pattern.substitution children)
-    let term =
-            Application
-                { applicationSymbolOrAlias = symbol
-                , applicationChildren = Pattern.term <$> children
-                }
+    let term = symbolApplication symbol (Pattern.term <$> children)
+
     return $ Pattern.withCondition term merged

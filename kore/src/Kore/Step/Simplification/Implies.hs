@@ -20,6 +20,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Step.Simplification.And as And
+    ( simplifyEvaluatedMultiple
+    )
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
     , simplifyEvaluated
@@ -91,10 +94,18 @@ simplifyEvaluateHalfImplies
   | Pattern.isTop second    = return (OrPattern.fromPatterns [Pattern.top])
   | Pattern.isBottom second = Not.simplifyEvaluated first
   | otherwise =
-    -- TODO: Also merge predicate-only patterns for 'Or'
-    return $ case MultiOr.extractPatterns first of
-        [firstP] -> makeEvaluateImplies firstP second
-        _ -> makeEvaluateImplies (OrPattern.toPattern first) second
+    case MultiOr.extractPatterns first of
+        [firstP] -> return $ makeEvaluateImplies firstP second
+        firstPatterns -> distributeEvaluateImplies firstPatterns second
+
+distributeEvaluateImplies
+    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    => [Pattern variable]
+    -> Pattern variable
+    -> simplifier (OrPattern variable)
+distributeEvaluateImplies firsts second =
+    And.simplifyEvaluatedMultiple
+            (map (\first -> makeEvaluateImplies first second) firsts)
 
 makeEvaluateImplies
     :: InternalVariable variable
