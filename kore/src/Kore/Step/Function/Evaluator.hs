@@ -122,7 +122,7 @@ evaluateApplication
                 [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
                 , "for symbol:" <+> unparse symbol
                 ]
-                | otherwise = return unevaluated
+          | otherwise = return unevaluated
 
         maybeEvaluatedSimplifier =
             maybeEvaluatePattern
