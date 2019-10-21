@@ -38,6 +38,9 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike hiding
     ( mkAnd
     )
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeNotPredicate
@@ -119,7 +122,7 @@ makeEvaluateNot
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
     OrPattern.fromPatterns
-        [ Pattern.fromTermLike $ makeTermNot term
+        [ Pattern.fromTermLike $ TermLike.markSimplified $ makeTermNot term
         , Pattern.fromPredicateSorted
             (termLikeSort term)
             (makeEvaluatePredicate predicate)
