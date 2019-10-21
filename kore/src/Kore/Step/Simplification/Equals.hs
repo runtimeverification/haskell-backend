@@ -249,7 +249,11 @@ makeEvaluate
     second@Conditional { term = Top_ _ }
     _
   =
-    return (Iff.makeEvaluate first second)
+    return
+        (Iff.makeEvaluate
+            first {term = mkTop_}   -- remove the term's sort
+            second {term = mkTop_}  -- remove the term's sort
+        )
 makeEvaluate
     Conditional
         { term = firstTerm
