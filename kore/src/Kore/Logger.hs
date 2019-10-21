@@ -29,6 +29,7 @@ module Kore.Logger
     , defaultShouldLog
     , MonadLog (..)
     , mapLocalFunction
+    , defaultLogPretty
     ) where
 
 import Colog
@@ -144,28 +145,42 @@ data LogMessage = LogMessage
 
 instance Pretty.Pretty LogMessage where
     pretty LogMessage {message, severity, scope, callstack} =
-        Pretty.hsep
-            [ Pretty.brackets (Pretty.pretty severity)
-            , Pretty.brackets (prettyScope scope)
-            , ":"
-            , Pretty.pretty message
-            , Pretty.brackets (formatCallstack callstack)
-            ]
-      where
-        prettyScope :: [Scope] -> Pretty.Doc ann
-        prettyScope =
-            mconcat
-                . zipWith (<>) ("" : repeat ".")
-                . fmap Pretty.pretty
-        formatCallstack :: GHC.Stack.CallStack -> Pretty.Doc ann
-        formatCallstack cs
-          | length (getCallStack cs) <= 1 = mempty
-          | otherwise                               = callStackToBuilder cs
-        callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
-        callStackToBuilder =
-            Pretty.pretty
-            . prettyCallStack
-            . popCallStack
+        defaultLogPretty
+            severity
+            scope
+            (Pretty.pretty message)
+            (Just callstack)
+
+defaultLogPretty
+    :: Severity
+    -> [Scope]
+    -> Pretty.Doc ann
+    -> Maybe GHC.Stack.CallStack
+    -> Pretty.Doc ann
+defaultLogPretty severity scope message callstack =
+    Pretty.hsep
+        [ Pretty.brackets (Pretty.pretty severity)
+        , Pretty.brackets (prettyScope scope)
+        , ":"
+        , message
+        , Pretty.brackets (formatCallstack callstack)
+        ]
+  where
+    prettyScope :: [Scope] -> Pretty.Doc ann
+    prettyScope =
+        mconcat
+            . zipWith (<>) ("" : repeat ".")
+            . fmap Pretty.pretty
+    formatCallstack :: Maybe GHC.Stack.CallStack -> Pretty.Doc ann
+    formatCallstack (Just cs)
+      | length (getCallStack cs) <= 1 = mempty
+      | otherwise                     = callStackToBuilder cs
+    formatCallstack Nothing = ""
+    callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
+    callStackToBuilder =
+        Pretty.pretty
+        . prettyCallStack
+        . popCallStack
 
 type WithLog msg = MonadLog
 

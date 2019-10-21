@@ -36,11 +36,23 @@ data WarnMissingHook = WarnMissingHook
     , symbol :: Symbol
     } deriving (Eq, Typeable)
 
+_scope :: Scope
+_scope = Scope "MissingHooks"
+
+_severity :: Severity
+_severity = Warning
+
 instance Pretty.Pretty WarnMissingHook where
     pretty WarnMissingHook { hook, symbol } =
-        Pretty.vsep
-            [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
-            , "for symbol:" <+> unparse symbol
+        Pretty.hsep
+            [ Pretty.brackets (Pretty.pretty _severity)
+            , Pretty.brackets (Pretty.pretty _scope)
+            , ":"
+            , Pretty.hsep
+                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
+                , "for symbol:" <+> unparse symbol
+                ]
+            , Pretty.brackets ""
             ]
 
 instance Entry WarnMissingHook where
@@ -48,8 +60,8 @@ instance Entry WarnMissingHook where
     shouldLog minSeverity currentScope _ =
         defaultShouldLog severity scope minSeverity currentScope
       where
-        severity = Warning
-        scope    = [Scope "MissingHooks"]
+        severity = _severity
+        scope    = [_scope]
 
 warnMissingHook :: MonadLog m => Text -> Symbol -> m ()
 warnMissingHook hook symbol =
