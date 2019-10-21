@@ -44,16 +44,13 @@ _severity = Warning
 
 instance Pretty.Pretty WarnMissingHook where
     pretty WarnMissingHook { hook, symbol } =
-        Pretty.hsep
-            [ Pretty.brackets (Pretty.pretty _severity)
-            , Pretty.brackets (Pretty.pretty _scope)
-            , ":"
-            , Pretty.hsep
+        defaultLogPretty _severity [_scope] message Nothing
+      where
+        message =
+            Pretty.hsep
                 [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
                 , "for symbol:" <+> unparse symbol
                 ]
-            , Pretty.brackets ""
-            ]
 
 instance Entry WarnMissingHook where
     shouldLog :: Severity -> Set Scope -> WarnMissingHook -> Bool
