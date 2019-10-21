@@ -9,9 +9,7 @@ Portability : portable
 -}
 
 module Kore.Step.PatternAttributes
-    ( isConstructorLikePattern
-    , isConstructorLikeTop
-    , isConstructorModuloLikePattern
+    ( isConstructorLikeTop
     ) where
 
 import Data.Either
@@ -19,67 +17,19 @@ import Data.Either
     )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import Data.Reflection
-    ( give
-    )
 
 import qualified Kore.Attribute.Symbol as Attribute
-import Kore.Builtin.Attributes
-    ( isConstructorModulo_
-    )
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Proof.Functional
-import Kore.Step.PatternAttributesError
-    ( ConstructorLikeError (..)
-    )
-
-{-| Checks whether a pattern is constructor-like or not and, if it is,
-    returns a proof certifying that.
--}
-isConstructorLikePattern
-    :: SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> Either ConstructorLikeError [ConstructorLikeProof]
-isConstructorLikePattern tools =
-    provePattern (checkConstructorLikeHead tools)
-
-{-| Checks whether a pattern is constructor-like, including
-    constructors modulo associativity, commutativity and neutral element.
-    If it is, returns a proof certifying that.
--}
-isConstructorModuloLikePattern
-    :: Show variable
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> Either ConstructorLikeError [ConstructorLikeProof]
-isConstructorModuloLikePattern tools =
-    provePattern (checkConstructorModuloLikeHead tools)
 
 data PartialPatternProof proof
     = Descend proof
     | DoNotDescend proof
   deriving Functor
-
-provePattern
-    ::  (  Recursive.Base (TermLike variable) (Either error [proof])
-        -> Either error (PartialPatternProof proof)
-        )
-    -> TermLike variable
-    -> Either error [proof]
-provePattern levelProver =
-    Recursive.fold reduceM
-  where
-    reduceM base = do
-        wrappedProof <- levelProver base
-        case wrappedProof of
-            DoNotDescend proof -> return [proof]
-            Descend proof -> do
-                proofs <- concat <$> sequence base
-                return (proof : proofs)
 
 -- Tells whether the pattern is a built-in constructor-like pattern
 isPreconstructedPattern
@@ -112,42 +62,3 @@ isConstructorLikeTop _tools base@(_ :< pattern') =
             patternHead = applicationSymbolOrAlias ap
         _ -> isRight (isPreconstructedPattern undefined base)
 
-checkConstructorLikeHead
-    :: SmtMetadataTools Attribute.Symbol
-    -> Recursive.Base (TermLike variable) a
-    -> Either
-        ConstructorLikeError
-        (PartialPatternProof ConstructorLikeProof)
-checkConstructorLikeHead _tools base@(_ :< pattern') =
-    case pattern' of
-        ApplySymbolF Application { applicationSymbolOrAlias }
-          | isConstructor || isSortInjection ->
-            return (Descend ConstructorLikeProof)
-          where
-            (isConstructor, isSortInjection) =
-                ((,) <$> Symbol.isConstructor <*> Symbol.isSortInjection)
-                    applicationSymbolOrAlias
-        VariableF _ ->
-            return (Descend ConstructorLikeProof)
-        _ | Right _ <- isPreconstructedPattern undefined base ->
-            return (DoNotDescend ConstructorLikeProof)
-          | otherwise -> Left NonConstructorLikeHead
-
-checkConstructorModuloLikeHead
-    :: (Show a, Show variable)
-    => SmtMetadataTools Attribute.Symbol
-    -> Recursive.Base (TermLike variable) a
-    -> Either
-        ConstructorLikeError
-        (PartialPatternProof ConstructorLikeProof)
-checkConstructorModuloLikeHead tools base@(_ :< pattern') =
-    case checkConstructorLikeHead tools base of
-        r@(Right _) -> r
-        Left _ ->
-            case pattern' of
-                ApplySymbolF Application { applicationSymbolOrAlias }
-                  | isConstructorModulo -> return (Descend ConstructorLikeProof)
-                  where
-                    isConstructorModulo =
-                        give tools isConstructorModulo_ applicationSymbolOrAlias
-                _ -> Left NonConstructorLikeHead
