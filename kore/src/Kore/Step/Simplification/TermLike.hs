@@ -197,7 +197,8 @@ simplifyInternal term predicate =
             then do
                 return . OrPattern.fromTermLike $ termLike
             else
-                assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
+                assertTermNotPredicate . assertSimplifiedResults
+                $ tracer termLike $
                 let doNotSimplify =
                         Exception.assert (TermLike.isSimplified termLike)
                         return (OrPattern.fromTermLike termLike)
@@ -218,7 +219,8 @@ simplifyInternal term predicate =
                     EqualsF equalsF ->
                         Equals.simplify predicate =<< simplifyChildren equalsF
                     ExistsF exists ->
-                        let fresh = Lens.over Binding.existsBinder refreshBinder exists
+                        let fresh =
+                                Lens.over Binding.existsBinder refreshBinder exists
                         in  Exists.simplify =<< simplifyChildren fresh
                     IffF iffF ->
                         Iff.simplify =<< simplifyChildren iffF
@@ -229,15 +231,22 @@ simplifyInternal term predicate =
                     NotF notF ->
                         Not.simplify =<< simplifyChildren notF
                     --
-                    BottomF bottomF -> Bottom.simplify <$> simplifyChildren bottomF
-                    BuiltinF builtinF -> Builtin.simplify <$> simplifyChildren builtinF
+                    BottomF bottomF ->
+                        Bottom.simplify <$> simplifyChildren bottomF
+                    BuiltinF builtinF ->
+                        Builtin.simplify <$> simplifyChildren builtinF
                     DomainValueF domainValueF ->
                         DomainValue.simplify <$> simplifyChildren domainValueF
                     FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
                     ForallF forall ->
-                        let fresh = Lens.over Binding.forallBinder refreshBinder forall
+                        let fresh =
+                                Lens.over
+                                    Binding.forallBinder
+                                    refreshBinder
+                                    forall
                         in  Forall.simplify <$> simplifyChildren fresh
-                    InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
+                    InhabitantF inhF ->
+                        Inhabitant.simplify <$> simplifyChildren inhF
                     MuF mu ->
                         let fresh = Lens.over Binding.muBinder refreshBinder mu
                         in  Mu.simplify <$> simplifyChildren fresh
