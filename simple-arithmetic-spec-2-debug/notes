@@ -1,4 +1,0 @@
-./kwasm prove --backend haskell tests/proofs/simple-arithmetic-spec.k --format-failures --def-module KWASM-LEMMAS --haskell-backend-command "/home/ana/kore/.build/kore/bin/kore-repl"
-
-rule | kast -i kore -o pretty -d .build/defn/haskell /dev/stdin
-config | kast -i kore -o pretty -d .build/defn/haskell /dev/stdin
