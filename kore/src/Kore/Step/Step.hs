@@ -37,6 +37,8 @@ module Kore.Step.Step
     , toAxiomVariables
     ) where
 
+import Debug.Trace
+
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -591,9 +593,14 @@ applyRulesSequence
     -- axiom variables.
     (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
-  =
-    unifyRules unificationProcedure initial rules
-    >>= finalizeRulesSequence initial
+  = do
+    --traceM "ApplyRulesSequence: init"
+    x <- unifyRules unificationProcedure initial rules
+    --traceM "ApplyRulesSequence: after unification"
+    y <- finalizeRulesSequence initial x
+    --traceM "ApplyRulesSequence: final"
+    return y
+
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 

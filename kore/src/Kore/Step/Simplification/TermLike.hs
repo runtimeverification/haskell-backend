@@ -205,11 +205,11 @@ simplifyInternal term predicate = --trace ("\n" <> unparseToString term <> "\n")
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
-        --if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
-        --    then do
-        --        --traceM $ "\nAlready simplified\n" <> unparseToString termLike
-        --        return . OrPattern.fromTermLike $ termLike
-        --    else
+        if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
+            then do
+                --traceM $ "\nAlready simplified\n" <> unparseToString termLike
+                return . OrPattern.fromTermLike $ termLike
+            else
                 --assertSimplifiedSimplified .
                 assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =

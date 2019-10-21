@@ -12,6 +12,13 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
+import qualified Control.Monad as Monad
+import Data.List
+    ( isInfixOf
+    )
+import Data.Text
+    ( unpack
+    )
 import Debug.Trace
 import Kore.Unparser
 
@@ -109,6 +116,8 @@ evaluateApplication
     Foldable.for_ canMemoize recallOrPattern
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
+    Monad.when (isInfixOf "chop" (unpack myModInt)) (traceM $ "\n" <> unpack myModInt <> "\n" <> unparseToString configurationPredicate)
+    Monad.when (unpack myModInt == "Lbl'Unds'modInt'Unds'") (traceM $ "\n" <> unpack myModInt <> "\n" <> unparseToString configurationPredicate)
     let
         unevaluatedSimplifier
           | Just hook <- getHook (Attribute.hook symbolAttributes)
@@ -166,6 +175,9 @@ evaluateApplication
     Application { applicationSymbolOrAlias = symbol } = application
     Application { applicationChildren = children } = application
     Symbol { symbolAttributes } = symbol
+    Symbol { symbolConstructor } = symbol
+    Id { getId = myModInt } = symbolConstructor
+
 
     termLike = synthesize (ApplySymbolF application)
     unevaluated =
@@ -357,7 +369,7 @@ maybeEvaluatePattern
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
-        reevaluateFunctions toSimplify
+        reevaluateFunctions configurationPredicate toSimplify
 
 evaluateSortInjection
     :: Ord variable
@@ -397,12 +409,13 @@ reevaluateFunctions
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Pattern variable
+    => Predicate variable
+    -> Pattern variable
     -- ^ Function evaluation result.
     -> simplifier (OrPattern variable)
-reevaluateFunctions rewriting = do
+reevaluateFunctions predicate rewriting = do
     let (rewritingTerm, rewritingPredicate) = Pattern.splitTerm rewriting
-    simplifiedTerms <- simplifyTerm rewritingTerm
+    simplifiedTerms <- simplifyConditionalTermToOr predicate rewritingTerm
     merged <- OrPattern.mergeWithPredicate rewritingPredicate simplifiedTerms
     orResults <- BranchT.gather $ do
         simplifiedTerm <- BranchT.scatter merged

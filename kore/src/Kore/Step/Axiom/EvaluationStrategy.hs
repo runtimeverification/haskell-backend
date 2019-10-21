@@ -253,6 +253,8 @@ applyFirstSimplifierThatWorks
                     , Pretty.indent 2 "remainders:"
                     , (Pretty.indent 4 . Pretty.vsep)
                         (unparse <$> Foldable.toList orRemainders)
+                    , Pretty.indent 2 "predicate:"
+                    , Pretty.indent 4 (unparse predicate)
                     , "Rule will be skipped."
                     ]
               -- TODO (traiansf): this might generate too much output
