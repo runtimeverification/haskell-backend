@@ -128,7 +128,8 @@ evaluateApplication
                  else
                     (error . show . Pretty.vsep)
                         [ "Application children must be simplified:"
-                        , "application term:" <+> unparse (mkApplySymbol symbol children)
+                        , "application term:"
+                          <+> unparse (mkApplySymbol symbol children)
                         ]
 
         maybeEvaluatedSimplifier =
@@ -303,9 +304,7 @@ maybeEvaluatePattern
                         childrenPredicate
                         flattened
                 case merged of
-                    AttemptedAxiom.NotApplicable -> do
-                        --traceM $ "\n\nPredicate\n" <> unparseToString configurationPredicate
-                        --traverse (traceM . unparseToString) $ OrPattern.toPatterns defaultValue
+                    AttemptedAxiom.NotApplicable ->
                         return defaultValue
                     AttemptedAxiom.Applied attemptResults ->
                         return $ MultiOr.merge results remainders
