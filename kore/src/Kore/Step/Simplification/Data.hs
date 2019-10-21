@@ -28,6 +28,7 @@ import Control.Monad.Catch
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
+import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
 import qualified GHC.Stack as GHC
@@ -95,18 +96,12 @@ instance MonadTrans SimplifierT where
     lift smt = SimplifierT (lift smt)
     {-# INLINE lift #-}
 
-instance (MonadUnliftIO m, WithLog LogMessage m)
-    => WithLog LogMessage (SimplifierT m)
-  where
-    askLogAction = SimplifierT (hoistLogAction SimplifierT <$> askLogAction)
-    {-# INLINE askLogAction #-}
+instance MonadLog log => MonadLog (SimplifierT log) where
+    logScope locally (SimplifierT readerT) =
+        SimplifierT $ Morph.hoist (logScope locally) readerT
+    {-# INLINE logScope #-}
 
-    localLogAction mapping =
-        SimplifierT . localLogAction mapping . runSimplifierT
-    {-# INLINE localLogAction #-}
-
-instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
-  where
+instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
     profile event duration =
         SimplifierT (profile event (runSimplifierT duration))
     {-# INLINE profile #-}

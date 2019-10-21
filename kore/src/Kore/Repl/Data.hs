@@ -475,19 +475,13 @@ deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
-instance Logger.WithLog Logger.LogMessage m
-    => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)
-  where
-    askLogAction =
-        Logger.hoistLogAction UnifierWithExplanation
-        <$> UnifierWithExplanation Logger.askLogAction
-    {-# INLINE askLogAction #-}
+instance Logger.MonadLog m => Logger.MonadLog (UnifierWithExplanation m) where
+    logM entry = UnifierWithExplanation $ Logger.logM entry
+    {-# INLINE logM #-}
 
-    localLogAction locally =
-        UnifierWithExplanation
-        . Logger.localLogAction locally
-        . getUnifierWithExplanation
-    {-# INLINE localLogAction #-}
+    logScope locally (UnifierWithExplanation unifierT) =
+        UnifierWithExplanation (Logger.logScope locally unifierT)
+    {-# INLINE logScope #-}
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 
