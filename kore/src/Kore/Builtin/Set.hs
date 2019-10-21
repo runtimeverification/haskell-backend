@@ -25,6 +25,9 @@ module Kore.Builtin.Set
     , internalize
     , expectBuiltinSet
     , expectConcreteBuiltinSet
+    , evalConcat
+    , evalElement
+    , evalUnit
       -- * Unification
     , unifyEquals
     ) where

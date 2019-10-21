@@ -95,6 +95,22 @@ test_applicationSimplification =
                 )
         assertEqual "" expect actual
 
+    , testCase "Application - preserves sort for top child" $ do
+        -- sigma(a, top) = top
+        let expect = OrPattern.fromPatterns
+                [ Pattern.fromTermLike (Mock.sigma Mock.a (mkTop Mock.testSort))
+                ]
+        actual <-
+            evaluate
+                Map.empty
+                (makeApplication
+                    Mock.sigmaSymbol
+                    [ [aExpanded]
+                    , [Pattern.top]
+                    ]
+                )
+        assertEqual "" expect actual
+
     , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
         let expect = OrPattern.fromPatterns [ gOfAExpanded ]
