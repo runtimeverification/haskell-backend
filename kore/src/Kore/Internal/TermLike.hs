@@ -87,6 +87,7 @@ module Kore.Internal.TermLike
     , applyAlias_
     , applySymbol
     , applySymbol_
+    , symbolApplication
     -- * Pattern synonyms
     , pattern And_
     , pattern ApplyAlias_
@@ -1210,13 +1211,25 @@ mkApplySymbol
     -- ^ Application arguments
     -> TermLike variable
 mkApplySymbol symbol children =
-    updateCallStack $ synthesize (ApplySymbolF application)
+    updateCallStack
+    $ synthesize (ApplySymbolF (symbolApplication symbol children))
+
+symbolApplication
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => Symbol
+    -- ^ Application symbol or alias
+    -> [TermLike variable]
+    -- ^ Application arguments
+    -> Application Symbol (TermLike variable)
+symbolApplication symbol children =
+    Application
+        { applicationSymbolOrAlias = symbol
+        , applicationChildren = forceSorts operandSorts children
+        }
   where
-    application =
-        Application
-            { applicationSymbolOrAlias = symbol
-            , applicationChildren = forceSorts operandSorts children
-            }
     operandSorts = applicationSortsOperands (symbolSorts symbol)
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.

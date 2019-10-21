@@ -26,6 +26,8 @@ import qualified Data.Foldable as Foldable
 import Data.Typeable
 
 import Kore.Logger
+    ( MonadLog (..)
+    )
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     )
@@ -75,11 +77,11 @@ newtype BranchT m a =
     deriving MonadIO
     deriving Typeable
 
+deriving instance MonadLog log => MonadLog (BranchT log)
+
 deriving instance MonadReader r m => MonadReader r (BranchT m)
 
 deriving instance MonadState s m => MonadState s (BranchT m)
-
-deriving instance WithLog msg m => WithLog msg (BranchT m)
 
 deriving instance MonadSMT m => MonadSMT (BranchT m)
 
