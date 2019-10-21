@@ -96,8 +96,6 @@ into a condition.
 
 If it does not know how to merge the substitutions, it will transform them into
 predicates and redo the merge.
-
-hs-boot: Please remember to update the hs-boot file when changing the signature.
 -}
 mergePredicatesAndSubstitutions
     ::  forall variable simplifier

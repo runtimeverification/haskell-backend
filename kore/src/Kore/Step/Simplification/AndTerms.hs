@@ -116,8 +116,6 @@ The comment for 'Kore.Step.Simplification.And.simplify' describes all
 the special cases handled by this.
 
 -}
--- NOTE (hs-boot): Please update the AndTerms.hs-boot file when changing the
--- signature.
 termUnification
     ::  forall variable unifier
     .   ( SimplifierVariable variable

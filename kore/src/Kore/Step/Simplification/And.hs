@@ -256,15 +256,9 @@ partitionWith f = partitionEithers . fmap f
 
 {- | Simplify the conjunction (@\\and@) of two terms.
 
-The comment for 'Kore.Step.Simplification.And.simplify' describes all the
-special cases
-handled by this.
-
-See also: 'termUnification'
+The comment for 'simplify' describes all the special cases handled by this.
 
 -}
--- NOTE (hs-boot): Please update AndTerms.hs-boot file when changing the
--- signature.
 termAnd
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
