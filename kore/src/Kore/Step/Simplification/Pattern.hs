@@ -32,9 +32,6 @@ import Kore.Step.Simplification.Simplify
     , simplifyConditionalTermToOr
     )
 
-import Debug.Trace
-import Kore.Unparser
-
 simplifyAndRemoveTopExists
     ::  ( SimplifierVariable variable
         , MonadSimplify simplifier
@@ -42,19 +39,14 @@ simplifyAndRemoveTopExists
         )
     => Pattern variable
     -> simplifier (OrPattern variable)
-simplifyAndRemoveTopExists patt = trace "Before simplify" $ do
-    traceM $ "Pattern before simplify:\n" <> unparseToString patt <> "\n"
-    traceM $ "Predicate before simplify:\n" <> unparseToString predicate <> "\n"
+simplifyAndRemoveTopExists patt = do
     simplified <- simplify patt
-    traceM "After simplify"
     return (removeTopExists <$> simplified)
   where
     removeTopExists :: Pattern variable -> Pattern variable
     removeTopExists p@Conditional{ term = Exists_ _ _ quantified } =
         removeTopExists p {term = quantified}
     removeTopExists p = p
-
-    (term, predicate) = Conditional.splitTerm patt
 
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}

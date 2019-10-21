@@ -9,18 +9,6 @@ module Kore.Step.Simplification.TermLike
     , simplifyInternal
     ) where
 
-import Debug.Trace
-import Kore.Internal.Symbol
-    ( Symbol (..)
-    )
-import Kore.Syntax.Application
-    ( Application (..)
-    )
-import Kore.Syntax.Id
-    ( Id (..)
-    )
-import Kore.Unparser
-
 import Control.Comonad.Trans.Cofree
     ( CofreeF ((:<))
     )
@@ -37,7 +25,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -186,7 +173,7 @@ simplifyInternal
     =>  TermLike variable
     ->  Predicate variable
     ->  simplifier (OrPattern variable)
-simplifyInternal term predicate = --trace ("\n" <> unparseToString term <> "\n") $
+simplifyInternal term predicate =
     simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
@@ -205,12 +192,11 @@ simplifyInternal term predicate = --trace ("\n" <> unparseToString term <> "\n")
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike =
-        if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike)
+        if TermLike.isSimplified termLike
+           && not (Syntax.Predicate.isPredicate termLike)
             then do
-                --traceM $ "\nAlready simplified\n" <> unparseToString termLike
                 return . OrPattern.fromTermLike $ termLike
             else
-                --assertSimplifiedSimplified .
                 assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
                 let doNotSimplify =
                         Exception.assert (TermLike.isSimplified termLike)
@@ -225,13 +211,8 @@ simplifyInternal term predicate = --trace ("\n" <> unparseToString term <> "\n")
                     AndF andF ->
                         And.simplify =<< simplifyChildren andF
                     ApplySymbolF applySymbolF ->
-                        --if ((getId . symbolConstructor . applicationSymbolOrAlias $ applySymbolF) == "Lbl'Unds'modInt'Unds'")
-                        --   then trace "\nDEBUG\n" $
-                        --        Application.simplify predicate
-                        --            =<< simplifyChildren applySymbolF
-                        --   else
-                                Application.simplify predicate
-                                    =<< simplifyChildren applySymbolF
+                        Application.simplify predicate
+                            =<< simplifyChildren applySymbolF
                     CeilF ceilF ->
                         Ceil.simplify predicate =<< simplifyChildren ceilF
                     EqualsF equalsF ->
@@ -313,20 +294,6 @@ simplifyInternal term predicate = --trace ("\n" <> unparseToString term <> "\n")
                         (unparse <$> unsimplified)
                     , "Expected all predicates to be removed from the term."
                     ]
-
-        --assertSimplifiedSimplified getResults = do
-        --    afterSimplf <- getResults
-        --    if TermLike.isSimplified termLike && not (Syntax.Predicate.isPredicate termLike) && ((OrPattern.fromTermLike termLike) /= afterSimplf)
-        --                then error $ (show . Pretty.vsep)
-        --                    [ "Term shouldn't have been marked simplified"
-        --                    , Pretty.indent 2 "input:"
-        --                    , Pretty.indent 4 (unparse termLike)
-        --                    , Pretty.indent 2 "simplified results:"
-        --                    , (Pretty.indent 4 . Pretty.vsep)
-        --                        (unparse <$> OrPattern.toPatterns afterSimplf)
-        --                    ]
-        --                    -- <> show termLike
-        --                else getResults
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)

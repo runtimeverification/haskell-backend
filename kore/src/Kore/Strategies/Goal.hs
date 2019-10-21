@@ -19,8 +19,6 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
-import Debug.Trace
-
 import Control.Applicative
     ( Alternative (..)
     )

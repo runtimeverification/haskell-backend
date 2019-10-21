@@ -21,9 +21,6 @@ module Kore.Exec
     , Equality
     ) where
 
-import Debug.Trace
-import Kore.Unparser
-
 import Control.Concurrent.MVar
 import Control.Error.Util
     ( note
@@ -301,7 +298,6 @@ prove limit definitionModule specModule =
     evalProver definitionModule specModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
-        --traverse (traceM . unparseToString) claims
         result <-
             runExceptT
             $ verify

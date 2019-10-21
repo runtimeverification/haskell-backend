@@ -25,8 +25,6 @@ module Kore.Step
     , runStrategy
     ) where
 
-import Debug.Trace
-
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -104,7 +102,7 @@ transitionRule =
         Simplify -> transitionSimplify
         Rewrite a -> transitionRewrite a
   where
-    transitionSimplify config = trace "Kore.Step transitionRule" $
+    transitionSimplify config =
         do
             configs <- Monad.Trans.lift $
                 Pattern.simplifyAndRemoveTopExists config

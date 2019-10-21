@@ -12,16 +12,6 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
-import qualified Control.Monad as Monad
-import Data.List
-    ( isInfixOf
-    )
-import Data.Text
-    ( unpack
-    )
-import Debug.Trace
-import Kore.Unparser
-
 import Control.Error
     ( ExceptT
     , exceptT
@@ -116,8 +106,6 @@ evaluateApplication
     Foldable.for_ canMemoize recallOrPattern
     simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
-    Monad.when (isInfixOf "chop" (unpack myModInt)) (traceM $ "\n" <> unpack myModInt <> "\n" <> unparseToString configurationPredicate)
-    Monad.when (unpack myModInt == "Lbl'Unds'modInt'Unds'") (traceM $ "\n" <> unpack myModInt <> "\n" <> unparseToString configurationPredicate)
     let
         unevaluatedSimplifier
           | Just hook <- getHook (Attribute.hook symbolAttributes)
@@ -137,19 +125,6 @@ evaluateApplication
           | otherwise =
               if all TermLike.isSimplified children
                  then return unevaluated
-                     --case termLike of
-                     --    App_ symb _ ->
-                     --        if (getId . symbolConstructor) symbol == "Lbl'Unds'modInt'Unds'"
-                     --           then do
-                     --               traceM
-                     --                   $ "\nFrom function evaluator; is simplified: "
-                     --                   <> show (TermLike.isSimplified termLike)
-                     --                   <> "\n"
-                     --                   <> unparseToString termLike <> "\n"
-                     --               return unevaluated
-                     --           else return unevaluated
-                     --    _ -> return unevaluated
-
                  else
                     (error . show . Pretty.vsep)
                         [ "Application children must be simplified:"
@@ -175,9 +150,6 @@ evaluateApplication
     Application { applicationSymbolOrAlias = symbol } = application
     Application { applicationChildren = children } = application
     Symbol { symbolAttributes } = symbol
-    Symbol { symbolConstructor } = symbol
-    Id { getId = myModInt } = symbolConstructor
-
 
     termLike = synthesize (ApplySymbolF application)
     unevaluated =
