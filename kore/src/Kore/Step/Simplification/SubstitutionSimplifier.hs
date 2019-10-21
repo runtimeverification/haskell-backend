@@ -7,6 +7,9 @@ License     : NCSA
 module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     , simplification
+    , MakeAnd (..)
+    , deduplicateSubstitution
+    , simplifyAnds
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
@@ -90,17 +93,26 @@ denormalized part into the predicate, but returns the normalized part as a
 substitution.
 
  -}
-simplification :: MonadSimplify simplifier => SubstitutionSimplifier simplifier
+simplification
+    :: forall simplifier
+    .  MonadSimplify simplifier
+    => SubstitutionSimplifier simplifier
 simplification =
-    SubstitutionSimplifier worker
+    SubstitutionSimplifier { simplifySubstitution }
   where
-    worker substitution = do
+    makeAnd' = simplifierMakeAnd
+    simplifySubstitution
+        :: forall variable
+        .  SubstitutionVariable variable
+        => Substitution variable
+        -> simplifier (OrPredicate variable)
+    simplifySubstitution substitution = do
         deduplicated <-
             -- TODO (thomas.tuegel): If substitution de-duplication fails with a
             -- unification error, this will still discard the entire
             -- substitution into the predicate. Fortunately, that seems to be
             -- rare enough to discount for now.
-            deduplicateSubstitution substitution
+            deduplicateSubstitution makeAnd' substitution
             & Branch.gather
         OrPredicate.fromPredicates
             <$> traverse (normalize1 . promoteUnsimplified) deduplicated
@@ -125,52 +137,80 @@ simplification =
                 $ normalize substitutions
         return $ Predicate.fromPredicate predicate <> normalized
 
+-- | Interface for constructing a simplified 'And' pattern.
+newtype MakeAnd monad =
+    MakeAnd
+        { makeAnd
+            :: forall variable
+            .  SubstitutionVariable variable
+            => TermLike variable
+            -> TermLike variable
+            -> Predicate.Predicate variable
+            -> monad (Pattern variable)
+            -- ^ Construct a simplified 'And' pattern of two 'TermLike's under
+            -- the given 'Predicate.Predicate'.
+        }
+
+simplifierMakeAnd :: MonadSimplify simplifier => MakeAnd (BranchT simplifier)
+simplifierMakeAnd =
+    MakeAnd { makeAnd }
+  where
+    makeAnd termLike1 termLike2 condition = do
+        simplified <-
+            mkAnd termLike1 termLike2
+            & simplifyConditionalTerm condition
+        TopBottom.guardAgainstBottom simplified
+        return simplified
+
 simplifyAnds
-    ::  forall variable simplifier
+    ::  forall variable monad
     .   ( SubstitutionVariable variable
-        , MonadSimplify simplifier
+        , Monad monad
         )
-    => NonEmpty (TermLike variable)
-    -> BranchT simplifier (Pattern variable)
-simplifyAnds (NonEmpty.sort -> patterns) = do
-    result <- foldM simplifyAnds' Pattern.top patterns
-    TopBottom.guardAgainstBottom result
-    return result
+    => MakeAnd monad
+    -> NonEmpty (TermLike variable)
+    -> monad (Pattern variable)
+simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) = do
+    foldM simplifyAnds' Pattern.top patterns
   where
     simplifyAnds'
         :: Pattern variable
         -> TermLike variable
-        -> BranchT simplifier (Pattern variable)
+        -> monad (Pattern variable)
     simplifyAnds' intermediate termLike =
         case Cofree.tailF (Recursive.project termLike) of
             AndF And { andFirst, andSecond } ->
                 foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
                 simplified <-
-                    mkAnd intermediateTerm termLike
-                    & simplifyConditionalTerm intermediateCondition
+                    makeAnd
+                        intermediateTerm
+                        termLike
+                        intermediateCondition
                 return (Pattern.andCondition simplified intermediateCondition)
       where
         (intermediateTerm, intermediateCondition) =
             Pattern.splitTerm intermediate
 
 deduplicateSubstitution
-    :: forall variable simplifier
+    :: forall variable monad
     .   ( SubstitutionVariable variable
-        , MonadSimplify simplifier
+        , Monad monad
         )
-    =>  Substitution variable
-    ->  BranchT simplifier
+    =>  MakeAnd monad
+    ->  Substitution variable
+    ->  monad
             ( Syntax.Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
-deduplicateSubstitution =
+deduplicateSubstitution makeAnd' =
     worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
   where
+    simplifyAnds' = simplifyAnds makeAnd'
     worker
         ::  Syntax.Predicate variable
         ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
-        ->  BranchT simplifier
+        ->  monad
                 ( Syntax.Predicate variable
                 , Map (UnifiedVariable variable) (TermLike variable)
                 )
@@ -179,7 +219,7 @@ deduplicateSubstitution =
       = return (predicate, deduplicated)
 
       | otherwise = do
-        simplified <- collectConditions <$> traverse simplifyAnds substitutions
+        simplified <- collectConditions <$> traverse simplifyAnds' substitutions
         let -- Substitutions de-duplicated by simplification.
             substitutions' = toMultiMap $ Conditional.term simplified
             -- New conditions produced by simplification.

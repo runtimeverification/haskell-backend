@@ -13,14 +13,20 @@ module Kore.Step.Simplification.And
     , simplifyEvaluated
     , simplifyEvaluatedMultiple
     , And (..)
+    , termAnd
     ) where
 
 import Control.Applicative
     ( Alternative (empty)
     )
+import Control.Error
+    ( fromMaybe
+    , runMaybeT
+    )
 import Control.Monad
     ( foldM
     )
+import qualified Control.Monad.Trans as Monad.Trans
 import Data.Bifunctor
     ( bimap
     )
@@ -39,6 +45,7 @@ import GHC.Stack
     )
 
 import Branch
+import qualified Branch as BranchT
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
@@ -61,11 +68,18 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Step.Simplification.AndTerms as AndTerms
-    ( termAnd
+import qualified Kore.Logger as Logger
+import Kore.Step.Simplification.AndTerms
+    ( maybeTermAnd
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
+import Kore.Unification.UnifierT
+    ( runUnifierT
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 
 {-|'simplify' simplifies an 'And' of 'OrPattern'.
 
@@ -183,7 +197,7 @@ makeEvaluateNonBool
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
   = do
-    terms <- AndTerms.termAnd firstTerm secondTerm
+    terms <- termAnd firstTerm secondTerm
     let firstCondition = Conditional.withoutTerm first
         secondCondition = Conditional.withoutTerm second
         initialConditions = firstCondition <> secondCondition
@@ -239,3 +253,40 @@ splitIntoTermsAndNegations =
 
 partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
 partitionWith f = partitionEithers . fmap f
+
+{- | Simplify the conjunction (@\\and@) of two terms.
+
+The comment for 'Kore.Step.Simplification.And.simplify' describes all the
+special cases
+handled by this.
+
+See also: 'termUnification'
+
+-}
+-- NOTE (hs-boot): Please update AndTerms.hs-boot file when changing the
+-- signature.
+termAnd
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    => HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> BranchT simplifier (Pattern variable)
+termAnd p1 p2 =
+    either (const andTerm) BranchT.scatter
+    =<< (Monad.Trans.lift . runUnifierT) (termAndWorker p1 p2)
+  where
+    andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
+    termAndWorker
+        ::  ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
+        => TermLike variable
+        -> TermLike variable
+        -> unifier (Pattern variable)
+    termAndWorker first second = do
+        let maybeTermAnd' = maybeTermAnd termAndWorker first second
+        patt <- runMaybeT maybeTermAnd'
+        return $ fromMaybe andPattern patt
+      where
+        andPattern = Pattern.fromTermLike (mkAnd first second)

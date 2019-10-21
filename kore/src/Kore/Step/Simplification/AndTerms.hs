@@ -9,15 +9,17 @@ Portability : portable
 -}
 module Kore.Step.Simplification.AndTerms
     ( simplifySortInjections
-    , termAnd
-    , termEquals
     , termUnification
+    , maybeTermAnd
+    , maybeTermEquals
     , SortInjectionMatch (..)
     , SortInjectionSimplification (..)
     , TermSimplifier
     , TermTransformationOld
     , cannotUnifyDistinctDomainValues
     , functionAnd
+    , equalsFunctions
+    , andFunctions
     ) where
 
 import Control.Applicative
@@ -25,7 +27,6 @@ import Control.Applicative
     )
 import Control.Error
     ( MaybeT (..)
-    , fromMaybe
     , mapMaybeT
     )
 import qualified Control.Error as Error
@@ -43,10 +44,6 @@ import Prelude hiding
     ( concat
     )
 
-import Branch
-    ( BranchT
-    )
-import qualified Branch as BranchT
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
@@ -57,9 +54,6 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -97,7 +91,7 @@ import Kore.Unification.Error
     ( unsupportedPatterns
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.UnifierT as Unify
+import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
@@ -109,93 +103,6 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     )
 
 data SimplificationTarget = AndT | EqualsT | BothT
-
-{- | Simplify an equality relation of two patterns.
-
-@termEquals@ assumes the result will be part of a predicate with a special
-condition for testing @⊥ = ⊥@ equality.
-
-The comment for 'Kore.Step.Simplification.And.simplify' describes all
-the special cases handled by this.
-
-See also: 'termAnd'
-
- -}
-termEquals
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => GHC.HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT simplifier (OrPredicate variable)
-termEquals first second = MaybeT $ do
-    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
-    case sequence maybeResults of
-        Nothing -> return Nothing
-        Just results -> return $ Just $
-            MultiOr.make (map Predicate.eraseConditionalTerm results)
-
-termEqualsAnd
-    :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => GHC.HasCallStack
-    => TermLike variable
-    -> TermLike variable
-    -> MaybeT (BranchT simplifier) (Pattern variable)
-termEqualsAnd p1 p2 =
-    MaybeT $ run $ maybeTermEqualsWorker p1 p2
-  where
-    run it = (runUnifierT . runMaybeT) it >>= either missingCase BranchT.scatter
-    missingCase = const (return Nothing)
-
-    maybeTermEqualsWorker
-        :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
-        => TermLike variable
-        -> TermLike variable
-        -> MaybeT unifier (Pattern variable)
-    maybeTermEqualsWorker = maybeTermEquals termEqualsAndWorker
-
-    termEqualsAndWorker
-        :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
-        => TermLike variable
-        -> TermLike variable
-        -> unifier (Pattern variable)
-    termEqualsAndWorker first second =
-        either ignoreErrors scatterResults
-        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
-      where
-        ignoreErrors _ = return equalsPredicate
-        scatterResults =
-            maybe
-                (return equalsPredicate) -- default if no results
-                (BranchT.alternate . BranchT.scatter)
-            . sequence
-        equalsPredicate =
-            Conditional
-                { term = mkTop_
-                , predicate =
-                    Syntax.Predicate.markSimplified
-                    $ makeEqualsPredicate first second
-                , substitution = mempty
-                }
-
-maybeTermEquals
-    ::  ( SimplifierVariable variable
-        , MonadUnify unifier
-        , Logger.WithLog Logger.LogMessage unifier
-        )
-    => GHC.HasCallStack
-    => TermSimplifier variable unifier
-    -- ^ Used to simplify subterm "and".
-    -> TermLike variable
-    -> TermLike variable
-    -> MaybeT unifier (Pattern variable)
-maybeTermEquals = maybeTransformTerm equalsFunctions
 
 {- | Unify two terms without discarding the terms.
 
@@ -241,42 +148,18 @@ termUnification =
                     )
         Error.maybeT unsupportedPatternsError pure maybeTermUnification
 
-{- | Simplify the conjunction (@\\and@) of two terms.
-
-The comment for 'Kore.Step.Simplification.And.simplify' describes all the
-special cases
-handled by this.
-
-See also: 'termUnification'
-
--}
--- NOTE (hs-boot): Please update AndTerms.hs-boot file when changing the
--- signature.
-termAnd
-    :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+maybeTermEquals
+    ::  ( SimplifierVariable variable
+        , MonadUnify unifier
+        , Logger.WithLog Logger.LogMessage unifier
+        )
     => GHC.HasCallStack
-    => TermLike variable
+    => TermSimplifier variable unifier
+    -- ^ Used to simplify subterm "and".
     -> TermLike variable
-    -> BranchT simplifier (Pattern variable)
-termAnd p1 p2 =
-    either (const andTerm) BranchT.scatter
-    =<< (Monad.Trans.lift . runUnifierT) (termAndWorker p1 p2)
-  where
-    andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
-    termAndWorker
-        ::  ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
-        => TermLike variable
-        -> TermLike variable
-        -> unifier (Pattern variable)
-    termAndWorker first second = do
-        let maybeTermAnd' = maybeTermAnd termAndWorker first second
-        patt <- runMaybeT maybeTermAnd'
-        return $ fromMaybe andPattern patt
-      where
-        andPattern = Pattern.fromTermLike (mkAnd first second)
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+maybeTermEquals = maybeTransformTerm equalsFunctions
 
 maybeTermAnd
     ::  ( SimplifierVariable variable

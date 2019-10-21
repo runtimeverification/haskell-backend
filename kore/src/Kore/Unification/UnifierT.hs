@@ -10,6 +10,7 @@ module Kore.Unification.UnifierT
     , runUnifierT
     , maybeUnifierT
     , substitutionSimplifier
+    , unificationMakeAnd
     -- * Re-exports
     , module Kore.Unification.Unify
     ) where
@@ -38,6 +39,7 @@ import Kore.Internal.OrPredicate
     ( OrPredicate
     )
 import qualified Kore.Internal.OrPredicate as OrPredicate
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -54,14 +56,20 @@ import qualified Kore.Predicate.Predicate as Syntax
 import Kore.Profiler.Data
     ( MonadProfiler
     )
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
+    )
 import qualified Kore.Step.Simplification.Predicate as PredicateSimplifier
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
     , PredicateSimplifier (..)
     , SimplifierVariable
     )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
-    ( SubstitutionSimplifier (..)
+    ( MakeAnd (..)
+    , SubstitutionSimplifier (..)
+    , deduplicateSubstitution
     )
 import Kore.Substitute
     ( SubstitutionVariable
@@ -73,7 +81,6 @@ import Kore.Unification.Substitution
 import Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
     )
-import qualified Kore.Unification.UnifierImpl as UnifierImpl
 import Kore.Unification.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
@@ -142,7 +149,10 @@ substitutionSimplifier =
         -> unifier (OrPredicate variable)
     worker substitution =
         fmap OrPredicate.fromPredicates . gather $ do
-            deduplicated <- UnifierImpl.deduplicateSubstitution substitution
+            deduplicated <-
+                deduplicateSubstitution
+                    unificationMakeAnd
+                    substitution
             normalize1 deduplicated
 
     normalizeSubstitution'
@@ -212,3 +222,13 @@ runUnifierT = runExceptT . BranchT.gather . getUnifierT
  -}
 maybeUnifierT :: MonadSimplify m => UnifierT m a -> MaybeT m [a]
 maybeUnifierT = hushT . BranchT.gather . getUnifierT
+
+unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
+unificationMakeAnd =
+    MakeAnd { makeAnd }
+  where
+    makeAnd termLike1 termLike2 condition = do
+        unified <- termUnification termLike1 termLike2
+        BranchT.alternate
+            $ Simplifier.simplifyPredicate
+            $ Pattern.andCondition unified condition

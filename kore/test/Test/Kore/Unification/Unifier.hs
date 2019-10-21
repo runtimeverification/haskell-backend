@@ -41,10 +41,10 @@ import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
     , MonadSimplify
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Error
 import Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.UnifierImpl
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
@@ -174,6 +174,13 @@ data UnificationResult =
         , substitution :: Substitution
         , predicate :: Syntax.Predicate Variable
         }
+
+simplifyAnds
+    :: Monad.Unify.MonadUnify unifier
+    => NonEmpty (TermLike Variable)
+    -> unifier (Pattern Variable)
+simplifyAnds =
+    SubstitutionSimplifier.simplifyAnds Monad.Unify.unificationMakeAnd
 
 andSimplifySuccess
     :: HasCallStack

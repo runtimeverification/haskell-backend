@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate
     , simplify
+    , termEquals
     ) where
 
 import Control.Error
@@ -25,7 +26,12 @@ import Data.List
 import Data.Maybe
     ( fromMaybe
     )
+import qualified GHC.Stack as GHC
 
+import Branch
+    ( BranchT
+    )
+import qualified Branch as BranchT
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -39,6 +45,7 @@ import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import Kore.Predicate.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate
@@ -50,8 +57,8 @@ import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
     )
-import qualified Kore.Step.Simplification.AndTerms as AndTerms
-    ( termEquals
+import Kore.Step.Simplification.AndTerms
+    ( maybeTermEquals
     )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
@@ -72,6 +79,12 @@ import qualified Kore.Step.Simplification.Or as Or
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
+import Kore.Unification.UnifierT
+    ( runUnifierT
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 
@@ -317,7 +330,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> TermLike variable
     -> MaybeT simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
-    result <- AndTerms.termEquals first second
+    result <- termEquals first second
     return (Pattern.fromPredicate <$> result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
@@ -339,7 +352,7 @@ makeEvaluateTermsToPredicate
 makeEvaluateTermsToPredicate first second configurationPredicate
   | first == second = return OrPredicate.top
   | otherwise = do
-    result <- runMaybeT $ AndTerms.termEquals first second
+    result <- runMaybeT $ termEquals first second
     case result of
         Nothing ->
             return
@@ -355,3 +368,75 @@ makeEvaluateTermsToPredicate first second configurationPredicate
                 (MultiAnd.make [firstCeilNegation, secondCeilNegation])
 
             return $ MultiOr.merge predicatedOr ceilNegationAnd
+
+{- | Simplify an equality relation of two patterns.
+
+@termEquals@ assumes the result will be part of a predicate with a special
+condition for testing @⊥ = ⊥@ equality.
+
+The comment for 'Kore.Step.Simplification.And.simplify' describes all
+the special cases handled by this.
+
+ -}
+termEquals
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT simplifier (OrPredicate variable)
+termEquals first second = MaybeT $ do
+    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
+    case sequence maybeResults of
+        Nothing -> return Nothing
+        Just results -> return $ Just $
+            MultiOr.make (map Predicate.eraseConditionalTerm results)
+
+termEqualsAnd
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT (BranchT simplifier) (Pattern variable)
+termEqualsAnd p1 p2 =
+    MaybeT $ run $ maybeTermEqualsWorker p1 p2
+  where
+    run it = (runUnifierT . runMaybeT) it >>= either missingCase BranchT.scatter
+    missingCase = const (return Nothing)
+
+    maybeTermEqualsWorker
+        :: forall unifier
+        .   ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
+        => TermLike variable
+        -> TermLike variable
+        -> MaybeT unifier (Pattern variable)
+    maybeTermEqualsWorker = maybeTermEquals termEqualsAndWorker
+
+    termEqualsAndWorker
+        :: forall unifier
+        .   ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
+        => TermLike variable
+        -> TermLike variable
+        -> unifier (Pattern variable)
+    termEqualsAndWorker first second =
+        either ignoreErrors scatterResults
+        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
+      where
+        ignoreErrors _ = return equalsPredicate
+        scatterResults =
+            maybe
+                (return equalsPredicate) -- default if no results
+                (BranchT.alternate . BranchT.scatter)
+            . sequence
+        equalsPredicate =
+            Conditional
+                { term = mkTop_
+                , predicate =
+                    Syntax.Predicate.markSimplified
+                    $ makeEqualsPredicate first second
+                , substitution = mempty
+                }

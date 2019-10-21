@@ -21,6 +21,8 @@ import GHC.Stack
 
 import Branch
 import qualified Kore.Internal.Conditional as Conditional
+import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Conditional (..)
     , Predicate
@@ -35,10 +37,12 @@ import qualified Kore.Predicate.Predicate as Syntax
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.Simplification.SubstitutionSimplifier
+    ( SubstitutionSimplifier (..)
+    )
 import Kore.Unification.Substitution
     ( Substitution
     )
-import qualified Kore.Unification.UnifierImpl as Unification
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( MonadUnify
@@ -51,16 +55,14 @@ normalize
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Conditional variable term
     -> BranchT simplifier (Conditional variable term)
-normalize Conditional { term, predicate, substitution } = do
+normalize conditional@Conditional { term, predicate, substitution } = do
     -- We collect all the results here because we should promote the
     -- substitution to the predicate when there is an error on *any* branch.
     results <-
-        Monad.Trans.lift
-        $ Unifier.runUnifierT
-        $ Unification.normalizeOnce
-            Conditional { term = (), predicate, substitution }
+        Monad.Trans.lift . Unifier.runUnifierT
+        $ simplifySubstitution substitution
     case results of
-        Right normal -> scatter (applyTerm <$> normal)
+        Right normal -> scatter (applyTermPredicate <$> MultiOr.mergeAll normal)
         Left _ -> do
             let combined =
                     Predicate.fromPredicate
@@ -72,7 +74,10 @@ normalize Conditional { term, predicate, substitution } = do
                     $ Syntax.Predicate.fromSubstitution substitution
             return (Conditional.withCondition term combined)
   where
-    applyTerm predicated = predicated { term }
+    applyTermPredicate =
+        Pattern.andCondition conditional { substitution = mempty }
+    SubstitutionSimplifier { simplifySubstitution } =
+        Unifier.substitutionSimplifier
 
 normalizeExcept
     ::  forall unifier variable term
