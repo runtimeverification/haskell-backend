@@ -194,7 +194,7 @@ simplifyInternal term predicate =
     simplifyInternalWorker termLike =
         if TermLike.isSimplified termLike
            && not (Syntax.Predicate.isPredicate termLike)
-            then do
+            then
                 return . OrPattern.fromTermLike $ termLike
             else
                 assertTermNotPredicate . assertSimplifiedResults
