@@ -12,6 +12,7 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
+    , mkBottom_
     , mkElemVar
     , mkEquals_
     , mkOr
@@ -20,7 +21,8 @@ import Kore.Logger.Output
     ( emptyLogger
     )
 import Kore.Predicate.Predicate
-    ( makeEqualsPredicate
+    ( makeCeilPredicate
+    , makeEqualsPredicate
     , makeTruePredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax
@@ -150,6 +152,32 @@ test_simplifyRule =
             (   mkOr Mock.a Mock.b
                 `rewritesTo`
                 Mock.cf
+            )
+
+        assertEqual "" expected actual
+    , testCase "Case where f(x) is defined; Top case is simplified" $ do
+        let expected =
+                [   Pair (Mock.f x, makeCeilPredicate (Mock.f x))
+                    `rewritesTo`
+                    Pair (Mock.a, makeTruePredicate)
+                ]
+
+        actual <- runSimplifyRule
+            (   Pair (Mock.f x, makeTruePredicate)
+                `rewritesTo`
+                Pair (Mock.a, makeTruePredicate)
+            )
+
+        assertEqual "" expected actual
+    , testCase "f(x) is always defined" $ do
+        let expected =
+                [ Mock.functional10 x `rewritesTo` Mock.a
+                ]
+
+        actual <- runSimplifyRule
+            (   Pair (Mock.functional10 x, makeTruePredicate)
+                `rewritesTo`
+                Pair (Mock.a, makeTruePredicate)
             )
 
         assertEqual "" expected actual
