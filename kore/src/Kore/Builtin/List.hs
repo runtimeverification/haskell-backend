@@ -37,6 +37,10 @@ module Kore.Builtin.List
     , elementKey
     , unitKey
     , getKey
+    -- * Evaluators
+    , evalConcat
+    , evalElement
+    , evalUnit
     , expectConcreteBuiltinList
     ) where
 

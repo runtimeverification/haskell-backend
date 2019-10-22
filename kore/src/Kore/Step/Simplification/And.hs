@@ -63,9 +63,8 @@ import Kore.Internal.TermLike
     , Sort
     , TermLike
     , mkAnd
-    , mkBottom
+    , mkBottom_
     , mkNot
-    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
@@ -220,7 +219,7 @@ applyAndIdempotenceAndFindContradictions
 applyAndIdempotenceAndFindContradictions patt =
     if noContradictions
         then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
-        else mkBottom (termLikeSort patt)
+        else mkBottom_
 
   where
     (terms, negatedTerms) = splitIntoTermsAndNegations patt

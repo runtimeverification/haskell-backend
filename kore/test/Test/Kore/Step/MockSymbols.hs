@@ -1056,6 +1056,12 @@ elementList
     -> TermLike variable
 elementList element = Internal.mkApplySymbol elementListSymbol [element]
 
+unitList
+    :: InternalVariable variable
+    => GHC.HasCallStack
+    => TermLike variable
+unitList = Internal.mkApplySymbol unitListSymbol []
+
 sigma
     :: InternalVariable variable
     => GHC.HasCallStack

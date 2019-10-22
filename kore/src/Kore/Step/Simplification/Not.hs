@@ -175,8 +175,8 @@ makeTermNot
 -- not ceil = floor not
 -- not forall = exists not
 makeTermNot term
-  | isBottom term = mkTop    (termLikeSort term)
-  | isTop term    = mkBottom (termLikeSort term)
+  | isBottom term = mkTop_
+  | isTop term    = mkBottom_
   | otherwise     = mkNot term
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
