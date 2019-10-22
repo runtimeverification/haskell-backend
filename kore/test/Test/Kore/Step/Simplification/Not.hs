@@ -5,10 +5,6 @@ module Test.Kore.Step.Simplification.Not
 import Test.Tasty
     ( TestTree
     )
-import Test.Tasty.HUnit
-    ( assertBool
-    , testCase
-    )
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -44,8 +40,6 @@ import Kore.Variables.UnifiedVariable
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
-    ( assertEqual
-    )
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
