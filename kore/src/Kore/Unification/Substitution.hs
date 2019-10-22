@@ -13,6 +13,7 @@ module Kore.Unification.Substitution
     , UnwrappedSubstitution
     , unwrap
     , toMap
+    , toMultiMap
     , fromMap
     , singleton
     , wrap
@@ -26,6 +27,7 @@ module Kore.Unification.Substitution
     , Kore.Unification.Substitution.freeVariables
     , partition
     , reverseIfRhsIsVar
+    , Normalization (..)
     ) where
 
 import Control.DeepSeq
@@ -36,6 +38,9 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
 import Data.Hashable
 import qualified Data.List as List
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -176,6 +181,40 @@ toMap
 toMap (Substitution _) =
     error "Cannot convert a denormalized substitution to a map!"
 toMap (NormalizedSubstitution norm) = norm
+
+toMultiMap
+    :: InternalVariable variable
+    => Substitution variable
+    -> Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
+toMultiMap =
+    Foldable.foldl' insertSubstitution Map.empty
+    . map sortRenamedVariable
+    . unwrap
+  where
+    {- | Sort variable-renaming substitutions.
+
+    Variable-renaming substitutions are sorted so that the greater variable is
+    substituted in place of the lesser. Consistent ordering prevents
+    variable-only cycles.
+
+    -}
+    sortRenamedVariable
+        :: InternalVariable variable
+        => (UnifiedVariable variable, TermLike variable)
+        -> (UnifiedVariable variable, TermLike variable)
+    sortRenamedVariable (variable1, Var_ variable2)
+      | variable2 < variable1 = (variable2, mkVar variable1)
+    sortRenamedVariable subst = subst
+
+    insertSubstitution
+        :: forall variable1 term
+        .  Ord variable1
+        => Map variable1 (NonEmpty term)
+        -> (variable1, term)
+        -> Map variable1 (NonEmpty term)
+    insertSubstitution multiMap (variable, termLike) =
+        let push = (termLike :|) . maybe [] Foldable.toList
+        in Map.alter (Just . push) variable multiMap
 
 fromMap
     :: Ord variable
@@ -408,3 +447,34 @@ variables
     -> Set (UnifiedVariable variable)
 variables (NormalizedSubstitution subst) = Map.keysSet subst
 variables (Substitution subst) = Foldable.foldMap (Set.singleton . fst) subst
+
+{- | The result of /normalizing/ a substitution.
+
+'normalized' holds the part of the substitution was normalized successfully.
+
+'denormalized' holds the part of the substitution which was not normalized
+because it contained simplifiable cycles.
+
+ -}
+data Normalization variable =
+    Normalization
+        { normalized, denormalized :: !(UnwrappedSubstitution variable) }
+    deriving GHC.Generic
+
+instance SOP.Generic (Normalization variable)
+
+instance SOP.HasDatatypeInfo (Normalization variable)
+
+instance Debug variable => Debug (Normalization variable)
+
+instance (Debug variable, Diff variable) => Diff (Normalization variable)
+
+instance Semigroup (Normalization variable) where
+    (<>) a b =
+        Normalization
+            { normalized = Function.on (<>) normalized a b
+            , denormalized = Function.on (<>) denormalized a b
+            }
+
+instance Monoid (Normalization variable) where
+    mempty = Normalization mempty mempty

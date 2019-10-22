@@ -15,3 +15,6 @@ lts_version=$( \
 
 # Replace the resolver in stack.yaml with the newest version.
 sed -i ./stack.yaml -e "/^resolver:/ c resolver: ${lts_version}"
+
+# Update 'stack.yaml.lock' and check for incompatible versions.
+stack test --pedantic
