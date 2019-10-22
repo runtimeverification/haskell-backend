@@ -12,7 +12,6 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
-    , mkBottom_
     , mkElemVar
     , mkEquals_
     , mkOr
