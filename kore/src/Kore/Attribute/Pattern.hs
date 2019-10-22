@@ -24,6 +24,7 @@ import Data.Hashable
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import Kore.Attribute.Pattern.ConstructorLikeTop
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
@@ -49,6 +50,7 @@ data Pattern variable =
         -- ^ The free variables of the pattern.
         , functional :: !Functional
         , function :: !Function
+        , constructorLikeTop :: !ConstructorLikeTop
         , defined :: !Defined
         , created :: !Created
         , simplified :: !Simplified
@@ -72,6 +74,7 @@ instance
     , Synthetic (FreeVariables variable) base
     , Synthetic Functional base
     , Synthetic Function base
+    , Synthetic ConstructorLikeTop base
     , Synthetic Defined base
     , Synthetic Simplified base
     ) =>
@@ -83,6 +86,7 @@ instance
             , freeVariables = synthetic (freeVariables <$> base)
             , functional = synthetic (functional <$> base)
             , function = synthetic (function <$> base)
+            , constructorLikeTop = synthetic (constructorLikeTop <$> base)
             , defined = synthetic (defined <$> base)
             , created = synthetic (created <$> base)
             , simplified = synthetic (simplified <$> base)

@@ -17,6 +17,7 @@ module Kore.Internal.TermLike
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
+    , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
     , termLikeSort
@@ -208,6 +209,7 @@ import qualified GHC.Stack as GHC
 
 import Generically
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.ConstructorLikeTop as Pattern
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
@@ -340,7 +342,7 @@ data TermLikeF variable child
     deriving
         ( Synthetic (FreeVariables variable), Synthetic Sort
         , Synthetic Pattern.Functional, Synthetic Pattern.Function
-        , Synthetic Pattern.Defined
+        , Synthetic Pattern.Defined, Synthetic Pattern.ConstructorLikeTop
         , Synthetic Pattern.Simplified
         ) via (Generically1 (TermLikeF variable))
 
@@ -662,6 +664,12 @@ refreshVariables
 isFunctionPattern :: TermLike variable -> Bool
 isFunctionPattern =
     Pattern.isFunction . Attribute.function . extractAttributes
+
+{- | Does the 'TermLike' have a constructor-like top
+ -}
+hasConstructorLikeTop :: TermLike variable -> Bool
+hasConstructorLikeTop =
+    Pattern.isConstructorLikeTop . Attribute.constructorLikeTop . extractAttributes
 
 {- | Is the 'TermLike' functional?
  -}
