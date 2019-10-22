@@ -14,51 +14,59 @@ import Data.Set
 import Data.Text
     ( Text
     )
-import Data.Text.Prettyprint.Doc
-    ( (<+>)
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Typeable
     ( Typeable
+    )
+import GHC.Stack
+    ( emptyCallStack
     )
 
 import Kore.Internal.Symbol
     ( Symbol
     )
 import Kore.Logger
+    ( Entry (..)
+    , LogMessage (..)
+    , MonadLog (logM)
+    , Scope
+    , Severity (Warning)
+    , defaultShouldLog
+    )
 import Kore.Unparser
     ( unparse
     )
-
 
 data WarnMissingHook = WarnMissingHook
     { hook :: Text
     , symbol :: Symbol
     } deriving (Eq, Typeable)
 
-_scope :: Scope
-_scope = Scope "MissingHooks"
-
-_severity :: Severity
-_severity = Warning
-
-instance Pretty.Pretty WarnMissingHook where
-    pretty WarnMissingHook { hook, symbol } =
-        defaultLogPretty _severity [_scope] message Nothing
-      where
-        message =
-            Pretty.hsep
-                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
-                , "for symbol:" <+> unparse symbol
-                ]
+missingHookSeverity :: Severity
+missingHookSeverity = Warning
 
 instance Entry WarnMissingHook where
     shouldLog :: Severity -> Set Scope -> WarnMissingHook -> Bool
     shouldLog minSeverity currentScope _ =
-        defaultShouldLog severity scope minSeverity currentScope
-      where
-        severity = _severity
-        scope    = [_scope]
+        defaultShouldLog missingHookSeverity mempty minSeverity currentScope
+
+    toLogMessage :: WarnMissingHook -> LogMessage
+    toLogMessage WarnMissingHook { hook, symbol } =
+        LogMessage
+            { message =
+                Pretty.renderStrict
+                    . Pretty.layoutPretty Pretty.defaultLayoutOptions
+                    $ Pretty.hsep
+                        [ "Attempted to evaluate missing hook:"
+                        , Pretty.pretty hook
+                        , "for symbol:"
+                        , unparse symbol
+                        ]
+            , severity = missingHookSeverity
+            , scope = mempty
+            , callstack = emptyCallStack
+            }
 
 warnMissingHook :: MonadLog m => Text -> Symbol -> m ()
 warnMissingHook hook symbol =

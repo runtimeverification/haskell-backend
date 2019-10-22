@@ -29,7 +29,6 @@ module Kore.Logger
     , defaultShouldLog
     , MonadLog (..)
     , mapLocalFunction
-    , defaultLogPretty
     ) where
 
 import Colog
@@ -92,9 +91,6 @@ import GHC.Stack
     ( CallStack
     , HasCallStack
     , callStack
-    , getCallStack
-    , popCallStack
-    , prettyCallStack
     )
 import Prelude hiding
     ( log
@@ -142,45 +138,6 @@ data LogMessage = LogMessage
     , callstack :: !CallStack
     -- ^ call stack of the message, when available
     }
-
-instance Pretty.Pretty LogMessage where
-    pretty LogMessage {message, severity, scope, callstack} =
-        defaultLogPretty
-            severity
-            scope
-            (Pretty.pretty message)
-            (Just callstack)
-
-defaultLogPretty
-    :: Severity
-    -> [Scope]
-    -> Pretty.Doc ann
-    -> Maybe GHC.Stack.CallStack
-    -> Pretty.Doc ann
-defaultLogPretty severity scope message callstack =
-    Pretty.hsep
-        [ Pretty.brackets (Pretty.pretty severity)
-        , Pretty.brackets (prettyScope scope)
-        , ":"
-        , message
-        , Pretty.brackets (formatCallstack callstack)
-        ]
-  where
-    prettyScope :: [Scope] -> Pretty.Doc ann
-    prettyScope =
-        mconcat
-            . zipWith (<>) ("" : repeat ".")
-            . fmap Pretty.pretty
-    formatCallstack :: Maybe GHC.Stack.CallStack -> Pretty.Doc ann
-    formatCallstack (Just cs)
-      | length (getCallStack cs) <= 1 = mempty
-      | otherwise                     = callStackToBuilder cs
-    formatCallstack Nothing = ""
-    callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
-    callStackToBuilder =
-        Pretty.pretty
-        . prettyCallStack
-        . popCallStack
 
 type WithLog msg = MonadLog
 
@@ -274,7 +231,7 @@ withLogScope newScope =
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
-class (Typeable entry, Pretty.Pretty entry) => Entry entry where
+class Typeable entry => Entry entry where
     toEntry :: entry -> SomeEntry
     toEntry = SomeEntry
 
@@ -283,10 +240,15 @@ class (Typeable entry, Pretty.Pretty entry) => Entry entry where
 
     shouldLog :: Severity -> Set Scope -> entry -> Bool
 
+    toLogMessage :: entry -> LogMessage
+
 instance Entry LogMessage where
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
     shouldLog minSeverity currentScope LogMessage { severity, scope } =
         defaultShouldLog severity scope minSeverity currentScope
+
+    toLogMessage :: LogMessage -> LogMessage
+    toLogMessage = id
 
 defaultShouldLog :: Severity -> [Scope] -> Severity -> Set Scope -> Bool
 defaultShouldLog severity scope minSeverity currentScope =
@@ -302,9 +264,6 @@ someEntry = Lens.prism' toEntry fromEntry
 
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
-
-instance Pretty.Pretty SomeEntry where
-    pretty (SomeEntry entry) = Pretty.pretty entry
 
 withSomeEntry
     :: (forall entry. Entry entry => entry -> a)
