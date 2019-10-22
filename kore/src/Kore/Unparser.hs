@@ -153,7 +153,8 @@ parameters2 = parameters2' . map unparse2
 
 -- | Print a list of sort parameters.
 parameters' :: [Doc ann] -> Doc ann
-parameters' = list lbrace rbrace
+parameters' = braces . hsep . punctuate comma
+
 parameters2' :: [Doc ann] -> Doc ann
 parameters2' = list2 "" ""
 
