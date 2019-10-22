@@ -19,6 +19,8 @@ resolver: lts-14.11
 
 nix:
   packages:
+    - cairo
+    - pkgconfig
     - z3
     - zlib
 
@@ -42,11 +44,17 @@ nix:
 # will not be run. This is useful for tweaking upstream packages.
 packages:
   - kore
+  - kore-charts
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
+  # kore:
   - ghc-trace-events-0.0.0.1@sha256:cef5cffd2d749b07ba948b27970c45b6e96705575853f9c14719ad2b9b3397e2
+  # kore-charts:
+  - Chart-cairo-1.9.1@sha256:85605a4663f319e482bbd208c1e44c3cc8e0ec094fcd41b6afa3db4ce60635b0,925
+  - cairo-0.13.6.0@sha256:a9122d48957a2dbb5a177e5068b850efa1e99bb22c68eb2571165c3c945a8dd6,4187
+  - gtk2hs-buildtools-0.13.5.4@sha256:0f18b0103fa7a3cbc28edc6a97bdaf08e1f9bd273ef26d2ad498630ec6d0ac9c,5288
 
 # TODO (thomas.tuegel): Remove this when stylish-haskell is updated upstream.
 allow-newer: true

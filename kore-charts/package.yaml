@@ -1,0 +1,72 @@
+name:                kore-charts
+version:             0.0.1.0
+github:              "kframework/kore"
+license:             NCSA
+license-file:        LICENSE
+author:              "Thomas Tuegel"
+maintainer:          "thomas.tuegel@runtimeverification.com"
+copyright:           "2019 Runtime Verification Inc"
+category:            Language
+
+# extra-source-files:
+#   - README.md
+#   - ChangeLog.md
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description: Please see the [README](README.md) file.
+
+dependencies:
+  - base >= 4.7
+  - Chart
+  - Chart-cairo
+  - aeson
+  - containers
+  - lens
+  - text
+  - wreq
+
+default-extensions:
+  - BangPatterns
+  - ConstraintKinds
+  - DataKinds
+  - DefaultSignatures
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DerivingVia
+  - DuplicateRecordFields
+  - EmptyCase
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - KindSignatures
+  - LambdaCase
+  - MultiParamTypeClasses
+  - NamedFieldPuns
+  - OverloadedStrings
+  - PatternSynonyms
+  - RankNTypes
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TypeApplications
+  - TypeFamilies
+  - TypeOperators
+  - TypeSynonymInstances
+  - ViewPatterns
+
+ghc-options: -fno-ignore-asserts
+
+executables:
+  kore-charts:
+    main: Main.hs
+    source-dirs:
+      - app
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"

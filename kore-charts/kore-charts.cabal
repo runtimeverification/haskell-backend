@@ -1,0 +1,43 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.32.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: c1cfc7b995557f46669029d9cfda7fa30cfd38302d07b71d1329fed6f39b4df8
+
+name:           kore-charts
+version:        0.0.1.0
+description:    Please see the [README](README.md) file.
+category:       Language
+homepage:       https://github.com/kframework/kore#readme
+bug-reports:    https://github.com/kframework/kore/issues
+author:         Thomas Tuegel
+maintainer:     thomas.tuegel@runtimeverification.com
+copyright:      2019 Runtime Verification Inc
+license:        NCSA
+license-file:   LICENSE
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/kframework/kore
+
+executable kore-charts
+  main-is: Main.hs
+  other-modules:
+      Paths_kore_charts
+  hs-source-dirs:
+      app
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
+  ghc-options: -fno-ignore-asserts -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+  build-depends:
+      Chart
+    , Chart-cairo
+    , aeson
+    , base >=4.7
+    , containers
+    , lens
+    , text
+    , wreq
+  default-language: Haskell2010
