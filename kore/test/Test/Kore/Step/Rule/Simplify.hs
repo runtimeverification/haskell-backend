@@ -155,7 +155,8 @@ test_simplifyRule =
             )
 
         assertEqual "" expected actual
-    , testCase "Case where f(x) is defined; Top case is simplified" $ do
+    , testCase "Case where f(x) is defined;\
+               \ Case where it is not is simplified" $ do
         let expected =
                 [   Pair (Mock.f x, makeCeilPredicate (Mock.f x))
                     `rewritesTo`
