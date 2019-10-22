@@ -77,12 +77,11 @@ verifySortHookAttribute
     => AttributesVerification declAtts axiomAtts
     -> Attributes
     -> error Hook
-verifySortHookAttribute (VerifyAttributes _ _) =
-    \attrs -> do
-        hook <- parseAttributes attrs
-        case getHook hook of
-            Just _  -> return hook
-            Nothing -> koreFail "missing hook attribute"
+verifySortHookAttribute (VerifyAttributes _ _) attrs = do
+    hook <- parseAttributes attrs
+    case getHook hook of
+        Just _  -> return hook
+        Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -96,12 +95,11 @@ verifySymbolHookAttribute
     => AttributesVerification declAtts axiomAtts
     -> Attributes
     -> error Hook
-verifySymbolHookAttribute (VerifyAttributes _ _) =
-    \attrs -> do
-        hook <- parseAttributes attrs
-        case getHook hook of
-            Just _  -> return hook
-            Nothing -> koreFail "missing hook attribute"
+verifySymbolHookAttribute (VerifyAttributes _ _) attrs = do
+    hook <- parseAttributes attrs
+    case getHook hook of
+        Just _  -> return hook
+        Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is not present.
 
@@ -113,12 +111,11 @@ verifyNoHookAttribute
     => AttributesVerification declAtts axiomAtts
     -> Attributes
     -> error ()
-verifyNoHookAttribute (VerifyAttributes _ _) =
-    \attributes -> do
-        Hook { getHook } <- parseAttributes attributes
-        case getHook of
-            Nothing ->
-                -- The hook attribute is (correctly) absent.
-                return ()
-            Just _ ->
-                koreFail "Unexpected 'hook' attribute"
+verifyNoHookAttribute (VerifyAttributes _ _) attributes = do
+    Hook { getHook } <- parseAttributes attributes
+    case getHook of
+        Nothing ->
+            -- The hook attribute is (correctly) absent.
+            return ()
+        Just _ ->
+            koreFail "Unexpected 'hook' attribute"
