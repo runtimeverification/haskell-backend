@@ -22,9 +22,12 @@ dependencies:
   - Chart
   - Chart-cairo
   - aeson
+  - attoparsec
   - containers
   - lens
+  - scientific
   - text
+  - witherable
   - wreq
 
 default-extensions:

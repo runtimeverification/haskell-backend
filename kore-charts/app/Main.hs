@@ -1,13 +1,20 @@
 module Main (main) where
 
+import Prelude hiding (filter)
+
+import Control.Applicative
 import Data.Traversable
+import Data.Witherable
 
 import Data.Aeson (FromJSON)
 import Data.Map (Map)
+import Data.Monoid (First (getFirst))
+import Data.Scientific (Scientific)
 import GHC.Generics (Generic)
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as Aeson
+import qualified Data.Attoparsec.ByteString as Attoparsec
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import qualified Control.Lens as Lens
@@ -20,7 +27,9 @@ main :: IO ()
 main = do
     job <- getJob "haskell-backend" "master"
     builds <- getBuilds job
-    print builds
+    let profiled = mapMaybe matchProfiled builds
+    buildProfiles <- Map.traverseWithKey (getBuildProfile builds) profiled
+    print buildProfiles
 
 getJob :: String -> String -> IO Job
 getJob project name = do
@@ -69,12 +78,21 @@ data Build =
     Build
     { number :: BuildNumber
     , result :: Result
+    , url :: String
     , artifacts :: [Artifact]
     }
     deriving (Show)
     deriving (Generic)
 
 instance FromJSON Build
+
+matchProfiled :: Build -> Maybe Artifact
+matchProfiled Build { artifacts } =
+    getFirst (foldMap matchFileName artifacts)
+  where
+    matchFileName artifact@Artifact { fileName }
+      | fileName == "profile.json" = pure artifact
+      | otherwise                  = mempty
 
 data Result = Success | Aborted | Incomplete | Other String
     deriving (Show)
@@ -97,3 +115,30 @@ data Artifact =
     deriving (Generic)
 
 instance FromJSON Artifact
+
+getBuildProfile :: Builds -> BuildNumber -> Artifact -> IO BuildProfile
+getBuildProfile builds buildNumber Artifact { relativePath } = do
+    let Just Build { url } = Map.lookup buildNumber builds
+        url' = url <> "artifact/" <> relativePath
+    response <- Wreq.get url'
+    Lens.view Wreq.responseBody <$> Wreq.asJSON response
+
+type BuildProfile = Map String Profile
+
+jsons :: Attoparsec.Parser [Aeson.Value]
+jsons = some Aeson.json <* Attoparsec.endOfInput
+
+asJSONs
+    :: FromJSON json
+    => Wreq.Response ByteString
+    -> IO (Wreq.Response [json])
+
+data Profile =
+    Profile
+    { user_sec :: Scientific
+    , resident_kbytes :: Integer
+    }
+    deriving (Show)
+    deriving (Generic)
+
+instance FromJSON Profile

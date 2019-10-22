@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c1cfc7b995557f46669029d9cfda7fa30cfd38302d07b71d1329fed6f39b4df8
+-- hash: c1bb038e43e3a023a533041bf8f4954562a9a902b13e499e992abfa47bb204c6
 
 name:           kore-charts
 version:        0.0.1.0
@@ -35,9 +35,12 @@ executable kore-charts
       Chart
     , Chart-cairo
     , aeson
+    , attoparsec
     , base >=4.7
     , containers
     , lens
+    , scientific
     , text
+    , witherable
     , wreq
   default-language: Haskell2010
