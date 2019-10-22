@@ -80,14 +80,15 @@ evaluateAxioms
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike patt
 
-    eitherResults <- (fmap . fmap)
-        (rejectList (Foldable.any Step.isNarrowingResult . Result.results))
-        (applyRules expanded (map unwrapEqualityRule definitionRules))
+    eitherResults <- applyRules expanded (map unwrapEqualityRule definitionRules)
 
     case eitherResults of
         Left _ -> return Result.Results
                         { results = mempty, remainders = MultiOr [expanded] }
-        Right results -> do
+        Right results
+          | Foldable.any (Foldable.any Step.isNarrowingResult . Result.results) results -> return Result.Results { results = mempty, remainders = MultiOr [expanded] }
+          | (not . Foldable.any Result.hasResults) results -> return Result.Results { results = mempty, remainders = MultiOr [expanded] }
+          | otherwise -> do
             ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
             let
                 result =
@@ -112,7 +113,7 @@ evaluateAxioms
             let Result.Results { results = returnedResults } = simplifiedResult
 
             if (all null . fmap Result.result) returnedResults
-                then return mempty
+                then return Result.Results { results = mempty, remainders = MultiOr [expanded] }
                 else return simplifiedResult
 
   where
@@ -125,9 +126,15 @@ evaluateAxioms
     unwrapEqualityRule (EqualityRule rule) =
         RulePattern.mapVariables fromVariable rule
 
+    rejectList :: (a -> Bool) -> [a] -> [a]
     rejectList p as
       | Foldable.any p as = []
       | otherwise = as
+
+    keepList :: (a -> Bool) -> [a] -> [a]
+    keepList p as
+      | Foldable.any p as = as
+      | otherwise = []
 
     applyRules (Step.toConfigurationVariables -> initial) rules
       = Monad.Unify.runUnifierT
