@@ -3,12 +3,20 @@ module Test.Kore.Step.Simplification.Not
     ) where
 
 import Test.Tasty
+    ( TestTree
+    )
 import Test.Tasty.HUnit
+    ( assertBool
+    , testCase
+    )
 
 import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -35,6 +43,9 @@ import Kore.Variables.UnifiedVariable
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
+import Test.Tasty.HUnit.Ext
+    ( assertEqual
+    )
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
@@ -42,6 +53,7 @@ test_simplifyEvaluated =
     , [] `becomes_` [Pattern.top]
     , [termX] `becomes_` [termNotX]
     , [equalsXA] `becomes_` [notEqualsXA]
+    , equalsXAWithSortedBottom `patternBecomes` [Pattern.top]
     , [substXA] `becomes_` [notEqualsXA]
     , [equalsXA, equalsXB] `becomes_` [neitherXAB]
     , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
@@ -70,6 +82,25 @@ test_simplifyEvaluated =
                 ]
           where
             actuals = Foldable.toList actual
+    patternBecomes
+        :: GHC.HasCallStack
+        => Pattern Variable
+        -> [Pattern Variable]
+        -> TestTree
+    patternBecomes original expecteds =
+        testCase "patternBecomes" $ do
+            let actuals = Foldable.toList $ Not.makeEvaluate original
+            assertEqual (message actuals) expecteds actuals
+      where
+        message actuals =
+            (show . Pretty.vsep)
+                [ "expected simplification of:"
+                , Pretty.indent 4 $ unparse original
+                , "would give:"
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                , "but got:"
+                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                ]
 
 termX :: Pattern Variable
 termX = Pattern.fromTermLike (mkElemVar Mock.x)
@@ -79,6 +110,13 @@ termNotX = mkNot <$> termX
 
 xAndEqualsXA :: Pattern Variable
 xAndEqualsXA = const <$> termX <*> equalsXA
+
+equalsXAWithSortedBottom :: Pattern Variable
+equalsXAWithSortedBottom = Conditional
+    { term = mkBottom Mock.testSort
+    , predicate = equalsXA_
+    , substitution = mempty
+    }
 
 equalsXA :: Pattern Variable
 equalsXA = fromPredicate equalsXA_
