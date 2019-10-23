@@ -12,6 +12,7 @@ import Test.Tasty
 
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
@@ -525,6 +526,115 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
+    , testCase "Sort matching" $ do
+        let mx = SetVariable $ Variable (testId "mx") mempty Mock.subOthersort
+            iz = SetVariable $ Variable (testId "iz") mempty Mock.intSort
+            ub = ElementVariable $ Variable (testId "ub") mempty Mock.boolSort
+
+        let expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkTop_
+                    , predicate = makeInPredicate
+                        (mkNu iz (Mock.builtinInt 595))
+                        (mkAnd
+                            (Mock.tdivInt mkTop_ mkTop_)
+                            (mkAnd
+                                (mkCeil_
+                                    (mkNot
+                                        (mkNu mx
+                                            (mkRewrites
+                                                mkBottom_
+                                                Mock.aSubOthersort
+                                            )
+                                        )
+                                    )
+                                )
+                                (mkEquals_
+                                    (Mock.g
+                                        (Mock.functionalConstr30
+                                            (Mock.functionalTopConstr21
+                                                Mock.ch
+                                                Mock.aTopSort
+                                            )
+                                            (mkIff Mock.plain00 Mock.d)
+                                            Mock.cg
+                                        )
+                                    )
+                                    Mock.functionalInjective00
+                                )
+                            )
+                        )
+                    , substitution = mempty
+                    }
+                , Conditional
+                    { term = mkTop_
+                    , predicate = makeInPredicate
+                        (mkNu iz (Mock.builtinInt 595))
+                        (mkAnd
+                            (Mock.tdivInt mkTop_ mkTop_)
+                            (mkAnd
+                                (mkEquals_
+                                    (Mock.g
+                                        (Mock.functionalConstr30
+                                            (Mock.functionalTopConstr21
+                                                Mock.ch
+                                                Mock.aTopSort
+                                            )
+                                            (mkIff Mock.plain00 Mock.d)
+                                            Mock.cg
+                                        )
+                                    )
+                                    Mock.functionalInjective00
+                                )
+                                (mkNot (mkFloor_ (Mock.builtinList [])))
+                            )
+                        )
+                    , substitution = mempty
+                    }
+                ]
+        actual <- evaluate
+            Conditional
+                { term = mkIn Mock.otherSort
+                    (mkNu iz (Mock.builtinInt 595))
+                    (Mock.tdivInt
+                        (mkForall ub
+                            (mkCeil Mock.intSort
+                                (mkNot
+                                    (mkAnd
+                                        (mkFloor Mock.subOthersort
+                                            Mock.unitList
+                                        )
+                                        (mkNu mx
+                                            (mkRewrites
+                                                (mkBottom Mock.subOthersort)
+                                                Mock.aSubOthersort
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                        (mkAnd
+                            (mkTop Mock.intSort)
+                            (mkEquals Mock.intSort
+                                (Mock.g
+                                    (Mock.functionalConstr30
+                                        (Mock.functionalTopConstr21
+                                            Mock.ch
+                                            Mock.aTopSort
+                                        )
+                                        (mkIff Mock.plain00 Mock.d)
+                                        Mock.cg
+                                    )
+                                )
+                                Mock.functionalInjective00
+                            )
+                        )
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "" expected actual
     , testCase "Forall simplification" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -785,6 +895,9 @@ builtinAxioms =
             )
         ,   ( AxiomIdentifier.Application Mock.elementSetId
             , builtinEvaluation Set.evalElement
+            )
+        ,   ( AxiomIdentifier.Application Mock.unitListId
+            , builtinEvaluation List.evalUnit
             )
         ,   ( AxiomIdentifier.Application Mock.tdivIntId
             , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)

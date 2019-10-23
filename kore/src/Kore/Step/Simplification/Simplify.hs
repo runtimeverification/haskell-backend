@@ -277,7 +277,7 @@ simplifyConditionalTerm
     => Predicate variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
-simplifyConditionalTerm predicate termLike  = do
+simplifyConditionalTerm predicate termLike = do
     TermLikeSimplifier simplify <- askSimplifierTermLike
     simplify predicate termLike
 

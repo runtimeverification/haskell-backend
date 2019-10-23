@@ -137,7 +137,9 @@ makeEvaluateNonBoolCeil
     -> Pattern variable
     -> simplifier (OrPattern variable)
 makeEvaluateNonBoolCeil predicate patt@Conditional {term}
-  | isTop term = return $ OrPattern.fromPattern patt
+  | isTop term =
+    return $ OrPattern.fromPattern
+        patt {term = mkTop_} -- erase the term's sort.
   | otherwise = do
     termCeil <- makeEvaluateTerm predicate term
     result <-

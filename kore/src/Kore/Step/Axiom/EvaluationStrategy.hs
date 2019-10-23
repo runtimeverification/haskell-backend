@@ -245,8 +245,10 @@ applyFirstSimplifierThatWorks
               Logger.logWarning
                   . Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep
                   $ [ "Simplification result with remainder:"
-                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 2 "input pattern:"
                     , Pretty.indent 4 (unparse patt)
+                    , Pretty.indent 2 "input predicate:"
+                    , Pretty.indent 4 (unparse predicate)
                     , Pretty.indent 2 "results:"
                     , (Pretty.indent 4 . Pretty.vsep)
                         (unparse <$> Foldable.toList orResults)

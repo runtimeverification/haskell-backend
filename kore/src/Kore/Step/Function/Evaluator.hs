@@ -143,8 +143,13 @@ evaluateApplication
     unevaluated =
         OrPattern.fromPattern
         $ Pattern.withCondition
-            (TermLike.markSimplified termLike)
+            (markSimplifiedIfChildren termLike)
             childrenPredicate
+
+    markSimplifiedIfChildren =
+        if all TermLike.isSimplified application
+           then TermLike.markSimplified
+           else id
 
     canMemoize
       | Symbol.isMemo symbol
@@ -291,7 +296,8 @@ maybeEvaluatePattern
                         childrenPredicate
                         flattened
                 case merged of
-                    AttemptedAxiom.NotApplicable -> return defaultValue
+                    AttemptedAxiom.NotApplicable ->
+                        return defaultValue
                     AttemptedAxiom.Applied attemptResults ->
                         return $ MultiOr.merge results remainders
                       where
@@ -326,7 +332,7 @@ maybeEvaluatePattern
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
-        reevaluateFunctions toSimplify
+        reevaluateFunctions configurationPredicate toSimplify
 
 evaluateSortInjection
     :: Ord variable
@@ -366,12 +372,13 @@ reevaluateFunctions
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Pattern variable
+    => Predicate variable
+    -> Pattern variable
     -- ^ Function evaluation result.
     -> simplifier (OrPattern variable)
-reevaluateFunctions rewriting = do
+reevaluateFunctions predicate rewriting = do
     let (rewritingTerm, rewritingPredicate) = Pattern.splitTerm rewriting
-    simplifiedTerms <- simplifyTerm rewritingTerm
+    simplifiedTerms <- simplifyConditionalTermToOr predicate rewritingTerm
     merged <- OrPattern.mergeWithPredicate rewritingPredicate simplifiedTerms
     orResults <- BranchT.gather $ do
         simplifiedTerm <- BranchT.scatter merged
