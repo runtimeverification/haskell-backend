@@ -20,6 +20,7 @@ module Kore.Builtin.Map.Map
     , isSymbolRemove
     , isSymbolRemoveAll
     , isSymbolSize
+    , isSymbolValues
     -- * Keys
     , concatKey
     , elementKey
@@ -31,6 +32,7 @@ module Kore.Builtin.Map.Map
     , unitKey
     , updateKey
     , sizeKey
+    , valuesKey
     ) where
 
 import qualified Data.Map as Map
@@ -84,6 +86,9 @@ removeAllKey = "MAP.removeAll"
 
 sizeKey :: IsString s => s
 sizeKey = "MAP.size"
+
+valuesKey :: IsString s => s
+valuesKey = "MAP.values"
 
 {- | Find the symbol hooked to @MAP.update@ in an indexed module.
  -}
@@ -141,6 +146,14 @@ lookupSymbolSize
     -> Either (Kore.Error e) Symbol
 lookupSymbolSize = Builtin.lookupSymbol sizeKey
 
+{- | Find the symbol hooked to @MAP.values@ in an indexed module.
+ -}
+lookupSymbolValues
+    :: Sort
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
+lookupSymbolValues = Builtin.lookupSymbol valuesKey
+
 {- | Check if the given symbol is hooked to @MAP.concat@.
  -}
 isSymbolConcat :: Symbol -> Bool
@@ -170,6 +183,11 @@ isSymbolRemoveAll = Builtin.isSymbol removeAllKey
 -}
 isSymbolSize :: Symbol -> Bool
 isSymbolSize = Builtin.isSymbol sizeKey
+
+{- | Check if the given symbol is hooked to @MAP.values@.
+-}
+isSymbolValues :: Symbol -> Bool
+isSymbolValues = Builtin.isSymbol valuesKey
 
 {- | Externalizes a 'Domain.InternalMap' as a 'TermLike'.
  -}

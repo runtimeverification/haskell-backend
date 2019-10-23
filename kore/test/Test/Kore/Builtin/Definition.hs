@@ -402,6 +402,10 @@ sizeMapSymbol :: Internal.Symbol
 sizeMapSymbol =
     builtinSymbol "sizeMap" intSort [mapSort] & hook "MAP.size"
 
+valuesMapSymbol :: Internal.Symbol
+valuesMapSymbol =
+    builtinSymbol "valuesMap" listSort [mapSort] & hook "MAP.values"
+
 unitMap :: TermLike Variable
 unitMap = mkApplySymbol unitMapSymbol []
 
@@ -457,6 +461,11 @@ sizeMap
     :: TermLike Variable
     -> TermLike Variable
 sizeMap map' = mkApplySymbol sizeMapSymbol [map']
+
+valuesMap
+    :: TermLike Variable
+    -> TermLike Variable
+valuesMap map' = mkApplySymbol valuesMapSymbol [map']
 
 -- ** Pair
 
@@ -1157,6 +1166,7 @@ mapModule =
             , hookedSymbolDecl removeMapSymbol
             , hookedSymbolDecl removeAllMapSymbol
             , hookedSymbolDecl sizeMapSymbol
+            , hookedSymbolDecl valuesMapSymbol
             ]
         }
 

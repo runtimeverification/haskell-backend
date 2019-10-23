@@ -42,6 +42,10 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( catMaybes
+    )
+import qualified Data.Sequence as Seq
 import Data.Text
     ( Text
     )
@@ -58,6 +62,7 @@ import Kore.Builtin.Builtin
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Domain.Builtin as Domain
@@ -173,6 +178,9 @@ symbolVerifiers =
       )
     , ( Map.sizeKey
       , Builtin.verifySymbol Int.assertSort [assertSort]
+      )
+    , ( Map.valuesKey
+      , Builtin.verifySymbol Builtin.List.assertSort [assertSort]
       )
     ]
 
@@ -353,8 +361,8 @@ evalKeys =
             let _map =
                     case arguments of
                         [_map] -> _map
-                        _ -> Builtin.wrongArity Map.lookupKey
-            _map <- expectConcreteBuiltinMap Map.lookupKey _map
+                        _ -> Builtin.wrongArity Map.keysKey
+            _map <- expectConcreteBuiltinMap Map.keysKey _map
             Builtin.Set.returnConcreteSet
                 resultSort
                 (fmap (const Domain.SetValue) _map)
@@ -425,6 +433,25 @@ evalSize =
                 . Map.size
                 $ _map
 
+evalValues :: Builtin.Function
+evalValues =
+    Builtin.functionEvaluator evalValues0
+  where
+    evalValues0 _ resultSort = \arguments ->
+        Builtin.getAttemptedAxiom $ do
+            let _map =
+                    case arguments of
+                        [_map] -> _map
+                        _ -> Builtin.wrongArity Map.valuesKey
+            _map <- expectConcreteBuiltinMap Map.valuesKey _map
+            Builtin.List.returnList resultSort
+                . fmap TermLike.fromConcrete
+                . Seq.fromList
+                . catMaybes
+                . fmap (TermLike.asConcrete . Domain.getMapValue)
+                . Map.elems
+                $ _map
+
 {- | Implement builtin function evaluation.
  -}
 builtinFunctions :: Map Text Builtin.Function
@@ -440,6 +467,7 @@ builtinFunctions =
         , (Map.removeKey, evalRemove)
         , (Map.removeAllKey, evalRemoveAll)
         , (Map.sizeKey, evalSize)
+        , (Map.valuesKey, evalValues)
         ]
 
 {- | Convert a Map-sorted 'TermLike' to its internal representation.
