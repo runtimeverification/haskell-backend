@@ -209,7 +209,6 @@ import qualified GHC.Stack as GHC
 
 import Generically
 import qualified Kore.Attribute.Pattern as Attribute
-import qualified Kore.Attribute.Pattern.ConstructorLikeTop as Pattern
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
@@ -342,7 +341,7 @@ data TermLikeF variable child
     deriving
         ( Synthetic (FreeVariables variable), Synthetic Sort
         , Synthetic Pattern.Functional, Synthetic Pattern.Function
-        , Synthetic Pattern.Defined, Synthetic Pattern.ConstructorLikeTop
+        , Synthetic Pattern.Defined
         , Synthetic Pattern.Simplified
         ) via (Generically1 (TermLikeF variable))
 
@@ -665,11 +664,27 @@ isFunctionPattern :: TermLike variable -> Bool
 isFunctionPattern =
     Pattern.isFunction . Attribute.function . extractAttributes
 
-{- | Does the 'TermLike' have a constructor-like top
+{- | Does the 'TermLike' have a constructor-like top?
+
+A pattern is 'ConstructorLikeTop' if it is one of the following:
+
+- A 'StringLiteral'
+- A 'Domain Value'
+- A 'Builtin'
+- An 'Application' whose head is a constructor symbol
  -}
 hasConstructorLikeTop :: TermLike variable -> Bool
-hasConstructorLikeTop =
-    Pattern.isConstructorLikeTop . Attribute.constructorLikeTop . extractAttributes
+hasConstructorLikeTop = \case
+    App_ symbol _ -> isConstructor symbol
+    DV_ _ _ -> True
+    BuiltinBool_ _ -> True
+    BuiltinInt_ _ -> True
+    BuiltinList_ _ -> True
+    BuiltinMap_ _ -> True
+    BuiltinSet_ _ -> True
+    BuiltinString_ _ -> True
+    StringLiteral_ _ -> True
+    _ -> False
 
 {- | Is the 'TermLike' functional?
  -}
