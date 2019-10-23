@@ -102,8 +102,8 @@ makeAndEvaluateSymbolApplications predicate symbol children = do
     expandedApplications <-
         Branch.gather $ makeExpandedApplication symbol children
     orResults <- traverse
-                    (evaluateApplicationFunction predicate)
-                    expandedApplications
+        (evaluateApplicationFunction predicate)
+        expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
