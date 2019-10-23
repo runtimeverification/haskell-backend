@@ -65,7 +65,6 @@ import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Strict as Strict
     ( StateT
     )
-import qualified Data.Foldable as Fold
 import Data.Functor.Contravariant
     ( contramap
     )
