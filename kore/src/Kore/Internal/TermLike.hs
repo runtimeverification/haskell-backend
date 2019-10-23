@@ -669,7 +669,7 @@ isFunctionPattern =
 A pattern is 'ConstructorLikeTop' if it is one of the following:
 
 - A 'StringLiteral'
-- A 'Domain Value'
+- A 'DomainValue'
 - A 'Builtin'
 - An 'Application' whose head is a constructor symbol
  -}
