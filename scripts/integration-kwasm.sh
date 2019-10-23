@@ -30,7 +30,8 @@ make build-haskell -B
 
 for each in \
     tests/proofs/simple-arithmetic-spec.k.prove \
-    tests/proofs/loops-spec.k.prove
+    tests/proofs/loops-spec.k.prove \
+    tests/proofs/memory-spec.k.prove
 do
     command time -o "$TOP/profile.json" -a \
         -f "{ \"wasm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
