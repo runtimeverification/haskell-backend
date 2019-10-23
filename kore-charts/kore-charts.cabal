@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 65ee858bbdb3604164fc84726e497ab97fbca90fa40100467be2014830e2a1cb
+-- hash: 208e27d34af6340778a2625decd367415be68ce0f316ae9dea6d297c9eda392f
 
 name:           kore-charts
 version:        0.0.1.0
@@ -39,6 +39,7 @@ executable kore-charts
     , base >=4.7
     , bytestring
     , containers
+    , data-default
     , exceptions
     , lens
     , scientific

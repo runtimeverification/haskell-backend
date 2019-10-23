@@ -25,6 +25,7 @@ dependencies:
   - aeson
   - attoparsec
   - containers
+  - data-default
   - exceptions
   - lens
   - scientific
