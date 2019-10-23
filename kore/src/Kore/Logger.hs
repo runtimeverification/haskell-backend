@@ -27,7 +27,6 @@ module Kore.Logger
     , someEntry
     , withSomeEntry
     , Entry (..)
-    , defaultShouldLog
     , MonadLog (..)
     ) where
 
@@ -258,15 +257,6 @@ instance Entry LogMessage where
 
     toLogMessage :: LogMessage -> LogMessage
     toLogMessage = id
-
-defaultShouldLog :: Severity -> [Scope] -> Severity -> Set Scope -> Bool
-defaultShouldLog severity scope minSeverity currentScope =
-    severity >= minSeverity && scope `member` currentScope
-  where
-    member :: [Scope] -> Set Scope -> Bool
-    member s set
-      | Set.null set = True
-      | otherwise    = Fold.any (`Set.member` set) s
 
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry
