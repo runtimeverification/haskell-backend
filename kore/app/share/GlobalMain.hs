@@ -348,11 +348,14 @@ clockSomethingIO description something = do
     return x
   where
     logMessage end start =
-        Logger.LogMessage
+         Logger.WithScope
+            (mkMessage start end)
+            (Scope "TimingInfo")
+    mkMessage start end =
+        SomeEntry $ Logger.LogMessage
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
             , severity = Logger.Info
-            , scope = [Scope "TimingInfo"]
             , callstack = emptyCallStack
             }
 

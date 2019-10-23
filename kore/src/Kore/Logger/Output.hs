@@ -256,20 +256,20 @@ swappableLogger mvar =
     worker a logAction = Colog.unLogAction logAction a
 
 defaultLogPretty :: LogMessage -> Pretty.Doc ann
-defaultLogPretty LogMessage { severity, scope, message, callstack } =
+defaultLogPretty LogMessage { severity, message, callstack } =
     Pretty.hsep
         [ Pretty.brackets (Pretty.pretty severity)
-        , Pretty.brackets (prettyScope scope)
         , ":"
         , Pretty.pretty message
         , Pretty.brackets (formatCallstack callstack)
         ]
   where
-    prettyScope :: [Scope] -> Pretty.Doc ann
-    prettyScope =
-        mconcat
-            . zipWith (<>) ("" : repeat ".")
-            . fmap Pretty.pretty
+    -- TODO: unroll WithScope here
+    -- prettyScope :: [Scope] -> Pretty.Doc ann
+    -- prettyScope =
+    --     mconcat
+    --         . zipWith (<>) ("" : repeat ".")
+    --         . fmap Pretty.pretty
     formatCallstack :: GHC.Stack.CallStack -> Pretty.Doc ann
     formatCallstack cs
       | length (getCallStack cs) <= 1 = mempty

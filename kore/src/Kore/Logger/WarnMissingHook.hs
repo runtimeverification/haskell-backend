@@ -64,7 +64,6 @@ instance Entry WarnMissingHook where
                         , unparse symbol
                         ]
             , severity = missingHookSeverity
-            , scope = mempty
             , callstack = emptyCallStack
             }
 

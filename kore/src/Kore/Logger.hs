@@ -11,6 +11,7 @@ module Kore.Logger
     , Severity (..)
     , Scope (..)
     , WithLog
+    , WithScope (..)
     , LogAction (..)
     , log
     , logDebug
@@ -132,8 +133,6 @@ data LogMessage = LogMessage
     -- ^ message being logged
     , severity  :: !Severity
     -- ^ log level / severity of message
-    , scope     :: ![Scope]
-    -- ^ scope of the message, usually of the form "a.b.c"
     , callstack :: !CallStack
     -- ^ call stack of the message, when available
     }
@@ -168,7 +167,7 @@ log
     -> Text
     -- ^ Message to be logged
     -> m ()
-log s t = logMsg $ LogMessage t s mempty callStack
+log s t = logMsg $ LogMessage t s callStack
 
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug
@@ -254,9 +253,9 @@ class Typeable entry => Entry entry where
     toLogMessage :: entry -> LogMessage
 
 instance Entry LogMessage where
+    -- TODO(Vladimir): this probably needs reviewed
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
-    shouldLog minSeverity currentScope LogMessage { severity, scope } =
-        defaultShouldLog severity scope minSeverity currentScope
+    shouldLog minSeverity _ LogMessage { severity } = severity >= minSeverity
 
     toLogMessage :: LogMessage -> LogMessage
     toLogMessage = id
