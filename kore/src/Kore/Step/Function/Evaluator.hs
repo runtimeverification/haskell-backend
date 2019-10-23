@@ -141,7 +141,6 @@ evaluateApplication
     finishT = exceptT return return
 
     Application { applicationSymbolOrAlias = symbol } = application
-    Application { applicationChildren = children } = application
     Symbol { symbolAttributes } = symbol
 
     termLike = synthesize (ApplySymbolF application)
@@ -152,7 +151,7 @@ evaluateApplication
             childrenPredicate
 
     markSimplifiedIfChildren =
-        if all TermLike.isSimplified children
+        if all TermLike.isSimplified application
            then TermLike.markSimplified
            else id
 

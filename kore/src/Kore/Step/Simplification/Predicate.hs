@@ -94,17 +94,14 @@ simplifyPartial
         )
     =>  Syntax.Predicate variable
     ->  BranchT simplifier (Predicate variable)
-simplifyPartial predicate =
-     if Syntax.isSimplified predicate
-         then return $ Conditional.fromPredicate predicate
-         else do
-            patternOr <-
-                Monad.Trans.lift
-                $ simplifyTerm
-                $ Syntax.unwrapPredicate predicate
-            -- Despite using Monad.Trans.lift above, we do not need to
-            -- explicitly check for \bottom because patternOr is an OrPattern.
-            scatter (eraseTerm <$> patternOr)
+simplifyPartial predicate = do
+    patternOr <-
+        Monad.Trans.lift
+        $ simplifyTerm
+        $ Syntax.unwrapPredicate predicate
+    -- Despite using Monad.Trans.lift above, we do not need to
+    -- explicitly check for \bottom because patternOr is an OrPattern.
+    scatter (eraseTerm <$> patternOr)
   where
     eraseTerm conditional
       | TopBottom.isTop (Pattern.term conditional)
