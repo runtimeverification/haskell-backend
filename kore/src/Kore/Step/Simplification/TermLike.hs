@@ -39,6 +39,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( isPredicate
     )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -155,10 +156,10 @@ simplifyToOr
     =>  Predicate variable
     ->  TermLike variable
     ->  simplifier (OrPattern variable)
-simplifyToOr term predicate =
+simplifyToOr predicate term =
     localSimplifierTermLike (const simplifier)
-        . simplifyInternal predicate
-        $ term
+        . simplifyInternal term
+        $ predicate
   where
     simplifier = termLikeSimplifier simplifyToOr
 
@@ -172,7 +173,8 @@ simplifyInternal
     =>  TermLike variable
     ->  Predicate variable
     ->  simplifier (OrPattern variable)
-simplifyInternal term predicate = simplifyInternalWorker term
+simplifyInternal term predicate =
+    simplifyInternalWorker term
   where
     tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
         Nothing -> id
@@ -187,65 +189,84 @@ simplifyInternal term predicate = simplifyInternalWorker term
         -> simplifier (t (OrPattern variable))
     simplifyChildren = traverse simplifyInternalWorker
 
-    simplifyInternalWorker termLike =
-        assertTermNotPredicate . assertSimplifiedResults $ tracer termLike $
-        let doNotSimplify =
-                Exception.assert (TermLike.isSimplified termLike)
-                return (OrPattern.fromTermLike termLike)
-            (_ :< termLikeF) = Recursive.project termLike
-        in case termLikeF of
-            -- Unimplemented cases
-            ApplyAliasF _ -> doNotSimplify
-            -- Do not simplify evaluated patterns.
-            EvaluatedF  _ -> doNotSimplify
-            --
-            AndF andF ->
-                And.simplify =<< simplifyChildren andF
-            ApplySymbolF applySymbolF ->
-                Application.simplify predicate
-                    =<< simplifyChildren applySymbolF
-            CeilF ceilF ->
-                Ceil.simplify predicate =<< simplifyChildren ceilF
-            EqualsF equalsF ->
-                Equals.simplify predicate =<< simplifyChildren equalsF
-            ExistsF exists ->
-                let fresh = Lens.over Binding.existsBinder refreshBinder exists
-                in  Exists.simplify =<< simplifyChildren fresh
-            IffF iffF ->
-                Iff.simplify =<< simplifyChildren iffF
-            ImpliesF impliesF ->
-                Implies.simplify =<< simplifyChildren impliesF
-            InF inF ->
-                In.simplify predicate =<< simplifyChildren inF
-            NotF notF ->
-                Not.simplify =<< simplifyChildren notF
-            --
-            BottomF bottomF -> Bottom.simplify <$> simplifyChildren bottomF
-            BuiltinF builtinF -> Builtin.simplify <$> simplifyChildren builtinF
-            DomainValueF domainValueF ->
-                DomainValue.simplify <$> simplifyChildren domainValueF
-            FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
-            ForallF forall ->
-                let fresh = Lens.over Binding.forallBinder refreshBinder forall
-                in  Forall.simplify <$> simplifyChildren fresh
-            InhabitantF inhF -> Inhabitant.simplify <$> simplifyChildren inhF
-            MuF mu ->
-                let fresh = Lens.over Binding.muBinder refreshBinder mu
-                in  Mu.simplify <$> simplifyChildren fresh
-            NuF nu ->
-                let fresh = Lens.over Binding.nuBinder refreshBinder nu
-                in  Nu.simplify <$> simplifyChildren fresh
-            -- TODO(virgil): Move next up through patterns.
-            NextF nextF -> Next.simplify <$> simplifyChildren nextF
-            OrF orF -> Or.simplify <$> simplifyChildren orF
-            RewritesF rewritesF ->
-                Rewrites.simplify <$> simplifyChildren rewritesF
-            TopF topF -> Top.simplify <$> simplifyChildren topF
-            --
-            StringLiteralF stringLiteralF ->
-                return $ StringLiteral.simplify (getConst stringLiteralF)
-            VariableF variableF ->
-                return $ Variable.simplify (getConst variableF)
+    simplifyInternalWorker
+        :: TermLike variable -> simplifier (OrPattern variable)
+    simplifyInternalWorker termLike
+        | TermLike.isSimplified termLike
+        , not (Syntax.Predicate.isPredicate termLike)
+        = return . OrPattern.fromTermLike $ termLike
+        | otherwise
+        =
+            assertTermNotPredicate . assertSimplifiedResults
+            $ tracer termLike $
+            let doNotSimplify =
+                    Exception.assert (TermLike.isSimplified termLike)
+                    return (OrPattern.fromTermLike termLike)
+                (_ :< termLikeF) = Recursive.project termLike
+            in case termLikeF of
+                -- Unimplemented cases
+                ApplyAliasF _ -> doNotSimplify
+                -- Do not simplify evaluated patterns.
+                EvaluatedF  _ -> doNotSimplify
+                --
+                AndF andF ->
+                    And.simplify =<< simplifyChildren andF
+                ApplySymbolF applySymbolF ->
+                    Application.simplify predicate
+                        =<< simplifyChildren applySymbolF
+                CeilF ceilF ->
+                    Ceil.simplify predicate =<< simplifyChildren ceilF
+                EqualsF equalsF ->
+                    Equals.simplify predicate =<< simplifyChildren equalsF
+                ExistsF exists ->
+                    let fresh =
+                            Lens.over
+                                Binding.existsBinder
+                                refreshBinder
+                                exists
+                    in  Exists.simplify =<< simplifyChildren fresh
+                IffF iffF ->
+                    Iff.simplify =<< simplifyChildren iffF
+                ImpliesF impliesF ->
+                    Implies.simplify =<< simplifyChildren impliesF
+                InF inF ->
+                    In.simplify predicate =<< simplifyChildren inF
+                NotF notF ->
+                    Not.simplify =<< simplifyChildren notF
+                --
+                BottomF bottomF ->
+                    Bottom.simplify <$> simplifyChildren bottomF
+                BuiltinF builtinF ->
+                    Builtin.simplify <$> simplifyChildren builtinF
+                DomainValueF domainValueF ->
+                    DomainValue.simplify <$> simplifyChildren domainValueF
+                FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
+                ForallF forall ->
+                    let fresh =
+                            Lens.over
+                                Binding.forallBinder
+                                refreshBinder
+                                forall
+                    in  Forall.simplify <$> simplifyChildren fresh
+                InhabitantF inhF ->
+                    Inhabitant.simplify <$> simplifyChildren inhF
+                MuF mu ->
+                    let fresh = Lens.over Binding.muBinder refreshBinder mu
+                    in  Mu.simplify <$> simplifyChildren fresh
+                NuF nu ->
+                    let fresh = Lens.over Binding.nuBinder refreshBinder nu
+                    in  Nu.simplify <$> simplifyChildren fresh
+                -- TODO(virgil): Move next up through patterns.
+                NextF nextF -> Next.simplify <$> simplifyChildren nextF
+                OrF orF -> Or.simplify <$> simplifyChildren orF
+                RewritesF rewritesF ->
+                    Rewrites.simplify <$> simplifyChildren rewritesF
+                TopF topF -> Top.simplify <$> simplifyChildren topF
+                --
+                StringLiteralF stringLiteralF ->
+                    return $ StringLiteral.simplify (getConst stringLiteralF)
+                VariableF variableF ->
+                    return $ Variable.simplify (getConst variableF)
       where
         assertSimplifiedResults getResults = do
             results <- getResults
