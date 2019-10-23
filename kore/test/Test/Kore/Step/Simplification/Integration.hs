@@ -727,6 +727,20 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
+    , testCase "Ceil simplification" $ do
+        actual <- evaluate
+            Conditional
+                { term = mkCeil Mock.topSort
+                    (mkForall Mock.x
+                        (Mock.concatSet
+                            (mkEvaluated (mkEvaluated (mkTop Mock.setSort)))
+                            (mkEvaluated (mkEvaluated (mkTop Mock.setSort)))
+                        )
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
     ]
   where
     zz = ElementVariable $ Variable (testId "zz") mempty Mock.subOthersort
@@ -892,6 +906,9 @@ builtinAxioms =
             )
         ,   ( AxiomIdentifier.Application Mock.unitSetId
             , builtinEvaluation Set.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application Mock.concatSetId
+            , builtinEvaluation Set.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.elementSetId
             , builtinEvaluation Set.evalElement
