@@ -253,7 +253,6 @@ class Typeable entry => Entry entry where
     toLogMessage :: entry -> LogMessage
 
 instance Entry LogMessage where
-    -- TODO(Vladimir): this probably needs reviewed
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
     shouldLog minSeverity _ LogMessage { severity } = severity >= minSeverity
 

@@ -32,7 +32,6 @@ import Kore.Logger
     , MonadLog (logM)
     , Scope
     , Severity (Warning)
-    , defaultShouldLog
     )
 import Kore.Unparser
     ( unparse
@@ -48,8 +47,7 @@ missingHookSeverity = Warning
 
 instance Entry WarnMissingHook where
     shouldLog :: Severity -> Set Scope -> WarnMissingHook -> Bool
-    shouldLog minSeverity currentScope _ =
-        defaultShouldLog missingHookSeverity mempty minSeverity currentScope
+    shouldLog minSeverity _ _ = missingHookSeverity >= minSeverity
 
     toLogMessage :: WarnMissingHook -> LogMessage
     toLogMessage WarnMissingHook { hook, symbol } =
