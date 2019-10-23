@@ -34,7 +34,6 @@ import Control.Exception
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -77,9 +76,6 @@ import Kore.Predicate.Predicate
     , makeTruePredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import Kore.Step.PatternAttributes
-    ( isConstructorLikeTop
-    )
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     )
@@ -783,9 +779,8 @@ simplifySortInjections
 
     isSubsortOf = MetadataTools.isSubsortOf tools
 
-    isConstructorLike = isConstructorLikeTop tools . Recursive.project
-    isFirstConstructorLike = isConstructorLike firstChild
-    isSecondConstructorLike = isConstructorLike secondChild
+    isFirstConstructorLike = hasConstructorLikeTop firstChild
+    isSecondConstructorLike = hasConstructorLikeTop secondChild
 
     {- |
         Merge the terms inside a sort injection,
