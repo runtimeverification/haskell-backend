@@ -34,6 +34,7 @@ import Test.Kore.Step.SMT.Builders
     , emptyModule
     , functional
     , hook
+    , hookedSortDeclaration
     , indexModule
     , koreSort
     , smthook
@@ -116,7 +117,7 @@ test_symbolParsing =
         ]
     , testsForModule "Declares smthook"
         (indexModule $ emptyModule "m"
-            `with` (sortDeclaration "Integer" `with` hook Int.sort)
+            `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
             `with`
                 (symbolDeclaration "minus" "Integer" ["Integer"]
                     `with` smthook "-"

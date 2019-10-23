@@ -14,6 +14,7 @@ import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad
     ( foldM
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import Data.List.NonEmpty
     ( NonEmpty (..)
@@ -29,14 +30,13 @@ import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Conditional (..)
+    , Predicate
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
-    )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Simplify as Simplifier
@@ -90,58 +90,103 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
         (intermediateTerm, intermediateCondition) =
             Pattern.splitTerm intermediate
 
+{- | Sort variable-renaming substitutions.
+
+Variable-renaming substitutions are sorted so that the greater variable is
+substituted in place of the lesser. Consistent ordering prevents variable-only
+cycles.
+
+ -}
+sortRenamedVariable
+    :: InternalVariable variable
+    => (UnifiedVariable variable, TermLike variable)
+    -> (UnifiedVariable variable, TermLike variable)
+sortRenamedVariable (variable1, Var_ variable2)
+  | variable2 < variable1 = (variable2, mkVar variable1)
+sortRenamedVariable subst = subst
+
+{- | Simplify a conjunction of substitutions for the same variable.
+
+Simplify a conjunction of substitutions for the same variable @x@,
+
+@
+x = t₁ ∧ ... ∧ x = tₙ
+@
+
+by unifying the assignments @tᵢ@,
+
+@
+x = (t₁ ∧ ... ∧ tₙ) ∧ ⌈t₁ ∧ ... ∧ tₙ⌉
+@
+
+ -}
+deduplicateOnce
+    :: ( SimplifierVariable variable
+       , MonadUnify unifier
+       , WithLog LogMessage unifier
+       )
+    => (UnifiedVariable variable, NonEmpty (TermLike variable))
+    -> unifier (Predicate variable)
+deduplicateOnce (variable, patterns) = do
+    (termLike, simplified) <- Pattern.splitTerm <$> simplifyAnds patterns
+    let substitution' = Predicate.fromSingleSubstitution (variable, termLike)
+    return (substitution' <> simplified)
+
+{- | Simplify a substitution so that each variable occurs only once.
+
+Simplify a conjunction of substitutions,
+
+@
+x₁ = t₁ ∧ ... ∧ xₙ = tₙ
+@
+
+where some of the @xᵢ@ may be the same so that each variable occurs on the
+left-hand side of only one substitution clause. New substitutions may be
+produced during simplification; @deduplicateSubstitution@ recurses until the
+solution stabilizes.
+
+See also: 'deduplicateOnce'
+
+ -}
 deduplicateSubstitution
     :: forall variable unifier
     .   ( SimplifierVariable variable
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
-    =>  Substitution variable
-    ->  unifier
-            ( Syntax.Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
-            )
+    => Substitution variable
+    -> unifier (Predicate variable)
 deduplicateSubstitution =
-    worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
+    worker . Predicate.fromSubstitution
   where
-    worker
-        ::  Syntax.Predicate variable
-        ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
-        ->  unifier
-                ( Syntax.Predicate variable
-                , Map (UnifiedVariable variable) (TermLike variable)
-                )
-    worker predicate substitutions
-      | Just deduplicated <- traverse getSingleton substitutions
-      = return (predicate, deduplicated)
+    isSingleton (_, _ :| duplicates) = null duplicates
+
+    insertSubstitution
+        :: forall variable1 term
+        .  Ord variable1
+        => Map variable1 (NonEmpty term)
+        -> (variable1, term)
+        -> Map variable1 (NonEmpty term)
+    insertSubstitution multiMap (variable, termLike) =
+        let push = (termLike :|) . maybe [] Foldable.toList
+        in Map.alter (Just . push) variable multiMap
+
+    worker conditional@Conditional { predicate, substitution }
+      | Substitution.isNormalized substitution || all isSingleton substitutions
+      = return conditional
 
       | otherwise = do
-        simplified <-
-            collectConditions
-            <$> traverse simplifyAnds substitutions
-        let -- Substitutions de-duplicated by simplification.
-            substitutions' = toMultiMap $ Conditional.term simplified
-            -- New conditions produced by simplification.
-            Conditional { predicate = predicate' } = simplified
-            predicate'' =
-                Syntax.Predicate.makeAndPredicate predicate predicate'
-            -- New substitutions produced by simplification.
-            Conditional { substitution } = simplified
-            substitutions'' =
-                Map.unionWith (<>) substitutions'
-                $ Substitution.toMultiMap substitution
-        worker predicate'' substitutions''
+        deduplicated <- Foldable.fold <$> mapM deduplicateOnce substitutions
+        worker (Predicate.fromPredicate predicate <> deduplicated)
 
-    getSingleton (t :| []) = Just t
-    getSingleton _         = Nothing
-
-    toMultiMap :: Map key value -> Map key (NonEmpty value)
-    toMultiMap = Map.map (:| [])
-
-    collectConditions
-        :: Map key (Conditional variable term)
-        -> Conditional variable (Map key term)
-    collectConditions = sequenceA
+      where
+        substitutions
+            :: [(UnifiedVariable variable, NonEmpty (TermLike variable))]
+        substitutions =
+            Map.toAscList
+            . Foldable.foldl' insertSubstitution Map.empty
+            . map sortRenamedVariable
+            $ Substitution.unwrap substitution
 
 normalizeOnce
     ::  forall unifier variable term
@@ -154,8 +199,15 @@ normalizeOnce
 normalizeOnce Conditional { term, predicate, substitution } = do
     -- The intermediate steps do not need to be checked for \bottom because we
     -- use guardAgainstBottom at the end.
-    (deduplicatedPredicate, deduplicatedSubstitution) <-
-        deduplicateSubstitution substitution
+    deduplicated <- deduplicateSubstitution substitution
+    let
+        Conditional { substitution = preDeduplicatedSubstitution } =
+            deduplicated
+        Conditional { predicate = deduplicatedPredicate } = deduplicated
+        -- The substitution is not fully normalized, but it is safe to convert
+        -- to a Map because it has been deduplicated.
+        deduplicatedSubstitution =
+            Map.fromList $ Substitution.unwrap preDeduplicatedSubstitution
 
     normalized <- normalizeSubstitution' deduplicatedSubstitution
     let

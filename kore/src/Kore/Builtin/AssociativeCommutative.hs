@@ -104,7 +104,6 @@ import Kore.Internal.TermLike
     , pattern ElemVar_
     , InternalVariable
     , TermLike
-    , pattern Var_
     , mkApplySymbol
     , mkBuiltin
     , mkElemVar
@@ -1293,7 +1292,7 @@ unifyEqualsElementLists
             first
             second
         Just remainderTerm -> case opaque of
-            Var_ _
+            ElemVar_ _
               | TermLike.isFunctionPattern remainderTerm -> do
                 opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
                 let
@@ -1304,8 +1303,9 @@ unifyEqualsElementLists
                 return (result, [opaqueTerm])
             _ -> (error . unlines)
                 [ "Unification case that should be handled somewhere else:"
-                , "attempting normalized unification with a non-variable opaque"
-                , "term or non-function maps could lead to infinite loops."
+                , "attempting normalized unification with a "
+                , "non-element-variable opaque term or "
+                , "non-function maps could lead to infinite loops."
                 , "first=" ++ unparseToString first
                 , "second=" ++ unparseToString second
                 ]

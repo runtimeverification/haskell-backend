@@ -105,8 +105,7 @@ import System.Clock
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
-    , defaultAttributesVerification
+    ( defaultAttributesVerification
     , verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
@@ -409,8 +408,6 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
-    -> Bool
-    -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
     -> Main
@@ -420,13 +417,9 @@ verifyDefinitionWithBase
         )
 verifyDefinitionWithBase
     alreadyVerified
-    willChkAttr
     definition
   =
-    let attributesVerification =
-            if willChkAttr
-            then defaultAttributesVerification Proxy Proxy
-            else DoNotVerifyAttributes
+    let attributesVerification = defaultAttributesVerification Proxy Proxy
     in do
       verifyResult <-
         clockSomething "Verifying the definition"
@@ -467,7 +460,7 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    Monad.foldM (\loaded -> verifyDefinitionWithBase loaded True) mempty
+    Monad.foldM verifyDefinitionWithBase mempty
     =<< traverse parseDefinition filePaths
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule
