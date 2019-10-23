@@ -16,7 +16,11 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
     ( bottom
+    , fromPredicateSorted
     , top
+    )
+import qualified Kore.Internal.Predicate as Predicate
+    ( top
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -85,6 +89,17 @@ test_floorSimplification =
                     )
                 )
         )
+    , testCase "Floor - bool operations" $
+        -- floor(top{testSort}) = top
+        assertEqual "floor(top)"
+            (OrPattern.fromPatterns
+                [ Pattern.top ]
+            )
+            (evaluate
+                (makeFloor
+                    [ Pattern.fromPredicateSorted testSort Predicate.top ]
+                )
+            )
     , testCase "expanded Floor - bool operations"
         (do
             -- floor(top) = top

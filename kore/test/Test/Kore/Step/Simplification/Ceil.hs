@@ -100,6 +100,19 @@ test_ceilSimplification =
                 )
                 actual2
         )
+    , testCase "Ceil - sorted bool operations"
+        (do
+            -- ceil(top{testSort}) = top
+            actual1 <- evaluate
+                (makeCeil
+                    [Pattern.fromPredicateSorted Mock.testSort Predicate.top]
+                )
+            assertEqual "ceil(top)"
+                (OrPattern.fromPatterns
+                    [ Pattern.top ]
+                )
+                actual1
+        )
     , testCase "expanded Ceil - bool operations"
         (do
             -- ceil(top) = top
