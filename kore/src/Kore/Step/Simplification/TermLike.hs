@@ -40,6 +40,9 @@ import Kore.Predicate.Predicate
     ( isPredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Syntax
+    ( Predicate
+    )
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -192,18 +195,12 @@ simplifyInternal term predicate =
     simplifyInternalWorker
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
-        | TermLike.isSimplified termLike
-        = case Syntax.Predicate.makePredicate termLike of
-            Left _ ->
-                return . OrPattern.fromTermLike $ termLike
-            Right predicateTerm ->
-                return
-                . OrPattern.fromPattern
-                . Pattern.fromPredicate
-                . Predicate.fromPredicate
-                $ predicateTerm
-        | otherwise
-        =
+        | TermLike.isSimplified termLike =
+            either
+                (const $ orPatternFromTerm termLike)
+                orPatternFromPredicate
+                $ Syntax.Predicate.makePredicate termLike
+        | otherwise =
             assertTermNotPredicate . assertSimplifiedResults
             $ tracer termLike $
             let doNotSimplify =
@@ -313,6 +310,17 @@ simplifyInternal term predicate =
                         (unparse <$> unsimplified)
                     , "Expected all predicates to be removed from the term."
                     ]
+
+        orPatternFromTerm
+            :: TermLike variable
+            -> simplifier (OrPattern variable)
+        orPatternFromTerm = return . OrPattern.fromTermLike
+
+        orPatternFromPredicate
+            :: Syntax.Predicate variable
+            -> simplifier (OrPattern variable)
+        orPatternFromPredicate =
+            return . OrPattern.fromPattern . Pattern.fromSyntaxPredicate
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
