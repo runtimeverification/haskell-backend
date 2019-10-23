@@ -193,15 +193,8 @@ simplifyInternal term predicate =
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
         | TermLike.isSimplified termLike
-        = case Syntax.Predicate.makePredicate termLike of
-            Left _ ->
-                return . OrPattern.fromTermLike $ termLike
-            Right predicateTerm ->
-                return
-                . OrPattern.fromPattern
-                . Pattern.fromPredicate
-                . Predicate.fromPredicate
-                $ predicateTerm
+        , not (Syntax.Predicate.isPredicate termLike)
+        = return . OrPattern.fromTermLike $ termLike
         | otherwise
         =
             assertTermNotPredicate . assertSimplifiedResults

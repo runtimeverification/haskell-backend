@@ -28,6 +28,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
+    , isSimplified
     , unwrapPredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
