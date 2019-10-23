@@ -84,7 +84,7 @@ pipeline {
     }
     stage('Integration: KWASM') {
       options {
-        timeout(time: 16, unit: 'MINUTES')
+        timeout(time: 8, unit: 'MINUTES')
       }
       steps {
         sh '''
