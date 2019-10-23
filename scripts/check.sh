@@ -14,6 +14,14 @@ then
     exit 1
 fi
 
+stack build --only-dependencies
+if ! $TOP/scripts/git-assert-clean.sh
+then
+    echo >&2 "Found changes after building dependencies!"
+    echo >&2 "Did you forget to run 'stack build' after updating 'stack.yaml'?"
+    exit 1
+fi
+
 stack install stylish-haskell
 changed=()
 for file in $(git diff --name-only --diff-filter=d $UPSTREAM_BRANCH)
