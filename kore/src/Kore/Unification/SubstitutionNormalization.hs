@@ -23,7 +23,6 @@ import Control.Monad.Except
     )
 import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
-import qualified Data.Function as Function
 import Data.Functor
     ( (<&>)
     )
@@ -40,11 +39,8 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
 import Data.Graph.TopologicalSort
-import Debug
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate
     ( Predicate
@@ -60,7 +56,8 @@ import Kore.Unification.Error
     ( SubstitutionError (..)
     )
 import Kore.Unification.Substitution
-    ( UnwrappedSubstitution
+    ( Normalization (..)
+    , UnwrappedSubstitution
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
@@ -93,37 +90,6 @@ normalizeSubstitution substitution =
         throwError (SimplifiableCycle variables)
       where
         (variables, _) = unzip denormalized
-
-{- | The result of /normalizing/ a substitution.
-
-'normalized' holds the part of the substitution was normalized successfully.
-
-'denormalized' holds the part of the substitution which was not normalized
-because it contained simplifiable cycles.
-
- -}
-data Normalization variable =
-    Normalization
-        { normalized, denormalized :: !(UnwrappedSubstitution variable) }
-    deriving GHC.Generic
-
-instance SOP.Generic (Normalization variable)
-
-instance SOP.HasDatatypeInfo (Normalization variable)
-
-instance Debug variable => Debug (Normalization variable)
-
-instance (Debug variable, Diff variable) => Diff (Normalization variable)
-
-instance Semigroup (Normalization variable) where
-    (<>) a b =
-        Normalization
-            { normalized = Function.on (<>) normalized a b
-            , denormalized = Function.on (<>) denormalized a b
-            }
-
-instance Monoid (Normalization variable) where
-    mempty = Normalization mempty mempty
 
 {- | 'normalize' a substitution as far as possible.
 

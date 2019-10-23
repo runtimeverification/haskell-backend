@@ -343,6 +343,32 @@ test_equalsSimplification_Pattern =
                     }
         assertEqual "" expect actual
 
+    , testCase "sorted equals predicate" $ do
+        let expect =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeIffPredicate
+                                (makeEqualsPredicate fOfA fOfB)
+                                (makeEqualsPredicate gOfA gOfB)
+                        , substitution = mempty
+                        }
+                    ]
+        actual <-
+            evaluate
+                Conditional
+                    { term = mkTop Mock.testSort
+                    , predicate = makeEqualsPredicate fOfA fOfB
+                    , substitution = mempty
+                    }
+                Conditional
+                    { term = mkTop Mock.testSort
+                    , predicate = makeEqualsPredicate gOfA gOfB
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+
     , testCase "constructor-patt vs constructor-patt" $ do
         let expect =
                 OrPattern.fromPatterns
