@@ -25,6 +25,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
+    , mkEvaluated
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Predicate.Predicate as Syntax
@@ -77,17 +78,23 @@ evaluateAxioms
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
-        expanded :: Pattern variable
+        expanded, evaluated :: Pattern variable
         expanded = Pattern.fromTermLike patt
+
+        evaluated = Pattern.fromTermLike $ mkEvaluated patt
 
     eitherResults <- applyRules expanded (map unwrapEqualityRule definitionRules)
 
     case eitherResults of
         Left _ -> return Result.Results
-                        { results = mempty, remainders = MultiOr [expanded] }
+                        { results = mempty, remainders = MultiOr [evaluated] }
         Right results
-          | Foldable.any (Foldable.any Step.isNarrowingResult . Result.results) results -> return Result.Results { results = mempty, remainders = MultiOr [expanded] }
-          | (not . Foldable.any Result.hasResults) results -> return Result.Results { results = mempty, remainders = MultiOr [expanded] }
+          | any (any Step.isNarrowingResult . Result.results) results ->
+            return Result.Results
+                { results = mempty, remainders = MultiOr [evaluated] }
+          | (not . any Result.hasResults) results ->
+            return Result.Results
+                { results = mempty, remainders = MultiOr [evaluated] }
           | otherwise -> do
             ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
             let
@@ -113,7 +120,8 @@ evaluateAxioms
             let Result.Results { results = returnedResults } = simplifiedResult
 
             if (all null . fmap Result.result) returnedResults
-                then return Result.Results { results = mempty, remainders = MultiOr [expanded] }
+                then return Result.Results
+                    { results = mempty, remainders = MultiOr [evaluated] }
                 else return simplifiedResult
 
   where
@@ -125,16 +133,6 @@ evaluateAxioms
 
     unwrapEqualityRule (EqualityRule rule) =
         RulePattern.mapVariables fromVariable rule
-
-    rejectList :: (a -> Bool) -> [a] -> [a]
-    rejectList p as
-      | Foldable.any p as = []
-      | otherwise = as
-
-    keepList :: (a -> Bool) -> [a] -> [a]
-    keepList p as
-      | Foldable.any p as = as
-      | otherwise = []
 
     applyRules (Step.toConfigurationVariables -> initial) rules
       = Monad.Unify.runUnifierT

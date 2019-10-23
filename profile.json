@@ -4,3 +4,6 @@ Command terminated by signal 2
 { "wasm-semantics/tests/proofs/simple-arithmetic-spec.k.prove": { "user_sec": 77.96, "resident_kbytes": 891840 } }
 Command terminated by signal 2
 { "wasm-semantics/tests/proofs/loops-spec.k.prove": { "user_sec": 230.39, "resident_kbytes": 720724 } }
+{ "wasm-semantics/tests/proofs/simple-arithmetic-spec.k.prove": { "user_sec": 83.57, "resident_kbytes": 894392 } }
+Command terminated by signal 2
+{ "wasm-semantics/tests/proofs/loops-spec.k.prove": { "user_sec": 163.20, "resident_kbytes": 741824 } }
