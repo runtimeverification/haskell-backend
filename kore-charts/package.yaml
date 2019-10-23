@@ -19,11 +19,13 @@ description: Please see the [README](README.md) file.
 
 dependencies:
   - base >= 4.7
+  - bytestring
   - Chart
   - Chart-cairo
   - aeson
   - attoparsec
   - containers
+  - exceptions
   - lens
   - scientific
   - text
