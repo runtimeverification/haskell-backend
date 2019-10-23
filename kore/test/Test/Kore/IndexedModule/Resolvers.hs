@@ -10,9 +10,6 @@ import Data.Map
     )
 import qualified Data.Map as Map
 import qualified Data.Ord
-import Data.Proxy
-    ( Proxy (..)
-    )
 
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -157,10 +154,7 @@ testDefinition =
 
 indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
 Right indexedModules =
-    verifyAndIndexDefinition
-        (VerifyAttributes Proxy Proxy)
-        Builtin.koreVerifiers
-        testDefinition
+    verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 
 testIndexedModule, testIndexedObjectModule
     :: VerifiedModule Attribute.Symbol Attribute.Axiom

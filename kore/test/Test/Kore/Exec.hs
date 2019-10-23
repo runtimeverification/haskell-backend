@@ -14,9 +14,6 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Set
     ( Set
     )
@@ -29,8 +26,7 @@ import System.Exit
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (VerifyAttributes)
-    , verifyAndIndexDefinition
+    ( verifyAndIndexDefinition
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Constructor
@@ -203,10 +199,7 @@ verifiedMyModule module_ = indexedModule
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
     indexedModules =
         Kore.Error.assertRight
-        $ verifyAndIndexDefinition
-            (VerifyAttributes Proxy Proxy)
-            Builtin.koreVerifiers
-            definition
+        $ verifyAndIndexDefinition Builtin.koreVerifiers definition
     definition = Definition
         { definitionAttributes = Attributes []
         , definitionModules =

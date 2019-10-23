@@ -16,7 +16,6 @@ import Data.Map
     )
 import qualified Data.Map as Map
 import Data.Maybe
-import Data.Proxy
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Prelude hiding
     ( succ
@@ -1178,9 +1177,7 @@ verify
         (Map
             ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
         )
-verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
-  where
-    attrVerify = defaultAttributesVerification Proxy Proxy
+verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
     :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
