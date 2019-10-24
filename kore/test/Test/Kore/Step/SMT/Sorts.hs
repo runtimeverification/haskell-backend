@@ -48,6 +48,7 @@ import Test.Kore.Step.SMT.Builders
     , emptyModule
     , functional
     , hook
+    , hookedSortDeclaration
     , indexModule
     , indexModules
     , sortDeclaration
@@ -160,7 +161,7 @@ test_sortDeclaration =
     , testsForModule "Constructor with arguments"
         (indexModule $ emptyModule "m"
             `with` sortDeclaration "S"
-            `with` (sortDeclaration "Integer" `with` hook Int.sort)
+            `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
             `with`
                 (symbolDeclaration "C" "S" [] `with` [functional, constructor])
             `with`

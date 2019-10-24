@@ -36,6 +36,7 @@ import Test.Kore.Step.SMT.Builders
     , emptyModule
     , functional
     , hook
+    , hookedSortDeclaration
     , indexModule
     , koreSort
     , sortDeclaration
@@ -122,7 +123,7 @@ test_sortParsing =
         ]
     , testsForModule "Definition with builtin sorts"
         (indexModule $ emptyModule "m"
-            `with` (sortDeclaration "Integer" `with` hook Int.sort)
+            `with` (hookedSortDeclaration "Integer" `with` hook Int.sort)
         )
         [ inDeclarations
             (unresolvedIndirectSortMap

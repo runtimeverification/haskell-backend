@@ -31,6 +31,13 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
+    ( fromPredicate
+    , toPredicate
+    )
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
@@ -108,20 +115,39 @@ top = fromPattern Pattern.top
 isTrue :: Ord variable => OrPattern variable -> Bool
 isTrue = isTop
 
-{-| 'toPattern' transforms an 'Pattern' into
-an 'Pattern.Pattern'.
+{-| 'toPattern' transforms an 'OrPattern' into a 'Pattern.Pattern'.
 -}
-toPattern :: InternalVariable variable => OrPattern variable -> Pattern variable
+toPattern
+    :: forall variable
+    .  InternalVariable variable
+    => OrPattern variable
+    -> Pattern variable
 toPattern multiOr =
     case MultiOr.extractPatterns multiOr of
         [] -> Pattern.bottom
         [patt] -> patt
-        patts ->
-            Conditional.Conditional
-                { term = Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
-                , predicate = Syntax.Predicate.makeTruePredicate
-                , substitution = mempty
-                }
+        patts -> Foldable.foldr1 mergeWithOr patts
+  where
+    mergeWithOr :: Pattern variable -> Pattern variable -> Pattern variable
+    mergeWithOr patt1 patt2
+      | isTop term1, isTop term2 =
+        term1
+        `Conditional.withCondition` mergePredicatesWithOr predicate1 predicate2
+      | otherwise =
+        Pattern.fromTermLike
+            (mkOr (Pattern.toTermLike patt1) (Pattern.toTermLike patt2))
+      where
+        (term1, predicate1) = Pattern.splitTerm patt1
+        (term2, predicate2) = Pattern.splitTerm patt2
+
+    mergePredicatesWithOr
+        :: Predicate variable -> Predicate variable -> Predicate variable
+    mergePredicatesWithOr predicate1 predicate2 =
+        Predicate.fromPredicate
+            (Syntax.Predicate.makeOrPredicate
+                (Predicate.toPredicate predicate1)
+                (Predicate.toPredicate predicate2)
+            )
 
 {-| Transforms a 'Pattern' into a 'TermLike'.
 -}
