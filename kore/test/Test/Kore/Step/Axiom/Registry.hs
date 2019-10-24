@@ -10,6 +10,9 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.Default as Default
+import Data.Function
+    ( (&)
+    )
 import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
@@ -42,7 +45,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Symbol
+import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
@@ -94,6 +97,7 @@ testSymbol name =
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts [] sortS
         }
+    & Symbol.function
 
 fHead, gHead, sHead, tHead :: Symbol
 fHead = testSymbol "f"

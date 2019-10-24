@@ -231,10 +231,7 @@ instance MonadLog NoSMT where
     logM entry =
         NoSMT $ ReaderT $ \logger ->
             Colog.unLogAction logger (Logger.toEntry entry)
-    logScope locally (NoSMT reader) =
-        NoSMT $ Reader.local locally' reader
-      where
-        locally' = contramap $ Lens.over Logger.someEntry locally
+    logScope locally = NoSMT . Reader.local (contramap locally) . getNoSMT
 
 instance MonadSMT NoSMT where
     withSolver = id
@@ -303,7 +300,7 @@ instance MonadUnliftIO m => MonadLog (SmtT m) where
         withSolverT' $ \solver -> do
             let mapping' =
                     Lens.over (field @"logger")
-                    $ contramap $ Lens.over Logger.someEntry mapping
+                    $ contramap mapping
             runReaderT action =<< liftIO (newMVar $ mapping' solver)
 
 instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where

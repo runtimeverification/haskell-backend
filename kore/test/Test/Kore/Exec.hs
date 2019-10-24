@@ -15,8 +15,6 @@ import Data.Limit
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
 import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Set
     ( Set
     )
@@ -34,6 +32,7 @@ import Kore.ASTVerifier.DefinitionVerifier
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Constructor
+import Kore.Attribute.Function
 import Kore.Attribute.Functional
 import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
@@ -323,6 +322,7 @@ test_execGetExitCode =
         , moduleSentences = []
         , moduleAttributes = Attributes []
         }
+
     -- simplification of the exit code pattern will not produce an integer
     -- (no axiom present for the symbol)
     testModuleNoAxiom = Module
@@ -333,6 +333,7 @@ test_execGetExitCode =
             ]
         , moduleAttributes = Attributes []
         }
+
     -- simplification succeeds
     testModuleSuccessfulSimplification = Module
         { moduleName = ModuleName "MY-MODULE"
@@ -360,7 +361,9 @@ test_execGetExitCode =
     getExitCodeDecl :: Verified.SentenceSymbol
     getExitCodeDecl =
         ( mkSymbol_ getExitCodeId [myIntSort] myIntSort )
-            { sentenceSymbolAttributes = Attributes [functionalAttribute] }
+            { sentenceSymbolAttributes =
+                Attributes [functionAttribute, functionalAttribute]
+            }
 
     mockGetExitCodeAxiom =
         mkEqualityAxiom
@@ -375,6 +378,10 @@ test_execGetExitCode =
             Symbol
                 { symbolConstructor = getExitCodeId
                 , symbolParams = []
-                , symbolAttributes = Attribute.defaultSymbolAttributes
+                , symbolAttributes =
+                    Attribute.defaultSymbolAttributes
+                    { Attribute.functional = Functional True
+                    , Attribute.function = Function True
+                    }
                 , symbolSorts = applicationSorts [myIntSort] myIntSort
                 }
