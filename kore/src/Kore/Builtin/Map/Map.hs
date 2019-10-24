@@ -14,6 +14,7 @@ module Kore.Builtin.Map.Map
     , lookupSymbolRemove
     , lookupSymbolRemoveAll
     , lookupSymbolSize
+    , lookupSymbolValues
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit

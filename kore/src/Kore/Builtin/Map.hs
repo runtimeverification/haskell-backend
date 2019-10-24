@@ -445,10 +445,8 @@ evalValues =
                         _ -> Builtin.wrongArity Map.valuesKey
             _map <- expectConcreteBuiltinMap Map.valuesKey _map
             Builtin.List.returnList resultSort
-                . fmap TermLike.fromConcrete
                 . Seq.fromList
-                . catMaybes
-                . fmap (TermLike.asConcrete . Domain.getMapValue)
+                . fmap Domain.getMapValue
                 . Map.elems
                 $ _map
 
