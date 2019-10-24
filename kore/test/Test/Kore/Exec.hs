@@ -14,9 +14,6 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Set
     ( Set
     )

@@ -20,9 +20,6 @@ module Test.Kore.Step.SMT.Builders
     ) where
 
 import qualified Data.Map.Strict as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Text
     ( Text
     )
