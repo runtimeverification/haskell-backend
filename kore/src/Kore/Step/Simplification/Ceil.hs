@@ -269,7 +269,9 @@ makeEvaluateBuiltin
     unsimplified =
         OrPredicate.fromPredicate
             (Predicate.fromPredicate
-                (makeCeilPredicate (mkBuiltin patt))
+                (Syntax.Predicate.markSimplified
+                    (makeCeilPredicate (mkBuiltin patt))
+                )
             )
 makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrPredicate.top
 makeEvaluateBuiltin _ (Domain.BuiltinInt _) = return OrPredicate.top
