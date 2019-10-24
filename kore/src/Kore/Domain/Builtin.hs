@@ -565,7 +565,7 @@ instance Unparse InternalInt where
     unparse InternalInt { builtinIntSort, builtinIntValue } =
         "\\dv"
         <> parameters [builtinIntSort]
-        <> arguments' [Pretty.dquotes $ Pretty.pretty builtinIntValue]
+        <> Pretty.parens (Pretty.dquotes $ Pretty.pretty builtinIntValue)
 
     unparse2 InternalInt { builtinIntSort, builtinIntValue } =
         "\\dv2"
@@ -599,7 +599,7 @@ instance Unparse InternalBool where
     unparse InternalBool { builtinBoolSort, builtinBoolValue } =
         "\\dv"
         <> parameters [builtinBoolSort]
-        <> arguments' [Pretty.dquotes value]
+        <> Pretty.parens (Pretty.dquotes value)
       where
         value
           | builtinBoolValue = "true"
@@ -641,7 +641,7 @@ instance Unparse InternalString where
     unparse InternalString { internalStringSort, internalStringValue } =
         "\\dv"
         <> parameters [internalStringSort]
-        <> arguments [StringLiteral internalStringValue]
+        <> Pretty.parens (unparse $ StringLiteral internalStringValue)
 
     unparse2 InternalString { internalStringSort, internalStringValue } =
         "\\dv2"

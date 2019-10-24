@@ -35,7 +35,13 @@ module Kore.Unparser
     , unparseAssoc'
     ) where
 
+import Control.Category
+    ( (>>>)
+    )
 import qualified Data.Char as Char
+import Data.Function
+    ( (&)
+    )
 import Data.Functor.Const
 import Data.Map.Strict
     ( Map
@@ -153,7 +159,8 @@ parameters2 = parameters2' . map unparse2
 
 -- | Print a list of sort parameters.
 parameters' :: [Doc ann] -> Doc ann
-parameters' = list lbrace rbrace
+parameters' = braces . hsep . punctuate comma
+
 parameters2' :: [Doc ann] -> Doc ann
 parameters2' = list2 "" ""
 
@@ -194,16 +201,7 @@ list
     -> Doc ann  -- ^ closing list delimiter
     -> [Doc ann]  -- ^ list items
     -> Doc ann
-list left right =
-    \case
-        [] -> left <> right
-        xs ->
-            (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between)
-                xs
-  where
-    open = left <> line'
-    close = line' <> right
-    between = comma
+list = listAux comma
 
 -- | Print a list of documents separated by space in the preferred Kore format.
 list2
@@ -211,16 +209,25 @@ list2
     -> Doc ann  -- ^ closing list delimiter
     -> [Doc ann]  -- ^ list items
     -> Doc ann
-list2 left right =
+list2 = listAux space
+
+-- | Print a list of documents separated by commas in the preferred Kore format.
+listAux
+    :: Doc ann  -- ^ delimiter
+    -> Doc ann  -- ^ opening bracket
+    -> Doc ann  -- ^ closing bracket
+    -> [Doc ann]  -- ^ list items
+    -> Doc ann
+listAux between left right =
     \case
-        [] -> left <> right
-        xs ->
-            (group . (<> close) . nest 4 . (open <>) . vsep . punctuate between)
-                xs
+        [ ] -> left <> right
+        xs  ->
+            xs
+            & (punctuate between >>> vsep)
+            & (begin >>> nest 4 >>> end >>> group)
   where
-    open = left <> line'
-    close = line' <> right
-    between = space
+    begin body = (left <> line') <> body
+    end body = body <> (line' <> right)
 
 
 -- | Render a 'Doc ann' with indentation and without extra line breaks.

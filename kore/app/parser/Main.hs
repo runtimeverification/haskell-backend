@@ -39,8 +39,7 @@ import Options.Applicative
 
 import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
-    , defaultAttributesVerification
+    ( defaultAttributesVerification
     , verifyAndIndexDefinition
     )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -89,8 +88,6 @@ data KoreParserOptions = KoreParserOptions
     -- ^ Option to print pattern
     , willVerify          :: !Bool
     -- ^ Option to verify definition
-    , willChkAttr         :: !Bool
-    -- ^ Option to check attributes during verification
     , appKore             :: !Bool
     -- ^ Option to print in applicative Kore syntax
     }
@@ -122,9 +119,6 @@ commandLineParser =
     <*> enableDisableFlag "verify"
         True False True
         "Verify well-formedness of parsed definition [default enabled]"
-    <*> enableDisableFlag "chkattr"
-        True False True
-        "attributes checking during verification [default enabled]"
     <*> enableDisableFlag "appkore"
         True False False
         (  "printing parsed definition in applicative Kore syntax "
@@ -155,13 +149,12 @@ main = do
         , willPrintDefinition
         , willPrintPattern
         , willVerify
-        , willChkAttr
         , appKore
         }
         -> flip runReaderT Logger.emptyLogger . getLoggerT $ do
             parsedDefinition <- mainDefinitionParse fileName
             indexedModules <- if willVerify
-                then lift $ mainVerify willChkAttr parsedDefinition
+                then lift $ mainVerify parsedDefinition
                 else return Map.empty
             lift $ when willPrintDefinition
                 $ if appKore
@@ -196,20 +189,15 @@ mainPatternParse = mainParse parseKorePattern
 -- | IO action verifies well-formedness of Kore definition and prints
 -- timing information.
 mainVerify
-    :: Bool
-    -- ^ whether to check (True) or ignore attributes during verification
-    -> ParsedDefinition
+    :: ParsedDefinition
     -- ^ Parsed definition to check well-formedness
     -> IO
         (Map.Map
             ModuleName
             (VerifiedModule StepperAttributes Attribute.Axiom)
         )
-mainVerify willChkAttr definition =
-    let attributesVerification =
-            if willChkAttr
-            then defaultAttributesVerification Proxy Proxy
-            else DoNotVerifyAttributes
+mainVerify definition =
+    let attributesVerification = defaultAttributesVerification Proxy Proxy
     in do
       verifyResult <-
           flip runReaderT Logger.emptyLogger

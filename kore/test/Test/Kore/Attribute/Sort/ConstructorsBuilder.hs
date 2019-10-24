@@ -44,6 +44,7 @@ import Kore.Syntax.Id
 
 import Test.Kore.Step.SMT.Builders
     ( emptyModule
+    , hookedSortDeclaration
     , indexModule
     , koreSort
     , sortDeclaration
@@ -109,7 +110,10 @@ test_sortParsing =
         )
     , testForModule "Definition with builtin sorts"
         (indexModule $ emptyModule "m"
-            `with` (sortDeclaration "Integer" `with` Attribute.hook Int.sort)
+            `with`
+                (hookedSortDeclaration "Integer"
+                    `with` Attribute.hook Int.sort
+                )
         )
         (constructorsAre [])
     ]
