@@ -11,9 +11,6 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.Map as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
@@ -73,10 +70,7 @@ testSubsorts =
     moduleIndex ::
         Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
     Right moduleIndex =
-        verifyAndIndexDefinition
-            (VerifyAttributes Proxy Proxy)
-            Builtin.koreVerifiers
-            testSubsortDefinition
+        verifyAndIndexDefinition Builtin.koreVerifiers testSubsortDefinition
     meta :: MetadataTools () () Attribute.Symbol
     meta =
         extractMetadataTools

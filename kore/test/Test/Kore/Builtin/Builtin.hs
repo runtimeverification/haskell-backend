@@ -34,7 +34,6 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
-import Data.Proxy
 import GHC.Stack
     ( HasCallStack
     )
@@ -154,9 +153,7 @@ verify
         (Map
             ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
         )
-verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
-  where
-    attrVerify = defaultAttributesVerification Proxy Proxy
+verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
     :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
