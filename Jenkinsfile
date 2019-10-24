@@ -64,7 +64,7 @@ pipeline {
     }
     stage('Integration: K') {
       options {
-        timeout(time: 16, unit: 'MINUTES')
+        timeout(time: 32, unit: 'MINUTES')
       }
       steps {
         sh '''
@@ -108,6 +108,9 @@ pipeline {
                     , message: "Build failure: ${env.BUILD_URL}"
         }
       }
+    }
+    success {
+      archiveArtifacts 'profile.json'
     }
   }
 }

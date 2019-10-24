@@ -28,6 +28,7 @@ import Control.Monad.Catch
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
+import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
 import qualified GHC.Stack as GHC
@@ -70,7 +71,7 @@ data Env simplifier =
     Env
         { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
         , simplifierTermLike  :: !TermLikeSimplifier
-        , simplifierPredicate :: !PredicateSimplifier
+        , simplifierPredicate :: !(PredicateSimplifier simplifier)
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         , memo                :: !(Memo.Self simplifier)
         }
@@ -95,23 +96,22 @@ instance MonadTrans SimplifierT where
     lift smt = SimplifierT (lift smt)
     {-# INLINE lift #-}
 
-instance (MonadUnliftIO m, WithLog LogMessage m)
-    => WithLog LogMessage (SimplifierT m)
-  where
-    askLogAction = SimplifierT (hoistLogAction SimplifierT <$> askLogAction)
-    {-# INLINE askLogAction #-}
+instance MonadLog log => MonadLog (SimplifierT log) where
+    logScope locally (SimplifierT readerT) =
+        SimplifierT $ Morph.hoist (logScope locally) readerT
+    {-# INLINE logScope #-}
 
-    localLogAction mapping =
-        SimplifierT . localLogAction mapping . runSimplifierT
-    {-# INLINE localLogAction #-}
-
-instance (MonadProfiler m) => MonadProfiler (SimplifierT m)
-  where
+instance (MonadProfiler m) => MonadProfiler (SimplifierT m) where
     profile event duration =
         SimplifierT (profile event (runSimplifierT duration))
     {-# INLINE profile #-}
 
-instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
+instance
+    ( MonadUnliftIO m
+    , MonadSMT m
+    , MonadProfiler m
+    , WithLog LogMessage m
+    )
     => MonadSimplify (SimplifierT m)
   where
     askMetadataTools = asks metadataTools
@@ -125,13 +125,10 @@ instance (MonadUnliftIO m, MonadSMT m, WithLog LogMessage m, MonadProfiler m)
             env { simplifierTermLike = locally simplifierTermLike }
     {-# INLINE localSimplifierTermLike #-}
 
-    askSimplifierPredicate = asks simplifierPredicate
-    {-# INLINE askSimplifierPredicate #-}
-
-    localSimplifierPredicate locally =
-        local $ \env@Env { simplifierPredicate } ->
-            env { simplifierPredicate = locally simplifierPredicate }
-    {-# INLINE localSimplifierPredicate #-}
+    simplifyPredicate conditional = do
+        PredicateSimplifier simplify <- asks simplifierPredicate
+        simplify conditional
+    {-# INLINE simplifyPredicate #-}
 
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}

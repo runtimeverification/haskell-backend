@@ -14,7 +14,6 @@ TODO(virgil): Get rid of this module and implement everything with normal
 
 module Kore.Builtin.Attributes
     ( isConstructorModulo_
-    , isConstructorModuloLike_
     ) where
 
 import qualified Kore.Builtin.List.List as List
@@ -33,7 +32,3 @@ isConstructorModulo_ symbol =
         ]
   where
     apply pattHead f = f pattHead
-
-isConstructorModuloLike_ :: Symbol -> Bool
-isConstructorModuloLike_ =
-    or <$> sequence [isConstructorModulo_, isConstructor, isSortInjection]

@@ -24,9 +24,6 @@ module GlobalMain
     , loadModule
     ) where
 
-import Colog
-    ( (<&)
-    )
 import Control.Exception
     ( evaluate
     )
@@ -108,8 +105,7 @@ import System.Clock
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
-    , defaultAttributesVerification
+    ( defaultAttributesVerification
     , verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
@@ -347,16 +343,18 @@ clockSomethingIO description something = do
     start  <- lift $ getTime Monotonic
     x      <- lift   something
     end    <- lift $ getTime Monotonic
-    logger <- askLogAction
-    logger <& logMessage end start
+    logM $ logMessage end start
     return x
   where
     logMessage end start =
-        Logger.LogMessage
+        Logger.WithScope
+            (mkMessage start end)
+            (Scope "TimingInfo")
+    mkMessage start end =
+        SomeEntry $ Logger.LogMessage
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
             , severity = Logger.Info
-            , scope = [Scope "TimingInfo"]
             , callstack = emptyCallStack
             }
 
@@ -410,8 +408,6 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
-    -> Bool
-    -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
     -> Main
@@ -421,13 +417,9 @@ verifyDefinitionWithBase
         )
 verifyDefinitionWithBase
     alreadyVerified
-    willChkAttr
     definition
   =
-    let attributesVerification =
-            if willChkAttr
-            then defaultAttributesVerification Proxy Proxy
-            else DoNotVerifyAttributes
+    let attributesVerification = defaultAttributesVerification Proxy Proxy
     in do
       verifyResult <-
         clockSomething "Verifying the definition"
@@ -468,7 +460,7 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    Monad.foldM (\loaded -> verifyDefinitionWithBase loaded True) mempty
+    Monad.foldM verifyDefinitionWithBase mempty
     =<< traverse parseDefinition filePaths
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule

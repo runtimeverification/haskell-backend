@@ -10,13 +10,22 @@ Portability : portable
 -}
 module Kore.Unification.SubstitutionNormalization
     ( normalizeSubstitution
+    , Normalization (..)
+    , normalize
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Monad.Except
-    ( ExceptT (..)
-    , lift
-    , throwError
+    ( throwError
+    )
+import qualified Control.Monad.State.Strict as State
+import qualified Data.Foldable as Foldable
+import qualified Data.Function as Function
+import Data.Functor
+    ( (<&>)
     )
 import Data.Functor.Const
 import Data.Functor.Foldable
@@ -27,44 +36,34 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Maybe
-    ( mapMaybe
-    )
 import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Data.Graph.TopologicalSort
+import Debug
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate
-    ( Conditional (..)
-    , Predicate
+    ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeTruePredicate
+import Kore.Substitute
+    ( SubstitutionVariable
     )
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    , SimplifierVariable
-    )
+import Kore.TopBottom
 import Kore.Unification.Error
     ( SubstitutionError (..)
     )
+import Kore.Unification.Substitution
+    ( UnwrappedSubstitution
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
-import qualified Kore.Variables.UnifiedVariable as UnifiedVariable
-
-data TopologicalSortResult variable
-  = MixedCtorCycle ![variable]
-  | SetCtorCycle ![variable]
-  | Sorted ![variable]
-  deriving (Show)
 
 {-| 'normalizeSubstitution' transforms a substitution into an equivalent one
 in which no variable that occurs on the left hand side also occurs on the
@@ -77,131 +76,200 @@ Returns an error when the substitution is not normalizable (i.e. it contains
 x = f(x) or something equivalent).
 -}
 normalizeSubstitution
-    :: forall m variable
-    .  (MonadSimplify m, SimplifierVariable variable)
+    :: forall variable
+    .  SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
-    -> ExceptT SubstitutionError m (Predicate variable)
-normalizeSubstitution substitution = do
-    let
-        -- | Do a `topologicalSort` of variables using the `dependencies` Map.
-        -- Topological cycles with non-ctors are returned as Left errors.
-        -- Non-simplifiable cycles are returned as Right Nothing.
-        topologicalSortConverted
-            :: Either
-                SubstitutionError
-                (TopologicalSortResult (UnifiedVariable variable))
-        topologicalSortConverted =
-            case topologicalSort (Set.toList <$> allDependencies) of
-                Left (TopologicalSortCycles vars) ->
-                    case nonSimplifiableSortResult of
-                        Left (TopologicalSortCycles nonSimplifiableCycle)
-                          | all isVariable
-                            (mapMaybe
-                                (`Map.lookup` substitution)
-                                nonSimplifiableCycle
-                            ) ->
-                            error
-                                (  "Impossible: order on variables should "
-                                ++ "prevent only-variable-cycles"
-                                )
-                          | all UnifiedVariable.isSetVar nonSimplifiableCycle ->
-                            Right (SetCtorCycle nonSimplifiableCycle)
-                          | otherwise ->
-                            Right (MixedCtorCycle nonSimplifiableCycle)
-                        Right _ ->
-                            Left (NonCtorCircularVariableDependency vars)
-                Right result -> Right (Sorted result)
-          where
-            nonSimplifiableSortResult =
-                topologicalSort (Set.toList <$> nonSimplifiableDependencies)
-    case topologicalSortConverted of
-        Left err -> throwError err
-        Right (MixedCtorCycle _) -> return Predicate.bottom
-        Right (Sorted vars) -> lift $ normalizeSortedSubstitution' vars
-        Right (SetCtorCycle vars) -> normalizeSubstitution
-            $ Map.mapWithKey (makeRhsBottom (`elem` vars)) substitution
+    -> Either SubstitutionError (Predicate variable)
+normalizeSubstitution substitution =
+    maybe bottom fromNormalization $ normalize substitution
   where
-    isVariable :: TermLike variable -> Bool
-    isVariable term =
-        case Cofree.tailF (Recursive.project term) of
-            VariableF _ -> True
-            _ -> False
+    bottom = return Predicate.bottom
+    fromNormalization Normalization { normalized, denormalized }
+      | null denormalized =
+        pure
+        $ Predicate.fromSubstitution
+        $ Substitution.unsafeWrap normalized
+      | otherwise =
+        throwError (SimplifiableCycle variables)
+      where
+        (variables, _) = unzip denormalized
+
+{- | The result of /normalizing/ a substitution.
+
+'normalized' holds the part of the substitution was normalized successfully.
+
+'denormalized' holds the part of the substitution which was not normalized
+because it contained simplifiable cycles.
+
+ -}
+data Normalization variable =
+    Normalization
+        { normalized, denormalized :: !(UnwrappedSubstitution variable) }
+    deriving GHC.Generic
+
+instance SOP.Generic (Normalization variable)
+
+instance SOP.HasDatatypeInfo (Normalization variable)
+
+instance Debug variable => Debug (Normalization variable)
+
+instance (Debug variable, Diff variable) => Diff (Normalization variable)
+
+instance Semigroup (Normalization variable) where
+    (<>) a b =
+        Normalization
+            { normalized = Function.on (<>) normalized a b
+            , denormalized = Function.on (<>) denormalized a b
+            }
+
+instance Monoid (Normalization variable) where
+    mempty = Normalization mempty mempty
+
+{- | 'normalize' a substitution as far as possible.
+
+The substitution is given as a 'Map', so there can be no duplicates.
+
+The result is @Nothing@ if the substitution is not satisfiable, for example
+because it contains pairs such as @x = \\bottom@ or because it contains
+constructor cycles with element variables.
+
+ -}
+normalize
+    ::  forall variable
+    .   SubstitutionVariable variable
+    =>  Map (UnifiedVariable variable) (TermLike variable)
+    -- ^ De-duplicated substitution
+    ->  Maybe (Normalization variable)
+normalize (dropTrivialSubstitutions -> substitution) =
+    case topologicalSort allDependencies of
+        Right order -> sorted order
+        Left (TopologicalSortCycles cycleVariables) ->
+            case topologicalSort nonSimplifiableDependencies of
+                Right _ ->
+                    -- Removing the non-simplifiable dependencies removed the
+                    -- cycle, therefore the cycle is simplifiable.
+                    simplifiableCycle cycleVariables
+                Left (TopologicalSortCycles cycleVariables')
+                  | all isRenaming cycleVariables' ->
+                    -- All substitutions in the cycle are variable-only renaming
+                    -- substitutions.
+                    renamingCycle
+                  | all isSetVar cycleVariables' ->
+                    -- All variables in the cycle are set variables.
+                    setCtorCycle cycleVariables'
+                  | otherwise ->
+                    mixedCtorCycle cycleVariables'
+  where
+    isRenaming variable =
+        case substitution Map.! variable of
+            Var_ _ -> True
+            _      -> False
+
+    renamingCycle =
+        error
+            "Impossible: order on variables should prevent \
+            \variable-only cycles!"
+
+    setCtorCycle variables = do
+        let substitution' = Foldable.foldl' assignBottom substitution variables
+        normalize substitution'
+
+    mixedCtorCycle _ = empty
+
+    simplifiableCycle (Set.fromList -> variables) = do
+        let denormalized = Map.toList $ Map.restrictKeys substitution variables
+            substitution' = Map.withoutKeys substitution variables
+        normalization <- normalize substitution'
+        pure $ normalization <> mempty { denormalized }
+
+    assignBottom
+        :: Map (UnifiedVariable variable) (TermLike variable)
+        -> UnifiedVariable variable
+        -> Map (UnifiedVariable variable) (TermLike variable)
+    assignBottom subst variable =
+        Map.adjust (mkBottom . termLikeSort) variable subst
 
     interestingVariables :: Set (UnifiedVariable variable)
     interestingVariables = Map.keysSet substitution
 
+    getDependencies' =
+        getDependencies interestingVariables
+
     allDependencies
-        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
+        :: Map (UnifiedVariable variable) [UnifiedVariable variable]
     allDependencies =
-        Map.mapWithKey
-            (getDependencies interestingVariables)
-            substitution
+        Map.map Set.toList
+        $ Map.mapWithKey getDependencies' substitution
+
+    getNonSimplifiableDependencies' =
+        getNonSimplifiableDependencies interestingVariables
 
     nonSimplifiableDependencies
-        :: Map (UnifiedVariable variable) (Set (UnifiedVariable variable))
+        :: Map (UnifiedVariable variable) [UnifiedVariable variable]
     nonSimplifiableDependencies =
-        Map.mapWithKey
-            (getNonSimplifiableDependencies interestingVariables)
-            substitution
+        Map.map Set.toList
+        $ Map.mapWithKey getNonSimplifiableDependencies' substitution
 
-    sortedSubstitution
-        :: [UnifiedVariable variable]
-        -> [(UnifiedVariable variable, TermLike variable)]
-    sortedSubstitution = fmap (variableToSubstitution substitution)
+    sorted order
+      | any (not . isSatisfiableSubstitution) substitution' = empty
+      | otherwise = do
+        let normalized = backSubstitute substitution'
+        pure Normalization { normalized, denormalized = mempty }
+      where
+        substitution' = order <&> \v -> (v, (Map.!) substitution v)
 
-    normalizeSortedSubstitution'
-        :: [UnifiedVariable variable]
-        -> m (Predicate variable)
-    normalizeSortedSubstitution' s =
-        normalizeSortedSubstitution (sortedSubstitution s) mempty mempty
+{- | Apply a topologically sorted list of substitutions to itself.
 
-    makeRhsBottom
-        :: (UnifiedVariable variable -> Bool)
-        -> UnifiedVariable variable
-        -> TermLike variable
-        -> TermLike variable
-    makeRhsBottom test var rhs
-      | test var  = TermLike.mkBottom (termLikeSort rhs)
-      | otherwise = rhs
+Apply the substitutions in order so that finally no substitution in the list
+depends on any other. The substitution must be topologically sorted.
 
-variableToSubstitution
-    :: (Ord variable, Show variable)
+The post-condition of this function depends on the following pre-conditions,
+which are not enforced:
+No substitution variable may appear in its own assignment.
+Every substitution must be satisfiable, see 'isSatisfiableSubstitution'.
+
+ -}
+backSubstitute
+    :: forall variable
+    .  SubstitutionVariable variable
+    => UnwrappedSubstitution variable
+    -- ^ Topologically-sorted substitution
+    -> UnwrappedSubstitution variable
+backSubstitute sorted =
+    (flip State.evalState mempty) (traverse worker sorted)
+  where
+    worker (variable, termLike) = do
+        termLike' <- applySubstitution termLike
+        insertSubstitution variable termLike'
+        return (variable, termLike')
+    insertSubstitution variable termLike =
+        State.modify' $ Map.insert variable termLike
+    applySubstitution termLike = do
+        substitution <- State.get
+        return $ TermLike.substitute substitution termLike
+
+isTrivialSubstitution
+    :: Eq variable
+    => UnifiedVariable variable
+    -> TermLike variable
+    -> Bool
+isTrivialSubstitution variable =
+    \case
+        Var_ variable' -> variable == variable'
+        _              -> False
+
+dropTrivialSubstitutions
+    :: Eq variable
     => Map (UnifiedVariable variable) (TermLike variable)
-    -> UnifiedVariable variable
-    -> (UnifiedVariable variable, TermLike variable)
-variableToSubstitution varToPattern var =
-    case Map.lookup var varToPattern of
-        Just patt -> (var, patt)
-        Nothing   -> error ("variable " ++ show var ++ " not found.")
+    -> Map (UnifiedVariable variable) (TermLike variable)
+dropTrivialSubstitutions =
+    Map.filterWithKey $ \k v -> not $ isTrivialSubstitution k v
 
-normalizeSortedSubstitution
-    :: (Monad m, SimplifierVariable variable)
-    => [(UnifiedVariable variable, TermLike variable)]
-    -> [(UnifiedVariable variable, TermLike variable)]
-    -> [(UnifiedVariable variable, TermLike variable)]
-    -> m (Predicate variable)
-normalizeSortedSubstitution [] result _ =
-    return Conditional
-        { term = ()
-        , predicate = makeTruePredicate
-        , substitution = Substitution.unsafeWrap result
-        }
-normalizeSortedSubstitution
-    ((var, varPattern) : unprocessed)
-    result
-    substitution
-  = case (var, Cofree.tailF (Recursive.project varPattern)) of
-        (UnifiedVariable.ElemVar _, BottomF _) -> return Predicate.bottom
-        (rvar, VariableF (Const var'))
-          | rvar == var' ->
-            normalizeSortedSubstitution unprocessed result substitution
-        _ -> let
-              substitutedVarPattern =
-                  TermLike.substitute (Map.fromList substitution) varPattern
-              in normalizeSortedSubstitution
-                  unprocessed
-                  ((var, substitutedVarPattern) : result)
-                  ((var, substitutedVarPattern) : substitution)
+isSatisfiableSubstitution
+    :: (UnifiedVariable variable, TermLike variable)
+    -> Bool
+isSatisfiableSubstitution (variable, termLike) =
+    not $ isElemVar variable && isBottom termLike
 
 {- | Calculate the dependencies of a substitution.
 

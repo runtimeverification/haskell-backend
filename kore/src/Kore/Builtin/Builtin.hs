@@ -780,8 +780,7 @@ functionEvaluator impl =
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator (valid :< app) =
-        impl resultSort applicationChildren
+    evaluator (valid :< app) = impl resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid

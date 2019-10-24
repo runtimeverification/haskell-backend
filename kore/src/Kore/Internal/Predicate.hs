@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Internal.Predicate
     ( Predicate
     , isSimplified
+    , markSimplified
     , eraseConditionalTerm
     , top
     , topTODO
@@ -18,15 +19,18 @@ module Kore.Internal.Predicate
     , Conditional.fromSubstitution
     , toPredicate
     , freeVariables
+    , hasFreeVariable
     , Kore.Internal.Predicate.mapVariables
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
     ) where
 
-
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
+    )
+import Kore.Attribute.Pattern.FreeVariables
+    ( isFreeVariable
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -39,12 +43,19 @@ import qualified Kore.Predicate.Predicate as Syntax
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Syntax
 import Kore.Unparser
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 
 -- | A predicate and substitution without an accompanying term.
 type Predicate variable = Conditional variable ()
 
 isSimplified :: Predicate variable -> Bool
 isSimplified = Syntax.Predicate.isSimplified . Conditional.predicate
+
+markSimplified :: Predicate variable -> Predicate variable
+markSimplified conditional@Conditional { predicate } =
+    conditional { predicate = Syntax.Predicate.markSimplified predicate }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Predicate'.
 eraseConditionalTerm
@@ -92,6 +103,17 @@ freeVariables
     => Predicate variable
     -> FreeVariables variable
 freeVariables = Conditional.freeVariables (const mempty)
+
+hasFreeVariable
+    :: ( Ord variable
+       , Show variable
+       , Unparse variable
+       , SortedVariable variable
+       )
+    => UnifiedVariable variable
+    -> Predicate variable
+    -> Bool
+hasFreeVariable variable = isFreeVariable variable . freeVariables
 
 {- | Extract the set of free set variables from a predicate and substitution.
 

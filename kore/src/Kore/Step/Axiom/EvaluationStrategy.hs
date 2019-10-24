@@ -29,6 +29,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     )
@@ -38,16 +39,16 @@ import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Rule
-    ( EqualityRule
+    ( EqualityRule (..)
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
-    , hasRemainders
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
+import qualified Kore.Step.Step as Step
 import Kore.Unparser
     ( unparse
     )
@@ -72,16 +73,30 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier $ \term predicate ->
-        evaluateAxioms rules term (Predicate.toPredicate predicate)
+    BuiltinAndAxiomSimplifier $ \term predicate -> do
+        let ea = evaluateAxioms
+                    rules
+                    term
+                    (Predicate.toPredicate predicate)
+        res <- Step.assertFunctionLikeResults
+                (Step.toConfigurationVariables (Pattern.fromTermLike term))
+                ea
+        return $ resultsToAttemptedAxiom res
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
     :: EqualityRule Variable
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
-    BuiltinAndAxiomSimplifier $ \term predicate ->
-        evaluateAxioms [rule] term (Predicate.toPredicate predicate)
+    BuiltinAndAxiomSimplifier $ \term predicate -> do
+        let ea = evaluateAxioms
+                    [rule]
+                    term
+                    (Predicate.toPredicate predicate)
+        res <- Step.recoveryFunctionLikeResults
+                (Step.toConfigurationVariables (Pattern.fromTermLike term))
+                ea
+        return $ resultsToAttemptedAxiom res
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -105,8 +120,12 @@ totalDefinitionEvaluation rules =
         -> Predicate variable
         -> simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker term predicate = do
-        result <- evaluateAxioms rules term (Predicate.toPredicate predicate)
-        if AttemptedAxiom.hasRemainders result
+        result0 <- evaluateAxioms
+                    rules
+                    term
+                    (Predicate.toPredicate predicate)
+        let result = resultsToAttemptedAxiom result0
+        if hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
 
@@ -220,8 +239,10 @@ applyFirstSimplifierThatWorks
               Logger.logWarning
                   . Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep
                   $ [ "Simplification result with remainder:"
-                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 2 "input pattern:"
                     , Pretty.indent 4 (unparse patt)
+                    , Pretty.indent 2 "input predicate:"
+                    , Pretty.indent 4 (unparse predicate)
                     , Pretty.indent 2 "results:"
                     , (Pretty.indent 4 . Pretty.vsep)
                         (unparse <$> Foldable.toList orResults)

@@ -29,10 +29,6 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Map as Map
-import Data.Text.Prettyprint.Doc
-    ( (<+>)
-    )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import Kore.Attribute.Hook
@@ -43,7 +39,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
     , merge
-    , mergeAll
     )
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -61,6 +56,9 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
+import Kore.Logger.WarnMissingHook
+    ( warnMissingHook
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -74,9 +72,6 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Merging.OrPattern as OrPattern
-import qualified Kore.Step.Simplification.Conditional as Conditional
-    ( simplifyPredicate
-    )
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -85,7 +80,6 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
 import Kore.TopBottom
-import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
 -}
@@ -122,11 +116,9 @@ evaluateApplication
           -- present, we assume that startup is finished, but we should really
           -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
-          =
-            (error . show . Pretty.vsep)
-                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
-                , "for symbol:" <+> unparse symbol
-                ]
+          = do
+            warnMissingHook hook symbol
+            pure unevaluated
           | otherwise = return unevaluated
 
     results <-
@@ -150,8 +142,13 @@ evaluateApplication
     unevaluated =
         OrPattern.fromPattern
         $ Pattern.withCondition
-            (TermLike.markSimplified termLike)
+            (markSimplifiedIfChildren termLike)
             childrenPredicate
+
+    markSimplifiedIfChildren =
+        if all TermLike.isSimplified application
+           then TermLike.markSimplified
+           else id
 
     canMemoize
       | Symbol.isMemo symbol
@@ -285,7 +282,8 @@ maybeEvaluatePattern
                         childrenPredicate
                         flattened
                 case merged of
-                    AttemptedAxiom.NotApplicable -> return defaultValue
+                    AttemptedAxiom.NotApplicable ->
+                        return defaultValue
                     AttemptedAxiom.Applied attemptResults ->
                         return $ MultiOr.merge results remainders
                       where
@@ -315,7 +313,7 @@ maybeEvaluatePattern
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
-        reevaluateFunctions toSimplify
+        reevaluateFunctions configurationPredicate toSimplify
 
 evaluateSortInjection
     :: Ord variable
@@ -355,16 +353,18 @@ reevaluateFunctions
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Pattern variable
+    => Predicate variable
+    -> Pattern variable
     -- ^ Function evaluation result.
     -> simplifier (OrPattern variable)
-reevaluateFunctions rewriting = do
-    pattOr <- simplifyTerm (Pattern.term rewriting)
-    mergedPatt <-
-        OrPattern.mergeWithPredicate (Pattern.withoutTerm rewriting) pattOr
-    orResults <-
-        BranchT.gather $ traverse Conditional.simplifyPredicate mergedPatt
-    return (MultiOr.mergeAll orResults)
+reevaluateFunctions predicate rewriting = do
+    let (rewritingTerm, rewritingPredicate) = Pattern.splitTerm rewriting
+    simplifiedTerms <- simplifyConditionalTermToOr predicate rewritingTerm
+    merged <- OrPattern.mergeWithPredicate rewritingPredicate simplifiedTerms
+    orResults <- BranchT.gather $ do
+        simplifiedTerm <- BranchT.scatter merged
+        simplifyPredicate simplifiedTerm
+    return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.
 -}

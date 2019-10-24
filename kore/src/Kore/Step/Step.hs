@@ -21,6 +21,8 @@ module Kore.Step.Step
     , Step.result
     , Step.gatherResults
     , Step.withoutRemainders
+    , assertFunctionLikeResults
+    , recoveryFunctionLikeResults
     , checkSubstitutionCoverage
     , unifyRule
     , unifyRules
@@ -78,10 +80,11 @@ import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import Kore.Step.Rule
     ( RewriteRule (..)
-    , RulePattern (RulePattern)
+    , RulePattern (RulePattern, left, requires)
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
+import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
@@ -252,9 +255,7 @@ unifyRules
 unifyRules unificationProcedure initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        unified <- unifyRule unificationProcedure initial rule
-        checkSubstitutionCoverage initial unified
-        return unified
+        unifyRule unificationProcedure initial rule
 
 {- | Apply the initial conditions to the results of rule unification.
 
@@ -372,17 +373,19 @@ finalizeRule
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => Predicate (Target variable)
+    => Pattern (Target variable)
     -- ^ Initial conditions
     -> UnifiedRule (Target variable)
     -- ^ Rewriting axiom
     -> unifier [Result variable]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
-finalizeRule initialCondition unifiedRule =
+finalizeRule initial unifiedRule =
     Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
+        let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
+        checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
         let result = unwrapAndQuantifyConfiguration <$> final
@@ -398,9 +401,7 @@ finalizeRulesParallel
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
 finalizeRulesParallel initial unifiedRules = do
-    let initialCondition = Conditional.withoutTerm initial
-    results <-
-        Foldable.fold <$> traverse (finalizeRule initialCondition) unifiedRules
+    results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
     remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
@@ -411,6 +412,32 @@ finalizeRulesParallel initial unifiedRules = do
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
 
+assertFunctionLikeResults
+    ::  forall unifier variable
+    .   ( SimplifierVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        )
+    => Pattern (Target variable)
+    -> unifier (Results variable)
+    -> unifier (Results variable)
+assertFunctionLikeResults initial unifier = do
+    results <- Step.results <$> unifier
+    let unifiedRules = Step.appliedRule <$> results
+    case checkFunctionLike unifiedRules (term initial) of
+        Left err -> error err
+        _        -> unifier
+
+recoveryFunctionLikeResults
+    ::  forall unifier variable
+    .   ( SimplifierVariable variable
+        , Log.WithLog Log.LogMessage unifier
+        , MonadSimplify unifier
+        )
+    => Pattern (Target variable)
+    -> unifier (Results variable)
+    -> unifier (Results variable)
+recoveryFunctionLikeResults _ = id
+
 finalizeRulesSequence
     ::  forall unifier variable
     .   ( SimplifierVariable variable
@@ -420,7 +447,8 @@ finalizeRulesSequence
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
-finalizeRulesSequence initial unifiedRules = do
+finalizeRulesSequence initial unifiedRules
+  = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
@@ -433,12 +461,14 @@ finalizeRulesSequence initial unifiedRules = do
             $ Pattern.mapVariables Target.unwrapVariable <$> remainders'
         }
   where
+    initialTerm = Conditional.term initial
     finalizeRuleSequence'
         :: UnifiedRule (Target variable)
         -> State.StateT (Predicate (Target variable)) unifier [Result variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
-        results <- Monad.Trans.lift $ finalizeRule remainder unifiedRule
+        let remainderPattern = Conditional.withCondition initialTerm remainder
+        results <- Monad.Trans.lift $ finalizeRule remainderPattern unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
                 Predicate.fromPredicate
@@ -446,6 +476,32 @@ finalizeRulesSequence initial unifiedRules = do
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')
         return results
+
+checkFunctionLike
+    ::  ( InternalVariable variable
+        , InternalVariable variable'
+        , Foldable f
+        , Eq (f (UnifiedRule variable'))
+        , Monoid (f (UnifiedRule variable'))
+        )
+    => f (UnifiedRule variable')
+    -> TermLike variable
+    -> Either String ()
+checkFunctionLike unifiedRules term
+  | unifiedRules == mempty = pure ()
+  | TermLike.isFunctionPattern term =
+    Foldable.traverse_ checkFunctionLikeRule unifiedRules
+  | otherwise = Left . show . Pretty.vsep $
+    [ "Expected function-like term, but found:"
+    , Pretty.indent 4 (unparse term)
+    ]
+  where
+    checkFunctionLikeRule Conditional { term = RulePattern { left } }
+      | TermLike.isFunctionPattern left = return ()
+      | otherwise = Left . show . Pretty.vsep $
+        [ "Expected function-like left-hand side of rule, but found:"
+        , Pretty.indent 4 (unparse left)
+        ]
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -535,7 +591,7 @@ applyRulesParallel
     => UnificationProcedure
     -> [RulePattern variable]
     -- ^ Rewrite rules
-    -> Pattern variable
+    -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
 applyRulesParallel
@@ -543,9 +599,8 @@ applyRulesParallel
     -- Wrap the rule and configuration so that unification prefers to substitute
     -- axiom variables.
     (map toAxiomVariables -> rules)
-    (toConfigurationVariables -> initial)
-  =
-    unifyRules unificationProcedure initial rules
+    initial
+  = unifyRules unificationProcedure initial rules
     >>= finalizeRulesParallel initial
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -565,8 +620,16 @@ applyRewriteRulesParallel
     -> Pattern variable
     -- ^ Configuration being rewritten
     -> unifier (Results variable)
-applyRewriteRulesParallel unificationProcedure rewriteRules =
-    applyRulesParallel unificationProcedure (getRewriteRule <$> rewriteRules)
+applyRewriteRulesParallel
+    unificationProcedure
+    rewriteRules
+    (toConfigurationVariables -> initial)
+  = assertFunctionLikeResults initial
+    $ applyRulesParallel
+        unificationProcedure
+        (getRewriteRule <$> rewriteRules)
+        initial
+
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
 
@@ -580,19 +643,18 @@ applyRulesSequence
         , MonadUnify unifier
         )
     => UnificationProcedure
-    -> Pattern variable
+    -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> [RulePattern variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
 applyRulesSequence
     unificationProcedure
-    -- Wrap the rule and configuration so that unification prefers to substitute
+    initial
+    -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
-    (toConfigurationVariables -> initial)
     (map toAxiomVariables -> rules)
-  =
-    unifyRules unificationProcedure initial rules
+  = unifyRules unificationProcedure initial rules
     >>= finalizeRulesSequence initial
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -612,8 +674,12 @@ applyRewriteRulesSequence
     -> [RewriteRule variable]
     -- ^ Rewrite rules
     -> unifier (Results variable)
-applyRewriteRulesSequence unificationProcedure initialConfig rewriteRules =
-    applyRulesSequence
+applyRewriteRulesSequence
+    unificationProcedure
+    (toConfigurationVariables -> initialConfig)
+    rewriteRules
+  = assertFunctionLikeResults initialConfig
+    $ applyRulesSequence
         unificationProcedure
         initialConfig
         (getRewriteRule <$> rewriteRules)

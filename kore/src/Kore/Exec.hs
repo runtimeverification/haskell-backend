@@ -26,6 +26,9 @@ import Control.Error.Util
     ( note
     )
 import qualified Control.Monad as Monad
+import Control.Monad.Catch
+    ( MonadCatch
+    )
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
@@ -80,7 +83,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
 import Kore.IndexedModule.Resolvers
-    ( resolveSymbol
+    ( resolveInternalSymbol
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
@@ -140,7 +143,6 @@ import qualified Kore.Step.Simplification.Rule as Rule
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
     , MonadSimplify
-    , PredicateSimplifier (..)
     , TermLikeSimplifier
     )
 import qualified Kore.Step.Strategy as Strategy
@@ -175,7 +177,6 @@ data Initialized = Initialized { rewriteRules :: ![Rewrite] }
 data Execution =
     Execution
         { simplifier :: !TermLikeSimplifier
-        , substitutionSimplifier :: !PredicateSimplifier
         , axiomIdToSimplifier :: !BuiltinAndAxiomSimplifierMap
         , executionGraph :: !ExecutionGraph
         }
@@ -231,13 +232,13 @@ execGetExitCode
     -- ^ The final pattern (top cell) to extract the exit code
     -> smt ExitCode
 execGetExitCode indexedModule strategy' finalTerm =
-    case resolveSymbol indexedModule $ noLocationId "LblgetExitCode" of
-        Left _ -> return ExitSuccess
-        Right (_,  exitCodeSymbol) -> do
+    case resolveInternalSymbol indexedModule $ noLocationId "LblgetExitCode" of
+        Nothing -> return ExitSuccess
+        Just mkExitCodeSymbol -> do
             exitCodePattern <-
                 -- TODO (thomas.tuegel): Run in original execution context.
                 exec indexedModule strategy'
-                $ applySymbol_ exitCodeSymbol [finalTerm]
+                $ mkApplySymbol (mkExitCodeSymbol []) [finalTerm]
             case exitCodePattern of
                 Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
                   | exit == 0 -> return ExitSuccess
@@ -246,7 +247,11 @@ execGetExitCode indexedModule strategy' finalTerm =
 
 -- | Symbolic search
 search
-    :: (Log.WithLog Log.LogMessage smt, MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadProfiler smt
+        , MonadSMT smt
+        , MonadUnliftIO smt
+        )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
@@ -278,6 +283,7 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 -- | Proving a spec given as a module containing rules to be proven
 prove
     ::  ( Log.WithLog Log.LogMessage smt
+        , MonadCatch smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
@@ -488,7 +494,6 @@ execute verifiedModule strategy inputPattern =
     $ initialize verifiedModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
         simplifier <- Simplifier.askSimplifierTermLike
-        substitutionSimplifier <- Simplifier.askSimplifierPredicate
         axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         simplifiedPatterns <-
             Pattern.simplify (Pattern.fromTermLike inputPattern)
@@ -503,7 +508,6 @@ execute verifiedModule strategy inputPattern =
         executionGraph <- runStrategy' initialPattern
         return Execution
             { simplifier
-            , substitutionSimplifier
             , axiomIdToSimplifier
             , executionGraph
             }

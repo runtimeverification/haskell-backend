@@ -37,8 +37,7 @@ import Kore.Internal.TermLike
     , TermLike
     )
 import Kore.Logger
-    ( LogMessage
-    , WithLog (..)
+    ( MonadLog (..)
     )
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -113,7 +112,7 @@ instance MonadTrans UnifierT where
     lift = UnifierT . lift . lift
     {-# INLINE lift #-}
 
-deriving instance WithLog LogMessage m => WithLog LogMessage (UnifierT m)
+deriving instance MonadLog m => MonadLog (UnifierT m)
 
 deriving instance MonadSMT m => MonadSMT (UnifierT m)
 

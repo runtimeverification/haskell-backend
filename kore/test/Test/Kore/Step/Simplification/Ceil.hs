@@ -100,6 +100,19 @@ test_ceilSimplification =
                 )
                 actual2
         )
+    , testCase "Ceil - sorted bool operations"
+        (do
+            -- ceil(top{testSort}) = top
+            actual1 <- evaluate
+                (makeCeil
+                    [Pattern.fromPredicateSorted Mock.testSort Predicate.top]
+                )
+            assertEqual "ceil(top)"
+                (OrPattern.fromPatterns
+                    [ Pattern.top ]
+                )
+                actual1
+        )
     , testCase "expanded Ceil - bool operations"
         (do
             -- ceil(top) = top
@@ -472,6 +485,33 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqual "ceil(set)" expected actual
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "ceil with opaque sets" $ do
+        let
+            expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate
+                        (asInternalSet
+                            ( emptyNormalizedSet
+                            `with` OpaqueSet fOfXset
+                            `with` OpaqueSet fOfYset
+                            )
+                        )
+                    , substitution = mempty
+                    }
+                ]
+        actual <- makeEvaluate
+            Conditional
+                { term = asInternalSet $
+                    emptyNormalizedSet
+                        `with` OpaqueSet fOfXset
+                        `with` OpaqueSet fOfYset
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "ceil(set set)" expected actual
+        assertBool "" (OrPattern.isSimplified actual)
     ]
   where
     fOfA :: TermLike Variable
@@ -484,6 +524,8 @@ test_ceilSimplification =
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXset :: TermLike Variable
     fOfXset = Mock.fSet (mkElemVar Mock.xSet)
+    fOfYset :: TermLike Variable
+    fOfYset = Mock.fSet (mkElemVar Mock.ySet)
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Conditional

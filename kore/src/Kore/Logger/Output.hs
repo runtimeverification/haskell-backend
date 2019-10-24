@@ -73,6 +73,12 @@ import Data.Time.LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
     )
+import GHC.Stack
+    ( CallStack
+    , getCallStack
+    , popCallStack
+    , prettyCallStack
+    )
 import Options.Applicative
     ( Parser
     , help
@@ -109,19 +115,6 @@ data KoreLogOptions = KoreLogOptions
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
-
-instance Pretty.Pretty WithTimestamp where
-    pretty (WithTimestamp entry time) =
-        Pretty.brackets formattedTime <> Pretty.pretty entry
-      where
-        formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q" time
-
-instance Entry WithTimestamp where
-    shouldLog
-        minSeverity
-        currentScope
-        (WithTimestamp (SomeEntry entry) _)
-      = shouldLog minSeverity currentScope entry
 
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
 -- the CPS style because some outputters require cleanup (e.g. files).
@@ -218,10 +211,12 @@ makeKoreLogger minSeverity currentScope logToText =
         $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
-    messageToText =
+    messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        . Pretty.pretty
+        $ Pretty.brackets (formattedTime localTime)
+        <> defaultLogPretty entry
+    formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
 
 -- | Adds the current timestamp to a log entry.
 withTimestamp :: MonadIO io => SomeEntry -> io WithTimestamp
@@ -259,3 +254,38 @@ swappableLogger mvar =
     acquire = liftIO $ takeMVar mvar
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
+
+defaultLogPretty :: SomeEntry -> Pretty.Doc ann
+defaultLogPretty scopedEntry =
+    case toLogMessage' <$> unwrapScope scopedEntry of
+        (scope, LogMessage { severity, message, callstack }) ->
+            Pretty.hsep
+                [ Pretty.brackets (Pretty.pretty severity)
+                , Pretty.brackets (prettyScope $ reverse scope)
+                , ":"
+                , Pretty.pretty message
+                , Pretty.brackets (formatCallstack callstack)
+                ]
+  where
+    toLogMessage' :: SomeEntry -> LogMessage
+    toLogMessage' (SomeEntry entry) = toLogMessage entry
+
+    prettyScope :: [Scope] -> Pretty.Doc ann
+    prettyScope =
+        mconcat
+            . zipWith (<>) ("" : repeat ".")
+            . fmap Pretty.pretty
+    formatCallstack :: GHC.Stack.CallStack -> Pretty.Doc ann
+    formatCallstack cs
+      | length (getCallStack cs) <= 1 = mempty
+      | otherwise                     = callStackToBuilder cs
+    callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
+    callStackToBuilder = Pretty.pretty . prettyCallStack . popCallStack
+
+unwrapScope :: SomeEntry -> ([Scope], SomeEntry)
+unwrapScope se =
+    case fromEntry se of
+        Nothing -> ([], se)
+        Just WithScope { entry, scope } ->
+            (scope : fst (unwrapScope entry), entry)
+

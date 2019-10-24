@@ -25,6 +25,9 @@ import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeFloorPredicate
     )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
+    ( markSimplified
+    )
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
 
@@ -84,7 +87,7 @@ makeEvaluateNonBoolFloor
     => Pattern variable
     -> OrPattern variable
 makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
-    OrPattern.fromPattern patt
+    OrPattern.fromPattern patt {term = mkTop_}  -- remove the term's sort
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
@@ -92,6 +95,7 @@ makeEvaluateNonBoolFloor
   =
     OrPattern.fromPattern Conditional
         { term = mkTop_
-        , predicate = makeAndPredicate (makeFloorPredicate term) predicate
+        , predicate = Syntax.Predicate.markSimplified
+            $ makeAndPredicate (makeFloorPredicate term) predicate
         , substitution = substitution
         }

@@ -17,6 +17,7 @@ module Kore.Internal.TermLike
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
+    , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
     , termLikeSort
@@ -87,6 +88,7 @@ module Kore.Internal.TermLike
     , applyAlias_
     , applySymbol
     , applySymbol_
+    , symbolApplication
     -- * Pattern synonyms
     , pattern And_
     , pattern ApplyAlias_
@@ -662,6 +664,28 @@ isFunctionPattern :: TermLike variable -> Bool
 isFunctionPattern =
     Pattern.isFunction . Attribute.function . extractAttributes
 
+{- | Does the 'TermLike' have a constructor-like top?
+
+A pattern is 'ConstructorLikeTop' if it is one of the following:
+
+- A 'StringLiteral'
+- A 'DomainValue'
+- A 'Builtin'
+- An 'Application' whose head is a constructor symbol
+ -}
+hasConstructorLikeTop :: TermLike variable -> Bool
+hasConstructorLikeTop = \case
+    App_ symbol _ -> isConstructor symbol
+    DV_ _ _ -> True
+    BuiltinBool_ _ -> True
+    BuiltinInt_ _ -> True
+    BuiltinList_ _ -> True
+    BuiltinMap_ _ -> True
+    BuiltinSet_ _ -> True
+    BuiltinString_ _ -> True
+    StringLiteral_ _ -> True
+    _ -> False
+
 {- | Is the 'TermLike' functional?
  -}
 isFunctionalPattern :: TermLike variable -> Bool
@@ -1210,13 +1234,25 @@ mkApplySymbol
     -- ^ Application arguments
     -> TermLike variable
 mkApplySymbol symbol children =
-    updateCallStack $ synthesize (ApplySymbolF application)
+    updateCallStack
+    $ synthesize (ApplySymbolF (symbolApplication symbol children))
+
+symbolApplication
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => Symbol
+    -- ^ Application symbol or alias
+    -> [TermLike variable]
+    -- ^ Application arguments
+    -> Application Symbol (TermLike variable)
+symbolApplication symbol children =
+    Application
+        { applicationSymbolOrAlias = symbol
+        , applicationChildren = forceSorts operandSorts children
+        }
   where
-    application =
-        Application
-            { applicationSymbolOrAlias = symbol
-            , applicationChildren = forceSorts operandSorts children
-            }
     operandSorts = applicationSortsOperands (symbolSorts symbol)
 
 {- | Construct an 'Application' pattern from a 'Alias' declaration.

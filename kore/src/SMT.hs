@@ -47,6 +47,7 @@ module SMT
     , SimpleSMT.forallQ
     ) where
 
+import qualified Colog
 import Control.Concurrent.MVar
 import qualified Control.Exception as Exception
 import qualified Control.Lens as Lens hiding
@@ -90,6 +91,9 @@ import Data.Text
     ( Text
     )
 
+import Kore.Logger
+    ( MonadLog (..)
+    )
 import qualified Kore.Logger as Logger
 import Kore.Profiler.Data
     ( MonadProfiler (..)
@@ -218,26 +222,16 @@ class Monad m => MonadSMT m where
 -- * Dummy implementation
 
 newtype NoSMT a = NoSMT { getNoSMT :: ReaderT Logger IO a }
-    deriving (Functor, Applicative, Monad, MonadIO)
+    deriving (Functor, Applicative, Monad, MonadCatch, MonadIO, MonadThrow)
 
 runNoSMT :: Logger -> NoSMT a -> IO a
 runNoSMT logger noSMT = runReaderT (getNoSMT noSMT) logger
 
-instance Logger.WithLog Logger.LogMessage NoSMT where
-    askLogAction =
-        NoSMT . Reader.asks
-            $ contramap Logger.toEntry
-            . Logger.hoistLogAction liftIO
-    localLogAction
-        :: forall a
-        .   (  forall n
-            .  Logger.LogAction n Logger.LogMessage
-            -> Logger.LogAction n Logger.LogMessage
-            )
-        -> NoSMT a
-        -> NoSMT a
-    localLogAction locally (NoSMT (ReaderT ra)) =
-        NoSMT $ ReaderT $ \logger -> ra $ Logger.mapLocalFunction locally logger
+instance MonadLog NoSMT where
+    logM entry =
+        NoSMT $ ReaderT $ \logger ->
+            Colog.unLogAction logger (Logger.toEntry entry)
+    logScope locally = NoSMT . Reader.local (contramap locally) . getNoSMT
 
 instance MonadSMT NoSMT where
     withSolver = id
@@ -297,26 +291,17 @@ withSolverT' action = SmtT $ do
     mvar <- Reader.ask
     Trans.lift $ withRunInIO $ \runInIO -> withMVar mvar (runInIO . action)
 
-instance (MonadIO m, MonadUnliftIO m)
-    => Logger.WithLog Logger.LogMessage (SmtT m)
-  where
-    askLogAction =
-        withSolverT'
-            $ return
-            . hoistLogAction
-            . contramap Logger.toEntry
-            . SimpleSMT.logger
-      where
-        hoistLogAction = Logger.hoistLogAction (SmtT . liftIO)
+instance MonadUnliftIO m => MonadLog (SmtT m) where
+    logM entry = withSolverT' $ \solver -> do
+        let logAction = contramap Logger.toEntry $ SimpleSMT.logger solver
+        liftIO $ Colog.unLogAction logAction entry
 
-    localLogAction mapping (SmtT action) =
+    logScope mapping (SmtT action) =
         withSolverT' $ \solver -> do
-            let solver' =
-                    Lens.over
-                        (field @"logger")
-                        (Logger.mapLocalFunction mapping)
-                        solver
-            runReaderT action =<< liftIO (newMVar solver')
+            let mapping' =
+                    Lens.over (field @"logger")
+                    $ contramap mapping
+            runReaderT action =<< liftIO (newMVar $ mapping' solver)
 
 instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
     withSolver (SmtT action) =

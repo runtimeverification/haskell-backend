@@ -9,8 +9,10 @@ copyright:           "2018-2019 Runtime Verification Inc"
 category:            Language
 
 extra-source-files:
-- README.md
-- ChangeLog.md
+  - README.md
+  - ChangeLog.md
+  - test/resources/*.kore
+  - test/resources/*.kore.golden
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package

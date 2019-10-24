@@ -21,10 +21,19 @@ import Control.Applicative
 import Control.Monad
     ( foldM
     )
+import Data.Bifunctor
+    ( bimap
+    )
+import Data.Either
+    ( partitionEithers
+    )
 import Data.List
     ( foldl1'
-    , nub
     )
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 import GHC.Stack
     ( HasCallStack
     )
@@ -43,9 +52,12 @@ import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
     , InternalVariable
+    , pattern Not_
     , Sort
     , TermLike
     , mkAnd
+    , mkBottom_
+    , mkNot
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.AndTerms as AndTerms
@@ -176,19 +188,53 @@ makeEvaluateNonBool
         initialConditions = firstCondition <> secondCondition
         merged = Conditional.andCondition terms initialConditions
     normalized <- Substitution.normalize merged
-    return (applyAndIdempotence <$> normalized)
-        { predicate = applyAndIdempotence <$> Conditional.predicate normalized }
+    return
+        normalized
+            { term =
+                applyAndIdempotenceAndFindContradictions
+                    (Conditional.term normalized)
+            , predicate =
+                applyAndIdempotenceAndFindContradictions
+                    <$> Conditional.predicate normalized
+            }
 
-applyAndIdempotence
+applyAndIdempotenceAndFindContradictions
     :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
-applyAndIdempotence patt =
-    foldl1' mkAndSimplified (nub (children patt))
+applyAndIdempotenceAndFindContradictions patt =
+    if noContradictions
+        then foldl1' mkAndSimplified . Set.toList $ Set.union terms negatedTerms
+        else mkBottom_
+
   where
-    children (And_ _ p1 p2) = children p1 ++ children p2
-    children p = [p]
+    (terms, negatedTerms) = splitIntoTermsAndNegations patt
+    noContradictions = Set.disjoint (Set.map mkNot terms) negatedTerms
     mkAndSimplified a b
       | TermLike.isSimplified a, TermLike.isSimplified b =
         TermLike.markSimplified $ mkAnd a b
       | otherwise = mkAnd a b
+
+splitIntoTermsAndNegations
+    :: forall variable
+    .  Ord variable
+    => TermLike variable
+    -> (Set (TermLike variable), Set (TermLike variable))
+splitIntoTermsAndNegations =
+    bimap Set.fromList Set.fromList
+        . partitionWith termOrNegation
+        . children
+  where
+    children :: TermLike variable -> [TermLike variable]
+    children (And_ _ p1 p2) = children p1 ++ children p2
+    children p = [p]
+
+    -- Left is for regular terms, Right is negated terms
+    termOrNegation
+        :: TermLike variable
+        -> Either (TermLike variable) (TermLike variable)
+    termOrNegation t@(Not_ _ _) = Right t
+    termOrNegation t            = Left t
+
+partitionWith :: (a -> Either b c) -> [a] -> ([b], [c])
+partitionWith f = partitionEithers . fmap f

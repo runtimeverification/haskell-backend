@@ -3,6 +3,10 @@ module Test.Kore.Strategies.AllPath.AllPath where
 import Test.Tasty
 
 import Control.Applicative
+import Control.Monad.Catch
+    ( MonadCatch (catch)
+    , MonadThrow (throwM)
+    )
 import qualified Data.Foldable as Foldable
 import Data.Function
     ( (&)
@@ -23,8 +27,7 @@ import GHC.Stack
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Logger
-    ( LogMessage (..)
-    , WithLog (..)
+    ( MonadLog (..)
     )
 import Kore.Profiler.Data
     ( Configuration (..)
@@ -418,9 +421,9 @@ runTransitionRule prim state =
 newtype AllPathIdentity a = AllPathIdentity { unAllPathIdentity :: Identity a }
     deriving (Functor, Applicative, Monad)
 
-instance WithLog LogMessage AllPathIdentity where
-    askLogAction = undefined
-    localLogAction _ = undefined
+instance MonadLog AllPathIdentity where
+    logM = undefined
+    logScope _ = undefined
 
 instance MonadSMT AllPathIdentity where
     withSolver = undefined
@@ -449,12 +452,17 @@ instance MonadProfiler AllPathIdentity where
             , logSmt = False
             }
 
+instance MonadThrow AllPathIdentity where
+    throwM _ = error "Unimplemented"
+
+instance MonadCatch AllPathIdentity where
+    catch action _handler = action
+
 instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined
     askSimplifierTermLike = undefined
     localSimplifierTermLike = undefined
-    askSimplifierPredicate = undefined
-    localSimplifierPredicate = undefined
+    simplifyPredicate = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined

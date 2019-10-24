@@ -148,15 +148,15 @@ test_equalsSimplification_Or_Pattern =
                         , predicate =
                             makeMultipleAndPredicate
                                 [ makeCeilPredicate Mock.cf
-                                , makeOrPredicate
-                                    (makeCeilPredicate Mock.cg)
-                                    (makeCeilPredicate Mock.ch)
                                 , makeImpliesPredicate
                                     (makeCeilPredicate Mock.cg)
                                     (makeEqualsPredicate Mock.cf Mock.cg)
                                 , makeImpliesPredicate
                                     (makeCeilPredicate Mock.ch)
                                     (makeEqualsPredicate Mock.cf Mock.ch)
+                                , makeOrPredicate
+                                    (makeCeilPredicate Mock.cg)
+                                    (makeCeilPredicate Mock.ch)
                                 ]
                         , substitution = mempty
                         }
@@ -221,7 +221,7 @@ test_equalsSimplification_Or_Pattern =
                                 [ definedF
                                 , definedG
                                 , makeImpliesPredicate
-                                    definedG
+                                    definedGWithSubstitution
                                     (makeEqualsPredicate Mock.cf Mock.cg)
                                 , makeImpliesPredicate
                                     definedH
@@ -249,8 +249,8 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             makeMultipleAndPredicate
-                                [ makeNotPredicate definedF
-                                , makeNotPredicate definedGWithSubstitution
+                                [ makeNotPredicate definedGWithSubstitution
+                                , makeNotPredicate definedF
                                 , makeNotPredicate definedH
                                 ]
                         , substitution = mempty
@@ -343,6 +343,32 @@ test_equalsSimplification_Pattern =
                     }
         assertEqual "" expect actual
 
+    , testCase "sorted equals predicate" $ do
+        let expect =
+                OrPattern.fromPatterns
+                    [ Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeIffPredicate
+                                (makeEqualsPredicate fOfA fOfB)
+                                (makeEqualsPredicate gOfA gOfB)
+                        , substitution = mempty
+                        }
+                    ]
+        actual <-
+            evaluate
+                Conditional
+                    { term = mkTop Mock.testSort
+                    , predicate = makeEqualsPredicate fOfA fOfB
+                    , substitution = mempty
+                    }
+                Conditional
+                    { term = mkTop Mock.testSort
+                    , predicate = makeEqualsPredicate gOfA gOfB
+                    , substitution = mempty
+                    }
+        assertEqual "" expect actual
+
     , testCase "constructor-patt vs constructor-patt" $ do
         let expect =
                 OrPattern.fromPatterns
@@ -350,18 +376,18 @@ test_equalsSimplification_Pattern =
                         { term = mkTop_
                         , predicate =
                             makeOrPredicate
-                                ( makeAndPredicate
+                                (makeAndPredicate
                                     (makeAndPredicate
                                         (makeAndPredicate
                                             (makeAndPredicate
-                                                (makeEqualsPredicate hOfA hOfB)
                                                 (makeCeilPredicate hOfA)
+                                                (makeCeilPredicate hOfB)
                                             )
                                             (makeEqualsPredicate fOfA fOfB)
                                         )
-                                        (makeCeilPredicate hOfB)
+                                        (makeEqualsPredicate gOfA gOfB)
                                     )
-                                    (makeEqualsPredicate gOfA gOfB)
+                                    (makeEqualsPredicate hOfA hOfB)
                                 )
                                 (makeAndPredicate
                                     (makeNotPredicate

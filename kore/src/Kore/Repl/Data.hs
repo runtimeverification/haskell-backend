@@ -300,7 +300,7 @@ helpText =
                                            \ with <name>\n\
     \prove <n|name>                        initializes proof mode for the nth\
                                            \ claim or for the claim with <name>\n\
-    \graph [file]                          shows the current proof graph (*)\n\
+    \graph [file]                          shows the current proof graph (*)(**)\n\
     \                                      (saves image in .jpeg format if file\
                                            \ argument is given; file extension\
                                            \ is added automatically)\n\
@@ -352,7 +352,7 @@ helpText =
     \                                      <type> can be 'none', 'stdout',\
                                            \ or 'file filename'\n\
     \exit                                  exits the repl\
-    \\n\
+    \\n\n\
     \Available modifiers:\n\
     \<command> > file                      prints the output of 'command'\
                                            \ to file\n\
@@ -366,18 +366,20 @@ helpText =
     \<command> | external script >> file   pipes and then appends the output\
                                            \ of the piped command to a file\n\
     \\n\
-    \(*) If an edge is labeled as Simpl/RD it means that\
-    \ either the target node was reached using the SMT solver\
-    \ or it was reached through the Remove Destination step.\n\
-    \\n\
+    \(*) If an edge is labeled as Simpl/RD it means that either the target node\n\
+    \ was reached using the SMT solver or it was reached through the Remove \n\
+    \ Destination step.\n\
+    \(**) A green node represents the proof has completed on\
+    \ that respective branch.\
+    \\n\n\
     \Rule names can be added in two ways:\n\
     \    a) rule <k> ... </k> [label(myName)]\n\
     \    b) rule [myName] : <k> ... </k>\n\
     \Names added via a) can be used as-is. Note that names which match the\n\
-    \ indexing syntax for the try and tryf commands shouldn't be added\
-    \ (e.g. a5 as a rule name).\
-    \ Names added via b) need to be prefixed with the module name followed by dot,\
-    \ e.g. IMP.myName"
+    \ indexing syntax for the try and tryf commands shouldn't be added\n\
+    \ (e.g. a5 as a rule name).\n\
+    \Names added via b) need to be prefixed with the module name followed by\n\
+    \ dot, e.g. IMP.myName"
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.
@@ -473,19 +475,13 @@ deriving instance MonadSMT m => MonadSMT (UnifierWithExplanation m)
 
 deriving instance MonadProfiler m => MonadProfiler (UnifierWithExplanation m)
 
-instance Logger.WithLog Logger.LogMessage m
-    => Logger.WithLog Logger.LogMessage (UnifierWithExplanation m)
-  where
-    askLogAction =
-        Logger.hoistLogAction UnifierWithExplanation
-        <$> UnifierWithExplanation Logger.askLogAction
-    {-# INLINE askLogAction #-}
+instance Logger.MonadLog m => Logger.MonadLog (UnifierWithExplanation m) where
+    logM entry = UnifierWithExplanation $ Logger.logM entry
+    {-# INLINE logM #-}
 
-    localLogAction locally =
-        UnifierWithExplanation
-        . Logger.localLogAction locally
-        . getUnifierWithExplanation
-    {-# INLINE localLogAction #-}
+    logScope locally (UnifierWithExplanation unifierT) =
+        UnifierWithExplanation (Logger.logScope locally unifierT)
+    {-# INLINE logScope #-}
 
 deriving instance MonadSimplify m => MonadSimplify (UnifierWithExplanation m)
 

@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-14.4
+resolver: lts-14.11
 
 nix:
   packages:

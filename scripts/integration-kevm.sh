@@ -33,6 +33,18 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-run test-interactive-search
+make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-search
 
-make -j8 -C "$TOP/src/main/k/evm-semantics" test
+for each in \
+    tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
+    tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json \
+    tests/interactive/sumTo10.evm
+do
+    command time -o "$TOP/profile.json" -a \
+        -f "{ \"evm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+        make TEST_CONCRETE_BACKEND=haskell "$each".run-interactive
+done
+
+command time -o "$TOP/profile.json" -a \
+    -f "{ \"src/main/k/evm-semantics/sum-to-n/sum-to-n-spec.k\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+    make -C "$TOP/src/main/k/evm-semantics/sum-to-n" sum-to-n-spec.kprove.diff
