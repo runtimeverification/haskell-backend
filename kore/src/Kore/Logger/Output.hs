@@ -211,11 +211,11 @@ makeKoreLogger minSeverity currentScope logToText =
         $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
-    messageToText (WithTimestamp (SomeEntry entry) localTime) =
+    messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         $ Pretty.brackets (formattedTime localTime)
-        <> defaultLogPretty (toLogMessage entry)
+        <> defaultLogPretty entry
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
 
 -- | Adds the current timestamp to a log entry.
@@ -255,16 +255,21 @@ swappableLogger mvar =
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
 
-defaultLogPretty :: LogMessage -> Pretty.Doc ann
-defaultLogPretty LogMessage { severity, scope, message, callstack } =
-    Pretty.hsep
-        [ Pretty.brackets (Pretty.pretty severity)
-        , Pretty.brackets (prettyScope scope)
-        , ":"
-        , Pretty.pretty message
-        , Pretty.brackets (formatCallstack callstack)
-        ]
+defaultLogPretty :: SomeEntry -> Pretty.Doc ann
+defaultLogPretty scopedEntry =
+    case toLogMessage' <$> unwrapScope scopedEntry of
+        (scope, LogMessage { severity, message, callstack }) ->
+            Pretty.hsep
+                [ Pretty.brackets (Pretty.pretty severity)
+                , Pretty.brackets (prettyScope $ reverse scope)
+                , ":"
+                , Pretty.pretty message
+                , Pretty.brackets (formatCallstack callstack)
+                ]
   where
+    toLogMessage' :: SomeEntry -> LogMessage
+    toLogMessage' (SomeEntry entry) = toLogMessage entry
+
     prettyScope :: [Scope] -> Pretty.Doc ann
     prettyScope =
         mconcat
@@ -276,4 +281,11 @@ defaultLogPretty LogMessage { severity, scope, message, callstack } =
       | otherwise                     = callStackToBuilder cs
     callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
     callStackToBuilder = Pretty.pretty . prettyCallStack . popCallStack
+
+unwrapScope :: SomeEntry -> ([Scope], SomeEntry)
+unwrapScope se =
+    case fromEntry se of
+        Nothing -> ([], se)
+        Just WithScope { entry, scope } ->
+            (scope : fst (unwrapScope entry), entry)
 
