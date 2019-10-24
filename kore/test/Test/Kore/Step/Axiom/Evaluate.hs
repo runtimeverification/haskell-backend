@@ -54,6 +54,9 @@ test_evaluateAxioms =
     , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to F(x)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f x, makeTruePredicate)
+    , doesn'tApply "F(x) => G(x) doesn't apply to F(top)"
+        [axiom_ (f x) (g x)]
+        (f mkTop_, makeTruePredicate)
     , applies "F(x) => G(x) [concrete] apply to F(a)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f a, makeTruePredicate)
@@ -220,4 +223,8 @@ evaluateAxioms
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms (termLike, predicate) =
     runSimplifier Mock.env
-    $ Kore.evaluateAxioms axioms termLike predicate
+    $ fmap Kore.resultsToAttemptedAxiom
+        $ Kore.evaluateAxioms
+            axioms
+            termLike
+            predicate
