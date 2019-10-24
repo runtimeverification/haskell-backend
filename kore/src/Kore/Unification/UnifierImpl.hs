@@ -5,6 +5,7 @@ License     : NCSA
  -}
 module Kore.Unification.UnifierImpl
     ( simplifyAnds
+    , orderRenaming
     , deduplicateSubstitution
     , normalizeOnce
     , normalizeExcept
@@ -90,20 +91,41 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
         (intermediateTerm, intermediateCondition) =
             Pattern.splitTerm intermediate
 
-{- | Sort variable-renaming substitutions.
+{- | Apply a normal order to variable-renaming substitutions.
+
+A variable-renaming substitution has one of the forms,
+
+@
+x:S{} = y:S{}
+\@X:S{} = \@Y:S{}
+@
+
+These are __not__ variable-renaming substitutions because they change variable
+types:
+
+@
+x:S{} = \@Y:S{}
+\@X:S{} = y:S{}
+@
 
 Variable-renaming substitutions are sorted so that the greater variable is
 substituted in place of the lesser. Consistent ordering prevents variable-only
 cycles.
 
  -}
-sortRenamedVariable
+orderRenaming
     :: InternalVariable variable
     => (UnifiedVariable variable, TermLike variable)
     -> (UnifiedVariable variable, TermLike variable)
-sortRenamedVariable (variable1, Var_ variable2)
-  | variable2 < variable1 = (variable2, mkVar variable1)
-sortRenamedVariable subst = subst
+orderRenaming (uVar1, Var_ uVar2)
+  | ElemVar eVar1 <- uVar1
+  , ElemVar eVar2 <- uVar2
+  , eVar2 < eVar1 = (uVar2, mkVar uVar1)
+
+  | SetVar sVar1 <- uVar1
+  , SetVar sVar2 <- uVar2
+  , sVar2 < sVar1 = (uVar2, mkVar uVar1)
+orderRenaming subst = subst
 
 {- | Simplify a conjunction of substitutions for the same variable.
 
@@ -185,7 +207,7 @@ deduplicateSubstitution =
         substitutions =
             Map.toAscList
             . Foldable.foldl' insertSubstitution Map.empty
-            . map sortRenamedVariable
+            . map orderRenaming
             $ Substitution.unwrap substitution
 
 normalizeOnce
