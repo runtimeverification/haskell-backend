@@ -24,6 +24,7 @@ module Kore.Builtin.Map
     -- * Raw evaluators
     , evalConcat
     , evalElement
+    , evalUnit
     ) where
 
 import Control.Applicative
