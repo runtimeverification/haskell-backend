@@ -5,11 +5,17 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
+import qualified Control.Lens as Lens
 import qualified Data.Default as Default
+import Data.Function
+    ( (&)
+    )
+import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Test.Tasty
 
+import Kore.Attribute.Simplification
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
@@ -271,7 +277,7 @@ test_simplificationIntegration =
                             ]
                           )
                         , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
-                          , [ EqualityRule $ rulePattern
+                          , [ EqualityRule $ simplificationRulePattern
                                 (mkCeil testSortVariable
                                     $ Mock.tdivInt
                                         (mkElemVar Mock.xInt)
@@ -748,6 +754,17 @@ test_simplificationIntegration =
     mw = ElementVariable $ Variable (testId "mw") mempty Mock.subOthersort
     k = SetVariable $ Variable (testId "k") mempty Mock.setSort
 
+
+simplificationRulePattern
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> RulePattern variable
+simplificationRulePattern left right =
+    patt & Lens.set (field @"attributes" . field @"simplification")
+        (Simplification True)
+  where
+    patt = rulePattern left right
 
 test_substitute :: [TestTree]
 test_substitute =

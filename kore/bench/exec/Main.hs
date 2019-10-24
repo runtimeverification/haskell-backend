@@ -10,13 +10,16 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
+import Data.Proxy
+    ( Proxy (..)
+    )
 import qualified Data.Set as Set
 import Numeric.Natural
     ( Natural
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
+    ( AttributesVerification (VerifyAttributes)
     , verifyAndIndexDefinition
     )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
@@ -159,7 +162,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
             verifiedModules =
                 either (error . printError) id
                     $ verifyAndIndexDefinition
-                        DoNotVerifyAttributes
+                        (VerifyAttributes Proxy Proxy)
                         Builtin.koreVerifiers
                         parsedDefinition
             Just verifiedModule = Map.lookup mainModuleName verifiedModules

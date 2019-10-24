@@ -17,6 +17,7 @@ module Kore.Internal.TermLike
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
+    , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
     , termLikeSort
@@ -662,6 +663,28 @@ refreshVariables
 isFunctionPattern :: TermLike variable -> Bool
 isFunctionPattern =
     Pattern.isFunction . Attribute.function . extractAttributes
+
+{- | Does the 'TermLike' have a constructor-like top?
+
+A pattern is 'ConstructorLikeTop' if it is one of the following:
+
+- A 'StringLiteral'
+- A 'DomainValue'
+- A 'Builtin'
+- An 'Application' whose head is a constructor symbol
+ -}
+hasConstructorLikeTop :: TermLike variable -> Bool
+hasConstructorLikeTop = \case
+    App_ symbol _ -> isConstructor symbol
+    DV_ _ _ -> True
+    BuiltinBool_ _ -> True
+    BuiltinInt_ _ -> True
+    BuiltinList_ _ -> True
+    BuiltinMap_ _ -> True
+    BuiltinSet_ _ -> True
+    BuiltinString_ _ -> True
+    StringLiteral_ _ -> True
+    _ -> False
 
 {- | Is the 'TermLike' functional?
  -}

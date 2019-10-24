@@ -52,6 +52,7 @@ builtinSymbol name resultSort operandSorts =
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts operandSorts resultSort
         }
+    & function
 
 unarySymbol :: Text -> Sort -> Internal.Symbol
 unarySymbol name sort = builtinSymbol name sort [sort]
@@ -469,6 +470,7 @@ pairSymbol lSort rSort =
         , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
     & constructor
+    & functional
 
 pair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 pair l r =
