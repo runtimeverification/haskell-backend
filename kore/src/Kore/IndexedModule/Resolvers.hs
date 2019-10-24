@@ -13,6 +13,7 @@ module Kore.IndexedModule.Resolvers
     , resolveSort
     , resolveAlias
     , resolveSymbol
+    , resolveInternalSymbol
     , resolveHook
     , findIndexedSort
 
@@ -22,9 +23,11 @@ module Kore.IndexedModule.Resolvers
     -- exported until `resolveHook` has its own
     -- tests.
     , getHeadApplicationSorts
-
     ) where
 
+import Control.Error
+    ( hush
+    )
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Set
@@ -43,6 +46,9 @@ import Kore.AST.Error
     ( koreFailWithLocations
     )
 import qualified Kore.Attribute.Sort as Attribute
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol
+    )
 import Kore.Error
 import Kore.IndexedModule.Error
     ( noAliasText
@@ -58,10 +64,17 @@ import Kore.IndexedModule.IndexedModule
     , indexedModulesInScope
     )
 import Kore.Internal.ApplicationSorts
+import qualified Kore.Internal.Symbol as Internal
+    ( Symbol (Symbol)
+    )
+import qualified Kore.Internal.Symbol as Internal.Symbol
 import Kore.Syntax
 import Kore.Syntax.Definition hiding
     ( Alias (..)
     , Symbol (..)
+    )
+import qualified Kore.Syntax.Definition as Syntax
+    ( Symbol (..)
     )
 
 symbolSentencesMap
@@ -186,6 +199,28 @@ resolveSymbol m headId =
             koreFailWithLocations [headId] (noSymbolText headId)
         Just result ->
             return result
+
+{- | Search for an 'Internal.Symbol' in the 'IndexedModule'.
+
+@resolveInternalSymbol@ recurses through all modules in scope.
+
+-}
+resolveInternalSymbol
+    :: IndexedModule patternType Attribute.Symbol axiomAtts
+    -> Id
+    -> Maybe ([Sort] -> Internal.Symbol)
+resolveInternalSymbol indexedModule symbolId = do
+    (symbolAttributes, sentence) <- hush $ resolveSymbol indexedModule symbolId
+    let SentenceSymbol { sentenceSymbolSymbol = external } = sentence
+        Syntax.Symbol { symbolConstructor } = external
+    return $ \symbolParams ->
+        let symbolSorts = assertRight $ symbolOrAliasSorts symbolParams sentence
+        in Internal.Symbol
+            { symbolConstructor
+            , symbolParams
+            , symbolSorts
+            , symbolAttributes
+            }
 
 {-|'resolveAlias' looks up a symbol id in an 'IndexedModule',
 also searching in the imported modules.
