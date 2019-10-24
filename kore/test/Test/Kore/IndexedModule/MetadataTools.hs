@@ -11,6 +11,9 @@ import Test.Tasty.HUnit
     )
 
 import qualified Data.Map as Map
+import Data.Proxy
+    ( Proxy (..)
+    )
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 

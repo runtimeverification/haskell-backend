@@ -10,6 +10,9 @@ import Data.Map
     )
 import qualified Data.Map as Map
 import qualified Data.Ord
+import Data.Proxy
+    ( Proxy (..)
+    )
 
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
