@@ -27,7 +27,7 @@ import System.Exit
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (..)
+    ( AttributesVerification (VerifyAttributes)
     , verifyAndIndexDefinition
     )
 import qualified Kore.Attribute.Axiom as Attribute
@@ -38,7 +38,7 @@ import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
-import Kore.Error
+import qualified Kore.Error
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
@@ -201,7 +201,7 @@ verifiedMyModule module_ = indexedModule
   where
     Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
     indexedModules =
-        either (error . printError) id
+        Kore.Error.assertRight
         $ verifyAndIndexDefinition
             (VerifyAttributes Proxy Proxy)
             Builtin.koreVerifiers

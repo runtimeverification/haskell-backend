@@ -33,7 +33,6 @@ import Kore.Syntax.Pattern
 declarations visible in these atributes. -}
 data AttributesVerification declAtts axiomAtts
     = VerifyAttributes (Proxy declAtts) (Proxy axiomAtts)
-    | DoNotVerifyAttributes
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -55,8 +54,6 @@ verifyAttributes
     verifySuccess
   where
     project = Cofree.tailF . Recursive.project
-verifyAttributes _ DoNotVerifyAttributes =
-    verifySuccess
 
 verifyAttributePattern
     :: MonadError (Error VerifyError) m
@@ -80,15 +77,11 @@ verifySortHookAttribute
     => AttributesVerification declAtts axiomAtts
     -> Attributes
     -> error Hook
-verifySortHookAttribute =
-    \case
-        DoNotVerifyAttributes ->
-            \_ -> return emptyHook
-        VerifyAttributes _ _ -> \attrs -> do
-            hook <- parseAttributes attrs
-            case getHook hook of
-                Just _  -> return hook
-                Nothing -> koreFail "missing hook attribute"
+verifySortHookAttribute (VerifyAttributes _ _) attrs = do
+    hook <- parseAttributes attrs
+    case getHook hook of
+        Just _  -> return hook
+        Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is present and well-formed.
 
@@ -102,16 +95,11 @@ verifySymbolHookAttribute
     => AttributesVerification declAtts axiomAtts
     -> Attributes
     -> error Hook
-verifySymbolHookAttribute =
-    \case
-        DoNotVerifyAttributes ->
-            -- Do not attempt to parse, verify, or return the hook attribute.
-            \_ -> return emptyHook
-        VerifyAttributes _ _ -> \attrs -> do
-            hook <- parseAttributes attrs
-            case getHook hook of
-                Just _  -> return hook
-                Nothing -> koreFail "missing hook attribute"
+verifySymbolHookAttribute (VerifyAttributes _ _) attrs = do
+    hook <- parseAttributes attrs
+    case getHook hook of
+        Just _  -> return hook
+        Nothing -> koreFail "missing hook attribute"
 
 {- | Verify that the @hook{}()@ attribute is not present.
 
@@ -123,16 +111,11 @@ verifyNoHookAttribute
     => AttributesVerification declAtts axiomAtts
     -> Attributes
     -> error ()
-verifyNoHookAttribute =
-    \case
-        DoNotVerifyAttributes ->
-            -- Do not verify anything.
-            \_ -> return ()
-        VerifyAttributes _ _ -> \attributes -> do
-            Hook { getHook } <- parseAttributes attributes
-            case getHook of
-                Nothing ->
-                    -- The hook attribute is (correctly) absent.
-                    return ()
-                Just _ ->
-                    koreFail "Unexpected 'hook' attribute"
+verifyNoHookAttribute (VerifyAttributes _ _) attributes = do
+    Hook { getHook } <- parseAttributes attributes
+    case getHook of
+        Nothing ->
+            -- The hook attribute is (correctly) absent.
+            return ()
+        Just _ ->
+            koreFail "Unexpected 'hook' attribute"

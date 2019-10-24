@@ -31,6 +31,10 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Predicate as Predicate
     ( fromPredicate
     )
+import Kore.Predicate.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    )
 import Kore.Step.Rule
     ( OnePathRule (..)
     , RulePattern (RulePattern)
@@ -65,12 +69,20 @@ simplifyRuleLhs
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
-    simplified <- Pattern.simplifyAndRemoveTopExists
-        (left `Conditional.withCondition` Predicate.fromPredicate requires)
+    simplified <- Pattern.simplifyAndRemoveTopExists definedLhs
     let rules = map (setRuleLeft rule) (MultiOr.extractPatterns simplified)
     return (MultiAnd.make rules)
   where
     RulePattern {left, requires} = rule
+
+    definedLhs =
+        Conditional.withCondition
+            left
+            $ Predicate.fromPredicate
+                ( makeAndPredicate
+                    requires
+                    (makeCeilPredicate left)
+                )
 
     setRuleLeft
         :: RulePattern variable
