@@ -677,6 +677,30 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
+    , testCase "Builtin and simplification failure" $ do
+        let m = SetVariable $ Variable (testId "m") mempty Mock.listSort
+            ue = SetVariable $ Variable (testId "ue") mempty Mock.listSort
+        actual <- evaluate
+            Conditional
+                { term = mkAnd
+                    (Mock.concatList
+                        (mkImplies
+                            (mkImplies mkBottom_ mkTop_)
+                            (mkIn_ Mock.cfSort0 Mock.cgSort0)
+                        )
+                        (mkImplies
+                            (mkAnd
+                                (mkMu m mkBottom_)
+                                mkBottom_
+                            )
+                            (mkImplies Mock.unitList (mkNu ue Mock.unitList))
+                        )
+                    )
+                    Mock.unitList
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
     , testCase "Forall simplification" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -983,6 +1007,9 @@ builtinAxioms =
             )
         ,   ( AxiomIdentifier.Application Mock.unitListId
             , builtinEvaluation List.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application Mock.concatListId
+            , builtinEvaluation List.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.tdivIntId
             , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)
