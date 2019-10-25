@@ -43,7 +43,6 @@ import qualified Kore.Internal.TermLike as TermLike
     )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
-    , makeNotPredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.And as And
@@ -175,8 +174,8 @@ makeTermNot
 -- not ceil = floor not
 -- not forall = exists not
 makeTermNot (Not_ _ term) = term
-makeTermNot (Not_ _ (And_ _ term1 term2)) =
-    mkOr (mkNot term1) (mkNot term2)
+makeTermNot (And_ _ term1 term2) =
+    mkOr (makeTermNot term1) (makeTermNot term2)
 makeTermNot term
   | isBottom term = mkTop_
   | isTop term    = mkBottom_
