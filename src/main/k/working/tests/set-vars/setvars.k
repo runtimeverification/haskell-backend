@@ -8,13 +8,13 @@ module SETVARS
   rule f(X:Int) => X +Int 1
 
   syntax KItem ::= g(Int)
-  rule g(@X:Int) => @X +Int 1 // This is not yet supported
+  rule g(@X:Int) => @X +Int 1 [simplification] // This is not yet supported
 
   syntax Int ::= h(Int) [function]
-  rule h(@X:Int) => @X +Int 1
+  rule h(@X:Int) => @X +Int 1 [simplification]
 
   syntax KItem ::= i(Int)
-  rule i(@X:Int) => @X +Int 1 [anywhere]
+  rule i(@X:Int) => @X +Int 1 [simplification,anywhere]
 
   syntax Int ::= j(Int, Int) [function, functional]
 

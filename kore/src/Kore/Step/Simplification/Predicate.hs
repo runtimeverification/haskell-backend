@@ -55,7 +55,6 @@ result. The result is re-simplified until it stabilizes.
 
 The 'term' of 'Conditional' may be any type; it passes through @simplify@
 unmodified.
-
 -}
 simplify
     ::  forall simplifier variable any
@@ -112,9 +111,11 @@ simplifyPartial
     ->  BranchT simplifier (Predicate variable)
 simplifyPartial predicate = do
     patternOr <-
-        Monad.Trans.lift $ simplifyTerm $ Syntax.unwrapPredicate predicate
-    -- Despite using Monad.Trans.lift above, we do not need to explicitly check
-    -- for \bottom because patternOr is an OrPattern.
+        Monad.Trans.lift
+        $ simplifyTerm
+        $ Syntax.unwrapPredicate predicate
+    -- Despite using Monad.Trans.lift above, we do not need to
+    -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)
   where
     eraseTerm conditional

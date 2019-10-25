@@ -11,7 +11,6 @@ module Kore.ASTVerifier.Verifier
     --
     , VerifiedModule'
     , ImplicitModule
-    , AttributesVerification'
     --
     , lookupVerifiedModule
     , lookupParsedModule
@@ -35,7 +34,6 @@ import qualified Data.Map as Map
 import qualified GHC.Generics as GHC
 
 import Kore.AST.Error
-import Kore.ASTVerifier.AttributesVerifier
 import Kore.ASTVerifier.Error
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
@@ -51,9 +49,6 @@ type ImplicitModule =
         Attribute.Symbol
         Attribute.Axiom
 
-type AttributesVerification' =
-    AttributesVerification Attribute.Symbol Attribute.Axiom
-
 type VerifiedModule' = VerifiedModule Attribute.Symbol Attribute.Axiom
 
 data VerifierContext =
@@ -61,7 +56,6 @@ data VerifierContext =
         { implicitModule         :: !ImplicitModule
         , modules                :: !(Map ModuleName ParsedModule)
         , importing              :: ![ModuleName]
-        , attributesVerification :: !AttributesVerification'
         , builtinVerifiers       :: !Builtin.Verifiers
         }
     deriving (GHC.Generic)
@@ -91,7 +85,6 @@ runVerifier
     -> Map ModuleName VerifiedModule'
     -> ImplicitModule
     -> Map ModuleName (Module ParsedSentence)
-    -> AttributesVerification'
     -> Builtin.Verifiers
     -> Either (Error VerifyError) (a, Map ModuleName VerifiedModule')
 runVerifier
@@ -99,7 +92,6 @@ runVerifier
     alreadyVerifiedModules
     implicitModule
     modules
-    attributesVerification
     builtinVerifiers
   = do
     (a, verifierState', ()) <-
@@ -116,7 +108,6 @@ runVerifier
             { implicitModule
             , modules
             , importing = []
-            , attributesVerification
             , builtinVerifiers
             }
 

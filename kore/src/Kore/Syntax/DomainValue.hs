@@ -13,6 +13,7 @@ import Control.DeepSeq
     )
 import Data.Function
 import Data.Hashable
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -56,11 +57,12 @@ instance Unparse child => Unparse (DomainValue Sort child) where
     unparse DomainValue { domainValueSort, domainValueChild } =
         "\\dv"
         <> parameters [domainValueSort]
-        <> arguments [domainValueChild]
+        <> Pretty.parens (unparse domainValueChild)
+
     unparse2 DomainValue { domainValueSort, domainValueChild } =
         "\\dv"
         <> parameters2 [domainValueSort]
-        <> arguments2 [domainValueChild]
+        Pretty.<+> unparse domainValueChild
 
 instance
     Ord variable =>

@@ -120,7 +120,6 @@ axiomPatternsUnitTests =
                         }
                 indexedDefinition =
                     verifyAndIndexDefinition
-                        DoNotVerifyAttributes
                         Builtin.koreVerifiers
                         Definition
                             { definitionAttributes = Attributes []

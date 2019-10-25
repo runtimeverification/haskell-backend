@@ -4,6 +4,7 @@ module Test.Kore.Step.Function.Integration
     , test_List
     , test_lookupMap
     , test_updateMap
+    , test_Ceil
     ) where
 
 import Test.Tasty
@@ -16,7 +17,6 @@ import Data.Map
     )
 import qualified Data.Map as Map
 import Data.Maybe
-import Data.Proxy
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Prelude hiding
     ( succ
@@ -1068,6 +1068,65 @@ vInt = elemVarS (testId "vInt") intSort
 xInt = elemVarS (testId "xInt") intSort
 yInt = elemVarS (testId "yInt") intSort
 
+xsInt :: SetVariable Variable
+xsInt = setVarS (testId "xsInt") intSort
+
+test_Ceil :: [TestTree]
+test_Ceil =
+    [ simplifies "\\ceil(dummy(X)) => ... ~ \\ceil(dummy(Y))"
+        ceilDummyRule
+        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yInt)
+    , notSimplifies "\\ceil(dummy(X)) => \\not(\\equals(X, 0)) !~ dummy(Y)"
+        ceilDummyRule
+        (Builtin.dummyInt $ mkElemVar yInt)
+    , simplifies "\\ceil(dummy(@X)) => ... ~ \\ceil(dummy(Y))"
+        ceilDummySetRule
+        (mkCeil_ $ Builtin.dummyInt $ mkElemVar yInt)
+    ]
+
+ceilDummyRule :: EqualityRule Variable
+ceilDummyRule =
+    axiom_
+        (mkCeil_ $ Builtin.dummyInt $ mkElemVar xInt)
+        (mkEquals_ (Builtin.eqInt (mkElemVar xInt) (mkInt 0)) (mkBool False))
+
+ceilDummySetRule :: EqualityRule Variable
+ceilDummySetRule =
+    axiom_
+        (mkCeil_ $ Builtin.dummyInt $ mkSetVar xsInt)
+        (mkEquals_ (Builtin.eqInt (mkSetVar xsInt) (mkInt 0)) (mkBool False))
+
+-- Simplification tests: check that one or more rules applies or not
+withSimplified
+    :: (CommonAttemptedAxiom -> Assertion)
+    -> TestName
+    -> EqualityRule Variable
+    -> TermLike Variable
+    -> TestTree
+withSimplified check comment rule term =
+    testCase comment $ do
+        actual <- evaluateWith (simplificationEvaluation rule) term
+        check actual
+
+simplifies, notSimplifies
+    :: TestName
+    -> EqualityRule Variable
+    -> TermLike Variable
+    -> TestTree
+simplifies =
+    withSimplified $ \attempted -> do
+        results <- expectApplied attempted
+        expectNoRemainders results
+  where
+    expectApplied NotApplicable     = assertFailure "Expected Applied"
+    expectApplied (Applied results) = return results
+    expectNoRemainders =
+        assertBool "Expected no remainders"
+        . isBottom
+        . Lens.view (field @"remainders")
+notSimplifies =
+    withSimplified (assertBool "Expected NotApplicable" . isNotApplicable)
+
 axiomEvaluator
     :: TermLike Variable
     -> TermLike Variable
@@ -1179,9 +1238,7 @@ verify
         (Map
             ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
         )
-verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
-  where
-    attrVerify = defaultAttributesVerification Proxy Proxy
+verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
     :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)

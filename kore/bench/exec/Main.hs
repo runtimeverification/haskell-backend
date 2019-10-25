@@ -16,8 +16,7 @@ import Numeric.Natural
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
-    , verifyAndIndexDefinition
+    ( verifyAndIndexDefinition
     )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -159,7 +158,6 @@ execBenchmark root kFile definitionFile mainModuleName test =
             verifiedModules =
                 either (error . printError) id
                     $ verifyAndIndexDefinition
-                        DoNotVerifyAttributes
                         Builtin.koreVerifiers
                         parsedDefinition
             Just verifiedModule = Map.lookup mainModuleName verifiedModules

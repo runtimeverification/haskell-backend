@@ -5,7 +5,6 @@ import Test.Tasty.HUnit
 
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
-import Data.Proxy
 
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Attribute.Overload
@@ -124,11 +123,7 @@ test_ignore =
         Just indexedModule = Map.lookup testModuleName verifiedModules
           where
             Right verifiedModules =
-                verifyAndIndexDefinition
-                    attributesVerification
-                    Builtin.koreVerifiers
-                    testDefinition
-            attributesVerification = defaultAttributesVerification Proxy Proxy
+                verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 
     testDefinition =
         Definition

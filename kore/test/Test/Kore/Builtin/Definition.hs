@@ -52,6 +52,7 @@ builtinSymbol name resultSort operandSorts =
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts operandSorts resultSort
         }
+    & function
 
 unarySymbol :: Text -> Sort -> Internal.Symbol
 unarySymbol name sort = builtinSymbol name sort [sort]
@@ -402,6 +403,10 @@ sizeMapSymbol :: Internal.Symbol
 sizeMapSymbol =
     builtinSymbol "sizeMap" intSort [mapSort] & hook "MAP.size"
 
+valuesMapSymbol :: Internal.Symbol
+valuesMapSymbol =
+    builtinSymbol "valuesMap" listSort [mapSort] & hook "MAP.values"
+
 unitMap :: TermLike Variable
 unitMap = mkApplySymbol unitMapSymbol []
 
@@ -458,6 +463,11 @@ sizeMap
     -> TermLike Variable
 sizeMap map' = mkApplySymbol sizeMapSymbol [map']
 
+valuesMap
+    :: TermLike Variable
+    -> TermLike Variable
+valuesMap map' = mkApplySymbol valuesMapSymbol [map']
+
 -- ** Pair
 
 pairSymbol :: Sort -> Sort -> Internal.Symbol
@@ -469,6 +479,7 @@ pairSymbol lSort rSort =
         , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
     & constructor
+    & functional
 
 pair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 pair l r =
@@ -1157,6 +1168,7 @@ mapModule =
             , hookedSymbolDecl removeMapSymbol
             , hookedSymbolDecl removeAllMapSymbol
             , hookedSymbolDecl sizeMapSymbol
+            , hookedSymbolDecl valuesMapSymbol
             ]
         }
 
