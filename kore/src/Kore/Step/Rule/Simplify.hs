@@ -43,6 +43,9 @@ import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     , applySubstitution
     )
+import Kore.Step.Simplification.OrPattern
+    ( simplifyPredicatesWithSmt
+    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyAndRemoveTopExists
     )
@@ -69,8 +72,9 @@ simplifyRuleLhs
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
-    simplified <- Pattern.simplifyAndRemoveTopExists definedLhs
-    let rules = map (setRuleLeft rule) (MultiOr.extractPatterns simplified)
+    simplifiedTerms <- Pattern.simplifyAndRemoveTopExists definedLhs
+    fullySimplified <- simplifyPredicatesWithSmt lhsPredicate simplifiedTerms
+    let rules = map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
     return (MultiAnd.make rules)
   where
     RulePattern {left, requires} = rule
@@ -79,10 +83,12 @@ simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
         Conditional.withCondition
             left
             $ Predicate.fromPredicate
-                ( makeAndPredicate
-                    requires
-                    (makeCeilPredicate left)
-                )
+                lhsPredicate
+    lhsPredicate =
+        makeAndPredicate
+            requires
+            (makeCeilPredicate left)
+
 
     setRuleLeft
         :: RulePattern variable
