@@ -575,11 +575,11 @@ initializeProver definitionModule specModule within =
             specClaims =
                 map (Bifunctor.second fromMaybeChanged) changedSpecClaims
 
+        assertSomeClaims specClaims
         simplifiedSpecClaims <-
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        assertSomeClaims specAxioms
         let
             axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = fmap makeClaim specAxioms

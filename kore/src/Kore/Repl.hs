@@ -64,6 +64,11 @@ import Text.Megaparsec
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkSortVariable
+    , mkTop
+    )
 import qualified Kore.Logger as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
@@ -79,6 +84,9 @@ import Kore.Strategies.Verification
 import Kore.Syntax.Variable
 import Kore.Unification.Procedure
     ( unificationProcedure
+    )
+import Kore.Unparser
+    ( unparseToString
     )
 
 -- | Runs the repl for proof mode. It requires all the tooling and simplifiers
@@ -103,6 +111,16 @@ runRepl
     -> OutputFile
     -- ^ optional output file
     -> m ()
+runRepl axioms' [] logger replScript replMode outputFile = do
+    let fileName =
+            fromMaybe
+                (error "Output file not specified")
+                (unOutputFile outputFile)
+    liftIO $ writeFile fileName (unparseToString topTerm)
+  where
+    topTerm :: TermLike Variable
+    topTerm = mkTop $ mkSortVariable "R"
+
 runRepl axioms' claims' logger replScript replMode outputFile = do
     (newState, _) <-
             (\rwst -> execRWST rwst config state)
