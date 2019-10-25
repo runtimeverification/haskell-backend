@@ -56,7 +56,15 @@ import Kore.Logger.Output
     , swappableLogger
     )
 import Kore.Repl.Data
+import Kore.Step.Rule
+    ( OnePathRule (..)
+    , RewriteRule (..)
+    , extractOnePathClaims
+    )
 import Kore.Step.SMT.Lemma
+import Kore.Strategies.Goal
+    ( Rule (OnePathRewriteRule)
+    )
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
@@ -224,6 +232,7 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
+                            extractOnePathClaims
                             mLogger
                             replScript
                             replMode

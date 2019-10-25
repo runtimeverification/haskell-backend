@@ -115,11 +115,19 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step
+import Kore.Step.Rule
+    ( OnePathRule (..)
+    , RewriteRule (..)
+    , extractOnePathClaims
+    )
 import Kore.Step.Search
     ( SearchType (..)
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
+import Kore.Strategies.Goal
+    ( Rule (OnePathRewriteRule)
+    )
 import Kore.Syntax.Definition
     ( ModuleName (..)
     )
@@ -439,7 +447,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove stepLimit mainModule specModule
+                <$> prove stepLimit mainModule specModule extractOnePathClaims
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where

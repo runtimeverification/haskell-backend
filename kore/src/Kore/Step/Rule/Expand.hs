@@ -4,9 +4,13 @@ License     : NCSA
 -}
 
 module Kore.Step.Rule.Expand
-    ( expandOnePathSingleConstructors
+    ( expandClaimSingleConstructors
     ) where
 
+import Data.Coerce
+    ( Coercible
+    , coerce
+    )
 import Data.List
     ( foldl'
     , foldr
@@ -55,8 +59,7 @@ import Kore.Sort
     )
 import qualified Kore.Sort as Sort.DoNotUse
 import Kore.Step.Rule
-    ( OnePathRule (OnePathRule)
-    , RulePattern (RulePattern)
+    ( RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -79,12 +82,14 @@ import Kore.Variables.UnifiedVariable
     , extractElementVariable
     )
 
-expandOnePathSingleConstructors
-    :: SmtMetadataTools attributes
-    -> OnePathRule Variable
-    -> OnePathRule Variable
-expandOnePathSingleConstructors metadataTools (OnePathRule rule) =
-    OnePathRule (expandSingleConstructors metadataTools rule)
+expandClaimSingleConstructors
+    :: Coercible (RulePattern Variable) claim
+    => Coercible claim (RulePattern Variable)
+    => SmtMetadataTools attributes
+    -> claim
+    -> claim
+expandClaimSingleConstructors metadataTools claim =
+    coerce (expandSingleConstructors metadataTools (coerce claim))
 
 expandSingleConstructors
     :: SmtMetadataTools attributes

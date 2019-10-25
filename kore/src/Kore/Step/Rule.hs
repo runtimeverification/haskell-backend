@@ -24,6 +24,7 @@ module Kore.Step.Rule
     , extractRewriteAxioms
     , extractOnePathClaims
     , extractAllPathClaims
+    , extractPathClaims
     , extractImplicationClaims
     , applySubstitution
     , mkRewriteAxiom
@@ -311,14 +312,45 @@ instance TopBottom (OnePathRule variable) where
     isTop _ = False
     isBottom _ = False
 
+{-  | Unified One-Path and All-Path Claim rule pattern.
+-}
+data PathRule variable
+    = One !(OnePathRule variable)
+    | All !(AllPathRule variable)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic (PathRule variable)
+
+instance SOP.HasDatatypeInfo (PathRule variable)
+
+instance Debug variable => Debug (PathRule variable)
+
+instance (Debug variable, Diff variable) => Diff (PathRule variable)
+
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (PathRule variable)
+  where
+    unparse = unparse . pathRuleToPattern
+    unparse2 = unparse2 . pathRuleToPattern
+
+instance TopBottom (PathRule variable) where
+    isTop _ = False
+    isBottom _ = False
+
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule variable =
     AllPathRule { getAllPathRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (AllPathRule variable)
-deriving instance Ord variable => Ord (AllPathRule variable)
-deriving instance Show variable => Show (AllPathRule variable)
+instance SOP.Generic (AllPathRule variable)
+
+instance SOP.HasDatatypeInfo (AllPathRule variable)
+
+instance Debug variable => Debug (AllPathRule variable)
+
+instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -427,6 +459,27 @@ extractAllPathClaimFrom
 extractAllPathClaimFrom sentence =
     case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
         Right (AllPathClaimPattern claim) -> Just claim
+        _ -> Nothing
+
+-- | Extracts all One-Path claims from a verified module.
+extractPathClaims
+    :: VerifiedModule declAtts axiomAtts
+    -- ^'IndexedModule' containing the definition
+    -> [(axiomAtts, PathRule Variable)]
+extractPathClaims idxMod =
+    mapMaybe
+        -- applying on second component
+        (traverse extractPathClaimFrom)
+        (indexedModuleClaims idxMod)
+
+extractPathClaimFrom
+    :: Verified.SentenceClaim
+    -- ^ Sentence to extract axiom pattern from
+    -> Maybe (PathRule Variable)
+extractPathClaimFrom sentence =
+    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
+        Right (OnePathClaimPattern claim) -> Just (One claim)
+        Right (AllPathClaimPattern claim) -> Just (All claim)
         _ -> Nothing
 
 -- | Extract all 'ImplicationRule' claims matching a given @level@ from
@@ -554,6 +607,16 @@ wAF sort = Alias
     , aliasLeft = []
     , aliasRight = mkTop sort
     }
+
+pathRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => PathRule variable
+    -> TermLike variable
+pathRuleToPattern = \case
+    One r -> onePathRuleToPattern r
+    All r -> allPathRuleToPattern r
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 

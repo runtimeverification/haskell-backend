@@ -4,8 +4,13 @@ License     : NCSA
 -}
 
 module Kore.Step.Rule.Simplify
-    ( simplifyOnePathRuleLhs
+    ( simplifyGoalRuleLhs
     ) where
+
+import Data.Coerce
+    ( Coercible
+    , coerce
+    )
 
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -36,8 +41,7 @@ import Kore.Predicate.Predicate
     , makeCeilPredicate
     )
 import Kore.Step.Rule
-    ( OnePathRule (..)
-    , RulePattern (RulePattern)
+    ( RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -51,15 +55,17 @@ import Kore.Step.Simplification.Simplify
     , SimplifierVariable
     )
 
-simplifyOnePathRuleLhs
+simplifyGoalRuleLhs
     ::  ( MonadSimplify simplifier
         , SimplifierVariable variable
+        , Coercible (RulePattern variable) rule
+        , Coercible rule (RulePattern variable)
         )
-    => OnePathRule variable
-    -> simplifier (MultiAnd (OnePathRule variable))
-simplifyOnePathRuleLhs (OnePathRule rule) = do
-    simplifiedList <- simplifyRuleLhs rule
-    return (fmap OnePathRule simplifiedList)
+    => rule
+    -> simplifier (MultiAnd rule)
+simplifyGoalRuleLhs rule = do
+    simplifiedList <- simplifyRuleLhs (coerce rule)
+    return (fmap coerce simplifiedList)
 
 simplifyRuleLhs
     :: forall simplifier variable

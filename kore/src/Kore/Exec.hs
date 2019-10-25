@@ -56,9 +56,6 @@ import Data.Text
 import GHC.Stack
     ( HasCallStack
     )
-import Kore.Step.Rule.Simplify
-    ( simplifyOnePathRuleLhs
-    )
 import System.Exit
     ( ExitCode (..)
     )
@@ -113,11 +110,9 @@ import Kore.Step
 import Kore.Step.Rule
     ( EqualityRule
     , ImplicationRule (..)
-    , OnePathRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , extractImplicationClaims
-    , extractOnePathClaims
     , extractRewriteAxioms
     , getRewriteRule
     )
@@ -128,7 +123,10 @@ import qualified Kore.Step.Rule.Combine as Rules
     ( mergeRules
     )
 import Kore.Step.Rule.Expand
-    ( expandOnePathSingleConstructors
+    ( expandClaimSingleConstructors
+    )
+import Kore.Step.Rule.Simplify
+    ( simplifyGoalRuleLhs
     )
 import Kore.Step.Search
     ( searchGraph
@@ -149,7 +147,11 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Claim
+    , CommonProofState
     , verify
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
     )
 import Kore.Unparser
     ( unparseToText
@@ -282,20 +284,31 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
-    ::  ( Log.WithLog Log.LogMessage smt
+    ::  forall smt claim
+      . ( Log.WithLog Log.LogMessage smt
         , MonadCatch smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
+        , Claim claim
+        , Eq claim
+        , Show claim
+        , Show (Goal.Rule claim)
+        , Coercible claim (RulePattern Variable)
+        , TopBottom claim
+        , Goal.ProofState claim (Pattern Variable) ~ CommonProofState
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> (VerifiedModule StepperAttributes Attribute.Axiom
+        -> [(Attribute.Axiom, claim)])
+    -- ^ claims extractor
     -> smt (Either (TermLike Variable) ())
-prove limit definitionModule specModule =
-    evalProver definitionModule specModule
+prove limit definitionModule specModule claimExtractor =
+    evalProver definitionModule specModule claimExtractor
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         result <-
@@ -305,17 +318,23 @@ prove limit definitionModule specModule =
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
-    extractUntrustedClaims' :: [OnePathRule Variable] -> [OnePathRule Variable]
+    extractUntrustedClaims' :: [claim] -> [claim]
     extractUntrustedClaims' =
         filter (not . Goal.isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
 proveWithRepl
-    :: VerifiedModule StepperAttributes Attribute.Axiom
+    :: Claim claim
+    => Eq claim
+    => TopBottom claim
+    => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> (VerifiedModule StepperAttributes Attribute.Axiom
+        -> [(Attribute.Axiom, claim)])
+    -- ^ claims extractor
     -> MVar (Log.LogAction IO Log.SomeEntry)
     -> Repl.Data.ReplScript
     -- ^ Optional script
@@ -324,8 +343,16 @@ proveWithRepl
     -> Repl.Data.OutputFile
     -- ^ Optional Output file
     -> SMT ()
-proveWithRepl definitionModule specModule mvar replScript replMode outputFile =
-    evalProver definitionModule specModule
+proveWithRepl
+    definitionModule
+    specModule
+    claimExtractor
+    mvar
+    replScript
+    replMode
+    outputFile
+  =
+    evalProver definitionModule specModule claimExtractor
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         Repl.runRepl axioms claims mvar replScript replMode outputFile
@@ -345,7 +372,8 @@ boundedModelCheck
     -> Strategy.GraphSearchOrder
     -> smt (Bounded.CheckResult (TermLike Variable))
 boundedModelCheck limit definitionModule specModule searchOrder =
-    evalSimplifier definitionModule $ initialize definitionModule $ \initialized -> do
+    evalSimplifier definitionModule $ initialize definitionModule
+    $ \initialized -> do
         let Initialized { rewriteRules } = initialized
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
@@ -524,10 +552,10 @@ initialize verifiedModule within = do
     let initialized = Initialized { rewriteRules }
     within initialized
 
-data InitializedProver =
+data InitializedProver claim =
     InitializedProver
-        { axioms :: ![Goal.Rule (OnePathRule Variable)]
-        , claims :: ![OnePathRule Variable]
+        { axioms :: ![Goal.Rule claim]
+        , claims :: ![claim]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -538,23 +566,28 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver
-    :: forall simplifier a
+    :: forall simplifier claim a
     .  MonadSimplify simplifier
+    => Claim claim
+    => Eq claim
+    => TopBottom claim
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> VerifiedModule StepperAttributes Attribute.Axiom
-    -> (InitializedProver -> simplifier a)
+    -> (VerifiedModule StepperAttributes Attribute.Axiom
+        -> [(Attribute.Axiom, claim)])
+    -> (InitializedProver claim -> simplifier a)
     -> simplifier a
-initializeProver definitionModule specModule within =
+initializeProver definitionModule specModule extractClaims within =
     initialize definitionModule
     $ \initialized -> do
         tools <- Simplifier.askMetadataTools
         let Initialized { rewriteRules } = initialized
             changedSpecClaims
-                :: [(Attribute.Axiom, MaybeChanged (OnePathRule Variable))]
+                :: [(Attribute.Axiom, MaybeChanged claim)]
             changedSpecClaims =
                 map
                     (Bifunctor.second $ expandClaim tools)
-                    (extractOnePathClaims specModule)
+                    (extractClaims specModule)
             mapMSecond
                 :: Monad m
                 => (rule -> m [rule'])
@@ -563,15 +596,15 @@ initializeProver definitionModule specModule within =
                 simplified <- f rule
                 return (map ((,) attribute) simplified)
             simplifyToList
-                :: OnePathRule Variable -> simplifier [OnePathRule Variable]
+                :: claim -> simplifier [claim]
             simplifyToList rules = do
-                simplified <- simplifyOnePathRuleLhs rules
+                simplified <- simplifyGoalRuleLhs rules
                 return (MultiAnd.extractPatterns simplified)
 
         Log.withLogScope (Log.Scope "ExpandedClaim")
             $ mapM_ (logChangedClaim . snd) changedSpecClaims
 
-        let specClaims :: [(Attribute.Axiom, OnePathRule Variable)]
+        let specClaims :: [(Attribute.Axiom, claim)]
             specClaims =
                 map (Bifunctor.second fromMaybeChanged) changedSpecClaims
 
@@ -581,25 +614,25 @@ initializeProver definitionModule specModule within =
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
         assertSomeClaims specAxioms
         let
-            axioms = Goal.OnePathRewriteRule <$> rewriteRules
+            axioms = coerce <$> rewriteRules
             claims = fmap makeClaim specAxioms
             initializedProver = InitializedProver { axioms, claims}
         within initializedProver
   where
     expandClaim
         :: SmtMetadataTools attributes
-        -> OnePathRule Variable
-        -> MaybeChanged (OnePathRule Variable)
+        -> claim
+        -> MaybeChanged claim
     expandClaim tools claim =
         if claim /= expanded
             then Changed expanded
             else Unchanged claim
       where
-        expanded = expandOnePathSingleConstructors tools claim
+        expanded = expandClaimSingleConstructors tools claim
 
     logChangedClaim
         :: HasCallStack
-        => MaybeChanged (OnePathRule Variable)
+        => MaybeChanged claim
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
@@ -610,14 +643,20 @@ evalProver
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
+        , Claim claim
+        , Eq claim
+        , TopBottom claim
         )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> (InitializedProver -> Simplifier.SimplifierT smt a)
+    -> (VerifiedModule StepperAttributes Attribute.Axiom
+        -> [(Attribute.Axiom, claim)])
+    -- ^ claims extractor
+    -> (InitializedProver claim -> Simplifier.SimplifierT smt a)
     -- The prover
     -> smt a
-evalProver definitionModule specModule prover =
+evalProver definitionModule specModule extractClaims prover =
     evalSimplifier definitionModule
-    $ initializeProver definitionModule specModule prover
+    $ initializeProver definitionModule specModule extractClaims prover
