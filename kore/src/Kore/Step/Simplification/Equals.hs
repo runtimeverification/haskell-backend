@@ -59,6 +59,7 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
+    , simplifyEvaluated
     )
 import qualified Kore.Step.Simplification.Implies as Implies
     ( simplifyEvaluated
@@ -181,18 +182,21 @@ simplifyEvaluated predicate first second
   | otherwise = do
     let isFunctionConditional Conditional {term} = isFunctionPattern term
     case (firstPatterns, secondPatterns) of
-        ([firstP], [secondP]) -> makeEvaluate firstP secondP predicate
+        ([firstP], [secondP]) ->
+            makeEvaluate firstP secondP predicate
         ([firstP], _)
             | isFunctionConditional firstP ->
                 makeEvaluateFunctionalOr predicate firstP secondPatterns
         (_, [secondP])
             | isFunctionConditional secondP ->
                 makeEvaluateFunctionalOr predicate secondP firstPatterns
-        _ ->
-            makeEvaluate
-                (OrPattern.toPattern first)
-                (OrPattern.toPattern second)
-                predicate
+        _ -> if OrPattern.isPredicate first && OrPattern.isPredicate second
+            then Iff.simplifyEvaluated first second
+            else
+                makeEvaluate
+                    (OrPattern.toPattern first)
+                    (OrPattern.toPattern second)
+                    predicate
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
