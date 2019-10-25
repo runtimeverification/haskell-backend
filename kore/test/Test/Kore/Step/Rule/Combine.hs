@@ -135,6 +135,20 @@ test_combineRulesPredicate =
                     Pair (Mock.h x, makeCeilPredicate (Mock.h Mock.a))
                 ]
         in assertEqual "" expected actual
+    , testCase "Three rules case" $
+        let expected =
+                makeMultipleAndPredicate
+                    [ makeCeilPredicate (mkAnd Mock.a (mkElemVar Mock.var_x_0))
+                    , makeCeilPredicate (mkAnd Mock.b (mkElemVar Mock.var_x_1))
+                    ]
+
+            actual = mergeRulesPredicate
+                [ mkElemVar Mock.x `rewritesTo` Mock.a
+                , mkElemVar Mock.x `rewritesTo` Mock.b
+                , mkElemVar Mock.x `rewritesTo` Mock.c
+                ]
+        in assertEqual "" expected actual
+
     ]
   where
     x :: TermLike Variable
