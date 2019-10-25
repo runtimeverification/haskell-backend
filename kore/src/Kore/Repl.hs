@@ -111,7 +111,7 @@ runRepl
     -> OutputFile
     -- ^ optional output file
     -> m ()
-runRepl axioms' [] logger replScript replMode outputFile = do
+runRepl _ [] _ _ _ outputFile = do
     let fileName =
             fromMaybe
                 (error "Output file not specified")
