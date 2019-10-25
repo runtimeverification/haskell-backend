@@ -147,15 +147,22 @@ import Kore.Internal.Pattern
 import Kore.Internal.Pattern as Pattern
     ( fromTermLike
     , top
+    , withCondition
+    )
+import Kore.Internal.Predicate as Predicate
+    ( topTODO
     )
 import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
-    ( makeCeilPredicate
-    , makeEqualsPredicate
+    ( makeEqualsPredicate
     )
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Proof.Value as Value
 import Kore.Sort
     ( predicateSort
+    )
+import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
+    ( makeEvaluateTerm
     )
 import Kore.Step.Simplification.SimplificationType as SimplificationType
     ( SimplificationType (..)
@@ -166,10 +173,10 @@ import Kore.Step.Simplification.Simplify
     , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
     , BuiltinAndAxiomSimplifierMap
     , MonadSimplify
+    , SimplifierVariable
     , TermLikeSimplifier
     , applicationAxiomSimplifier
     )
-import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
@@ -178,6 +185,12 @@ import Kore.Syntax.Definition
     , ParsedSentenceSymbol
     , SentenceSort (..)
     , SentenceSymbol (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
+import qualified Kore.Unification.Unify as Monad.Unify
+    ( scatter
     )
 import Kore.Unparser
 import qualified Kore.Verified as Verified
@@ -983,19 +996,19 @@ getAttemptedAxiom attempt =
 
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
-    :: (Monad m, SimplifierVariable variable)
+    :: (MonadUnify unifier, SimplifierVariable variable)
     => SimplificationType
     -> TermLike variable
     -> TermLike variable
-    -> m (Pattern variable)
-unifyEqualsUnsolved SimplificationType.And a b =
-    let
-        unified = mkAnd a b
-        predicate = makeCeilPredicate unified
-    in
-        return (pure unified) { predicate }
+    -> unifier (Pattern variable)
+unifyEqualsUnsolved SimplificationType.And a b = do
+    let unified = TermLike.markSimplified $ mkAnd a b
+    orPredicate <- Ceil.makeEvaluateTerm Predicate.topTODO unified
+    predicate <- Monad.Unify.scatter orPredicate
+    return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
-    return Pattern.top {predicate = makeEqualsPredicate a b}
+    return Pattern.top
+        {predicate = Syntax.Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable
@@ -1003,11 +1016,10 @@ makeDomainValueTerm
     -> Text
     -> TermLike variable
 makeDomainValueTerm sort stringLiteral =
-    mkDomainValue
-    $ DomainValue
-          { domainValueSort = sort
-          , domainValueChild = mkStringLiteral stringLiteral
-          }
+    mkDomainValue DomainValue
+        { domainValueSort = sort
+        , domainValueChild = mkStringLiteral stringLiteral
+        }
 
 makeDomainValuePattern
     :: InternalVariable variable
