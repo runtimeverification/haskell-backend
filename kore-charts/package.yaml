@@ -27,6 +27,7 @@ dependencies:
   - containers
   - data-default
   - exceptions
+  - filepath
   - lens
   - scientific
   - text

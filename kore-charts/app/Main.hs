@@ -38,6 +38,7 @@ import qualified Graphics.Rendering.Chart.Easy as Chart
 import qualified Graphics.Rendering.Chart.Grid as Chart
 import qualified Graphics.Rendering.Chart.Backend.Cairo as Chart.Backend
 import qualified Network.Wreq as Wreq
+import qualified System.FilePath as FilePath
 
 jenkins :: String
 jenkins = "https://office.runtimeverification.com/jenkins"
@@ -54,22 +55,28 @@ main = do
         firstBuild = Set.findMin buildNumbers
         lastBuild = Set.findMax buildNumbers
         buildRange = (firstBuild, lastBuild)
-        title =
-            "Kore"
-            & Chart.label style Chart.HTA_Centre Chart.VTA_Centre
-            & Chart.setPickFn Chart.nullPickFn
-          where
-            style =
-                def
-                & Chart.font_size .~ 15
-                & Chart.font_weight .~ Chart.FontWeightBold
+        resident_mbytes = (/ 1000) . resident_kbytes
         grid =
-            Chart.aboveN
-                [ Chart.besideN
-                    [ Chart.layoutToGrid (layoutTest buildRange test profiles) ]
-                | (test, profiles) <- Map.toList testProfiles
-                ]
-            & Chart.wideAbove title
+            Chart.aboveN $ do
+                (test, profiles) <- Map.toList testProfiles
+                let title =
+                        semantics <> ":" <> testName
+                        & Chart.label style Chart.HTA_Left Chart.VTA_Centre
+                        & Chart.setPickFn Chart.nullPickFn
+                    testName = FilePath.takeFileName test
+                    semantics : _ = FilePath.splitDirectories test
+                    style =
+                        def
+                        & Chart.font_size .~ 14
+                        & Chart.font_weight .~ Chart.FontWeightBold
+                    layout' = layoutTest buildRange profiles
+                return
+                    $ Chart.wideAbove title
+                    $ Chart.besideN
+                    $ map Chart.layoutToGrid
+                        [ layout' "user time (s)"           user_sec
+                        , layout' "max. residency (Mbytes)" resident_mbytes
+                        ]
     let fileOptions = def & Chart.Backend.fo_size .~ (800, 400 * Set.size tests)
     _ <-
         Chart.gridToRenderable grid
@@ -79,21 +86,23 @@ main = do
 
 layoutTest
     :: (BuildNumber, BuildNumber)
-    -> String
     -> Map BuildNumber Profile
+    -> String
+    -> (Profile -> Scientific)
     -> Chart.Layout Double Double
-layoutTest (beg, end) title profiles = Chart.execEC $ do
+layoutTest (beg, end) profiles title select = Chart.execEC $ do
     let xRange = (double beg, double end)
-        userTime =
+        points =
             profiles
-            & Map.map Scientific.toRealFloat . Map.map user_sec
+            & Map.map Scientific.toRealFloat . Map.map select
             & Map.mapKeys double
             & Map.toAscList
-        yRange = (0, 1.1 * maximum (snd <$> userTime))
-    Chart.layout_title .= title
+        yRange = (0, 1.1 * maximum (snd <$> points))
     Chart.layout_x_axis . Chart.laxis_generate .= Chart.scaledAxis def xRange
+    Chart.layout_x_axis . Chart.laxis_title .= "Build number"
     Chart.layout_y_axis . Chart.laxis_generate .= Chart.scaledAxis def yRange
-    Chart.plot $ Chart.line "user time (s)" [ userTime ]
+    Chart.layout_y_axis . Chart.laxis_title .= title
+    Chart.plot $ Chart.line "" [ points ]
   where
     double = fromInteger . unBuildNumber
 
@@ -269,7 +278,7 @@ parseOnly parser byteString =
 data Profile =
     Profile
     { user_sec :: Scientific
-    , resident_kbytes :: Integer
+    , resident_kbytes :: Scientific
     }
     deriving (Show)
     deriving (Generic)
