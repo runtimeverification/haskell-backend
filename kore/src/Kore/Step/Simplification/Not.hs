@@ -154,7 +154,7 @@ makeEvaluatePredicate
         { term = ()
         , predicate =
             Syntax.Predicate.markSimplified
-            $ makeNotPredicate
+            $ makePredicateNot
             $ makeAndPredicate predicate
             $ Syntax.Predicate.fromSubstitution substitution
         , substitution = mempty
@@ -174,10 +174,21 @@ makeTermNot
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
+makeTermNot (Not_ _ term) = term
+makeTermNot (Not_ _ (And_ _ term1 term2)) =
+    mkOr (mkNot term1) (mkNot term2)
 makeTermNot term
   | isBottom term = mkTop_
   | isTop term    = mkBottom_
   | otherwise     = mkNot term
+
+makePredicateNot
+    :: InternalVariable variable
+    => Syntax.Predicate.Predicate variable
+    -> Syntax.Predicate.Predicate variable
+makePredicateNot Syntax.Predicate.PredicateFalse = Syntax.Predicate.makeTruePredicate
+makePredicateNot Syntax.Predicate.PredicateTrue = Syntax.Predicate.makeFalsePredicate
+makePredicateNot genericPredicate = fmap makeTermNot genericPredicate
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
