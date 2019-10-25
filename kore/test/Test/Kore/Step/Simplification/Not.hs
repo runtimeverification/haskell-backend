@@ -52,7 +52,6 @@ test_simplifyEvaluated =
     , [substXA] `becomes_` [notEqualsXA]
     , [equalsXA, equalsXB] `becomes_` [neitherXAB]
     , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
-    , [termNotX] `becomes_` [termX]
     , [termXAndY] `becomes_` [termNotXOrNotY]
     , [termNotXAndY] `becomes_` [termXOrNotY]
     , [notEqualsXA] `becomes_` [equalsXA]

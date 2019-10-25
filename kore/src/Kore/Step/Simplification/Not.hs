@@ -10,6 +10,7 @@ Portability : portable
 module Kore.Step.Simplification.Not
     ( makeEvaluate
     , makeEvaluatePredicate
+    , makePredicateNot
     , simplify
     , simplifyEvaluated
     , simplifyEvaluatedPredicate

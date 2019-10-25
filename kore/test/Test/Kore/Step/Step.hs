@@ -47,6 +47,9 @@ import Kore.Step.Rule
     , rulePattern
     )
 import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.Simplification.Not as Simplification.Not
+    ( makePredicateNot
+    )
 import Kore.Step.Step hiding
     ( applyInitialConditions
     , applyRewriteRulesParallel
@@ -774,7 +777,7 @@ test_applyRewriteRulesParallel =
                     [ Conditional
                         { term = initialTerm
                         , predicate =
-                            makeNotPredicate
+                            Simplification.Not.makePredicateNot
                             $ makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
@@ -821,7 +824,7 @@ test_applyRewriteRulesParallel =
                                 Mock.cg
                         , predicate =
                             makeAndPredicate (makeCeilPredicate Mock.cf)
-                            $ makeNotPredicate
+                            $ Simplification.Not.makePredicateNot
                             $ makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
@@ -896,7 +899,7 @@ test_applyRewriteRulesParallel =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            makeNotPredicate
+                            Simplification.Not.makePredicateNot
                             $ makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
@@ -954,13 +957,13 @@ test_applyRewriteRulesParallel =
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
-                                (Predicate.makeNotPredicate
+                                (Simplification.Not.makePredicateNot
                                     $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkElemVar Mock.x)
                                         Mock.a
                                 )
-                                (Predicate.makeNotPredicate
+                                (Simplification.Not.makePredicateNot
                                     $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkElemVar Mock.x)
@@ -1000,7 +1003,7 @@ test_applyRewriteRulesParallel =
                 OrPattern.fromPatterns
                     [ initial
                         { predicate =
-                            makeNotPredicate
+                            Simplification.Not.makePredicateNot
                             $ makeAndPredicate
                                 (makeCeilPredicate Mock.cg)
                                 (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
@@ -1140,7 +1143,7 @@ test_applyRewriteRulesSequence =
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
-                                (Predicate.makeNotPredicate
+                                (Simplification.Not.makePredicateNot
                                     $ Predicate.makeAndPredicate
                                         definedBranches
                                         (Predicate.makeEqualsPredicate
@@ -1148,7 +1151,7 @@ test_applyRewriteRulesSequence =
                                             Mock.a
                                         )
                                 )
-                                (Predicate.makeNotPredicate
+                                (Simplification.Not.makePredicateNot
                                     $ Predicate.makeAndPredicate
                                         definedBranches
                                         (Predicate.makeEqualsPredicate

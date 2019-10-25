@@ -43,6 +43,9 @@ import Kore.Step.Simplification.Equals
     , makeEvaluateTermsToPredicate
     , simplify
     )
+import qualified Kore.Step.Simplification.Not as Simplification.Not
+    ( makePredicateNot
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
@@ -249,9 +252,10 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             makeMultipleAndPredicate
-                                [ makeNotPredicate definedGWithSubstitution
-                                , makeNotPredicate definedF
+                                [ makeNotPredicate definedF
                                 , makeNotPredicate definedH
+                                , Simplification.Not.makePredicateNot
+                                    definedGWithSubstitution
                                 ]
                         , substitution = mempty
                         }
@@ -390,13 +394,13 @@ test_equalsSimplification_Pattern =
                                     (makeEqualsPredicate hOfA hOfB)
                                 )
                                 (makeAndPredicate
-                                    (makeNotPredicate
+                                    (Simplification.Not.makePredicateNot
                                         (makeAndPredicate
                                             (makeCeilPredicate hOfA)
                                             (makeEqualsPredicate fOfA fOfB)
                                         )
                                     )
-                                    (makeNotPredicate
+                                    (Simplification.Not.makePredicateNot
                                         (makeAndPredicate
                                             (makeCeilPredicate hOfB)
                                             (makeEqualsPredicate gOfA gOfB)
@@ -544,13 +548,13 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate =
                     makeAndPredicate
-                        (makeNotPredicate
+                        (Simplification.Not.makePredicateNot
                             (makeAndPredicate
                                 (makeCeilPredicate fOfA)
                                 (makeCeilPredicate fOfB)
                             )
                         )
-                        (makeNotPredicate
+                        (Simplification.Not.makePredicateNot
                             (makeAndPredicate
                                 (makeCeilPredicate gOfA)
                                 (makeCeilPredicate gOfB)
