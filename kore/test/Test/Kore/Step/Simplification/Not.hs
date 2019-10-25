@@ -46,6 +46,7 @@ test_simplifyEvaluated =
     [ [Pattern.top] `becomes_` []
     , [] `becomes_` [Pattern.top]
     , [termX] `becomes_` [termNotX]
+    , [termNotX] `becomes_` [termX]
     , [equalsXA] `becomes_` [notEqualsXA]
     , equalsXAWithSortedBottom `patternBecomes` [Pattern.top]
     , [substXA] `becomes_` [notEqualsXA]

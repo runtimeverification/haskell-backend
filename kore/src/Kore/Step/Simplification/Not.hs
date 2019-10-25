@@ -186,9 +186,12 @@ makePredicateNot
     :: InternalVariable variable
     => Syntax.Predicate.Predicate variable
     -> Syntax.Predicate.Predicate variable
-makePredicateNot Syntax.Predicate.PredicateFalse = Syntax.Predicate.makeTruePredicate
-makePredicateNot Syntax.Predicate.PredicateTrue = Syntax.Predicate.makeFalsePredicate
-makePredicateNot genericPredicate = fmap makeTermNot genericPredicate
+makePredicateNot Syntax.Predicate.PredicateFalse =
+    Syntax.Predicate.makeTruePredicate
+makePredicateNot Syntax.Predicate.PredicateTrue =
+    Syntax.Predicate.makeFalsePredicate
+makePredicateNot genericPredicate =
+    fmap makeTermNot genericPredicate
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
