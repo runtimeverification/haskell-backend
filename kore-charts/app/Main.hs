@@ -34,9 +34,9 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Control.Lens as Lens
 import qualified Graphics.Rendering.Chart as Chart
+import qualified Graphics.Rendering.Chart.Backend.Cairo as Chart.Backend
 import qualified Graphics.Rendering.Chart.Easy as Chart
 import qualified Graphics.Rendering.Chart.Grid as Chart
-import qualified Graphics.Rendering.Chart.Backend.Cairo as Chart.Backend
 import qualified Network.Wreq as Wreq
 import qualified System.FilePath as FilePath
 
@@ -94,14 +94,14 @@ layoutTest (beg, end) profiles title select = Chart.execEC $ do
     let xRange = (double beg, double end)
         points =
             profiles
-            & Map.map Scientific.toRealFloat . Map.map select
+            & Map.map (logBase 10 . Scientific.toRealFloat) . Map.map select
             & Map.mapKeys double
             & Map.toAscList
-        yRange = (0, 1.1 * maximum (snd <$> points))
+        yRange = (0, (fromInteger . ceiling . maximum) (snd <$> points))
     Chart.layout_x_axis . Chart.laxis_generate .= Chart.scaledAxis def xRange
     Chart.layout_x_axis . Chart.laxis_title .= "Build number"
     Chart.layout_y_axis . Chart.laxis_generate .= Chart.scaledAxis def yRange
-    Chart.layout_y_axis . Chart.laxis_title .= title
+    Chart.layout_y_axis . Chart.laxis_title .= "log_10(" <> title <> ")"
     Chart.plot $ Chart.line "" [ points ]
   where
     double = fromInteger . unBuildNumber
