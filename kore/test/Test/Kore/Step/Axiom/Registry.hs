@@ -17,9 +17,6 @@ import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Text
     ( Text
     )
@@ -259,11 +256,7 @@ testDef =
 testIndexedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
 testIndexedModule =
     let
-        attributesVerification = defaultAttributesVerification Proxy Proxy
-        verifyResult = verifyAndIndexDefinition
-            attributesVerification
-            Builtin.koreVerifiers
-            testDef
+        verifyResult = verifyAndIndexDefinition Builtin.koreVerifiers testDef
     in
         case verifyResult of
             Left err1            -> error (printError err1)

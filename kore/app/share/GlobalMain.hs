@@ -44,9 +44,6 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Semigroup
     ( (<>)
     )
@@ -105,8 +102,7 @@ import System.Clock
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( defaultAttributesVerification
-    , verifyAndIndexDefinitionWithBase
+    ( verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -418,18 +414,14 @@ verifyDefinitionWithBase
 verifyDefinitionWithBase
     alreadyVerified
     definition
-  =
-    let attributesVerification = defaultAttributesVerification Proxy Proxy
-    in do
-      verifyResult <-
-        clockSomething "Verifying the definition"
-            (verifyAndIndexDefinitionWithBase
-                alreadyVerified
-                attributesVerification
-                Builtin.koreVerifiers
-                definition
-            )
-      case verifyResult of
+  = do
+    verifyResult <- clockSomething "Verifying the definition"
+        (verifyAndIndexDefinitionWithBase
+            alreadyVerified
+            Builtin.koreVerifiers
+            definition
+        )
+    case verifyResult of
         Left err1               -> error (printError err1)
         Right indexedDefinition -> return indexedDefinition
 
