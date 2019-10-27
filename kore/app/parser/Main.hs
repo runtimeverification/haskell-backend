@@ -10,9 +10,6 @@ import Control.Monad.Trans.Reader
     ( runReaderT
     )
 import qualified Data.Map as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Semigroup
     ( (<>)
     )
@@ -39,8 +36,7 @@ import Options.Applicative
 
 import Kore.AST.ApplicativeKore
 import Kore.ASTVerifier.DefinitionVerifier
-    ( defaultAttributesVerification
-    , verifyAndIndexDefinition
+    ( verifyAndIndexDefinition
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol
@@ -196,18 +192,15 @@ mainVerify
             ModuleName
             (VerifiedModule StepperAttributes Attribute.Axiom)
         )
-mainVerify definition =
-    let attributesVerification = defaultAttributesVerification Proxy Proxy
-    in do
-      verifyResult <-
-          flip runReaderT Logger.emptyLogger
-          . getLoggerT
-          $ clockSomething "Verifying the definition"
+mainVerify definition = do
+    verifyResult <-
+        flip runReaderT Logger.emptyLogger
+        . getLoggerT
+        $ clockSomething "Verifying the definition"
             (verifyAndIndexDefinition
-                attributesVerification
                 Builtin.koreVerifiers
                 definition
             )
-      case verifyResult of
+    case verifyResult of
         Left err1            -> error (printError err1)
         Right indexedModules -> return indexedModules

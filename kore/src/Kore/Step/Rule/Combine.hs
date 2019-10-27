@@ -158,7 +158,7 @@ renameRuleVariable
 
     (FreeVariables ruleVariables) = RulePattern.freeVariables rulePattern
 
-    (FreeVariables newRuleVariables) = RulePattern.freeVariables rulePattern
+    (FreeVariables newRuleVariables) = RulePattern.freeVariables newRulePattern
 
     (_, newRulePattern) =
         refreshRulePattern (FreeVariables usedVariables) rulePattern

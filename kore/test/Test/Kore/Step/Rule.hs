@@ -13,9 +13,6 @@ import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
-import Data.Proxy
-    ( Proxy (..)
-    )
 import qualified Data.Set as Set
 import Data.Text
     ( Text
@@ -123,7 +120,6 @@ axiomPatternsUnitTests =
                         }
                 indexedDefinition =
                     verifyAndIndexDefinition
-                        (VerifyAttributes Proxy Proxy)
                         Builtin.koreVerifiers
                         Definition
                             { definitionAttributes = Attributes []
