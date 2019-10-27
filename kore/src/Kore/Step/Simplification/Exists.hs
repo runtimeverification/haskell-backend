@@ -22,6 +22,10 @@ import Branch
     ( BranchT
     )
 import qualified Branch
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -32,23 +36,19 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
+import qualified Kore.Internal.OrCondition as OrCondition
+    ( fromCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.OrPredicate as OrPredicate
-    ( fromPredicate
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
     ( splitTerm
     )
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
     , pattern Equals_
@@ -215,7 +215,7 @@ matchesToVariableSubstitution _ _ = return False
 
 singleVariableSubstitution
     :: InternalVariable variable
-    => ElementVariable variable -> Predicate variable -> Bool
+    => ElementVariable variable -> Condition variable -> Bool
 singleVariableSubstitution
     variable
     Conditional
@@ -288,19 +288,19 @@ makeEvaluateBoundRight
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundRight variable freeSubstitution normalized = do
-    orPredicate <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
+    orCondition <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
         (MultiAnd.make
-            [   OrPredicate.fromPredicate quantifyPredicate
-            ,   OrPredicate.fromPredicate
-                    (Predicate.fromSubstitution freeSubstitution)
+            [   OrCondition.fromCondition quantifyCondition
+            ,   OrCondition.fromCondition
+                    (Condition.fromSubstitution freeSubstitution)
             ]
         )
-    predicate <- Branch.scatter orPredicate
+    predicate <- Branch.scatter orCondition
     let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern
   where
-    (quantifyTerm, quantifyPredicate) = Pattern.splitTerm
+    (quantifyTerm, quantifyCondition) = Pattern.splitTerm
         (quantifyPattern variable normalized)
 
 {- | Split the substitution on the given variable.
@@ -360,7 +360,7 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
   | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
-    $ Predicate.fromPredicate . Syntax.Predicate.markSimplified
+    $ Condition.fromPredicate . Syntax.Predicate.markSimplified
     -- TODO (thomas.tuegel): This may not be fully simplified: we have not used
     -- the And simplifier on the predicate.
     $ Syntax.Predicate.makeExistsPredicate variable predicate'

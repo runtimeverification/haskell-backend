@@ -25,11 +25,11 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 
 import qualified Branch
-import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
+import Kore.Internal.Condition
     ( Conditional (..)
     )
+import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Logger
     ( LogMessage

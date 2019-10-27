@@ -43,9 +43,9 @@ import Kore.Builtin.Builtin
     )
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Error
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -136,15 +136,15 @@ evalKEq true _ _ (valid :< app) =
         let pattern1 = Pattern.fromTermLike termLike1
             pattern2 = Pattern.fromTermLike termLike2
 
-        defined1 <- Ceil.makeEvaluate Predicate.topTODO pattern1
-        defined2 <- Ceil.makeEvaluate Predicate.topTODO pattern2
+        defined1 <- Ceil.makeEvaluate Condition.topTODO pattern1
+        defined2 <- Ceil.makeEvaluate Condition.topTODO pattern2
         defined <- And.simplifyEvaluated defined1 defined2
 
         equalTerms <-
             Equals.makeEvaluateTermsToPredicate
                 termLike1
                 termLike2
-                Predicate.topTODO
+                Condition.topTODO
         let trueTerm = Bool.asInternal sort true
             truePatterns = Pattern.withCondition trueTerm <$> equalTerms
 

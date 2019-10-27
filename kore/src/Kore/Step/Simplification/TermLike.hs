@@ -25,12 +25,12 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
@@ -139,7 +139,7 @@ simplify
         , MonadSimplify simplifier
         )
     =>  TermLike variable
-    ->  Predicate variable
+    ->  Condition variable
     ->  simplifier (Pattern variable)
 simplify patt predicate = do
     orPatt <- simplifyToOr predicate patt
@@ -153,7 +153,7 @@ simplifyToOr
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Predicate variable
+    =>  Condition variable
     ->  TermLike variable
     ->  simplifier (OrPattern variable)
 simplifyToOr predicate term =
@@ -171,7 +171,7 @@ simplifyInternal
         , MonadSimplify simplifier
         )
     =>  TermLike variable
-    ->  Predicate variable
+    ->  Condition variable
     ->  simplifier (OrPattern variable)
 simplifyInternal term predicate =
     simplifyInternalWorker term
@@ -181,7 +181,7 @@ simplifyInternal term predicate =
         Just identifier -> Profiler.identifierSimplification identifier
 
     predicateFreeVars =
-        FreeVariables.getFreeVariables $ Predicate.freeVariables predicate
+        FreeVariables.getFreeVariables $ Condition.freeVariables predicate
 
     simplifyChildren
         :: Traversable t

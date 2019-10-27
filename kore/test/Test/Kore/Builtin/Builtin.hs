@@ -59,6 +59,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import Kore.Internal.Condition as Condition
+    ( top
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -67,9 +70,6 @@ import Kore.Internal.OrPattern
     )
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import Kore.Internal.Predicate as Predicate
-    ( top
     )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike
@@ -193,7 +193,7 @@ testEnv =
         }
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
-evaluate = runSimplifier testEnv . (`TermLike.simplify` Predicate.top)
+evaluate = runSimplifier testEnv . (`TermLike.simplify` Condition.top)
 
 evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
@@ -202,7 +202,7 @@ evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
-    . TermLike.simplifyToOr Predicate.top
+    . TermLike.simplifyToOr Condition.top
 
 runStep
     :: Pattern Variable

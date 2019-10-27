@@ -26,14 +26,14 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr
     )
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
-import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike hiding
     ( mkAnd
@@ -97,10 +97,10 @@ simplifyEvaluated simplified =
 
 simplifyEvaluatedPredicate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPredicate variable
-    -> simplifier (OrPredicate variable)
+    => OrCondition variable
+    -> simplifier (OrCondition variable)
 simplifyEvaluatedPredicate notChild =
-    fmap OrPredicate.fromPredicates $ gather $ do
+    fmap OrCondition.fromConditions $ gather $ do
         let not' = Not { notChild = notChild, notSort = () }
         andPredicate <- scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
         mkMultiAndPredicate andPredicate
@@ -123,17 +123,17 @@ makeEvaluateNot
 makeEvaluateNot Not { notChild } =
     OrPattern.fromPatterns
         [ Pattern.fromTermLike $ TermLike.markSimplified $ makeTermNot term
-        , Pattern.fromPredicateSorted
+        , Pattern.fromConditionSorted
             (termLikeSort term)
             (makeEvaluatePredicate predicate)
         ]
   where
     (term, predicate) = Conditional.splitTerm notChild
 
-{- | Given a not's @Internal.Predicate@ argument, simplifies the @not@.
+{- | Given a not's @Internal.Condition@ argument, simplifies the @not@.
 
 Right now there is no actual simplification, this function just creates
-a negated @Internal.Predicate@.
+a negated @Internal.Condition@.
 
 I.e. if we want to simplify @not (predicate and substitution)@, we may pass
 @predicate and substitution@ to this function, which will convert
@@ -142,8 +142,8 @@ a @not@ on top of that.
 -}
 makeEvaluatePredicate
     :: InternalVariable variable
-    => Predicate variable
-    -> Predicate variable
+    => Condition variable
+    -> Condition variable
 makeEvaluatePredicate
     Conditional
         { term = ()
@@ -162,10 +162,10 @@ makeEvaluatePredicate
 
 makeEvaluateNotPredicate
     :: InternalVariable variable
-    => Not sort (Predicate variable)
-    -> OrPredicate variable
+    => Not sort (Condition variable)
+    -> OrCondition variable
 makeEvaluateNotPredicate Not { notChild = predicate } =
-    OrPredicate.fromPredicates [ makeEvaluatePredicate predicate ]
+    OrCondition.fromConditions [ makeEvaluatePredicate predicate ]
 
 makeTermNot
     :: InternalVariable variable
@@ -214,13 +214,13 @@ mkMultiAndPattern
 mkMultiAndPattern patterns =
     Foldable.foldrM And.makeEvaluate Pattern.top patterns
 
-{- | Conjoin and simplify a 'MultiAnd' of 'Predicate'.
+{- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
 mkMultiAndPredicate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => MultiAnd (Predicate variable)
-    -> BranchT simplifier (Predicate variable)
+    => MultiAnd (Condition variable)
+    -> BranchT simplifier (Condition variable)
 mkMultiAndPredicate predicates =
-    -- Using Foldable.fold because the Monoid instance of Predicate
+    -- Using Foldable.fold because the Monoid instance of Condition
     -- implements And semantics.
     return $ Foldable.fold predicates

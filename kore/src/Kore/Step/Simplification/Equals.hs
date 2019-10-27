@@ -26,18 +26,18 @@ import Data.Maybe
     ( fromMaybe
     )
 
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
-import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( pattern PredicateTrue
@@ -150,7 +150,7 @@ Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify predicate Equals { equalsFirst = first, equalsSecond = second } =
@@ -171,7 +171,7 @@ carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -200,7 +200,7 @@ simplifyEvaluated predicate first second
 makeEvaluateFunctionalOr
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Pattern variable
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
@@ -242,7 +242,7 @@ makeEvaluate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Pattern variable
     -> Pattern variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (OrPattern variable)
 makeEvaluate
     first@Conditional { term = Top_ _ }
@@ -268,7 +268,7 @@ makeEvaluate
     predicate
   = do
     result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
-    return (Pattern.fromPredicate <$> result)
+    return (Pattern.fromCondition <$> result)
 
 makeEvaluate
     first@Conditional { term = firstTerm }
@@ -322,7 +322,7 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> MaybeT simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
     result <- AndTerms.termEquals first second
-    return (Pattern.fromPredicate <$> result)
+    return (Pattern.fromCondition <$> result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -338,21 +338,21 @@ makeEvaluateTermsToPredicate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
-    -> Predicate variable
-    -> simplifier (OrPredicate variable)
-makeEvaluateTermsToPredicate first second configurationPredicate
-  | first == second = return OrPredicate.top
+    -> Condition variable
+    -> simplifier (OrCondition variable)
+makeEvaluateTermsToPredicate first second configurationCondition
+  | first == second = return OrCondition.top
   | otherwise = do
     result <- runMaybeT $ AndTerms.termEquals first second
     case result of
         Nothing ->
             return
-                $ OrPredicate.fromPredicate . Predicate.fromPredicate
+                $ OrCondition.fromCondition . Condition.fromPredicate
                 $ Syntax.Predicate.markSimplified
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
-            secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
+            firstCeilOr <- Ceil.makeEvaluateTerm configurationCondition first
+            secondCeilOr <- Ceil.makeEvaluateTerm configurationCondition second
             firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate

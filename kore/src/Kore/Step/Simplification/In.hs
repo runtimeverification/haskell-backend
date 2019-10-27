@@ -11,14 +11,14 @@ module Kore.Step.Simplification.In
     ( simplify
     ) where
 
+import Kore.Internal.Condition as Condition
+    ( Condition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate as Predicate
-    ( Predicate
-    )
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( makeInPredicate
@@ -46,7 +46,7 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> In Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify predicate In { inContainedChild = first, inContainingChild = second } =
@@ -68,7 +68,7 @@ carry around.
 simplifyEvaluatedIn
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -85,7 +85,7 @@ simplifyEvaluatedIn predicate first second
 
 makeEvaluateIn
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Pattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)

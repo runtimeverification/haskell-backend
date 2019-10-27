@@ -6,16 +6,16 @@ import Test.Tasty
 
 import qualified Data.Map as Map
 
+import Kore.Internal.Condition
+    ( Condition
+    , Conditional (..)
+    )
+import qualified Kore.Internal.Condition as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
-import Kore.Internal.Predicate
-    ( Conditional (..)
-    , Predicate
-    )
-import qualified Kore.Internal.Predicate as Conditional
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
@@ -44,11 +44,11 @@ import Test.Tasty.HUnit.Ext
 test_predicateSimplification :: [TestTree]
 test_predicateSimplification =
     [ testCase "Identity for top and bottom" $ do
-        actualBottom <- runSimplifier Map.empty Conditional.bottomPredicate
+        actualBottom <- runSimplifier Map.empty Conditional.bottomCondition
         assertEqual "" mempty actualBottom
-        actualTop <- runSimplifier Map.empty Conditional.topPredicate
+        actualTop <- runSimplifier Map.empty Conditional.topCondition
         assertEqual ""
-            (MultiOr.singleton Conditional.topPredicate)
+            (MultiOr.singleton Conditional.topCondition)
             actualTop
 
     , testCase "Applies substitution to predicate" $ do
@@ -268,8 +268,8 @@ test_predicateSimplification =
 
 runSimplifier
     :: BuiltinAndAxiomSimplifierMap
-    -> Predicate Variable
-    -> IO (OrPredicate Variable)
+    -> Condition Variable
+    -> IO (OrCondition Variable)
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ Test.runSimplifierBranch env
@@ -296,7 +296,7 @@ simpleEvaluator
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => [(TermLike variable, TermLike variable)]
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
 simpleEvaluator [] _  _ = return NotApplicable
 simpleEvaluator ((from, to) : ps) patt predicate

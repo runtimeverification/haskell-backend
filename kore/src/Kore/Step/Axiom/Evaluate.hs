@@ -15,6 +15,7 @@ import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
@@ -22,7 +23,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , mkEvaluated
@@ -96,7 +96,7 @@ evaluateAxioms
             return Result.Results
                 { results = mempty, remainders = MultiOr [evaluated] }
           | otherwise -> do
-            ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
+            ceilChild <- ceilChildOfApplicationOrTop Condition.topTODO patt
             let
                 result =
                     Result.mergeResults results

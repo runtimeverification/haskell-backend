@@ -43,12 +43,12 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
@@ -589,7 +589,7 @@ test_functionIntegration =
         -> IO (Pattern Variable)
     evaluate functionIdToEvaluator patt =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt Predicate.top
+        $ TermLike.simplify patt Condition.top
 
 test_Nat :: [TestTree]
 test_Nat =
@@ -652,7 +652,7 @@ equals comment term results =
 simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify =
     runSimplifier testEnv
-    . (TermLike.simplifyToOr Predicate.top)
+    . (TermLike.simplifyToOr Condition.top)
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -660,7 +660,7 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier Predicate.top patt
+    $ runBuiltinAndAxiomSimplifier simplifier Condition.top patt
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -1174,7 +1174,7 @@ mockEvaluator
     -> TermLikeSimplifier
     -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ _ _ = return evaluation
 

@@ -14,6 +14,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Axiom.Concrete
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -22,7 +23,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
@@ -130,7 +130,7 @@ andRequires
     -> Syntax.Predicate Variable
     -> Pattern Variable
 andRequires termLike requires =
-    Pattern.withCondition termLike (Predicate.fromPredicate requires)
+    Pattern.withCondition termLike (Condition.fromPredicate requires)
 
 -- * Helpers
 

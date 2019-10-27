@@ -15,6 +15,10 @@ import Control.Applicative
     )
 import qualified Data.Foldable as Foldable
 
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -25,11 +29,7 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr
     )
-import qualified Kore.Internal.OrPredicate as OrPredicate
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
@@ -65,7 +65,7 @@ See also: 'remainder\''
  -}
 remainder
     :: InternalVariable variable
-    => MultiOr (Predicate (Target variable))
+    => MultiOr (Condition (Target variable))
     -> Syntax.Predicate variable
 remainder =
     Syntax.Predicate.mapVariables Target.unwrapVariable . remainder'
@@ -78,7 +78,7 @@ by any applied rule.
  -}
 remainder'
     :: InternalVariable variable
-    => MultiOr (Predicate (Target variable))
+    => MultiOr (Condition (Target variable))
     -> Syntax.Predicate (Target variable)
 remainder' results =
     mkMultiAndPredicate $ mkNotExists conditions
@@ -86,7 +86,7 @@ remainder' results =
     conditions = mkMultiAndPredicate . unificationConditions <$> results
     mkNotExists = mkNotMultiOr . fmap existentiallyQuantifyTarget
 
--- | Existentially-quantify target (axiom) variables in the 'Predicate'.
+-- | Existentially-quantify target (axiom) variables in the 'Condition'.
 existentiallyQuantifyTarget
     :: InternalVariable variable
     => Syntax.Predicate (Target variable)
@@ -126,7 +126,7 @@ mkMultiAndPredicate =
  -}
 unificationConditions
     :: InternalVariable variable
-    => Predicate (Target variable)
+    => Condition (Target variable)
     -- ^ Unification solution
     -> MultiAnd (Syntax.Predicate (Target variable))
 unificationConditions Conditional { predicate, substitution } =
@@ -149,9 +149,9 @@ substitutionConditions subst =
 ceilChildOfApplicationOrTop
     :: forall variable m
     .  (SimplifierVariable variable, MonadSimplify m)
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
-    -> m (Predicate variable)
+    -> m (Condition variable)
 ceilChildOfApplicationOrTop predicate patt =
     case patt of
         App_ _ children -> do
@@ -163,9 +163,9 @@ ceilChildOfApplicationOrTop predicate patt =
             pure $ Conditional
                 { term = ()
                 , predicate =
-                    OrPredicate.toPredicate
-                    . fmap Predicate.toPredicate
+                    OrCondition.toPredicate
+                    . fmap Condition.toPredicate
                     $ ceil
                 , substitution = mempty
                 }
-        _ -> pure Predicate.top
+        _ -> pure Condition.top

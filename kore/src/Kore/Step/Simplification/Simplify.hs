@@ -64,6 +64,7 @@ import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional
     )
@@ -74,10 +75,9 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
-    , Predicate
+    ( Condition
+    , Pattern
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( SubstitutionVariable
     , Symbol
@@ -226,7 +226,7 @@ newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable m
         . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
-        => Predicate variable
+        => Condition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
         )
@@ -249,7 +249,7 @@ simplifyTerm
         )
     => TermLike variable
     -> simplifier (OrPattern variable)
-simplifyTerm = simplifyConditionalTermToOr Predicate.top
+simplifyTerm = simplifyConditionalTermToOr Condition.top
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}
@@ -259,7 +259,7 @@ simplifyConditionalTermToOr
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
 simplifyConditionalTermToOr predicate termLike = do
@@ -274,7 +274,7 @@ simplifyConditionalTerm
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
 simplifyConditionalTerm predicate termLike = do
@@ -290,7 +290,7 @@ simplification, but only attaches it unmodified to the final result.
 termLikeSimplifier
     ::  ( forall variable m
         . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
-        => Predicate variable
+        => Condition variable
         -> TermLike variable
         -> m (OrPattern variable)
         )
@@ -301,7 +301,7 @@ termLikeSimplifier simplifier =
     termLikeSimplifierWorker
         :: forall variable m
         .  (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
-        => Predicate variable
+        => Condition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
     termLikeSimplifierWorker
@@ -373,7 +373,7 @@ newtype BuiltinAndAxiomSimplifier =
         => TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
-        -> Predicate variable
+        -> Condition variable
         -> simplifier (AttemptedAxiom variable)
         )
 
@@ -381,7 +381,7 @@ runBuiltinAndAxiomSimplifier
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
-    -> Predicate variable
+    -> Condition variable
     -> TermLike variable
     -> simplifier (AttemptedAxiom variable)
 runBuiltinAndAxiomSimplifier
@@ -552,7 +552,7 @@ applicationAxiomSimplifier applicationSimplifier =
         => TermLikeSimplifier
         -> BuiltinAndAxiomSimplifierMap
         -> TermLike variable
-        -> Predicate variable
+        -> Condition variable
         -> simplifier (AttemptedAxiom variable)
     helper simplifier axiomIdToSimplifier termLike _ =
         case Recursive.project termLike of

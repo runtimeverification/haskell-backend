@@ -55,17 +55,17 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
+import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPredicate
-    ( OrPredicate
+import Kore.Internal.OrCondition
+    ( OrCondition
     )
-import qualified Kore.Internal.OrPredicate as OrPredicate
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
@@ -127,13 +127,13 @@ termEquals
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-    -> MaybeT simplifier (OrPredicate variable)
+    -> MaybeT simplifier (OrCondition variable)
 termEquals first second = MaybeT $ do
     maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
     case sequence maybeResults of
         Nothing -> return Nothing
         Just results -> return $ Just $
-            MultiOr.make (map Predicate.eraseConditionalTerm results)
+            MultiOr.make (map Condition.eraseConditionalTerm results)
 
 termEqualsAnd
     :: forall variable simplifier
@@ -173,13 +173,13 @@ termEqualsAnd p1 p2 =
         either ignoreErrors scatterResults
         =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
       where
-        ignoreErrors _ = return equalsPredicate
+        ignoreErrors _ = return equalsCondition
         scatterResults =
             maybe
-                (return equalsPredicate) -- default if no results
+                (return equalsCondition) -- default if no results
                 (BranchT.alternate . BranchT.scatter)
             . sequence
-        equalsPredicate =
+        equalsCondition =
             Conditional
                 { term = mkTop_
                 , predicate =
@@ -326,7 +326,7 @@ andFunctions =
     forAnd
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forAnd f = f Predicate.topTODO SimplificationType.And
+    forAnd f = f Condition.topTODO SimplificationType.And
 
 equalsFunctions
     ::  forall variable unifier
@@ -347,7 +347,7 @@ equalsFunctions =
     forEquals
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forEquals f = f Predicate.topTODO SimplificationType.Equals
+    forEquals f = f Condition.topTODO SimplificationType.Equals
 
 andEqualsFunctions
     ::  forall variable unifier
@@ -434,7 +434,7 @@ call 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation variable unifier =
-       Predicate variable
+       Condition variable
     -> SimplificationType
     -> PredicateMerger variable unifier
     -> TermSimplifier variable unifier
@@ -529,7 +529,7 @@ bottomTermEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -554,8 +554,8 @@ bottomTermEquals
                 { term = mkTop_
                 , predicate =
                     makeNotPredicate
-                    $ OrPredicate.toPredicate
-                    $ Predicate.toPredicate <$> secondCeil
+                    $ OrCondition.toPredicate
+                    $ Condition.toPredicate <$> secondCeil
                 , substitution = mempty
                 }
 bottomTermEquals _ _ _ = empty
@@ -570,7 +570,7 @@ termBottomEquals
         , MonadUnify unifier
         , Logger.WithLog Logger.LogMessage unifier
         )
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
@@ -588,7 +588,7 @@ variableFunctionAndEquals
         , Logger.WithLog Logger.LogMessage unifier
         )
     => GHC.HasCallStack
-    => Predicate variable
+    => Condition variable
     -> SimplificationType
     -> TermLike variable
     -> TermLike variable
@@ -608,7 +608,7 @@ variableFunctionAndEquals
                 ]
         }
 variableFunctionAndEquals
-    configurationPredicate
+    configurationCondition
     simplificationType
     first@(ElemVar_ v)
     second
@@ -619,9 +619,9 @@ variableFunctionAndEquals
                 -- Ceil predicate not needed since 'second' being bottom
                 -- will make the entire term bottom. However, one must
                 -- be careful to not just drop the term.
-                return Predicate.top
+                return Condition.top
             SimplificationType.Equals -> do
-                resultOr <- Ceil.makeEvaluateTerm configurationPredicate second
+                resultOr <- Ceil.makeEvaluateTerm configurationCondition second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom
@@ -630,9 +630,9 @@ variableFunctionAndEquals
                            first
                            second
                         empty
-                    resultPredicates -> Unify.scatter resultPredicates
+                    resultConditions -> Unify.scatter resultConditions
     let result =
-            predicate <> Predicate.fromSingleSubstitution (ElemVar v, second)
+            predicate <> Condition.fromSingleSubstitution (ElemVar v, second)
     return (Pattern.withCondition second result)
 variableFunctionAndEquals _ _ _ _ = empty
 
@@ -644,7 +644,7 @@ See also: 'variableFunctionAndEquals'
 functionVariableAndEquals
     :: (SimplifierVariable variable, MonadUnify unifier)
     => GHC.HasCallStack
-    => Predicate variable
+    => Condition variable
     -> SimplificationType
     -> TermLike variable
     -> TermLike variable

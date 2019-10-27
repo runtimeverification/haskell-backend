@@ -19,13 +19,13 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import Branch
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
-    ( Conditional (..)
-    , Predicate
+    ( Condition
+    , Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     , unwrapPredicate
@@ -44,7 +44,7 @@ import Kore.Unparser
 create :: MonadSimplify simplifier => PredicateSimplifier simplifier
 create = PredicateSimplifier simplify
 
-{- | Simplify a 'Predicate'.
+{- | Simplify a 'Condition'.
 
 @simplify@ applies the substitution to the predicate and simplifies the
 result. The result is re-simplified until it stabilizes.
@@ -67,7 +67,7 @@ simplify initial = normalize initial >>= worker
             predicate' = Syntax.Predicate.substitute substitution' predicate
         simplified <- simplifyPartial predicate'
         TopBottom.guardAgainstBottom simplified
-        let merged = simplified <> Predicate.fromSubstitution substitution
+        let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
         if fullySimplified normalized
             then return normalized { term }
@@ -92,7 +92,7 @@ simplifyPartial
         , MonadSimplify simplifier
         )
     =>  Syntax.Predicate variable
-    ->  BranchT simplifier (Predicate variable)
+    ->  BranchT simplifier (Condition variable)
 simplifyPartial predicate = do
     patternOr <-
         Monad.Trans.lift

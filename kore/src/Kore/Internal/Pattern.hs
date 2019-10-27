@@ -6,8 +6,8 @@ Representation of program configurations as conditional patterns.
 -}
 module Kore.Internal.Pattern
     ( Pattern
-    , fromPredicate
-    , fromPredicateSorted
+    , fromCondition
+    , fromConditionSorted
     , toPredicate
     , bottom
     , bottomOf
@@ -27,7 +27,7 @@ module Kore.Internal.Pattern
     , Conditional.andCondition
     , Conditional.withCondition
     , Conditional.withoutTerm
-    , Predicate
+    , Condition
     ) where
 
 import GHC.Stack
@@ -38,14 +38,14 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     , getFreeElementVariables
     )
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
@@ -77,22 +77,22 @@ program configuration for Kore execution.
  -}
 type Pattern variable = Conditional variable (TermLike variable)
 
-fromPredicate
+fromCondition
     :: (Ord variable, SortedVariable variable)
-    => Predicate variable
+    => Condition variable
     -> Pattern variable
-fromPredicate = (<$) mkTop_
+fromCondition = (<$) mkTop_
 
-fromPredicateSorted
+fromConditionSorted
     :: (Ord variable, SortedVariable variable)
     => Sort
-    -> Predicate variable
+    -> Condition variable
     -> Pattern variable
-fromPredicateSorted sort = (<$) (mkTop sort)
+fromConditionSorted sort = (<$) (mkTop sort)
 
 isSimplified :: Pattern variable -> Bool
 isSimplified (splitTerm -> (t, p)) =
-    TermLike.isSimplified t && Predicate.isSimplified p
+    TermLike.isSimplified t && Condition.isSimplified p
 
 freeVariables
     :: Ord variable
@@ -230,5 +230,5 @@ toPredicate
     -> Syntax.Predicate variable
 toPredicate = Conditional.toPredicate
 
-splitTerm :: Pattern variable -> (TermLike variable, Predicate variable)
+splitTerm :: Pattern variable -> (TermLike variable, Condition variable)
 splitTerm = Conditional.splitTerm

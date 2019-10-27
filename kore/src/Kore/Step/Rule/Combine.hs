@@ -28,13 +28,13 @@ import qualified Branch as BranchT
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (FreeVariables)
     )
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import qualified Kore.Internal.Predicate as Predicate
-    ( fromPredicate
-    )
 import Kore.Internal.TermLike
     ( mkAnd
     )
@@ -171,7 +171,7 @@ mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
     BranchT.gather $ do
         Conditional {term = (), predicate, substitution} <-
-            simplifyPredicate . Predicate.fromPredicate
+            simplifyPredicate . Condition.fromPredicate
             $ makeAndPredicate firstRequires mergedPredicate
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of

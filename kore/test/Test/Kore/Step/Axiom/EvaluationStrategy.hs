@@ -11,6 +11,7 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute
     ( Concrete (Concrete)
     )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
     ( Conditional (Conditional)
@@ -18,7 +19,6 @@ import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Pattern as Pattern
     ( Conditional (..)
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( Predicate
@@ -603,6 +603,6 @@ evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
         patternSimplifier
         Map.empty
         term
-        (Predicate.fromPredicate predicate)
+        (Condition.fromPredicate predicate)
   where
     patternSimplifier = Simplifier.create

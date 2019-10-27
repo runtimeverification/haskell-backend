@@ -59,14 +59,14 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( substitute
     )
@@ -147,7 +147,7 @@ matchIncremental
     .  (MatchingVariable variable, MonadUnify unifier)
     => TermLike variable
     -> TermLike variable
-    -> unifier (Predicate variable)
+    -> unifier (Condition variable)
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
@@ -167,17 +167,17 @@ matchIncremental termLike1 termLike2 =
     free2 = (getFreeVariables . TermLike.freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable unifier (Predicate variable)
+    done :: MatcherT variable unifier (Condition variable)
     done = do
         final@MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
         Monad.unless isDone throwUnknown
         let MatcherState { predicate, substitution } = final
             predicate' =
-                Predicate.fromPredicate
+                Condition.fromPredicate
                 $ MultiAnd.toPredicate predicate
             substitution' =
-                Predicate.fromSubstitution
+                Condition.fromSubstitution
                 $ Substitution.fromMap substitution
             solution = predicate' <> substitution'
         return solution

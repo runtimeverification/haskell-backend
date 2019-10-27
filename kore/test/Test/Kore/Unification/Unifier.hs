@@ -264,7 +264,7 @@ unificationProcedureSuccessWithSimplifiers
             $ unificationProcedure term1 term2
         let
             normalize
-                :: Predicate Variable
+                ::  Condition Variable
                 ->  ( [(UnifiedVariable Variable, TermLike Variable)]
                     , Syntax.Predicate Variable
                     )

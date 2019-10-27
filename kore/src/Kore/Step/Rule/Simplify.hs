@@ -7,6 +7,9 @@ module Kore.Step.Rule.Simplify
     ( simplifyOnePathRuleLhs
     ) where
 
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -27,9 +30,6 @@ import qualified Kore.Internal.MultiOr as MultiOr
     )
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import qualified Kore.Internal.Predicate as Predicate
-    ( fromPredicate
     )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
@@ -78,7 +78,7 @@ simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
     definedLhs =
         Conditional.withCondition
             left
-            $ Predicate.fromPredicate
+            $ Condition.fromPredicate
                 ( makeAndPredicate
                     requires
                     (makeCeilPredicate left)
@@ -98,4 +98,3 @@ simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
                 { RulePattern.left = term
                 , RulePattern.requires = predicate
                 }
-

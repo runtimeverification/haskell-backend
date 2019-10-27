@@ -7,15 +7,15 @@ import Test.Tasty
 
 import qualified Data.Foldable as Foldable
 
+import Kore.Internal.Condition
+    ( Condition
+    , Conditional (..)
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.Predicate
-    ( Conditional (..)
-    , Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Predicate as Predicate
@@ -35,11 +35,11 @@ test_normalize :: [TestTree]
 test_normalize =
     [ testCase "predicate = \\bottom" $ do
         let expect = mempty
-        actual <- normalize Predicate.bottomPredicate
+        actual <- normalize Condition.bottomCondition
         assertEqual "Expected empty result" expect actual
         assertNormalizedPredicatesMulti actual
     , testCase "∃ y z. x = σ(y, z)" $ do
-        let expect = Predicate.fromPredicate existsPredicate
+        let expect = Condition.fromPredicate existsPredicate
         actual <- normalizeExcept expect
         assertEqual
             "Expected original result"
@@ -48,7 +48,7 @@ test_normalize =
         Foldable.traverse_ assertNormalizedPredicatesMulti actual
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
-                Predicate.fromPredicate
+                Condition.fromPredicate
                 $ Syntax.Predicate.makeNotPredicate existsPredicate
         actual <- normalizeExcept expect
         assertEqual
@@ -70,7 +70,7 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(a)] + [x=constructor(a)]  === [x=constructor(a)]
         $ do
             let expect = Right
-                    [ Predicate.fromSubstitution $ Substitution.unsafeWrap
+                    [ Condition.fromSubstitution $ Substitution.unsafeWrap
                         [ ( ElemVar Mock.x , Mock.constr10 Mock.a ) ]
                     ]
             actual <-
@@ -90,7 +90,7 @@ test_mergeAndNormalizeSubstitutions =
         -- [x=constructor(y)] + [x=constructor(y)]  === [x=constructor(y)]
         $ do
             let expect = Right
-                    [ Predicate.fromSubstitution $ Substitution.unsafeWrap
+                    [ Condition.fromSubstitution $ Substitution.unsafeWrap
                         [(ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))]
                     ]
             actual <-
@@ -258,14 +258,14 @@ test_mergeAndNormalizeSubstitutions =
     , testCase "Normalizes substitution"
         $ do
             let expect =
-                    [ Predicate.fromSubstitution $ Substitution.unsafeWrap
+                    [ Condition.fromSubstitution $ Substitution.unsafeWrap
                         [ (ElemVar Mock.x, Mock.constr10 Mock.a)
                         , (ElemVar Mock.y, Mock.a)
                         ]
                     ]
             actual <-
                 normalize
-                $ Predicate.fromSubstitution $ Substitution.wrap
+                $ Condition.fromSubstitution $ Substitution.wrap
                     [ (ElemVar Mock.x, Mock.constr10 Mock.a)
                     , (ElemVar Mock.x, Mock.constr10 (mkElemVar Mock.y))
                     ]
@@ -329,14 +329,14 @@ test_mergeAndNormalizeSubstitutions =
 merge
     :: [(UnifiedVariable Variable, TermLike Variable)]
     -> [(UnifiedVariable Variable, TermLike Variable)]
-    -> IO (Either UnificationOrSubstitutionError [Predicate Variable])
+    -> IO (Either UnificationOrSubstitutionError [Condition Variable])
 merge s1 s2 =
     Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
     $ mergeSubstitutionsExcept $ Substitution.wrap <$> [s1, s2]
   where
     mergeSubstitutionsExcept =
-        Substitution.normalizeExcept . Predicate.fromSubstitution . mconcat
+        Substitution.normalizeExcept . Condition.fromSubstitution . mconcat
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
@@ -359,20 +359,20 @@ normalizeExcept predicated =
   where
     mockEnv = Mock.env
 
--- | Check that 'Predicate.substitution' is normalized for all arguments.
-assertNormalizedPredicates :: Foldable f => f [Predicate Variable] -> Assertion
+-- | Check that 'Condition.substitution' is normalized for all arguments.
+assertNormalizedPredicates :: Foldable f => f [Condition Variable] -> Assertion
 assertNormalizedPredicates =
     Foldable.traverse_ assertNormalizedPredicatesMulti
 
--- | Check that 'Predicate.substitution' is normalized for all arguments.
+-- | Check that 'Condition.substitution' is normalized for all arguments.
 assertNormalizedPredicatesMulti
-    :: Foldable f => f (Predicate Variable) -> Assertion
+    :: Foldable f => f (Condition Variable) -> Assertion
 assertNormalizedPredicatesMulti =
     Foldable.traverse_ assertNormalizedPredicatesSingle
 
--- | Check that 'Predicate.substitution' is normalized for all arguments.
-assertNormalizedPredicatesSingle :: Predicate Variable -> Assertion
+-- | Check that 'Condition.substitution' is normalized for all arguments.
+assertNormalizedPredicatesSingle :: Condition Variable -> Assertion
 assertNormalizedPredicatesSingle =
     assertBool "Substitution is normalized"
     . Substitution.isNormalized
-    . Predicate.substitution
+    . Condition.substitution

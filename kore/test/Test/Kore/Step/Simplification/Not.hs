@@ -10,6 +10,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -21,7 +22,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
@@ -143,16 +143,16 @@ forceTermSort = fmap (forceSort Mock.testSort)
 fromPredicate :: Syntax.Predicate Variable -> Pattern Variable
 fromPredicate =
     forceTermSort
-    . Pattern.fromPredicate
-    . Predicate.fromPredicate
+    . Pattern.fromCondition
+    . Condition.fromPredicate
 
 fromSubstitution
     :: Substitution Variable
     -> Pattern Variable
 fromSubstitution =
     forceTermSort
-    . Pattern.fromPredicate
-    . Predicate.fromSubstitution
+    . Pattern.fromCondition
+    . Condition.fromSubstitution
 
 simplifyEvaluated
     :: OrPattern Variable
