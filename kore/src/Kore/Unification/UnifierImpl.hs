@@ -187,5 +187,5 @@ normalizeExcept
 normalizeExcept conditional = do
     normalized <- normalizeOnce conditional
     let (term, predicate') = Conditional.splitTerm normalized
-    simplified <- Branch.alternate $ Simplifier.simplifyPredicate predicate'
+    simplified <- Branch.alternate $ Simplifier.simplifyCondition predicate'
     return simplified { term }

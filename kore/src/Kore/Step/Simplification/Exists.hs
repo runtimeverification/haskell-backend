@@ -170,7 +170,7 @@ makeEvaluate
     -> simplifier (OrPattern variable)
 makeEvaluate variable original
   = fmap OrPattern.fromPatterns $ Branch.gather $ do
-    normalized <- simplifyPredicate original
+    normalized <- simplifyCondition original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->

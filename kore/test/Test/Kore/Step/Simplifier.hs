@@ -1,6 +1,6 @@
 module Test.Kore.Step.Simplifier
     ( mockSimplifier
-    , mockPredicateSimplifier
+    , mockConditionSimplifier
     ) where
 
 import Kore.Internal.OrPattern
@@ -29,11 +29,11 @@ mockSimplifier values =
     termLikeSimplifier
         $ const $ mockSimplifierHelper Pattern.fromTermLike values
 
-mockPredicateSimplifier
+mockConditionSimplifier
     :: SimplifierVariable variable
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
-mockPredicateSimplifier values =
+mockConditionSimplifier values =
     termLikeSimplifier $ const $
         (mockSimplifierHelper
             (\patt -> Conditional

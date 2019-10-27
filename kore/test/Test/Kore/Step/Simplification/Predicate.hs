@@ -276,7 +276,7 @@ runSimplifier patternSimplifierMap predicate =
     $ simplifier predicate
   where
     env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
-    PredicateSimplifier simplifier = PSSimplifier.create
+    ConditionSimplifier simplifier = PSSimplifier.create
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]

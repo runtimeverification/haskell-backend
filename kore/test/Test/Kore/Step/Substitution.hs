@@ -340,7 +340,7 @@ merge s1 s2 =
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
-normalize = Test.runSimplifierBranch mockEnv . Predicate.simplifyPredicate
+normalize = Test.runSimplifierBranch mockEnv . Predicate.simplifyCondition
   where
     mockEnv = Mock.env
 

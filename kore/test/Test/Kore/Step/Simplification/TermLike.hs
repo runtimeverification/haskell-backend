@@ -38,5 +38,5 @@ simplifyInternalEvaluated original =
             termLikeSimplifier $ const undefined
         , simplifierPredicate =
             -- Throw an error if any predicate would be simplified.
-            PredicateSimplifier $ const undefined
+            ConditionSimplifier $ const undefined
         }

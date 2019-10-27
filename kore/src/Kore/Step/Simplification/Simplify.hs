@@ -11,10 +11,10 @@ module Kore.Step.Simplification.Simplify
     , simplifyConditionalTerm
     , simplifyConditionalTermToOr
     , TermSimplifier
-    -- * Predicate simplifiers
-    , PredicateSimplifier (..)
-    , emptyPredicateSimplifier
-    , liftPredicateSimplifier
+    -- * Condition simplifiers
+    , ConditionSimplifier (..)
+    , emptyConditionSimplifier
+    , liftConditionSimplifier
     -- * Term simplifiers
     , TermLikeSimplifier
     , termLikeSimplifier
@@ -142,11 +142,11 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         Monad.Morph.hoist (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
 
-    simplifyPredicate
+    simplifyCondition
         :: SimplifierVariable variable
         => Conditional variable term
         -> BranchT m (Conditional variable term)
-    default simplifyPredicate
+    default simplifyCondition
         ::  ( SimplifierVariable variable
             , MonadTrans trans
             , MonadSimplify n
@@ -154,12 +154,12 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
             )
         =>  Conditional variable term
         ->  BranchT m (Conditional variable term)
-    simplifyPredicate conditional = do
+    simplifyCondition conditional = do
         results <-
             Monad.Trans.lift . Monad.Trans.lift
-            $ Branch.gather $ simplifyPredicate conditional
+            $ Branch.gather $ simplifyCondition conditional
         Branch.scatter results
-    {-# INLINE simplifyPredicate #-}
+    {-# INLINE simplifyCondition #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
     default askSimplifierAxioms
@@ -313,28 +313,28 @@ termLikeSimplifier simplifier =
 
 -- * Predicate simplifiers
 
-{-| 'PredicateSimplifier' wraps a function that simplifies
+{-| 'ConditionSimplifier' wraps a function that simplifies
 'Predicate's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSimplifier monad =
-    PredicateSimplifier
-        { getPredicateSimplifier
+newtype ConditionSimplifier monad =
+    ConditionSimplifier
+        { getConditionSimplifier
             :: forall variable term
             .  SimplifierVariable variable
             => Conditional variable term
             -> BranchT monad (Conditional variable term)
         }
 
-emptyPredicateSimplifier :: Monad monad => PredicateSimplifier monad
-emptyPredicateSimplifier = PredicateSimplifier return
+emptyConditionSimplifier :: Monad monad => ConditionSimplifier monad
+emptyConditionSimplifier = ConditionSimplifier return
 
-liftPredicateSimplifier
+liftConditionSimplifier
     :: (Monad monad, MonadTrans trans, Monad (trans monad))
-    => PredicateSimplifier monad
-    -> PredicateSimplifier (trans monad)
-liftPredicateSimplifier (PredicateSimplifier simplifier) =
-    PredicateSimplifier $ \predicate -> do
+    => ConditionSimplifier monad
+    -> ConditionSimplifier (trans monad)
+liftConditionSimplifier (ConditionSimplifier simplifier) =
+    ConditionSimplifier $ \predicate -> do
         results <-
             Monad.Trans.lift . Monad.Trans.lift
             $ Branch.gather $ simplifier predicate

@@ -74,7 +74,7 @@ import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
-    , PredicateSimplifier
+    , ConditionSimplifier
     , TermLikeSimplifier
     )
 import qualified Kore.Step.SMT.AST as SMT
@@ -1564,7 +1564,7 @@ axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 axiomSimplifiers = Map.empty
 
 predicateSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
 predicateSimplifier = Simplifier.Predicate.create
 
 env :: MonadSimplify simplifier => Env simplifier

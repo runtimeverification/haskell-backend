@@ -40,7 +40,7 @@ mergeWithPredicate
     -- ^ pattern to which the above should be added.
     -> BranchT simplifier (Pattern variable)
 mergeWithPredicate condition' pattern' =
-    simplifyPredicate $ Pattern.andCondition pattern' condition'
+    simplifyCondition $ Pattern.andCondition pattern' condition'
 
 {-| Ands the given predicate/substitution with the given pattern.
 

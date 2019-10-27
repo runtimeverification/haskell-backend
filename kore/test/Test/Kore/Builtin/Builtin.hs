@@ -173,7 +173,7 @@ testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
 testSubstitutionSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
 testSubstitutionSimplifier = Simplifier.Predicate.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap

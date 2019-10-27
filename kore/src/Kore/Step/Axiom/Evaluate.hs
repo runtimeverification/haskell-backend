@@ -112,10 +112,10 @@ evaluateAxioms
             simplifiedResult <-
                 Lens.traverseOf
                     (field @"results" . Lens.traversed . field @"result")
-                    (OrPattern.simplifyPredicatesWithSmt predicate)
+                    (OrPattern.simplifyConditionsWithSmt predicate)
                     result
                     >>= Lens.traverseOf (field @"remainders")
-                        (OrPattern.simplifyPredicatesWithSmt predicate)
+                        (OrPattern.simplifyConditionsWithSmt predicate)
 
             let Result.Results { results = returnedResults } = simplifiedResult
 

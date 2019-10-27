@@ -115,7 +115,7 @@ mergePredicatesAndSubstitutions
     -> [Substitution variable]
     -> BranchT simplifier (Condition variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
-    simplifyPredicate Conditional
+    simplifyCondition Conditional
         { term = ()
         , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
         , substitution = Foldable.fold substitutions

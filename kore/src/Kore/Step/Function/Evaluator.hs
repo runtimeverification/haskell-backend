@@ -382,7 +382,7 @@ reevaluateFunctions predicate rewriting = do
     merged <- OrPattern.mergeWithPredicate rewritingCondition simplifiedTerms
     orResults <- BranchT.gather $ do
         simplifiedTerm <- BranchT.scatter merged
-        simplifyPredicate simplifiedTerm
+        simplifyCondition simplifiedTerm
     return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.

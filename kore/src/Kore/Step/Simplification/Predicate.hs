@@ -11,7 +11,7 @@ module Kore.Step.Simplification.Predicate
     ( create
     , simplify
     , simplifyPartial
-    , simplifyPredicate
+    , simplifyCondition
     ) where
 
 import qualified Control.Monad.Trans as Monad.Trans
@@ -39,10 +39,10 @@ import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 
-{- | Create a 'PredicateSimplifier' using 'simplify'.
+{- | Create a 'ConditionSimplifier' using 'simplify'.
 -}
-create :: MonadSimplify simplifier => PredicateSimplifier simplifier
-create = PredicateSimplifier simplify
+create :: MonadSimplify simplifier => ConditionSimplifier simplifier
+create = ConditionSimplifier simplify
 
 {- | Simplify a 'Condition'.
 
