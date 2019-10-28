@@ -60,13 +60,14 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( mkAnd
     )
 import qualified Kore.Predicate.Predicate as Syntax
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -729,9 +730,9 @@ makeRuleFromPatterns
     -> Pattern variable
     -> rule
 makeRuleFromPatterns configuration destination =
-    let (left, Conditional.toPredicate -> requires) =
+    let (left, Predicate.toPredicate -> requires) =
             Pattern.splitTerm configuration
-        (right, Conditional.toPredicate -> ensures) =
+        (right, Predicate.toPredicate -> ensures) =
             Pattern.splitTerm destination
     in coerce RulePattern
         { left
@@ -766,15 +767,16 @@ removalPredicate destination config =
             $ Set.difference destinationVariables configVariables
         extraElementVariables = [v | ElemVar v <- extraVariables]
         extraNonElemVariables = filter (not . isElemVar) extraVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraElementVariables
+        quantifyPredicate =
+            Syntax.Predicate.makeMultipleExists extraElementVariables
     in
         if not (null extraNonElemVariables)
         then error
             ("Cannot quantify non-element variables: "
                 ++ show (unparse <$> extraNonElemVariables))
-        else Predicate.makeNotPredicate
+        else Syntax.Predicate.makeNotPredicate
             $ quantifyPredicate
-            $ Predicate.makeCeilPredicate
+            $ Syntax.Predicate.makeCeilPredicate
             $ mkAnd
                 (Pattern.toTermLike destination)
                 (Pattern.toTermLike config)
