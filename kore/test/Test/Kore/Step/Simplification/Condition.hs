@@ -1,4 +1,4 @@
-module Test.Kore.Step.Simplification.Predicate
+module Test.Kore.Step.Simplification.Condition
     ( test_predicateSimplification
     ) where
 
@@ -28,9 +28,7 @@ import Kore.Step.Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
-import qualified Kore.Step.Simplification.Predicate as PSSimplifier
-    ( create
-    )
+import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
@@ -276,7 +274,7 @@ runSimplifier patternSimplifierMap predicate =
     $ simplifier predicate
   where
     env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
-    ConditionSimplifier simplifier = PSSimplifier.create
+    ConditionSimplifier simplifier = Condition.create
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]

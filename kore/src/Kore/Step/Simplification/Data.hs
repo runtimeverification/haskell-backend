@@ -56,7 +56,7 @@ import Kore.Profiler.Data
 import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Registry as Axiom.Registry
 import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.Simplification.Predicate as Predicate
+import qualified Kore.Step.Simplification.Condition as Condition
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
@@ -71,7 +71,7 @@ data Env simplifier =
     Env
         { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
         , simplifierTermLike  :: !TermLikeSimplifier
-        , simplifierPredicate :: !(ConditionSimplifier simplifier)
+        , simplifierCondition :: !(ConditionSimplifier simplifier)
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         , memo                :: !(Memo.Self simplifier)
         }
@@ -126,7 +126,7 @@ instance
     {-# INLINE localSimplifierTermLike #-}
 
     simplifyCondition conditional = do
-        ConditionSimplifier simplify <- asks simplifierPredicate
+        ConditionSimplifier simplify <- asks simplifierCondition
         simplify conditional
     {-# INLINE simplifyCondition #-}
 
@@ -188,7 +188,7 @@ evalSimplifier verifiedModule simplifier = do
         Env
             { metadataTools = earlyMetadataTools
             , simplifierTermLike
-            , simplifierPredicate
+            , simplifierCondition
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
             }
@@ -197,7 +197,7 @@ evalSimplifier verifiedModule simplifier = do
     -- knowledge of the patterns which are internalized.
     earlyMetadataTools = MetadataTools.build verifiedModule
     simplifierTermLike = Simplifier.create
-    simplifierPredicate = Predicate.create
+    simplifierCondition = Condition.create
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 
@@ -229,7 +229,7 @@ evalSimplifier verifiedModule simplifier = do
         return Env
             { metadataTools
             , simplifierTermLike
-            , simplifierPredicate
+            , simplifierCondition
             , simplifierAxioms
             , memo
             }

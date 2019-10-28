@@ -79,7 +79,7 @@ import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     , rulePattern
     )
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -1251,7 +1251,7 @@ testMetadataTools = MetadataTools.build verifiedModule
 
 testSubstitutionSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-testSubstitutionSimplifier = Simplifier.Predicate.create
+testSubstitutionSimplifier = Simplifier.Condition.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -1264,7 +1264,7 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
-        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierCondition = testSubstitutionSimplifier
         , simplifierAxioms =
             mconcat
                 [ testEvaluators

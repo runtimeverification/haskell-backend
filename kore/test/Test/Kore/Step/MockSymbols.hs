@@ -65,12 +65,12 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
 import qualified Kore.Step.Function.Memo as Memo
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
     ( Env (Env)
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
@@ -1565,14 +1565,14 @@ axiomSimplifiers = Map.empty
 
 predicateSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-predicateSimplifier = Simplifier.Predicate.create
+predicateSimplifier = Simplifier.Condition.create
 
 env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
         { metadataTools = Test.Kore.Step.MockSymbols.metadataTools
         , simplifierTermLike = termLikeSimplifier
-        , simplifierPredicate = predicateSimplifier
+        , simplifierCondition = predicateSimplifier
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         }

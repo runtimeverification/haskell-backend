@@ -1,16 +1,12 @@
-{-|
-Module      : Kore.Step.Simplification.Predicate
-Description : Predicate simplification.
+{- |
 Copyright   : (c) Runtime Verification, 2018
-License     : UIUC/NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+License     : NCSA
+
 -}
-module Kore.Step.Simplification.Predicate
+module Kore.Step.Simplification.Condition
     ( create
     , simplify
-    , simplifyPartial
+    , simplifyPredicate
     , simplifyCondition
     ) where
 
@@ -65,7 +61,7 @@ simplify initial = normalize initial >>= worker
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Syntax.Predicate.substitute substitution' predicate
-        simplified <- simplifyPartial predicate'
+        simplified <- simplifyPredicate predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -78,22 +74,22 @@ simplify initial = normalize initial >>= worker
       where
         variables = Substitution.variables substitution
 
-{- | Simplify the 'Syntax.Predicate' once; do not apply the substitution.
+{- | Simplify the 'Syntax.Predicate' once.
 
-@simplifyPartial@ does not attempt to apply the resulting substitution and
+@simplifyPredicate@ does not attempt to apply the resulting substitution and
 re-simplify the result.
 
 See also: 'simplify'
 
 -}
-simplifyPartial
+simplifyPredicate
     ::  ( GHC.HasCallStack
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
     =>  Syntax.Predicate variable
     ->  BranchT simplifier (Condition variable)
-simplifyPartial predicate = do
+simplifyPredicate predicate = do
     patternOr <-
         Monad.Trans.lift
         $ simplifyTerm

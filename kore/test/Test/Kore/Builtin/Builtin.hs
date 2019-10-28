@@ -83,8 +83,8 @@ import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( RewriteRule
     )
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
@@ -174,7 +174,7 @@ testMetadataTools = MetadataTools.build verifiedModule
 
 testSubstitutionSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-testSubstitutionSimplifier = Simplifier.Predicate.create
+testSubstitutionSimplifier = Simplifier.Condition.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -187,7 +187,7 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
-        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierCondition = testSubstitutionSimplifier
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         }
