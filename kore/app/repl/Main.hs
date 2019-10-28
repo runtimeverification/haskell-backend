@@ -44,6 +44,7 @@ import System.Exit
 import Data.Limit
     ( Limit (..)
     )
+import Data.Proxy
 import Kore.Exec
     ( proveWithRepl
     )
@@ -59,7 +60,6 @@ import Kore.Repl.Data
 import Kore.Step.Rule
     ( OnePathRule (..)
     , RewriteRule (..)
-    , extractOnePathClaims
     )
 import Kore.Step.SMT.Lemma
 import Kore.Strategies.Goal
@@ -67,6 +67,9 @@ import Kore.Strategies.Goal
     )
 import Kore.Syntax.Module
     ( ModuleName (..)
+    )
+import Kore.Syntax.Variable
+    ( Variable
     )
 import qualified SMT
 
@@ -232,7 +235,7 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
-                            extractOnePathClaims
+                            (Proxy :: Proxy (OnePathRule Variable))
                             mLogger
                             replScript
                             replMode

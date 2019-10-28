@@ -50,6 +50,9 @@ import qualified Data.Map as Map
 import Data.Maybe
     ( mapMaybe
     )
+import Data.Proxy
+    ( Proxy
+    )
 import Data.Text
     ( Text
     )
@@ -284,7 +287,7 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
-    ::  forall smt claim
+    ::  forall claim smt
       . ( Log.WithLog Log.LogMessage smt
         , MonadCatch smt
         , MonadProfiler smt
@@ -303,12 +306,11 @@ prove
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> (VerifiedModule StepperAttributes Attribute.Axiom
-        -> [(Attribute.Axiom, claim)])
-    -- ^ claims extractor
+    -> Proxy claim
+    -- ^ Proxy for the claim type
     -> smt (Either (TermLike Variable) ())
-prove limit definitionModule specModule claimExtractor =
-    evalProver definitionModule specModule claimExtractor
+prove limit definitionModule specModule claimProxy =
+    evalProver definitionModule specModule claimProxy
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         result <-
@@ -325,16 +327,16 @@ prove limit definitionModule specModule claimExtractor =
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
 proveWithRepl
-    :: Claim claim
+    :: forall claim
+     . Claim claim
     => Eq claim
     => TopBottom claim
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> (VerifiedModule StepperAttributes Attribute.Axiom
-        -> [(Attribute.Axiom, claim)])
-    -- ^ claims extractor
+    -> Proxy claim
+    -- ^ Proxy for the claim type
     -> MVar (Log.LogAction IO Log.SomeEntry)
     -> Repl.Data.ReplScript
     -- ^ Optional script
@@ -346,13 +348,13 @@ proveWithRepl
 proveWithRepl
     definitionModule
     specModule
-    claimExtractor
+    claimProxy
     mvar
     replScript
     replMode
     outputFile
   =
-    evalProver definitionModule specModule claimExtractor
+    evalProver definitionModule specModule claimProxy
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         Repl.runRepl axioms claims mvar replScript replMode outputFile
@@ -573,11 +575,9 @@ initializeProver
     => TopBottom claim
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> VerifiedModule StepperAttributes Attribute.Axiom
-    -> (VerifiedModule StepperAttributes Attribute.Axiom
-        -> [(Attribute.Axiom, claim)])
     -> (InitializedProver claim -> simplifier a)
     -> simplifier a
-initializeProver definitionModule specModule extractClaims within =
+initializeProver definitionModule specModule within =
     initialize definitionModule
     $ \initialized -> do
         tools <- Simplifier.askMetadataTools
@@ -587,7 +587,7 @@ initializeProver definitionModule specModule extractClaims within =
             changedSpecClaims =
                 map
                     (Bifunctor.second $ expandClaim tools)
-                    (extractClaims specModule)
+                    (Goal.extractClaims specModule)
             mapMSecond
                 :: Monad m
                 => (rule -> m [rule'])
@@ -639,7 +639,8 @@ initializeProver definitionModule specModule extractClaims within =
     logChangedClaim (Unchanged _) = return ()
 
 evalProver
-    ::  ( Log.WithLog Log.LogMessage smt
+    ::  forall claim smt a
+      . ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
@@ -651,12 +652,11 @@ evalProver
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> (VerifiedModule StepperAttributes Attribute.Axiom
-        -> [(Attribute.Axiom, claim)])
-    -- ^ claims extractor
+    -> Proxy claim
+    -- ^ Proxy for the claim type
     -> (InitializedProver claim -> Simplifier.SimplifierT smt a)
     -- The prover
     -> smt a
-evalProver definitionModule specModule extractClaims prover =
+evalProver definitionModule specModule _ prover =
     evalSimplifier definitionModule
-    $ initializeProver definitionModule specModule extractClaims prover
+    $ initializeProver definitionModule specModule prover

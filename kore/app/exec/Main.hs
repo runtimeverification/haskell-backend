@@ -22,6 +22,9 @@ import qualified Data.Foldable as Foldable
 import Data.List
     ( intercalate
     )
+import Data.Proxy
+    ( Proxy (..)
+    )
 import Data.Reflection
 import Data.Semigroup
     ( (<>)
@@ -118,7 +121,6 @@ import Kore.Step
 import Kore.Step.Rule
     ( OnePathRule (..)
     , RewriteRule (..)
-    , extractOnePathClaims
     )
 import Kore.Step.Search
     ( SearchType (..)
@@ -447,7 +449,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove stepLimit mainModule specModule extractOnePathClaims
+                <$> prove stepLimit mainModule specModule (Proxy :: Proxy (OnePathRule Variable))
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where

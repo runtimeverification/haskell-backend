@@ -69,6 +69,7 @@ type Claim claim =
     , Unparse claim
     , Unparse (Rule claim)
     , Goal claim
+    , ClaimExtractor claim
     , Prim claim ~ ProofState.Prim (Rule claim)
     , ProofState claim claim ~ ProofState.ProofState claim
     )
