@@ -387,19 +387,19 @@ test_ceilSimplification =
                 }
         assertEqual "ceil(1)" expected actual
     , testGroup "Builtin.Map"
-        [ testCase "concrete partial keys" $ do
-            -- maps assume that their keys are relatively functional, so
-            -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
-            let original = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
-                expected =
-                    OrPattern.fromPattern . Pattern.fromPredicate
-                    . Predicate.fromPredicate
-                    $ makeAndPredicate
-                        (makeCeilPredicate fOfB)
-                        (makeCeilPredicate gOfB)
-            actual <- makeEvaluate $ Pattern.fromTermLike original
-            assertEqual "" expected actual
-        , testCase "abstract keys" $ do
+        --[ testCase "concrete partial keys" $ do
+        --    -- maps assume that their keys are relatively functional, so
+        --    -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
+        --    let original = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
+        --        expected =
+        --            OrPattern.fromPattern . Pattern.fromPredicate
+        --            . Predicate.fromPredicate
+        --            $ makeAndPredicate
+        --                (makeCeilPredicate fOfB)
+        --                (makeCeilPredicate gOfB)
+        --    actual <- makeEvaluate $ Pattern.fromTermLike original
+        --    assertEqual "" expected actual
+        [ testCase "abstract keys" $ do
             let original =
                     Mock.builtinMap [(mkElemVar Mock.x, mkElemVar Mock.y)]
                 expected = OrPattern.top
@@ -542,7 +542,7 @@ test_ceilSimplification =
     fOfB :: TermLike Variable
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
-    gOfB = Mock.g Mock.b
+    --gOfB = Mock.g Mock.b
     fOfX :: TermLike Variable
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXset :: TermLike Variable

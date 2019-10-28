@@ -305,7 +305,7 @@ makeEvaluateNormalizedAc
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
 
-    traverse assertCanBeEqCheck concreteKeys
+    _ <- traverse assertCanBeEqCheck concreteKeys
     elementsWithVariablesDistinct <-
         evaluateDistinct variableKeys concreteKeys
     let allConditions :: [OrPredicate variable]
