@@ -815,6 +815,16 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "And-list simplification" $ do
+        actual <- evaluate
+            Conditional
+                { term = mkAnd
+                    (Mock.elementList Mock.plain00)
+                    (Mock.elementList Mock.functional00)
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
     ]
 
 
