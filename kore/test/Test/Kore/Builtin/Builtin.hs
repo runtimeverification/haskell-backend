@@ -4,7 +4,7 @@ module Test.Kore.Builtin.Builtin
     , hpropUnparse
     , testMetadataTools
     , testEnv
-    , testSubstitutionSimplifier
+    , testConditionSimplifier
     , testTermLikeSimplifier
     , testEvaluators
     , testSymbolWithSolver
@@ -172,9 +172,9 @@ indexedModule =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier
+testConditionSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-testSubstitutionSimplifier = Simplifier.Condition.create
+testConditionSimplifier = Simplifier.Condition.create
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -187,7 +187,7 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
-        , simplifierCondition = testSubstitutionSimplifier
+        , simplifierCondition = testConditionSimplifier
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         }
