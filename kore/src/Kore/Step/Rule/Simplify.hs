@@ -72,23 +72,21 @@ simplifyRuleLhs
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
+    let lhsPredicate =
+            makeAndPredicate
+                requires
+                (makeCeilPredicate left)
+        definedLhs =
+            Conditional.withCondition
+                left
+                $ Predicate.fromPredicate
+                    lhsPredicate
     simplifiedTerms <- Pattern.simplifyAndRemoveTopExists definedLhs
     fullySimplified <- simplifyPredicatesWithSmt lhsPredicate simplifiedTerms
     let rules = map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
     return (MultiAnd.make rules)
   where
     RulePattern {left, requires} = rule
-
-    definedLhs =
-        Conditional.withCondition
-            left
-            $ Predicate.fromPredicate
-                lhsPredicate
-    lhsPredicate =
-        makeAndPredicate
-            requires
-            (makeCeilPredicate left)
-
 
     setRuleLeft
         :: RulePattern variable
