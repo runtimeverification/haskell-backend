@@ -47,7 +47,7 @@ import Kore.Predicate.Predicate
     , makeMultipleAndPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Rule
@@ -93,7 +93,7 @@ See docs/2019-09-09-Combining-Rewrite-Axioms.md for details.
 mergeRulesPredicate
     :: SubstitutionVariable variable
     => [RewriteRule variable]
-    -> Syntax.Predicate variable
+    -> Predicate variable
 mergeRulesPredicate rules =
     mergeDisjointVarRulesPredicate
     $ renameRulesVariables rules
@@ -101,7 +101,7 @@ mergeRulesPredicate rules =
 mergeDisjointVarRulesPredicate
     :: SubstitutionVariable variable
     => [RewriteRule variable]
-    -> Syntax.Predicate variable
+    -> Predicate variable
 mergeDisjointVarRulesPredicate rules =
     makeMultipleAndPredicate
     $ map mergeRulePairPredicate
@@ -115,7 +115,7 @@ makeConsecutivePairs (a1 : a2 : as) = (a1, a2) : makeConsecutivePairs (a2 : as)
 mergeRulePairPredicate
     :: InternalVariable variable
     => (RewriteRule variable, RewriteRule variable)
-    -> Syntax.Predicate variable
+    -> Predicate variable
 mergeRulePairPredicate
     ( RewriteRule RulePattern {right = right1, ensures = ensures1}
     , RewriteRule RulePattern

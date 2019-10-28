@@ -23,7 +23,7 @@ import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( makeInPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
     ( markSimplified
     )
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -104,7 +104,7 @@ makeEvaluateNonBoolIn patt1 patt2 =
     OrPattern.fromPattern Conditional
         { term = mkTop_
         , predicate =
-            Syntax.Predicate.markSimplified
+            Predicate.markSimplified
             $ makeInPredicate
                 -- TODO: Wrap in 'contained' and 'container'.
                 (Pattern.toTermLike patt1)

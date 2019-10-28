@@ -67,7 +67,7 @@ import qualified Kore.Internal.TermLike as TermLike
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Sort
     ( predicateSort
     )
@@ -184,7 +184,7 @@ makeEvaluate variable original
                 normalized { Conditional.substitution = boundSubstitution }
             if matched
                 then return normalized
-                    { Conditional.predicate = Syntax.Predicate.makeTruePredicate
+                    { Conditional.predicate = Predicate.makeTruePredicate
                     , Conditional.substitution = freeSubstitution
                     }
                 else makeEvaluateBoundRight
@@ -201,7 +201,7 @@ matchesToVariableSubstitution
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
   | Equals_ _sort1 _sort2 first second <-
-        Syntax.Predicate.fromPredicate predicateSort predicate
+        Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
   , not (TermLike.hasFreeVariable (ElemVar variable) term)
   = do
@@ -220,7 +220,7 @@ singleVariableSubstitution
     variable
     Conditional
         { term = ()
-        , predicate = Syntax.Predicate.PredicateTrue
+        , predicate = Predicate.PredicateTrue
         , substitution
         }
   = case Substitution.unwrap substitution of
@@ -264,7 +264,7 @@ makeEvaluateBoundLeft variable boundTerm normalized
                         TermLike.substitute boundSubstitution
                         $ Conditional.term normalized
                     , Conditional.predicate =
-                        Syntax.Predicate.substitute boundSubstitution
+                        Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
         orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
@@ -360,15 +360,15 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
   | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
-    $ Condition.fromPredicate . Syntax.Predicate.markSimplified
+    $ Condition.fromPredicate . Predicate.markSimplified
     -- TODO (thomas.tuegel): This may not be fully simplified: we have not used
     -- the And simplifier on the predicate.
-    $ Syntax.Predicate.makeExistsPredicate variable predicate'
+    $ Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
     quantifyTerm = TermLike.hasFreeVariable (ElemVar variable) term
     predicate' =
-        Syntax.Predicate.makeAndPredicate predicate
-        $ Syntax.Predicate.fromSubstitution substitution
+        Predicate.makeAndPredicate predicate
+        $ Predicate.fromSubstitution substitution
     quantifyPredicate =
-        Syntax.Predicate.hasFreeVariable (ElemVar variable) predicate'
+        Predicate.hasFreeVariable (ElemVar variable) predicate'

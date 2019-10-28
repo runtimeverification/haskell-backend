@@ -57,7 +57,7 @@ import Kore.Predicate.Predicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Axiom.EvaluationStrategy
@@ -1136,7 +1136,7 @@ axiomEvaluator left right =
 axiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Syntax.Predicate Variable
+    -> Predicate Variable
     -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }

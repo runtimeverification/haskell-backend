@@ -45,7 +45,7 @@ import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeNotPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
@@ -153,10 +153,10 @@ makeEvaluatePredicate
   = Conditional
         { term = ()
         , predicate =
-            Syntax.Predicate.markSimplified
+            Predicate.markSimplified
             $ makeNotPredicate
             $ makeAndPredicate predicate
-            $ Syntax.Predicate.fromSubstitution substitution
+            $ Predicate.fromSubstitution substitution
         , substitution = mempty
         }
 

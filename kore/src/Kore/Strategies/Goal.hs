@@ -57,7 +57,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( mkAnd
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
@@ -707,7 +707,7 @@ removalPredicate
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> Syntax.Predicate variable
+    -> Predicate variable
 removalPredicate destination config =
     let
         -- The variables of the destination that are missing from the

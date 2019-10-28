@@ -47,7 +47,7 @@ import Kore.Predicate.Predicate
     ( makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Sort
@@ -374,7 +374,7 @@ smtTerm :: TermLike Variable -> TermLike Variable
 smtTerm term = Mock.functionalConstr10 term
 
 smtSyntaxPredicate
-    :: TermLike Variable -> PredicateState -> Syntax.Predicate Variable
+    :: TermLike Variable -> PredicateState -> Predicate Variable
 smtSyntaxPredicate term predicateState =
     makeEqualsPredicate
         (Mock.lessInt

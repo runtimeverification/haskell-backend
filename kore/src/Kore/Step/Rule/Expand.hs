@@ -45,7 +45,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
     ( fromSubstitution
     , substitute
     )
@@ -111,17 +111,17 @@ expandSingleConstructors
             expansion =
                 expandVariables metadataTools leftVariables allElementVariables
             substitutionPredicate =
-                Syntax.Predicate.fromSubstitution
+                Predicate.fromSubstitution
                     (Substitution.wrap (Map.toList expansion))
         in rule
             { RulePattern.left = TermLike.substitute expansion left
             , RulePattern.antiLeft = TermLike.substitute expansion <$> antiLeft
             , RulePattern.right = TermLike.substitute expansion right
             , RulePattern.ensures =
-                Syntax.Predicate.substitute expansion ensures
+                Predicate.substitute expansion ensures
             , RulePattern.requires =
                 makeAndPredicate
-                    (Syntax.Predicate.substitute expansion requires)
+                    (Predicate.substitute expansion requires)
                     substitutionPredicate
             }
 

@@ -35,10 +35,10 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
@@ -98,17 +98,17 @@ deduplicateSubstitution
         )
     =>  Substitution variable
     ->  unifier
-            ( Syntax.Predicate variable
+            ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution =
-    worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate . Substitution.toMultiMap
   where
     worker
-        ::  Syntax.Predicate variable
+        ::  Predicate variable
         ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
         ->  unifier
-                ( Syntax.Predicate variable
+                ( Predicate variable
                 , Map (UnifiedVariable variable) (TermLike variable)
                 )
     worker predicate substitutions
@@ -124,7 +124,7 @@ deduplicateSubstitution =
             -- New conditions produced by simplification.
             Conditional { predicate = predicate' } = simplified
             predicate'' =
-                Syntax.Predicate.makeAndPredicate predicate predicate'
+                Predicate.makeAndPredicate predicate predicate'
             -- New substitutions produced by simplification.
             Conditional { substitution } = simplified
             substitutions'' =
@@ -163,7 +163,7 @@ normalizeOnce Conditional { term, predicate, substitution } = do
         Conditional { predicate = normalizedPredicate } = normalized
 
         mergedPredicate =
-            Syntax.Predicate.makeMultipleAndPredicate
+            Predicate.makeMultipleAndPredicate
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate

@@ -75,7 +75,7 @@ import Kore.Predicate.Predicate
     , makeNotPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     )
@@ -183,7 +183,7 @@ termEqualsAnd p1 p2 =
             Conditional
                 { term = mkTop_
                 , predicate =
-                    Syntax.Predicate.markSimplified
+                    Predicate.markSimplified
                     $ makeEqualsPredicate first second
                 , substitution = mempty
                 }
@@ -1017,7 +1017,7 @@ functionAnd first second
         -- bottom will make the entire term bottom. However,
         -- one must be careful to not just drop the term.
         , predicate =
-            Syntax.Predicate.markSimplified
+            Predicate.markSimplified
             $ makeEqualsPredicate first second
         , substitution = mempty
         }

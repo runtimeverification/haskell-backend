@@ -38,10 +38,10 @@ import Kore.Internal.Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Variable
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Substitute
     ( SubstitutionVariable
     )
@@ -59,11 +59,11 @@ import Kore.Variables.UnifiedVariable
 type Condition variable = Conditional variable ()
 
 isSimplified :: Condition variable -> Bool
-isSimplified = Syntax.Predicate.isSimplified . Conditional.predicate
+isSimplified = Predicate.isSimplified . Conditional.predicate
 
 markSimplified :: Condition variable -> Condition variable
 markSimplified conditional@Conditional { predicate } =
-    conditional { predicate = Syntax.Predicate.markSimplified predicate }
+    conditional { predicate = Predicate.markSimplified predicate }
 
 -- | Erase the @Conditional@ 'term' to yield a 'Condition'.
 eraseConditionalTerm
@@ -75,7 +75,7 @@ top :: InternalVariable variable => Condition variable
 top =
     Conditional
         { term = ()
-        , predicate = Syntax.Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -87,7 +87,7 @@ bottom :: InternalVariable variable => Condition variable
 bottom =
     Conditional
         { term = ()
-        , predicate = Syntax.Predicate.makeFalsePredicate
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -133,13 +133,13 @@ hasFreeVariable variable = isFreeVariable variable . freeVariables
 @toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
 a 'PredicateSubstition' into only a 'Predicate'.
 
-See also: 'Syntax.Predicate.fromSubstitution'.
+See also: 'Predicate.fromSubstitution'.
 
 -}
 toPredicate
     :: InternalVariable variable
     => Condition variable
-    -> Syntax.Predicate variable
+    -> Predicate variable
 toPredicate = Conditional.toPredicate
 
 mapVariables
@@ -164,7 +164,7 @@ fromNormalization Normalization { normalized, denormalized } =
   where
     predicate' =
         Conditional.fromPredicate
-        . Syntax.Predicate.fromSubstitution
+        . Predicate.fromSubstitution
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution

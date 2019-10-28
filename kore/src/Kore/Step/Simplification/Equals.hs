@@ -43,7 +43,7 @@ import Kore.Predicate.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
     )
@@ -307,7 +307,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
             Conditional
                 { term = mkTop_
                 , predicate =
-                    Syntax.Predicate.markSimplified
+                    Predicate.markSimplified
                     $ makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
@@ -348,7 +348,7 @@ makeEvaluateTermsToPredicate first second configurationCondition
         Nothing ->
             return
                 $ OrCondition.fromCondition . Condition.fromPredicate
-                $ Syntax.Predicate.markSimplified
+                $ Predicate.markSimplified
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
             firstCeilOr <- Ceil.makeEvaluateTerm configurationCondition first

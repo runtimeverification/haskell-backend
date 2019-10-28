@@ -31,10 +31,10 @@ import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.TermLike
     ( TermLike
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -91,11 +91,11 @@ simplification =
             let unwrapped =
                     OrCondition.fromCondition
                     . Condition.fromPredicate
-                    . Syntax.Predicate.markSimplified
+                    . Predicate.markSimplified
                     -- TODO (thomas.tuegel): Promoting the entire substitution
                     -- to the predicate is a problem. We should only promote the
                     -- part which has cyclic dependencies.
-                    $ Syntax.Predicate.fromSubstitution substitution
+                    $ Predicate.fromSubstitution substitution
             in maybeT (return unwrapped) return
 
     normalize1 (predicate, substitutions) = do
@@ -138,7 +138,7 @@ unification =
     normalize1
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  ( Syntax.Predicate variable
+        =>  ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
         ->  unifier (Condition variable)

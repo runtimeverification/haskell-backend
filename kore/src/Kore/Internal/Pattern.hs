@@ -60,10 +60,10 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -121,7 +121,7 @@ mapVariables
   =
     Conditional
         { term = TermLike.mapVariables variableMapper term
-        , predicate = Syntax.Predicate.mapVariables variableMapper predicate
+        , predicate = Predicate.mapVariables variableMapper predicate
         , substitution =
             Substitution.mapVariables variableMapper substitution
         }
@@ -141,12 +141,12 @@ toTermLike
 toTermLike Conditional { term, predicate, substitution } =
     simpleAnd
         (simpleAnd term predicate)
-        (Syntax.Predicate.fromSubstitution substitution)
+        (Predicate.fromSubstitution substitution)
   where
     -- TODO: Most likely I defined this somewhere.
     simpleAnd
         :: TermLike variable
-        -> Syntax.Predicate variable
+        -> Predicate variable
         -> TermLike variable
     simpleAnd pattern' predicate'
       | isTop predicate'    = pattern'
@@ -155,7 +155,7 @@ toTermLike Conditional { term, predicate, substitution } =
       | isBottom pattern'   = pattern'
       | otherwise           = mkAnd pattern' predicateTermLike
       where
-        predicateTermLike = Syntax.Predicate.fromPredicate sort predicate'
+        predicateTermLike = Predicate.fromPredicate sort predicate'
         sort = termLikeSort pattern'
 
 {-|'bottom' is an expanded pattern that has a bottom condition and that
@@ -165,7 +165,7 @@ bottom :: InternalVariable variable => Pattern variable
 bottom =
     Conditional
         { term      = mkBottom_
-        , predicate = Syntax.Predicate.makeFalsePredicate
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -178,7 +178,7 @@ bottomOf :: InternalVariable variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
-        , predicate = Syntax.Predicate.makeFalsePredicate
+        , predicate = Predicate.makeFalsePredicate
         , substitution = mempty
         }
 
@@ -189,7 +189,7 @@ top :: InternalVariable variable => Pattern variable
 top =
     Conditional
         { term      = mkTop_
-        , predicate = Syntax.Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -199,7 +199,7 @@ topOf :: InternalVariable variable => Sort -> Pattern variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
-        , predicate = Syntax.Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
@@ -220,14 +220,14 @@ fromTermLike term
   | otherwise =
     Conditional
         { term
-        , predicate = Syntax.Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
 
 toPredicate
     :: InternalVariable variable
     => Pattern variable
-    -> Syntax.Predicate variable
+    -> Predicate variable
 toPredicate = Conditional.toPredicate
 
 splitTerm :: Pattern variable -> (TermLike variable, Condition variable)

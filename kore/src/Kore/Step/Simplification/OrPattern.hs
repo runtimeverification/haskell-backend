@@ -26,7 +26,7 @@ import Kore.Internal.Pattern
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Simplification.Simplify
@@ -41,7 +41,7 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 simplifyConditionsWithSmt
     ::  forall variable simplifier
     .   (MonadSimplify simplifier, SimplifierVariable variable)
-    => Syntax.Predicate variable
+    => Predicate variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
 simplifyConditionsWithSmt predicate' unsimplified = do

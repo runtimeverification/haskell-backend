@@ -41,7 +41,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -144,7 +144,7 @@ toPattern multiOr =
         :: Condition variable -> Condition variable -> Condition variable
     mergeConditionsWithOr predicate1 predicate2 =
         Condition.fromPredicate
-            (Syntax.Predicate.makeOrPredicate
+            (Predicate.makeOrPredicate
                 (Condition.toPredicate predicate1)
                 (Condition.toPredicate predicate2)
             )

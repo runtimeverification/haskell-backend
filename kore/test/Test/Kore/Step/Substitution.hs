@@ -17,7 +17,7 @@ import Kore.Internal.MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Condition as Condition
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.Error
@@ -49,7 +49,7 @@ test_normalize =
     , testCase "¬∃ y z. x = σ(y, z)" $ do
         let expect =
                 Condition.fromPredicate
-                $ Syntax.Predicate.makeNotPredicate existsPredicate
+                $ Predicate.makeNotPredicate existsPredicate
         actual <- normalizeExcept expect
         assertEqual
             "Expected original result"
@@ -59,8 +59,8 @@ test_normalize =
     ]
   where
     existsPredicate =
-        Syntax.Predicate.makeMultipleExists [Mock.y, Mock.z]
-        $ Syntax.Predicate.makeEqualsPredicate
+        Predicate.makeMultipleExists [Mock.y, Mock.z]
+        $ Predicate.makeEqualsPredicate
             (mkElemVar Mock.x)
             (Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))
 
@@ -151,7 +151,7 @@ test_mergeAndNormalizeSubstitutions =
                         [ Conditional
                             { term = ()
                             , predicate =
-                                Syntax.Predicate.makeEqualsPredicate
+                                Predicate.makeEqualsPredicate
                                     Mock.a
                                     (Mock.f Mock.a)
                             , substitution = Substitution.unsafeWrap
@@ -278,7 +278,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Syntax.Predicate.makeEqualsPredicate Mock.cf Mock.cg
+                            Predicate.makeEqualsPredicate Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.cf) ]
                         }
@@ -287,7 +287,7 @@ test_mergeAndNormalizeSubstitutions =
                 normalize
                     Conditional
                         { term = ()
-                        , predicate = Syntax.Predicate.makeTruePredicate
+                        , predicate = Predicate.makeTruePredicate
                         , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.cf)
                             , (ElemVar Mock.x, Mock.constr10 Mock.cg)
@@ -302,7 +302,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Syntax.Predicate.makeCeilPredicate
+                            Predicate.makeCeilPredicate
                             $ Mock.f Mock.a
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)
@@ -315,7 +315,7 @@ test_mergeAndNormalizeSubstitutions =
                     Conditional
                         { term = ()
                         , predicate =
-                            Syntax.Predicate.makeCeilPredicate
+                            Predicate.makeCeilPredicate
                             $ Mock.f (mkElemVar Mock.y)
                         , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)

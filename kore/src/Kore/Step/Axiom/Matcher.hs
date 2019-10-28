@@ -74,10 +74,10 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeCeilPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.AndTerms
     ( SortInjectionMatch (SortInjectionMatch)
     , simplifySortInjections
@@ -380,7 +380,7 @@ data MatcherState variable =
         -- information.
         , substitution :: !(Map (UnifiedVariable variable) (TermLike variable))
         -- ^ Matching solution: Substitutions for target variables.
-        , predicate :: !(MultiAnd (Syntax.Predicate variable))
+        , predicate :: !(MultiAnd (Predicate variable))
         -- ^ Matching solution: Additional constraints.
         , bound :: !(Set (UnifiedVariable variable))
         -- ^ Bound variable that must not escape in the solution.
@@ -463,7 +463,7 @@ substitute eVariable termLike = do
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
-    field @"predicate" . Lens.mapped %= Syntax.Predicate.substitute subst
+    field @"predicate" . Lens.mapped %= Predicate.substitute subst
 
     return ()
   where
@@ -504,7 +504,7 @@ setSubstitute sVariable termLike = do
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
-    field @"predicate" . Lens.mapped %= Syntax.Predicate.substitute subst
+    field @"predicate" . Lens.mapped %= Predicate.substitute subst
 
     return ()
   where

@@ -22,11 +22,11 @@ import Kore.Internal.Pattern
     , Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     , unwrapPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Substitution
     ( normalize
@@ -60,7 +60,7 @@ simplify initial = normalize initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
-            predicate' = Syntax.Predicate.substitute substitution' predicate
+            predicate' = Predicate.substitute substitution' predicate
         simplified <- simplifyPredicate predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
@@ -70,11 +70,11 @@ simplify initial = normalize initial >>= worker
             else worker normalized { term }
 
     fullySimplified Conditional { predicate, substitution } =
-        Syntax.Predicate.isFreeOf predicate variables
+        Predicate.isFreeOf predicate variables
       where
         variables = Substitution.variables substitution
 
-{- | Simplify the 'Syntax.Predicate' once.
+{- | Simplify the 'Predicate' once.
 
 @simplifyPredicate@ does not attempt to apply the resulting substitution and
 re-simplify the result.
@@ -87,13 +87,13 @@ simplifyPredicate
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Syntax.Predicate variable
+    =>  Predicate variable
     ->  BranchT simplifier (Condition variable)
 simplifyPredicate predicate = do
     patternOr <-
         Monad.Trans.lift
         $ simplifyTerm
-        $ Syntax.unwrapPredicate predicate
+        $ unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.
     scatter (eraseTerm <$> patternOr)

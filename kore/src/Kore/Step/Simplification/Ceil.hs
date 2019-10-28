@@ -59,7 +59,7 @@ import Kore.Predicate.Predicate
     ( makeCeilPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Function.Evaluator as Axiom
     ( evaluatePattern
     )
@@ -211,7 +211,7 @@ makeEvaluateTerm
             (OrPattern.fromPattern Conditional
                 { term = mkTop_
                 , predicate =
-                    Syntax.Predicate.markSimplified
+                    Predicate.markSimplified
                     $ makeCeilPredicate term
                 , substitution = mempty
                 }
@@ -252,7 +252,7 @@ makeEvaluateBuiltin
   where
     unsimplified =
         OrCondition.fromCondition . Condition.fromPredicate
-        $ Syntax.Predicate.markSimplified . makeCeilPredicate $ mkBuiltin patt
+        $ Predicate.markSimplified . makeCeilPredicate $ mkBuiltin patt
 makeEvaluateBuiltin predicate (Domain.BuiltinList l) = do
     children <- mapM (makeEvaluateTerm predicate) (Foldable.toList l)
     let
@@ -272,7 +272,7 @@ makeEvaluateBuiltin
     unsimplified =
         OrCondition.fromCondition
             (Condition.fromPredicate
-                (Syntax.Predicate.markSimplified
+                (Predicate.markSimplified
                     (makeCeilPredicate (mkBuiltin patt))
                 )
             )

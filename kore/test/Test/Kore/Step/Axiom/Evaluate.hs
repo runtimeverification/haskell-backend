@@ -32,7 +32,7 @@ import Kore.Predicate.Predicate
     , makeOrPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
 import qualified Kore.Step.Axiom.Evaluate as Kore
 import Kore.Step.Rule
     ( EqualityRule (..)
@@ -109,7 +109,7 @@ z = mkElemVar Mock.z
 a :: TermLike Variable
 a = Mock.a
 
-positive :: TermLike Variable -> Syntax.Predicate Variable
+positive :: TermLike Variable -> Predicate Variable
 positive u =
     makeEqualsPredicate
         (Mock.lessInt
@@ -119,15 +119,15 @@ positive u =
         (Mock.builtinBool False)
 
 andNot, orNot
-    :: Syntax.Predicate Variable
-    -> Syntax.Predicate Variable
-    -> Syntax.Predicate Variable
+    :: Predicate Variable
+    -> Predicate Variable
+    -> Predicate Variable
 andNot p1 p2 = makeAndPredicate p1 (makeNotPredicate p2)
 orNot p1 p2 = makeOrPredicate p1 (makeNotPredicate p2)
 
 andRequires
     :: TermLike Variable
-    -> Syntax.Predicate Variable
+    -> Predicate Variable
     -> Pattern Variable
 andRequires termLike requires =
     Pattern.withCondition termLike (Condition.fromPredicate requires)
@@ -137,7 +137,7 @@ andRequires termLike requires =
 axiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Syntax.Predicate Variable
+    -> Predicate Variable
     -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule (rulePattern left right) { requires = predicate }
@@ -160,7 +160,7 @@ withAttempted
     :: (AttemptedAxiom Variable -> Assertion)
     -> TestName
     -> [EqualityRule Variable]
-    -> (TermLike Variable, Syntax.Predicate Variable)
+    -> (TermLike Variable, Predicate Variable)
     -> TestTree
 withAttempted check comment axioms termLikeAndPredicate =
     testCase comment (evaluateAxioms axioms termLikeAndPredicate >>= check)
@@ -169,7 +169,7 @@ applies
     :: GHC.HasCallStack
     => TestName
     -> [EqualityRule Variable]
-    -> (TermLike Variable, Syntax.Predicate Variable)
+    -> (TermLike Variable, Predicate Variable)
     -> [Pattern Variable]
     -> TestTree
 applies testName axioms termLikeAndPredicate results =
@@ -210,7 +210,7 @@ doesn'tApply
     :: GHC.HasCallStack
     => TestName
     -> [EqualityRule Variable]
-    -> (TermLike Variable, Syntax.Predicate Variable)
+    -> (TermLike Variable, Predicate Variable)
     -> TestTree
 doesn'tApply =
     withAttempted (assertBool "Expected NotApplicable" . isNotApplicable)
@@ -219,7 +219,7 @@ doesn'tApply =
 
 evaluateAxioms
     :: [EqualityRule Variable]
-    -> (TermLike Variable, Syntax.Predicate Variable)
+    -> (TermLike Variable, Predicate Variable)
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms (termLike, predicate) =
     runSimplifier Mock.env

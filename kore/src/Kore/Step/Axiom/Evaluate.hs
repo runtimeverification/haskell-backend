@@ -28,7 +28,7 @@ import Kore.Internal.TermLike
     , mkEvaluated
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Axiom.Matcher
@@ -64,7 +64,7 @@ evaluateAxioms
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [EqualityRule Variable]
     -> TermLike variable
-    -> Syntax.Predicate variable
+    -> Predicate variable
     -> simplifier (Step.Results variable)
 evaluateAxioms
     definitionRules

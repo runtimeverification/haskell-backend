@@ -29,10 +29,10 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -97,6 +97,6 @@ toConditions = Foldable.toList
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate
     :: InternalVariable variable
-    => MultiOr (Syntax.Predicate variable) -> Syntax.Predicate variable
+    => MultiOr (Predicate variable) -> Predicate variable
 toPredicate multiOr =
-    Syntax.Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)
+    Predicate.makeMultipleOrPredicate (MultiOr.extractPatterns multiOr)

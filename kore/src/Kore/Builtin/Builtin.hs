@@ -156,7 +156,7 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeEqualsPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Proof.Value as Value
 import Kore.Sort
     ( predicateSort
@@ -1008,7 +1008,7 @@ unifyEqualsUnsolved SimplificationType.And a b = do
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
-        {predicate = Syntax.Predicate.markSimplified $ makeEqualsPredicate a b}
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable

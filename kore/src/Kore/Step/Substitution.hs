@@ -34,10 +34,10 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Substitution
     ( Substitution
@@ -51,7 +51,7 @@ import qualified Kore.Unification.Unify as Monad.Unify
 
 newtype PredicateMerger variable m =
     PredicateMerger
-    (  [Syntax.Predicate variable]
+    (  [Predicate variable]
     -> [Substitution variable]
     -> m (Condition variable)
     )
@@ -75,12 +75,12 @@ normalize Conditional { term, predicate, substitution } = do
         Left _ -> do
             let combined =
                     Condition.fromPredicate
-                    . Syntax.Predicate.markSimplified
-                    $ Syntax.Predicate.makeAndPredicate predicate
+                    . Predicate.markSimplified
+                    $ Predicate.makeAndPredicate predicate
                     -- TODO (thomas.tuegel): Promoting the entire substitution
                     -- to the predicate is a problem. We should only promote the
                     -- part which has cyclic dependencies.
-                    $ Syntax.Predicate.fromSubstitution substitution
+                    $ Predicate.fromSubstitution substitution
             return (Conditional.withCondition term combined)
   where
     applyTerm predicated = predicated { term }
@@ -111,13 +111,13 @@ mergePredicatesAndSubstitutions
         , HasCallStack
         , WithLog LogMessage simplifier
         )
-    => [Syntax.Predicate variable]
+    => [Predicate variable]
     -> [Substitution variable]
     -> BranchT simplifier (Condition variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
     simplifyCondition Conditional
         { term = ()
-        , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
+        , predicate = Predicate.makeMultipleAndPredicate predicates
         , substitution = Foldable.fold substitutions
         }
 
@@ -135,7 +135,7 @@ createPredicatesAndSubstitutionsMergerExcept =
     PredicateMerger worker
   where
     worker
-        :: [Syntax.Predicate variable]
+        :: [Predicate variable]
         -> [Substitution variable]
         -> unifier (Condition variable)
     worker predicates substitutions = do
@@ -155,7 +155,7 @@ createPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
   where
     worker
-        :: [Syntax.Predicate variable]
+        :: [Predicate variable]
         -> [Substitution variable]
         -> BranchT simplifier (Condition variable)
     worker predicates substitutions = do
@@ -179,7 +179,7 @@ createLiftedPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
   where
     worker
-        :: [Syntax.Predicate variable]
+        :: [Predicate variable]
         -> [Substitution variable]
         -> unifier (Condition variable)
     worker predicates substitutions = do
