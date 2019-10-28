@@ -241,7 +241,7 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ resultSort arguments =
+    evalElement0 resultSort arguments =
         Builtin.getAttemptedAxiom
             (case arguments of
                 [_elem] ->
@@ -266,7 +266,7 @@ evalIn =
     Builtin.functionEvaluator evalIn0
   where
     evalIn0 :: Builtin.FunctionImplementation
-    evalIn0 _ resultSort = \arguments ->
+    evalIn0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_elem, _set) =
                     case arguments of
@@ -283,7 +283,7 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 _ resultSort =
+    evalUnit0 resultSort =
         \case
             [] -> returnConcreteSet resultSort Map.empty
             _ -> Builtin.wrongArity Set.unitKey
@@ -296,11 +296,10 @@ evalConcat =
         :: forall variable m
         .  InternalVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    evalConcat0 _ resultSort arguments = Builtin.getAttemptedAxiom $ do
+    evalConcat0 resultSort arguments = Builtin.getAttemptedAxiom $ do
         let (_set1, _set2) =
                 case arguments of
                     [_set1, _set2] -> (_set1, _set2)
@@ -319,7 +318,7 @@ evalDifference =
   where
     ctx = Set.differenceKey
     evalDifference0 :: Builtin.FunctionImplementation
-    evalDifference0 _ resultSort arguments =
+    evalDifference0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
@@ -342,7 +341,7 @@ evalToList :: Builtin.Function
 evalToList = Builtin.functionEvaluator evalToList0
   where
     evalToList0 :: Builtin.FunctionImplementation
-    evalToList0 _ resultSort arguments =
+    evalToList0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
@@ -362,7 +361,7 @@ evalSize :: Builtin.Function
 evalSize = Builtin.functionEvaluator evalSize0
   where
     evalSize0 :: Builtin.FunctionImplementation
-    evalSize0 _ resultSort arguments =
+    evalSize0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _set =
                         case arguments of
@@ -381,7 +380,7 @@ evalIntersection =
   where
     ctx = Set.intersectionKey
     evalIntersection0 :: Builtin.FunctionImplementation
-    evalIntersection0 _ resultSort arguments =
+    evalIntersection0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_set1, _set2) =
                     case arguments of
@@ -396,7 +395,7 @@ evalList2set =
     Builtin.functionEvaluator evalList2set0
   where
     evalList2set0 :: Builtin.FunctionImplementation
-    evalList2set0 _ resultSort arguments =
+    evalList2set0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _list =
                     case arguments of
