@@ -25,11 +25,21 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
+import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
@@ -117,6 +127,9 @@ import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
 import qualified Kore.Substitute as Substitute
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Kore.Unparser
     ( unparse
     )
