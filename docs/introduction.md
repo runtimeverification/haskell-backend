@@ -109,8 +109,6 @@ C(a, b) ∧ (\ceil(a) ∧ \ceil(b) ∧ a = b) ∧ x = a    -- substitution norma
 Disjunction is handled by distribution.
 The substitution normalization step is discussed below.
 
-### Matching
-
 ### Substitution normalization
 
 Substitution normalization is a step after unification required by unifying in parallel.
@@ -147,10 +145,50 @@ because we have failed to produce a substitution which unifies the given pattern
 During predicate simplification, we are more flexible;
 it is entirely reasonable to generate conditions such as `x = x + y` in this context.
 
+### Matching
+
+An ad hoc subset of patterns can be matched, based on the usual needs of the frontend and semantics developers.
+Matching is implemented sequentially, so there is no separate substitution normalization step.
+
 ### Semantic rules
+
+Semantic rules are instantiated by unification, as described above.
+The procedures to apply one-path and all-path reachability claims is described in other documents.
 
 ### Function rules
 
+Function rules are instantiated by matching, as described above.
+Function evaluation occurs during simplification, but not during unification.
+Function evaluation _may_ split the configuration
+if multiple branches of a function's definition match the configuration;
+this point is planned to change.
+
 ### Simplification
 
+Patterns are simplified from the bottom up.
+The top-level condition of the configuration is passed down as context for function and predicate evaluation.
+New conditions are accumulated as simplification moves up the syntax tree,
+requiring substitution normalization at the top.
+`TermLike` is simplified in a single pass, but this is planned to change.
+`Condition` is simplified in a loop where new substitutions are applied and the result is re-simplified.
+
 ### Refuting predicates
+
+Some predicates can be evaluated by an external solver;
+in theory this can be any solver with an SMT-LIB 2 interface, but in practice we use Z3.
+Generally, we only check satisfiability of a predicate,
+using the solver to refute impossible execution paths.
+Predicate logic connectives are translated to their corresponding connectives in the solver.
+`\equals` can be translated if its arguments are in `Int` or `Bool`.
+It is essential that the arguments be functional (match exactly one value)
+because of the solver's internal assumptions.
+Other predicates cannot be translated directly,
+but they are translated as unknown (uninterpreted) `Bool` variables.
+An uninterpreted predicate is translated as the same variable wherever it occurs in a formula
+so that the solver can refute predicates such as `\in(a, b) ∧ \not \in(a, b)`.
+
+The backend uses a single solver process for all queries.
+The solver is initialized with all the symbols and sorts defined by the user
+and many axioms (such as constructor axioms).
+While proving, queries are sent to the solver incrementally,
+avoiding the overhead of restarting the solver for each query.
