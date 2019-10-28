@@ -418,6 +418,29 @@ test_ceilSimplification =
                         [Mock.m]
             actual <- makeEvaluate $ Pattern.fromTermLike original
             assertEqual "" expected actual
+        --, testCase "ceil with map domain value" $ do
+        --    -- maps assume that their keys are relatively functional, so
+        --    -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
+        --    let expected = OrPattern.fromPatterns
+        --            [ Conditional
+        --                { term = mkTop_
+        --                , predicate =
+        --                    makeAndPredicate
+        --                        (makeCeilPredicate fOfB)
+        --                        (makeCeilPredicate gOfB)
+        --                , substitution = mempty
+        --                }
+        --            ]
+        --    actual <-
+        --        makeEvaluate
+        --            Conditional
+        --                { term =
+        --                    Mock.builtinMap
+        --                        [(fOfA, fOfB), (gOfA, gOfB)]
+        --                , predicate = makeTruePredicate
+        --                , substitution = mempty
+        --                }
+        --    assertEqual "" expected actual
         ]
     , testCase "ceil with list domain value" $ do
         -- ceil([a, b]) = ceil(a) and ceil(b)

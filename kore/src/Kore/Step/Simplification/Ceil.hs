@@ -46,6 +46,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Logger
@@ -241,7 +242,7 @@ makeEvaluateBuiltin
     predicate
     patt@(Domain.BuiltinMap Domain.InternalAc
         {builtinAcChild}
-    )
+        )
   =
     fromMaybe
         (return unsimplified)
@@ -304,6 +305,7 @@ makeEvaluateNormalizedAc
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
 
+    traverse assertCanBeEqCheck concreteKeys
     elementsWithVariablesDistinct <-
         evaluateDistinct variableKeys concreteKeys
     let allConditions :: [OrPredicate variable]
@@ -314,6 +316,27 @@ makeEvaluateNormalizedAc
             ++ elementsWithVariablesDistinct
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make allConditions)
   where
+    assertCanBeEqCheck
+        :: TermLike variable
+        -> simplifier (TermLike variable)
+    assertCanBeEqCheck key =
+        case key of
+            App_ symbol _ ->
+                if not (Symbol.isInjective symbol)
+                    || not (Symbol.isConstructor symbol)
+                    then
+                        error "Maps can only contain concrete keys\
+                              \ which can be tested for equality."
+                   else return key
+            BuiltinBool_ _   -> return key
+            BuiltinInt_ _    -> return key
+            BuiltinString_ _ -> return key
+            BuiltinString_ _ -> return key
+            DV_ _ _          -> return key
+            _ ->
+                error "Maps can only contain concrete keys\
+                      \ which can be tested for equality."
+
     concreteElementsList
         ::  [   ( TermLike variable
                 , Domain.Value normalized (TermLike variable)
