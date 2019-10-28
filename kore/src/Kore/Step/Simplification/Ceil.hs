@@ -22,6 +22,7 @@ import Data.Maybe
     ( fromMaybe
     )
 
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
     ( isTotal
     )
@@ -66,6 +67,9 @@ import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
+import Kore.Unparser
+    ( unparse
+    )
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 
@@ -323,19 +327,26 @@ makeEvaluateNormalizedAc
         case key of
             App_ symbol _ ->
                 if not (Symbol.isInjective symbol)
-                    || not (Symbol.isConstructor symbol)
-                    then
-                        error "Maps can only contain concrete keys\
-                              \ which can be tested for equality."
-                   else return key
+                   && not (Symbol.isConstructor symbol)
+                then (error . show . Pretty.vsep)
+                    [ "Maps can only contain concrete keys\
+                      \ which can be tested for equality."
+                    , Pretty.indent 2 "key:"
+                    , Pretty.indent 4 (unparse key)
+                    ]
+                else return key
             BuiltinBool_ _   -> return key
             BuiltinInt_ _    -> return key
             BuiltinString_ _ -> return key
             BuiltinString_ _ -> return key
             DV_ _ _          -> return key
             _ ->
-                error "Maps can only contain concrete keys\
+                (error . show . Pretty.vsep)
+                    [ "Maps can only contain concrete keys\
                       \ which can be tested for equality."
+                    , Pretty.indent 2 "key:"
+                    , Pretty.indent 4 (unparse key)
+                    ]
 
     concreteElementsList
         ::  [   ( TermLike variable
