@@ -8,7 +8,6 @@ module Kore.Internal.Pattern
     ( Pattern
     , fromCondition
     , fromConditionSorted
-    , toPredicate
     , bottom
     , bottomOf
     , isBottom
@@ -25,6 +24,7 @@ module Kore.Internal.Pattern
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
+    , Conditional.isPredicate
     , Conditional.withCondition
     , Conditional.withoutTerm
     , Condition
@@ -143,7 +143,6 @@ toTermLike Conditional { term, predicate, substitution } =
         (simpleAnd term predicate)
         (Predicate.fromSubstitution substitution)
   where
-    -- TODO: Most likely I defined this somewhere.
     simpleAnd
         :: TermLike variable
         -> Predicate variable
@@ -223,12 +222,6 @@ fromTermLike term
         , predicate = Predicate.makeTruePredicate
         , substitution = mempty
         }
-
-toPredicate
-    :: InternalVariable variable
-    => Pattern variable
-    -> Predicate variable
-toPredicate = Conditional.toPredicate
 
 splitTerm :: Pattern variable -> (TermLike variable, Condition variable)
 splitTerm = Conditional.splitTerm

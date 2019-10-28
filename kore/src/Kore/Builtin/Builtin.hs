@@ -171,10 +171,8 @@ import Kore.Step.Simplification.Simplify
     ( AttemptedAxiom (..)
     , AttemptedAxiomResults (AttemptedAxiomResults)
     , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
-    , BuiltinAndAxiomSimplifierMap
     , MonadSimplify
     , SimplifierVariable
-    , TermLikeSimplifier
     , applicationAxiomSimplifier
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
@@ -307,7 +305,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure NotApplicable
+    notImplemented0 _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 
@@ -667,11 +665,10 @@ unaryOperator
     unaryOperator0
         :: InternalVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    unaryOperator0 _ resultSort children =
+    unaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
                 -- Apply the operator to a domain value
@@ -716,11 +713,10 @@ binaryOperator
     binaryOperator0
         :: SimplifierVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    binaryOperator0 _ resultSort children =
+    binaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
@@ -765,11 +761,10 @@ ternaryOperator
     ternaryOperator0
         :: SimplifierVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    ternaryOperator0 _ resultSort children =
+    ternaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
                 -- Apply the operator to three domain values
@@ -779,13 +774,12 @@ ternaryOperator
             _ -> wrongArity (Text.unpack ctx)
 
 type FunctionImplementation
-    = forall variable m
+    = forall variable simplifier
         .  SimplifierVariable variable
-        => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => MonadSimplify simplifier
+        => Sort
         -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
@@ -794,15 +788,12 @@ functionEvaluator impl =
     evaluator
         :: SimplifierVariable variable
         => MonadSimplify simplifier
-        => TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> CofreeF
+        => CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator simplifier _axiomIdToSimplifier (valid :< app) =
-        impl simplifier resultSort applicationChildren
+    evaluator (valid :< app) = impl resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
