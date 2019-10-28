@@ -288,9 +288,7 @@ makeEvaluator
         => [(TermLike variable, TermLike variable)]
         )
     -> BuiltinAndAxiomSimplifier
-makeEvaluator mapping =
-    BuiltinAndAxiomSimplifier
-    $ const $ const $ simpleEvaluator mapping
+makeEvaluator mapping = BuiltinAndAxiomSimplifier $ simpleEvaluator mapping
 
 simpleEvaluator
     :: (SimplifierVariable variable, MonadSimplify simplifier)

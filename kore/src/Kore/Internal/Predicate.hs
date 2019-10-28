@@ -29,9 +29,7 @@ module Kore.Internal.Predicate
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( isFreeVariable
+    , isFreeVariable
     )
 import Kore.Internal.Conditional
     ( Conditional (..)
@@ -140,7 +138,10 @@ toPredicate
     :: InternalVariable variable
     => Predicate variable
     -> Syntax.Predicate variable
-toPredicate = Conditional.toPredicate
+toPredicate Conditional {predicate, substitution} =
+    Syntax.Predicate.makeAndPredicate
+        predicate
+        (Syntax.Predicate.fromSubstitution substitution)
 
 mapVariables
     :: (Ord variable1, Ord variable2)

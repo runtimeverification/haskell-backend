@@ -198,11 +198,7 @@ makeEvaluateTerm
                                         child
 
       | otherwise = do
-        simplifier <- Simplifier.askSimplifierTermLike
-        axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
         evaluation <- Axiom.evaluatePattern
-            simplifier
-            axiomIdToEvaluator
             configurationPredicate
             Conditional
                 { term = ()
