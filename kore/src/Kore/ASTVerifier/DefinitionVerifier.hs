@@ -8,12 +8,9 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Kore.ASTVerifier.DefinitionVerifier
-    ( defaultAttributesVerification
-    , defaultNullAttributesVerification
-    , verifyDefinition
+    ( verifyDefinition
     , verifyAndIndexDefinition
     , verifyAndIndexDefinitionWithBase
-    , AttributesVerification (..)
     ) where
 
 import Control.Monad
@@ -24,9 +21,6 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map.Strict as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Text
     ( Text
     )
@@ -38,7 +32,6 @@ import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.ModuleVerifier
 import Kore.ASTVerifier.Verifier
 import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Parser as Attribute.Parser
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -68,14 +61,12 @@ e.g.:
 -}
 verifyDefinition
     :: ParseAttributes Attribute.Axiom
-    => AttributesVerification Attribute.Symbol Attribute.Axiom
-    -> Builtin.Verifiers
+    => Builtin.Verifiers
     -> ParsedDefinition
     -> Either (Error VerifyError) VerifySuccess
-verifyDefinition attributesVerification builtinVerifiers definition = do
+verifyDefinition builtinVerifiers definition = do
     _ <-
-        verifyAndIndexDefinition
-            attributesVerification builtinVerifiers definition
+        verifyAndIndexDefinition builtinVerifiers definition
     verifySuccess
 
 {-|'verifyAndIndexDefinition' verifies a definition and returns an indexed
@@ -83,17 +74,15 @@ collection of the definition's modules.
 -}
 verifyAndIndexDefinition
     :: ParseAttributes Attribute.Axiom
-    => AttributesVerification Attribute.Symbol Attribute.Axiom
-    -> Builtin.Verifiers
+    => Builtin.Verifiers
     -> ParsedDefinition
     -> Either
         (Error VerifyError)
         (Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom))
-verifyAndIndexDefinition attributesVerification builtinVerifiers definition = do
+verifyAndIndexDefinition builtinVerifiers definition = do
     (indexedModules, _defaultNames) <-
         verifyAndIndexDefinitionWithBase
             mempty
-            attributesVerification
             builtinVerifiers
             definition
     return indexedModules
@@ -106,14 +95,12 @@ and defined names.
 -}
 verifyAndIndexDefinitionWithBase
     ::  (Map ModuleName VerifiedModule', Map Text AstLocation)
-    ->  AttributesVerification Attribute.Symbol Attribute.Axiom
     ->  Builtin.Verifiers
     ->  ParsedDefinition
     ->  Either (Error VerifyError)
             (Map ModuleName VerifiedModule', Map Text AstLocation)
 verifyAndIndexDefinitionWithBase
     alreadyVerified
-    attributesVerification
     builtinVerifiers
     definition
   = do
@@ -138,28 +125,9 @@ verifyAndIndexDefinitionWithBase
             verifiedModulesCache
             implicitModule
             parsedModules
-            attributesVerification
             builtinVerifiers
-    verifyAttributes
-        (definitionAttributes definition)
-        attributesVerification
+    verifyAttributes (definitionAttributes definition)
 
     return (index, names)
   where
     modulesByName = Map.fromList . map (\m -> (moduleName m, m))
-
-defaultAttributesVerification
-    :: (ParseAttributes declAtts, ParseAttributes axiomAtts)
-    => Proxy declAtts
-    -> Proxy axiomAtts
-    -> AttributesVerification declAtts axiomAtts
-defaultAttributesVerification = VerifyAttributes
-
--- |default option for verifying attributes without parsing them
-defaultNullAttributesVerification
-    :: AttributesVerification Attribute.Null Attribute.Null
-defaultNullAttributesVerification =
-   defaultAttributesVerification proxy proxy
-  where
-    proxy :: Proxy Attribute.Null
-    proxy = Proxy

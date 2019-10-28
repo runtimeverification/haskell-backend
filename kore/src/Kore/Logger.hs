@@ -11,6 +11,7 @@ module Kore.Logger
     , Severity (..)
     , Scope (..)
     , WithLog
+    , WithScope (..)
     , LogAction (..)
     , log
     , logDebug
@@ -26,9 +27,7 @@ module Kore.Logger
     , someEntry
     , withSomeEntry
     , Entry (..)
-    , defaultShouldLog
     , MonadLog (..)
-    , mapLocalFunction
     ) where
 
 import Colog
@@ -66,7 +65,6 @@ import Control.Monad.Trans.Reader
 import qualified Control.Monad.Trans.State.Strict as Strict
     ( StateT
     )
-import qualified Data.Foldable as Fold
 import Data.Functor.Contravariant
     ( contramap
     )
@@ -133,8 +131,6 @@ data LogMessage = LogMessage
     -- ^ message being logged
     , severity  :: !Severity
     -- ^ log level / severity of message
-    , scope     :: ![Scope]
-    -- ^ scope of the message, usually of the form "a.b.c"
     , callstack :: !CallStack
     -- ^ call stack of the message, when available
     }
@@ -169,7 +165,7 @@ log
     -> Text
     -- ^ Message to be logged
     -> m ()
-log s t = logMsg $ LogMessage t s mempty callStack
+log s t = logMsg $ LogMessage t s callStack
 
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug
@@ -211,9 +207,21 @@ logCritical
     -> m ()
 logCritical = log Critical
 
--- | Creates a new logging scope, appending the text to the current scope. For
--- example, if the current scope is "a.b" and 'withLogScope' is called with
--- "c", then the new scope will be "a.b.c".
+data WithScope = WithScope
+    { entry :: SomeEntry
+    , scope :: Scope
+    } deriving Typeable
+
+instance Entry WithScope where
+    shouldLog
+        minSeverity
+        currentScope
+        WithScope { entry = SomeEntry entry, scope }
+      = scope `Set.member` currentScope
+        || shouldLog minSeverity currentScope entry
+
+    toLogMessage WithScope { entry = SomeEntry entry } = toLogMessage entry
+
 withLogScope
     :: forall m a
     .  WithLog LogMessage m
@@ -225,8 +233,8 @@ withLogScope
 withLogScope newScope =
     logScope appendScope
   where
-    appendScope (LogMessage msg sev scope callstack) =
-        LogMessage msg sev (newScope : scope) callstack
+    appendScope entry =
+        toEntry $ WithScope entry newScope
 
 -- ---------------------------------------------------------------------
 -- * LoggerT
@@ -244,20 +252,10 @@ class Typeable entry => Entry entry where
 
 instance Entry LogMessage where
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
-    shouldLog minSeverity currentScope LogMessage { severity, scope } =
-        defaultShouldLog severity scope minSeverity currentScope
+    shouldLog minSeverity _ LogMessage { severity } = severity >= minSeverity
 
     toLogMessage :: LogMessage -> LogMessage
     toLogMessage = id
-
-defaultShouldLog :: Severity -> [Scope] -> Severity -> Set Scope -> Bool
-defaultShouldLog severity scope minSeverity currentScope =
-    severity >= minSeverity && scope `member` currentScope
-  where
-    member :: [Scope] -> Set Scope -> Bool
-    member s set
-      | Set.null set = True
-      | otherwise    = Fold.any (`Set.member` set) s
 
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry
@@ -281,11 +279,10 @@ class Monad m => MonadLog m where
     logM = Monad.Trans.lift . logM
     {-# INLINE logM #-}
 
-    logScope :: Entry e1 => Entry e2 => (e1 -> e2) -> m a -> m a
+    logScope :: (SomeEntry -> SomeEntry) -> m a -> m a
     default logScope
-        :: (Entry e1, Entry e2)
-        => (MFunctor trans, MonadLog log, m ~ trans log)
-        => (e1 -> e2)
+        :: (MFunctor trans, MonadLog log, m ~ trans log)
+        => (SomeEntry -> SomeEntry)
         -> m a
         -> m a
     logScope locally = Morph.hoist (logScope locally)
@@ -313,29 +310,9 @@ newtype LoggerT m a =
 instance Monad m => MonadLog (LoggerT m) where
     logM entry =
         LoggerT $ ask >>= Monad.Trans.lift . (<& toEntry entry)
-    logScope f (LoggerT (ReaderT logActionReader)) =
-        LoggerT . ReaderT
-            $ \(LogAction logAction) ->
-                logActionReader . LogAction
-                    $ \entry ->
-                        case fromEntry entry of
-                            Nothing -> logAction entry
-                            Just entry' -> logAction $ toEntry $ f entry'
+    logScope f = LoggerT . local (contramap f) . getLoggerT
 
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
     {-# INLINE lift #-}
-
-mapLocalFunction
-    :: forall m
-    .  (LogAction m LogMessage -> LogAction m LogMessage)
-    -> LogAction m SomeEntry
-    -> LogAction m SomeEntry
-mapLocalFunction mapping la@(LogAction action) =
-    LogAction $ \entry ->
-        case fromEntry entry of
-            Nothing -> action entry
-            Just logMessage ->
-                let LogAction f = mapping $ contramap toEntry la
-                in f logMessage
 

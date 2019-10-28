@@ -188,10 +188,8 @@ verifyHookedSortSentence :: SentenceSort ParsedPattern -> SentenceVerifier ()
 verifyHookedSortSentence sentence =
     withSentenceHookContext (SentenceHookedSort sentence) $ do
         let SentenceSort { sentenceSortAttributes } = sentence
-        VerifierContext { attributesVerification } <- Reader.ask
         hook <-
             verifySortHookAttribute
-                attributesVerification
                 sentenceSortAttributes
         let SentenceSort { sentenceSortName = name } = sentence
         attrs <- lookupSortAttributes name
@@ -219,11 +217,7 @@ verifyHookedSymbolSentence
 verifyHookedSymbolSentence sentence =
     withSentenceHookContext (SentenceHookedSymbol sentence) $ do
         let SentenceSymbol { sentenceSymbolAttributes } = sentence
-        VerifierContext { attributesVerification } <- Reader.ask
-        hook <-
-            verifySymbolHookAttribute
-                attributesVerification
-                sentenceSymbolAttributes
+        hook <- verifySymbolHookAttribute sentenceSymbolAttributes
         VerifierContext { builtinVerifiers } <- Reader.ask
         verifiedModule <- State.get
         Builtin.runSymbolVerifier
@@ -420,10 +414,8 @@ verifyNonHooks sentences=
 
 verifyNonHookSentence :: ParsedSentence -> SentenceVerifier ()
 verifyNonHookSentence sentence =
-    withSentenceContext sentence $ do
-        VerifierContext { attributesVerification } <- Reader.ask
-        verifyNoHookAttribute attributesVerification
-            $ sentenceAttributes sentence
+    withSentenceContext sentence $
+        verifyNoHookAttribute $ sentenceAttributes sentence
 
 buildDeclaredSortVariables
     :: MonadError (Error e) error

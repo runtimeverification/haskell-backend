@@ -12,15 +12,11 @@ module Kore.ASTVerifier.AttributesVerifier
     , verifySortHookAttribute
     , verifySymbolHookAttribute
     , verifyNoHookAttribute
-    , AttributesVerification (..)
     , parseAttributes
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
 import qualified Data.Functor.Foldable as Recursive
-import Data.Proxy
-    ( Proxy
-    )
 
 import Kore.ASTVerifier.Error
 import Kore.Attribute.Hook
@@ -28,11 +24,6 @@ import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Error
 import Kore.Syntax.Definition
 import Kore.Syntax.Pattern
-
-{-| Whether we should verify attributes and, when verifying, the module with
-declarations visible in these atributes. -}
-data AttributesVerification declAtts axiomAtts
-    = VerifyAttributes (Proxy declAtts) (Proxy axiomAtts)
 
 parseAttributes :: MonadError (Error VerifyError) m => Attributes -> m Hook
 parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
@@ -42,11 +33,8 @@ parseAttributes = Attribute.Parser.liftParser . Attribute.Parser.parseAttributes
 verifyAttributes
     :: MonadError (Error VerifyError) m
     => Attributes
-    -> AttributesVerification declAtts axiomAtts
     -> m VerifySuccess
-verifyAttributes
-    (Attributes patterns)
-    (VerifyAttributes _ _)
+verifyAttributes (Attributes patterns)
   = do
     withContext
         "attributes"
@@ -74,10 +62,9 @@ verifyAttributePattern pat =
  -}
 verifySortHookAttribute
     :: MonadError (Error VerifyError) error
-    => AttributesVerification declAtts axiomAtts
-    -> Attributes
+    => Attributes
     -> error Hook
-verifySortHookAttribute (VerifyAttributes _ _) attrs = do
+verifySortHookAttribute attrs = do
     hook <- parseAttributes attrs
     case getHook hook of
         Just _  -> return hook
@@ -92,10 +79,9 @@ verifySortHookAttribute (VerifyAttributes _ _) attrs = do
  -}
 verifySymbolHookAttribute
     :: MonadError (Error VerifyError) error
-    => AttributesVerification declAtts axiomAtts
-    -> Attributes
+    => Attributes
     -> error Hook
-verifySymbolHookAttribute (VerifyAttributes _ _) attrs = do
+verifySymbolHookAttribute attrs = do
     hook <- parseAttributes attrs
     case getHook hook of
         Just _  -> return hook
@@ -108,10 +94,9 @@ verifySymbolHookAttribute (VerifyAttributes _ _) attrs = do
  -}
 verifyNoHookAttribute
     :: MonadError (Error VerifyError) error
-    => AttributesVerification declAtts axiomAtts
-    -> Attributes
+    => Attributes
     -> error ()
-verifyNoHookAttribute (VerifyAttributes _ _) attributes = do
+verifyNoHookAttribute attributes = do
     Hook { getHook } <- parseAttributes attributes
     case getHook of
         Nothing ->
