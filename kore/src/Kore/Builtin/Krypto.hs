@@ -106,7 +106,7 @@ evalKeccak =
     Builtin.functionEvaluator evalKeccak0
   where
     evalKeccak0 :: Builtin.FunctionImplementation
-    evalKeccak0 _ resultSort arguments =
+    evalKeccak0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let
                 arg =
@@ -129,7 +129,7 @@ evalECDSARecover =
     Builtin.functionEvaluator eval0
   where
     eval0 :: Builtin.FunctionImplementation
-    eval0 _ resultSort [messageHash0, v0, r0, s0] =
+    eval0 resultSort [messageHash0, v0, r0, s0] =
         Builtin.getAttemptedAxiom $ do
             messageHash <- string2Integer . Text.unpack
                     <$> String.expectBuiltinString "" messageHash0
@@ -144,7 +144,7 @@ evalECDSARecover =
                 $ byteString2String
                 $ pad 64 0
                 $ signatureToKey messageHash r s v
-    eval0 _ _ _ = Builtin.wrongArity ecsdaRecover
+    eval0 _ _ = Builtin.wrongArity ecsdaRecover
 
 pad :: Int -> Word8 -> ByteString -> ByteString
 pad n w s = ByteString.append s padding

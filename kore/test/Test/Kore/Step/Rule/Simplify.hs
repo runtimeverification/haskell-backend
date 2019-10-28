@@ -20,8 +20,10 @@ import Kore.Logger.Output
     ( emptyLogger
     )
 import Kore.Predicate.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
+    , makeNotPredicate
     , makeTruePredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax
@@ -180,6 +182,25 @@ test_simplifyRule =
                 Pair (Mock.a, makeTruePredicate)
             )
 
+        assertEqual "" expected actual
+    , testCase "Predicate simplification removes trivial claim" $ do
+        let expected = []
+        actual <- runSimplifyRule
+            ( Pair
+                ( Mock.b
+                , makeAndPredicate
+                    (makeNotPredicate
+                        (makeEqualsPredicate x Mock.b)
+                    )
+                    (makeNotPredicate
+                        (makeNotPredicate
+                            (makeEqualsPredicate x Mock.b)
+                        )
+                    )
+                )
+              `rewritesTo`
+              Pair (Mock.a, makeTruePredicate)
+            )
         assertEqual "" expected actual
     ]
   where
