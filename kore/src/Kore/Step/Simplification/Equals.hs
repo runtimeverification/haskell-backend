@@ -190,9 +190,10 @@ simplifyEvaluated predicate first second
         (_, [secondP])
             | isFunctionConditional secondP ->
                 makeEvaluateFunctionalOr predicate secondP firstPatterns
-        _ -> if OrPattern.isPredicate first && OrPattern.isPredicate second
-            then Iff.simplifyEvaluated first second
-            else
+        _
+            | OrPattern.isPredicate first && OrPattern.isPredicate second ->
+                Iff.simplifyEvaluated first second
+            | otherwise ->
                 makeEvaluate
                     (OrPattern.toPattern first)
                     (OrPattern.toPattern second)
