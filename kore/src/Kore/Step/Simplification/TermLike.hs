@@ -31,15 +31,15 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( isPredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( isPredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )

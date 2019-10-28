@@ -34,8 +34,8 @@ import Kore.Attribute.SmtLemma
 import Kore.Attribute.Symbol
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.MetadataTools
+import Kore.Internal.Predicate
 import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
 import qualified Kore.Step.SMT.Declaration.All as SMT.All
     ( declare
     )

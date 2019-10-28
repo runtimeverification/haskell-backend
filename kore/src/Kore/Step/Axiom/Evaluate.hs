@@ -23,14 +23,14 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkEvaluated
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )

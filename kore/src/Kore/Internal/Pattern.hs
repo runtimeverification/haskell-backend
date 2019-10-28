@@ -46,6 +46,10 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
@@ -60,10 +64,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )

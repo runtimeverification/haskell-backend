@@ -9,6 +9,14 @@ import Data.Default
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    , makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -18,14 +26,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Logger.Output
     ( emptyLogger
-    )
-import Kore.Predicate.Predicate
-    ( makeCeilPredicate
-    , makeEqualsPredicate
-    , makeTruePredicate
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
     )
 import Kore.Step.Rule
     ( OnePathRule (OnePathRule)

@@ -49,6 +49,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
     ( splitTerm
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
     , pattern Equals_
@@ -67,7 +68,6 @@ import qualified Kore.Internal.TermLike as TermLike
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Sort
     ( predicateSort
     )

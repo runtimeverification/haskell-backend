@@ -35,20 +35,20 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import Kore.Internal.TermLike
-    ( mkAnd
-    )
-import Kore.Internal.Variable
-    ( InternalVariable
-    )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeMultipleAndPredicate
     , makeTruePredicate
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
+    )
+import Kore.Internal.TermLike
+    ( mkAnd
+    )
+import Kore.Internal.Variable
+    ( InternalVariable
     )
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)

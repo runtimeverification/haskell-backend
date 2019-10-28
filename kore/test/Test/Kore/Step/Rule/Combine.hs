@@ -9,6 +9,16 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeMultipleAndPredicate
+    , makeTruePredicate
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -16,16 +26,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Logger.Output
     ( emptyLogger
-    )
-import Kore.Predicate.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeMultipleAndPredicate
-    , makeTruePredicate
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
     )
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)

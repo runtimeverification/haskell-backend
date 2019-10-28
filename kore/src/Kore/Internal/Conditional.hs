@@ -41,6 +41,11 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import Kore.Debug
+import Kore.Internal.Predicate
+    ( Predicate
+    , singleSubstitutionToPredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( InternalVariable
     , Sort
@@ -48,11 +53,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Predicate.Predicate
-    ( Predicate
-    , singleSubstitutionToPredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )

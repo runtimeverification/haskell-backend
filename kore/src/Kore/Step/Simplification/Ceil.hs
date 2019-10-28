@@ -49,17 +49,17 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    , makeTruePredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import Kore.Predicate.Predicate
-    ( makeCeilPredicate
-    , makeTruePredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Function.Evaluator as Axiom
     ( evaluatePattern
     )

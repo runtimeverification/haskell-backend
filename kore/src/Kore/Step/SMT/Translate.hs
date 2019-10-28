@@ -49,8 +49,8 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import Kore.IndexedModule.MetadataTools
+import Kore.Internal.Predicate
 import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
 import Kore.Step.SMT.Resolvers
     ( translateSort
     , translateSymbol

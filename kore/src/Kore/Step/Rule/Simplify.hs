@@ -31,7 +31,7 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     )

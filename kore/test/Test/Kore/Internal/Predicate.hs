@@ -1,4 +1,6 @@
-module Test.Kore.Predicate.Predicate (test_predicate) where
+module Test.Kore.Internal.Predicate
+    ( test_predicate
+    ) where
 
 import Test.Tasty
 
@@ -8,8 +10,8 @@ import Data.Foldable
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Predicate.Predicate as Predicate
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

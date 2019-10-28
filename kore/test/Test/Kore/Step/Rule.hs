@@ -32,10 +32,10 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (..)
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( freeVariables
     )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Rule hiding
     ( freeVariables
     )

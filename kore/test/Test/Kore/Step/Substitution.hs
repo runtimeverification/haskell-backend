@@ -16,8 +16,8 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Condition as Condition
 import qualified Kore.Step.Substitution as Substitution
 import Kore.Unification.Error

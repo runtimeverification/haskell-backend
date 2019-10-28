@@ -13,8 +13,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Pattern as Pattern
 
 import qualified Test.Kore.Step.MockSymbols as Mock

@@ -94,13 +94,13 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import qualified Kore.Logger as Log
-import qualified Kore.ModelChecker.Bounded as Bounded
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeMultipleOrPredicate
     , unwrapPredicate
     )
+import Kore.Internal.TermLike
+import qualified Kore.Logger as Log
+import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
     )

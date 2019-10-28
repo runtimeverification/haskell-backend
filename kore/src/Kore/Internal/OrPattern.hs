@@ -38,10 +38,10 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )

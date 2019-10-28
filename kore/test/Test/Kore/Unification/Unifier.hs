@@ -27,11 +27,11 @@ import qualified GHC.Generics as GHC
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
     ( Env (..)
     , runSimplifier

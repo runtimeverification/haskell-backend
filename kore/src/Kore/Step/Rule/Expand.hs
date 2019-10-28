@@ -33,6 +33,13 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     , findSortConstructors
     )
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
+    ( fromSubstitution
+    , substitute
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkApplySymbol
@@ -40,13 +47,6 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( freeVariables
-    , substitute
-    )
-import Kore.Predicate.Predicate
-    ( makeAndPredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
-    ( fromSubstitution
     , substitute
     )
 import Kore.Sort

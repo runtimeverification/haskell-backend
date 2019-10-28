@@ -30,15 +30,15 @@ import Kore.Internal.Condition
     )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
