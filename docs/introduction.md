@@ -81,7 +81,71 @@ This is the usual output of simplification.
 
 ### Unification
 
+Unification is represented in matching logic by `\and`
+and is essentially implemented as `\and` simplification,
+that is, by pushing `\and` down through symbols as far as possible.
+The backend has special support for unification modulo certain theories:
+
+- Constructors (injective, no-confusion)
+- Sort injections (constructors modulo triangle equality)
+- Overloaded symbols
+- `List` (common patterns only)
+- `Map` (common patterns only)
+- `Set` (common patterns only)
+
+Because unification is implemented as "pushing `\and` down", the solution is determined in parallel.
+Consider this example unification, with a constructor `C(_, _)` and constant terms `a` and `b` which may be undefined:
+
+```
+C(x, x) ∧ C(a, b)
+C(x ∧ a, x ∧ b)                                    -- constructor axioms: injectivity
+C(a ∧ (\ceil(a) ∧ x = a), b ∧ (\ceil(b) ∧ x = b))  -- singular variables
+C(a, b) ∧ (\ceil(a) ∧ \ceil(b)) ∧ (x = a ∧ x = b)  -- lifting conditions
+C(a, b) ∧ (\ceil(a) ∧ \ceil(b)) ∧ x = a ∧ b        -- substitution normalization
+C(a, b) ∧ (\ceil(a) ∧ \ceil(b)) ∧ x = (a ∧ a = b)  -- substitution normalization
+C(a, b) ∧ (\ceil(a) ∧ \ceil(b) ∧ a = b) ∧ x = a    -- substitution normalization
+```
+
+Disjunction is handled by distribution.
+The substitution normalization step is discussed below.
+
 ### Matching
+
+### Substitution normalization
+
+Substitution normalization is a step after unification required by unifying in parallel.
+Normalization solves two problems:
+first, a substitution variable may be duplicated (occurs on the left-hand side of multiple substitutions),
+and second, there may be a cycle in the substitution (`x = f(y) ∧ y = g(x)`).
+
+A duplicated substitution is solved by unification:
+
+```
+x = t₁ ∧ ... ∧ x = tₙ
+x = (t₁ ∧ ... ∧ tₙ)
+x = t ∧ ...
+```
+
+Unification of the right-hand sides may produce additional conditions and substitutions,
+so the deduplication process iterates until no duplications remain.
+
+After the substitutions are deduplicated, they are topologically sorted by their dependencies on each other.
+If a cycle exists, we determine if that cycle passes through any simplifiable symbols.
+If the cycle passes only through constructors or other non-simplifiable symbols,
+and it involves any element variables,
+then the result of normalization is `\bottom`.
+If a non-simplifiable cycle involves only set variables,
+those variables themselves are equated with `\bottom`.
+If the cycle passes through simplifiable symbols,
+the cycle (denormalized part) is held as conditions apart from the rest of the substitution.
+In any case, the normalizable part of the substitution is ordered and each substitution is applied to the others
+so that no variable occuring on the right-hand side of any substitution also occurs on the left-hand side of any (other) substitution.
+
+The denormalized part of a substitution is handled differently in the context of unification and simplification.
+During unification, a denormalized substitution is considered an error
+because we have failed to produce a substitution which unifies the given patterns.
+During predicate simplification, we are more flexible;
+it is entirely reasonable to generate conditions such as `x = x + y` in this context.
 
 ### Semantic rules
 
