@@ -12,6 +12,7 @@ module Kore.Internal.OrPattern
     , fromTermLike
     , bottom
     , isFalse
+    , isPredicate
     , top
     , isTrue
     , toPattern
@@ -148,6 +149,10 @@ toPattern multiOr =
                 (Predicate.toPredicate predicate1)
                 (Predicate.toPredicate predicate2)
             )
+
+{- Check if an OrPattern can be reduced to a Predicate. -}
+isPredicate :: OrPattern variable -> Bool
+isPredicate = all Pattern.isPredicate
 
 {-| Transforms a 'Pattern' into a 'TermLike'.
 -}

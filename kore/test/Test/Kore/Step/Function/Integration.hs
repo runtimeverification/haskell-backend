@@ -191,8 +191,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
-                        (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
+                        (builtinEvaluation $ BuiltinAndAxiomSimplifier $ \_ _ ->
+                            notApplicableAxiomEvaluator
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkElemVar Mock.x))
@@ -661,7 +661,7 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier Predicate.top patt
+    $ runBuiltinAndAxiomSimplifier simplifier patt Predicate.top
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -1172,12 +1172,10 @@ mapVariables =
 mockEvaluator
     :: Monad simplifier
     => AttemptedAxiom variable
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
     -> Predicate variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ = return evaluation
 
 -- ---------------------------------------------------------------------
 -- * Definition
