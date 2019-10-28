@@ -25,15 +25,15 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
@@ -77,7 +77,7 @@ definitionEvaluation rules =
         let ea = evaluateAxioms
                     rules
                     term
-                    (Predicate.toPredicate predicate)
+                    (Condition.toPredicate predicate)
         res <- Step.assertFunctionLikeResults
                 (Step.toConfigurationVariables (Pattern.fromTermLike term))
                 ea
@@ -92,7 +92,7 @@ simplificationEvaluation rule =
         let ea = evaluateAxioms
                     [rule]
                     term
-                    (Predicate.toPredicate predicate)
+                    (Condition.toPredicate predicate)
         res <- Step.recoveryFunctionLikeResults
                 (Step.toConfigurationVariables (Pattern.fromTermLike term))
                 ea
@@ -117,13 +117,13 @@ totalDefinitionEvaluation rules =
         :: forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
         => TermLike variable
-        -> Predicate variable
+        -> Condition variable
         -> simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker term predicate = do
         result0 <- evaluateAxioms
                     rules
                     term
-                    (Predicate.toPredicate predicate)
+                    (Condition.toPredicate predicate)
         let result = resultsToAttemptedAxiom result0
         if hasRemainders result
             then return AttemptedAxiom.NotApplicable
@@ -169,7 +169,7 @@ evaluateBuiltin
     => BuiltinAndAxiomSimplifier
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
@@ -198,7 +198,7 @@ applyFirstSimplifierThatWorks
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
 applyFirstSimplifierThatWorks [] _ _ _ =
     return AttemptedAxiom.NotApplicable

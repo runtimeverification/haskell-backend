@@ -25,7 +25,7 @@ import Kore.Predicate.Predicate
     , makeOrPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Simplification.Or
@@ -183,7 +183,7 @@ t_ = mkBottom Mock.testSort
 testVar :: Text -> ElementVariable Variable
 testVar ident = ElementVariable $ Variable (testId ident) mempty Mock.testSort
 
-type TestPredicate = Syntax.Predicate Variable
+type TestPredicate = Predicate Variable
 
 pT :: TestPredicate
 pT = makeTruePredicate

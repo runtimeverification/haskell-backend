@@ -16,8 +16,8 @@ import Test.Tasty.Hedgehog
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Parser.Lexeme
 import Kore.Parser.Parser
 import Kore.Parser.ParserUtils
@@ -178,7 +178,7 @@ test_unparse =
         , unparseTest
             (Pattern.andCondition
                 (Pattern.topOf Mock.topSort)
-                (Predicate.fromSubstitution $ Substitution.wrap
+                (Condition.fromSubstitution $ Substitution.wrap
                     [ (ElemVar Mock.x, Mock.a)
                     , (ElemVar Mock.y, Mock.b)
                     , (ElemVar Mock.z, Mock.c)
@@ -202,14 +202,14 @@ test_unparse =
         , unparseTest
             (Pattern.andCondition
                 (Pattern.topOf Mock.topSort)
-                (Predicate.andCondition
-                    (Predicate.fromPredicate $ makeMultipleAndPredicate
+                (Condition.andCondition
+                    (Condition.fromPredicate $ makeMultipleAndPredicate
                         [ makeCeilPredicate Mock.a
                         , makeCeilPredicate Mock.b
                         , makeCeilPredicate Mock.c
                         ]
                     )
-                    (Predicate.fromSubstitution $ Substitution.wrap
+                    (Condition.fromSubstitution $ Substitution.wrap
                         [ (ElemVar Mock.x, Mock.a)
                         , (ElemVar Mock.y, Mock.b)
                         , (ElemVar Mock.z, Mock.c)

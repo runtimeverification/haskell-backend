@@ -17,6 +17,7 @@ import Branch
     ( BranchT
     )
 import qualified Branch as BranchT
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
@@ -30,13 +31,12 @@ import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
     , mergeAll
     )
-import Kore.Internal.OrPredicate
-    ( OrPredicate
+import Kore.Internal.OrCondition
+    ( OrCondition
     )
 import Kore.Internal.Pattern
-    ( Predicate
+    ( Condition
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
@@ -46,24 +46,24 @@ import qualified Kore.Step.Substitution as Substitution
 simplifyEvaluatedMultiPredicate
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => MultiAnd (OrPredicate variable)
-    -> simplifier (OrPredicate variable)
+    => MultiAnd (OrCondition variable)
+    -> simplifier (OrCondition variable)
 simplifyEvaluatedMultiPredicate predicates = do
     let
-        crossProduct :: MultiOr [Predicate variable]
+        crossProduct :: MultiOr [Condition variable]
         crossProduct =
             MultiOr.fullCrossProduct
                 (MultiAnd.extractPatterns predicates)
-    orResults <- BranchT.gather (traverse andPredicates crossProduct)
+    orResults <- BranchT.gather (traverse andConditions crossProduct)
     return (MultiOr.mergeAll orResults)
   where
-    andPredicates
-        :: [Predicate variable]
-        -> BranchT simplifier (Predicate variable)
-    andPredicates predicates' =
+    andConditions
+        :: [Condition variable]
+        -> BranchT simplifier (Condition variable)
+    andConditions predicates' =
         fmap markSimplified
         $ Substitution.normalize (Foldable.fold predicates')
       where
         markSimplified
-          | all Predicate.isSimplified predicates' = Predicate.markSimplified
+          | all Condition.isSimplified predicates' = Condition.markSimplified
           | otherwise = id

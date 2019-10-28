@@ -54,20 +54,20 @@ import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
     )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( mkAnd
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -730,9 +730,9 @@ makeRuleFromPatterns
     -> Pattern variable
     -> rule
 makeRuleFromPatterns configuration destination =
-    let (left, Predicate.toPredicate -> requires) =
+    let (left, Condition.toPredicate -> requires) =
             Pattern.splitTerm configuration
-        (right, Predicate.toPredicate -> ensures) =
+        (right, Condition.toPredicate -> ensures) =
             Pattern.splitTerm destination
     in coerce RulePattern
         { left
@@ -751,7 +751,7 @@ removalPredicate
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> Syntax.Predicate variable
+    -> Predicate variable
 removalPredicate destination config =
     let
         -- The variables of the destination that are missing from the
@@ -768,15 +768,15 @@ removalPredicate destination config =
         extraElementVariables = [v | ElemVar v <- extraVariables]
         extraNonElemVariables = filter (not . isElemVar) extraVariables
         quantifyPredicate =
-            Syntax.Predicate.makeMultipleExists extraElementVariables
+            Predicate.makeMultipleExists extraElementVariables
     in
         if not (null extraNonElemVariables)
         then error
             ("Cannot quantify non-element variables: "
                 ++ show (unparse <$> extraNonElemVariables))
-        else Syntax.Predicate.makeNotPredicate
+        else Predicate.makeNotPredicate
             $ quantifyPredicate
-            $ Syntax.Predicate.makeCeilPredicate
+            $ Predicate.makeCeilPredicate
             $ mkAnd
                 (Pattern.toTermLike destination)
                 (Pattern.toTermLike config)

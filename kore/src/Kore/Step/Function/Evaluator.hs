@@ -45,9 +45,9 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Conditional (..)
+    ( Condition
+    , Conditional (..)
     , Pattern
-    , Predicate
     )
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
@@ -91,16 +91,16 @@ import Kore.TopBottom
 evaluateApplication
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -- ^ The predicate from the configuration
-    -> Predicate variable
+    -> Condition variable
     -- ^ Aggregated children predicate and substitution.
     -> Application Symbol (TermLike variable)
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplication
-    configurationPredicate
-    childrenPredicate
+    configurationCondition
+    childrenCondition
     (evaluateSortInjection -> application)
   = finishT $ do
     Foldable.for_ canMemoize recallOrPattern
@@ -123,10 +123,10 @@ evaluateApplication
 
     results <-
         maybeEvaluatePattern
-            childrenPredicate
+            childrenCondition
             termLike
             unevaluated
-            configurationPredicate
+            configurationCondition
         & maybeT unevaluatedSimplifier return
         & Trans.lift
     Foldable.for_ canMemoize (recordOrPattern results)
@@ -143,7 +143,7 @@ evaluateApplication
         OrPattern.fromPattern
         $ Pattern.withCondition
             (markSimplifiedIfChildren termLike)
-            childrenPredicate
+            childrenCondition
 
     markSimplifiedIfChildren =
         if all TermLike.isSimplified application
@@ -152,8 +152,8 @@ evaluateApplication
 
     canMemoize
       | Symbol.isMemo symbol
-      , isTop childrenPredicate
-      , isTop configurationPredicate
+      , isTop childrenCondition
+      , isTop configurationCondition
       = traverse asConcrete application
       | otherwise
       = Nothing
@@ -174,7 +174,7 @@ evaluateApplication
       -- these are not errors, but they are unusual enough that we don't want to
       -- deal with them here.
       , isTop (Pattern.predicate result)
-      -- We already checked that childrenPredicate has no substitutions, so we
+      -- We already checked that childrenCondition has no substitutions, so we
       -- don't expect the result to have any substitutions either. As with the
       -- predicate, it might be possible to have a substitution in some cases,
       -- but they are unusual enough that we don't need to deal with them here.
@@ -193,9 +193,9 @@ evaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => Condition variable
     -- ^ The predicate from the configuration
-    -> Predicate variable
+    -> Condition variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
@@ -225,19 +225,19 @@ maybeEvaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => Condition variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Predicate variable
+    -> Condition variable
     -> MaybeT simplifier (OrPattern variable)
 maybeEvaluatePattern
-    childrenPredicate
+    childrenCondition
     patt
     defaultValue
-    configurationPredicate
+    configurationCondition
   = do
     simplifierMap <- Trans.lift askSimplifierAxioms
     let maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
@@ -251,8 +251,8 @@ maybeEvaluatePattern
                 result <- Profile.axiomEvaluation identifier $
                     evaluator
                         patt
-                        ( configurationPredicate
-                        `Conditional.andCondition` childrenPredicate
+                        ( configurationCondition
+                        `Conditional.andCondition` childrenCondition
                         )
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
@@ -279,7 +279,7 @@ maybeEvaluatePattern
                 merged <-
                     Profile.mergeSubstitutions identifier
                     $ mergeWithConditionAndSubstitution
-                        childrenPredicate
+                        childrenCondition
                         flattened
                 case merged of
                     AttemptedAxiom.NotApplicable ->
@@ -306,14 +306,14 @@ maybeEvaluatePattern
             , substitution = substitution
             }
       where
-        Conditional { term = (), predicate, substitution } = childrenPredicate
+        Conditional { term = (), predicate, substitution } = childrenCondition
 
     simplifyIfNeeded :: Pattern variable -> simplifier (OrPattern variable)
     simplifyIfNeeded toSimplify
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
-        reevaluateFunctions configurationPredicate toSimplify
+        reevaluateFunctions configurationCondition toSimplify
 
 evaluateSortInjection
     :: Ord variable
@@ -353,17 +353,17 @@ reevaluateFunctions
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => Condition variable
     -> Pattern variable
     -- ^ Function evaluation result.
     -> simplifier (OrPattern variable)
 reevaluateFunctions predicate rewriting = do
-    let (rewritingTerm, rewritingPredicate) = Pattern.splitTerm rewriting
+    let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
     simplifiedTerms <- simplifyConditionalTermToOr predicate rewritingTerm
-    merged <- OrPattern.mergeWithPredicate rewritingPredicate simplifiedTerms
+    merged <- OrPattern.mergeWithPredicate rewritingCondition simplifiedTerms
     orResults <- BranchT.gather $ do
         simplifiedTerm <- BranchT.scatter merged
-        simplifyPredicate simplifiedTerm
+        simplifyCondition simplifiedTerm
     return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.
@@ -373,7 +373,7 @@ mergeWithConditionAndSubstitution
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => Condition variable
     -- ^ Condition and substitution to add.
     -> AttemptedAxiom variable
     -- ^ AttemptedAxiom to which the condition should be added.

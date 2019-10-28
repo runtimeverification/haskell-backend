@@ -44,7 +44,7 @@ import Kore.Predicate.Predicate
     ( makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Rule
@@ -75,7 +75,7 @@ import Test.Tasty.HUnit.Ext
 class OnePathRuleBase base where
     rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
 
-newtype Pair variable = Pair (TermLike variable, Syntax.Predicate variable)
+newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
 instance OnePathRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =

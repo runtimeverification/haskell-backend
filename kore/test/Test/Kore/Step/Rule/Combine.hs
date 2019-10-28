@@ -24,7 +24,7 @@ import Kore.Predicate.Predicate
     , makeMultipleAndPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Rule
@@ -47,7 +47,7 @@ import Test.Tasty.HUnit.Ext
 class RewriteRuleBase base where
     rewritesTo :: base Variable -> base Variable -> RewriteRule Variable
 
-newtype Pair variable = Pair (TermLike variable, Syntax.Predicate variable)
+newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
 instance RewriteRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
