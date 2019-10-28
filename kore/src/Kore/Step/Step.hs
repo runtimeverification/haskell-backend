@@ -53,23 +53,23 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
@@ -117,7 +117,7 @@ newtype UnificationProcedure =
         .  (SimplifierVariable variable, MonadUnify unifier)
         => TermLike variable
         -> TermLike variable
-        -> unifier (Predicate variable)
+        -> unifier (Condition variable)
         )
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
@@ -236,7 +236,7 @@ unifyRule
     -- Combine the unification solution with the rule's requirement clause,
     let
         RulePattern { requires = ruleRequires } = rule'
-        requires' = Predicate.fromPredicate ruleRequires
+        requires' = Condition.fromPredicate ruleRequires
     unification' <- Substitution.normalizeExcept (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
 
@@ -268,11 +268,11 @@ applyInitialConditions
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
-    => Predicate variable
+    => Condition variable
     -- ^ Initial conditions
-    -> Predicate variable
+    -> Condition variable
     -- ^ Unification conditions
-    -> unifier (OrPredicate variable)
+    -> unifier (OrCondition variable)
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
 applyInitialConditions initial unification = do
@@ -309,7 +309,7 @@ finalizeAppliedRule
         )
     => RulePattern variable
     -- ^ Applied rule
-    -> OrPredicate variable
+    -> OrCondition variable
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule renamedRule appliedConditions =
@@ -322,7 +322,7 @@ finalizeAppliedRule renamedRule appliedConditions =
         -- unifyRule.
         let
             RulePattern { ensures } = renamedRule
-            ensuresCondition = Predicate.fromPredicate ensures
+            ensuresCondition = Condition.fromPredicate ensures
         finalCondition <- normalize (appliedCondition <> ensuresCondition)
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
@@ -346,7 +346,7 @@ applyRemainder
         )
     => Pattern variable
     -- ^ Initial configuration
-    -> Predicate variable
+    -> Condition variable
     -- ^ Remainder
     -> unifier (Pattern variable)
 applyRemainder initial remainder = do
@@ -403,7 +403,7 @@ finalizeRulesParallel
 finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
-        remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
+        remainder = Condition.fromPredicate (Remainder.remainder' unifications)
     remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
     return Step.Results
         { results = Seq.fromList results
@@ -464,14 +464,14 @@ finalizeRulesSequence initial unifiedRules
     initialTerm = Conditional.term initial
     finalizeRuleSequence'
         :: UnifiedRule (Target variable)
-        -> State.StateT (Predicate (Target variable)) unifier [Result variable]
+        -> State.StateT (Condition (Target variable)) unifier [Result variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
         results <- Monad.Trans.lift $ finalizeRule remainderPattern unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
-                Predicate.fromPredicate
+                Condition.fromPredicate
                 $ Remainder.remainder'
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')

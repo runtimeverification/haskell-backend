@@ -45,10 +45,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
-import Kore.Internal.Predicate
-    ( Predicate
+import Kore.Internal.Condition
+    ( Condition
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -328,7 +328,7 @@ unificationSuccess = do
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
-        expectedOutput = formatUnifiers (Predicate.top :| [])
+        expectedOutput = formatUnifiers (Condition.top :| [])
 
     Result { output, continue, state } <- run command axioms [claim] claim
     output `equalsOutput` expectedOutput
@@ -344,7 +344,7 @@ unificationSuccessWithName = do
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByName . RuleName $ "0to1"
-        expectedOutput = formatUnifiers (Predicate.top :| [])
+        expectedOutput = formatUnifiers (Condition.top :| [])
 
     Result { output, continue, state } <- run command axioms [claim] claim
     output `equalsOutput` expectedOutput
@@ -712,5 +712,5 @@ formatUnificationError info first second = do
         empty
     return $ formatUnificationMessage res
 
-formatUnifiers :: NonEmpty (Predicate Variable) -> ReplOutput
+formatUnifiers :: NonEmpty (Condition Variable) -> ReplOutput
 formatUnifiers = formatUnificationMessage . Right

@@ -45,7 +45,7 @@ import Kore.Predicate.Predicate
     , makeNotPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Rule
@@ -532,7 +532,7 @@ simpleRewrite left right =
 rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
-    -> Syntax.Predicate Variable
+    -> Predicate Variable
     -> Rule (OnePathRule Variable)
 rewriteWithPredicate left right predicate =
     OnePathRewriteRule

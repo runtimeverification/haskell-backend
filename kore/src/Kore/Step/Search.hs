@@ -38,22 +38,22 @@ import Data.Limit
     ( Limit (..)
     )
 import qualified Data.Limit as Limit
+import qualified Kore.Internal.Condition as Condition
+    ( bottom
+    , fromSubstitution
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
     ( make
     , mergeAll
     )
-import Kore.Internal.OrPredicate
-    ( OrPredicate
+import Kore.Internal.OrCondition
+    ( OrCondition
     )
 import Kore.Internal.Pattern
-    ( Pattern
-    , Predicate
+    ( Condition
+    , Pattern
     )
 import qualified Kore.Internal.Pattern as Conditional
-import qualified Kore.Internal.Predicate as Predicate
-    ( bottom
-    , fromSubstitution
-    )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( evaluate
@@ -133,23 +133,23 @@ matchWith
     .  (SimplifierVariable variable, MonadSimplify m)
     => Pattern variable
     -> Pattern variable
-    -> MaybeT m (OrPredicate variable)
+    -> MaybeT m (OrCondition variable)
 matchWith e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Monad.Unify.runUnifierT
         $ unificationProcedure t1 t2
     let
-        maybeUnifiers :: Maybe [Predicate variable]
+        maybeUnifiers :: Maybe [Condition variable]
         maybeUnifiers = hush eitherUnifiers
         mergeAndEvaluate
-            :: Predicate variable
-            -> m (OrPredicate variable)
+            :: Condition variable
+            -> m (OrCondition variable)
         mergeAndEvaluate predSubst = do
             results <- Branch.gather $ mergeAndEvaluateBranches predSubst
             return (MultiOr.make results)
         mergeAndEvaluateBranches
-            :: Predicate variable
-            -> BranchT m (Predicate variable)
+            :: Condition variable
+            -> BranchT m (Condition variable)
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
@@ -168,9 +168,9 @@ matchWith e1 e2 = do
                             [ Conditional.substitution merged
                             , Conditional.substitution simplified
                             ]
-                    Just False -> return Predicate.bottom
+                    Just False -> return Condition.bottom
                     Just True -> return
-                        (Predicate.fromSubstitution
+                        (Condition.fromSubstitution
                             (Conditional.substitution merged)
                         )
     case maybeUnifiers of
@@ -178,7 +178,7 @@ matchWith e1 e2 = do
         Just unifiers -> do
             results <- lift $ traverse mergeAndEvaluate unifiers
             let
-                orResults :: OrPredicate variable
+                orResults :: OrCondition variable
                 orResults = MultiOr.mergeAll results
             guardAgainstBottom orResults
             return orResults

@@ -24,20 +24,20 @@ import GHC.Stack
     )
 
 import Branch
-import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.Predicate
-    ( Conditional (..)
-    , Predicate
+import Kore.Internal.Condition
+    ( Condition
+    , Conditional (..)
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Substitution
     ( Substitution
@@ -51,9 +51,9 @@ import qualified Kore.Unification.Unify as Monad.Unify
 
 newtype PredicateMerger variable m =
     PredicateMerger
-    (  [Syntax.Predicate variable]
+    (  [Predicate variable]
     -> [Substitution variable]
-    -> m (Predicate variable)
+    -> m (Condition variable)
     )
 
 -- | Normalize the substitution and predicate of 'expanded'.
@@ -74,13 +74,13 @@ normalize Conditional { term, predicate, substitution } = do
         Right normal -> scatter (applyTerm <$> normal)
         Left _ -> do
             let combined =
-                    Predicate.fromPredicate
-                    . Syntax.Predicate.markSimplified
-                    $ Syntax.Predicate.makeAndPredicate predicate
+                    Condition.fromPredicate
+                    . Predicate.markSimplified
+                    $ Predicate.makeAndPredicate predicate
                     -- TODO (thomas.tuegel): Promoting the entire substitution
                     -- to the predicate is a problem. We should only promote the
                     -- part which has cyclic dependencies.
-                    $ Syntax.Predicate.fromSubstitution substitution
+                    $ Predicate.fromSubstitution substitution
             return (Conditional.withCondition term combined)
   where
     applyTerm predicated = predicated { term }
@@ -91,8 +91,8 @@ normalizeExcept
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
-    => Predicate variable
-    -> unifier (Predicate variable)
+    => Condition variable
+    -> unifier (Condition variable)
 normalizeExcept = Unification.normalizeExcept
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
@@ -111,13 +111,13 @@ mergePredicatesAndSubstitutions
         , HasCallStack
         , WithLog LogMessage simplifier
         )
-    => [Syntax.Predicate variable]
+    => [Predicate variable]
     -> [Substitution variable]
-    -> BranchT simplifier (Predicate variable)
+    -> BranchT simplifier (Condition variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
-    simplifyPredicate Conditional
+    simplifyCondition Conditional
         { term = ()
-        , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
+        , predicate = Predicate.makeMultipleAndPredicate predicates
         , substitution = Foldable.fold substitutions
         }
 
@@ -135,13 +135,13 @@ createPredicatesAndSubstitutionsMergerExcept =
     PredicateMerger worker
   where
     worker
-        :: [Syntax.Predicate variable]
+        :: [Predicate variable]
         -> [Substitution variable]
-        -> unifier (Predicate variable)
+        -> unifier (Condition variable)
     worker predicates substitutions = do
         let merged =
-                (Predicate.fromPredicate <$> predicates)
-                <> (Predicate.fromSubstitution <$> substitutions)
+                (Condition.fromPredicate <$> predicates)
+                <> (Condition.fromSubstitution <$> substitutions)
         normalizeExcept (Foldable.fold merged)
 
 {-| Creates a 'PredicateMerger' that creates predicates for
@@ -155,13 +155,13 @@ createPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
   where
     worker
-        :: [Syntax.Predicate variable]
+        :: [Predicate variable]
         -> [Substitution variable]
-        -> BranchT simplifier (Predicate variable)
+        -> BranchT simplifier (Condition variable)
     worker predicates substitutions = do
         let merged =
-                (Predicate.fromPredicate <$> predicates)
-                <> (Predicate.fromSubstitution <$> substitutions)
+                (Condition.fromPredicate <$> predicates)
+                <> (Condition.fromSubstitution <$> substitutions)
         normalize (Foldable.fold merged)
 
 {-| Creates a 'PredicateMerger' that creates predicates for
@@ -179,11 +179,11 @@ createLiftedPredicatesAndSubstitutionsMerger =
     PredicateMerger worker
   where
     worker
-        :: [Syntax.Predicate variable]
+        :: [Predicate variable]
         -> [Substitution variable]
-        -> unifier (Predicate variable)
+        -> unifier (Condition variable)
     worker predicates substitutions = do
         let merged =
-                (Predicate.fromPredicate <$> predicates)
-                <> (Predicate.fromSubstitution <$> substitutions)
+                (Condition.fromPredicate <$> predicates)
+                <> (Condition.fromSubstitution <$> substitutions)
         normalizeExcept (Foldable.fold merged)

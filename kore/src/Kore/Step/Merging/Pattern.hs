@@ -12,9 +12,9 @@ import Branch
     ( BranchT
     )
 import Kore.Internal.Pattern
-    ( Conditional (..)
+    ( Condition
+    , Conditional (..)
     , Pattern
-    , Predicate
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Logger
@@ -34,13 +34,13 @@ mergeWithPredicate
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => Condition variable
     -- ^ Condition and substitution to add.
     -> Pattern variable
     -- ^ pattern to which the above should be added.
     -> BranchT simplifier (Pattern variable)
 mergeWithPredicate condition' pattern' =
-    simplifyPredicate $ Pattern.andCondition pattern' condition'
+    simplifyCondition $ Pattern.andCondition pattern' condition'
 
 {-| Ands the given predicate/substitution with the given pattern.
 
@@ -50,7 +50,7 @@ to re-simplify them.
 mergeWithPredicateAssumesEvaluated
     :: (SimplifierVariable variable, Monad m)
     => PredicateMerger variable m
-    -> Predicate variable
+    -> Condition variable
     -> Conditional variable term
     -> m (Conditional variable term)
 mergeWithPredicateAssumesEvaluated

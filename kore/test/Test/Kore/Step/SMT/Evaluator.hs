@@ -27,7 +27,7 @@ import Kore.Predicate.Predicate
     , makeNotPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import qualified Kore.Step.Simplification.Data as Kore
@@ -54,7 +54,7 @@ import qualified Test.Kore.Step.Simplification as Test
 import Test.SMT
 import Test.Tasty.HUnit.Ext
 
-contradictoryPredicate :: Syntax.Predicate Variable
+contradictoryPredicate :: Predicate Variable
 contradictoryPredicate =
     makeAndPredicate
         (makeEqualsPredicate
@@ -152,7 +152,7 @@ test_evaluableMultiOr =
     ]
 
 evaluatePredicate
-    :: Syntax.Predicate Variable
+    :: Predicate Variable
     -> IO (Maybe Bool)
 evaluatePredicate = evaluate
 
@@ -194,7 +194,7 @@ test_andNegation =
     expected = Just False
 
 evaluateSMT
-    :: Syntax.Predicate Variable
+    :: Predicate Variable
     -> PropertyT SMT (Maybe Bool)
 evaluateSMT = Trans.lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
 
@@ -219,7 +219,7 @@ p, q :: TermLike Variable
 p = vBool (testId "p")
 q = vBool (testId "q")
 
-assertRefuted :: HasCallStack => Syntax.Predicate Variable -> Assertion
+assertRefuted :: HasCallStack => Predicate Variable -> Assertion
 assertRefuted prop = do
     let expect = Just False
     actual <- Test.runSimplifier testEnv $ SMT.Evaluator.decidePredicate prop

@@ -25,7 +25,7 @@ import Kore.Predicate.Predicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Simplification.OrPattern
@@ -98,7 +98,7 @@ test_orPatternSimplification =
     x :: TermLike Variable
     x = mkElemVar Mock.x
 
-positive :: TermLike Variable -> Syntax.Predicate Variable
+positive :: TermLike Variable -> Predicate Variable
 positive u =
     makeEqualsPredicate
         (Mock.lessInt
@@ -107,7 +107,7 @@ positive u =
         )
         (Mock.builtinBool False)
 
-negative :: TermLike Variable -> Syntax.Predicate Variable
+negative :: TermLike Variable -> Predicate Variable
 negative u =
     makeEqualsPredicate
         (Mock.greaterEqInt
@@ -117,9 +117,9 @@ negative u =
         (Mock.builtinBool False)
 
 runSimplifyPredicates
-    :: Syntax.Predicate Variable
+    :: Predicate Variable
     -> OrPattern Variable
     -> IO (OrPattern Variable)
 runSimplifyPredicates predicate orPattern =
     Test.runSimplifier Mock.env
-    $ simplifyPredicatesWithSmt predicate orPattern
+    $ simplifyConditionsWithSmt predicate orPattern
