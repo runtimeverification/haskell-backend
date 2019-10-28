@@ -814,7 +814,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
     , testCase "Equals-in simplification" $ do
         let gt = SetVariable $ Variable (testId "gt") mempty Mock.stringSort
             g = SetVariable $ Variable (testId "g") mempty Mock.testSort1

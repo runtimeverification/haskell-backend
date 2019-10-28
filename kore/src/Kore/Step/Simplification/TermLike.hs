@@ -32,6 +32,10 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
+import qualified Kore.Internal.Conditional as Conditional
+    ( andCondition
+    )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -205,11 +209,17 @@ simplifyInternal term predicate =
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
         | TermLike.isSimplified termLike
-        , not (Predicate.isPredicate termLike)
-        = return . OrPattern.fromTermLike $ termLike
+        = case Predicate.makePredicate termLike of
+            Left _ -> return . OrPattern.fromTermLike $ termLike
+            Right termPredicate ->
+                return
+                $ OrPattern.fromPattern
+                $ Pattern.fromCondition
+                $ Condition.markSimplified
+                $ Condition.fromPredicate termPredicate
         | otherwise
-        =
-            assertTermNotPredicate . assertSimplifiedResults
+          =
+            assertTermNotPredicate . resimplifyIfNeeded termLike
             $ tracer termLike $
             let doNotSimplify =
                     Exception.assert (TermLike.isSimplified termLike)
@@ -280,23 +290,6 @@ simplifyInternal term predicate =
                 VariableF variableF ->
                     return $ Variable.simplify (getConst variableF)
       where
-        assertSimplifiedResults getResults = do
-            results <- getResults
-            let unsimplified =
-                    filter (not . TermLike.isSimplified . Pattern.term)
-                    $ OrPattern.toPatterns results
-            if null unsimplified
-                then return results
-                else (error . show . Pretty.vsep)
-                    [ "Incomplete simplification!"
-                    , Pretty.indent 2 "input:"
-                    , Pretty.indent 4 (unparse termLike)
-                    , Pretty.indent 2 "unsimplified results:"
-                    , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> unsimplified)
-                    , "Expected all patterns to be fully simplified."
-                    ]
-
         assertTermNotPredicate getResults = do
             results <- getResults
             let
@@ -318,6 +311,43 @@ simplifyInternal term predicate =
                         (unparse <$> unsimplified)
                     , "Expected all predicates to be removed from the term."
                     ]
+
+    resimplifyIfNeeded
+        :: TermLike variable
+        -> simplifier (OrPattern variable)
+        -> simplifier (OrPattern variable)
+    resimplifyIfNeeded originalTerm getResults = do
+        results <- getResults
+        case OrPattern.toPatterns results of
+            [] -> return results
+            [result] ->
+                let (resultTerm, resultPredicate) = Pattern.splitTerm result
+                    termAsPredicate =
+                        Condition.fromPredicate
+                            <$> Predicate.makePredicate originalTerm
+                in if Pattern.isSimplified result
+                    then return (OrPattern.fromPattern result)
+                    else if isTop resultPredicate && resultTerm == originalTerm
+                    then return
+                        (OrPattern.fromTermLike
+                            (TermLike.markSimplified resultTerm)
+                        )
+                    else if isTop resultTerm
+                        && Right resultPredicate == termAsPredicate
+                    then return
+                        $ OrPattern.fromPattern
+                        $ Pattern.fromCondition
+                        $ Condition.markSimplified resultPredicate
+
+                    else resimplify result
+            resultList -> do
+                resultsList <- mapM resimplify resultList
+                return (MultiOr.mergeAll resultsList)
+      where
+        resimplify result = do
+            let (resultTerm, resultPredicate) = Pattern.splitTerm result
+            simplified <- simplifyInternalWorker resultTerm
+            return ((`Conditional.andCondition` resultPredicate) <$> simplified)
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)
