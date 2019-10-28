@@ -7,6 +7,9 @@ module Kore.Step.Rule.Simplify
     ( simplifyOnePathRuleLhs
     ) where
 
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -28,9 +31,6 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Predicate as Predicate
-    ( fromPredicate
-    )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
@@ -44,7 +44,7 @@ import qualified Kore.Step.Rule as RulePattern
     , applySubstitution
     )
 import Kore.Step.Simplification.OrPattern
-    ( simplifyPredicatesWithSmt
+    ( simplifyConditionsWithSmt
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyAndRemoveTopExists
@@ -77,12 +77,10 @@ simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
                 requires
                 (makeCeilPredicate left)
         definedLhs =
-            Conditional.withCondition
-                left
-                $ Predicate.fromPredicate
-                    lhsPredicate
+            Conditional.withCondition left
+            $ Condition.fromPredicate lhsPredicate
     simplifiedTerms <- Pattern.simplifyAndRemoveTopExists definedLhs
-    fullySimplified <- simplifyPredicatesWithSmt lhsPredicate simplifiedTerms
+    fullySimplified <- simplifyConditionsWithSmt lhsPredicate simplifiedTerms
     let rules = map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
     return (MultiAnd.make rules)
   where
@@ -102,4 +100,3 @@ simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
                 { RulePattern.left = term
                 , RulePattern.requires = predicate
                 }
-

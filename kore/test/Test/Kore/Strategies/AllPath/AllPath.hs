@@ -462,7 +462,7 @@ instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined
     askSimplifierTermLike = undefined
     localSimplifierTermLike = undefined
-    simplifyPredicate = undefined
+    simplifyCondition = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined

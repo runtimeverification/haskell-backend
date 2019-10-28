@@ -341,11 +341,11 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    propagatePredicates
+    propagateConditions
         :: Traversable t
         => t (Conditional variable a)
         -> Conditional variable (t a)
-    propagatePredicates = sequenceA
+    propagateConditions = sequenceA
 
     unifyEquals0
         :: TermLike variable
@@ -397,7 +397,7 @@ unifyEquals
         Reflection.give tools $ do
             unified <- sequence $ Seq.zipWith simplifyChild list1 list2
             let
-                propagatedUnified = propagatePredicates unified
+                propagatedUnified = propagateConditions unified
                 result =
                     (TermLike.markSimplified . asInternal tools builtinListSort)
                     <$> propagatedUnified

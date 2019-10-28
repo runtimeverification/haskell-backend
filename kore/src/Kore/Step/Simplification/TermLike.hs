@@ -25,10 +25,13 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -37,10 +40,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
@@ -49,7 +48,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( isPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -152,7 +151,7 @@ simplify
         , MonadSimplify simplifier
         )
     =>  TermLike variable
-    ->  Predicate variable
+    ->  Condition variable
     ->  simplifier (Pattern variable)
 simplify patt predicate = do
     orPatt <- simplifyToOr predicate patt
@@ -166,7 +165,7 @@ simplifyToOr
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Predicate variable
+    =>  Condition variable
     ->  TermLike variable
     ->  simplifier (OrPattern variable)
 simplifyToOr predicate term =
@@ -184,7 +183,7 @@ simplifyInternal
         , MonadSimplify simplifier
         )
     =>  TermLike variable
-    ->  Predicate variable
+    ->  Condition variable
     ->  simplifier (OrPattern variable)
 simplifyInternal term predicate =
     simplifyInternalWorker term
@@ -194,7 +193,7 @@ simplifyInternal term predicate =
         Just identifier -> Profiler.identifierSimplification identifier
 
     predicateFreeVars =
-        FreeVariables.getFreeVariables $ Predicate.freeVariables predicate
+        FreeVariables.getFreeVariables $ Condition.freeVariables predicate
 
     simplifyChildren
         :: Traversable t
@@ -206,7 +205,7 @@ simplifyInternal term predicate =
         :: TermLike variable -> simplifier (OrPattern variable)
     simplifyInternalWorker termLike
         | TermLike.isSimplified termLike
-        , not (Syntax.Predicate.isPredicate termLike)
+        , not (Predicate.isPredicate termLike)
         = return . OrPattern.fromTermLike $ termLike
         | otherwise
         =

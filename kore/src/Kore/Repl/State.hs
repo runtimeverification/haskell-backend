@@ -101,13 +101,15 @@ import Control.Monad.Reader
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import Kore.Internal.Pattern
     ( toTermLike
     )
-import qualified Kore.Internal.Predicate as IPredicate
 import Kore.Internal.TermLike
     ( Sort
     , TermLike
@@ -497,7 +499,7 @@ runUnifier
     => MonadIO m
     => TermLike Variable
     -> TermLike Variable
-    -> t m (Either ReplOutput (NonEmpty (IPredicate.Predicate Variable)))
+    -> t m (Either ReplOutput (NonEmpty (Condition Variable)))
 runUnifier first second = do
     unifier <- asks unifier
     mvar <- asks logger

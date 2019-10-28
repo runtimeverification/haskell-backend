@@ -23,6 +23,13 @@ module Kore.Internal.OrPattern
 
 import qualified Data.Foldable as Foldable
 
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    , toPredicate
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiOr
     ( MultiOr
@@ -32,17 +39,10 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
-    ( fromPredicate
-    , toPredicate
-    )
 import Kore.Internal.TermLike hiding
     ( isSimplified
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -133,7 +133,7 @@ toPattern multiOr =
     mergeWithOr patt1 patt2
       | isTop term1, isTop term2 =
         term1
-        `Conditional.withCondition` mergePredicatesWithOr predicate1 predicate2
+        `Conditional.withCondition` mergeConditionsWithOr predicate1 predicate2
       | otherwise =
         Pattern.fromTermLike
             (mkOr (Pattern.toTermLike patt1) (Pattern.toTermLike patt2))
@@ -141,13 +141,13 @@ toPattern multiOr =
         (term1, predicate1) = Pattern.splitTerm patt1
         (term2, predicate2) = Pattern.splitTerm patt2
 
-    mergePredicatesWithOr
-        :: Predicate variable -> Predicate variable -> Predicate variable
-    mergePredicatesWithOr predicate1 predicate2 =
-        Predicate.fromPredicate
-            (Syntax.Predicate.makeOrPredicate
-                (Predicate.toPredicate predicate1)
-                (Predicate.toPredicate predicate2)
+    mergeConditionsWithOr
+        :: Condition variable -> Condition variable -> Condition variable
+    mergeConditionsWithOr predicate1 predicate2 =
+        Condition.fromPredicate
+            (Predicate.makeOrPredicate
+                (Condition.toPredicate predicate1)
+                (Condition.toPredicate predicate2)
             )
 
 {- Check if an OrPattern can be reduced to a Predicate. -}

@@ -18,13 +18,13 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
+import Kore.Internal.Condition as Condition
+    ( Condition
+    )
 import Kore.Internal.Pattern
     ( Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Conditional
-import Kore.Internal.Predicate as Predicate
-    ( Predicate
-    )
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import qualified Kore.Step.Merging.OrPattern as OrPattern
@@ -54,7 +54,7 @@ unificationProcedure
         )
     => TermLike variable
     -> TermLike variable
-    -> unifier (Predicate variable)
+    -> unifier (Condition variable)
 unificationProcedure p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom

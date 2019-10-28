@@ -28,17 +28,17 @@ import qualified GHC.Stack as GHC
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.String as String
+import Kore.Internal.Condition
+    ( Conditional (..)
+    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
     ( make
     )
-import Kore.Internal.OrPredicate
-    ( OrPredicate
+import Kore.Internal.OrCondition
+    ( OrCondition
     )
-import qualified Kore.Internal.OrPredicate as OrPredicate
-import Kore.Internal.Predicate
-    ( Conditional (..)
-    )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( makeCeilPredicate
@@ -103,7 +103,7 @@ test_matcherEqualHeads =
         ]
 
     , testCase "Bottom" $ do
-        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+        let expect = Just $ OrCondition.fromCondition Condition.topCondition
         actual <- matchDefinition mkBottom_ mkBottom_
         assertEqual "" expect actual
 
@@ -154,7 +154,7 @@ test_matcherEqualHeads =
         assertEqual "" topOrPredicate actual
 
     , testCase "DomainValue" $ do
-        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+        let expect = Just $ OrCondition.fromCondition Condition.topCondition
         actual <-
             matchDefinition
                 (mkDomainValue DomainValue
@@ -171,7 +171,7 @@ test_matcherEqualHeads =
 
 
     , testCase "StringLiteral" $ do
-        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+        let expect = Just $ OrCondition.fromCondition Condition.topCondition
         actual <-
             matchDefinition
                 (mkStringLiteral "10")
@@ -179,7 +179,7 @@ test_matcherEqualHeads =
         assertEqual "" expect actual
 
     , testCase "Top" $ do
-        let expect = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+        let expect = Just $ OrCondition.fromCondition Condition.topCondition
         actual <-
             matchDefinition
                 mkTop_
@@ -393,8 +393,8 @@ test_matcherVariableFunction =
         [ testCase "Functional" $ do
             let evaluated = mkEvaluated Mock.functional00
                 expect =
-                    Just . OrPredicate.fromPredicate
-                    $ Predicate.fromSingleSubstitution
+                    Just . OrCondition.fromCondition
+                    $ Condition.fromSingleSubstitution
                         (UnifiedVariable.ElemVar Mock.x, evaluated)
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
             assertEqual "" expect actual
@@ -402,8 +402,8 @@ test_matcherVariableFunction =
         , testCase "Function" $ do
             let evaluated = mkEvaluated Mock.cf
                 expect =
-                    (Just . OrPredicate.fromPredicate)
-                    (Predicate.fromSingleSubstitution
+                    (Just . OrCondition.fromCondition)
+                    (Condition.fromSingleSubstitution
                         (UnifiedVariable.ElemVar Mock.x, evaluated))
                         { predicate = makeCeilPredicate evaluated }
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
@@ -481,7 +481,7 @@ test_matching_Bool =
         (mkElemVar Mock.xBool)
     ]
   where
-    top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+    top = Just $ OrCondition.fromCondition Condition.topCondition
     substitution subst = Just $ MultiOr.make
         [ Conditional
             { term = ()
@@ -512,7 +512,7 @@ test_matching_Int =
         (mkElemVar xInt)
     ]
   where
-    top = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+    top = Just $ OrCondition.fromCondition Condition.topCondition
     substitution subst = Just $ MultiOr.make
         [ Conditional
             { term = ()
@@ -823,8 +823,8 @@ test_matching_Pair =
 mkPair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 mkPair = Test.pair
 
-topOrPredicate :: Maybe (OrPredicate Variable)
-topOrPredicate = Just $ OrPredicate.fromPredicate Predicate.topPredicate
+topOrPredicate :: Maybe (OrCondition Variable)
+topOrPredicate = Just $ OrCondition.fromCondition Condition.topCondition
 
 test_matching_Set :: [TestTree]
 test_matching_Set =
@@ -928,17 +928,17 @@ mkMap elements opaques =
 matchDefinition
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Variable))
+    -> IO (Maybe (OrCondition Variable))
 matchDefinition term1 term2 =
     either (const Nothing) Just <$> match term1 term2
 
 matchSimplification
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe (OrPredicate Variable))
+    -> IO (Maybe (OrCondition Variable))
 matchSimplification = matchDefinition
 
-type MatchResult = Either UnificationOrSubstitutionError (OrPredicate Variable)
+type MatchResult = Either UnificationOrSubstitutionError (OrCondition Variable)
 
 match
     :: TermLike Variable
@@ -1000,10 +1000,10 @@ matchesAux comment term1 term2 expect =
   where
     solution =
         case expect of
-            Nothing -> OrPredicate.bottom
+            Nothing -> OrCondition.bottom
             Just substs ->
-                OrPredicate.fromPredicate
-                $ Predicate.fromSubstitution
+                OrCondition.fromCondition
+                $ Condition.fromSubstitution
                 $ Substitution.unsafeWrap substs
     check (Left _) = assertFailure "Expected matching solution."
     check (Right actual) = assertEqual "" solution actual
