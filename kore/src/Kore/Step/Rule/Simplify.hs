@@ -4,7 +4,7 @@ License     : NCSA
 -}
 
 module Kore.Step.Rule.Simplify
-    ( simplifyOnePathRuleLhs
+    ( SimplifyRuleLHS (..)
     ) where
 
 import qualified Kore.Internal.Condition as Condition
@@ -36,7 +36,8 @@ import Kore.Internal.Predicate
     , makeCeilPredicate
     )
 import Kore.Step.Rule
-    ( OnePathRule (..)
+    ( AllPathRule (..)
+    , OnePathRule (..)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -53,50 +54,54 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
     )
+import Kore.Syntax.Variable
+    ( Variable
+    )
 
-simplifyOnePathRuleLhs
-    ::  ( MonadSimplify simplifier
-        , SimplifierVariable variable
-        )
-    => OnePathRule variable
-    -> simplifier (MultiAnd (OnePathRule variable))
-simplifyOnePathRuleLhs (OnePathRule rule) = do
-    simplifiedList <- simplifyRuleLhs rule
-    return (fmap OnePathRule simplifiedList)
+-- | Simplifies the left-hand-side of a rule/claim
+class SimplifyRuleLHS rule where
+    simplifyRuleLhs
+        :: forall simplifier
+        .  MonadSimplify simplifier
+        => rule
+        -> simplifier (MultiAnd rule)
 
-simplifyRuleLhs
-    :: forall simplifier variable
-    .   ( MonadSimplify simplifier
-        , SimplifierVariable variable
-        )
-    => RulePattern variable
-    -> simplifier (MultiAnd (RulePattern variable))
-simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
-    let lhsPredicate =
-            makeAndPredicate
-                requires
-                (makeCeilPredicate left)
-        definedLhs =
-            Conditional.withCondition left
-            $ Condition.fromPredicate lhsPredicate
-    simplifiedTerms <- Pattern.simplifyAndRemoveTopExists definedLhs
-    fullySimplified <- simplifyConditionsWithSmt lhsPredicate simplifiedTerms
-    let rules = map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
-    return (MultiAnd.make rules)
+instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
   where
-    RulePattern {left, requires} = rule
+    simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
+        let lhsPredicate =
+                makeAndPredicate
+                    requires
+                    (makeCeilPredicate left)
+            definedLhs =
+                Conditional.withCondition left
+                $ Condition.fromPredicate lhsPredicate
+        simplifiedTerms <- Pattern.simplifyAndRemoveTopExists definedLhs
+        fullySimplified <-
+            simplifyConditionsWithSmt lhsPredicate simplifiedTerms
+        let rules =
+                map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
+        return (MultiAnd.make rules)
+      where
+        RulePattern {left, requires} = rule
 
-    setRuleLeft
-        :: RulePattern variable
-        -> Pattern variable
-        -> RulePattern variable
-    setRuleLeft
-        rulePattern
-        Conditional {term, predicate, substitution}
-      =
-        RulePattern.applySubstitution
-            substitution
+        setRuleLeft
+            :: RulePattern variable
+            -> Pattern variable
+            -> RulePattern variable
+        setRuleLeft
             rulePattern
-                { RulePattern.left = term
-                , RulePattern.requires = predicate
-                }
+            Conditional {term, predicate, substitution}
+          =
+            RulePattern.applySubstitution
+                substitution
+                rulePattern
+                    { RulePattern.left = term
+                    , RulePattern.requires = predicate
+                    }
+
+instance SimplifyRuleLHS (OnePathRule Variable) where
+    simplifyRuleLhs = fmap (fmap OnePathRule) . simplifyRuleLhs . getOnePathRule
+
+instance SimplifyRuleLHS (AllPathRule Variable) where
+    simplifyRuleLhs = fmap (fmap AllPathRule) . simplifyRuleLhs . getAllPathRule

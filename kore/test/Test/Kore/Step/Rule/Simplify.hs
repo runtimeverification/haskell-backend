@@ -35,8 +35,6 @@ import Kore.Step.Rule
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
 import Kore.Step.Rule.Simplify
-    ( simplifyOnePathRuleLhs
-    )
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )
@@ -213,4 +211,4 @@ runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ runSimplifier Mock.env
-    $ simplifyOnePathRuleLhs rule
+    $ simplifyRuleLhs rule
