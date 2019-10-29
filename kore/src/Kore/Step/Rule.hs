@@ -329,8 +329,8 @@ instance
     (Ord variable, SortedVariable variable, Unparse variable)
     => Unparse (ReachabilityRule variable)
   where
-    unparse = unparse . pathRuleToPattern
-    unparse2 = unparse2 . pathRuleToPattern
+    unparse = unparse . reachabilityRuleToPattern
+    unparse2 = unparse2 . reachabilityRuleToPattern
 
 instance TopBottom (ReachabilityRule variable) where
     isTop _ = False
@@ -555,13 +555,13 @@ wAF sort = Alias
     , aliasRight = mkTop sort
     }
 
-pathRuleToPattern
+reachabilityRuleToPattern
     :: Ord variable
     => SortedVariable variable
     => Unparse variable
     => ReachabilityRule variable
     -> TermLike variable
-pathRuleToPattern = \case
+reachabilityRuleToPattern = \case
     OnePath r -> onePathRuleToPattern r
     AllPath r -> allPathRuleToPattern r
 

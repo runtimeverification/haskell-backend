@@ -235,7 +235,7 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
-                            (Proxy :: Proxy (OnePathRule Variable))
+                            (Proxy @(OnePathRule Variable))
                             mLogger
                             replScript
                             replMode

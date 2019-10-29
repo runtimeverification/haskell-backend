@@ -449,7 +449,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove stepLimit mainModule specModule (Proxy :: Proxy (OnePathRule Variable))
+                <$> prove stepLimit mainModule specModule (Proxy @(OnePathRule Variable))
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
