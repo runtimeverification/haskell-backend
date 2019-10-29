@@ -41,6 +41,8 @@ import Kore.Internal.Pattern
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
+import Kore.Step.Rule.Expand
+import Kore.Step.Rule.Simplify
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
 import Kore.Step.Transition
@@ -70,6 +72,8 @@ type Claim claim =
     , Unparse (Rule claim)
     , Goal claim
     , ClaimExtractor claim
+    , ExpandSingleConstructors claim
+    , SimplifyRuleLHS claim
     , Prim claim ~ ProofState.Prim (Rule claim)
     , ProofState claim claim ~ ProofState.ProofState claim
     )
@@ -110,8 +114,7 @@ verify strategy' =
 verifyClaim
     :: forall claim m
     .  (MonadCatch m, MonadSimplify m)
-    => ProofState claim (Pattern Variable)
-        ~ ProofState.ProofState (Pattern Variable)
+    => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
     => Show (Rule claim)

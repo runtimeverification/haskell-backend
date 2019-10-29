@@ -126,10 +126,10 @@ import qualified Kore.Step.Rule.Combine as Rules
     ( mergeRules
     )
 import Kore.Step.Rule.Expand
-    ( expandClaimSingleConstructors
+    ( ExpandSingleConstructors (..)
     )
 import Kore.Step.Rule.Simplify
-    ( simplifyGoalRuleLhs
+    ( SimplifyRuleLHS (..)
     )
 import Kore.Step.Search
     ( searchGraph
@@ -297,7 +297,6 @@ prove
         , Eq claim
         , Show claim
         , Show (Goal.Rule claim)
-        , Coercible claim (RulePattern Variable)
         , TopBottom claim
         , Goal.ProofState claim (Pattern Variable) ~ CommonProofState
         )
@@ -598,7 +597,7 @@ initializeProver definitionModule specModule within =
             simplifyToList
                 :: claim -> simplifier [claim]
             simplifyToList rules = do
-                simplified <- simplifyGoalRuleLhs rules
+                simplified <- simplifyRuleLhs rules
                 return (MultiAnd.extractPatterns simplified)
 
         Log.withLogScope (Log.Scope "ExpandedClaim")
@@ -630,7 +629,7 @@ initializeProver definitionModule specModule within =
             then Changed expanded
             else Unchanged claim
       where
-        expanded = expandClaimSingleConstructors tools claim
+        expanded = expandSingleConstructors tools claim
 
     logChangedClaim
         :: HasCallStack

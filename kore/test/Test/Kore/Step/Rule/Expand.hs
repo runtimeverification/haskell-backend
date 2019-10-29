@@ -98,14 +98,14 @@ test_expandRule =
     [ testCase "Nothing to expand" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools [])
                     (Mock.f x `rewritesTo` Mock.g x)
         in assertEqual "" expected actual
     , testCase "Nothing to expand without constructors" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [ (Mock.testSortId, noConstructor) ]
                     )
@@ -114,7 +114,7 @@ test_expandRule =
     , testCase "Nothing to expand with multiple constructors" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSortId
                             , noConstructor
@@ -131,7 +131,7 @@ test_expandRule =
                 `rewritesTo`
                 Pair (Mock.g Mock.a, makeTruePredicate)
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSortId
                             , noConstructor `with` constructor Mock.aSymbol
@@ -154,7 +154,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor
@@ -181,7 +181,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor
@@ -211,7 +211,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor
@@ -242,7 +242,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandClaimSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor

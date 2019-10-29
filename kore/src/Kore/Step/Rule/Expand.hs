@@ -4,13 +4,9 @@ License     : NCSA
 -}
 
 module Kore.Step.Rule.Expand
-    ( expandClaimSingleConstructors
+    ( ExpandSingleConstructors (..)
     ) where
 
-import Data.Coerce
-    ( Coercible
-    , coerce
-    )
 import Data.List
     ( foldl'
     , foldr
@@ -59,12 +55,11 @@ import Kore.Sort
     )
 import qualified Kore.Sort as Sort.DoNotUse
 import Kore.Step.Rule
-    ( RulePattern (RulePattern)
+    ( AllPathRule (..)
+    , OnePathRule (..)
+    , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
-    , freeVariables
-    )
 import Kore.Syntax.ElementVariable
     ( ElementVariable (ElementVariable)
     )
@@ -82,53 +77,65 @@ import Kore.Variables.UnifiedVariable
     , extractElementVariable
     )
 
-expandClaimSingleConstructors
-    :: Coercible (RulePattern Variable) claim
-    => Coercible claim (RulePattern Variable)
-    => SmtMetadataTools attributes
-    -> claim
-    -> claim
-expandClaimSingleConstructors metadataTools claim =
-    coerce (expandSingleConstructors metadataTools (coerce claim))
+-- | Instantiate variables on sorts with a single constructor
+{- TODO(ttuegel): make this a strategy step, so that we expand any
+    single-constructor variables at the start of each proof step.
+    Going even further: make this a step in the variable simplifier?
+-}
+class ExpandSingleConstructors rule where
+    expandSingleConstructors
+        :: SmtMetadataTools attributes
+        -> rule
+        -> rule
 
-expandSingleConstructors
-    :: SmtMetadataTools attributes
-    -> RulePattern Variable
-    -> RulePattern Variable
-expandSingleConstructors
-    metadataTools
-    rule@(RulePattern _ _ _ _ _ _)
-  = case rule of
-    RulePattern {left, antiLeft, right, ensures, requires} ->
-        let leftVariables :: [ElementVariable Variable]
-            leftVariables =
-                mapMaybe extractElementVariable
-                $ Set.toList
-                $ getFreeVariables
-                $ TermLike.freeVariables left
-            allUnifiedVariables :: Set.Set (UnifiedVariable Variable)
-            allUnifiedVariables =
-                getFreeVariables (RulePattern.freeVariables rule)
-            allElementVariables :: Set.Set (ElementVariable Variable)
-            allElementVariables = Set.fromList
-                [ v | ElemVar v <- Set.toList allUnifiedVariables]
-            expansion :: Map.Map (UnifiedVariable Variable) (TermLike Variable)
-            expansion =
-                expandVariables metadataTools leftVariables allElementVariables
-            substitutionPredicate =
-                Predicate.fromSubstitution
-                    (Substitution.wrap (Map.toList expansion))
-        in rule
-            { RulePattern.left = TermLike.substitute expansion left
-            , RulePattern.antiLeft = TermLike.substitute expansion <$> antiLeft
-            , RulePattern.right = TermLike.substitute expansion right
-            , RulePattern.ensures =
-                Predicate.substitute expansion ensures
-            , RulePattern.requires =
-                makeAndPredicate
-                    (Predicate.substitute expansion requires)
-                    substitutionPredicate
-            }
+instance ExpandSingleConstructors (RulePattern Variable) where
+    expandSingleConstructors
+        metadataTools
+        rule@(RulePattern _ _ _ _ _ _)
+      = case rule of
+        RulePattern {left, antiLeft, right, ensures, requires} ->
+            let leftVariables :: [ElementVariable Variable]
+                leftVariables =
+                    mapMaybe extractElementVariable
+                    $ Set.toList
+                    $ getFreeVariables
+                    $ TermLike.freeVariables left
+                allUnifiedVariables :: Set.Set (UnifiedVariable Variable)
+                allUnifiedVariables =
+                    getFreeVariables (RulePattern.freeVariables rule)
+                allElementVariables :: Set.Set (ElementVariable Variable)
+                allElementVariables = Set.fromList
+                    [ v | ElemVar v <- Set.toList allUnifiedVariables]
+                expansion
+                    :: Map.Map (UnifiedVariable Variable) (TermLike Variable)
+                expansion =
+                    expandVariables
+                        metadataTools
+                        leftVariables
+                        allElementVariables
+                substitutionPredicate =
+                    Predicate.fromSubstitution
+                        (Substitution.wrap (Map.toList expansion))
+            in rule
+                { RulePattern.left = TermLike.substitute expansion left
+                , RulePattern.antiLeft =
+                    TermLike.substitute expansion <$> antiLeft
+                , RulePattern.right = TermLike.substitute expansion right
+                , RulePattern.ensures =
+                    Predicate.substitute expansion ensures
+                , RulePattern.requires =
+                    makeAndPredicate
+                        (Predicate.substitute expansion requires)
+                        substitutionPredicate
+                }
+
+instance ExpandSingleConstructors (OnePathRule Variable) where
+    expandSingleConstructors tools =
+        OnePathRule . expandSingleConstructors tools . getOnePathRule
+
+instance ExpandSingleConstructors (AllPathRule Variable) where
+    expandSingleConstructors tools =
+        AllPathRule . expandSingleConstructors tools . getAllPathRule
 
 expandVariables
     :: SmtMetadataTools attributes
