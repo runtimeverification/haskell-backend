@@ -155,6 +155,14 @@ Matching is implemented sequentially, so there is no separate substitution norma
 Semantic rules are instantiated by unification, as described above.
 The procedures to apply one-path and all-path reachability claims is described in other documents.
 
+1. Unify the left-hand side of the rule with the current configuration's term.
+1. Conjoin the `requires` clause with the unification conditions and simplify.
+1. Conjoin with the initial conditions (from the current configuration) and simplify.
+1. Check that the conditions include substitutions for every variable on the left-hand side of the rule.
+1. Conjoin with the `ensures` clause.
+1. Instantiate the rule with the combined conditions.
+1. Calculate the _remainder_ from the (unification+requires) conditions of all applied rules.
+
 ### Function rules
 
 Function rules are instantiated by matching, as described above.
