@@ -9,6 +9,12 @@ The parser produces values of these types from the text of syntactically-valid K
 After parsing, the verifier (`Kore.ASTVerifier`) checks that the parsed values are well-formed
 and converts the external representations into internal representations.
 
+References:
+
+- `Kore.Syntax.Pattern`
+- `Kore.Syntax.Definition`
+- `Kore.ASTVerifier.DefinitionVerifier`
+
 ### `TermLike`
 
 `TermLike` is the basic internal representation of Kore (matching logic) patterns.
@@ -17,6 +23,10 @@ The representation includes matching logic formulas, user-defined symbols and al
 The name `TermLike` alludes to the fact that these are _usually_ matching logic _terms_
 (patterns that match at most one element).
 
+References:
+
+- `Kore.Internal.TermLike`
+
 #### `Cofree` and `Synthetic`
 
 `TermLike` is represented internally as a `Cofree` comonad (tree) over a base functor named `TermLikeF`.
@@ -24,6 +34,12 @@ The name `TermLike` alludes to the fact that these are _usually_ matching logic 
 The `Cofree` tree carries annotations at every node.
 These annotations are synthetic attributes of the pattern and carry data used for various purposes.
 The `Synthetic` typeclass ensures that the annotations are always kept updated, efficiently.
+
+References:
+
+- `Kore.Attribute.Synthetic`
+- `Kore.Attribute.Pattern`
+- `Control.Comonad.Trans.Cofree`
 
 #### `Builtin`
 
@@ -41,16 +57,28 @@ The `Int`, `Bool`, and `String` built-ins specialize ground terms in those domai
 The `List`, `Map`, and `Set` collections specialize _expressions_ in those domains
 both for performance and to facilitate unification and matching.
 
+References:
+
+- `Kore.Domain.Builtin`
+
 ### `Condition`
 
 A `Condition` represents the conditions or constraints along an execution path,
 made up of a `Predicate` and a `Substitution`.
+
+References:
+
+- `Kore.Internal.Condition`
 
 #### `Predicate`
 
 `Predicate` is the representation predicate logic formulas,
 essentially the subset of `TermLike` that can be built from `Ceil` and connectives.
 `Predicate`s are the only type of pattern that can be translated for the external solver.
+
+References:
+
+- `Kore.Internal.Predicate`
 
 #### `Substitution`
 
@@ -59,6 +87,10 @@ where `(x, t)` represents `\equals(x, t)`.
 `Substitution` can be viewed as a specialization of `Predicate` in that way,
 that is, a `Substitution` is the type of `Predicate` which can be applied as a substitution.
 
+References:
+
+- `Kore.Unification.Substitution`
+
 ### `Pattern`
 
 A `Pattern` is part of a program configuration:
@@ -66,15 +98,27 @@ some _term_ (`TermLike`) and the _condition_ on that term (`Condition`).
 It is unusual to operate on a term without the accompanying condition,
 so `Pattern` is somewhat more common than `TermLike` alone.
 
+References:
+
+- `Kore.Internal.Pattern`
+
 ### `Conditional`
 
 `Conditional` is a generalization of `Pattern`:
 an arbitrary type with `Condition`s.
 
+References:
+
+- `Kore.Internal.Conditional`
+
 ### `OrPattern`
 
 `OrPattern` is a disjunction of `Pattern`s (program configurations).
 This is the usual output of simplification.
+
+References:
+
+- `Kore.Internal.OrPattern`
 
 
 ## Behavior
@@ -108,6 +152,13 @@ C(a, b) ∧ (\ceil(a) ∧ \ceil(b) ∧ a = b) ∧ x = a    -- substitution norma
 
 Disjunction is handled by distribution.
 The substitution normalization step is discussed below.
+
+References:
+
+- `Kore.Step.Simplification.AndTerms`
+- `Kore.Builtin.List`
+- `Kore.Builtin.Map`
+- `Kore.Builtin.Set`
 
 ### Substitution normalization
 
@@ -145,23 +196,37 @@ because we have failed to produce a substitution which unifies the given pattern
 During predicate simplification, we are more flexible;
 it is entirely reasonable to generate conditions such as `x = x + y` in this context.
 
+References:
+
+- `Kore.Unification.SubstitutionNormalization`
+- `Kore.Step.Simplification.SubstitutionSimplifier`
+
 ### Matching
 
 An ad hoc subset of patterns can be matched, based on the usual needs of the frontend and semantics developers.
 Matching is implemented sequentially, so there is no separate substitution normalization step.
 
+References:
+
+- `Kore.Step.Axiom.Matcher`
+
 ### Semantic rules
 
-Semantic rules are instantiated by unification, as described above.
-The procedures to apply one-path and all-path reachability claims is described in other documents.
+Semantic rules are applied by the following procedure:
 
-1. Unify the left-hand side of the rule with the current configuration's term.
+1. Unify (as described above) the left-hand side of the rule with the current configuration's term.
 1. Conjoin the `requires` clause with the unification conditions and simplify.
 1. Conjoin with the initial conditions (from the current configuration) and simplify.
 1. Check that the conditions include substitutions for every variable on the left-hand side of the rule.
 1. Conjoin with the `ensures` clause.
 1. Instantiate the rule with the combined conditions.
 1. Calculate the _remainder_ from the (unification+requires) conditions of all applied rules.
+
+The procedures to apply one-path and all-path reachability claims is described in other documents.
+
+References:
+
+- `Kore.Step.Step`
 
 ### Function rules
 
@@ -171,6 +236,11 @@ Function evaluation _may_ split the configuration
 if multiple branches of a function's definition match the configuration;
 this point is planned to change.
 
+References:
+
+- `Kore.Step.Function.Evaluator`
+- `Kore.Step.Axiom.EvaluationStrategy`
+
 ### Simplification
 
 Patterns are simplified from the bottom up.
@@ -179,6 +249,11 @@ New conditions are accumulated as simplification moves up the syntax tree,
 requiring substitution normalization at the top.
 `TermLike` is simplified in a single pass, but this is planned to change.
 `Condition` is simplified in a loop where new substitutions are applied and the result is re-simplified.
+
+References:
+
+- `Kore.Step.Simplification.TermLike`
+- `Kore.Step.Simplification.Condition`
 
 ### Refuting predicates
 
@@ -200,3 +275,8 @@ The solver is initialized with all the symbols and sorts defined by the user
 and many axioms (such as constructor axioms).
 While proving, queries are sent to the solver incrementally,
 avoiding the overhead of restarting the solver for each query.
+
+References:
+
+- `Kore.Step.SMT.Translate`
+- `Kore.Step.SMT.Evaluator`
