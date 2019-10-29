@@ -20,11 +20,13 @@ import Kore.Logger.Output
     ( emptyLogger
     )
 import Kore.Predicate.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
+    , makeNotPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Rule
@@ -49,7 +51,7 @@ import Test.Tasty.HUnit.Ext
 class OnePathRuleBase base where
     rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
 
-newtype Pair variable = Pair (TermLike variable, Syntax.Predicate variable)
+newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
 instance OnePathRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
@@ -180,6 +182,25 @@ test_simplifyRule =
                 Pair (Mock.a, makeTruePredicate)
             )
 
+        assertEqual "" expected actual
+    , testCase "Predicate simplification removes trivial claim" $ do
+        let expected = []
+        actual <- runSimplifyRule
+            ( Pair
+                ( Mock.b
+                , makeAndPredicate
+                    (makeNotPredicate
+                        (makeEqualsPredicate x Mock.b)
+                    )
+                    (makeNotPredicate
+                        (makeNotPredicate
+                            (makeEqualsPredicate x Mock.b)
+                        )
+                    )
+                )
+              `rewritesTo`
+              Pair (Mock.a, makeTruePredicate)
+            )
         assertEqual "" expected actual
     ]
   where

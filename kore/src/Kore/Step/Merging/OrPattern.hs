@@ -19,8 +19,8 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.Pattern
-    ( Conditional
-    , Predicate
+    ( Condition
+    , Conditional
     )
 import Kore.Logger
     ( LogMessage
@@ -43,8 +43,8 @@ mergeWithPredicate
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
-    -- ^ Predicate to add.
+    => Condition variable
+    -- ^ Condition to add.
     -> OrPattern variable
     -- ^ Pattern to which the condition should be added.
     -> simplifier (OrPattern variable)
@@ -61,8 +61,8 @@ to re-simplify them.
 mergeWithPredicateAssumesEvaluated
     :: (SimplifierVariable variable, Monad m, TopBottom term)
     => PredicateMerger variable m
-    -> Predicate variable
-    -- ^ Predicate to add.
+    -> Condition variable
+    -- ^ Condition to add.
     -> MultiOr (Conditional variable term)
     -- ^ Pattern to which the condition should be added.
     -> m (MultiOr (Conditional variable term))

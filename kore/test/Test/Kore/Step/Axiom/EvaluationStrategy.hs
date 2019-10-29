@@ -5,12 +5,12 @@ import Test.Tasty
 import Data.Default
     ( def
     )
-import qualified Data.Map as Map
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute
     ( Concrete (Concrete)
     )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
     ( Conditional (Conditional)
@@ -18,7 +18,6 @@ import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Pattern as Pattern
     ( Conditional (..)
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( Predicate
@@ -33,9 +32,6 @@ import Kore.Step.Rule as RulePattern
 import Kore.Step.Rule
     ( EqualityRule (EqualityRule)
     , RulePattern (RulePattern)
-    )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-    ( create
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -545,7 +541,7 @@ test_builtinEvaluation =
 
 failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
+    BuiltinAndAxiomSimplifier $ \_ _ ->
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluatorWithRequires
@@ -599,10 +595,4 @@ evaluateWithPredicate
     -> IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifier Mock.env
-    $ simplifier
-        patternSimplifier
-        Map.empty
-        term
-        (Predicate.fromPredicate predicate)
-  where
-    patternSimplifier = Simplifier.create
+    $ simplifier term (Condition.fromPredicate predicate)

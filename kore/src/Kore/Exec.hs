@@ -85,6 +85,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.IndexedModule.Resolvers
     ( resolveInternalSymbol
     )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
@@ -93,7 +94,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
@@ -274,7 +274,7 @@ search verifiedModule strategy termLike searchPattern searchConfig =
         let
             solutions = concatMap MultiOr.extractPatterns solutionsLists
             orPredicate =
-                makeMultipleOrPredicate (Predicate.toPredicate <$> solutions)
+                makeMultipleOrPredicate (Condition.toPredicate <$> solutions)
         return (forceSort patternSort $ unwrapPredicate orPredicate)
   where
     patternSort = termLikeSort termLike
@@ -575,11 +575,13 @@ initializeProver definitionModule specModule within =
             specClaims =
                 map (Bifunctor.second fromMaybeChanged) changedSpecClaims
 
+        -- This assertion should come before simplifiying the claims,
+        -- since simplification should remove all trivial claims.
+        assertSomeClaims specClaims
         simplifiedSpecClaims <-
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        assertSomeClaims specAxioms
         let
             axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = fmap makeClaim specAxioms

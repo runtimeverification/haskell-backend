@@ -7,6 +7,9 @@ module Kore.Step.Rule.Simplify
     ( simplifyOnePathRuleLhs
     ) where
 
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -28,9 +31,6 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Predicate as Predicate
-    ( fromPredicate
-    )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
@@ -42,6 +42,9 @@ import Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     , applySubstitution
+    )
+import Kore.Step.Simplification.OrPattern
+    ( simplifyConditionsWithSmt
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplifyAndRemoveTopExists
@@ -69,20 +72,19 @@ simplifyRuleLhs
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
 simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
-    simplified <- Pattern.simplifyAndRemoveTopExists definedLhs
-    let rules = map (setRuleLeft rule) (MultiOr.extractPatterns simplified)
+    let lhsPredicate =
+            makeAndPredicate
+                requires
+                (makeCeilPredicate left)
+        definedLhs =
+            Conditional.withCondition left
+            $ Condition.fromPredicate lhsPredicate
+    simplifiedTerms <- Pattern.simplifyAndRemoveTopExists definedLhs
+    fullySimplified <- simplifyConditionsWithSmt lhsPredicate simplifiedTerms
+    let rules = map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
     return (MultiAnd.make rules)
   where
     RulePattern {left, requires} = rule
-
-    definedLhs =
-        Conditional.withCondition
-            left
-            $ Predicate.fromPredicate
-                ( makeAndPredicate
-                    requires
-                    (makeCeilPredicate left)
-                )
 
     setRuleLeft
         :: RulePattern variable
@@ -98,4 +100,3 @@ simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
                 { RulePattern.left = term
                 , RulePattern.requires = predicate
                 }
-

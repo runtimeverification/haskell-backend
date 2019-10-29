@@ -10,6 +10,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -21,12 +22,11 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.Substitution
     ( Substitution
@@ -133,21 +133,21 @@ equalsXA = fromPredicate equalsXA_
 equalsXB :: Pattern Variable
 equalsXB = fromPredicate equalsXB_
 
-equalsXA_ :: Syntax.Predicate Variable
-equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+equalsXA_ :: Predicate Variable
+equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 
-equalsXB_ :: Syntax.Predicate Variable
-equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
+equalsXB_ :: Predicate Variable
+equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
 notEqualsXA :: Pattern Variable
-notEqualsXA = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXA_
+notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
 
 neitherXAB :: Pattern Variable
 neitherXAB =
     fromPredicate
-    $ Syntax.Predicate.makeAndPredicate
-        (Syntax.Predicate.makeNotPredicate equalsXA_)
-        (Syntax.Predicate.makeNotPredicate equalsXB_)
+    $ Predicate.makeAndPredicate
+        (Predicate.makeNotPredicate equalsXA_)
+        (Predicate.makeNotPredicate equalsXB_)
 
 substXA :: Pattern Variable
 substXA = fromSubstitution $ Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
@@ -155,19 +155,19 @@ substXA = fromSubstitution $ Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
 forceTermSort :: Pattern Variable -> Pattern Variable
 forceTermSort = fmap (forceSort Mock.testSort)
 
-fromPredicate :: Syntax.Predicate Variable -> Pattern Variable
+fromPredicate :: Predicate Variable -> Pattern Variable
 fromPredicate =
     forceTermSort
-    . Pattern.fromPredicate
-    . Predicate.fromPredicate
+    . Pattern.fromCondition
+    . Condition.fromPredicate
 
 fromSubstitution
     :: Substitution Variable
     -> Pattern Variable
 fromSubstitution =
     forceTermSort
-    . Pattern.fromPredicate
-    . Predicate.fromSubstitution
+    . Pattern.fromCondition
+    . Condition.fromSubstitution
 
 simplifyEvaluated
     :: OrPattern Variable
