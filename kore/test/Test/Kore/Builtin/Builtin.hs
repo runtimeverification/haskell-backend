@@ -4,7 +4,7 @@ module Test.Kore.Builtin.Builtin
     , hpropUnparse
     , testMetadataTools
     , testEnv
-    , testSubstitutionSimplifier
+    , testConditionSimplifier
     , testTermLikeSimplifier
     , testEvaluators
     , testSymbolWithSolver
@@ -59,6 +59,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import Kore.Internal.Condition as Condition
+    ( top
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -67,9 +70,6 @@ import Kore.Internal.OrPattern
     )
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import Kore.Internal.Predicate as Predicate
-    ( top
     )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike
@@ -83,8 +83,8 @@ import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( RewriteRule
     )
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
@@ -173,10 +173,10 @@ indexedModule =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
-testSubstitutionSimplifier =
-    Simplifier.Predicate.create SubstitutionSimplifier.simplification
+testConditionSimplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.simplification
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -189,13 +189,13 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
-        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierCondition = testConditionSimplifier
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         }
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
-evaluate = runSimplifier testEnv . (`TermLike.simplify` Predicate.top)
+evaluate = runSimplifier testEnv . (`TermLike.simplify` Condition.top)
 
 evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
@@ -204,7 +204,7 @@ evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
-    . TermLike.simplifyToOr Predicate.top
+    . TermLike.simplifyToOr Condition.top
 
 runStep
     :: Pattern Variable

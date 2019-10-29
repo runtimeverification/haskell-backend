@@ -18,10 +18,10 @@ import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
-import qualified Kore.Internal.Pattern as Conditional
-import Kore.Internal.Predicate as Predicate
-    ( Predicate
+import Kore.Internal.Condition
+    ( Condition
     )
+import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.AndTerms
@@ -31,7 +31,7 @@ import qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
     )
 import Kore.Step.Simplification.Simplify
-    ( simplifyPredicate
+    ( simplifyCondition
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
@@ -51,7 +51,7 @@ unificationProcedure
         )
     => TermLike variable
     -> TermLike variable
-    -> unifier (Predicate variable)
+    -> unifier (Condition variable)
 unificationProcedure p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom
@@ -75,7 +75,7 @@ unificationProcedure p1 p2
     let (term, conditions) = Conditional.splitTerm pat
     orCeil <- Ceil.makeEvaluateTerm conditions term
     ceil' <- Monad.Unify.scatter orCeil
-    BranchT.alternate . simplifyPredicate
+    BranchT.alternate . simplifyCondition
         $ Conditional.andCondition ceil' conditions
   where
       p1Sort = termLikeSort p1

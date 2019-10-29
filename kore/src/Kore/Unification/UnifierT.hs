@@ -35,22 +35,22 @@ import Branch
     ( BranchT
     )
 import qualified Branch as BranchT
-import Kore.Internal.OrPredicate
-    ( OrPredicate
+import Kore.Internal.Condition
+    ( Condition
     )
-import qualified Kore.Internal.OrPredicate as OrPredicate
+import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Logger
     ( MonadLog (..)
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Profiler.Data
@@ -59,10 +59,10 @@ import Kore.Profiler.Data
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
-import qualified Kore.Step.Simplification.Predicate as PredicateSimplifier
+import qualified Kore.Step.Simplification.Condition as ConditionSimplifier
 import Kore.Step.Simplification.Simplify
-    ( MonadSimplify (..)
-    , PredicateSimplifier (..)
+    ( ConditionSimplifier (..)
+    , MonadSimplify (..)
     , SimplifierVariable
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
@@ -123,11 +123,11 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
                 )
     {-# INLINE localSimplifierAxioms #-}
 
-    simplifyPredicate = simplifyPredicate'
+    simplifyCondition = simplifyCondition'
       where
-        PredicateSimplifier simplifyPredicate' =
-            PredicateSimplifier.create substitutionSimplifier
-    {-# INLINE simplifyPredicate #-}
+        ConditionSimplifier simplifyCondition' =
+            ConditionSimplifier.create substitutionSimplifier
+    {-# INLINE simplifyCondition #-}
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -146,9 +146,9 @@ substitutionSimplifier =
         :: forall variable
         .  SubstitutionVariable variable
         => Substitution variable
-        -> unifier (OrPredicate variable)
+        -> unifier (OrCondition variable)
     worker substitution =
-        fmap OrPredicate.fromPredicates . gather $ do
+        fmap OrCondition.fromConditions . gather $ do
             deduplicated <-
                 deduplicateSubstitution
                     unificationMakeAnd
@@ -159,20 +159,20 @@ substitutionSimplifier =
         :: forall variable
         .  SubstitutionVariable variable
         => Map (UnifiedVariable variable) (TermLike variable)
-        -> unifier (Predicate variable)
+        -> unifier (Condition variable)
     normalizeSubstitution' =
         either throwSubstitutionError return . normalizeSubstitution
 
     normalize1
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  ( Syntax.Predicate variable
+        =>  ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
-        ->  unifier (Predicate variable)
+        ->  unifier (Condition variable)
     normalize1 (predicate, deduplicated) = do
         normalized <- normalizeSubstitution' deduplicated
-        return $ Predicate.fromPredicate predicate <> normalized
+        return $ Condition.fromPredicate predicate <> normalized
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
     throwSubstitutionError =
@@ -230,5 +230,5 @@ unificationMakeAnd =
     makeAnd termLike1 termLike2 condition = do
         unified <- termUnification termLike1 termLike2
         BranchT.alternate
-            $ Simplifier.simplifyPredicate
+            $ Simplifier.simplifyCondition
             $ Pattern.andCondition unified condition

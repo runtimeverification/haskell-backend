@@ -139,6 +139,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.Condition as Condition
+    ( topTODO
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -149,14 +152,11 @@ import Kore.Internal.Pattern as Pattern
     , top
     , withCondition
     )
-import Kore.Internal.Predicate as Predicate
-    ( topTODO
-    )
 import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeEqualsPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Proof.Value as Value
 import Kore.Sort
     ( predicateSort
@@ -994,12 +994,12 @@ unifyEqualsUnsolved
     -> unifier (Pattern variable)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
-    orPredicate <- Ceil.makeEvaluateTerm Predicate.topTODO unified
-    predicate <- Monad.Unify.scatter orPredicate
+    orCondition <- Ceil.makeEvaluateTerm Condition.topTODO unified
+    predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
-        {predicate = Syntax.Predicate.markSimplified $ makeEqualsPredicate a b}
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable

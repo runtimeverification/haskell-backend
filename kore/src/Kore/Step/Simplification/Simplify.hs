@@ -11,10 +11,10 @@ module Kore.Step.Simplification.Simplify
     , simplifyConditionalTerm
     , simplifyConditionalTermToOr
     , TermSimplifier
-    -- * Predicate simplifiers
-    , PredicateSimplifier (..)
-    , emptyPredicateSimplifier
-    , liftPredicateSimplifier
+    -- * Condition simplifiers
+    , ConditionSimplifier (..)
+    , emptyConditionSimplifier
+    , liftConditionSimplifier
     -- * Term simplifiers
     , TermLikeSimplifier
     , termLikeSimplifier
@@ -63,6 +63,7 @@ import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional
     )
@@ -73,10 +74,9 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
-    ( Pattern
-    , Predicate
+    ( Condition
+    , Pattern
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( SubstitutionVariable
     , Symbol
@@ -141,11 +141,11 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         Monad.Morph.hoist (localSimplifierTermLike locally)
     {-# INLINE localSimplifierTermLike #-}
 
-    simplifyPredicate
+    simplifyCondition
         :: SimplifierVariable variable
         => Conditional variable term
         -> BranchT m (Conditional variable term)
-    default simplifyPredicate
+    default simplifyCondition
         ::  ( SimplifierVariable variable
             , MonadTrans trans
             , MonadSimplify n
@@ -153,12 +153,12 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
             )
         =>  Conditional variable term
         ->  BranchT m (Conditional variable term)
-    simplifyPredicate conditional = do
+    simplifyCondition conditional = do
         results <-
             Monad.Trans.lift . Monad.Trans.lift
-            $ Branch.gather $ simplifyPredicate conditional
+            $ Branch.gather $ simplifyCondition conditional
         Branch.scatter results
-    {-# INLINE simplifyPredicate #-}
+    {-# INLINE simplifyCondition #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
     default askSimplifierAxioms
@@ -225,7 +225,7 @@ newtype TermLikeSimplifier =
     TermLikeSimplifier
         ( forall variable m
         . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
-        => Predicate variable
+        => Condition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
         )
@@ -248,7 +248,7 @@ simplifyTerm
         )
     => TermLike variable
     -> simplifier (OrPattern variable)
-simplifyTerm = simplifyConditionalTermToOr Predicate.top
+simplifyTerm = simplifyConditionalTermToOr Condition.top
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}
@@ -258,7 +258,7 @@ simplifyConditionalTermToOr
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
     -> simplifier (OrPattern variable)
 simplifyConditionalTermToOr predicate termLike = do
@@ -273,7 +273,7 @@ simplifyConditionalTerm
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
     -> BranchT simplifier (Pattern variable)
 simplifyConditionalTerm predicate termLike = do
@@ -289,7 +289,7 @@ simplification, but only attaches it unmodified to the final result.
 termLikeSimplifier
     ::  ( forall variable m
         . (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
-        => Predicate variable
+        => Condition variable
         -> TermLike variable
         -> m (OrPattern variable)
         )
@@ -300,7 +300,7 @@ termLikeSimplifier simplifier =
     termLikeSimplifierWorker
         :: forall variable m
         .  (GHC.HasCallStack, SimplifierVariable variable, MonadSimplify m)
-        => Predicate variable
+        => Condition variable
         -> TermLike variable
         -> BranchT m (Pattern variable)
     termLikeSimplifierWorker
@@ -312,28 +312,28 @@ termLikeSimplifier simplifier =
 
 -- * Predicate simplifiers
 
-{-| 'PredicateSimplifier' wraps a function that simplifies
+{-| 'ConditionSimplifier' wraps a function that simplifies
 'Predicate's. The minimal requirement from this function is
 that it applies the substitution on the predicate.
 -}
-newtype PredicateSimplifier monad =
-    PredicateSimplifier
-        { getPredicateSimplifier
+newtype ConditionSimplifier monad =
+    ConditionSimplifier
+        { getConditionSimplifier
             :: forall variable term
             .  SimplifierVariable variable
             => Conditional variable term
             -> BranchT monad (Conditional variable term)
         }
 
-emptyPredicateSimplifier :: Monad monad => PredicateSimplifier monad
-emptyPredicateSimplifier = PredicateSimplifier return
+emptyConditionSimplifier :: Monad monad => ConditionSimplifier monad
+emptyConditionSimplifier = ConditionSimplifier return
 
-liftPredicateSimplifier
+liftConditionSimplifier
     :: (Monad monad, MonadTrans trans, Monad (trans monad))
-    => PredicateSimplifier monad
-    -> PredicateSimplifier (trans monad)
-liftPredicateSimplifier (PredicateSimplifier simplifier) =
-    PredicateSimplifier $ \predicate -> do
+    => ConditionSimplifier monad
+    -> ConditionSimplifier (trans monad)
+liftConditionSimplifier (ConditionSimplifier simplifier) =
+    ConditionSimplifier $ \predicate -> do
         results <-
             Monad.Trans.lift . Monad.Trans.lift
             $ Branch.gather $ simplifier predicate
@@ -370,7 +370,7 @@ newtype BuiltinAndAxiomSimplifier =
             ::  forall variable simplifier
             .  (SimplifierVariable variable, MonadSimplify simplifier)
             => TermLike variable
-            -> Predicate variable
+            -> Condition variable
             -> simplifier (AttemptedAxiom variable)
         }
 
@@ -525,7 +525,7 @@ applicationAxiomSimplifier applicationSimplifier =
         :: forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
         => TermLike variable
-        -> Predicate variable
+        -> Condition variable
         -> simplifier (AttemptedAxiom variable)
     helper termLike _ =
         case Recursive.project termLike of

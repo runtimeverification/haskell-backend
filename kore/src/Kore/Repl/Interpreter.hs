@@ -127,13 +127,13 @@ import qualified Kore.Attribute.Axiom as Attribute
     )
 import qualified Kore.Attribute.Label as AttrLabel
 import Kore.Attribute.RuleIndex
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -1309,10 +1309,10 @@ parseEvalScript file = do
                     (PrintKoreOutput $ \_ -> return ())
 
 formatUnificationMessage
-    :: Either ReplOutput (NonEmpty (Predicate Variable))
+    :: Either ReplOutput (NonEmpty (Condition Variable))
     -> ReplOutput
-formatUnificationMessage docOrPredicate =
-    either id prettyUnifiers docOrPredicate
+formatUnificationMessage docOrCondition =
+    either id prettyUnifiers docOrCondition
   where
     prettyUnifiers =
         ReplOutput

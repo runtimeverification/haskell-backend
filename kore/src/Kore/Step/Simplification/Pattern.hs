@@ -28,8 +28,8 @@ import Kore.Logger
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
+    , simplifyCondition
     , simplifyConditionalTermToOr
-    , simplifyPredicate
     )
 
 simplifyAndRemoveTopExists
@@ -61,6 +61,6 @@ simplify pattern' = do
     orSimplifiedTerms <- simplifyConditionalTermToOr predicate term
     fmap OrPattern.fromPatterns . Branch.gather $ do
         simplifiedTerm <- Branch.scatter orSimplifiedTerms
-        simplifyPredicate $ Conditional.andCondition simplifiedTerm predicate
+        simplifyCondition $ Conditional.andCondition simplifiedTerm predicate
   where
     (term, predicate) = Conditional.splitTerm pattern'

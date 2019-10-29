@@ -20,22 +20,22 @@ import GHC.Stack
     )
 
 import Branch
+import Kore.Internal.Condition
+    ( Condition
+    , Conditional (..)
+    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Conditional (..)
-    , Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -65,13 +65,13 @@ normalize conditional@Conditional { term, predicate, substitution } = do
         Right normal -> scatter (applyTermPredicate <$> MultiOr.mergeAll normal)
         Left _ -> do
             let combined =
-                    Predicate.fromPredicate
-                    . Syntax.Predicate.markSimplified
-                    $ Syntax.Predicate.makeAndPredicate predicate
+                    Condition.fromPredicate
+                    . Predicate.markSimplified
+                    $ Predicate.makeAndPredicate predicate
                     -- TODO (thomas.tuegel): Promoting the entire substitution
                     -- to the predicate is a problem. We should only promote the
                     -- part which has cyclic dependencies.
-                    $ Syntax.Predicate.fromSubstitution substitution
+                    $ Predicate.fromSubstitution substitution
             return (Conditional.withCondition term combined)
   where
     applyTermPredicate =
@@ -88,7 +88,7 @@ normalizeExcept
     => Conditional variable term
     -> unifier (Conditional variable term)
 normalizeExcept conditional =
-    Branch.alternate (Simplifier.simplifyPredicate conditional)
+    Branch.alternate (Simplifier.simplifyCondition conditional)
 
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
@@ -104,12 +104,12 @@ mergePredicatesAndSubstitutions
         , HasCallStack
         , WithLog LogMessage simplifier
         )
-    => [Syntax.Predicate variable]
+    => [Predicate variable]
     -> [Substitution variable]
-    -> BranchT simplifier (Predicate variable)
+    -> BranchT simplifier (Condition variable)
 mergePredicatesAndSubstitutions predicates substitutions = do
-    simplifyPredicate Conditional
+    simplifyCondition Conditional
         { term = ()
-        , predicate = Syntax.Predicate.makeMultipleAndPredicate predicates
+        , predicate = Predicate.makeMultipleAndPredicate predicates
         , substitution = Foldable.fold substitutions
         }

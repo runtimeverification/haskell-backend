@@ -21,12 +21,12 @@ import Kore.Attribute.Simplification
     )
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
@@ -1242,7 +1242,7 @@ test_functionAnd =
             y = mkElemVar Mock.y
             expect =
                 Pattern.withCondition (f x)
-                $ Predicate.fromPredicate
+                $ Condition.fromPredicate
                 $ makeEqualsPredicate (f x) (f y)
         let Just actual = functionAnd (f x) (f y)
         assertEqual "" expect actual
@@ -1321,7 +1321,7 @@ simplifyEquals
     :: BuiltinAndAxiomSimplifierMap
     -> TermLike Variable
     -> TermLike Variable
-    -> IO (Maybe [Predicate Variable])
+    -> IO (Maybe [Condition Variable])
 simplifyEquals simplifierAxioms first second =
     (fmap . fmap) MultiOr.extractPatterns
     $ runSimplifier mockEnv

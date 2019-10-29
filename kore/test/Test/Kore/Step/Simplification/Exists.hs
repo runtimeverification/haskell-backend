@@ -7,12 +7,12 @@ import Test.Tasty
 
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
     ( makeAndPredicate
@@ -47,7 +47,7 @@ test_simplify =
         $ "discharge substitution"
     , [substForXWithCycleY]
         `simplifiesTo`
-        [Pattern.fromPredicate predicateCycleY]
+        [Pattern.fromCondition predicateCycleY]
         $ "discharge substitution with cycle"
     , [substToX]         `simplifiesTo` [top]
         $ "discharge reverse substitution"
@@ -98,12 +98,12 @@ test_simplify =
     f = Mock.f
     y = mkElemVar Mock.y
     predicateCycleY =
-        Internal.Predicate.fromPredicate
+        Condition.fromPredicate
         $ Predicate.makeAndPredicate
             (Predicate.makeCeilPredicate (f y))
             (Predicate.makeEqualsPredicate y (f y))
     substCycleY =
-        (Internal.Predicate.fromSubstitution . Substitution.wrap)
+        (Condition.fromSubstitution . Substitution.wrap)
             [(ElemVar Mock.y, f y)]
     substForXWithCycleY = substForX `Pattern.andCondition` substCycleY
 

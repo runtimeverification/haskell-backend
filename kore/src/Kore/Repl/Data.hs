@@ -75,7 +75,9 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
 
-import qualified Kore.Internal.Predicate as IPredicate
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -451,7 +453,7 @@ data Config claim m = Config
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation m (IPredicate.Predicate Variable)
+        -> UnifierWithExplanation m (Condition Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures

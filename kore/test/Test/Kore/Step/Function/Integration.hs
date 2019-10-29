@@ -43,12 +43,12 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
@@ -57,7 +57,7 @@ import Kore.Predicate.Predicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Axiom.EvaluationStrategy
@@ -79,7 +79,7 @@ import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     , rulePattern
     )
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -590,7 +590,7 @@ test_functionIntegration =
         -> IO (Pattern Variable)
     evaluate functionIdToEvaluator patt =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt Predicate.top
+        $ TermLike.simplify patt Condition.top
 
 test_Nat :: [TestTree]
 test_Nat =
@@ -653,7 +653,7 @@ equals comment term results =
 simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify =
     runSimplifier testEnv
-    . (TermLike.simplifyToOr Predicate.top)
+    . (TermLike.simplifyToOr Condition.top)
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -661,7 +661,7 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier patt Predicate.top
+    $ runBuiltinAndAxiomSimplifier simplifier patt Condition.top
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -1137,7 +1137,7 @@ axiomEvaluator left right =
 axiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Syntax.Predicate Variable
+    -> Predicate Variable
     -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
@@ -1173,7 +1173,7 @@ mockEvaluator
     :: Monad simplifier
     => AttemptedAxiom variable
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ = return evaluation
 
@@ -1248,10 +1248,10 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
-testSubstitutionSimplifier =
-    Simplifier.Predicate.create SubstitutionSimplifier.simplification
+testConditionSimplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.simplification
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -1264,7 +1264,7 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
-        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierCondition = testConditionSimplifier
         , simplifierAxioms =
             mconcat
                 [ testEvaluators

@@ -79,6 +79,10 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional
     , andCondition
@@ -89,10 +93,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -726,8 +726,8 @@ unifyEqualsNormalized
             secondNormalized
     let
         unifierNormalizedTerm :: TermNormalizedAc normalized variable
-        unifierPredicate :: Predicate variable
-        (unifierNormalizedTerm, unifierPredicate) =
+        unifierCondition :: Condition variable
+        (unifierNormalizedTerm, unifierCondition) =
             Conditional.splitTerm unifierNormalized
         normalizedTerm :: TermLike variable
         normalizedTerm = asInternal tools sort1 unifierNormalizedTerm
@@ -758,7 +758,7 @@ unifyEqualsNormalized
                 (unzip . Map.toList)
                     (Domain.concreteElements unwrapped)
 
-    return (unifierTerm `withCondition` unifierPredicate)
+    return (unifierTerm `withCondition` unifierCondition)
   where
     sort1 = termLikeSort first
 
@@ -829,13 +829,13 @@ unifyEqualsNormalizedAc
           | null allElements2 ->
             unifyOpaqueVariable' v2 allElements1 opaqueDifference1
         (_, _) -> empty
-    let (unifiedElements, unifierPredicate) =
+    let (unifiedElements, unifierCondition) =
             Conditional.splitTerm simpleUnifier
     Monad.Trans.lift $ do -- unifier monad
         -- unify the parts not sent to unifyEqualsNormalizedElements.
-        (commonElementsTerms, commonElementsPredicate) <-
+        (commonElementsTerms, commonElementsCondition) <-
             unifyElementList (Map.toList commonElements)
-        (commonVariablesTerms, commonVariablesPredicate) <-
+        (commonVariablesTerms, commonVariablesCondition) <-
             unifyElementList (Map.toList commonVariables)
 
         -- simplify results so that things like inj applications that
@@ -851,9 +851,9 @@ unifyEqualsNormalizedAc
             commonOpaque
             unifiedSimplified
             opaquesSimplified
-            [ unifierPredicate
-            , commonElementsPredicate
-            , commonVariablesPredicate
+            [ unifierCondition
+            , commonElementsCondition
+            , commonVariablesCondition
             ]
   where
     listToMap :: Ord a => [a] -> Map a Int
@@ -954,24 +954,24 @@ unifyEqualsNormalizedAc
             ]
         -> unifier
             ( [(key, Domain.Value normalized (TermLike variable))]
-            , Predicate variable
+            , Condition variable
             )
     unifyElementList elements = do
         result <- mapM (unifyCommonElements unifyEqualsChildren) elements
         let
             terms :: [(key, Domain.Value normalized (TermLike variable))]
-            predicates :: [Predicate variable]
+            predicates :: [Condition variable]
             (terms, predicates) = unzip (map Conditional.splitTerm result)
-            predicate :: Predicate variable
+            predicate :: Condition variable
             predicate = List.foldl'
                 andCondition
-                Predicate.top
+                Condition.top
                 predicates
 
         return (terms, predicate)
 
     simplify :: TermLike variable -> unifier (Pattern variable)
-    simplify term = alternate $ simplifyConditionalTerm Predicate.top term
+    simplify term = alternate $ simplifyConditionalTerm Condition.top term
 
     simplifyPair
         :: (TermLike variable, Domain.Value normalized (TermLike variable))
@@ -982,35 +982,35 @@ unifyEqualsNormalizedAc
             )
     simplifyPair (key, value) = do
         simplifiedKey <- simplifyTermLike key
-        let (keyTerm, keyPredicate) = Conditional.splitTerm simplifiedKey
+        let (keyTerm, keyCondition) = Conditional.splitTerm simplifiedKey
         simplifiedValue <- traverse simplifyTermLike value
         let
             splitSimplifiedValue
                 :: Domain.Value
                     normalized
-                    (TermLike variable, Predicate variable)
+                    (TermLike variable, Condition variable)
             splitSimplifiedValue =
                 fmap Conditional.splitTerm simplifiedValue
             simplifiedValueTerm :: Domain.Value normalized (TermLike variable)
             simplifiedValueTerm = fmap fst splitSimplifiedValue
-            simplifiedValuePredicates
-                :: Domain.Value normalized (Predicate variable)
-            simplifiedValuePredicates = fmap snd splitSimplifiedValue
-            simplifiedValuePredicate :: Predicate variable
-            simplifiedValuePredicate =
+            simplifiedValueConditions
+                :: Domain.Value normalized (Condition variable)
+            simplifiedValueConditions = fmap snd splitSimplifiedValue
+            simplifiedValueCondition :: Condition variable
+            simplifiedValueCondition =
                 foldr
                     andCondition
-                    Predicate.top
-                    simplifiedValuePredicates
+                    Condition.top
+                    simplifiedValueConditions
         return
             ((keyTerm, simplifiedValueTerm)
-            `withCondition` keyPredicate
-            `andCondition` simplifiedValuePredicate
+            `withCondition` keyCondition
+            `andCondition` simplifiedValueCondition
             )
       where
         simplifyTermLike :: TermLike variable -> unifier (Pattern variable)
         simplifyTermLike term =
-            alternate $ simplifyConditionalTerm Predicate.top term
+            alternate $ simplifyConditionalTerm Condition.top term
 
 buildResultFromUnifiers
     :: forall normalized unifier variable
@@ -1027,7 +1027,7 @@ buildResultFromUnifiers
             (TermLike variable, Domain.Value normalized (TermLike variable))
         ]
     -> [Pattern variable]
-    -> [Predicate variable]
+    -> [Condition variable]
     -> unifier (Conditional variable (TermNormalizedAc normalized variable))
 buildResultFromUnifiers
     bottomWithExplanation
@@ -1044,13 +1044,13 @@ buildResultFromUnifiers
                     , Domain.Value normalized (TermLike variable)
                     )
                 ]
-        almostResultPredicates :: [Predicate variable]
-        (almostResultTerms, almostResultPredicates) =
+        almostResultConditions :: [Condition variable]
+        (almostResultTerms, almostResultConditions) =
             unzip (map Conditional.splitTerm unifiedElementsSimplified)
         (withVariableTerms, concreteTerms) =
             splitVariableConcrete almostResultTerms
 
-        (opaquesTerms, opaquesPredicates) =
+        (opaquesTerms, opaquesConditions) =
             unzip (map Conditional.splitTerm opaquesSimplified)
         opaquesNormalized :: NormalizedOrBottom normalized variable
         opaquesNormalized = Foldable.foldMap toNormalized opaquesTerms
@@ -1088,8 +1088,8 @@ buildResultFromUnifiers
         -- Merge all unification predicates.
         predicate = List.foldl'
             andCondition
-            Predicate.top
-            (almostResultPredicates ++ opaquesPredicates ++ predicates)
+            Condition.top
+            (almostResultConditions ++ opaquesConditions ++ predicates)
         result
             :: Conditional variable
                 (normalized (TermLike Concrete) (TermLike variable))
@@ -1139,9 +1139,9 @@ unifyCommonElements
   = do
     valuesUnifier <- unifyWrappedValues unifier firstValue secondValue
     let
-        (valuesTerm, valuePredicate) = Conditional.splitTerm valuesUnifier
+        (valuesTerm, valueCondition) = Conditional.splitTerm valuesUnifier
 
-    return ((key, valuesTerm) `withCondition` valuePredicate)
+    return ((key, valuesTerm) `withCondition` valueCondition)
 
 unifyWrappedValues
     :: forall normalized unifier variable
@@ -1160,17 +1160,17 @@ unifyWrappedValues unifier firstValue secondValue = do
     unifiedValues <- traverse (uncurry unifier) aligned
     let
         splitValues
-            :: Domain.Value normalized (TermLike variable, Predicate variable)
+            :: Domain.Value normalized (TermLike variable, Condition variable)
         splitValues = fmap Pattern.splitTerm unifiedValues
         valueUnifierTerm :: Domain.Value normalized (TermLike variable)
         valueUnifierTerm = fmap fst splitValues
-        valuePredicates :: Domain.Value normalized (Predicate variable)
-        valuePredicates = fmap snd splitValues
-        valueUnifierPredicate :: Predicate variable
-        valueUnifierPredicate =
-            foldr Conditional.andCondition Predicate.top valuePredicates
+        valueConditions :: Domain.Value normalized (Condition variable)
+        valueConditions = fmap snd splitValues
+        valueUnifierCondition :: Condition variable
+        valueUnifierCondition =
+            foldr Conditional.andCondition Condition.top valueConditions
 
-    return (valueUnifierTerm `withCondition` valueUnifierPredicate)
+    return (valueUnifierTerm `withCondition` valueUnifierCondition)
 
 {- | Unifies two ac structures given their representation as a list of
 @ConcreteOrWithVariable@, with the first structure being allowed an additional
@@ -1296,9 +1296,9 @@ unifyEqualsElementLists
               | TermLike.isFunctionPattern remainderTerm -> do
                 opaqueUnifier <- unifyEqualsChildren opaque remainderTerm
                 let
-                    (opaqueTerm, opaquePredicate) =
+                    (opaqueTerm, opaqueCondition) =
                         Pattern.splitTerm opaqueUnifier
-                    result = unifier `andCondition` opaquePredicate
+                    result = unifier `andCondition` opaqueCondition
 
                 return (result, [opaqueTerm])
             _ -> (error . unlines)
@@ -1457,16 +1457,16 @@ unifyEqualsPair
 
     let
         valueUnifierTerm :: Domain.Value normalized (TermLike variable)
-        valueUnifierPredicate :: Predicate variable
-        (valueUnifierTerm, valueUnifierPredicate) =
+        valueUnifierCondition :: Condition variable
+        (valueUnifierTerm, valueUnifierCondition) =
             Conditional.splitTerm valueUnifier
 
-    let (keyUnifierTerm, keyUnifierPredicate) = Pattern.splitTerm keyUnifier
+    let (keyUnifierTerm, keyUnifierCondition) = Pattern.splitTerm keyUnifier
 
     return
         ((keyUnifierTerm, valueUnifierTerm)
-            `withCondition` keyUnifierPredicate
-            `andCondition` valueUnifierPredicate
+            `withCondition` keyUnifierCondition
+            `andCondition` valueUnifierCondition
         )
 
 
@@ -1501,7 +1501,7 @@ unifyEqualsElementPermutations unifier firsts seconds = do
                 kPermutationsBacktracking unifier firsts seconds
             return (u, r, [])
     let (terms, predicates) = unzip (map Conditional.splitTerm unifiers)
-        predicate = foldr andCondition Predicate.top predicates
+        predicate = foldr andCondition Condition.top predicates
     return (terms `withCondition` predicate, remainderFirst, remainderSecond)
 
 {- |Given two lists generates k-permutation pairings and merges them using the

@@ -33,19 +33,22 @@ import Branch
     ( BranchT
     )
 import qualified Branch
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.OrPredicate
-    ( OrPredicate
+import Kore.Internal.OrCondition
+    ( OrCondition
     )
-import qualified Kore.Internal.OrPredicate as OrPredicate
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( And (..)
     , pattern And_
@@ -54,10 +57,10 @@ import Kore.Internal.TermLike
     , mkAnd
     , mkVar
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
@@ -83,7 +86,7 @@ newtype SubstitutionSimplifier simplifier =
             :: forall variable
             .  SubstitutionVariable variable
             => Substitution variable
-            -> simplifier (OrPredicate variable)
+            -> simplifier (OrCondition variable)
         }
 
 {- | A 'SubstitutionSimplifier' to use during simplification.
@@ -105,7 +108,7 @@ simplification =
         :: forall variable
         .  SubstitutionVariable variable
         => Substitution variable
-        -> simplifier (OrPredicate variable)
+        -> simplifier (OrCondition variable)
     simplifySubstitution substitution = do
         deduplicated <-
             -- TODO (thomas.tuegel): If substitution de-duplication fails with a
@@ -114,7 +117,7 @@ simplification =
             -- rare enough to discount for now.
             deduplicateSubstitution makeAnd' substitution
             & Branch.gather
-        OrPredicate.fromPredicates
+        OrCondition.fromConditions
             <$> traverse (normalize1 . promoteUnsimplified) deduplicated
 
     isAnd (And_ _ _ _) = True
@@ -123,19 +126,19 @@ simplification =
     promoteUnsimplified (predicate, substitutions) =
         let (unsimplified, simplified) = Map.partition isAnd substitutions
             predicate' =
-                Syntax.Predicate.makeMultipleAndPredicate
+                Predicate.makeMultipleAndPredicate
                 . (:) predicate
                 . map mkUnsimplified
                 $ Map.toList unsimplified
             mkUnsimplified (mkVar -> variable, termLike) =
-                Syntax.Predicate.makeEqualsPredicate variable termLike
+                Predicate.makeEqualsPredicate variable termLike
         in (predicate', simplified)
 
     normalize1 (predicate, substitutions) = do
         let normalized =
-                maybe Predicate.bottom Predicate.fromNormalization
+                maybe Condition.bottom Condition.fromNormalization
                 $ normalize substitutions
-        return $ Predicate.fromPredicate predicate <> normalized
+        return $ Condition.fromPredicate predicate <> normalized
 
 -- | Interface for constructing a simplified 'And' pattern.
 newtype MakeAnd monad =
@@ -145,7 +148,7 @@ newtype MakeAnd monad =
             .  SubstitutionVariable variable
             => TermLike variable
             -> TermLike variable
-            -> Predicate.Predicate variable
+            -> Condition variable
             -> monad (Pattern variable)
             -- ^ Construct a simplified 'And' pattern of two 'TermLike's under
             -- the given 'Predicate.Predicate'.
@@ -200,18 +203,18 @@ deduplicateSubstitution
     =>  MakeAnd monad
     ->  Substitution variable
     ->  monad
-            ( Syntax.Predicate variable
+            ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution makeAnd' =
-    worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate . Substitution.toMultiMap
   where
     simplifyAnds' = simplifyAnds makeAnd'
     worker
-        ::  Syntax.Predicate variable
+        ::  Predicate variable
         ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
         ->  monad
-                ( Syntax.Predicate variable
+                ( Predicate variable
                 , Map (UnifiedVariable variable) (TermLike variable)
                 )
     worker predicate substitutions
@@ -224,7 +227,7 @@ deduplicateSubstitution makeAnd' =
             substitutions' = toMultiMap $ Conditional.term simplified
             -- New conditions produced by simplification.
             Conditional { predicate = predicate' } = simplified
-            predicate'' = Syntax.Predicate.makeAndPredicate predicate predicate'
+            predicate'' = Predicate.makeAndPredicate predicate predicate'
             -- New substitutions produced by simplification.
             Conditional { substitution } = simplified
             substitutions'' =

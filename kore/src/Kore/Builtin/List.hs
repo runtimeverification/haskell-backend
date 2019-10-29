@@ -88,6 +88,20 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+    ( pattern App_
+    , Builtin
+    , pattern Builtin_
+    , Concrete
+    , InternalVariable
+    , Sort
+    , TermLike
+    , pattern Var_
+    , mkBuiltin
+    , mkSort
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
 import Kore.Step.Simplification.SimplificationType
     ( SimplificationType
     )
@@ -327,11 +341,11 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    propagatePredicates
+    propagateConditions
         :: Traversable t
         => t (Conditional variable a)
         -> Conditional variable (t a)
-    propagatePredicates = sequenceA
+    propagateConditions = sequenceA
 
     unifyEquals0
         :: TermLike variable
@@ -383,8 +397,10 @@ unifyEquals
         Reflection.give tools $ do
             unified <- sequence $ Seq.zipWith simplifyChild list1 list2
             let
-                propagatedUnified = propagatePredicates unified
-                result = asInternal tools builtinListSort <$> propagatedUnified
+                propagatedUnified = propagateConditions unified
+                result =
+                    (TermLike.markSimplified . asInternal tools builtinListSort)
+                    <$> propagatedUnified
             return result
       where
         Domain.InternalList { builtinListSort } = builtin1
@@ -410,7 +426,8 @@ unifyEquals
                     builtin1 { Domain.builtinListChild = prefix1 }
                     builtin2
             suffixUnified <- simplifyChild frame2 listSuffix1
-            let result = mkBuiltin internal1 <$ prefixUnified <* suffixUnified
+            let result = TermLike.markSimplified (mkBuiltin internal1)
+                    <$ prefixUnified <* suffixUnified
             return result
       where
         internal1 = Domain.BuiltinList builtin1
