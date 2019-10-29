@@ -575,11 +575,13 @@ initializeProver definitionModule specModule within =
             specClaims =
                 map (Bifunctor.second fromMaybeChanged) changedSpecClaims
 
+        -- This assertion should come before simplifiying the claims,
+        -- since simplification should remove all trivial claims.
+        assertSomeClaims specClaims
         simplifiedSpecClaims <-
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        assertSomeClaims specAxioms
         let
             axioms = Goal.OnePathRewriteRule <$> rewriteRules
             claims = fmap makeClaim specAxioms

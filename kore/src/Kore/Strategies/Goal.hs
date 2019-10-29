@@ -48,6 +48,7 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.Debug
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
@@ -686,9 +687,9 @@ makeRuleFromPatterns
     -> Pattern variable
     -> rule
 makeRuleFromPatterns configuration destination =
-    let (left, Conditional.toPredicate -> requires) =
+    let (left, Condition.toPredicate -> requires) =
             Pattern.splitTerm configuration
-        (right, Conditional.toPredicate -> ensures) =
+        (right, Condition.toPredicate -> ensures) =
             Pattern.splitTerm destination
     in coerce RulePattern
         { left
@@ -723,7 +724,8 @@ removalPredicate destination config =
             $ Set.difference destinationVariables configVariables
         extraElementVariables = [v | ElemVar v <- extraVariables]
         extraNonElemVariables = filter (not . isElemVar) extraVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraElementVariables
+        quantifyPredicate =
+            Predicate.makeMultipleExists extraElementVariables
     in
         if not (null extraNonElemVariables)
         then error

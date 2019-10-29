@@ -815,6 +815,33 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "Equals-in simplification" $ do
+        let gt = SetVariable $ Variable (testId "gt") mempty Mock.stringSort
+            g = SetVariable $ Variable (testId "g") mempty Mock.testSort1
+        actual <- evaluate
+            Conditional
+                { term = mkNu gt
+                    (mkEquals_
+                        (mkIn_
+                            mkTop_
+                            (mkNu g (mkOr Mock.aSort1 (mkSetVar g)))
+                        )
+                        mkTop_
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "And-list simplification" $ do
+        actual <- evaluate
+            Conditional
+                { term = mkAnd
+                    (Mock.elementList Mock.plain00)
+                    (Mock.elementList Mock.functional00)
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
     ]
 
 

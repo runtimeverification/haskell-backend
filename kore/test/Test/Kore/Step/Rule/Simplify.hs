@@ -10,8 +10,10 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
+    , makeNotPredicate
     , makeTruePredicate
     )
 import Kore.Internal.Predicate
@@ -180,6 +182,25 @@ test_simplifyRule =
                 Pair (Mock.a, makeTruePredicate)
             )
 
+        assertEqual "" expected actual
+    , testCase "Predicate simplification removes trivial claim" $ do
+        let expected = []
+        actual <- runSimplifyRule
+            ( Pair
+                ( Mock.b
+                , makeAndPredicate
+                    (makeNotPredicate
+                        (makeEqualsPredicate x Mock.b)
+                    )
+                    (makeNotPredicate
+                        (makeNotPredicate
+                            (makeEqualsPredicate x Mock.b)
+                        )
+                    )
+                )
+              `rewritesTo`
+              Pair (Mock.a, makeTruePredicate)
+            )
         assertEqual "" expected actual
     ]
   where

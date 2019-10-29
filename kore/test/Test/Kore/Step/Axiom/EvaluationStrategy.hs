@@ -5,7 +5,6 @@ import Test.Tasty
 import Data.Default
     ( def
     )
-import qualified Data.Map as Map
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute
@@ -33,9 +32,6 @@ import Kore.Step.Rule as RulePattern
 import Kore.Step.Rule
     ( EqualityRule (EqualityRule)
     , RulePattern (RulePattern)
-    )
-import qualified Kore.Step.Simplification.Simplifier as Simplifier
-    ( create
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -545,7 +541,7 @@ test_builtinEvaluation =
 
 failingEvaluator :: BuiltinAndAxiomSimplifier
 failingEvaluator =
-    BuiltinAndAxiomSimplifier $ \_ _ _ _ ->
+    BuiltinAndAxiomSimplifier $ \_ _ ->
         return AttemptedAxiom.NotApplicable
 
 axiomEvaluatorWithRequires
@@ -599,10 +595,4 @@ evaluateWithPredicate
     -> IO CommonAttemptedAxiom
 evaluateWithPredicate (BuiltinAndAxiomSimplifier simplifier) term predicate =
     runSimplifier Mock.env
-    $ simplifier
-        patternSimplifier
-        Map.empty
-        term
-        (Condition.fromPredicate predicate)
-  where
-    patternSimplifier = Simplifier.create
+    $ simplifier term (Condition.fromPredicate predicate)

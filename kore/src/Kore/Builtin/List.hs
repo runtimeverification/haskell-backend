@@ -88,6 +88,20 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+    ( pattern App_
+    , Builtin
+    , pattern Builtin_
+    , Concrete
+    , InternalVariable
+    , Sort
+    , TermLike
+    , pattern Var_
+    , mkBuiltin
+    , mkSort
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
 import Kore.Step.Simplification.SimplificationType
     ( SimplificationType
     )
@@ -203,7 +217,7 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ resultSort =
+    evalElement0 resultSort =
         \case
             [elem'] -> returnList resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
@@ -214,11 +228,10 @@ evalGet =
   where
     evalGet0
         :: (InternalVariable variable, MonadSimplify simplifier)
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> simplifier (AttemptedAxiom variable)
-    evalGet0 _ _ = \arguments ->
+    evalGet0 _ = \arguments ->
         Builtin.getAttemptedAxiom
         (do
             let (_list, _ix) =
@@ -250,7 +263,7 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 _ resultSort =
+    evalUnit0 resultSort =
         \case
             [] -> returnList resultSort Seq.empty
             _ -> Builtin.wrongArity "LIST.unit"
@@ -261,11 +274,10 @@ evalConcat =
   where
     evalConcat0
         :: (InternalVariable variable, MonadSimplify simplifier)
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> simplifier (AttemptedAxiom variable)
-    evalConcat0 _ resultSort = \arguments ->
+    evalConcat0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_list1, _list2) =
                     case arguments of
@@ -386,7 +398,9 @@ unifyEquals
             unified <- sequence $ Seq.zipWith simplifyChild list1 list2
             let
                 propagatedUnified = propagateConditions unified
-                result = asInternal tools builtinListSort <$> propagatedUnified
+                result =
+                    (TermLike.markSimplified . asInternal tools builtinListSort)
+                    <$> propagatedUnified
             return result
       where
         Domain.InternalList { builtinListSort } = builtin1
@@ -412,7 +426,8 @@ unifyEquals
                     builtin1 { Domain.builtinListChild = prefix1 }
                     builtin2
             suffixUnified <- simplifyChild frame2 listSuffix1
-            let result = mkBuiltin internal1 <$ prefixUnified <* suffixUnified
+            let result = TermLike.markSimplified (mkBuiltin internal1)
+                    <$ prefixUnified <* suffixUnified
             return result
       where
         internal1 = Domain.BuiltinList builtin1

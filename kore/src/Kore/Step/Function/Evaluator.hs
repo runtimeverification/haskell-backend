@@ -12,9 +12,14 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
+import Control.Applicative
+    ( empty
+    )
 import Control.Error
     ( ExceptT
+    , MaybeT (..)
     , exceptT
+    , maybeT
     , throwE
     )
 import Control.Exception
@@ -24,9 +29,6 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Map as Map
-import Data.Maybe
-    ( fromMaybe
-    )
 
 import qualified Branch as BranchT
 import Kore.Attribute.Hook
@@ -102,7 +104,6 @@ evaluateApplication
     (evaluateSortInjection -> application)
   = finishT $ do
     Foldable.for_ canMemoize recallOrPattern
-    simplifier <- Simplifier.askSimplifierTermLike
     axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
     let
         unevaluatedSimplifier
@@ -120,16 +121,14 @@ evaluateApplication
             pure unevaluated
           | otherwise = return unevaluated
 
-        maybeEvaluatedSimplifier =
-            maybeEvaluatePattern
-                simplifier
-                axiomIdToEvaluator
-                childrenCondition
-                termLike
-                unevaluated
-                configurationCondition
-
-    results <- maybeEvaluatedSimplifier & maybe unevaluatedSimplifier Trans.lift
+    results <-
+        maybeEvaluatePattern
+            childrenCondition
+            termLike
+            unevaluated
+            configurationCondition
+        & maybeT unevaluatedSimplifier return
+        & Trans.lift
     Foldable.for_ canMemoize (recordOrPattern results)
     return results
   where
@@ -194,11 +193,7 @@ evaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Condition variable
+    => Condition variable
     -- ^ The predicate from the configuration
     -> Condition variable
     -- ^ Aggregated children predicate and substitution.
@@ -208,23 +203,17 @@ evaluatePattern
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
-    simplifier
-    axiomIdToEvaluator
     configurationCondition
     childrenCondition
     patt
     defaultValue
   =
-    fromMaybe
-        (return defaultValue)
-        (maybeEvaluatePattern
-            simplifier
-            axiomIdToEvaluator
-            childrenCondition
-            patt
-            defaultValue
-            configurationCondition
-        )
+    maybeEvaluatePattern
+        childrenCondition
+        patt
+        defaultValue
+        configurationCondition
+    & maybeT (return defaultValue) return
 
 {-| Evaluates axioms on patterns.
 
@@ -236,34 +225,31 @@ maybeEvaluatePattern
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => TermLikeSimplifier
-    -- ^ Evaluates functions.
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
-    -> Condition variable
+    => Condition variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
     -> Condition variable
-    -> Maybe (simplifier (OrPattern variable))
+    -> MaybeT simplifier (OrPattern variable)
 maybeEvaluatePattern
-    simplifier
-    axiomIdToEvaluator
     childrenCondition
     patt
     defaultValue
     configurationCondition
-  =
+  = do
+    simplifierMap <- Trans.lift askSimplifierAxioms
+    let maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
+        maybeEvaluator = do
+            identifier' <- identifier
+            Map.lookup identifier' simplifierMap
     case maybeEvaluator of
-        Nothing -> Nothing
+        Nothing -> empty
         Just (BuiltinAndAxiomSimplifier evaluator) ->
-            Just . tracing $ do
+            Trans.lift . tracing $ do
                 result <- Profile.axiomEvaluation identifier $
                     evaluator
-                        simplifier
-                        axiomIdToEvaluator
                         patt
                         ( configurationCondition
                         `Conditional.andCondition` childrenCondition
@@ -306,11 +292,6 @@ maybeEvaluatePattern
   where
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.matchAxiomIdentifier patt
-
-    maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
-    maybeEvaluator = do
-        identifier' <- identifier
-        Map.lookup identifier' axiomIdToEvaluator
 
     tracing =
         traceNonErrorMonad

@@ -238,7 +238,7 @@ evalLookup =
     Builtin.functionEvaluator evalLookup0
   where
     evalLookup0 :: Builtin.FunctionImplementation
-    evalLookup0 _ _ arguments =
+    evalLookup0 _ arguments =
         Builtin.getAttemptedAxiom $ do
             let (_map, _key) =
                     case arguments of
@@ -264,7 +264,7 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ resultSort arguments =
+    evalElement0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_key, _value) =
                     case arguments of
@@ -292,11 +292,10 @@ evalConcat =
     evalConcat0
         :: forall variable m
         .  (MonadSimplify m, InternalVariable variable)
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    evalConcat0 _ resultSort arguments = Builtin.getAttemptedAxiom $ do
+    evalConcat0 resultSort arguments = Builtin.getAttemptedAxiom $ do
         let (_map1, _map2) =
                 case arguments of
                     [_map1, _map2] -> (_map1, _map2)
@@ -313,7 +312,7 @@ evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 _ resultSort =
+    evalUnit0 resultSort =
         \case
             [] -> returnConcreteMap resultSort Map.empty
             _ -> Builtin.wrongArity Map.unitKey
@@ -322,7 +321,7 @@ evalUpdate :: Builtin.Function
 evalUpdate =
     Builtin.functionEvaluator evalUpdate0
   where
-    evalUpdate0 _ resultSort = \arguments ->
+    evalUpdate0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_map, _key, value) =
                     case arguments of
@@ -338,7 +337,7 @@ evalInKeys :: Builtin.Function
 evalInKeys =
     Builtin.functionEvaluator evalInKeys0
   where
-    evalInKeys0 _ resultSort = \arguments ->
+    evalInKeys0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_key, _map) =
                     case arguments of
@@ -354,7 +353,7 @@ evalKeys :: Builtin.Function
 evalKeys =
     Builtin.functionEvaluator evalKeys0
   where
-    evalKeys0 _ resultSort = \arguments ->
+    evalKeys0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let _map =
                     case arguments of
@@ -370,7 +369,7 @@ evalRemove =
     Builtin.functionEvaluator evalRemove0
   where
     evalRemove0 :: Builtin.FunctionImplementation
-    evalRemove0 _ resultSort arguments =
+    evalRemove0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_map, _key) =
                     case arguments of
@@ -392,7 +391,7 @@ evalRemoveAll =
     Builtin.functionEvaluator evalRemoveAll0
   where
     evalRemoveAll0 :: Builtin.FunctionImplementation
-    evalRemoveAll0 _ resultSort arguments =
+    evalRemoveAll0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_map, _set) =
                     case arguments of
@@ -418,7 +417,7 @@ evalSize =
     Builtin.functionEvaluator evalSize0
   where
     evalSize0 :: Builtin.FunctionImplementation
-    evalSize0 _ resultSort arguments =
+    evalSize0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _map =
                     case arguments of
@@ -435,7 +434,7 @@ evalValues :: Builtin.Function
 evalValues =
     Builtin.functionEvaluator evalValues0
   where
-    evalValues0 _ resultSort = \arguments ->
+    evalValues0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let _map =
                     case arguments of

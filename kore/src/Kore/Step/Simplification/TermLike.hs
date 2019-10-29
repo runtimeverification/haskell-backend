@@ -31,9 +31,6 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( isPredicate
-    )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
@@ -117,6 +114,9 @@ import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
 import qualified Kore.Substitute as Substitute
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
 import Kore.Unparser
     ( unparse
     )
@@ -292,7 +292,7 @@ simplifyInternal term predicate =
                 -- Top or Bottom.
                 hasPredicateTerm Conditional { term = term' }
                   | isTop term' || isBottom term' = False
-                  | otherwise                     = isPredicate term'
+                  | otherwise                     = Predicate.isPredicate term'
                 unsimplified =
                     filter hasPredicateTerm $ OrPattern.toPatterns results
             if null unsimplified

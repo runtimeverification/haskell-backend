@@ -68,10 +68,8 @@ import Kore.Internal.MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    )
-import Kore.Internal.Predicate
     ( Predicate
+    , makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding

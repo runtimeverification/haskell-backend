@@ -3,17 +3,17 @@ module Kore.Step.Simplification.Ceil
     , makeEvaluateTerm
     ) where
 
-import Kore.Internal.OrPattern
-    ( OrPattern
+import Kore.Internal.Condition
+    ( Condition
     )
 import Kore.Internal.OrCondition
     ( OrCondition
     )
+import Kore.Internal.OrPattern
+    ( OrPattern
+    )
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import Kore.Internal.Condition
-    ( Condition
     )
 import Kore.Internal.TermLike
     ( TermLike
