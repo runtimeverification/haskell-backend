@@ -337,6 +337,7 @@ makeEvaluateNormalizedAc
             BuiltinBool_ _   -> return key
             BuiltinInt_ _    -> return key
             BuiltinString_ _ -> return key
+            StringLiteral_ _ -> return key
             DV_ _ _          -> return key
             _ ->
                 (error . show . Pretty.vsep)
