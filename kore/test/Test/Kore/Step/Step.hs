@@ -954,13 +954,13 @@ test_applyRewriteRulesParallel =
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
-                                (makeNotPredicate
+                                (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkElemVar Mock.x)
                                         Mock.a
                                 )
-                                (makeNotPredicate
+                                (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate definedBranches
                                     $ Predicate.makeEqualsPredicate
                                         (mkElemVar Mock.x)
@@ -1140,7 +1140,7 @@ test_applyRewriteRulesSequence =
                     [ initial
                         { predicate =
                             Predicate.makeAndPredicate
-                                (makeNotPredicate
+                                (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
                                         definedBranches
                                         (Predicate.makeEqualsPredicate
@@ -1148,7 +1148,7 @@ test_applyRewriteRulesSequence =
                                             Mock.a
                                         )
                                 )
-                                (makeNotPredicate
+                                (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
                                         definedBranches
                                         (Predicate.makeEqualsPredicate

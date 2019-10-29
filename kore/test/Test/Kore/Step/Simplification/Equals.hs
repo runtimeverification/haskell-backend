@@ -418,7 +418,7 @@ test_equalsSimplification_Pattern =
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = mempty
                     }
-        assertEqual "" actual expect
+        assertEqual "" expect actual
     ]
 
 test_equalsSimplification_TermLike :: [TestTree]
