@@ -37,7 +37,12 @@ import Kore.Attribute.Simplification
     ( Simplification (..)
     )
 import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
 import Kore.IndexedModule.IndexedModule
+import Kore.Internal.Symbol
+    ( isFunction
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( definitionEvaluation
@@ -169,7 +174,7 @@ axiom; this is determined by checking the 'Attribute.Axiom' attributes.
 
  -}
 ignoreEqualityRule :: EqualityRule Variable -> Bool
-ignoreEqualityRule (EqualityRule RulePattern { attributes })
+ignoreEqualityRule (EqualityRule RulePattern { left, attributes })
     | isAssoc = True
     | isComm = True
     -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
@@ -177,7 +182,10 @@ ignoreEqualityRule (EqualityRule RulePattern { attributes })
     | isUnit = True
     | isIdem = True
     | Just _ <- getOverload = True
-    | otherwise = False
+    | otherwise =
+        case left of
+            App_ symbol _ -> isFunction symbol
+            _ -> True
   where
     Assoc { isAssoc } = Attribute.assoc attributes
     Comm { isComm } = Attribute.comm attributes
