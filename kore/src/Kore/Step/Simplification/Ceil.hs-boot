@@ -3,17 +3,17 @@ module Kore.Step.Simplification.Ceil
     , makeEvaluateTerm
     ) where
 
+import Kore.Internal.Condition
+    ( Condition
+    )
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import Kore.Internal.Predicate
-    ( Predicate
     )
 import Kore.Internal.TermLike
     ( TermLike
@@ -32,7 +32,7 @@ makeEvaluate
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => Condition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
 
@@ -42,6 +42,6 @@ makeEvaluateTerm
         , MonadSimplify simplifier
         , WithLog LogMessage simplifier
         )
-    => Predicate variable
+    => Condition variable
     -> TermLike variable
-    -> simplifier (OrPredicate variable)
+    -> simplifier (OrCondition variable)

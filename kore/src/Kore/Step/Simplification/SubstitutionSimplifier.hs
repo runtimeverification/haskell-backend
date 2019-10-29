@@ -20,21 +20,21 @@ import Data.Map.Strict
     ( Map
     )
 
-import Kore.Internal.OrPredicate
-    ( OrPredicate
+import Kore.Internal.Condition
+    ( Condition
     )
-import qualified Kore.Internal.OrPredicate as OrPredicate
-import Kore.Internal.Predicate
-    ( Predicate
+import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.OrCondition
+    ( OrCondition
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.TermLike
     ( TermLike
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     )
@@ -63,7 +63,7 @@ newtype SubstitutionSimplifier simplifier =
             :: forall variable
             .  SubstitutionVariable variable
             => Substitution variable
-            -> simplifier (OrPredicate variable)
+            -> simplifier (OrCondition variable)
         }
 
 {- | A 'SubstitutionSimplifier' to use during simplification.
@@ -85,24 +85,24 @@ simplification =
             -- rare enough to discount for now.
             Unifier.deduplicateSubstitution substitution
             & Unifier.maybeUnifierT
-        OrPredicate.fromPredicates <$> traverse normalize1 deduplicated
+        OrCondition.fromConditions <$> traverse normalize1 deduplicated
       where
         maybeUnwrapSubstitution =
             let unwrapped =
-                    OrPredicate.fromPredicate
-                    . Predicate.fromPredicate
-                    . Syntax.Predicate.markSimplified
+                    OrCondition.fromCondition
+                    . Condition.fromPredicate
+                    . Predicate.markSimplified
                     -- TODO (thomas.tuegel): Promoting the entire substitution
                     -- to the predicate is a problem. We should only promote the
                     -- part which has cyclic dependencies.
-                    $ Syntax.Predicate.fromSubstitution substitution
+                    $ Predicate.fromSubstitution substitution
             in maybeT (return unwrapped) return
 
     normalize1 (predicate, substitutions) = do
         let normalized =
-                maybe Predicate.bottom Predicate.fromNormalization
+                maybe Condition.bottom Condition.fromNormalization
                 $ normalize substitutions
-        return $ Predicate.fromPredicate predicate <> normalized
+        return $ Condition.fromPredicate predicate <> normalized
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -121,9 +121,9 @@ unification =
         :: forall variable
         .  SubstitutionVariable variable
         => Substitution variable
-        -> unifier (OrPredicate variable)
+        -> unifier (OrCondition variable)
     worker substitution =
-        fmap OrPredicate.fromPredicates . Unifier.gather $ do
+        fmap OrCondition.fromConditions . Unifier.gather $ do
             deduplicated <- Unifier.deduplicateSubstitution substitution
             normalize1 deduplicated
 
@@ -131,17 +131,17 @@ unification =
         :: forall variable
         .  SubstitutionVariable variable
         => Map (UnifiedVariable variable) (TermLike variable)
-        -> unifier (Predicate variable)
+        -> unifier (Condition variable)
     normalizeSubstitution' =
         either Unifier.throwSubstitutionError return . normalizeSubstitution
 
     normalize1
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  ( Syntax.Predicate variable
+        =>  ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
-        ->  unifier (Predicate variable)
+        ->  unifier (Condition variable)
     normalize1 (predicate, deduplicated) = do
         normalized <- normalizeSubstitution' deduplicated
-        return $ Predicate.fromPredicate predicate <> normalized
+        return $ Condition.fromPredicate predicate <> normalized

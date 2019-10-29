@@ -16,6 +16,7 @@ import Branch
     ( BranchT
     )
 import qualified Branch as Branch
+import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
     , mergeAll
@@ -29,7 +30,6 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Profiler.Profile as Profile
     ( simplificationBranching
@@ -57,7 +57,7 @@ then merging everything into an Pattern.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify predicate application = do
@@ -85,7 +85,7 @@ simplify predicate application = do
 
 makeAndEvaluateApplications
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
@@ -94,7 +94,7 @@ makeAndEvaluateApplications =
 
 makeAndEvaluateSymbolApplications
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
@@ -108,17 +108,17 @@ makeAndEvaluateSymbolApplications predicate symbol children = do
 
 evaluateApplicationFunction
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -- ^ The predicate from the configuration
     -> ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplicationFunction
-    configurationPredicate
+    configurationCondition
     Conditional { term, predicate, substitution }
   =
     evaluateApplication
-        configurationPredicate
+        configurationCondition
         Conditional { term = (), predicate, substitution }
         term
 

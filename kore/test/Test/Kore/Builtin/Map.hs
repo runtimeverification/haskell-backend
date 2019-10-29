@@ -1234,9 +1234,9 @@ mkIntVar variableName =
         Variable
             { variableName, variableCounter = mempty, variableSort = intSort }
 
-mockSubstitutionSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
-mockSubstitutionSimplifier = PredicateSimplifier return
+mockConditionSimplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+mockConditionSimplifier = ConditionSimplifier return
 
 asVariableName :: ElementVariable Variable -> Id
 asVariableName = variableName . getElementVariable

@@ -8,8 +8,8 @@ import Test.Tasty
 
 import qualified GHC.Stack as GHC
 
-import qualified Kore.Internal.OrPredicate as OrPredicate
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -190,8 +190,8 @@ test_SubstitutionSimplifier =
                 let SubstitutionSimplifier { simplifySubstitution } =
                         SubstitutionSimplifier.simplification
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
-                let expect = Predicate.fromNormalization <$> results
-                assertEqual "" expect (OrPredicate.toPredicates actual)
+                let expect = Condition.fromNormalization <$> results
+                assertEqual "" expect (OrCondition.toConditions actual)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
                         SubstitutionSimplifier.unification
@@ -201,13 +201,13 @@ test_SubstitutionSimplifier =
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
-                        Right $ Predicate.fromNormalization normalization
+                        Right $ Condition.fromNormalization normalization
                       | otherwise =
                         Left
                         $ SubstitutionError
                         $ SimplifiableCycle (fst <$> denormalized)
                     expect = (: []) <$> traverse expect1 results
-                assertEqual "" expect (map OrPredicate.toPredicates <$> actual)
+                assertEqual "" expect (map OrCondition.toConditions <$> actual)
             ]
 
 x, y, z, xs, ys :: UnifiedVariable Variable

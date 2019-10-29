@@ -139,6 +139,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.Condition as Condition
+    ( topTODO
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -149,14 +152,11 @@ import Kore.Internal.Pattern as Pattern
     , top
     , withCondition
     )
-import Kore.Internal.Predicate as Predicate
-    ( topTODO
-    )
 import Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( makeEqualsPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Proof.Value as Value
 import Kore.Sort
     ( predicateSort
@@ -171,10 +171,8 @@ import Kore.Step.Simplification.Simplify
     ( AttemptedAxiom (..)
     , AttemptedAxiomResults (AttemptedAxiomResults)
     , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
-    , BuiltinAndAxiomSimplifierMap
     , MonadSimplify
     , SimplifierVariable
-    , TermLikeSimplifier
     , applicationAxiomSimplifier
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
@@ -307,7 +305,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure NotApplicable
+    notImplemented0 _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 
@@ -667,11 +665,10 @@ unaryOperator
     unaryOperator0
         :: InternalVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    unaryOperator0 _ resultSort children =
+    unaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
                 -- Apply the operator to a domain value
@@ -716,11 +713,10 @@ binaryOperator
     binaryOperator0
         :: SimplifierVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    binaryOperator0 _ resultSort children =
+    binaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
@@ -765,11 +761,10 @@ ternaryOperator
     ternaryOperator0
         :: SimplifierVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    ternaryOperator0 _ resultSort children =
+    ternaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
                 -- Apply the operator to three domain values
@@ -779,13 +774,12 @@ ternaryOperator
             _ -> wrongArity (Text.unpack ctx)
 
 type FunctionImplementation
-    = forall variable m
+    = forall variable simplifier
         .  SimplifierVariable variable
-        => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => MonadSimplify simplifier
+        => Sort
         -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
@@ -794,15 +788,12 @@ functionEvaluator impl =
     evaluator
         :: SimplifierVariable variable
         => MonadSimplify simplifier
-        => TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> CofreeF
+        => CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator simplifier _axiomIdToSimplifier (valid :< app) =
-        impl simplifier resultSort applicationChildren
+    evaluator (valid :< app) = impl resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
@@ -1003,12 +994,12 @@ unifyEqualsUnsolved
     -> unifier (Pattern variable)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
-    orPredicate <- Ceil.makeEvaluateTerm Predicate.topTODO unified
-    predicate <- Monad.Unify.scatter orPredicate
+    orCondition <- Ceil.makeEvaluateTerm Condition.topTODO unified
+    predicate <- Monad.Unify.scatter orCondition
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
-        {predicate = Syntax.Predicate.markSimplified $ makeEqualsPredicate a b}
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable

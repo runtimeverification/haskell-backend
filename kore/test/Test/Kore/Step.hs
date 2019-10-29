@@ -19,6 +19,10 @@ import Kore.IndexedModule.MetadataTools
     ( MetadataTools (..)
     , SmtMetadataTools
     )
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional as Conditional
     ( Conditional (Conditional)
     )
@@ -26,10 +30,6 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
     ( Symbol (Symbol, symbolConstructor)
     , constructor
@@ -47,7 +47,7 @@ import Kore.Predicate.Predicate
     ( makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Sort
@@ -374,7 +374,7 @@ smtTerm :: TermLike Variable -> TermLike Variable
 smtTerm term = Mock.functionalConstr10 term
 
 smtSyntaxPredicate
-    :: TermLike Variable -> PredicateState -> Syntax.Predicate Variable
+    :: TermLike Variable -> PredicateState -> Predicate Variable
 smtSyntaxPredicate term predicateState =
     makeEqualsPredicate
         (Mock.lessInt
@@ -383,13 +383,13 @@ smtSyntaxPredicate term predicateState =
         )
         (Mock.builtinBool (predicateStateToBool predicateState))
 
-smtPredicate :: TermLike Variable -> PredicateState -> Predicate Variable
-smtPredicate term predicateState =
-    Predicate.fromPredicate (smtSyntaxPredicate term predicateState)
+smtCondition :: TermLike Variable -> PredicateState -> Condition Variable
+smtCondition term predicateState =
+    Condition.fromPredicate (smtSyntaxPredicate term predicateState)
 
 smtPattern :: TermLike Variable -> PredicateState -> Pattern Variable
 smtPattern term predicateState =
-    smtTerm term `Pattern.withCondition` smtPredicate term predicateState
+    smtTerm term `Pattern.withCondition` smtCondition term predicateState
 
 
 test_SMT :: [TestTree]
@@ -424,7 +424,7 @@ test_SMT =
             ]
         assertEqual ""
             [ Mock.a
-                `Pattern.withCondition` smtPredicate Mock.b PredicatePositive
+                `Pattern.withCondition` smtCondition Mock.b PredicatePositive
             ]
             [ _actual1 ]
     , testCase "Remainder with SMT pruning" $ do
