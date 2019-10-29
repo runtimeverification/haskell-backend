@@ -39,9 +39,10 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Step.Rule as RulePattern
-    ( OnePathRule
-    , RulePattern (..)
+    ( RulePattern (..)
     )
+import Kore.Step.Rule.Expand
+import Kore.Step.Rule.Simplify
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
 import Kore.Step.Transition
@@ -58,7 +59,7 @@ import Numeric.Natural
     ( Natural
     )
 
-type CommonProofState = ProofState (OnePathRule Variable) (Pattern Variable)
+type CommonProofState  = ProofState.ProofState (Pattern Variable)
 
 {- | Class type for claim-like rules
 -}
@@ -70,6 +71,9 @@ type Claim claim =
     , Unparse claim
     , Unparse (Rule claim)
     , Goal claim
+    , ClaimExtractor claim
+    , ExpandSingleConstructors claim
+    , SimplifyRuleLHS claim
     , Prim claim ~ ProofState.Prim (Rule claim)
     , ProofState claim claim ~ ProofState.ProofState claim
     )
@@ -129,7 +133,8 @@ verifyClaim
                 stepLimit
                 strategy'
     executionGraph <-
-        runStrategy (modifiedTransitionRule destination) limitedStrategy startPattern
+        runStrategy
+            (modifiedTransitionRule destination) limitedStrategy startPattern
     -- Throw the first unproven configuration as an error.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
