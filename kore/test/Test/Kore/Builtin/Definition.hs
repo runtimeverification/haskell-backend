@@ -617,6 +617,11 @@ keccakSymbol =
     builtinSymbol "keccak256Krypto" stringSort [stringSort]
     & hook "KRYPTO.keccak256"
 
+sha256Symbol :: Internal.Symbol
+sha256Symbol =
+    builtinSymbol "sha256Krypto" stringSort [stringSort]
+    & hook "KRYPTO.sha256"
+
 -- -------------------------------------------------------------
 -- * Sorts
 
@@ -1294,6 +1299,7 @@ kryptoModule =
             , importParsedModule listModuleName
             , hookedSymbolDecl ecdsaRecoverSymbol
             , hookedSymbolDecl keccakSymbol
+            , hookedSymbolDecl sha256Symbol
             ]
         }
 

@@ -17,8 +17,10 @@ builtin modules.
 module Kore.Builtin.Krypto
     ( symbolVerifiers
     , builtinFunctions
-    , keccakKey
     , signatureToKey
+    -- * Constants
+    , keccakKey
+    , sha256Key
     ) where
 
 
@@ -32,7 +34,9 @@ import GHC.Stack
 import Crypto.Hash
     ( Digest
     , Keccak_256
+    , SHA256 (..)
     , hash
+    , hashWith
     )
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.ECC.Types
@@ -64,11 +68,10 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
 
-keccakKey, ecsdaRecover :: IsString s => s
-
+keccakKey, ecsdaRecover, sha256Key :: IsString s => s
 keccakKey = "KRYPTO.keccak256"
-
 ecsdaRecover = "KRYPTO.ecdsaRecover"
+sha256Key = "KRYPTO.sha256"
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -90,6 +93,9 @@ symbolVerifiers =
             , String.assertSort
             ]
       )
+    , ( sha256Key
+      , Builtin.verifySymbol String.assertSort [String.assertSort]
+      )
     ]
 
 {- | Implement builtin function evaluation.
@@ -99,6 +105,7 @@ builtinFunctions =
     Map.fromList
         [ (keccakKey, evalKeccak)
         , (ecsdaRecover, evalECDSARecover)
+        , (sha256Key, evalSha256)
         ]
 
 evalKeccak :: Builtin.Function
@@ -123,6 +130,24 @@ evalKeccak =
                     $ Text.unpack str
                 result = fromString (show digest)
             Builtin.appliedFunction $ String.asPattern resultSort result
+
+evalSha256 :: Builtin.Function
+evalSha256 =
+    Builtin.functionEvaluator evalSha256Worker
+  where
+    evalSha256Worker :: Builtin.FunctionImplementation
+    evalSha256Worker resultSort [_bytes] =
+        Builtin.getAttemptedAxiom $ do
+            _bytes <- String.expectBuiltinString sha256Key _bytes
+            let
+                digest =
+                    hashWith SHA256
+                    $ ByteString.pack
+                    $ map (fromIntegral . ord)
+                    $ Text.unpack _bytes
+                result = fromString (show digest)
+            Builtin.appliedFunction $ String.asPattern resultSort result
+    evalSha256Worker _ _ = Builtin.wrongArity ecsdaRecover
 
 evalECDSARecover :: Builtin.Function
 evalECDSARecover =
