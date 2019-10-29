@@ -184,7 +184,7 @@ ignoreEqualityRule (EqualityRule RulePattern { left, attributes })
     | Just _ <- getOverload = True
     | otherwise =
         case left of
-            App_ symbol _ -> isFunction symbol
+            App_ symbol _ -> not (isFunction symbol)
             _ -> True
   where
     Assoc { isAssoc } = Attribute.assoc attributes
