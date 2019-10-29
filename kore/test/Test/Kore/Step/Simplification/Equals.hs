@@ -253,9 +253,18 @@ test_equalsSimplification_Or_Pattern =
                         , predicate =
                             makeMultipleAndPredicate
                                 [ makeNotPredicate definedF
+                                , (makeNotPredicate (makeCeilPredicate Mock.cg))
                                 , makeNotPredicate definedH
-                                , Simplification.Not.makePredicateNot
-                                    definedGWithSubstitution
+                                ]
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeNotPredicate definedF
+                                , makeNotPredicate definedH
+                                , (makeNotPredicate (makeEqualsPredicate (mkElemVar Mock.x) Mock.a))
                                 ]
                         , substitution = mempty
                         }
@@ -267,6 +276,10 @@ test_equalsSimplification_Or_Pattern =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cg)
                         (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+                negatedDefinedGWithSubstitutionSimplified =
+                    makeOrPredicate
+                        (makeNotPredicate (makeCeilPredicate Mock.cg))
+                        (makeNotPredicate (makeEqualsPredicate (mkElemVar Mock.x) Mock.a))
                 definedH = makeCeilPredicate Mock.ch
             first =
                 OrPattern.fromPatterns
@@ -422,7 +435,7 @@ test_equalsSimplification_Pattern =
                     , predicate = makeEqualsPredicate gOfA gOfB
                     , substitution = mempty
                     }
-        assertEqual "" expect actual
+        assertEqual "" actual expect
     ]
 
 test_equalsSimplification_TermLike :: [TestTree]

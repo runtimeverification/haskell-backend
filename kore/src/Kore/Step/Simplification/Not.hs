@@ -25,14 +25,16 @@ import Kore.Internal.MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
-    ( MultiOr
+    ( MultiOr(..)
     )
 import Kore.Internal.OrPattern
     ( OrPattern
+    , toPatterns
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.OrPredicate
     ( OrPredicate
+    , toPredicates
     )
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
@@ -121,14 +123,18 @@ makeEvaluateNot
     => Not sort (Pattern variable)
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
-    OrPattern.fromPatterns
-        [ Pattern.fromTermLike $ TermLike.markSimplified $ makeTermNot term
-        , Pattern.fromPredicateSorted
-            (termLikeSort term)
+    OrPattern.fromPatterns $ concat
+        [ (Pattern.fromTermLike . TermLike.markSimplified) <$>
+            children (makeTermNot term)
+        , toPatterns $ fmap (Pattern.fromPredicateSorted (termLikeSort term))
             (makeEvaluatePredicate predicate)
         ]
   where
     (term, predicate) = Conditional.splitTerm notChild
+
+children :: TermLike variable -> [TermLike variable]
+children (Or_ _ p1 p2) = children p1 ++ children p2
+children p = [p]
 
 {- | Given a not's @Internal.Predicate@ argument, simplifies the @not@.
 
@@ -143,29 +149,32 @@ a @not@ on top of that.
 makeEvaluatePredicate
     :: InternalVariable variable
     => Predicate variable
-    -> Predicate variable
+    -> OrPredicate variable
 makeEvaluatePredicate
     Conditional
         { term = ()
         , predicate
         , substitution
         }
-  = Conditional
-        { term = ()
-        , predicate =
-            Syntax.Predicate.markSimplified
-            $ makePredicateNot
-            $ makeAndPredicate predicate
-            $ Syntax.Predicate.fromSubstitution substitution
-        , substitution = mempty
-        }
+  = MultiOr $ fmap Conditional.fromPredicate predicates
+  where
+    predicates = Syntax.Predicate.markSimplified <$> 
+        (childrenPredicate
+        . makePredicateNot
+        . makeAndPredicate predicate
+        . Syntax.Predicate.fromSubstitution) substitution
+
+    childrenPredicate
+        :: Syntax.Predicate.Predicate variable
+        -> [Syntax.Predicate.Predicate variable]
+    childrenPredicate = traverse children
 
 makeEvaluateNotPredicate
     :: InternalVariable variable
     => Not sort (Predicate variable)
     -> OrPredicate variable
 makeEvaluateNotPredicate Not { notChild = predicate } =
-    OrPredicate.fromPredicates [ makeEvaluatePredicate predicate ]
+    makeEvaluatePredicate predicate
 
 makeTermNot
     :: InternalVariable variable

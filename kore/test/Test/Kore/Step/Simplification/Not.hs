@@ -52,10 +52,10 @@ test_simplifyEvaluated =
     , [substXA] `becomes_` [notEqualsXA]
     , [equalsXA, equalsXB] `becomes_` [neitherXAB]
     , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
-    , [termXAndY] `becomes_` [termNotXOrNotY]
-    , [termNotXAndY] `becomes_` [termXOrNotY]
+    , [termXAndY] `becomes_` [termNotX, termNotY]
+    , [termNotXAndY] `becomes_` [termX, termNotY]
     , [notEqualsXA] `becomes_` [equalsXA]
-    , [notEqualsXAAndEqualsXB] `becomes_` [equalsXAOrNotEqualsXB]
+    , [notEqualsXAAndEqualsXB] `becomes_` [equalsXA, notEqualsXB]
     ]
   where
     becomes_
@@ -161,6 +161,9 @@ equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
 notEqualsXA :: Pattern Variable
 notEqualsXA = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXA_
+
+notEqualsXB :: Pattern Variable
+notEqualsXB = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXB_
 
 neitherXAB :: Pattern Variable
 neitherXAB =
