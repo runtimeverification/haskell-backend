@@ -10,7 +10,6 @@ Portability : portable
 module Kore.Step.Simplification.Not
     ( makeEvaluate
     , makeEvaluatePredicate
-    , makePredicateNot
     , simplify
     , simplifyEvaluated
     , simplifyEvaluatedPredicate
@@ -25,16 +24,14 @@ import Kore.Internal.MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
-    ( MultiOr(..)
+    ( MultiOr (..)
     )
 import Kore.Internal.OrPattern
     ( OrPattern
-    , toPatterns
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.OrPredicate
     ( OrPredicate
-    , toPredicates
     )
 import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
@@ -46,6 +43,7 @@ import qualified Kore.Internal.TermLike as TermLike
     )
 import Kore.Predicate.Predicate
     ( makeAndPredicate
+    , makeNotPredicate
     )
 import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.And as And
@@ -126,8 +124,9 @@ makeEvaluateNot Not { notChild } =
     OrPattern.fromPatterns $ concat
         [ (Pattern.fromTermLike . TermLike.markSimplified) <$>
             children (makeTermNot term)
-        , toPatterns $ fmap (Pattern.fromPredicateSorted (termLikeSort term))
-            (makeEvaluatePredicate predicate)
+        , [Pattern.fromPredicateSorted
+            (termLikeSort term)
+            (makeEvaluatePredicate predicate)]
         ]
   where
     (term, predicate) = Conditional.splitTerm notChild
@@ -149,32 +148,29 @@ a @not@ on top of that.
 makeEvaluatePredicate
     :: InternalVariable variable
     => Predicate variable
-    -> OrPredicate variable
+    -> Predicate variable
 makeEvaluatePredicate
     Conditional
         { term = ()
         , predicate
         , substitution
         }
-  = MultiOr $ fmap Conditional.fromPredicate predicates
-  where
-    predicates = Syntax.Predicate.markSimplified <$> 
-        (childrenPredicate
-        . makePredicateNot
-        . makeAndPredicate predicate
-        . Syntax.Predicate.fromSubstitution) substitution
-
-    childrenPredicate
-        :: Syntax.Predicate.Predicate variable
-        -> [Syntax.Predicate.Predicate variable]
-    childrenPredicate = traverse children
+  = Conditional
+        { term = ()
+        , predicate =
+            Syntax.Predicate.markSimplified
+            $ makeNotPredicate
+            $ makeAndPredicate predicate
+            $ Syntax.Predicate.fromSubstitution substitution
+        , substitution = mempty
+        }
 
 makeEvaluateNotPredicate
     :: InternalVariable variable
     => Not sort (Predicate variable)
     -> OrPredicate variable
 makeEvaluateNotPredicate Not { notChild = predicate } =
-    makeEvaluatePredicate predicate
+    OrPredicate.fromPredicates [ makeEvaluatePredicate predicate ]
 
 makeTermNot
     :: InternalVariable variable
@@ -190,17 +186,6 @@ makeTermNot term
   | isBottom term = mkTop_
   | isTop term    = mkBottom_
   | otherwise     = mkNot term
-
-makePredicateNot
-    :: InternalVariable variable
-    => Syntax.Predicate.Predicate variable
-    -> Syntax.Predicate.Predicate variable
-makePredicateNot Syntax.Predicate.PredicateFalse =
-    Syntax.Predicate.makeTruePredicate
-makePredicateNot Syntax.Predicate.PredicateTrue =
-    Syntax.Predicate.makeFalsePredicate
-makePredicateNot genericPredicate =
-    fmap makeTermNot genericPredicate
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}

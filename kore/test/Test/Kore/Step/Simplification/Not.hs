@@ -54,8 +54,6 @@ test_simplifyEvaluated =
     , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
     , [termXAndY] `becomes_` [termNotX, termNotY]
     , [termNotXAndY] `becomes_` [termX, termNotY]
-    , [notEqualsXA] `becomes_` [equalsXA]
-    , [notEqualsXAAndEqualsXB] `becomes_` [equalsXA, notEqualsXB]
     ]
   where
     becomes_
@@ -110,14 +108,8 @@ termY = Pattern.fromTermLike (mkElemVar Mock.y)
 termXAndY :: Pattern Variable
 termXAndY = mkAnd <$> termX <*> termY
 
-termNotXOrNotY :: Pattern Variable
-termNotXOrNotY = mkOr <$> termNotX <*> termNotY
-
 termNotXAndY :: Pattern Variable
 termNotXAndY = mkAnd <$> termNotX <*> termY
-
-termXOrNotY :: Pattern Variable
-termXOrNotY = mkOr <$> termX <*> termNotY
 
 termNotX :: Pattern Variable
 termNotX = mkNot <$> termX
@@ -141,18 +133,6 @@ equalsXA = fromPredicate equalsXA_
 equalsXB :: Pattern Variable
 equalsXB = fromPredicate equalsXB_
 
-notEqualsXAAndEqualsXB :: Pattern Variable
-notEqualsXAAndEqualsXB = fromPredicate $
-    Syntax.Predicate.makeAndPredicate
-        (Syntax.Predicate.makeNotPredicate equalsXA_)
-        equalsXB_
-
-equalsXAOrNotEqualsXB :: Pattern Variable
-equalsXAOrNotEqualsXB = fromPredicate $
-    Syntax.Predicate.makeOrPredicate
-        equalsXA_
-        (Syntax.Predicate.makeNotPredicate equalsXB_)
-
 equalsXA_ :: Syntax.Predicate Variable
 equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 
@@ -161,9 +141,6 @@ equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
 notEqualsXA :: Pattern Variable
 notEqualsXA = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXA_
-
-notEqualsXB :: Pattern Variable
-notEqualsXB = fromPredicate $ Syntax.Predicate.makeNotPredicate equalsXB_
 
 neitherXAB :: Pattern Variable
 neitherXAB =

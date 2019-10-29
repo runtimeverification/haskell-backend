@@ -43,9 +43,6 @@ import Kore.Step.Simplification.Equals
     , makeEvaluateTermsToPredicate
     , simplify
     )
-import qualified Kore.Step.Simplification.Not as Simplification.Not
-    ( makePredicateNot
-    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
@@ -252,19 +249,9 @@ test_equalsSimplification_Or_Pattern =
                         { term = mkTop_
                         , predicate =
                             makeMultipleAndPredicate
-                                [ makeNotPredicate definedF
-                                , (makeNotPredicate (makeCeilPredicate Mock.cg))
+                                [ makeNotPredicate definedGWithSubstitution
+                                , makeNotPredicate definedF
                                 , makeNotPredicate definedH
-                                ]
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeMultipleAndPredicate
-                                [ makeNotPredicate definedF
-                                , makeNotPredicate definedH
-                                , (makeNotPredicate (makeEqualsPredicate (mkElemVar Mock.x) Mock.a))
                                 ]
                         , substitution = mempty
                         }
@@ -276,10 +263,6 @@ test_equalsSimplification_Or_Pattern =
                     makeAndPredicate
                         (makeCeilPredicate Mock.cg)
                         (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
-                negatedDefinedGWithSubstitutionSimplified =
-                    makeOrPredicate
-                        (makeNotPredicate (makeCeilPredicate Mock.cg))
-                        (makeNotPredicate (makeEqualsPredicate (mkElemVar Mock.x) Mock.a))
                 definedH = makeCeilPredicate Mock.ch
             first =
                 OrPattern.fromPatterns
@@ -407,13 +390,13 @@ test_equalsSimplification_Pattern =
                                     (makeEqualsPredicate hOfA hOfB)
                                 )
                                 (makeAndPredicate
-                                    (Simplification.Not.makePredicateNot
+                                    (makeNotPredicate
                                         (makeAndPredicate
                                             (makeCeilPredicate hOfA)
                                             (makeEqualsPredicate fOfA fOfB)
                                         )
                                     )
-                                    (Simplification.Not.makePredicateNot
+                                    (makeNotPredicate
                                         (makeAndPredicate
                                             (makeCeilPredicate hOfB)
                                             (makeEqualsPredicate gOfA gOfB)
@@ -561,13 +544,13 @@ test_equalsSimplification_TermLike =
                 { term = ()
                 , predicate =
                     makeAndPredicate
-                        (Simplification.Not.makePredicateNot
+                        (makeNotPredicate
                             (makeAndPredicate
                                 (makeCeilPredicate fOfA)
                                 (makeCeilPredicate fOfB)
                             )
                         )
-                        (Simplification.Not.makePredicateNot
+                        (makeNotPredicate
                             (makeAndPredicate
                                 (makeCeilPredicate gOfA)
                                 (makeCeilPredicate gOfB)
