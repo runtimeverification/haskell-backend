@@ -56,29 +56,26 @@ instance Synthetic NonSimplifiable (Bottom sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
---instance Synthetic NonSimplifiable (Application Symbol) where
---    synthetic application
---        | Symbol.isConstructor symbol =
---            NonSimplifiable . Just $ ConstructorHead
---        | Symbol.isSortInjection symbol =
---            case children of
---                [NonSimplifiable (Just child)] ->
---                    case child of
---                        SortInjectionHead -> NonSimplifiable Nothing
---                        ConstructorHead ->
---                            NonSimplifiable
---                            . Just
---                            $ SortInjectionHead
---                        BuiltinHead ->
---                            NonSimplifiable
---                            . Just
---                            $ SortInjectionHead
---                _ -> NonSimplifiable Nothing
---        | otherwise =
---            NonSimplifiable Nothing
---      where
---        symbol = applicationSymbolOrAlias application
---        children = applicationChildren application
+instance Synthetic NonSimplifiable (Application Symbol) where
+    synthetic application
+        | Symbol.isConstructor symbol
+        , childrenAreNonSimplifiable children =
+            NonSimplifiable . Just $ ConstructorHead
+
+        | Symbol.isSortInjection symbol
+        , childrenAreNonSimplifiable children
+        , childrenAreNotSortInjections children =
+            NonSimplifiable . Just $ SortInjectionHead
+
+        | otherwise =
+            NonSimplifiable Nothing
+      where
+        symbol = applicationSymbolOrAlias application
+        children = applicationChildren application
+        childrenAreNonSimplifiable xs =
+            elem (NonSimplifiable Nothing) xs
+        childrenAreNotSortInjections xs =
+            not $ elem (NonSimplifiable . Just $ SortInjectionHead) xs
 
 instance Synthetic NonSimplifiable (Application (Alias patternType)) where
     synthetic = const (NonSimplifiable Nothing)
