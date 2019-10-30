@@ -25,6 +25,8 @@ import Kore.Internal.MultiAnd
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr (..)
+    , merge
+    , singleton
     )
 import Kore.Internal.OrCondition
     ( OrCondition
@@ -121,19 +123,14 @@ makeEvaluateNot
     => Not sort (Pattern variable)
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
-    OrPattern.fromPatterns $ concat
-        [ (Pattern.fromTermLike . TermLike.markSimplified) <$>
-            children (makeTermNot term)
-        , [Pattern.fromConditionSorted
+    merge
+        (Pattern.fromTermLike . TermLike.markSimplified <$> makeTermNot term)
+        (singleton $ Pattern.fromConditionSorted
             (termLikeSort term)
-            (makeEvaluatePredicate predicate)]
-        ]
+            (makeEvaluatePredicate predicate)
+        )
   where
     (term, predicate) = Conditional.splitTerm notChild
-
-children :: TermLike variable -> [TermLike variable]
-children (Or_ _ p1 p2) = children p1 ++ children p2
-children p = [p]
 
 {- | Given a not's @Internal.Predicate@ argument, simplifies the @not@.
 
@@ -175,17 +172,17 @@ makeEvaluateNotPredicate Not { notChild = predicate } =
 makeTermNot
     :: InternalVariable variable
     => TermLike variable
-    -> TermLike variable
+    -> MultiOr (TermLike variable)
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
-makeTermNot (Not_ _ term) = term
+makeTermNot (Not_ _ term) = singleton term
 makeTermNot (And_ _ term1 term2) =
-    mkOr (makeTermNot term1) (makeTermNot term2)
+    merge (makeTermNot term1) (makeTermNot term2)
 makeTermNot term
-  | isBottom term = mkTop_
-  | isTop term    = mkBottom_
-  | otherwise     = mkNot term
+  | isBottom term = singleton mkTop_
+  | isTop term    = singleton mkBottom_
+  | otherwise     = singleton $ mkNot term
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
