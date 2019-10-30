@@ -24,29 +24,26 @@ module Kore.Builtin.Krypto
     ) where
 
 
+import Control.Category
+    ( (>>>)
+    )
 import Control.Exception.Base
     ( assert
     )
-import GHC.Stack
-    ( HasCallStack
-    )
-
 import Crypto.Hash
-    ( Digest
-    , Keccak_256
+    ( HashAlgorithm
+    , Keccak_256 (..)
     , SHA256 (..)
-    , hash
     , hashWith
     )
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.ECC.Types
-
 import Data.Bits
 import Data.ByteString
     ( ByteString
     )
 import qualified Data.ByteString as ByteString
-import Data.Char
+import Data.Char as Char
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map
     ( Map
@@ -62,6 +59,9 @@ import Data.Text
 import qualified Data.Text as Text
 import Data.Word
     ( Word8
+    )
+import GHC.Stack
+    ( HasCallStack
     )
 
 import qualified Kore.Builtin.Builtin as Builtin
@@ -81,9 +81,8 @@ sha256Key = "KRYPTO.sha256"
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( keccakKey
-      , Builtin.verifySymbol String.assertSort [String.assertSort]
-      )
+    [ (keccakKey, verifyHashFunction)
+    , (sha256Key, verifyHashFunction)
     , (ecsdaRecover
       , Builtin.verifySymbol
             String.assertSort
@@ -92,9 +91,6 @@ symbolVerifiers =
             , String.assertSort
             , String.assertSort
             ]
-      )
-    , ( sha256Key
-      , Builtin.verifySymbol String.assertSort [String.assertSort]
       )
     ]
 
@@ -108,46 +104,69 @@ builtinFunctions =
         , (sha256Key, evalSha256)
         ]
 
-evalKeccak :: Builtin.Function
-evalKeccak =
-    Builtin.functionEvaluator evalKeccak0
+verifyHashFunction :: Builtin.SymbolVerifier
+verifyHashFunction = Builtin.verifySymbol String.assertSort [String.assertSort]
+
+{- | A function evaluator for builtin hash function hooks.
+
+The symbol's argument must be a string which will be interpreted as a sequence
+of 8-bit bytes. The result is the hash as a string in big-endian base-16
+encoding.
+
+ -}
+evalHashFunction
+    :: HashAlgorithm algorithm
+    => String  -- ^ hook name for error messages
+    -> algorithm  -- ^ hash function
+    -> Builtin.Function
+evalHashFunction context algorithm =
+    Builtin.functionEvaluator evalHashFunctionWorker
   where
-    evalKeccak0 :: Builtin.FunctionImplementation
-    evalKeccak0 resultSort arguments =
+    evalHashFunctionWorker :: Builtin.FunctionImplementation
+    evalHashFunctionWorker resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let
                 arg =
                     case arguments of
                       [input] -> input
-                      _ -> Builtin.wrongArity keccakKey
-            str <- String.expectBuiltinString keccakKey arg
-            let
-                digest :: Digest Keccak_256
-                digest =
-                    hash
-                    $ ByteString.pack
-                    $ map (fromIntegral . ord)
-                    $ Text.unpack str
+                      _ -> Builtin.wrongArity context
+            str <- String.expectBuiltinString context arg
+            let bytes = encode8Bit str
+                digest = hashWith algorithm bytes
                 result = fromString (show digest)
             Builtin.appliedFunction $ String.asPattern resultSort result
 
-evalSha256 :: Builtin.Function
-evalSha256 =
-    Builtin.functionEvaluator evalSha256Worker
+{- | Encode text using an 8-bit encoding.
+
+Each 'Char' in the text is interpreted as a 'Data.Word.Word8'. It is an error if
+any character falls outside that representable range.
+
+ -}
+encode8Bit :: Text -> ByteString
+encode8Bit =
+    Text.unpack
+    >>> map (Char.ord >>> encodeByte)
+    >>> ByteString.pack
   where
-    evalSha256Worker :: Builtin.FunctionImplementation
-    evalSha256Worker resultSort [_bytes] =
-        Builtin.getAttemptedAxiom $ do
-            _bytes <- String.expectBuiltinString sha256Key _bytes
-            let
-                digest =
-                    hashWith SHA256
-                    $ ByteString.pack
-                    $ map (fromIntegral . ord)
-                    $ Text.unpack _bytes
-                result = fromString (show digest)
-            Builtin.appliedFunction $ String.asPattern resultSort result
-    evalSha256Worker _ _ = Builtin.wrongArity ecsdaRecover
+    encodeByte :: Int -> Word8
+    encodeByte int
+      | int < 0x00 = failed "expected positive value"
+      | int > 0xFF = failed "expected 8-bit value"
+      | otherwise = fromIntegral int
+      where
+        failed message =
+            (error . unwords)
+                [ "encode8Bit:"
+                , message ++ ","
+                , "found:"
+                , show int
+                ]
+
+evalKeccak :: Builtin.Function
+evalKeccak = evalHashFunction keccakKey Keccak_256
+
+evalSha256 :: Builtin.Function
+evalSha256 = evalHashFunction sha256Key SHA256
 
 evalECDSARecover :: Builtin.Function
 evalECDSARecover =
