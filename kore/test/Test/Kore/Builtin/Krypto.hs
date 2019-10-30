@@ -4,6 +4,7 @@ module Test.Kore.Builtin.Krypto
     ( test_ecdsaRecover
     , test_keccak256
     , test_sha256
+    , test_sha3256
     ) where
 
 import Test.Tasty
@@ -116,6 +117,25 @@ test_sha256 =
             actual <-
                 sha256Krypto (String.asInternal stringSort input)
                 & evaluate "KRYPTO.sha256"
+            assertEqual "" expect actual
+
+test_sha3256 :: [TestTree]
+test_sha3256 =
+    -- from the NIST conformance tests:
+    [ test
+        ""
+        "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a"
+    , test
+        "\xe9"
+        "f0d04dd1e6cfc29a4460d521796852f25d9ef8d28b44ee91ff5b759d72c1e6d6"
+    ]
+  where
+    test input result =
+        testCase (show input) $ do
+            let expect = String.asPattern stringSort result
+            actual <-
+                sha3256Krypto (String.asInternal stringSort input)
+                & evaluate "KRYPTO.sha3256"
             assertEqual "" expect actual
 
 evaluate :: Text -> TermLike Variable -> IO (Pattern Variable)

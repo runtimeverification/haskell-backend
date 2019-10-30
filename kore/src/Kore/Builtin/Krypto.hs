@@ -21,6 +21,7 @@ module Kore.Builtin.Krypto
     -- * Constants
     , keccak256Key
     , sha256Key
+    , sha3256Key
     , ecdsaRecoverKey
     ) where
 
@@ -35,6 +36,7 @@ import Crypto.Hash
     ( HashAlgorithm
     , Keccak_256 (..)
     , SHA256 (..)
+    , SHA3_256 (..)
     , hashWith
     )
 import Crypto.PubKey.ECC.Prim
@@ -69,10 +71,11 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
 
-keccak256Key, ecdsaRecoverKey, sha256Key :: IsString s => s
+keccak256Key, ecdsaRecoverKey, sha256Key, sha3256Key :: IsString s => s
 keccak256Key = "KRYPTO.keccak256"
 ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
 sha256Key = "KRYPTO.sha256"
+sha3256Key = "KRYPTO.sha3256"
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -84,6 +87,7 @@ symbolVerifiers =
     HashMap.fromList
     [ (keccak256Key, verifyHashFunction)
     , (sha256Key, verifyHashFunction)
+    , (sha3256Key, verifyHashFunction)
     , (ecdsaRecoverKey
       , Builtin.verifySymbol
             String.assertSort
@@ -101,8 +105,9 @@ builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
         [ (keccak256Key, evalKeccak)
-        , (ecdsaRecoverKey, evalECDSARecover)
         , (sha256Key, evalSha256)
+        , (sha3256Key, evalSha3256)
+        , (ecdsaRecoverKey, evalECDSARecover)
         ]
 
 verifyHashFunction :: Builtin.SymbolVerifier
@@ -168,6 +173,9 @@ evalKeccak = evalHashFunction keccak256Key Keccak_256
 
 evalSha256 :: Builtin.Function
 evalSha256 = evalHashFunction sha256Key SHA256
+
+evalSha3256 :: Builtin.Function
+evalSha3256 = evalHashFunction sha3256Key SHA3_256
 
 evalECDSARecover :: Builtin.Function
 evalECDSARecover =
