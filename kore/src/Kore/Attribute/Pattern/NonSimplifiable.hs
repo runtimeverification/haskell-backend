@@ -16,10 +16,15 @@ import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import Kore.Domain.Builtin
+import Kore.Internal.Alias
+    ( Alias
+    )
 import Kore.Internal.Symbol
     ( Symbol
     )
 import qualified Kore.Internal.Symbol as Symbol
+import Kore.Syntax
 import Kore.Syntax.Application
     ( Application (..)
     )
@@ -43,30 +48,113 @@ instance NFData NonSimplifiable
 
 instance Hashable NonSimplifiable
 
-instance Synthetic NonSimplifiable (Application Symbol) where
-    synthetic application
-        | Symbol.isConstructor symbol =
-            NonSimplifiable . Just $ ConstructorHead
-        | Symbol.isSortInjection symbol =
-            case children of
-                [NonSimplifiable (Just child)] ->
-                    case child of
-                        SortInjectionHead -> NonSimplifiable Nothing
-                        ConstructorHead ->
-                            NonSimplifiable
-                            . Just
-                            $ SortInjectionHead
-                        BuiltinHead ->
-                            NonSimplifiable
-                            . Just
-                            $ SortInjectionHead
-                _ -> NonSimplifiable Nothing
-        | otherwise =
-            NonSimplifiable Nothing
-      where
-        symbol = applicationSymbolOrAlias application
-        children = applicationChildren application
+instance Synthetic NonSimplifiable (And sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
 
+instance Synthetic NonSimplifiable (Bottom sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+--instance Synthetic NonSimplifiable (Application Symbol) where
+--    synthetic application
+--        | Symbol.isConstructor symbol =
+--            NonSimplifiable . Just $ ConstructorHead
+--        | Symbol.isSortInjection symbol =
+--            case children of
+--                [NonSimplifiable (Just child)] ->
+--                    case child of
+--                        SortInjectionHead -> NonSimplifiable Nothing
+--                        ConstructorHead ->
+--                            NonSimplifiable
+--                            . Just
+--                            $ SortInjectionHead
+--                        BuiltinHead ->
+--                            NonSimplifiable
+--                            . Just
+--                            $ SortInjectionHead
+--                _ -> NonSimplifiable Nothing
+--        | otherwise =
+--            NonSimplifiable Nothing
+--      where
+--        symbol = applicationSymbolOrAlias application
+--        children = applicationChildren application
+
+instance Synthetic NonSimplifiable (Application (Alias patternType)) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Ceil sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (DomainValue sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Equals sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Exists sort variable) where
+    synthetic = const (NonSimplifiable Nothing)
+
+instance Synthetic NonSimplifiable (Floor sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Forall sort variable) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Iff sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Implies sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (In sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Mu sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Next sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Not sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Nu sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Or sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Rewrites sort) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Builtin key) where
+    synthetic =
+        \case
+            BuiltinInt _    -> NonSimplifiable . Just $ BuiltinHead
+            BuiltinBool _   -> NonSimplifiable . Just $ BuiltinHead
+            BuiltinString _ -> NonSimplifiable . Just $ BuiltinHead
+            _               -> NonSimplifiable Nothing
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable Inhabitant where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
 
 data NonSimplifiableHead = ConstructorHead
                          | SortInjectionHead
