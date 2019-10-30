@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module Test.Kore.Builtin.Krypto
     ( test_ecdsaRecover
     , test_keccak256
@@ -6,14 +8,19 @@ module Test.Kore.Builtin.Krypto
 
 import Test.Tasty
 
+import qualified Control.Lens as Lens
 import Data.Function
     ( (&)
     )
+import Data.Generics.Sum.Constructors
 import qualified Data.Map.Strict as Map
+import Data.Proxy
 import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
+import qualified GHC.Stack as GHC
+import qualified GHC.TypeLits as TypeLits
 
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Krypto as Krypto
@@ -28,8 +35,7 @@ import Kore.Step.Simplification.Data
     ( runSimplifier
     )
 import Kore.Step.Simplification.Simplify
-    ( AttemptedAxiom (..)
-    , AttemptedAxiomResults (..)
+    ( AttemptedAxiomResults (..)
     , BuiltinAndAxiomSimplifier (..)
     )
 import qualified Kore.TopBottom as TopBottom
@@ -120,20 +126,25 @@ evaluate :: Text -> TermLike Variable -> IO (Pattern Variable)
 evaluate builtin termLike = do
     evaluator <-
         Map.lookup builtin Krypto.builtinFunctions
-        & maybe missing return
+        & expectConstructor @"Just"
     attempt <-
         runBuiltinAndAxiomSimplifier evaluator termLike Condition.top
         & runSimplifier testEnv
         & SMT.runNoSMT mempty
-    attemptResults <-
-        case attempt of
-            NotApplicable -> assertFailure "Expected Applied"
-            Applied results -> return results
-    assertBool "Expected no remainders"
-        $ TopBottom.isBottom (remainders attemptResults)
-    case OrPattern.toPatterns (results attemptResults) of
+    attemptResults <- expectConstructor @"Applied" attempt
+    let AttemptedAxiomResults { results, remainders } = attemptResults
+    assertBool "Expected no remainders" $ TopBottom.isBottom remainders
+    case OrPattern.toPatterns results of
         [actual] -> return actual
         _ -> assertFailure "Expected one result"
+
+expectConstructor
+    :: forall (ctor :: TypeLits.Symbol) s a
+    .  (AsConstructor' ctor s a, TypeLits.KnownSymbol ctor)
+    => GHC.HasCallStack
+    => (s -> IO a)
+expectConstructor s =
+    Lens.preview (_Ctor' @ctor) s
+    & maybe failure return
   where
-    missing =
-        error ("No builtin function for hook: " ++ Text.unpack builtin)
+    failure = assertFailure ("Expected " ++ TypeLits.symbolVal (Proxy @ctor))
