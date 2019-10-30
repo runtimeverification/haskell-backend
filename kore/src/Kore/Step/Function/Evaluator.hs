@@ -29,6 +29,10 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Map as Map
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import Kore.Attribute.Hook
@@ -56,9 +60,6 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import Kore.Logger.WarnMissingHook
-    ( warnMissingHook
-    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -79,6 +80,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
 import Kore.TopBottom
+import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
 -}
@@ -115,9 +117,11 @@ evaluateApplication
           -- present, we assume that startup is finished, but we should really
           -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
-          = do
-            warnMissingHook hook symbol
-            pure unevaluated
+          =
+            (error . show . Pretty.vsep)
+                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
+                , "for symbol:" <+> unparse symbol
+                ]
           | otherwise = return unevaluated
 
     results <-
