@@ -76,10 +76,12 @@ import Kore.Substitute
     )
 import Kore.Unification.Error
 import Kore.Unification.Substitution
-    ( Substitution
+    ( Normalization (..)
+    , Substitution
     )
+import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
-    ( normalizeSubstitution
+    ( normalize
     )
 import Kore.Unification.Unify
 import Kore.Variables.UnifiedVariable
@@ -161,7 +163,18 @@ substitutionSimplifier =
         => Map (UnifiedVariable variable) (TermLike variable)
         -> unifier (Condition variable)
     normalizeSubstitution' =
-        either throwSubstitutionError return . normalizeSubstitution
+        maybe bottom fromNormalization . normalize
+      where
+        bottom = return Condition.bottom
+        fromNormalization Normalization { normalized, denormalized }
+          | null denormalized =
+            pure
+            $ Condition.fromSubstitution
+            $ Substitution.unsafeWrap normalized
+          | otherwise =
+            throwSubstitutionError (SimplifiableCycle variables)
+          where
+            (variables, _) = unzip denormalized
 
     normalize1
         ::  forall variable
