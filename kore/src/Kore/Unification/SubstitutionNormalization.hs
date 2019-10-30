@@ -143,10 +143,20 @@ normalize (dropTrivialSubstitutions -> substitution) =
     mixedCtorCycle _ = empty
 
     simplifiableCycle (Set.fromList -> variables) = do
-        let denormalized = Map.toList $ Map.restrictKeys substitution variables
-            substitution' = Map.withoutKeys substitution variables
+        let -- Variables with simplifiable dependencies
+            simplifiable = Set.filter (not . isNonSimplifiable) variables
+            denormalized =
+                Map.toList $ Map.restrictKeys substitution simplifiable
+            substitution' = Map.withoutKeys substitution simplifiable
+        -- Partially normalize the substitution by separating variables with
+        -- simplifiable dependencies.
         normalization <- normalize substitution'
         pure $ normalization <> mempty { denormalized }
+
+    isNonSimplifiable variable =
+        (==)
+            (Map.lookup variable allDependencies)
+            (Map.lookup variable nonSimplifiableDependencies)
 
     assignBottom
         :: Map (UnifiedVariable variable) (TermLike variable)
