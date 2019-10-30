@@ -61,7 +61,7 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( UnifierT
     , runUnifierT
     )

@@ -197,7 +197,7 @@ parse = Text.pack <$> Parsec.many Parsec.anySingle
  -}
 expectBuiltinString
     :: Monad m
-    => Text  -- ^ Context for error message
+    => String  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Text
 expectBuiltinString ctx =
@@ -210,7 +210,7 @@ expectBuiltinString ctx =
                     Domain.InternalString { internalStringValue } = internal
                 _ ->
                     Builtin.verifierBug
-                    $ Text.unpack ctx ++ ": Domain value is not a string"
+                    $ ctx ++ ": Domain value is not a string"
         _ -> empty
 
 
