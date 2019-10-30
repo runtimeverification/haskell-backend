@@ -92,16 +92,12 @@ test_keccak256 =
     ]
   where
     test input result =
-        testCase (Text.unpack name) $ do
+        testCase (show input) $ do
             let expect = String.asPattern stringSort result
             actual <-
                 keccak256Krypto (String.asInternal stringSort input)
                 & evaluate "KRYPTO.keccak256"
             assertEqual "" expect actual
-      where
-        Just name =
-            Attribute.getHook . Attribute.hook
-            $ symbolAttributes ecdsaRecoverSymbol
 
 test_sha256 :: [TestTree]
 test_sha256 =
