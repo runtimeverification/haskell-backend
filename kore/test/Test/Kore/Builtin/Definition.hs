@@ -627,6 +627,11 @@ sha3256Symbol =
     builtinSymbol "sha3256Krypto" stringSort [stringSort]
     & hook "KRYPTO.sha3256"
 
+ripemd160Symbol :: Internal.Symbol
+ripemd160Symbol =
+    builtinSymbol "ripemd160Krypto" stringSort [stringSort]
+    & hook "KRYPTO.ripemd160"
+
 ecdsaRecoverKrypto
     :: TermLike Variable
     -> TermLike Variable
@@ -643,6 +648,9 @@ sha256Krypto message = mkApplySymbol sha256Symbol [message]
 
 sha3256Krypto :: TermLike Variable -> TermLike Variable
 sha3256Krypto message = mkApplySymbol sha3256Symbol [message]
+
+ripemd160Krypto :: TermLike Variable -> TermLike Variable
+ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
 
 -- -------------------------------------------------------------
 -- * Sorts
@@ -1323,6 +1331,7 @@ kryptoModule =
             , hookedSymbolDecl keccak256Symbol
             , hookedSymbolDecl sha256Symbol
             , hookedSymbolDecl sha3256Symbol
+            , hookedSymbolDecl ripemd160Symbol
             ]
         }
 

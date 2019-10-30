@@ -22,6 +22,7 @@ module Kore.Builtin.Krypto
     , keccak256Key
     , sha256Key
     , sha3256Key
+    , ripemd160Key
     , ecdsaRecoverKey
     ) where
 
@@ -35,6 +36,7 @@ import Control.Exception.Base
 import Crypto.Hash
     ( HashAlgorithm
     , Keccak_256 (..)
+    , RIPEMD160 (..)
     , SHA256 (..)
     , SHA3_256 (..)
     , hashWith
@@ -71,11 +73,13 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
 
-keccak256Key, ecdsaRecoverKey, sha256Key, sha3256Key :: IsString s => s
+keccak256Key, ecdsaRecoverKey, sha256Key, sha3256Key, ripemd160Key
+    :: IsString s => s
 keccak256Key = "KRYPTO.keccak256"
 ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
 sha256Key = "KRYPTO.sha256"
 sha3256Key = "KRYPTO.sha3256"
+ripemd160Key = "KRYPTO.ripemd160"
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -88,6 +92,7 @@ symbolVerifiers =
     [ (keccak256Key, verifyHashFunction)
     , (sha256Key, verifyHashFunction)
     , (sha3256Key, verifyHashFunction)
+    , (ripemd160Key, verifyHashFunction)
     , (ecdsaRecoverKey
       , Builtin.verifySymbol
             String.assertSort
@@ -107,6 +112,7 @@ builtinFunctions =
         [ (keccak256Key, evalKeccak)
         , (sha256Key, evalSha256)
         , (sha3256Key, evalSha3256)
+        , (ripemd160Key, evalRipemd160)
         , (ecdsaRecoverKey, evalECDSARecover)
         ]
 
@@ -176,6 +182,9 @@ evalSha256 = evalHashFunction sha256Key SHA256
 
 evalSha3256 :: Builtin.Function
 evalSha3256 = evalHashFunction sha3256Key SHA3_256
+
+evalRipemd160 :: Builtin.Function
+evalRipemd160 = evalHashFunction ripemd160Key RIPEMD160
 
 evalECDSARecover :: Builtin.Function
 evalECDSARecover =

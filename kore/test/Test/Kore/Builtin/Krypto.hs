@@ -5,6 +5,7 @@ module Test.Kore.Builtin.Krypto
     , test_keccak256
     , test_sha256
     , test_sha3256
+    , test_ripemd160
     ) where
 
 import Test.Tasty
@@ -136,6 +137,31 @@ test_sha3256 =
             actual <-
                 sha3256Krypto (String.asInternal stringSort input)
                 & evaluate "KRYPTO.sha3256"
+            assertEqual "" expect actual
+
+test_ripemd160 :: [TestTree]
+test_ripemd160 =
+    -- from the frontend test suite:
+    [ test
+        ""
+        "9c1185a5c5e9fc54612808977ee8f548b2258d31"
+    , test
+        "a"
+        "0bdc9d2d256b3ee9daae347be6f4dc835a467ffe"
+    , test
+        "abc"
+        "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc"
+    , test
+        "message digest"
+        "5d0689ef49d2fae572b881b123a85ffa21595f36"
+    ]
+  where
+    test input result =
+        testCase (show input) $ do
+            let expect = String.asPattern stringSort result
+            actual <-
+                ripemd160Krypto (String.asInternal stringSort input)
+                & evaluate "KRYPTO.ripemd160"
             assertEqual "" expect actual
 
 evaluate :: Text -> TermLike Variable -> IO (Pattern Variable)
