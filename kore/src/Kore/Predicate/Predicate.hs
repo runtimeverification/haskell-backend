@@ -55,6 +55,7 @@ import Control.DeepSeq
     ( NFData
     )
 import qualified Data.Either as Either
+import qualified Data.Foldable as Foldable
 import Data.Functor.Foldable
     ( Base
     )
@@ -77,7 +78,13 @@ import GHC.Stack
     ( HasCallStack
     )
 
+import qualified Kore.Attribute.Pattern as Attribute.Pattern
+    ( simplified
+    )
 import Kore.Attribute.Pattern.FreeVariables
+import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
+    ( isSimplified
+    )
 import Kore.Debug
 import Kore.Error
     ( Error
@@ -445,21 +452,48 @@ makeTruePredicate = GenericPredicate TermLike.mkTop_
 makeFalsePredicate :: InternalVariable variable => Predicate variable
 makeFalsePredicate = GenericPredicate TermLike.mkBottom_
 
+data HasChanged = Changed | NotChanged
+    deriving (Show, Eq)
+
+instance Semigroup HasChanged where
+    NotChanged <> x = x
+    Changed <> _ = Changed
+
+instance Monoid HasChanged where
+    mempty = NotChanged
+
 makePredicate
     :: forall variable e
     .  InternalVariable variable
     => TermLike variable
     -> Either (Error e) (Predicate variable)
-makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
+makePredicate t = fst <$> makePredicateWorker t
   where
+    makePredicateWorker
+        :: TermLike variable
+        -> Either (Error e) (Predicate variable, HasChanged)
+    makePredicateWorker =
+        Recursive.elgot makePredicateBottomUp makePredicateTopDown
+
     makePredicateBottomUp
         :: Base
             (TermLike variable)
-            (Either (Error e) (Predicate variable))
-        -> Either (Error e) (Predicate variable)
-    makePredicateBottomUp (_ :< patE) = do
-        pat <- sequence patE
-        case pat of
+            (Either (Error e) (Predicate variable, HasChanged))
+        -> Either (Error e) (Predicate variable, HasChanged)
+    makePredicateBottomUp termE = do
+        termWithChanged <- sequence termE
+        let dropChanged
+                :: (Predicate variable, HasChanged) -> Predicate variable
+            dropChanged = fst
+
+            term@(_ :< patE) = dropChanged <$> termWithChanged
+
+            dropPredicate :: (Predicate variable, HasChanged) -> HasChanged
+            dropPredicate = snd
+
+            childChanged :: HasChanged
+            childChanged = Foldable.fold (dropPredicate <$> termWithChanged)
+        predicate <- case patE of
             TopF _ -> return makeTruePredicate
             BottomF _ -> return makeFalsePredicate
             AndF p -> return $ makeAndPredicate (andFirst p) (andSecond p)
@@ -474,23 +508,92 @@ makePredicate = Recursive.elgot makePredicateBottomUp makePredicateTopDown
                 makeForallPredicate (forallVariable p) (forallChild p)
             p -> koreFail
                 ("Cannot translate to predicate: " ++ show p)
+        return
+            (keepSimplifiedAndUpdateChanged
+                childChanged
+                (fmap unwrapPredicate term)
+                predicate
+            )
+
     makePredicateTopDown
         :: TermLike variable
         -> Either
-            (Either (Error e) (Predicate variable))
+            (Either (Error e) (Predicate variable, HasChanged))
             (Base (TermLike variable) (TermLike variable))
     makePredicateTopDown (Recursive.project -> projected@(_ :< pat)) =
         case pat of
             CeilF Ceil { ceilChild } ->
-                (Left . pure) (makeCeilPredicate ceilChild)
+                (Left . pure)
+                    ( keepSimplifiedAndUpdateChanged'
+                    $ makeCeilPredicate ceilChild
+                    )
             FloorF Floor { floorChild } ->
-                (Left . pure) (makeFloorPredicate floorChild)
+                (Left . pure)
+                    ( keepSimplifiedAndUpdateChanged'
+                    $ makeFloorPredicate floorChild
+                    )
             EqualsF Equals { equalsFirst, equalsSecond } ->
-                (Left . pure) (makeEqualsPredicate equalsFirst equalsSecond)
+                (Left . pure)
+                    ( keepSimplifiedAndUpdateChanged'
+                    $ makeEqualsPredicate equalsFirst equalsSecond
+                    )
             InF In { inContainedChild, inContainingChild } ->
                 (Left . pure)
-                    (makeInPredicate inContainedChild inContainingChild)
+                    ( keepSimplifiedAndUpdateChanged'
+                    $ makeInPredicate inContainedChild inContainingChild
+                    )
             _ -> Right projected
+      where
+        keepSimplifiedAndUpdateChanged' =
+            keepSimplifiedAndUpdateChanged NotChanged projected
+
+    keepSimplifiedAndUpdateChanged
+        :: HasChanged
+        -> Base (TermLike variable) (TermLike variable)
+        -> Predicate variable
+        -> (Predicate variable, HasChanged)
+    keepSimplifiedAndUpdateChanged hasChanged termBase predicate =
+        (keepSimplified newHasChanged termBase predicate, newHasChanged)
+      where
+        term = Recursive.embed termBase
+        newHasChanged = updateHasChanged hasChanged term predicate
+
+    keepSimplified
+        :: HasChanged
+        -> Base (TermLike variable) (TermLike variable)
+        -> Predicate variable
+        -> Predicate variable
+    keepSimplified hasChanged (attrs :< _) predicate =
+        case hasChanged of
+            Changed -> predicate
+            NotChanged
+                | wasSimplified -> markSimplified predicate
+                | otherwise -> predicate
+      where
+        wasSimplified =
+            Attribute.Simplified.isSimplified
+                (Attribute.Pattern.simplified attrs)
+
+    updateHasChanged
+        :: HasChanged
+        -> TermLike variable
+        -> Predicate variable
+        -> HasChanged
+    updateHasChanged before term predicate =
+        case before of
+            Changed -> Changed
+            NotChanged
+                | didNotChange -> NotChanged
+                | otherwise -> Changed
+      where
+        didNotChange =
+            (  TermLike.forceSort (termLikeSort term) (unwrapPredicate predicate)
+            == TermLike.fullyOverrideSort (termLikeSort term) term
+            -- TODO (virgil): The term sort override above is because we don't
+            -- always fill sorts properly. If anyone is interested in figuring
+            -- this issue out, please replace the second part of the equality
+            -- with the original term and fix the failing tests.
+            )
 
 {- | Is the 'TermLike' a predicate?
 
