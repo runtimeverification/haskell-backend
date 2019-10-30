@@ -29,6 +29,9 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Map as Map
+import Data.Text
+    ( Text
+    )
 import Data.Text.Prettyprint.Doc
     ( (<+>)
     )
@@ -117,11 +120,7 @@ evaluateApplication
           -- present, we assume that startup is finished, but we should really
           -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
-          =
-            (error . show . Pretty.vsep)
-                [ "Attempted to evaluate missing hook:" <+> Pretty.pretty hook
-                , "for symbol:" <+> unparse symbol
-                ]
+          = criticalMissingHook symbol hook
           | otherwise = return unevaluated
 
     results <-
@@ -187,6 +186,23 @@ evaluateApplication
         record key term
       | otherwise
       = return ()
+
+criticalMissingHook :: Symbol -> Text -> a
+criticalMissingHook symbol hookName =
+    (error . show . Pretty.vsep)
+        [ "Error: missing hook"
+        , "Symbol"
+        , Pretty.indent 4 (unparse symbol)
+        , "declared with attribute"
+        , Pretty.indent 4 (unparse attribute)
+        , "We don't recognize that hook and it was not given any rules."
+        , "Please open a feature request at"
+        , Pretty.indent 4 "https://github.com/kframework/kore/issues"
+        , "and include the text of this message."
+        , "Workaround: Give rules for" <+> unparse symbol
+        ]
+  where
+    attribute = hookAttribute hookName
 
 {-| Evaluates axioms on patterns.
 -}
