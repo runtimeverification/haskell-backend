@@ -10,7 +10,6 @@ module Kore.Attribute.Pattern.NonSimplifiable
 
 import Control.DeepSeq
 import Data.Hashable
-import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -76,7 +75,7 @@ instance Synthetic NonSimplifiable (Application Symbol) where
         symbol = applicationSymbolOrAlias application
         children = applicationChildren application
         childrenAreNonSimplifiable =
-            (NonSimplifiable Nothing) `notElem` children
+            NonSimplifiable Nothing `notElem` children
         childrenAreNotSortInjections =
             (NonSimplifiable . Just $ SortInjectionHead) `notElem` children
 

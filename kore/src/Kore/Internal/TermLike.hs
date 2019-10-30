@@ -213,9 +213,6 @@ import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
