@@ -25,9 +25,8 @@ import Kore.Internal.MultiAnd
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr (..)
-    , merge
-    , singleton
     )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
     ( OrCondition
     )
@@ -123,9 +122,9 @@ makeEvaluateNot
     => Not sort (Pattern variable)
     -> OrPattern variable
 makeEvaluateNot Not { notChild } =
-    merge
+    MultiOr.merge
         (Pattern.fromTermLike . TermLike.markSimplified <$> makeTermNot term)
-        (singleton $ Pattern.fromConditionSorted
+        (MultiOr.singleton $ Pattern.fromConditionSorted
             (termLikeSort term)
             (makeEvaluatePredicate predicate)
         )
@@ -176,13 +175,13 @@ makeTermNot
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
-makeTermNot (Not_ _ term) = singleton term
+makeTermNot (Not_ _ term) = MultiOr.singleton term
 makeTermNot (And_ _ term1 term2) =
-    merge (makeTermNot term1) (makeTermNot term2)
+    MultiOr.merge (makeTermNot term1) (makeTermNot term2)
 makeTermNot term
-  | isBottom term = singleton mkTop_
-  | isTop term    = singleton mkBottom_
-  | otherwise     = singleton $ mkNot term
+  | isBottom term = MultiOr.singleton mkTop_
+  | isTop term    = MultiOr.singleton mkBottom_
+  | otherwise     = MultiOr.singleton $ mkNot term
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
