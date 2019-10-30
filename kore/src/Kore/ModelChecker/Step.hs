@@ -71,7 +71,7 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 
 data Prim patt rewrite =
