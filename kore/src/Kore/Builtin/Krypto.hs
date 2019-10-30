@@ -19,8 +19,9 @@ module Kore.Builtin.Krypto
     , builtinFunctions
     , signatureToKey
     -- * Constants
-    , keccakKey
+    , keccak256Key
     , sha256Key
+    , ecdsaRecoverKey
     ) where
 
 
@@ -68,9 +69,9 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
 
-keccakKey, ecsdaRecover, sha256Key :: IsString s => s
-keccakKey = "KRYPTO.keccak256"
-ecsdaRecover = "KRYPTO.ecdsaRecover"
+keccak256Key, ecdsaRecoverKey, sha256Key :: IsString s => s
+keccak256Key = "KRYPTO.keccak256"
+ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
 sha256Key = "KRYPTO.sha256"
 
 {- | Verify that hooked symbol declarations are well-formed.
@@ -81,9 +82,9 @@ sha256Key = "KRYPTO.sha256"
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ (keccakKey, verifyHashFunction)
+    [ (keccak256Key, verifyHashFunction)
     , (sha256Key, verifyHashFunction)
-    , (ecsdaRecover
+    , (ecdsaRecoverKey
       , Builtin.verifySymbol
             String.assertSort
             [ String.assertSort
@@ -99,8 +100,8 @@ symbolVerifiers =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ (keccakKey, evalKeccak)
-        , (ecsdaRecover, evalECDSARecover)
+        [ (keccak256Key, evalKeccak)
+        , (ecdsaRecoverKey, evalECDSARecover)
         , (sha256Key, evalSha256)
         ]
 
@@ -163,7 +164,7 @@ encode8Bit =
                 ]
 
 evalKeccak :: Builtin.Function
-evalKeccak = evalHashFunction keccakKey Keccak_256
+evalKeccak = evalHashFunction keccak256Key Keccak_256
 
 evalSha256 :: Builtin.Function
 evalSha256 = evalHashFunction sha256Key SHA256
@@ -188,7 +189,7 @@ evalECDSARecover =
                 $ byteString2String
                 $ pad 64 0
                 $ signatureToKey messageHash r s v
-    eval0 _ _ = Builtin.wrongArity ecsdaRecover
+    eval0 _ _ = Builtin.wrongArity ecdsaRecoverKey
 
 pad :: Int -> Word8 -> ByteString -> ByteString
 pad n w s = ByteString.append s padding
