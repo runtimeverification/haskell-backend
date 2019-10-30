@@ -76,6 +76,7 @@ instance
     , Synthetic Function base
     , Synthetic Defined base
     , Synthetic Simplified base
+    , Synthetic NonSimplifiable base
     ) =>
     Synthetic (Pattern variable) base
   where
@@ -88,7 +89,7 @@ instance
             , defined = synthetic (defined <$> base)
             , created = synthetic (created <$> base)
             , simplified = synthetic (simplified <$> base)
-            , nonSimplifiable = undefined -- synthetic (nonSimplifiable <$> base)
+            , nonSimplifiable = synthetic (nonSimplifiable <$> base)
             }
 
 {- | Use the provided mapping to replace all variables in a 'Pattern'.

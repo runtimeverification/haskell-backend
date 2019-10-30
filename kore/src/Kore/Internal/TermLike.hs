@@ -13,6 +13,7 @@ module Kore.Internal.TermLike
     , Builtin
     , extractAttributes
     , isSimplified
+    , isNonSimplifiable
     , markSimplified
     , isFunctionPattern
     , isFunctionalPattern
@@ -218,13 +219,16 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
+import qualified Kore.Attribute.Pattern.NonSimplifiable as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
-import Kore.Internal.Symbol
+import Kore.Internal.Symbol hiding
+    ( isNonSimplifiable
+    )
 import Kore.Internal.Variable
 import Kore.Sort
 import qualified Kore.Substitute as Substitute
@@ -339,10 +343,13 @@ data TermLikeF variable child
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic, GHC.Generic1)
     deriving
-        ( Synthetic (FreeVariables variable), Synthetic Sort
-        , Synthetic Pattern.Functional, Synthetic Pattern.Function
+        ( Synthetic (FreeVariables variable)
+        , Synthetic Sort
+        , Synthetic Pattern.Functional
+        , Synthetic Pattern.Function
         , Synthetic Pattern.Defined
         , Synthetic Pattern.Simplified
+        , Synthetic Pattern.NonSimplifiable
         ) via (Generically1 (TermLikeF variable))
 
 instance SOP.Generic (TermLikeF variable child)
@@ -982,6 +989,13 @@ externalizeFreshVariables termLike =
 
 isSimplified :: TermLike variable -> Bool
 isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
+
+isNonSimplifiable :: TermLike variable -> Bool
+isNonSimplifiable =
+    isJust
+    . Pattern.isNonSimplifiable
+    . Attribute.nonSimplifiable
+    . extractAttributes
 
 {- | Mark a 'TermLike' as fully simplified.
 

@@ -28,6 +28,9 @@ import Kore.Syntax
 import Kore.Syntax.Application
     ( Application (..)
     )
+import Kore.Variables.UnifiedVariable
+    ( UnifiedVariable
+    )
 
 newtype NonSimplifiable =
     NonSimplifiable
@@ -73,9 +76,9 @@ instance Synthetic NonSimplifiable (Application Symbol) where
         symbol = applicationSymbolOrAlias application
         children = applicationChildren application
         childrenAreNonSimplifiable =
-            not $ elem (NonSimplifiable Nothing) children
+            (NonSimplifiable Nothing) `notElem` children
         childrenAreNotSortInjections =
-            not $ elem (NonSimplifiable . Just $ SortInjectionHead) children
+            (NonSimplifiable . Just $ SortInjectionHead) `notElem` children
 
 instance Synthetic NonSimplifiable (Application (Alias patternType)) where
     synthetic = const (NonSimplifiable Nothing)
@@ -150,6 +153,17 @@ instance Synthetic NonSimplifiable (Builtin key) where
     {-# INLINE synthetic #-}
 
 instance Synthetic NonSimplifiable Inhabitant where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Const (UnifiedVariable variable)) where
+    synthetic = const (NonSimplifiable Nothing)
+
+instance Synthetic NonSimplifiable (Const StringLiteral) where
+    synthetic = const (NonSimplifiable Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Top sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
