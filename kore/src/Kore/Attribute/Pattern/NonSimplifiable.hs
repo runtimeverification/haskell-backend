@@ -59,12 +59,12 @@ instance Synthetic NonSimplifiable (Bottom sort) where
 instance Synthetic NonSimplifiable (Application Symbol) where
     synthetic application
         | Symbol.isConstructor symbol
-        , childrenAreNonSimplifiable children =
+        , childrenAreNonSimplifiable =
             NonSimplifiable . Just $ ConstructorHead
 
         | Symbol.isSortInjection symbol
-        , childrenAreNonSimplifiable children
-        , childrenAreNotSortInjections children =
+        , childrenAreNonSimplifiable
+        , childrenAreNotSortInjections =
             NonSimplifiable . Just $ SortInjectionHead
 
         | otherwise =
@@ -72,10 +72,10 @@ instance Synthetic NonSimplifiable (Application Symbol) where
       where
         symbol = applicationSymbolOrAlias application
         children = applicationChildren application
-        childrenAreNonSimplifiable xs =
-            elem (NonSimplifiable Nothing) xs
-        childrenAreNotSortInjections xs =
-            not $ elem (NonSimplifiable . Just $ SortInjectionHead) xs
+        childrenAreNonSimplifiable =
+            not $ elem (NonSimplifiable Nothing) children
+        childrenAreNotSortInjections =
+            not $ elem (NonSimplifiable . Just $ SortInjectionHead) children
 
 instance Synthetic NonSimplifiable (Application (Alias patternType)) where
     synthetic = const (NonSimplifiable Nothing)
