@@ -131,7 +131,7 @@ makeEvaluateNot Not { notChild } =
   where
     (term, predicate) = Conditional.splitTerm notChild
 
-{- | Given a not's @Internal.Predicate@ argument, simplifies the @not@.
+{- | Given a not's @Internal.Condition@ argument, simplifies the @not@.
 
 Right now there is no actual simplification, this function just creates
 a negated @Internal.Condition@.
