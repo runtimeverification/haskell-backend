@@ -87,7 +87,7 @@ class Monad profiler => MonadProfiler profiler where
         return Configuration
             { identifierFilter = Nothing
             , dumpIdentifier = Nothing
-            , destination = KoreProfiler
+            , destination = GhcEventsAnalyze
             , logBranching = False
             , logStrategy = True
             , logSimplification = False
