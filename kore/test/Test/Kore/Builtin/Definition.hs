@@ -612,8 +612,8 @@ ecdsaRecoverSymbol =
         [stringSort, intSort, stringSort, stringSort]
     & hook "KRYPTO.ecdsaRecover"
 
-keccakSymbol :: Internal.Symbol
-keccakSymbol =
+keccak256Symbol :: Internal.Symbol
+keccak256Symbol =
     builtinSymbol "keccak256Krypto" stringSort [stringSort]
     & hook "KRYPTO.keccak256"
 
@@ -621,6 +621,20 @@ sha256Symbol :: Internal.Symbol
 sha256Symbol =
     builtinSymbol "sha256Krypto" stringSort [stringSort]
     & hook "KRYPTO.sha256"
+
+ecdsaRecoverKrypto
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+ecdsaRecoverKrypto m v r s = mkApplySymbol ecdsaRecoverSymbol [m, v, r, s]
+
+keccak256Krypto :: TermLike Variable -> TermLike Variable
+keccak256Krypto message = mkApplySymbol keccak256Symbol [message]
+
+sha256Krypto :: TermLike Variable -> TermLike Variable
+sha256Krypto message = mkApplySymbol sha256Symbol [message]
 
 -- -------------------------------------------------------------
 -- * Sorts
@@ -1298,7 +1312,7 @@ kryptoModule =
             , importParsedModule intModuleName
             , importParsedModule listModuleName
             , hookedSymbolDecl ecdsaRecoverSymbol
-            , hookedSymbolDecl keccakSymbol
+            , hookedSymbolDecl keccak256Symbol
             , hookedSymbolDecl sha256Symbol
             ]
         }
