@@ -52,6 +52,7 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Branch
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Condition
     ( Condition
@@ -85,8 +86,10 @@ import Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
@@ -237,7 +240,7 @@ unifyRule
     let
         RulePattern { requires = ruleRequires } = rule'
         requires' = Condition.fromPredicate ruleRequires
-    unification' <- Substitution.normalizeExcept (unification <> requires')
+    unification' <- simplifyPredicate (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
 
 unifyRules
@@ -281,7 +284,7 @@ applyInitialConditions initial unification = do
     applied <-
         Monad.liftM MultiOr.make
         $ Monad.Unify.gather
-        $ Substitution.normalizeExcept (initial <> unification)
+        $ simplifyPredicate (initial <> unification)
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'applied' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
@@ -323,7 +326,8 @@ finalizeAppliedRule renamedRule appliedConditions =
         let
             RulePattern { ensures } = renamedRule
             ensuresCondition = Condition.fromPredicate ensures
-        finalCondition <- normalize (appliedCondition <> ensuresCondition)
+            preFinalCondition = appliedCondition <> ensuresCondition
+        finalCondition <- simplifyPredicate preFinalCondition
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
@@ -332,8 +336,6 @@ finalizeAppliedRule renamedRule appliedConditions =
             RulePattern { right = finalTerm } = renamedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
         return finalCondition { Pattern.term = finalTerm' }
-
-    normalize = Substitution.normalizeExcept
 
 {- | Apply the remainder predicate to the given initial configuration.
 
@@ -353,7 +355,7 @@ applyRemainder initial remainder = do
     let final = initial `Conditional.andCondition` remainder
         finalCondition = Conditional.withoutTerm final
         Conditional { Conditional.term = finalTerm } = final
-    normalizedCondition <- Substitution.normalizeExcept finalCondition
+    normalizedCondition <- simplifyPredicate finalCondition
     return normalizedCondition { Conditional.term = finalTerm }
 
 toAxiomVariables
@@ -683,3 +685,14 @@ applyRewriteRulesSequence
         unificationProcedure
         initialConfig
         (getRewriteRule <$> rewriteRules)
+
+simplifyPredicate
+    ::  forall unifier variable term
+    .   ( SimplifierVariable variable
+        , MonadUnify unifier
+        , WithLog LogMessage unifier
+        )
+    => Conditional variable term
+    -> unifier (Conditional variable term)
+simplifyPredicate conditional =
+    Branch.alternate (Simplifier.simplifyCondition conditional)
