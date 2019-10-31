@@ -591,10 +591,11 @@ makePredicate t = fst <$> makePredicateWorker t
                 (termLikeSort term)
                 (unwrapPredicate predicate)
             == TermLike.fullyOverrideSort (termLikeSort term) term
-            -- TODO (virgil): The term sort override above is because we don't
-            -- always fill sorts properly. If anyone is interested in figuring
-            -- this issue out, please replace the second part of the equality
-            -- with the original term and fix the failing tests.
+            -- TODO (virgil): The term sort override above is needed
+            -- because above we're computing the term with
+            -- (fmap unwrapPredicate term) which leaves the original
+            -- sort at the top, while the term's children have sort
+            -- _PREDICATE. We should fix that and not use fullyOverrideSort.
             )
 
 {- | Is the 'TermLike' a predicate?
