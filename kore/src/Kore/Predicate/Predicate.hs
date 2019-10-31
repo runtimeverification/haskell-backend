@@ -587,7 +587,9 @@ makePredicate t = fst <$> makePredicateWorker t
                 | otherwise -> Changed
       where
         didNotChange =
-            (  TermLike.forceSort (termLikeSort term) (unwrapPredicate predicate)
+            (  TermLike.forceSort
+                (termLikeSort term)
+                (unwrapPredicate predicate)
             == TermLike.fullyOverrideSort (termLikeSort term) term
             -- TODO (virgil): The term sort override above is because we don't
             -- always fill sorts properly. If anyone is interested in figuring
