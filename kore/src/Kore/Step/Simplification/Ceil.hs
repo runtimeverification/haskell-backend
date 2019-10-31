@@ -325,8 +325,15 @@ makeEvaluateNormalizedAc
     assertNonSimplifiable keys =
         if any (not . TermLike.isNonSimplifiable) keys
             then
-                error "Maps can only contain concrete keys\
-                      \ which are non-simplifiable."
+                let simplifiableKeys =
+                        filter (not . TermLike.isNonSimplifiable) keys
+                in
+                    (error . show . Pretty.vsep) $
+                        [ "Maps can only contain concrete keys\
+                        \ which are non-simplifiable."
+                        , Pretty.indent 2 "keys:"
+                        ]
+                        <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
             else return ()
 
     concreteElementsList
