@@ -22,6 +22,7 @@ import Data.Maybe
     ( fromMaybe
     )
 
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
     ( isTotal
     )
@@ -49,6 +50,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Logger
@@ -68,6 +70,9 @@ import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
+import Kore.Unparser
+    ( unparse
+    )
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 
