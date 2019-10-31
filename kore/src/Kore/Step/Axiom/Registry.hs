@@ -33,6 +33,7 @@ import Kore.Attribute.Axiom
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Simplification
     ( Simplification (..)
     )
@@ -144,7 +145,7 @@ axiomPatternsToEvaluators =
                 Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
       where
         simplifications, evaluations :: [EqualityRule Variable]
-        (simplifications, evaluations) =
+        (simplifications, filter (not . ignoreEvaluation) -> evaluations) =
             partition isSimplificationRule equalities
           where
             isSimplificationRule (EqualityRule RulePattern { attributes }) =
@@ -163,11 +164,11 @@ axiomPatternsToEvaluators =
                 then Nothing
                 else Just (definitionEvaluation evaluations)
 
-{- | Return the evaluator corresponding to the 'EqualityRule'.
+{- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
-@ignoreEqualityRule@ returns 'Nothing' if the 'EqualityRule' should not be
-used as an evaluator, such as if it is an associativity or commutativity
-axiom; this is determined by checking the 'Attribute.Axiom' attributes.
+@ignoreEqualityRule@ returns 'True' if the 'EqualityRule' should not be used in
+evaluation or simplification, such as if it is an associativity or commutativity
+axiom.
 
  -}
 ignoreEqualityRule :: EqualityRule Variable -> Bool
@@ -186,3 +187,10 @@ ignoreEqualityRule (EqualityRule RulePattern { attributes })
     Unit { isUnit } = Attribute.unit attributes
     Idem { isIdem } = Attribute.idem attributes
     Overload { getOverload } = Attribute.overload attributes
+
+{- | Should we ignore the 'EqualityRule' for function evaluation?
+ -}
+ignoreEvaluation :: EqualityRule Variable -> Bool
+ignoreEvaluation (EqualityRule RulePattern { left })
+  | (Pattern.isFunction . Pattern.function) (extractAttributes left) = False
+  | otherwise = True
