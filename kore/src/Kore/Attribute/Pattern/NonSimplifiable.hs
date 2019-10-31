@@ -31,6 +31,12 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
 
+{- | A pattern is `NonSimplifiable` if:
+    1. it's a `BuiltinBool`, `BuiltinInt` or a `BuiltinString`
+    2. a constructor applied over a `NonSimplifiable` pattern
+    3. a sort injection applied over a `NonSimplifiable` pattern `pat`,
+    where `pat` does not also have a sort injection at the top
+-}
 newtype NonSimplifiable =
     NonSimplifiable
         { isNonSimplifiable :: Maybe NonSimplifiableHead
