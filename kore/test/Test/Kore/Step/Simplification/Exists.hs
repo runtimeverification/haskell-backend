@@ -5,6 +5,9 @@ module Test.Kore.Step.Simplification.Exists
 
 import Test.Tasty
 
+import qualified Data.Text.Prettyprint.Doc as Pretty
+
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -21,6 +24,7 @@ import Kore.Predicate.Predicate
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Unification.Substitution as Substitution
+import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -41,6 +45,10 @@ test_simplify =
         $ "\\equals"
     , [substForX]        `simplifiesTo` [top]
         $ "discharge substitution"
+    , [substForXWithCycleY]
+        `simplifiesTo`
+        [Pattern.fromCondition predicateCycleY]
+        $ "discharge substitution with cycle"
     , [substToX]         `simplifiesTo` [top]
         $ "discharge reverse substitution"
     , [substOfX]         `simplifiesTo` [quantifySubstitution substOfX]
@@ -87,17 +95,37 @@ test_simplify =
                   )
                 ]
             }
+    f = Mock.f
+    y = mkElemVar Mock.y
+    predicateCycleY =
+        Condition.fromPredicate
+        $ Predicate.makeAndPredicate
+            (Predicate.makeCeilPredicate (f y))
+            (Predicate.makeEqualsPredicate y (f y))
+    substCycleY =
+        (Condition.fromSubstitution . Substitution.wrap)
+            [(ElemVar Mock.y, f y)]
+    substForXWithCycleY = substForX `Pattern.andCondition` substCycleY
+
     simplifiesTo
         :: HasCallStack
         => [Pattern Variable]
         -> [Pattern Variable]
         -> String
         -> TestTree
-    simplifiesTo original expected message =
-        testCase message $ do
+    simplifiesTo original expected testName =
+        testCase testName $ do
             actual <- simplify (makeExists Mock.x original)
-            assertEqual "expected simplification"
-                (OrPattern.fromPatterns expected) actual
+            let message =
+                    (show . Pretty.vsep)
+                        [ "expected:"
+                        , (Pretty.indent 4 . Pretty.vsep)
+                            (unparse <$> expected)
+                        , "actual:"
+                        , (Pretty.indent 4 . Pretty.vsep)
+                            (unparse <$> OrPattern.toPatterns actual)
+                        ]
+            assertEqual message expected (OrPattern.toPatterns actual)
 
 test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
