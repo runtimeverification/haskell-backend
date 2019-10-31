@@ -149,13 +149,12 @@ substitutionSimplifier =
         .  SubstitutionVariable variable
         => Substitution variable
         -> unifier (OrCondition variable)
-    worker substitution =
-        fmap OrCondition.fromConditions . gather $ do
-            deduplicated <-
-                deduplicateSubstitution
-                    unificationMakeAnd
-                    substitution
-            normalize1 deduplicated
+    worker substitution = do
+        deduplicated <-
+            deduplicateSubstitution
+                unificationMakeAnd
+                substitution
+        OrCondition.fromCondition <$> normalize1 deduplicated
 
     normalizeSubstitution'
         :: forall variable
