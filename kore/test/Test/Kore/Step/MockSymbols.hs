@@ -602,12 +602,12 @@ xTopSort :: ElementVariable Variable
 xTopSort = ElementVariable $ Variable (testId "xTopSort") mempty topSort
 
 makeUnifiedVariable :: Text -> Sort -> UnifiedVariable Variable
-makeUnifiedVariable v sort
+makeUnifiedVariable v sort'
   | Text.head v == '@' = SetVar (SetVariable v')
   | otherwise = ElemVar (ElementVariable v')
   where
     v' = Variable
-        { variableSort = sort
+        { variableSort = sort'
         , variableName = testId v
         , variableCounter = mempty
         }
