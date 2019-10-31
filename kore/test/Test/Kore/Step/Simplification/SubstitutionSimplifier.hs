@@ -199,7 +199,7 @@ test_SubstitutionSimplifier =
                         Unification.substitutionSimplifier
                 actual <-
                     runSimplifier Mock.env
-                    . runUnifierT . flip evalStateT ()
+                    . runUnifierT . flip evalStateT 0
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
