@@ -308,7 +308,7 @@ makeEvaluateNormalizedAc
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
 
-    _ <- traverse assertCanBeEqCheck concreteKeys
+    assertNonSimplifiable concreteKeys
     elementsWithVariablesDistinct <-
         evaluateDistinct variableKeys concreteKeys
     let allConditions :: [OrCondition variable]
@@ -319,33 +319,15 @@ makeEvaluateNormalizedAc
             ++ elementsWithVariablesDistinct
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make allConditions)
   where
-    assertCanBeEqCheck
-        :: TermLike variable
-        -> simplifier (TermLike variable)
-    assertCanBeEqCheck key =
-        case key of
-            App_ symbol _ ->
-                if not (Symbol.isInjective symbol)
-                   && not (Symbol.isConstructor symbol)
-                then (error . show . Pretty.vsep)
-                    [ "Maps can only contain concrete keys\
-                      \ which can be tested for equality."
-                    , Pretty.indent 2 "key:"
-                    , Pretty.indent 4 (unparse key)
-                    ]
-                else return key
-            BuiltinBool_ _   -> return key
-            BuiltinInt_ _    -> return key
-            BuiltinString_ _ -> return key
-            StringLiteral_ _ -> return key
-            DV_ _ _          -> return key
-            _ ->
-                (error . show . Pretty.vsep)
-                    [ "Maps can only contain concrete keys\
-                      \ which can be tested for equality."
-                    , Pretty.indent 2 "key:"
-                    , Pretty.indent 4 (unparse key)
-                    ]
+    assertNonSimplifiable
+        :: [TermLike variable]
+        -> simplifier ()
+    assertNonSimplifiable keys =
+        if any (not . TermLike.isNonSimplifiable) keys
+            then
+                error "Maps can only contain concrete keys\
+                      \ which are non-simplifiable."
+            else return ()
 
     concreteElementsList
         ::  [   ( TermLike variable
