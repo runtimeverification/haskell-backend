@@ -40,9 +40,6 @@ import Kore.Attribute.Symbol
     ( StepperAttributes
     )
 import Kore.IndexedModule.IndexedModule
-import Kore.Internal.Symbol
-    ( isFunction
-    )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( definitionEvaluation
@@ -174,18 +171,15 @@ axiom; this is determined by checking the 'Attribute.Axiom' attributes.
 
  -}
 ignoreEqualityRule :: EqualityRule Variable -> Bool
-ignoreEqualityRule (EqualityRule RulePattern { left, attributes })
-    | isAssoc = True
-    | isComm = True
-    -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
-    -- extraction of their axioms.
-    | isUnit = True
-    | isIdem = True
-    | Just _ <- getOverload = True
-    | otherwise =
-        case left of
-            App_ symbol _ -> not (isFunction symbol)
-            _ -> True
+ignoreEqualityRule (EqualityRule RulePattern { attributes })
+  | isAssoc = True
+  | isComm = True
+  -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
+  -- extraction of their axioms.
+  | isUnit = True
+  | isIdem = True
+  | Just _ <- getOverload = True
+  | otherwise = False
   where
     Assoc { isAssoc } = Attribute.assoc attributes
     Comm { isComm } = Attribute.comm attributes
