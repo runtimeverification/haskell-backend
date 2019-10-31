@@ -189,7 +189,7 @@ test_SubstitutionSimplifier =
                 let SubstitutionSimplifier { simplifySubstitution } =
                         SubstitutionSimplifier.simplification
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
-                let expect = Condition.fromNormalization <$> results
+                let expect = Condition.fromNormalizationSimplified <$> results
                 assertEqual "" expect (OrCondition.toConditions actual)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
@@ -200,7 +200,8 @@ test_SubstitutionSimplifier =
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
-                        Right $ Condition.fromNormalization normalization
+                        Right $
+                            Condition.fromNormalizationSimplified normalization
                       | otherwise =
                         Left
                         $ SubstitutionError
