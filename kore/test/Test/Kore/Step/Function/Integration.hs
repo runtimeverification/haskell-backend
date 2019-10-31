@@ -85,6 +85,7 @@ import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.Syntax.Definition hiding
     ( Symbol (..)
@@ -1249,7 +1250,8 @@ testMetadataTools = MetadataTools.build verifiedModule
 
 testConditionSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-testConditionSimplifier = Simplifier.Condition.create
+testConditionSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.simplification
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule

@@ -50,6 +50,7 @@ import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
+import Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -77,6 +78,7 @@ import Kore.Step.Simplification.Simplify
     , ConditionSimplifier
     , TermLikeSimplifier
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
     ( resolve
@@ -601,12 +603,12 @@ xTopSort :: ElementVariable Variable
 xTopSort = ElementVariable $ Variable (testId "xTopSort") mempty topSort
 
 makeUnifiedVariable :: Text -> Sort -> UnifiedVariable Variable
-makeUnifiedVariable v sort
+makeUnifiedVariable v sort'
   | Text.head v == '@' = SetVar (SetVariable v')
   | otherwise = ElemVar (ElementVariable v')
   where
     v' = Variable
-        { variableSort = sort
+        { variableSort = sort'
         , variableName = testId v
         , variableCounter = mempty
         }
@@ -1537,6 +1539,12 @@ builtinBool
     -> TermLike variable
 builtinBool = Builtin.Bool.asInternal boolSort
 
+builtinString
+    :: InternalVariable variable
+    => Text
+    -> TermLike variable
+builtinString = Builtin.String.asInternal stringSort
+
 emptyMetadataTools :: SmtMetadataTools Attribute.Symbol
 emptyMetadataTools =
     Mock.makeMetadataTools
@@ -1565,7 +1573,8 @@ axiomSimplifiers = Map.empty
 
 predicateSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-predicateSimplifier = Simplifier.Condition.create
+predicateSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.simplification
 
 env :: MonadSimplify simplifier => Env simplifier
 env =
