@@ -11,6 +11,13 @@ module Kore.Attribute.Pattern
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
+    -- * Re-exports
+    , module Kore.Attribute.Pattern.Created
+    , module Kore.Attribute.Pattern.Defined
+    , module Kore.Attribute.Pattern.FreeVariables
+    , module Kore.Attribute.Pattern.Function
+    , module Kore.Attribute.Pattern.Functional
+    , module Kore.Attribute.Pattern.Simplified
     ) where
 
 import Control.DeepSeq
