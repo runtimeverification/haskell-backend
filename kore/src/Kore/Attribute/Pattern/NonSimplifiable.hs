@@ -35,7 +35,7 @@ import Kore.Variables.UnifiedVariable
     )
 
 {- | A pattern is 'NonSimplifiable' if:
-    1. it's a 'BuiltinBool', 'BuiltinInt' or a 'BuiltinString'
+    1. it's a 'BuiltinBool', 'BuiltinInt', 'BuiltinString' or a 'StringLiteral'
     2. a constructor or a domain value applied over a 'NonSimplifiable' pattern
     3. a sort injection applied over a 'NonSimplifiable' pattern 'pat',
     where `pat` does not also have a sort injection at the top.
