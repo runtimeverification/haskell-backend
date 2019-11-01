@@ -38,7 +38,7 @@ import Kore.Variables.UnifiedVariable
     1. it's a 'BuiltinBool', 'BuiltinInt', 'BuiltinString' or a 'StringLiteral'
     2. a constructor or a domain value applied over a 'NonSimplifiable' pattern
     3. a sort injection applied over a 'NonSimplifiable' pattern 'pat',
-    where `pat` does not also have a sort injection at the top.
+    where 'pat' does not also have a sort injection at the top.
 -}
 newtype NonSimplifiable =
     NonSimplifiable
