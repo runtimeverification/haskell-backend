@@ -21,8 +21,11 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( runUnifierT
+    )
+import qualified Kore.Unification.UnifierT as Unification
+    ( substitutionSimplifier
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -63,8 +66,6 @@ test_SubstitutionSimplifier =
         [ test "length 1, alone"
             [(xs, mkVar xs)]
             [ mempty ]
-        -- TODO (thomas.tuegel): Enable this test if we ever support this
-        -- unification case.
         -- UnificationError: UnsupportedPatterns
         -- , test "length 1, beside related substitution"
         --     [(xs, mkVar xs), (ys, mkVar xs)]
@@ -115,8 +116,6 @@ test_SubstitutionSimplifier =
         [ test "length 1, alone"
             [(xs, f (mkVar xs))]
             [ Normalization [] [(xs, f (mkVar xs))] ]
-        -- TODO (thomas.tuegel): Enable this test if we ever support this
-        -- unification case.
         -- UnificationError: UnsupportedPatterns
         -- , test "length 1, beside related substitution"
         --     [(xs, f (mkVar xs)), (ys, mkVar xs)]
@@ -194,7 +193,7 @@ test_SubstitutionSimplifier =
                 assertEqual "" expect (OrCondition.toConditions actual)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        SubstitutionSimplifier.unification
+                        Unification.substitutionSimplifier
                 actual <-
                     runSimplifier Mock.env
                     . runUnifierT

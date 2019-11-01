@@ -1,17 +1,20 @@
-module Test.Kore.Step.Substitution
+module Test.Kore.Unification.UnifierT
     ( test_mergeAndNormalizeSubstitutions
-    , test_normalize
+    , test_simplifyPredicate
     ) where
 
 import Test.Tasty
 
 import qualified Data.Foldable as Foldable
 
+import qualified Branch
 import Kore.Internal.Condition
     ( Condition
-    , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import Kore.Internal.MultiOr
     ( MultiOr
     )
@@ -19,10 +22,10 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.Condition as Condition
-import qualified Kore.Step.Substitution as Substitution
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -31,8 +34,8 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
 
-test_normalize :: [TestTree]
-test_normalize =
+test_simplifyPredicate :: [TestTree]
+test_simplifyPredicate =
     [ testCase "predicate = \\bottom" $ do
         let expect = mempty
         actual <- normalize Condition.bottomCondition
@@ -336,7 +339,10 @@ merge s1 s2 =
     $ mergeSubstitutionsExcept $ Substitution.wrap <$> [s1, s2]
   where
     mergeSubstitutionsExcept =
-        Substitution.normalizeExcept . Condition.fromSubstitution . mconcat
+        Branch.alternate
+        . Simplifier.simplifyCondition
+        . Condition.fromSubstitution
+        . mconcat
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
@@ -355,7 +361,8 @@ normalizeExcept predicated =
     (fmap . fmap) MultiOr.make
     $ Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
-    $ Substitution.normalizeExcept predicated
+    $ Branch.alternate
+    $ Simplifier.simplifyCondition predicated
   where
     mockEnv = Mock.env
 

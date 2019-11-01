@@ -86,7 +86,7 @@ import Kore.Unification.Substitution
     ( Substitution
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( runUnifierT
     )
 import Kore.Unparser

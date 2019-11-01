@@ -30,6 +30,7 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     )
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -274,7 +275,8 @@ runSimplifier patternSimplifierMap predicate =
     $ simplifier predicate
   where
     env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
-    ConditionSimplifier simplifier = Condition.create
+    ConditionSimplifier simplifier =
+        Condition.create SubstitutionSimplifier.simplification
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]
