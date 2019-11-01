@@ -106,7 +106,6 @@ instance Synthetic NonSimplifiable (DomainValue sort) where
             NonSimplifiable Nothing
       where
         child = domainValueChild domainValue
-        sort = domainValueSort domainValue
 
 instance Synthetic NonSimplifiable (Equals sort) where
     synthetic = const (NonSimplifiable Nothing)
