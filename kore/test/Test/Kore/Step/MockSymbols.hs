@@ -50,7 +50,7 @@ import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
-import Kore.Builtin.String as Builtin.String
+import qualified Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -603,12 +603,12 @@ xTopSort :: ElementVariable Variable
 xTopSort = ElementVariable $ Variable (testId "xTopSort") mempty topSort
 
 makeUnifiedVariable :: Text -> Sort -> UnifiedVariable Variable
-makeUnifiedVariable v sort'
+makeUnifiedVariable v sort
   | Text.head v == '@' = SetVar (SetVariable v')
   | otherwise = ElemVar (ElementVariable v')
   where
     v' = Variable
-        { variableSort = sort'
+        { variableSort = sort
         , variableName = testId v
         , variableCounter = mempty
         }
