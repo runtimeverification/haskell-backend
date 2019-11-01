@@ -6,23 +6,41 @@ License     : NCSA
 -}
 module Kore.Attribute.Subsort where
 
+import Control.DeepSeq
+    ( NFData
+    )
 import Data.Hashable
     ( Hashable
     )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Parser as Parser
+import Kore.Debug
 
 {- | The @subsort@ attribute. -}
 data Subsort = Subsort
     { subsort :: Sort
     , supersort :: Sort
     }
-    deriving (Eq, Generic, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic Subsort
+instance SOP.HasDatatypeInfo Subsort
+instance Debug Subsort
+instance Diff Subsort
+instance NFData Subsort
 
 instance Hashable Subsort
 
 newtype Subsorts = Subsorts { getSubsorts :: [Subsort] }
-    deriving (Eq, Ord, Show)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance SOP.Generic Subsorts
+instance SOP.HasDatatypeInfo Subsorts
+instance Debug Subsorts
+instance Diff Subsorts
+instance NFData Subsorts
 
 instance Default Subsorts where
     def = Subsorts []

@@ -62,6 +62,9 @@ import GHC.Stack
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom.Constructor
+    ( isConstructor
+    )
 import Kore.Attribute.Functional
     ( isDeclaredFunctional
     )
@@ -72,6 +75,9 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Priority
     ( getPriority
+    )
+import Kore.Attribute.Subsort
+    ( getSubsorts
     )
 import Kore.Debug
 import Kore.Error
@@ -722,7 +728,9 @@ patternToAxiomPattern attributes pat =
                     , attributes
                     }
         _
-            | isDeclaredFunctional . Attribute.functional $ attributes
+            | (isDeclaredFunctional . Attribute.functional $ attributes)
+            || (isConstructor . Attribute.constructor $ attributes)
+            || (not . null . getSubsorts . Attribute.subsorts $ attributes)
             -> koreFail "Patterns of this type do not represent rules"
             | otherwise ->
                 error
