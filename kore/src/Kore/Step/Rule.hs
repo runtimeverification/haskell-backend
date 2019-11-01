@@ -36,6 +36,9 @@ module Kore.Step.Rule
     , Kore.Step.Rule.substitute
     ) where
 
+import Control.DeepSeq
+    ( NFData
+    )
 import Control.Exception
     ( assert
     )
@@ -59,6 +62,9 @@ import GHC.Stack
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Functional
+    ( isDeclaredFunctional
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
@@ -144,6 +150,9 @@ import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
+    deriving (GHC.Generic)
+
+instance NFData AxiomPatternError
 
 {- | Normal rewriting and function axioms, claims and patterns.
 
@@ -161,6 +170,8 @@ data RulePattern variable = RulePattern
 deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
 deriving instance Show variable => Show (RulePattern variable)
+
+instance NFData variable => NFData (RulePattern variable)
 
 instance SOP.Generic (RulePattern variable)
 
@@ -213,17 +224,23 @@ newtype EqualityRule variable =
     EqualityRule { getEqualityRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData variable => NFData (EqualityRule variable)
+
 instance SOP.Generic (EqualityRule variable)
 
 instance SOP.HasDatatypeInfo (EqualityRule variable)
 
 instance Debug variable => Debug (EqualityRule variable)
 
+instance (Debug variable, Diff variable) => Diff (EqualityRule variable)
+
 {-  | Rewrite-based rule pattern.
 -}
 newtype RewriteRule variable =
     RewriteRule { getRewriteRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData variable => NFData (RewriteRule variable)
 
 instance SOP.Generic (RewriteRule variable)
 
@@ -252,11 +269,15 @@ newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData variable => NFData (ImplicationRule variable)
+
 instance SOP.Generic (ImplicationRule variable)
 
 instance SOP.HasDatatypeInfo (ImplicationRule variable)
 
 instance Debug variable => Debug (ImplicationRule variable)
+
+instance (Debug variable, Diff variable) => Diff (ImplicationRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -293,6 +314,8 @@ newtype OnePathRule variable =
     OnePathRule { getOnePathRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData variable => NFData (OnePathRule variable)
+
 instance SOP.Generic (OnePathRule variable)
 
 instance SOP.HasDatatypeInfo (OnePathRule variable)
@@ -319,6 +342,8 @@ data ReachabilityRule variable
     | AllPath !(AllPathRule variable)
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData variable => NFData (ReachabilityRule variable)
+
 instance SOP.Generic (ReachabilityRule variable)
 
 instance SOP.HasDatatypeInfo (ReachabilityRule variable)
@@ -343,6 +368,8 @@ instance TopBottom (ReachabilityRule variable) where
 newtype AllPathRule variable =
     AllPathRule { getAllPathRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData variable => NFData (AllPathRule variable)
 
 instance SOP.Generic (AllPathRule variable)
 
@@ -372,12 +399,19 @@ data QualifiedAxiomPattern variable
     | OnePathClaimPattern (OnePathRule variable)
     | AllPathClaimPattern (AllPathRule variable)
     | ImplicationAxiomPattern (ImplicationRule variable)
+    deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
     -- not only to function-related ones.
 
-deriving instance Eq variable => Eq (QualifiedAxiomPattern variable)
-deriving instance Ord variable => Ord (QualifiedAxiomPattern variable)
-deriving instance Show variable => Show (QualifiedAxiomPattern variable)
+instance NFData variable => NFData (QualifiedAxiomPattern variable)
+
+instance SOP.Generic (QualifiedAxiomPattern variable)
+
+instance SOP.HasDatatypeInfo (QualifiedAxiomPattern variable)
+
+instance (Debug variable) => Debug (QualifiedAxiomPattern variable)
+
+instance (Debug variable, Diff variable) => Diff (QualifiedAxiomPattern variable)
 
 {- | Does the axiom pattern represent a heating rule?
  -}
@@ -581,41 +615,45 @@ patternToAxiomPattern
     => Attribute.Axiom
     -> TermLike variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
-patternToAxiomPattern attributes pat
-  | isJust . getPriority . Attribute.priority $ attributes =
+patternToAxiomPattern attributes pat =
     case pat of
         Rewrites_ _ (ApplyAlias_ alias params) rhs ->
             case substituteInAlias alias params of
-               And_ _ requires lhs ->
-                   patternToAxiomPattern
-                       attributes
-                       (mkRewrites (mkAnd requires lhs) rhs)
-               _ -> koreFail "LHS alias of rule is ill-formed."
+                And_ _ requires lhs ->
+                    patternToAxiomPattern
+                        attributes
+                        (mkRewrites (mkAnd requires lhs) rhs)
+                _ ->
+                    error
+                        (   "LHS alias of rule is ill-formed."
+                        ++  unparseToString pat
+                        )
         Rewrites_ _ (And_ _ (Not_ _ antiLeft) (ApplyAlias_ alias params)) rhs
             -> case substituteInAlias alias params of
-               And_ _ requires lhs ->
-                   patternToAxiomPattern
+                And_ _ requires lhs ->
+                    patternToAxiomPattern
                         attributes
                         (mkRewrites
                             (mkAnd (mkNot antiLeft) (mkAnd requires lhs))
                             rhs
                         )
-               _ -> koreFail "LHS alias of rule is ill-formed."
+                _ ->
+                    error
+                        (   "LHS alias of rule is ill-formed."
+                        ++  unparseToString pat
+                        )
         Rewrites_ _
             (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
-            (And_ _ ensures rhs) ->
-                        pure $ RewriteAxiomPattern $ RewriteRule RulePattern
-                            { left = lhs
-                            , antiLeft = Just antiLeft
-                            , right = rhs
-                            , requires = Predicate.wrapPredicate requires
-                            , ensures = Predicate.wrapPredicate ensures
-                            , attributes
-                            }
-        _ -> error $ "Rule is ill-formed with respect\
-                      \ to the priority attribute.\n" ++ unparseToString pat
-  | otherwise =
-    case pat of
+            (And_ _ ensures rhs)
+            | isJust . getPriority . Attribute.priority $ attributes  ->
+                pure $ RewriteAxiomPattern $ RewriteRule RulePattern
+                    { left = lhs
+                    , antiLeft = Just antiLeft
+                    , right = rhs
+                    , requires = Predicate.wrapPredicate requires
+                    , ensures = Predicate.wrapPredicate ensures
+                    , attributes
+                    }
         -- normal rewrite axioms
         -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
         -- quantifiers.
@@ -683,7 +721,14 @@ patternToAxiomPattern attributes pat
                     , ensures = Predicate.makeTruePredicate
                     , attributes
                     }
-        _ -> koreFail "Unsupported pattern type in axiom"
+        _
+            | isDeclaredFunctional . Attribute.functional $ attributes
+            -> koreFail "Patterns of this type do not represent rules"
+            | otherwise ->
+                error
+                    (   "Unsupported pattern type in axiom"
+                    ++  unparseToString pat
+                    )
       where
         isModalSymbol symbol
             | headName == allPathGlobally = True

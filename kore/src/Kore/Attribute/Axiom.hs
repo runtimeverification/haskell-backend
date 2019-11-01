@@ -44,6 +44,7 @@ import Kore.Attribute.Axiom.Concrete
 import Kore.Attribute.Axiom.Constructor
 import Kore.Attribute.Axiom.Unit
 import Kore.Attribute.Comm
+import Kore.Attribute.Functional
 import Kore.Attribute.HeatCool
 import Kore.Attribute.Idem
 import Kore.Attribute.Label
@@ -97,6 +98,8 @@ data Axiom =
     , constructor :: !Constructor
     -- ^ Shows that this is one of the constructor axioms
     -- (e.g. no confusion, no junk)
+    , functional :: !Functional
+    -- ^ Shows that this is one of the functionality axioms
     , identifier :: !RuleIndex
     -- ^ Used to identify an axiom in the repl.
     , uniqueId :: !UniqueId
@@ -132,6 +135,7 @@ instance Default Axiom where
             , label = def
             , sourceLocation = def
             , constructor = def
+            , functional = def
             , identifier = def
             , uniqueId = def
             }
@@ -153,6 +157,7 @@ instance ParseAttributes Axiom where
         Monad.>=> typed @Label (parseAttribute attr)
         Monad.>=> typed @SourceLocation (parseAttribute attr)
         Monad.>=> typed @Constructor (parseAttribute attr)
+        Monad.>=> typed @Functional (parseAttribute attr)
         Monad.>=> typed @UniqueId (parseAttribute attr)
 
     toAttributes =
@@ -172,5 +177,6 @@ instance ParseAttributes Axiom where
             , toAttributes . label
             , toAttributes . sourceLocation
             , toAttributes . constructor
+            , toAttributes . functional
             , toAttributes . uniqueId
             ]
