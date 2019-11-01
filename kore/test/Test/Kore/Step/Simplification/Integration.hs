@@ -842,6 +842,21 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "nu-floor-in-or simplification" $ do
+        let q = SetVariable $ Variable (testId "q") mempty Mock.otherSort
+        actual <- evaluate
+            Conditional
+                { term = mkNu q
+                    (mkFloor_
+                        (mkIn_
+                            (Mock.g Mock.ch)
+                            (mkOr Mock.cf Mock.cg)
+                        )
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
     ]
 
 
