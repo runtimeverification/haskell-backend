@@ -45,6 +45,10 @@ do
         make TEST_CONCRETE_BACKEND=haskell "$each".run-interactive
 done
 
-command time -o "$TOP/profile.json" -a \
-    -f "{ \"src/main/k/evm-semantics/sum-to-n/sum-to-n-spec.k\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
-    make -C "$TOP/src/main/k/evm-semantics/sum-to-n" sum-to-n-spec.kprove.diff
+for each in \
+    tests/specs/examples/sum-to-n-spec.k
+do
+    command time -o "$TOP/profile.json" -a \
+        -f "{ \"evm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
+        make TEST_SYMBOLIC_BACKEND=haskell "$each".prove
+done

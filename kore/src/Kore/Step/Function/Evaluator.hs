@@ -29,6 +29,13 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Map as Map
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import Kore.Attribute.Hook
@@ -56,9 +63,6 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import Kore.Logger.WarnMissingHook
-    ( warnMissingHook
-    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -79,6 +83,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
 import Kore.TopBottom
+import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
 -}
@@ -115,9 +120,7 @@ evaluateApplication
           -- present, we assume that startup is finished, but we should really
           -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
-          = do
-            warnMissingHook hook symbol
-            pure unevaluated
+          = criticalMissingHook symbol hook
           | otherwise = return unevaluated
 
     results <-
@@ -183,6 +186,23 @@ evaluateApplication
         record key term
       | otherwise
       = return ()
+
+criticalMissingHook :: Symbol -> Text -> a
+criticalMissingHook symbol hookName =
+    (error . show . Pretty.vsep)
+        [ "Error: missing hook"
+        , "Symbol"
+        , Pretty.indent 4 (unparse symbol)
+        , "declared with attribute"
+        , Pretty.indent 4 (unparse attribute)
+        , "We don't recognize that hook and it was not given any rules."
+        , "Please open a feature request at"
+        , Pretty.indent 4 "https://github.com/kframework/kore/issues"
+        , "and include the text of this message."
+        , "Workaround: Give rules for" <+> unparse symbol
+        ]
+  where
+    attribute = hookAttribute hookName
 
 {-| Evaluates axioms on patterns.
 -}

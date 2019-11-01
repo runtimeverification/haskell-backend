@@ -10,6 +10,9 @@ module Kore.Attribute.Pattern.NonSimplifiable
 
 import Control.DeepSeq
 import Data.Hashable
+import Data.Maybe
+    ( isJust
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -31,11 +34,11 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
 
-{- | A pattern is `NonSimplifiable` if:
-    1. it's a `BuiltinBool`, `BuiltinInt` or a `BuiltinString`
-    2. a constructor applied over a `NonSimplifiable` pattern
-    3. a sort injection applied over a `NonSimplifiable` pattern `pat`,
-    where `pat` does not also have a sort injection at the top
+{- | A pattern is 'NonSimplifiable' if:
+    1. it's a 'BuiltinBool', 'BuiltinInt', 'BuiltinString' or a 'StringLiteral'
+    2. a constructor or a domain value applied over a 'NonSimplifiable' pattern
+    3. a sort injection applied over a 'NonSimplifiable' pattern 'pat',
+    where `pat` does not also have a sort injection at the top.
 -}
 newtype NonSimplifiable =
     NonSimplifiable
@@ -68,7 +71,7 @@ instance Synthetic NonSimplifiable (Application Symbol) where
     synthetic application
         | Symbol.isConstructor symbol
         , childrenAreNonSimplifiable =
-            NonSimplifiable . Just $ ConstructorHead
+            NonSimplifiable . Just $ ConstructorLikeHead
 
         | Symbol.isSortInjection symbol
         , childrenAreNonSimplifiable
@@ -93,9 +96,17 @@ instance Synthetic NonSimplifiable (Ceil sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
+-- TODO: the sort of the domain value should not be hooked
+-- for it to be non-simplifiable
 instance Synthetic NonSimplifiable (DomainValue sort) where
-    synthetic = const (NonSimplifiable Nothing)
-    {-# INLINE synthetic #-}
+    synthetic domainValue
+        | isJust . isNonSimplifiable $ child =
+            NonSimplifiable . Just $ ConstructorLikeHead
+        | otherwise =
+            NonSimplifiable Nothing
+      where
+        child = domainValueChild domainValue
+        sort = domainValueSort domainValue
 
 instance Synthetic NonSimplifiable (Equals sort) where
     synthetic = const (NonSimplifiable Nothing)
@@ -165,14 +176,14 @@ instance Synthetic NonSimplifiable (Const (UnifiedVariable variable)) where
     synthetic = const (NonSimplifiable Nothing)
 
 instance Synthetic NonSimplifiable (Const StringLiteral) where
-    synthetic = const (NonSimplifiable Nothing)
+    synthetic = const (NonSimplifiable . Just $ BuiltinHead)
     {-# INLINE synthetic #-}
 
 instance Synthetic NonSimplifiable (Top sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
-data NonSimplifiableHead = ConstructorHead
+data NonSimplifiableHead = ConstructorLikeHead
                          | SortInjectionHead
                          | BuiltinHead
     deriving (Eq, GHC.Generic, Ord, Show)
