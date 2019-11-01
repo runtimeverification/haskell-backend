@@ -36,9 +36,9 @@ import Kore.Variables.UnifiedVariable
 
 {- | A pattern is 'NonSimplifiable' if:
     1. it's a 'BuiltinBool', 'BuiltinInt' or a 'BuiltinString'
-    2. a constructor applied over a 'NonSimplifiable' pattern
+    2. a constructor or a domain value applied over a 'NonSimplifiable' pattern
     3. a sort injection applied over a 'NonSimplifiable' pattern 'pat',
-    where `pat` does not also have a sort injection at the top
+    where `pat` does not also have a sort injection at the top.
 -}
 newtype NonSimplifiable =
     NonSimplifiable
@@ -96,6 +96,8 @@ instance Synthetic NonSimplifiable (Ceil sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
+-- TODO: the sort of the domain value should not be hooked
+-- for it to be non-simplifiable
 instance Synthetic NonSimplifiable (DomainValue sort) where
     synthetic domainValue
         | isJust . isNonSimplifiable $ child =
