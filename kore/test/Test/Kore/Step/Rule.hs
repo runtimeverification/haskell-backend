@@ -2,6 +2,7 @@ module Test.Kore.Step.Rule
     ( test_axiomPatterns
     , test_freeVariables
     , test_refreshRulePattern
+    , test_Unparse_RewriteRule
     ) where
 
 import Test.Tasty
@@ -43,6 +44,7 @@ import qualified Kore.Step.Rule as Rule
 import Kore.Syntax.Definition hiding
     ( Alias (..)
     )
+import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -428,3 +430,35 @@ testRulePattern =
         , ensures = Predicate.makeCeilPredicate (mkElemVar Mock.t)
         , attributes = def
         }
+
+test_Unparse_RewriteRule :: [TestTree]
+test_Unparse_RewriteRule =
+    [ testCase "ordinary" $ do
+        let input = RewriteRule ordinary
+            expect =
+                mkRewrites
+                    (mkAnd (mkElemVar Mock.x) (mkCeil_ Mock.a))
+                    (mkAnd (mkElemVar Mock.y) (mkCeil_ Mock.b))
+        assertEqual "" (unparseToString expect) (unparseToString input)
+    , testCase "priority form" $ do
+        let input = RewriteRule priority
+            expect =
+                mkRewrites
+                    (mkAnd
+                        (mkAnd (mkNot (mkElemVar Mock.z)) (mkElemVar Mock.x))
+                        (mkCeil_ Mock.a)
+                    )
+                    (mkAnd (mkElemVar Mock.y) (mkCeil_ Mock.b))
+        assertEqual "" (unparseToString expect) (unparseToString input)
+    ]
+  where
+    ordinary =
+        RulePattern
+            { left = mkElemVar Mock.x
+            , antiLeft = Nothing
+            , right = mkElemVar Mock.y
+            , requires = Predicate.makeCeilPredicate Mock.a
+            , ensures = Predicate.makeCeilPredicate Mock.b
+            , attributes = def
+            }
+    priority = ordinary { antiLeft = Just (mkElemVar Mock.z) }

@@ -91,6 +91,7 @@ import Kore.Internal.TermLike
     , mkCeil
     , mkEquals
     , mkImplies
+    , mkNot
     , mkRewrites
     , mkTop
     , mkTop_
@@ -231,20 +232,26 @@ instance Debug variable => Debug (RewriteRule variable)
 
 instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
 
-instance
-    (Ord variable, SortedVariable variable, Unparse variable)
-    => Unparse (RewriteRule variable)
-  where
-    unparse (RewriteRule RulePattern { left, right, requires } ) =
-        unparse $ mkRewrites
-            (mkAnd left (Predicate.unwrapPredicate requires))
-            right
-    unparse2 (RewriteRule RulePattern { left, right, requires } ) =
-        unparse2 $ mkRewrites
-            (mkAnd left (Predicate.unwrapPredicate requires))
-            right
+instance InternalVariable variable => Unparse (RewriteRule variable) where
+    unparse = unparse . rewriteRuleToTermLike
+    unparse2 = unparse2 . rewriteRuleToTermLike
 
-{-  | Implication-based pattern.
+rewriteRuleToTermLike
+    :: InternalVariable variable
+    => RewriteRule variable
+    -> TermLike variable
+rewriteRuleToTermLike (RewriteRule rule@(RulePattern _ _ _ _ _ _)) =
+    mkRewrites
+        (mkAnd left' (Predicate.unwrapPredicate requires))
+        (mkAnd right (Predicate.unwrapPredicate ensures))
+  where
+    RulePattern { left, antiLeft, right, requires, ensures } = rule
+    left' =
+        case antiLeft of
+            Nothing -> left
+            Just antiLeft' -> mkAnd (mkNot antiLeft') left
+
+{- | Implication-based pattern.
 -}
 newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
