@@ -88,7 +88,6 @@ import Kore.Unification.Substitution
     ( Normalization (..)
     , Substitution
     )
-import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
@@ -136,12 +135,10 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
 
     simplifyCondition condition =
         simplifyCondition' condition
-        & BranchT.mapBranchT (flip evalStateT denormalizedCount)
+        & BranchT.mapBranchT (flip evalStateT maxBound)
       where
         ConditionSimplifier simplifyCondition' =
             ConditionSimplifier.create substitutionSimplifier
-        denormalizedCount =
-            (length . Substitution.variables . Condition.substitution) condition
     {-# INLINE simplifyCondition #-}
 
 type DenormalizedCount = Int
