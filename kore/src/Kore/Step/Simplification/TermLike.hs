@@ -251,38 +251,27 @@ simplifyInternal term predicate = do
                 $ assertConditionSimplified termLike
                 $ Condition.fromPredicate termPredicate
         | otherwise
-          = assertTermNotPredicate $ tracer termLike $ do
+        = assertTermNotPredicate $ tracer termLike $ do
             termOr <- descendAndSimplify termLike
-            termPredicateList <- BranchT.gather $ do
-                termOrElement <- BranchT.scatter termOr
-                simplified <- simplifyCondition termOrElement
-                return (applyTermSubstitution simplified)
+            returnIfSimplifiedOrContinue
+                termLike
+                (OrPattern.toPatterns termOr)
+                (do
+                    termPredicateList <- BranchT.gather $ do
+                        termOrElement <- BranchT.scatter termOr
+                        simplified <- simplifyCondition termOrElement
+                        return (applyTermSubstitution simplified)
 
-            case termPredicateList of
-                [] -> return OrPattern.bottom
-                [result] ->
-                    let (resultTerm, resultPredicate) = Pattern.splitTerm result
-                        termAsPredicate =
-                            Condition.fromPredicate
-                                <$> Predicate.makePredicate termLike
-                    in if Pattern.isSimplified result
-                        then return (OrPattern.fromPattern result)
-                        else if isTop resultPredicate && resultTerm == termLike
-                        then return
-                            (OrPattern.fromTermLike
-                                (TermLike.markSimplified resultTerm)
-                            )
-                        else if isTop resultTerm
-                            && Right resultPredicate == termAsPredicate
-                        then return
-                            $ OrPattern.fromPattern
-                            $ Pattern.fromCondition
-                            $ Condition.markSimplified resultPredicate
-                        else resimplify result
-                resultList -> do
-                    resultsList <- mapM resimplify resultList
-                    return (MultiOr.mergeAll resultsList)
+                    returnIfSimplifiedOrContinue
+                        termLike
+                        termPredicateList
+                        (do
+                            resultsList <- mapM resimplify termPredicateList
+                            return (MultiOr.mergeAll resultsList)
+                        )
+                )
       where
+
         resimplify :: Pattern variable -> simplifier (OrPattern variable)
         resimplify result = do
             let (resultTerm, resultPredicate) = Pattern.splitTerm result
@@ -322,6 +311,47 @@ simplifyInternal term predicate = do
                     , "Expected all predicates to be removed from the term."
                     ]
 
+        returnIfSimplifiedOrContinue
+            :: TermLike variable
+            -> [Pattern variable]
+            -> simplifier (OrPattern variable)
+            -> simplifier (OrPattern variable)
+        returnIfSimplifiedOrContinue originalTerm resultList continuation =
+            case resultList of
+                [] -> return OrPattern.bottom
+                [result] ->
+                    returnIfResultSimplifiedOrContinue
+                        originalTerm result continuation
+                _ -> continuation
+
+        returnIfResultSimplifiedOrContinue
+            :: TermLike variable
+            -> Pattern variable
+            -> simplifier (OrPattern variable)
+            -> simplifier (OrPattern variable)
+        returnIfResultSimplifiedOrContinue originalTerm result continuation
+          | Pattern.isSimplified result
+            && isTop resultTerm
+            && resultSubstitutionIsEmpty
+          = return (OrPattern.fromPattern result)
+          | Pattern.isSimplified result
+            && isTop resultPredicate
+          = return (OrPattern.fromPattern result)
+          | isTop resultPredicate && resultTerm == originalTerm
+          = return (OrPattern.fromTermLike (TermLike.markSimplified resultTerm))
+          | isTop resultTerm && Right resultPredicate == termAsPredicate
+          = return
+                $ OrPattern.fromPattern
+                $ Pattern.fromCondition
+                $ Condition.markSimplified resultPredicate
+          | otherwise = continuation
+          where
+            (resultTerm, resultPredicate) = Pattern.splitTerm result
+            resultSubstitutionIsEmpty =
+                case resultPredicate of
+                    Conditional {substitution} -> substitution == mempty
+            termAsPredicate =
+                Condition.fromPredicate <$> Predicate.makePredicate term
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =

@@ -1016,7 +1016,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 Attribute.Pattern { patternSort = sort }
                   | sort == forcedSort    -> Left <$> pattern'
                   | sort == predicateSort ->
-                    forceSortWorkerPredicate forcedSort original
+                    forceSortPredicate forcedSort original
                   | otherwise             -> illSorted forcedSort original
             )
 
@@ -1039,7 +1039,7 @@ fullyOverrideSort forcedSort = Recursive.apo overrideSortWorker
     overrideSortWorker original@(Recursive.project -> attrs :< _) =
         (:<)
             (attrs { Attribute.patternSort = forcedSort })
-            (forceSortWorkerPredicate forcedSort original)
+            (forceSortPredicate forcedSort original)
 
 illSorted
     :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
@@ -1056,12 +1056,12 @@ illSorted forcedSort original =
     , Pretty.indent 4 (unparse original)
     ]
 
-forceSortWorkerPredicate
+forceSortPredicate
     :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
     => Sort
     -> TermLike variable
     -> TermLikeF variable (Either (TermLike variable) (TermLike variable))
-forceSortWorkerPredicate
+forceSortPredicate
     forcedSort
     original@(Recursive.project -> _ :< pattern')
   =

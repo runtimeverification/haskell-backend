@@ -402,7 +402,6 @@ makesPredicate
     toBool IsSimplified = True
     toBool NotSimplified = False
 
-
 makePredicateYieldsWrapPredicate :: String -> TermLike Variable -> IO ()
 makePredicateYieldsWrapPredicate msg p =
     assertEqual msg
