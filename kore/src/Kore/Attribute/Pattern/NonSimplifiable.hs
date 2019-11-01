@@ -36,9 +36,10 @@ import Kore.Variables.UnifiedVariable
 
 {- | A pattern is 'NonSimplifiable' if:
     1. it's a 'BuiltinBool', 'BuiltinInt', 'BuiltinString' or a 'StringLiteral'
-    2. a constructor or a domain value applied over a 'NonSimplifiable' pattern
+    2. a constructor or a domain value of a non-hooked sort applied over
+    a 'NonSimplifiable' pattern
     3. a sort injection applied over a 'NonSimplifiable' pattern 'pat',
-    where `pat` does not also have a sort injection at the top.
+    where 'pat' does not also have a sort injection at the top.
 -}
 newtype NonSimplifiable =
     NonSimplifiable
@@ -96,8 +97,6 @@ instance Synthetic NonSimplifiable (Ceil sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
--- TODO: the sort of the domain value should not be hooked
--- for it to be non-simplifiable
 instance Synthetic NonSimplifiable (DomainValue sort) where
     synthetic domainValue
         | isJust . isNonSimplifiable $ child =
@@ -161,9 +160,9 @@ instance Synthetic NonSimplifiable (Rewrites sort) where
 instance Synthetic NonSimplifiable (Builtin key) where
     synthetic =
         \case
-            BuiltinInt _    -> NonSimplifiable . Just $ BuiltinHead
-            BuiltinBool _   -> NonSimplifiable . Just $ BuiltinHead
-            BuiltinString _ -> NonSimplifiable . Just $ BuiltinHead
+            BuiltinInt _    -> NonSimplifiable . Just $ ConstructorLikeHead
+            BuiltinBool _   -> NonSimplifiable . Just $ ConstructorLikeHead
+            BuiltinString _ -> NonSimplifiable . Just $ ConstructorLikeHead
             _               -> NonSimplifiable Nothing
     {-# INLINE synthetic #-}
 
@@ -175,7 +174,7 @@ instance Synthetic NonSimplifiable (Const (UnifiedVariable variable)) where
     synthetic = const (NonSimplifiable Nothing)
 
 instance Synthetic NonSimplifiable (Const StringLiteral) where
-    synthetic = const (NonSimplifiable . Just $ BuiltinHead)
+    synthetic = const (NonSimplifiable . Just $ ConstructorLikeHead)
     {-# INLINE synthetic #-}
 
 instance Synthetic NonSimplifiable (Top sort) where
@@ -184,7 +183,6 @@ instance Synthetic NonSimplifiable (Top sort) where
 
 data NonSimplifiableHead = ConstructorLikeHead
                          | SortInjectionHead
-                         | BuiltinHead
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic NonSimplifiableHead

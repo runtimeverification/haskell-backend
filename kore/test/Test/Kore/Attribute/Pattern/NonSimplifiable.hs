@@ -15,6 +15,8 @@ test_TermLike =
         Mock.builtinBool True `shouldBeNonSimplifiable` True
     , testCase "Non-simplifiable BuiltinString" $
         Mock.builtinString "test" `shouldBeNonSimplifiable` True
+    , testCase "Non-simplifiable DomainValue" $
+        domainValue `shouldBeNonSimplifiable` True
     , testCase "Simplifiable BuiltinSet" $
         Mock.builtinSet [Mock.a, Mock.b] `shouldBeNonSimplifiable` False
     , testCase "Single constructor is non-simplifiable" $
@@ -50,6 +52,13 @@ test_TermLike =
             )
         `shouldBeNonSimplifiable` True
     ]
+  where
+    domainValue =
+        mkDomainValue
+            ( DomainValue
+                Mock.testSort
+                (mkStringLiteral "testDV")
+            )
 
 shouldBeNonSimplifiable
     :: TermLike Variable
