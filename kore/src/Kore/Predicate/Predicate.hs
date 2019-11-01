@@ -452,6 +452,15 @@ makeTruePredicate = GenericPredicate TermLike.mkTop_
 makeFalsePredicate :: InternalVariable variable => Predicate variable
 makeFalsePredicate = GenericPredicate TermLike.mkBottom_
 
+{-| When transforming a term into a predicate, this tells
+whether the predicate is different in a significant way from the term used
+to build it, i.e. whether it changed when being transformed.
+
+A significant change is a change that does not involve sorts. When building
+predicates from terms we replace existing sorts with a placeholder,
+assuming that later we will put the right sorts back, so we don't count
+that as a significant change.
+-}
 data HasChanged = Changed | NotChanged
     deriving (Show, Eq)
 
