@@ -12,6 +12,7 @@ module Kore.Step.Axiom.Registry
     , axiomPatternsToEvaluators
     ) where
 
+import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import Data.List
     ( partition
@@ -145,7 +146,7 @@ axiomPatternsToEvaluators =
                 Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
       where
         simplifications, evaluations :: [EqualityRule Variable]
-        (simplifications, filter (not . ignoreEvaluation) -> evaluations) =
+        (simplifications, filter (not . ignoreDefinition) -> evaluations) =
             partition isSimplificationRule equalities
           where
             isSimplificationRule (EqualityRule RulePattern { attributes }) =
@@ -188,9 +189,11 @@ ignoreEqualityRule (EqualityRule RulePattern { attributes })
     Idem { isIdem } = Attribute.idem attributes
     Overload { getOverload } = Attribute.overload attributes
 
-{- | Should we ignore the 'EqualityRule' for function evaluation?
+{- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
-ignoreEvaluation :: EqualityRule Variable -> Bool
-ignoreEvaluation (EqualityRule RulePattern { left })
-  | (Pattern.isFunction . Pattern.function) (extractAttributes left) = False
-  | otherwise = True
+ignoreDefinition :: EqualityRule Variable -> Bool
+ignoreDefinition (EqualityRule RulePattern { left }) =
+    Exception.assert isLeftFunctionLike False
+  where
+    isLeftFunctionLike =
+        (Pattern.isFunction . Pattern.function) (extractAttributes left)
