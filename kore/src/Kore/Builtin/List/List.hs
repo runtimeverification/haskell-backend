@@ -160,6 +160,12 @@ lookupSymbolGet
     -> Either (Kore.Error e) Symbol
 lookupSymbolGet = Builtin.lookupSymbol getKey
 
+lookupSymbolUpdate
+    :: Sort
+    -> VerifiedModule Attribute.Symbol axiomAttrs
+    -> Either (Kore.Error e) Symbol
+lookupSymbolUpdate = Builtin.lookupSymbol updateKey
+
 {- | Check if the given symbol is hooked to @LIST.concat@.
 -}
 isSymbolConcat :: Symbol -> Bool
@@ -174,6 +180,11 @@ isSymbolElement = Builtin.isSymbol elementKey
 -}
 isSymbolUnit :: Symbol -> Bool
 isSymbolUnit = Builtin.isSymbol unitKey
+
+{- | Check if the given symbol is hooked to @LIST.update@.
+-}
+isSymbolUpdate :: Symbol -> Bool
+isSymbolUpdate = Builtin.isSymbol updateKey
 
 concatKey :: IsString s => s
 concatKey = "LIST.concat"

@@ -1,5 +1,8 @@
 module Test.Kore.Builtin.Map where
 
+import Debug.Trace
+import Kore.Unparser
+
 import Hedgehog
     ( Gen
     , Property
@@ -130,6 +133,8 @@ test_lookupUpdate =
             let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
                 predicate = mkEquals_ patLookup patVal
                 expect = Pattern.fromTermLike patVal
+            --traceM $ "\npatLookup: " <> unparseToString (lookupMap (updateMap patMap patKey patVal) patKey) <> "\n"
+            --traceM $ "\npatVal: " <> unparseToString patVal <> "\n"
             (===) expect      =<< evaluateT patLookup
             (===) Pattern.top =<< evaluateT predicate
         )

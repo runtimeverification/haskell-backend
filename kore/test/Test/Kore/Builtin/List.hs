@@ -1,5 +1,8 @@
 module Test.Kore.Builtin.List where
 
+import Debug.Trace
+import Kore.Unparser
+
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -95,6 +98,40 @@ test_getLastElement =
         let expectGet = Test.Int.asPartialPattern value
         (===) expectGet   =<< evaluateT patGet
         (===) Pattern.top =<< evaluateT predicate
+
+test_update :: TestTree
+test_update =
+    testPropertyWithSolver
+    ""
+    prop
+  where
+    prop = do
+        values <- forAll genSeqInteger
+        value  <- forAll genInteger 
+        let len = length values
+        ix <- forAll $ Gen.integral (Range.linear (-len) (len - 1))
+        let patValues = asTermLike $ Test.Int.asInternal <$> values
+        let patUpdated = mkApplySymbol updateListSymbol 
+                [ patValues
+                , Test.Int.asInternal (fromIntegral ix)
+                , Test.Int.asInternal value
+                ]
+        if len > 0 then do            
+            let patGet = mkApplySymbol getListSymbol
+                    [ patUpdated
+                    , Test.Int.asInternal (fromIntegral ix)
+                    ]
+            
+                predicate = mkEquals_
+                    patGet
+                    (Test.Int.asInternal value)
+                expect = Pattern.fromTermLike (Test.Int.asInternal value)
+            (===) Pattern.top  =<< evaluateT predicate
+            (===) expect =<< evaluateT patGet
+        else do
+            let predicate = mkEquals_ mkBottom_ patUpdated
+            (===) Pattern.bottom =<< evaluateT patUpdated
+            (===) Pattern.top =<< evaluateT predicate
 
 test_concatUnit :: TestTree
 test_concatUnit =
