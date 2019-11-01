@@ -61,20 +61,22 @@ simplify
     =>  SubstitutionSimplifier simplifier
     ->  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
-simplify SubstitutionSimplifier { simplifySubstitution } =
-    worker
+simplify SubstitutionSimplifier { simplifySubstitution } initial =
+    normalize initial >>= worker
   where
-    worker initial = do
-        normalized <- normalize initial
-        let Conditional { term, predicate, substitution } = normalized
-            substitution' = Substitution.toMap substitution
+    worker Conditional { term, predicate, substitution } = do
+        let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
         simplified <- simplifyPredicate predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
-        if fullySimplified merged && merged == normalized { term = () }
-            then normalize merged { term }
-            else worker    merged { term }
+        normalized <- normalize merged
+        -- Check for full simplification *after* normalization. Simplification
+        -- may have produced irrelevant substitutions that become relevant after
+        -- normalization.
+        if fullySimplified normalized
+            then return normalized { term }
+            else worker normalized { term }
 
     fullySimplified Conditional { predicate, substitution } =
         Predicate.isFreeOf predicate variables
