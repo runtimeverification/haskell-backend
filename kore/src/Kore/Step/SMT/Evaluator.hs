@@ -161,12 +161,11 @@ decidePredicate korePredicate =
         case result of
             Unsat   -> return False
             Sat     -> Applicative.empty
-            Unknown -> do
-                (logWarning . Text.pack . show . Pretty.vsep)
-                    [ "Failed to decide predicate:"
+            Unknown ->
+                (error . show . Pretty.vsep)
+                    [ "Error: Failed to decide predicate:"
                     , Pretty.indent 4 (unparse korePredicate)
                     ]
-                Applicative.empty
 
 goTranslatePredicate
     :: forall variable m.
