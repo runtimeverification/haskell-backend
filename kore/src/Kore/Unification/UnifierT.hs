@@ -184,12 +184,15 @@ substitutionSimplifier =
           | otherwise = do
             let denormalizedCount = length denormalized
             lastDenormalizedCount <- State.get
-            unless (denormalizedCount < lastDenormalizedCount) . lift
-                $ throwSubstitutionError (SimplifiableCycle variables)
+            unless (denormalizedCount < lastDenormalizedCount)
+                (simplifiableCycle variables)
             State.put denormalizedCount
             return $ Condition.fromNormalization normalization
           where
             (variables, _) = unzip denormalized
+
+    simplifiableCycle variables =
+        (lift . throwSubstitutionError) (SimplifiableCycle variables)
 
     normalize1
         ::  forall variable
