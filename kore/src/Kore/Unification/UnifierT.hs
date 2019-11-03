@@ -141,6 +141,7 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
             ConditionSimplifier.create substitutionSimplifier
     {-# INLINE simplifyCondition #-}
 
+-- | The number of denormalized substitutions.
 type DenormalizedCount = Int
 
 {- | A 'SubstitutionSimplifier' to use during unification.
