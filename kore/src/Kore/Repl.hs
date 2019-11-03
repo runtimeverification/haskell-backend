@@ -111,12 +111,9 @@ runRepl
     -> OutputFile
     -- ^ optional output file
     -> m ()
-runRepl _ [] _ _ _ outputFile = do
-    let fileName =
-            fromMaybe
-                (error "Output file not specified")
-                (unOutputFile outputFile)
-    liftIO $ writeFile fileName (unparseToString topTerm)
+runRepl _ [] _ _ _ outputFile =
+    let printTerm = maybe putStr writeFile (unOutputFile outputFile)
+    in liftIO . printTerm . unparseToString $ topTerm
   where
     topTerm :: TermLike Variable
     topTerm = mkTop $ mkSortVariable "R"
