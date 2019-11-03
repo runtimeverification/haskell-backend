@@ -144,7 +144,7 @@ normalize (dropTrivialSubstitutions -> substitution) =
 
     simplifiableCycle (Set.fromList -> variables) = do
         let -- Variables with simplifiable dependencies
-            simplifiable = Set.filter (not . isNonSimplifiable) variables
+            simplifiable = Set.filter isSimplifiable variables
             denormalized =
                 Map.toList $ Map.restrictKeys substitution simplifiable
             substitution' = Map.withoutKeys substitution simplifiable
@@ -153,8 +153,8 @@ normalize (dropTrivialSubstitutions -> substitution) =
         normalization <- normalize substitution'
         pure $ normalization <> mempty { denormalized }
 
-    isNonSimplifiable variable =
-        (==)
+    isSimplifiable variable =
+        (/=)
             (Map.lookup variable allDependencies)
             (Map.lookup variable nonSimplifiableDependencies)
 
