@@ -322,7 +322,7 @@ exit = do
     onePathClaims <- generateInProgressOPClaims
     sort <- currentClaimSort
     let conj = conjOfOnePathClaims onePathClaims sort
-        printTerm = maybe putStr writeFile (unOutputFile ofile)
+        printTerm = maybe putStrLn writeFile (unOutputFile ofile)
     liftIO . printTerm . unparseToString $ conj
     if isCompleted (Map.elems proofs)
        then return SuccessStop

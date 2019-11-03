@@ -112,7 +112,7 @@ runRepl
     -- ^ optional output file
     -> m ()
 runRepl _ [] _ _ _ outputFile =
-    let printTerm = maybe putStr writeFile (unOutputFile outputFile)
+    let printTerm = maybe putStrLn writeFile (unOutputFile outputFile)
     in liftIO . printTerm . unparseToString $ topTerm
   where
     topTerm :: TermLike Variable
