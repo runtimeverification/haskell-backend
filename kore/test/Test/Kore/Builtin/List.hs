@@ -111,16 +111,9 @@ test_GetUpdate =
         ix <- forAll genSeqIndex
         let len = fromIntegral $ length values
             patValues = asTermLike $ Test.Int.asInternal <$> values
-            patUpdated = mkApplySymbol updateListSymbol
-                [ patValues
-                , Test.Int.asInternal ix
-                , value
-                ]
+            patUpdated = updateList patValues (Test.Int.asInternal ix) value
         if (-len) <= ix && ix < len then do
-            let patGet = mkApplySymbol getListSymbol
-                    [ patUpdated
-                    , Test.Int.asInternal ix
-                    ]
+            let patGet = getList patUpdated $ Test.Int.asInternal ix
                 predicate = mkEquals_
                     patGet
                     value
