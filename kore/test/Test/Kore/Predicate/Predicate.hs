@@ -9,6 +9,7 @@ import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.TermLike
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate as Predicate
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
@@ -327,7 +328,7 @@ test_predicate =
                     (makeForall makeFalsePredicate)
             )
     , testGroup "makePredicate"
-        [testCase "makePredicate yields wrapPredicate"
+        [ testCase "makePredicate yields wrapPredicate"
             (traverse_ (uncurry makePredicateYieldsWrapPredicate)
                 [ ("Top", mkTop_)
                 , ("Bottom", mkBottom_)
@@ -344,8 +345,62 @@ test_predicate =
                 , ("In", inA)
                 ]
             )
+        , testGroup "keeps simplified bit"
+            [ testCase "unsimplified stays unsimplified" $
+                (mkEquals_ Mock.cf Mock.cg, NotSimplified)
+                `makesPredicate`
+                (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
+            , testCase "simplified stays simplified" $
+                ( TermLike.markSimplified $ mkEquals_ Mock.cf Mock.cg
+                , IsSimplified
+                )
+                `makesPredicate`
+                (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
+            , testCase "changed simplified becomes unsimplified" $
+                ( TermLike.markSimplified
+                    $ mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
+                , IsSimplified
+                )
+                `makesPredicate`
+                (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
+            , testCase "changed simplified becomes unsimplified" $
+                ( TermLike.markSimplified
+                    $ mkAnd
+                        (mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg))
+                        (mkEquals_ Mock.cg Mock.ch)
+                , IsSimplified
+                )
+                `makesPredicate`
+                ( makeAndPredicate
+                    (makeEqualsPredicate Mock.cf Mock.cg)
+                    (makeEqualsPredicate Mock.cg Mock.ch)
+                , NotSimplified)
+            ]
         ]
     ]
+
+data Simplified = IsSimplified | NotSimplified
+
+makesPredicate
+    :: HasCallStack
+    => (TermLike Variable, Simplified)
+    -> (Predicate Variable, Simplified)
+    -> IO ()
+makesPredicate
+    (term, termSimplification)
+    (predicate, predicateSimplification)
+  = do
+    let eitherPredicate = makePredicate term
+    assertEqual "Predicate equality" (Right predicate) eitherPredicate
+    assertEqual "Term simplification"
+        (toBool termSimplification)
+        (TermLike.isSimplified term)
+    assertEqual "Predicate simplification"
+        (Right (toBool predicateSimplification))
+        (Predicate.isSimplified <$> eitherPredicate)
+  where
+    toBool IsSimplified = True
+    toBool NotSimplified = False
 
 makePredicateYieldsWrapPredicate :: String -> TermLike Variable -> IO ()
 makePredicateYieldsWrapPredicate msg p =

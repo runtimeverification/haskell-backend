@@ -136,7 +136,7 @@ simplification =
 
     normalize1 (predicate, substitutions) = do
         let normalized =
-                maybe Condition.bottom Condition.fromNormalization
+                maybe Condition.bottom Condition.fromNormalizationSimplified
                 $ normalize substitutions
         return $ Condition.fromPredicate predicate <> normalized
 

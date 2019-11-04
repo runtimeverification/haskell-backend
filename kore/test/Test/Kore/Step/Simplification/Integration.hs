@@ -814,7 +814,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
     , testCase "Equals-in simplification" $ do
         let gt = SetVariable $ Variable (testId "gt") mempty Mock.stringSort
             g = SetVariable $ Variable (testId "g") mempty Mock.testSort1
@@ -865,7 +865,7 @@ test_substitute =
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
-                                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                                (Mock.functionalConstr10 Mock.a)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -894,7 +894,7 @@ test_substitute =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
                         { term =
-                            Mock.functionalConstr20 Mock.a (mkElemVar Mock.y)
+                            Mock.functionalConstr20 Mock.a Mock.a
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -928,7 +928,7 @@ test_substituteMap =
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testMapX
+                        { term = Mock.functionalConstr20 Mock.a testMapA
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -962,7 +962,7 @@ test_substituteList =
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testListX
+                        { term = Mock.functionalConstr20 Mock.a testListA
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
