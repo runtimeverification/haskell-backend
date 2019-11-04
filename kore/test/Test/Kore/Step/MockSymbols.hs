@@ -50,6 +50,7 @@ import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
+import qualified Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -1537,6 +1538,12 @@ builtinBool
     => Bool
     -> TermLike variable
 builtinBool = Builtin.Bool.asInternal boolSort
+
+builtinString
+    :: InternalVariable variable
+    => Text
+    -> TermLike variable
+builtinString = Builtin.String.asInternal stringSort
 
 emptyMetadataTools :: SmtMetadataTools Attribute.Symbol
 emptyMetadataTools =
