@@ -30,10 +30,14 @@ import Control.Monad.IO.Unlift
     )
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
+import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Map.Strict as Map
 import qualified GHC.Stack as GHC
 
 import Branch
+import qualified Branch as BranchT
+    ( scatter
+    )
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
     )
@@ -60,6 +64,9 @@ import qualified Kore.Step.Simplification.Condition as Condition
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
+import Kore.Step.Simplification.SubstitutionSimplifier
+    ( SubstitutionSimplifier (SubstitutionSimplifier)
+    )
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import SMT
     ( MonadSMT (..)
@@ -70,11 +77,12 @@ import SMT
 
 data Env simplifier =
     Env
-        { metadataTools       :: !(SmtMetadataTools Attribute.Symbol)
-        , simplifierTermLike  :: !TermLikeSimplifier
-        , simplifierCondition :: !(ConditionSimplifier simplifier)
-        , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
-        , memo                :: !(Memo.Self simplifier)
+        { metadataTools          :: !(SmtMetadataTools Attribute.Symbol)
+        , simplifierTermLike     :: !TermLikeSimplifier
+        , simplifierCondition    :: !(ConditionSimplifier simplifier)
+        , simplifierSubstitution :: !(SubstitutionSimplifier simplifier)
+        , simplifierAxioms       :: !BuiltinAndAxiomSimplifierMap
+        , memo                   :: !(Memo.Self simplifier)
         }
 
 {- | @Simplifier@ represents a simplification action.
@@ -130,6 +138,12 @@ instance
         ConditionSimplifier simplify <- asks simplifierCondition
         simplify conditional
     {-# INLINE simplifyCondition #-}
+
+    simplifySubstitution substitution = do
+        SubstitutionSimplifier simplify <- asks simplifierSubstitution
+        results <- Monad.Trans.lift $ simplify substitution
+        BranchT.scatter results
+    {-# INLINE simplifySubstitution #-}
 
     askSimplifierAxioms = asks simplifierAxioms
     {-# INLINE askSimplifierAxioms #-}
@@ -190,6 +204,7 @@ evalSimplifier verifiedModule simplifier = do
             { metadataTools = earlyMetadataTools
             , simplifierTermLike
             , simplifierCondition
+            , simplifierSubstitution
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
             }
@@ -198,7 +213,8 @@ evalSimplifier verifiedModule simplifier = do
     -- knowledge of the patterns which are internalized.
     earlyMetadataTools = MetadataTools.build verifiedModule
     simplifierTermLike = Simplifier.create
-    simplifierCondition = Condition.create SubstitutionSimplifier.simplification
+    simplifierCondition = Condition.create
+    simplifierSubstitution = SubstitutionSimplifier.simplification
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 
@@ -231,6 +247,7 @@ evalSimplifier verifiedModule simplifier = do
             { metadataTools
             , simplifierTermLike
             , simplifierCondition
+            , simplifierSubstitution
             , simplifierAxioms
             , memo
             }

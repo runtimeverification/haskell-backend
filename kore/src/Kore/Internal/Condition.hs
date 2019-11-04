@@ -35,12 +35,6 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.TermLike
-    ( TermLike
-    )
-import qualified Kore.Internal.TermLike as TermLike
-    ( isSimplified
-    )
 import Kore.Internal.Variable
 import Kore.Predicate.Predicate
     ( Predicate
@@ -171,22 +165,9 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
   where
     predicate' =
         Conditional.fromPredicate
-        . markSimplifiedIfChildrenSimplified denormalized
         . Predicate.fromSubstitution
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution
         $ Substitution.unsafeWrap normalized
-    markSimplifiedIfChildrenSimplified childrenList result =
-        if childrenAreSimplified
-            then Predicate.markSimplified result
-            else result
-      where
-        childrenAreSimplified =
-            all (TermLike.isSimplified) (map dropVariable childrenList)
-
-        dropVariable
-            :: (UnifiedVariable variable, TermLike variable)
-            -> TermLike variable
-        dropVariable = snd
 

@@ -24,6 +24,7 @@ import Control.Monad
     )
 import qualified Control.Monad.Except as Error
 import qualified Control.Monad.Morph as Morph
+import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
@@ -126,8 +127,15 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
     simplifyCondition = simplifyCondition'
       where
         ConditionSimplifier simplifyCondition' =
-            ConditionSimplifier.create substitutionSimplifier
+            ConditionSimplifier.create
     {-# INLINE simplifyCondition #-}
+
+    simplifySubstitution substitution = do
+        result <- Monad.Trans.lift $ simplifySubstitution' substitution
+        BranchT.scatter result
+      where
+        (SubstitutionSimplifier simplifySubstitution') = substitutionSimplifier
+    {-# INLINE simplifySubstitution #-}
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 

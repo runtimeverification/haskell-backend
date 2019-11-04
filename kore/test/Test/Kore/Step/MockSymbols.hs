@@ -1573,8 +1573,7 @@ axiomSimplifiers = Map.empty
 
 predicateSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-predicateSimplifier =
-    Simplifier.Condition.create SubstitutionSimplifier.simplification
+predicateSimplifier = Simplifier.Condition.create
 
 env :: MonadSimplify simplifier => Env simplifier
 env =
@@ -1582,6 +1581,7 @@ env =
         { metadataTools = Test.Kore.Step.MockSymbols.metadataTools
         , simplifierTermLike = termLikeSimplifier
         , simplifierCondition = predicateSimplifier
+        , simplifierSubstitution = SubstitutionSimplifier.simplification
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         }

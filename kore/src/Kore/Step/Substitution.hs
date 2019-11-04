@@ -36,7 +36,11 @@ import Kore.Predicate.Predicate
     ( Predicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
-import Kore.Step.Simplification.Simplify as Simplifier
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    , simplifyCondition
+    )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )

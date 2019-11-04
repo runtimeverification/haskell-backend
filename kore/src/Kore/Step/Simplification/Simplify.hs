@@ -93,6 +93,9 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Syntax.Application
+import Kore.Unification.Substitution
+    ( Substitution
+    )
 import ListT
     ( ListT (..)
     , mapListT
@@ -159,6 +162,25 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
             $ Branch.gather $ simplifyCondition conditional
         Branch.scatter results
     {-# INLINE simplifyCondition #-}
+
+    simplifySubstitution
+        :: SubstitutionVariable variable
+        => Substitution variable
+        -> BranchT m (Condition variable)
+    default simplifySubstitution
+        ::  ( SubstitutionVariable variable
+            , MonadTrans trans
+            , MonadSimplify n
+            , m ~ trans n
+            )
+        =>  Substitution variable
+        ->  BranchT m (Condition variable)
+    simplifySubstitution substitution = do
+        results <-
+            Monad.Trans.lift . Monad.Trans.lift
+            $ Branch.gather $ simplifySubstitution substitution
+        Branch.scatter results
+    {-# INLINE simplifySubstitution #-}
 
     askSimplifierAxioms :: m BuiltinAndAxiomSimplifierMap
     default askSimplifierAxioms

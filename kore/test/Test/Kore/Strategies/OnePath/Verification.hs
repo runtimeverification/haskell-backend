@@ -143,7 +143,7 @@ test_onePathVerification =
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
         assertEqual "" (Right ()) actual
-    , testCase "Partial verification failure" $ do
+    , testCase "zzzPartial verification failure" $ do
         -- Axiom: constr11(a) => b
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b

@@ -27,6 +27,9 @@ import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
+import Branch
+    ( BranchT
+    )
 import qualified Branch as BranchT
     ( gather
     , scatter
@@ -40,7 +43,8 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
-    ( andCondition
+    ( Conditional (..)
+    , andCondition
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -259,8 +263,8 @@ simplifyInternal term predicate = do
                 (do
                     termPredicateList <- BranchT.gather $ do
                         termOrElement <- BranchT.scatter termOr
-                        simplified <- simplifyCondition termOrElement
-                        return (applyTermSubstitution simplified)
+                        simplified <- normalize termOrElement
+                        return (applySubstitution simplified)
 
                     returnIfSimplifiedOrContinue
                         termLike
@@ -272,20 +276,32 @@ simplifyInternal term predicate = do
                 )
       where
 
+        normalize
+            ::  forall any'
+            .   Conditional variable any'
+            ->  BranchT simplifier (Conditional variable any')
+        normalize conditional@Conditional { substitution } = do
+            let conditional' = conditional { Conditional.substitution = mempty }
+            predicate' <- simplifySubstitution substitution
+            return $ Conditional.andCondition conditional' predicate'
+
         resimplify :: Pattern variable -> simplifier (OrPattern variable)
         resimplify result = do
             let (resultTerm, resultPredicate) = Pattern.splitTerm result
             simplified <- simplifyInternalWorker resultTerm
             return ((`Conditional.andCondition` resultPredicate) <$> simplified)
 
-        applyTermSubstitution :: Pattern variable -> Pattern variable
-        applyTermSubstitution
+        applySubstitution :: Pattern variable -> Pattern variable
+        applySubstitution
             Conditional {term = term', predicate = predicate', substitution}
           =
             Conditional
                 { term =
                     TermLike.substitute (Substitution.toMap substitution) term'
-                , predicate = predicate'
+                , predicate =
+                    Predicate.substitute
+                        (Substitution.toMap substitution)
+                        predicate'
                 , substitution
                 }
 

@@ -28,9 +28,6 @@ import Kore.Predicate.Predicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Simplification.SubstitutionSimplifier
-    ( SubstitutionSimplifier (..)
-    )
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
@@ -39,10 +36,8 @@ import Kore.Unparser
 -}
 create
     :: MonadSimplify simplifier
-    => SubstitutionSimplifier simplifier
-    -> ConditionSimplifier simplifier
-create substitutionSimplifier =
-    ConditionSimplifier $ simplify substitutionSimplifier
+    => ConditionSimplifier simplifier
+create = ConditionSimplifier $ simplify
 
 {- | Simplify a 'Condition'.
 
@@ -58,10 +53,9 @@ simplify
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  SubstitutionSimplifier simplifier
-    ->  Conditional variable any
+    =>  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
-simplify SubstitutionSimplifier { simplifySubstitution } initial =
+simplify initial =
     normalize initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
@@ -86,8 +80,7 @@ simplify SubstitutionSimplifier { simplifySubstitution } initial =
         ->  BranchT simplifier (Conditional variable any')
     normalize conditional@Conditional { substitution } = do
         let conditional' = conditional { substitution = mempty }
-        predicates' <- Monad.Trans.lift $ simplifySubstitution substitution
-        predicate' <- Branch.scatter predicates'
+        predicate' <- simplifySubstitution substitution
         return $ Conditional.andCondition conditional' predicate'
 
 {- | Simplify the 'Predicate' once.
