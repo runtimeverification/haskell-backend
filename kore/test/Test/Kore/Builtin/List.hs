@@ -1,8 +1,5 @@
 module Test.Kore.Builtin.List where
 
-import Debug.Trace
-import Kore.Unparser
-
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -41,6 +38,9 @@ genInteger = Gen.integral (Range.linear (-1024) 1024)
 
 genSeqInteger :: Gen (Seq Integer)
 genSeqInteger = Gen.seq (Range.linear 0 16) genInteger
+
+genSeqIndex :: Gen Integer
+genSeqIndex = Gen.integral (Range.linear (-20) 20)
 
 test_getUnit :: TestTree
 test_getUnit =
@@ -99,33 +99,32 @@ test_getLastElement =
         (===) expectGet   =<< evaluateT patGet
         (===) Pattern.top =<< evaluateT predicate
 
-test_update :: TestTree
-test_update =
+test_GetUpdate :: TestTree
+test_GetUpdate =
     testPropertyWithSolver
-    ""
+    "get{}(update{}(map, ix, val), ix) === val"
     prop
   where
     prop = do
         values <- forAll genSeqInteger
-        value  <- forAll genInteger 
-        let len = length values
-        ix <- forAll $ Gen.integral (Range.linear (-len) (len - 1))
-        let patValues = asTermLike $ Test.Int.asInternal <$> values
-        let patUpdated = mkApplySymbol updateListSymbol 
+        value  <- forAll Test.Int.genIntegerPattern
+        ix <- forAll genSeqIndex
+        let len = fromIntegral $ length values
+            patValues = asTermLike $ Test.Int.asInternal <$> values
+            patUpdated = mkApplySymbol updateListSymbol
                 [ patValues
-                , Test.Int.asInternal (fromIntegral ix)
-                , Test.Int.asInternal value
+                , Test.Int.asInternal ix
+                , value
                 ]
-        if len > 0 then do            
+        if (-len) <= ix && ix < len then do
             let patGet = mkApplySymbol getListSymbol
                     [ patUpdated
-                    , Test.Int.asInternal (fromIntegral ix)
+                    , Test.Int.asInternal ix
                     ]
-            
                 predicate = mkEquals_
                     patGet
-                    (Test.Int.asInternal value)
-                expect = Pattern.fromTermLike (Test.Int.asInternal value)
+                    value
+                expect = Pattern.fromTermLike value
             (===) Pattern.top  =<< evaluateT predicate
             (===) expect =<< evaluateT patGet
         else do
