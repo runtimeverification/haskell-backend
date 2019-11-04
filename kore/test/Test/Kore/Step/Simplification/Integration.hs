@@ -842,6 +842,19 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "Distributed equals simplification" $ do
+        let k = SetVariable $ Variable (testId "k") mempty Mock.stringSort
+        actual <- evaluate
+            Conditional
+                { term = mkMu k
+                    (mkEquals_
+                        (Mock.functionalConstr21 Mock.cf Mock.cf)
+                        (Mock.functionalConstr21 Mock.ch Mock.cg)
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
     ]
 
 
