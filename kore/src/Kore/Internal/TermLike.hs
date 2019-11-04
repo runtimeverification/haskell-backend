@@ -33,6 +33,7 @@ module Kore.Internal.TermLike
     , externalizeFreshVariables
     -- * Utility functions for dealing with sorts
     , forceSort
+    , fullyOverrideSort
     -- * Pure Kore pattern constructors
     , mkAnd
     , mkApplyAlias
@@ -1025,78 +1026,112 @@ forceSort forcedSort = Recursive.apo forceSortWorker
             (case attrs of
                 Attribute.Pattern { patternSort = sort }
                   | sort == forcedSort    -> Left <$> pattern'
-                  | sort == predicateSort -> forceSortWorkerPredicate
-                  | otherwise             -> illSorted
+                  | sort == predicateSort ->
+                    forceSortPredicate forcedSort original
+                  | otherwise             -> illSorted forcedSort original
             )
-      where
-        illSorted =
-            (error . show . Pretty.vsep)
-            [ Pretty.cat
-                [ "Could not force pattern to sort "
-                , Pretty.squotes (unparse forcedSort)
-                , ", instead it has sort "
-                , Pretty.squotes (unparse (termLikeSort original))
-                , ":"
-                ]
-            , Pretty.indent 4 (unparse original)
-            ]
-        forceSortWorkerPredicate =
-            case pattern' of
-                -- Recurse
-                EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
-                -- Predicates: Force sort and stop.
-                BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
-                TopF top' -> TopF top' { topSort = forcedSort }
-                CeilF ceil' -> CeilF (Left <$> ceil'')
-                  where
-                    ceil'' = ceil' { ceilResultSort = forcedSort }
-                FloorF floor' -> FloorF (Left <$> floor'')
-                  where
-                    floor'' = floor' { floorResultSort = forcedSort }
-                EqualsF equals' -> EqualsF (Left <$> equals'')
-                  where
-                    equals'' = equals' { equalsResultSort = forcedSort }
-                InF in' -> InF (Left <$> in'')
-                  where
-                    in'' = in' { inResultSort = forcedSort }
-                -- Connectives: Force sort and recurse.
-                AndF and' -> AndF (Right <$> and'')
-                  where
-                    and'' = and' { andSort = forcedSort }
-                OrF or' -> OrF (Right <$> or'')
-                  where
-                    or'' = or' { orSort = forcedSort }
-                IffF iff' -> IffF (Right <$> iff'')
-                  where
-                    iff'' = iff' { iffSort = forcedSort }
-                ImpliesF implies' -> ImpliesF (Right <$> implies'')
-                  where
-                    implies'' = implies' { impliesSort = forcedSort }
-                NotF not' -> NotF (Right <$> not'')
-                  where
-                    not'' = not' { notSort = forcedSort }
-                NextF next' -> NextF (Right <$> next'')
-                  where
-                    next'' = next' { nextSort = forcedSort }
-                RewritesF rewrites' -> RewritesF (Right <$> rewrites'')
-                  where
-                    rewrites'' = rewrites' { rewritesSort = forcedSort }
-                ExistsF exists' -> ExistsF (Right <$> exists'')
-                  where
-                    exists'' = exists' { existsSort = forcedSort }
-                ForallF forall' -> ForallF (Right <$> forall'')
-                  where
-                    forall'' = forall' { forallSort = forcedSort }
-                -- Rigid: These patterns should never have sort _PREDICATE{}.
-                MuF _ -> illSorted
-                NuF _ -> illSorted
-                ApplySymbolF _ -> illSorted
-                ApplyAliasF _ -> illSorted
-                BuiltinF _ -> illSorted
-                DomainValueF _ -> illSorted
-                StringLiteralF _ -> illSorted
-                VariableF _ -> illSorted
-                InhabitantF _ -> illSorted
+
+{-| Attempts to modify the pattern to have the given sort, ignoring the
+previous sort and without assuming that the pattern's sorts are consistent.
+-}
+fullyOverrideSort
+    :: forall variable
+    .  (SortedVariable variable, Unparse variable, GHC.HasCallStack)
+    => Sort
+    -> TermLike variable
+    -> TermLike variable
+fullyOverrideSort forcedSort = Recursive.apo overrideSortWorker
+  where
+    overrideSortWorker
+        :: TermLike variable
+        -> Base
+            (TermLike variable)
+            (Either (TermLike variable) (TermLike variable))
+    overrideSortWorker original@(Recursive.project -> attrs :< _) =
+        (:<)
+            (attrs { Attribute.patternSort = forcedSort })
+            (forceSortPredicate forcedSort original)
+
+illSorted
+    :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
+    => Sort -> TermLike variable -> a
+illSorted forcedSort original =
+    (error . show . Pretty.vsep)
+    [ Pretty.cat
+        [ "Could not force pattern to sort "
+        , Pretty.squotes (unparse forcedSort)
+        , ", instead it has sort "
+        , Pretty.squotes (unparse (termLikeSort original))
+        , ":"
+        ]
+    , Pretty.indent 4 (unparse original)
+    ]
+
+forceSortPredicate
+    :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
+    => Sort
+    -> TermLike variable
+    -> TermLikeF variable (Either (TermLike variable) (TermLike variable))
+forceSortPredicate
+    forcedSort
+    original@(Recursive.project -> _ :< pattern')
+  =
+    case pattern' of
+        -- Recurse
+        EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
+        -- Predicates: Force sort and stop.
+        BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
+        TopF top' -> TopF top' { topSort = forcedSort }
+        CeilF ceil' -> CeilF (Left <$> ceil'')
+            where
+            ceil'' = ceil' { ceilResultSort = forcedSort }
+        FloorF floor' -> FloorF (Left <$> floor'')
+            where
+            floor'' = floor' { floorResultSort = forcedSort }
+        EqualsF equals' -> EqualsF (Left <$> equals'')
+            where
+            equals'' = equals' { equalsResultSort = forcedSort }
+        InF in' -> InF (Left <$> in'')
+            where
+            in'' = in' { inResultSort = forcedSort }
+        -- Connectives: Force sort and recurse.
+        AndF and' -> AndF (Right <$> and'')
+            where
+            and'' = and' { andSort = forcedSort }
+        OrF or' -> OrF (Right <$> or'')
+            where
+            or'' = or' { orSort = forcedSort }
+        IffF iff' -> IffF (Right <$> iff'')
+            where
+            iff'' = iff' { iffSort = forcedSort }
+        ImpliesF implies' -> ImpliesF (Right <$> implies'')
+            where
+            implies'' = implies' { impliesSort = forcedSort }
+        NotF not' -> NotF (Right <$> not'')
+            where
+            not'' = not' { notSort = forcedSort }
+        NextF next' -> NextF (Right <$> next'')
+            where
+            next'' = next' { nextSort = forcedSort }
+        RewritesF rewrites' -> RewritesF (Right <$> rewrites'')
+            where
+            rewrites'' = rewrites' { rewritesSort = forcedSort }
+        ExistsF exists' -> ExistsF (Right <$> exists'')
+            where
+            exists'' = exists' { existsSort = forcedSort }
+        ForallF forall' -> ForallF (Right <$> forall'')
+            where
+            forall'' = forall' { forallSort = forcedSort }
+        -- Rigid: These patterns should never have sort _PREDICATE{}.
+        MuF _ -> illSorted forcedSort original
+        NuF _ -> illSorted forcedSort original
+        ApplySymbolF _ -> illSorted forcedSort original
+        ApplyAliasF _ -> illSorted forcedSort original
+        BuiltinF _ -> illSorted forcedSort original
+        DomainValueF _ -> illSorted forcedSort original
+        StringLiteralF _ -> illSorted forcedSort original
+        VariableF _ -> illSorted forcedSort original
+        InhabitantF _ -> illSorted forcedSort original
 
 {- | Call the argument function with two patterns whose sorts agree.
 

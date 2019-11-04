@@ -22,6 +22,9 @@ module Kore.Error
     , module Control.Monad.Except
     ) where
 
+import Control.DeepSeq
+    ( NFData
+    )
 import Control.Monad
     ( when
     )
@@ -49,6 +52,8 @@ data Error a = Error
     , errorError   :: !String
     }
     deriving (Eq, GHC.Generic, Show)
+
+instance NFData a => NFData (Error a)
 
 instance SOP.Generic (Error a)
 
