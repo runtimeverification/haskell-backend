@@ -1,4 +1,4 @@
-# Introduction to the backend
+# Introduction to the Haskell backend
 
 ## Data
 
@@ -53,7 +53,7 @@ The backend supports these built-in sorts:
 - `Map`
 - `Set`
 
-The `Int`, `Bool`, and `String` built-ins specialize ground terms in those domains for performance.
+The `Int`, `Bool`, `String`, and `Bytes` built-ins specialize ground terms in those domains for performance.
 The `List`, `Map`, and `Set` collections specialize _expressions_ in those domains
 both for performance and to facilitate unification and matching.
 
