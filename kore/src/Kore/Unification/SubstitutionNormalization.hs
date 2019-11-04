@@ -42,10 +42,10 @@ import qualified Data.Set as Set
 
 import Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Predicate
-    ( Predicate
+import Kore.Internal.Condition
+    ( Condition
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Substitute
@@ -76,15 +76,15 @@ normalizeSubstitution
     :: forall variable
     .  SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
-    -> Either SubstitutionError (Predicate variable)
+    -> Either SubstitutionError (Condition variable)
 normalizeSubstitution substitution =
     maybe bottom fromNormalization $ normalize substitution
   where
-    bottom = return Predicate.bottom
+    bottom = return Condition.bottom
     fromNormalization Normalization { normalized, denormalized }
       | null denormalized =
         pure
-        $ Predicate.fromSubstitution
+        $ Condition.fromSubstitution
         $ Substitution.unsafeWrap normalized
       | otherwise =
         throwError (SimplifiableCycle variables)

@@ -4,6 +4,7 @@ module Test.Kore.Step.Function.Integration
     , test_List
     , test_lookupMap
     , test_updateMap
+    , test_updateList
     , test_Ceil
     ) where
 
@@ -43,12 +44,12 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate
@@ -57,7 +58,7 @@ import Kore.Predicate.Predicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Axiom.EvaluationStrategy
@@ -79,12 +80,13 @@ import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     , rulePattern
     )
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import Kore.Syntax.Definition hiding
     ( Symbol (..)
@@ -190,8 +192,8 @@ test_functionIntegration =
                 (Map.singleton
                     (AxiomIdentifier.Application Mock.functionalConstr10Id)
                     (simplifierWithFallback
-                        (builtinEvaluation $ BuiltinAndAxiomSimplifier
-                            (\_ _ _ _ -> notApplicableAxiomEvaluator)
+                        (builtinEvaluation $ BuiltinAndAxiomSimplifier $ \_ _ ->
+                            notApplicableAxiomEvaluator
                         )
                         ( axiomEvaluator
                             (Mock.functionalConstr10 (mkElemVar Mock.x))
@@ -589,7 +591,7 @@ test_functionIntegration =
         -> IO (Pattern Variable)
     evaluate functionIdToEvaluator patt =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt Predicate.top
+        $ TermLike.simplify patt Condition.top
 
 test_Nat :: [TestTree]
 test_Nat =
@@ -652,7 +654,7 @@ equals comment term results =
 simplify :: TermLike Variable -> IO (OrPattern Variable)
 simplify =
     runSimplifier testEnv
-    . (TermLike.simplifyToOr Predicate.top)
+    . (TermLike.simplifyToOr Condition.top)
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -660,7 +662,7 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier Predicate.top patt
+    $ runBuiltinAndAxiomSimplifier simplifier patt Condition.top
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -955,6 +957,89 @@ listSimplifiers =
         AxiomIdentifier.Application
         $ symbolConstructor Builtin.removeMapSymbol
 
+
+test_updateList :: [TestTree]
+test_updateList =
+    [ notApplies "different concrete indices"
+        [updateListSimplifier]
+        (updateList
+            (updateList singletonList (mkInt 0) (mkInt 1))
+            (mkInt 1)
+            (mkInt 2)
+        )
+    , applies "same concrete indices"
+        [updateListSimplifier]
+        (updateList
+            (updateList singletonList (mkInt 0) (mkInt 1))
+            (mkInt 0)
+            (mkInt 2)
+        )
+    , notApplies "different abstract keys; evaluates requires with SMT"
+        [updateListSimplifier]
+        (updateList
+            (updateList varL (mkElemVar xInt) (mkInt 1))
+            (addInt (mkElemVar xInt) (mkInt 1))
+            (mkInt 2)
+        )
+    , notApplies "different keys; evaluates requires with function rule"
+        [updateListSimplifier]
+        (updateList
+            (updateList Builtin.unitList (mkInt 0) (mkInt 1))
+            (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
+            (mkInt 2)
+        )
+    , equals "different keys; evaluates updateList"
+        (updateList
+            (updateList twoElementList (mkInt 0) (mkInt 1))
+            (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
+            (mkInt 2)
+        )
+        [mkList [mkInt 1, mkInt 2]]
+    , equals "different negative keys; evaluates updateList"
+        (updateList
+            (updateList twoElementList (mkInt (-2)) (mkInt 1))
+            (addInt (mkInt 0) (Builtin.dummyInt (mkInt (-1))))
+            (mkInt 2)
+        )
+        [mkList [mkInt 1, mkInt 2]]
+    , equals "negative index outside rage"
+        (updateList singletonList (mkInt (-2)) (mkInt 1))
+        [mkBottom_]
+    , equals "positive index outside rage"
+        (updateList singletonList (mkInt 1) (mkInt 1))
+        [mkBottom_]
+    , applies "same abstract key"
+        [updateListSimplifier]
+        (updateList
+            (updateList singletonList (mkElemVar xInt) (mkInt 1))
+            (mkElemVar xInt)
+            (mkInt 2)
+        )
+    ]
+
+singletonList :: TermLike Variable
+singletonList = Builtin.elementList (mkInt 0)
+
+twoElementList :: TermLike Variable
+twoElementList = Builtin.concatList singletonList singletonList
+
+updateList
+    :: TermLike Variable -- ^ List
+    -> TermLike Variable -- ^ Index
+    -> TermLike Variable -- ^ Value
+    -> TermLike Variable
+updateList = Builtin.updateList
+
+updateListSimplifier :: EqualityRule Variable
+updateListSimplifier =
+    axiom
+        (updateList (updateList varL u v) x y)
+        (updateList varL u y)
+        (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
+  where
+    [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
+    injK = Builtin.inj Builtin.kSort
+
 test_lookupMap :: [TestTree]
 test_lookupMap =
     [ equals "lookupMap(.Map, 1) = \\bottom"
@@ -1136,7 +1221,7 @@ axiomEvaluator left right =
 axiom
     :: TermLike Variable
     -> TermLike Variable
-    -> Syntax.Predicate Variable
+    -> Predicate Variable
     -> EqualityRule Variable
 axiom left right predicate =
     EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
@@ -1171,12 +1256,10 @@ mapVariables =
 mockEvaluator
     :: Monad simplifier
     => AttemptedAxiom variable
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ = return evaluation
 
 -- ---------------------------------------------------------------------
 -- * Definition
@@ -1249,9 +1332,10 @@ Just verifiedModule = Map.lookup testModuleName verifiedModules
 testMetadataTools :: SmtMetadataTools Attribute.Symbol
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
-testSubstitutionSimplifier = Simplifier.Predicate.create
+testConditionSimplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.simplification
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -1264,7 +1348,7 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
-        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierCondition = testConditionSimplifier
         , simplifierAxioms =
             mconcat
                 [ testEvaluators

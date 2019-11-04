@@ -10,14 +10,14 @@ import qualified GHC.Stack as GHC
 import Kore.Attribute.Synthetic
     ( synthesize
     )
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( Application
     , Symbol
@@ -52,7 +52,7 @@ test_evaluateApplication =
         -> TestTree
     evaluates name origin expect =
         testCase name $ do
-            actual <- evaluateApplication Predicate.top origin
+            actual <- evaluateApplication Condition.top origin
             assertEqual "" (OrPattern.fromTermLike expect) actual
     notEvaluates
         :: GHC.HasCallStack
@@ -85,11 +85,11 @@ fEvaluator =
     x = TermLike.mkElemVar Mock.x
 
 evaluateApplication
-    :: Predicate Variable
+    :: Condition Variable
     -> Application Symbol (TermLike Variable)
     -> IO (OrPattern Variable)
 evaluateApplication predicate =
-    Test.runSimplifier env . Kore.evaluateApplication Predicate.top predicate
+    Test.runSimplifier env . Kore.evaluateApplication Condition.top predicate
 
 simplifierAxioms :: Kore.BuiltinAndAxiomSimplifierMap
 simplifierAxioms = Map.fromList [ (fId, fEvaluator) ]

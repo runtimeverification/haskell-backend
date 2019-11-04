@@ -20,11 +20,13 @@ import Kore.Logger.Output
     ( emptyLogger
     )
 import Kore.Predicate.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
+    , makeNotPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Rule
@@ -33,8 +35,6 @@ import Kore.Step.Rule
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
 import Kore.Step.Rule.Simplify
-    ( simplifyOnePathRuleLhs
-    )
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )
@@ -49,7 +49,7 @@ import Test.Tasty.HUnit.Ext
 class OnePathRuleBase base where
     rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
 
-newtype Pair variable = Pair (TermLike variable, Syntax.Predicate variable)
+newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
 instance OnePathRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
@@ -181,6 +181,25 @@ test_simplifyRule =
             )
 
         assertEqual "" expected actual
+    , testCase "Predicate simplification removes trivial claim" $ do
+        let expected = []
+        actual <- runSimplifyRule
+            ( Pair
+                ( Mock.b
+                , makeAndPredicate
+                    (makeNotPredicate
+                        (makeEqualsPredicate x Mock.b)
+                    )
+                    (makeNotPredicate
+                        (makeNotPredicate
+                            (makeEqualsPredicate x Mock.b)
+                        )
+                    )
+                )
+              `rewritesTo`
+              Pair (Mock.a, makeTruePredicate)
+            )
+        assertEqual "" expected actual
     ]
   where
     x = mkElemVar Mock.x
@@ -192,4 +211,4 @@ runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ runSimplifier Mock.env
-    $ simplifyOnePathRuleLhs rule
+    $ simplifyRuleLhs rule

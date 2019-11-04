@@ -15,20 +15,20 @@ import Data.Default as Default
 import qualified Data.Foldable as Foldable
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Predicate.Predicate as Predicate
     ( makeAndPredicate
@@ -61,7 +61,7 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( UnifierT
     , runUnifierT
     )
@@ -82,9 +82,9 @@ evalUnifier
 evalUnifier = runSimplifier Mock.env . runUnifierT
 
 applyInitialConditions
-    :: Predicate Variable
-    -> Predicate Variable
-    -> IO (Either UnificationOrSubstitutionError [OrPredicate Variable])
+    :: Condition Variable
+    -> Condition Variable
+    -> IO (Either UnificationOrSubstitutionError [OrCondition Variable])
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
@@ -99,21 +99,21 @@ test_applyInitialConditions =
                     , predicate = Predicate.makeTruePredicate
                     , substitution = mempty
                     }
-            initial = Predicate.bottom
+            initial = Condition.bottom
             expect = Right mempty
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
     , testCase "returns axiom right-hand side" $ do
-        let unification = Predicate.top
-            initial = Predicate.top
+        let unification = Condition.top
+            initial = Condition.top
             expect = Right [MultiOr.singleton initial]
         actual <- applyInitialConditions initial unification
         assertEqual "" expect actual
 
     , testCase "combine initial and rule conditions" $ do
-        let unification = Predicate.fromPredicate expect2
-            initial = Predicate.fromPredicate expect1
+        let unification = Condition.fromPredicate expect2
+            initial = Condition.fromPredicate expect1
             expect1 =
                 Predicate.makeEqualsPredicate
                     (Mock.f $ mkElemVar Mock.x)
@@ -130,9 +130,9 @@ test_applyInitialConditions =
 
     , testCase "conflicting initial and rule conditions" $ do
         let predicate = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
-            unification = Predicate.fromPredicate predicate
+            unification = Condition.fromPredicate predicate
             initial =
-                Predicate.fromPredicate
+                Condition.fromPredicate
                 $ Predicate.makeNotPredicate predicate
             expect = Right mempty
         actual <- applyInitialConditions initial unification

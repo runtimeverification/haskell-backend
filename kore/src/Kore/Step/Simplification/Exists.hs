@@ -22,6 +22,10 @@ import Branch
     ( BranchT
     )
 import qualified Branch
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -32,23 +36,19 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
+import qualified Kore.Internal.OrCondition as OrCondition
+    ( fromCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import qualified Kore.Internal.OrPredicate as OrPredicate
-    ( fromPredicate
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
     ( splitTerm
     )
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
     , pattern Equals_
@@ -67,7 +67,7 @@ import qualified Kore.Internal.TermLike as TermLike
     , withoutFreeVariable
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Sort
     ( predicateSort
     )
@@ -86,7 +86,7 @@ import Kore.Unification.Substitution
     ( Substitution
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( runUnifierT
     )
 import Kore.Unparser
@@ -170,7 +170,7 @@ makeEvaluate
     -> simplifier (OrPattern variable)
 makeEvaluate variable original
   = fmap OrPattern.fromPatterns $ Branch.gather $ do
-    normalized <- simplifyPredicate original
+    normalized <- simplifyCondition original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
         (Left boundTerm, freeSubstitution) ->
@@ -184,7 +184,7 @@ makeEvaluate variable original
                 normalized { Conditional.substitution = boundSubstitution }
             if matched
                 then return normalized
-                    { Conditional.predicate = Syntax.Predicate.makeTruePredicate
+                    { Conditional.predicate = Predicate.makeTruePredicate
                     , Conditional.substitution = freeSubstitution
                     }
                 else makeEvaluateBoundRight
@@ -201,7 +201,7 @@ matchesToVariableSubstitution
     variable
     Conditional {term, predicate, substitution = boundSubstitution}
   | Equals_ _sort1 _sort2 first second <-
-        Syntax.Predicate.fromPredicate predicateSort predicate
+        Predicate.fromPredicate predicateSort predicate
   , Substitution.null boundSubstitution
   , not (TermLike.hasFreeVariable (ElemVar variable) term)
   = do
@@ -215,12 +215,12 @@ matchesToVariableSubstitution _ _ = return False
 
 singleVariableSubstitution
     :: InternalVariable variable
-    => ElementVariable variable -> Predicate variable -> Bool
+    => ElementVariable variable -> Condition variable -> Bool
 singleVariableSubstitution
     variable
     Conditional
         { term = ()
-        , predicate = Syntax.Predicate.PredicateTrue
+        , predicate = Predicate.PredicateTrue
         , substitution
         }
   = case Substitution.unwrap substitution of
@@ -264,7 +264,7 @@ makeEvaluateBoundLeft variable boundTerm normalized
                         TermLike.substitute boundSubstitution
                         $ Conditional.term normalized
                     , Conditional.predicate =
-                        Syntax.Predicate.substitute boundSubstitution
+                        Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
         orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
@@ -288,19 +288,19 @@ makeEvaluateBoundRight
     -> Pattern variable  -- ^ pattern to quantify
     -> BranchT simplifier (Pattern variable)
 makeEvaluateBoundRight variable freeSubstitution normalized = do
-    orPredicate <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
+    orCondition <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
         (MultiAnd.make
-            [   OrPredicate.fromPredicate quantifyPredicate
-            ,   OrPredicate.fromPredicate
-                    (Predicate.fromSubstitution freeSubstitution)
+            [   OrCondition.fromCondition quantifyCondition
+            ,   OrCondition.fromCondition
+                    (Condition.fromSubstitution freeSubstitution)
             ]
         )
-    predicate <- Branch.scatter orPredicate
+    predicate <- Branch.scatter orCondition
     let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate
     TopBottom.guardAgainstBottom simplifiedPattern
     return simplifiedPattern
   where
-    (quantifyTerm, quantifyPredicate) = Pattern.splitTerm
+    (quantifyTerm, quantifyCondition) = Pattern.splitTerm
         (quantifyPattern variable normalized)
 
 {- | Split the substitution on the given variable.
@@ -360,15 +360,15 @@ quantifyPattern variable original@Conditional { term, predicate, substitution }
   | quantifyTerm = TermLike.markSimplified . mkExists variable <$> original
   | quantifyPredicate =
     Conditional.withCondition term
-    $ Predicate.fromPredicate . Syntax.Predicate.markSimplified
+    $ Condition.fromPredicate . Predicate.markSimplified
     -- TODO (thomas.tuegel): This may not be fully simplified: we have not used
     -- the And simplifier on the predicate.
-    $ Syntax.Predicate.makeExistsPredicate variable predicate'
+    $ Predicate.makeExistsPredicate variable predicate'
   | otherwise = original
   where
     quantifyTerm = TermLike.hasFreeVariable (ElemVar variable) term
     predicate' =
-        Syntax.Predicate.makeAndPredicate predicate
-        $ Syntax.Predicate.fromSubstitution substitution
+        Predicate.makeAndPredicate predicate
+        $ Predicate.fromSubstitution substitution
     quantifyPredicate =
-        Syntax.Predicate.hasFreeVariable (ElemVar variable) predicate'
+        Predicate.hasFreeVariable (ElemVar variable) predicate'

@@ -15,6 +15,7 @@ import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
@@ -22,13 +23,12 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , mkEvaluated
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Axiom.Matcher
@@ -56,7 +56,7 @@ import Kore.Step.Step
     ( UnificationProcedure (..)
     )
 import qualified Kore.Step.Step as Step
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
 
 evaluateAxioms
@@ -64,7 +64,7 @@ evaluateAxioms
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [EqualityRule Variable]
     -> TermLike variable
-    -> Syntax.Predicate variable
+    -> Predicate variable
     -> simplifier (Step.Results variable)
 evaluateAxioms
     definitionRules
@@ -96,7 +96,7 @@ evaluateAxioms
             return Result.Results
                 { results = mempty, remainders = MultiOr [evaluated] }
           | otherwise -> do
-            ceilChild <- ceilChildOfApplicationOrTop Predicate.topTODO patt
+            ceilChild <- ceilChildOfApplicationOrTop Condition.topTODO patt
             let
                 result =
                     Result.mergeResults results
@@ -112,10 +112,10 @@ evaluateAxioms
             simplifiedResult <-
                 Lens.traverseOf
                     (field @"results" . Lens.traversed . field @"result")
-                    (OrPattern.simplifyPredicatesWithSmt predicate)
+                    (OrPattern.simplifyConditionsWithSmt predicate)
                     result
                     >>= Lens.traverseOf (field @"remainders")
-                        (OrPattern.simplifyPredicatesWithSmt predicate)
+                        (OrPattern.simplifyConditionsWithSmt predicate)
 
             let Result.Results { results = returnedResults } = simplifiedResult
 
@@ -135,15 +135,15 @@ evaluateAxioms
         RulePattern.mapVariables fromVariable rule
 
     applyRules (Step.toConfigurationVariables -> initial) rules
-      = Monad.Unify.runUnifierT
+      = Unifier.runUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =
-        Monad.Unify.runUnifierT (unification pattern1 pattern2)
-        >>= either (couldNotMatch pattern1 pattern2) Monad.Unify.scatter
+        Unifier.runUnifierT (unification pattern1 pattern2)
+        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
 
     couldNotMatch pattern1 pattern2 _ =
-        Monad.Unify.explainAndReturnBottom
+        Unifier.explainAndReturnBottom
             "Could not match patterns"
             pattern1
             pattern2

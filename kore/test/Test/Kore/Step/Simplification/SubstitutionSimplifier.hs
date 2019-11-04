@@ -8,8 +8,8 @@ import Test.Tasty
 
 import qualified GHC.Stack as GHC
 
-import qualified Kore.Internal.OrPredicate as OrPredicate
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -21,8 +21,11 @@ import Kore.Unification.Error
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( runUnifierT
+    )
+import qualified Kore.Unification.UnifierT as Unification
+    ( substitutionSimplifier
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -63,8 +66,6 @@ test_SubstitutionSimplifier =
         [ test "length 1, alone"
             [(xs, mkVar xs)]
             [ mempty ]
-        -- TODO (thomas.tuegel): Enable this test if we ever support this
-        -- unification case.
         -- UnificationError: UnsupportedPatterns
         -- , test "length 1, beside related substitution"
         --     [(xs, mkVar xs), (ys, mkVar xs)]
@@ -115,8 +116,6 @@ test_SubstitutionSimplifier =
         [ test "length 1, alone"
             [(xs, f (mkVar xs))]
             [ Normalization [] [(xs, f (mkVar xs))] ]
-        -- TODO (thomas.tuegel): Enable this test if we ever support this
-        -- unification case.
         -- UnificationError: UnsupportedPatterns
         -- , test "length 1, beside related substitution"
         --     [(xs, f (mkVar xs)), (ys, mkVar xs)]
@@ -190,24 +189,24 @@ test_SubstitutionSimplifier =
                 let SubstitutionSimplifier { simplifySubstitution } =
                         SubstitutionSimplifier.simplification
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
-                let expect = Predicate.fromNormalization <$> results
-                assertEqual "" expect (OrPredicate.toPredicates actual)
+                let expect = Condition.fromNormalization <$> results
+                assertEqual "" expect (OrCondition.toConditions actual)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        SubstitutionSimplifier.unification
+                        Unification.substitutionSimplifier
                 actual <-
                     runSimplifier Mock.env
                     . runUnifierT
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
-                        Right $ Predicate.fromNormalization normalization
+                        Right $ Condition.fromNormalization normalization
                       | otherwise =
                         Left
                         $ SubstitutionError
                         $ SimplifiableCycle (fst <$> denormalized)
                     expect = (: []) <$> traverse expect1 results
-                assertEqual "" expect (map OrPredicate.toPredicates <$> actual)
+                assertEqual "" expect (map OrCondition.toConditions <$> actual)
             ]
 
 x, y, z, xs, ys :: UnifiedVariable Variable

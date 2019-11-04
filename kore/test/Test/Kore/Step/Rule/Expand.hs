@@ -44,7 +44,7 @@ import Kore.Predicate.Predicate
     ( makeEqualsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
 import Kore.Step.Rule
@@ -75,7 +75,7 @@ import Test.Tasty.HUnit.Ext
 class OnePathRuleBase base where
     rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
 
-newtype Pair variable = Pair (TermLike variable, Syntax.Predicate variable)
+newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
 instance OnePathRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
@@ -98,14 +98,14 @@ test_expandRule =
     [ testCase "Nothing to expand" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools [])
                     (Mock.f x `rewritesTo` Mock.g x)
         in assertEqual "" expected actual
     , testCase "Nothing to expand without constructors" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [ (Mock.testSortId, noConstructor) ]
                     )
@@ -114,7 +114,7 @@ test_expandRule =
     , testCase "Nothing to expand with multiple constructors" $
         let expected = Mock.f x `rewritesTo` Mock.g x
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSortId
                             , noConstructor
@@ -131,7 +131,7 @@ test_expandRule =
                 `rewritesTo`
                 Pair (Mock.g Mock.a, makeTruePredicate)
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSortId
                             , noConstructor `with` constructor Mock.aSymbol
@@ -154,7 +154,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor
@@ -181,7 +181,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor
@@ -211,7 +211,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor
@@ -242,7 +242,7 @@ test_expandRule =
                     , makeTruePredicate
                     )
             actual =
-                expandOnePathSingleConstructors
+                expandSingleConstructors
                     (metadataTools
                         [   ( Mock.testSort0Id
                             , noConstructor

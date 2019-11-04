@@ -50,6 +50,7 @@ import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
+import qualified Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -65,18 +66,19 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
 import qualified Kore.Step.Function.Memo as Memo
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
     ( Env (Env)
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
-    , PredicateSimplifier
+    , ConditionSimplifier
     , TermLikeSimplifier
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.SMT.AST as SMT
 import qualified Kore.Step.SMT.Representation.Resolve as SMT
     ( resolve
@@ -1537,6 +1539,12 @@ builtinBool
     -> TermLike variable
 builtinBool = Builtin.Bool.asInternal boolSort
 
+builtinString
+    :: InternalVariable variable
+    => Text
+    -> TermLike variable
+builtinString = Builtin.String.asInternal stringSort
+
 emptyMetadataTools :: SmtMetadataTools Attribute.Symbol
 emptyMetadataTools =
     Mock.makeMetadataTools
@@ -1564,15 +1572,16 @@ axiomSimplifiers :: BuiltinAndAxiomSimplifierMap
 axiomSimplifiers = Map.empty
 
 predicateSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
-predicateSimplifier = Simplifier.Predicate.create
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+predicateSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.simplification
 
 env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
         { metadataTools = Test.Kore.Step.MockSymbols.metadataTools
         , simplifierTermLike = termLikeSimplifier
-        , simplifierPredicate = predicateSimplifier
+        , simplifierCondition = predicateSimplifier
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
         }

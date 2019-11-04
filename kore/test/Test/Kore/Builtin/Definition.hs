@@ -345,6 +345,10 @@ getListSymbol =
 sizeListSymbol :: Internal.Symbol
 sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
 
+updateListSymbol :: Internal.Symbol
+updateListSymbol = builtinSymbol "updateList" listSort
+    [listSort, intSort, intSort] & hook "LIST.update"
+
 unitList :: TermLike Variable
 unitList = mkApplySymbol unitListSymbol []
 
@@ -354,8 +358,18 @@ elementList x = mkApplySymbol elementListSymbol [x]
 concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
 concatList x y = mkApplySymbol concatListSymbol [x, y]
 
+getList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+getList list poz = mkApplySymbol getListSymbol [list, poz]
+
 sizeList :: TermLike Variable -> TermLike Variable
 sizeList l = mkApplySymbol sizeListSymbol [l]
+
+updateList
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
 
 -- ** Map
 
@@ -612,10 +626,45 @@ ecdsaRecoverSymbol =
         [stringSort, intSort, stringSort, stringSort]
     & hook "KRYPTO.ecdsaRecover"
 
-keccakSymbol :: Internal.Symbol
-keccakSymbol =
+keccak256Symbol :: Internal.Symbol
+keccak256Symbol =
     builtinSymbol "keccak256Krypto" stringSort [stringSort]
     & hook "KRYPTO.keccak256"
+
+sha256Symbol :: Internal.Symbol
+sha256Symbol =
+    builtinSymbol "sha256Krypto" stringSort [stringSort]
+    & hook "KRYPTO.sha256"
+
+sha3256Symbol :: Internal.Symbol
+sha3256Symbol =
+    builtinSymbol "sha3256Krypto" stringSort [stringSort]
+    & hook "KRYPTO.sha3256"
+
+ripemd160Symbol :: Internal.Symbol
+ripemd160Symbol =
+    builtinSymbol "ripemd160Krypto" stringSort [stringSort]
+    & hook "KRYPTO.ripemd160"
+
+ecdsaRecoverKrypto
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+ecdsaRecoverKrypto m v r s = mkApplySymbol ecdsaRecoverSymbol [m, v, r, s]
+
+keccak256Krypto :: TermLike Variable -> TermLike Variable
+keccak256Krypto message = mkApplySymbol keccak256Symbol [message]
+
+sha256Krypto :: TermLike Variable -> TermLike Variable
+sha256Krypto message = mkApplySymbol sha256Symbol [message]
+
+sha3256Krypto :: TermLike Variable -> TermLike Variable
+sha3256Krypto message = mkApplySymbol sha3256Symbol [message]
+
+ripemd160Krypto :: TermLike Variable -> TermLike Variable
+ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
 
 -- -------------------------------------------------------------
 -- * Sorts
@@ -1134,6 +1183,7 @@ listModule =
             , hookedSymbolDecl elementListSymbol
             , hookedSymbolDecl concatListSymbol
             , hookedSymbolDecl getListSymbol
+            , hookedSymbolDecl updateListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol
@@ -1293,7 +1343,10 @@ kryptoModule =
             , importParsedModule intModuleName
             , importParsedModule listModuleName
             , hookedSymbolDecl ecdsaRecoverSymbol
-            , hookedSymbolDecl keccakSymbol
+            , hookedSymbolDecl keccak256Symbol
+            , hookedSymbolDecl sha256Symbol
+            , hookedSymbolDecl sha3256Symbol
+            , hookedSymbolDecl ripemd160Symbol
             ]
         }
 

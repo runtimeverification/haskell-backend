@@ -28,10 +28,10 @@ import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Predicate.Predicate
     ( Predicate
     )
+import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Data
     ( Env (..)
     , runSimplifier
@@ -41,11 +41,11 @@ import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
     , MonadSimplify
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Error
 import Kore.Unification.Procedure
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.UnifierImpl
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -172,8 +172,15 @@ data UnificationResult =
     UnificationResult
         { term :: TermLike Variable
         , substitution :: Substitution
-        , predicate :: Syntax.Predicate Variable
+        , predicate :: Predicate Variable
         }
+
+simplifyAnds
+    :: Monad.Unify.MonadUnify unifier
+    => NonEmpty (TermLike Variable)
+    -> unifier (Pattern Variable)
+simplifyAnds =
+    SubstitutionSimplifier.simplifyAnds Monad.Unify.unificationMakeAnd
 
 andSimplifySuccess
     :: HasCallStack
@@ -244,7 +251,7 @@ unificationProcedureSuccessWithSimplifiers
     -> UnificationTerm
     -> UnificationTerm
     -> [  ( [(UnifiedVariable Variable, TermLike Variable)]
-          , Syntax.Predicate Variable
+          , Predicate Variable
           )
        ]
     -> TestTree
@@ -264,9 +271,9 @@ unificationProcedureSuccessWithSimplifiers
             $ unificationProcedure term1 term2
         let
             normalize
-                :: Predicate Variable
+                ::  Condition Variable
                 ->  ( [(UnifiedVariable Variable, TermLike Variable)]
-                    , Syntax.Predicate Variable
+                    , Predicate Variable
                     )
             normalize Conditional { substitution, predicate } =
                 (Substitution.unwrap substitution, predicate)
@@ -279,7 +286,7 @@ unificationProcedureSuccess
     => TestName
     -> UnificationTerm
     -> UnificationTerm
-    -> [(Substitution, Syntax.Predicate Variable)]
+    -> [(Substitution, Predicate Variable)]
     -> TestTree
 unificationProcedureSuccess message term1 term2 substPredicate =
     unificationProcedureSuccessWithSimplifiers
@@ -301,7 +308,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = []
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "Variable" $
@@ -311,7 +318,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = [("x", a)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "one level" $
@@ -321,7 +328,7 @@ test_unification =
             [ UnificationResult
                 { term = f a
                 , substitution = [("x", a)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "equal non-constructor patterns" $
@@ -331,7 +338,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = []
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "variable + non-constructor pattern" $
@@ -341,7 +348,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = [("x", a2)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
@@ -355,7 +362,7 @@ test_unification =
                     , ("ex2", ex3)
                     , ("ex4", eh (eg ex3))
                     ]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
@@ -369,7 +376,7 @@ test_unification =
                     [ ("x", nonLinA)
                     , ("y", nonLinG nonLinA)
                     ]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
@@ -382,7 +389,7 @@ test_unification =
                     [ ("a", expY)
                     , ("x", expBin expY expY)
                     ]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , unificationProcedureSuccess
@@ -397,7 +404,7 @@ test_unification =
         [   (   [ ("a", expY)
                 , ("x", expBin expY expY)
                 ]
-            , Syntax.Predicate.makeTruePredicate
+            , Predicate.makeTruePredicate
             )
         ]
     , unificationProcedureSuccess
@@ -410,7 +417,7 @@ test_unification =
         (UnificationTerm (mkElemVar Mock.x))
         (UnificationTerm a5)
         [   ( [("x", a5)]
-            , Syntax.Predicate.makeCeilPredicate a5
+            , Predicate.makeCeilPredicate a5
             )
         ]
     , testGroup "inj unification tests" injUnificationTests
@@ -536,7 +543,7 @@ test_unification =
                 [ UnificationResult
                     { term =
                         Mock.builtinMap [(a, constr a) , (b, constr b)]
-                    , predicate = Syntax.Predicate.makeTruePredicate
+                    , predicate = Predicate.makeTruePredicate
                     , substitution =
                         [ ("x", constr a)
                         , ("m", Mock.builtinMap [(Mock.b, constr b)])
@@ -570,7 +577,7 @@ test_unification =
                         constr20
                             Mock.a
                             (Mock.builtinMap [(a, constr a), (b, constr b)])
-                    , predicate = Syntax.Predicate.makeTruePredicate
+                    , predicate = Predicate.makeTruePredicate
                     , substitution =
                         [ ("x", constr a)
                         , ("y", a)
@@ -611,7 +618,7 @@ test_unification =
                                 (Mock.builtinMap [(y, x)])
                                 (mkElemVar Mock.m)
                             )
-                    , predicate = Syntax.Predicate.makeTruePredicate
+                    , predicate = Predicate.makeTruePredicate
                     , substitution =
                         [ ("x", constr a)
                         , ("y", a)
@@ -631,7 +638,7 @@ test_evaluated =
             [ UnificationResult
                 { term = evaluated
                 , substitution = [("x", evaluated)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , unificationProcedureSuccess
@@ -639,7 +646,7 @@ test_evaluated =
         (UnificationTerm (mkElemVar Mock.x))
         (UnificationTerm (mkEvaluated a5))
         [   ( [("x", mkEvaluated a5)]
-            , Syntax.Predicate.makeCeilPredicate (mkEvaluated a5)
+            , Predicate.makeCeilPredicate (mkEvaluated a5)
             )
         ]
     ]
@@ -711,7 +718,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
                 , substitution = [("xSubSort", Mock.aSubsort)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "Variable" $
@@ -722,7 +729,7 @@ injUnificationTests =
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
                 , substitution =
                     [("xTopSort", Mock.sortInjectionSubToTop Mock.aSubsort)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "Injected Variable vs doubly injected term" $ do
@@ -740,7 +747,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "doubly injected variable vs injected term" $ do
@@ -754,7 +761,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "doubly injected variable vs doubly injected term" $ do
@@ -772,7 +779,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "constant vs injection is bottom" $
@@ -814,7 +821,7 @@ injUnificationTests =
                         , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                         )
                     ]
-                , predicate = Syntax.Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate
                 }
             ]
     , testCase "unmatching injections" $
@@ -841,8 +848,8 @@ simplifyPattern (UnificationTerm term) = do
 makeEqualsPredicate
     :: TermLike Variable
     -> TermLike Variable
-    -> Syntax.Predicate Variable
-makeEqualsPredicate = Syntax.Predicate.makeEqualsPredicate
+    -> Predicate Variable
+makeEqualsPredicate = Predicate.makeEqualsPredicate
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger
