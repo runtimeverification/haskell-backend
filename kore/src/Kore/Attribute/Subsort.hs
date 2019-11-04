@@ -26,9 +26,13 @@ data Subsort = Subsort
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Subsort
+
 instance SOP.HasDatatypeInfo Subsort
+
 instance Debug Subsort
+
 instance Diff Subsort
+
 instance NFData Subsort
 
 instance Hashable Subsort
@@ -37,9 +41,13 @@ newtype Subsorts = Subsorts { getSubsorts :: [Subsort] }
     deriving (Eq, GHC.Generic, Ord, Show)
 
 instance SOP.Generic Subsorts
+
 instance SOP.HasDatatypeInfo Subsorts
+
 instance Debug Subsorts
+
 instance Diff Subsorts
+
 instance NFData Subsorts
 
 instance Default Subsorts where

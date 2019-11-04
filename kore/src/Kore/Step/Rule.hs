@@ -147,7 +147,6 @@ import Kore.Unparser
     ( Unparse
     , unparse
     , unparse2
-    , unparseToString
     )
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
@@ -629,11 +628,10 @@ patternToAxiomPattern attributes pat =
                     patternToAxiomPattern
                         attributes
                         (mkRewrites (mkAnd requires lhs) rhs)
-                _ ->
-                    error
-                        (   "LHS alias of rule is ill-formed."
-                        ++  unparseToString pat
-                        )
+                _ -> (error . show. Pretty.vsep)
+                        [ "LHS alias of rule is ill-formed."
+                        , Pretty.indent 4 $ unparse pat
+                        ]
         Rewrites_ _ (And_ _ (Not_ _ antiLeft) (ApplyAlias_ alias params)) rhs
             -> case substituteInAlias alias params of
                 And_ _ requires lhs ->
@@ -643,11 +641,10 @@ patternToAxiomPattern attributes pat =
                             (mkAnd (mkNot antiLeft) (mkAnd requires lhs))
                             rhs
                         )
-                _ ->
-                    error
-                        (   "LHS alias of rule is ill-formed."
-                        ++  unparseToString pat
-                        )
+                _ -> (error . show. Pretty.vsep)
+                        [ "LHS alias of rule is ill-formed."
+                        , Pretty.indent 4 $ unparse pat
+                        ]
         Rewrites_ _
             (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
             (And_ _ ensures rhs)
@@ -732,11 +729,10 @@ patternToAxiomPattern attributes pat =
             || (isConstructor . Attribute.constructor $ attributes)
             || (not . null . getSubsorts . Attribute.subsorts $ attributes)
             -> koreFail "Patterns of this type do not represent rules"
-            | otherwise ->
-                error
-                    (   "Unsupported pattern type in axiom"
-                    ++  unparseToString pat
-                    )
+            | otherwise -> (error . show. Pretty.vsep)
+                    [ "Unsupported pattern type in axiom"
+                    , Pretty.indent 4 $ unparse pat
+                    ]
       where
         isModalSymbol symbol
             | headName == allPathGlobally = True
