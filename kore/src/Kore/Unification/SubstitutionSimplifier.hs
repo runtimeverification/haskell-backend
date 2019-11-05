@@ -11,8 +11,13 @@ module Kore.Unification.SubstitutionSimplifier
     , module Kore.Step.Simplification.SubstitutionSimplifier
     ) where
 
-import Data.Map.Strict
-    ( Map
+import Control.Monad.State.Strict
+    ( StateT
+    , evalStateT
+    )
+import qualified Control.Monad.Trans as Trans
+import Data.Function
+    ( (&)
     )
 
 import qualified Branch as BranchT
@@ -25,11 +30,9 @@ import Kore.Internal.OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-    ( TermLike
-    )
 import Kore.Predicate.Predicate
     ( Predicate
+    , makeTruePredicate
     )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
@@ -48,13 +51,12 @@ import Kore.Unification.Substitution
     ( Normalization (..)
     , Substitution
     )
-import Kore.Unification.SubstitutionNormalization
+import qualified Kore.Unification.SubstitutionNormalization as Substitution
     ( normalize
     )
 import Kore.Unification.Unify
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
+
+type DenormalizedCount = Int
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -74,43 +76,34 @@ substitutionSimplifier =
         .  SubstitutionVariable variable
         => Substitution variable
         -> unifier (OrCondition variable)
-    worker substitution = do
-        deduplicated <-
-            deduplicateSubstitution
-                unificationMakeAnd
-                substitution
-        OrCondition.fromCondition <$> normalize1 deduplicated
+    worker substitution =
+        flip evalStateT maxBound
+        $ OrCondition.fromCondition <$> loop (makeTruePredicate, substitution)
 
-    normalizeSubstitution'
-        :: forall variable
-        .  SubstitutionVariable variable
-        => Map (UnifiedVariable variable) (TermLike variable)
-        -> unifier (Condition variable)
-    normalizeSubstitution' =
-        maybe bottom fromNormalization . normalize
-      where
-        bottom = return Condition.bottom
-        fromNormalization normalization@Normalization { denormalized }
-          | null denormalized =
-            pure $ Condition.fromNormalizationSimplified normalization
-          | otherwise =
-            simplifiableCycle variables
-          where
-            (variables, _) = unzip denormalized
+    deduplicate substitution =
+        deduplicateSubstitution unificationMakeAnd substitution & Trans.lift
 
-    simplifiableCycle variables =
-        throwSubstitutionError (SimplifiableCycle variables)
+    fromPredicates predicates = mconcat (map Condition.fromPredicate predicates)
 
-    normalize1
+    loop
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  ( Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
-            )
-        ->  unifier (Condition variable)
-    normalize1 (predicate, deduplicated) = do
-        normalized <- normalizeSubstitution' deduplicated
-        return $ Condition.fromPredicate predicate <> normalized
+        =>  (Predicate variable, Substitution variable)
+        ->  StateT DenormalizedCount unifier (Condition variable)
+    loop (predicate, substitution) = do
+        (predicate', deduplicated) <- deduplicate substitution
+        let predicates = fromPredicates [predicate, predicate']
+        case Substitution.normalize deduplicated of
+            Nothing -> return Condition.bottom
+            Just normalization@Normalization { denormalized }
+              | null denormalized -> return $ predicates <> condition
+              | otherwise -> simplifiableCycle variables
+              where
+                (variables, _) = unzip denormalized
+                condition = Condition.fromNormalizationSimplified normalization
+
+    simplifiableCycle variables =
+        (Trans.lift . throwSubstitutionError) (SimplifiableCycle variables)
 
 unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =
