@@ -114,7 +114,10 @@ substitutionSimplifier =
             Nothing -> return Condition.bottom
             Just normalization@Normalization { denormalized }
               | null denormalized -> return $ predicates <> condition
-              | otherwise -> simplifyNormalization predicates normalization >>= loop
+              | otherwise ->
+                simplifyNormalization normalization
+                & flip Accum.execAccumT predicates
+                & (>>= loop)
               where
                 condition = Condition.fromNormalizationSimplified normalization
 
@@ -133,18 +136,16 @@ substitutionSimplifier =
     simplifyNormalization
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  Condition variable
-        ->  Normalization variable
-        ->  StateT DenormalizedCount unifier (Condition variable)
-    simplifyNormalization condition normalization = do
+        =>  Normalization variable
+        ->  AccumT (Condition variable) (StateT DenormalizedCount unifier) ()
+    simplifyNormalization normalization = do
         let Normalization { denormalized } = normalization
-        updateCount denormalized
+        Trans.lift $ updateCount denormalized
         return normalization
             >>= simplifyNormalized
             >>= return . applyNormalized
             >>= simplifyDenormalized
             >>= addNormalization
-            & flip Accum.execAccumT condition
 
     simplifyNormalized
         :: (MonadSimplify simplifier, SimplifierVariable variable)
