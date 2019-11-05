@@ -436,7 +436,7 @@ attribute.
 ~~~
     hooked-symbol string2token(String{}) : TokenSort{}
         [hook{}("STRING.string2token")]
-~~
+~~~
 
 ## MAP
 
@@ -597,6 +597,18 @@ of the list and negative indices count from the end. The first element is
 ~~~
     hooked-symbol get{}(List{}, Int{}) : Elem{}
         [hook{}("LIST.concat")]
+~~~
+
+### LIST.update
+
+Update an element from the list by index. Positive indices count from the 
+beginning of the list and negative indices count from the end. The first element
+is `\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
+`\bottom{}()` if the index is out-of-bounds.
+
+~~~
+    hooked-symbol update{}(List{}, Int{}, Elem{}) : List{}
+        [hook{}("LIST.update")]
 ~~~
 
 ## SET

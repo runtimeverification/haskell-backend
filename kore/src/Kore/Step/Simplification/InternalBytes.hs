@@ -10,10 +10,7 @@ import Kore.Internal.InternalBytes
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
-import Kore.Internal.Variable
-import Kore.Sort
 import Kore.Step.Simplification.Simplify
     ( SimplifierVariable
     )

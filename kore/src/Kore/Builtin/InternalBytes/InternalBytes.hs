@@ -56,7 +56,6 @@ import qualified Kore.Internal.TermLike as TermLike
     , pattern StringLiteral_
     , markSimplified
     )
-import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 
 -- | Builtin name for the Bytes sort.
 sort :: Text
