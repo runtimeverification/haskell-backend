@@ -5,6 +5,7 @@ License     : NCSA
 
 module Kore.Step.Rule.Combine
     ( mergeRules
+    , mergeRulesConsecutiveBatches
     , mergeRulesPredicate
     ) where
 
@@ -42,13 +43,11 @@ import Kore.Internal.Variable
     ( InternalVariable
     )
 import Kore.Predicate.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeCeilPredicate
     , makeMultipleAndPredicate
     , makeTruePredicate
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
     )
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)
@@ -201,3 +200,30 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
         firstRule
     RewriteRule RulePattern {right = lastRight, ensures = lastEnsures} =
         last rules
+
+{-| Merge rules in consecutive batches.
+
+As an example, when trying to merge rules 1..9 in batches of 4, it
+first merges rules 1, 2, 3 and 4 into rule 4', then rules 4', 5, 6, 7
+into rule 7', then returns the result of merging 7', 8 and 9.
+-}
+mergeRulesConsecutiveBatches
+    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    => Int
+    -- ^ Batch size
+    -> NonEmpty (RewriteRule variable)
+    -- Rules to merge
+    -> simplifier [RewriteRule variable]
+mergeRulesConsecutiveBatches
+    batchSize
+    (rule :| rules)
+  | batchSize <= 1 = error ("Invalid group size: " ++ show batchSize)
+  | null rules = return [rule]
+  | otherwise = do
+    let (rulesBatch, remainder) = splitAt (batchSize - 1) rules
+    mergedRulesList <- mergeRules (rule :| rulesBatch)
+    BranchT.gather $ do
+        mergedRule <- BranchT.scatter mergedRulesList
+        allMerged <-
+            mergeRulesConsecutiveBatches batchSize (mergedRule :| remainder)
+        BranchT.scatter allMerged
