@@ -27,9 +27,6 @@ module Kore.Builtin.Krypto
     ) where
 
 
-import Control.Category
-    ( (>>>)
-    )
 import Control.Exception.Base
     ( assert
     )
@@ -67,6 +64,9 @@ import Data.Word
     )
 import GHC.Stack
     ( HasCallStack
+    )
+import Kore.Builtin.Encoding
+    ( encode8Bit
     )
 
 import qualified Kore.Builtin.Builtin as Builtin
@@ -147,32 +147,6 @@ evalHashFunction context algorithm =
                 digest = hashWith algorithm bytes
                 result = fromString (show digest)
             Builtin.appliedFunction $ String.asPattern resultSort result
-
-{- | Encode text using an 8-bit encoding.
-
-Each 'Char' in the text is interpreted as a 'Data.Word.Word8'. It is an error if
-any character falls outside that representable range.
-
- -}
-encode8Bit :: Text -> ByteString
-encode8Bit =
-    Text.unpack
-    >>> map (Char.ord >>> encodeByte)
-    >>> ByteString.pack
-  where
-    encodeByte :: Int -> Word8
-    encodeByte int
-      | int < 0x00 = failed "expected positive value"
-      | int > 0xFF = failed "expected 8-bit value"
-      | otherwise = fromIntegral int
-      where
-        failed message =
-            (error . unwords)
-                [ "encode8Bit:"
-                , message ++ ","
-                , "found:"
-                , show int
-                ]
 
 evalKeccak :: Builtin.Function
 evalKeccak = evalHashFunction keccak256Key Keccak_256
