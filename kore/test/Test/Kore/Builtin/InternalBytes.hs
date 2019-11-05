@@ -206,31 +206,39 @@ test_substr =
                 , Test.Int.asInternal (toInteger end)
                 ]
         (===) expect actual
-    , testBytes
-        "substr 'abcd' 0 1 = 'a'"
-        substrBytesSymbol
+    , testSubstrBytes "substr 'abcd' 0 0 = ''"
+        [ asInternal "abcd"
+        , Test.Int.asInternal 0
+        , Test.Int.asInternal 0
+        ]
+        (asPattern "")
+    , testSubstrBytes "substr 'abcd' 0 1 = 'a'"
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         , Test.Int.asInternal 1
         ]
         (asPattern "a")
-    , testBytes
-        "substr 'abcd' 1 3 = 'bc'"
-        substrBytesSymbol
+    , testSubstrBytes "substr 'abcd' 1 3 = 'bc'"
         [ asInternal "abcd"
         , Test.Int.asInternal 1
         , Test.Int.asInternal 3
         ]
         (asPattern "bc")
-    , testBytes
-        "substr 'abcd' 0 4 = 'abcd'"
-        substrBytesSymbol
+    , testSubstrBytes "substr 'abcd' 0 4 = 'abcd'"
         [ asInternal "abcd"
         , Test.Int.asInternal 0
         , Test.Int.asInternal 4
         ]
         (asPattern "abcd")
     ]
+  where
+    testSubstrBytes
+        :: HasCallStack
+        => TestName
+        -> [TermLike Variable]  -- ^ arguments of @substrBytes@ symbol
+        -> Pattern Variable  -- ^ expected result
+        -> TestTree
+    testSubstrBytes testName = testBytes testName substrBytesSymbol
 
 test_replaceAt :: [TestTree]
 test_replaceAt =
