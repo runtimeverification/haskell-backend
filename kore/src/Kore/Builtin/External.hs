@@ -24,6 +24,7 @@ import qualified Kore.Builtin.Set.Set as Set
 import qualified Kore.Builtin.String.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Alias as Alias
+import qualified Kore.Internal.InternalBytes as InternalBytes
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
@@ -109,16 +110,11 @@ externalize =
             StringLiteralF stringLiteralF ->
                 Syntax.StringLiteralF stringLiteralF
             InternalBytesF
-                (Const InternalBytes { bytesValue, string2BytesSymbol }) ->
-                Syntax.ApplicationF $ Application
-                    { applicationSymbolOrAlias =
-                        Symbol.toSymbolOrAlias string2BytesSymbol
-                    , applicationChildren =
-                        [ String.asInternal
-                            (head $ symbolParams string2BytesSymbol)
-                            $ E.decode8Bit bytesValue
-                        ]
-                    }
+                (Const internalBytes) ->
+                    Syntax.ApplicationF
+                    . fmap String.asTermLike
+                    . InternalBytes.toApplication
+                    $ internalBytes
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF

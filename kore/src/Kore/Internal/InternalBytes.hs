@@ -5,6 +5,7 @@ License     : NCSA
 
 module Kore.Internal.InternalBytes
     ( InternalBytes (..)
+    , toApplication
     ) where
 
 import Control.DeepSeq
@@ -20,6 +21,7 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import qualified Kore.Builtin.Encoding as E
 import Kore.Debug
+import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.Symbol
 import Kore.Syntax
 import Kore.Unparser
@@ -44,43 +46,18 @@ instance Debug InternalBytes
 
 instance Diff InternalBytes
 
--- TODO(Bytes): This should be String2Bytes(\dv{StringSort}(string))
 instance Unparse InternalBytes where
-    unparse InternalBytes { bytesSort, bytesValue, string2BytesSymbol } =
+    unparse internalBytes =
         "\\dv"
-        <> parameters [bytesSort]
+        <> parameters [bytesSort internalBytes]
         <> Pretty.parens
-            ( unparse
-                Application
-                    { applicationSymbolOrAlias =
-                        toSymbolOrAlias string2BytesSymbol
-                    , applicationChildren =
-                        [ DomainValue
-                            { domainValueSort =
-                                head $ symbolParams string2BytesSymbol
-                            , domainValueChild =
-                                StringLiteral $ E.decode8Bit bytesValue
-                            }
-                        ]
-                    }
-            )
+            (unparse $ toApplication internalBytes)
 
-    unparse2 InternalBytes { bytesSort, bytesValue, string2BytesSymbol } =
+    unparse2 internalBytes =
         "\\dv2"
-        <> parameters2 [bytesSort]
+        <> parameters2 [bytesSort internalBytes]
         <> arguments2
-            [ Application
-                { applicationSymbolOrAlias =
-                    toSymbolOrAlias string2BytesSymbol
-                , applicationChildren =
-                    [ DomainValue
-                        { domainValueSort =
-                            head $ symbolParams string2BytesSymbol
-                        , domainValueChild =
-                            StringLiteral $ E.decode8Bit bytesValue
-                        }
-                    ]
-                }
+            [ toApplication internalBytes
             ]
 
 instance Synthetic Sort (Const InternalBytes) where
@@ -93,3 +70,18 @@ instance
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
+
+toApplication :: InternalBytes -> Application SymbolOrAlias Domain.InternalString
+toApplication InternalBytes { bytesValue, string2BytesSymbol } =
+    Application
+        { applicationSymbolOrAlias =
+            toSymbolOrAlias string2BytesSymbol
+        , applicationChildren =
+            [ Domain.InternalString
+                { Domain.internalStringSort =
+                    head $ symbolParams string2BytesSymbol
+                , Domain.internalStringValue =
+                    E.decode8Bit bytesValue
+                }
+            ]
+        }

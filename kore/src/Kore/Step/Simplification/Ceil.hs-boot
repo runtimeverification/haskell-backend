@@ -46,12 +46,3 @@ makeEvaluateTerm
     => Condition variable
     -> TermLike variable
     -> simplifier (OrCondition variable)
-
-simplifyEvaluated
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
-    => Condition variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)

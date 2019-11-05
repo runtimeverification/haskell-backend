@@ -36,10 +36,10 @@ import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
 
 genString :: Gen Text
-genString = Gen.text (Range.linear 0 256) Gen.alphaNum
+genString = Gen.text (Range.linear 0 256) Gen.latin1
 
 genString' :: Int -> Gen Text
-genString' i = Gen.text (Range.linear 0 i) Gen.alphaNum
+genString' i = Gen.text (Range.linear 0 i) Gen.latin1
 
 test_update :: [TestTree]
 test_update =
