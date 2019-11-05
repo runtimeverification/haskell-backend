@@ -29,6 +29,7 @@ module Kore.Unification.Substitution
     , partition
     , reverseIfRhsIsVar
     , Normalization (..)
+    , wrapNormalization
     ) where
 
 import Control.DeepSeq
@@ -500,3 +501,7 @@ instance Semigroup (Normalization variable) where
 
 instance Monoid (Normalization variable) where
     mempty = Normalization mempty mempty
+
+wrapNormalization :: Normalization variable -> Substitution variable
+wrapNormalization Normalization { normalized, denormalized } =
+    wrap (normalized <> denormalized)
