@@ -162,10 +162,10 @@ test_get =
 
 test_substr :: [TestTree]
 test_substr =
-    [ testPropertyWithSolver "∀ b s e (b >= e). substr b s e = ⊥" $ do
+    [ testPropertyWithSolver "end < start -> substr bytes start end = ⊥" $ do
         str <- forAll genString
-        begin <- forAll $ Gen.int (Range.linear 0 (T.length str - 1))
-        delta <- forAll $ Gen.int (Range.linear 0 10)
+        delta <- forAll $ Gen.int (Range.linear 1 10)
+        end <- forAll $ Gen.int (Range.linear 0 (T.length str - delta))
         let
             bytes = E.encode8Bit str
             expect = bottom
@@ -173,8 +173,8 @@ test_substr =
             $ mkApplySymbol
                 substrBytesSymbol
                 [ asInternal bytes
-                , Test.Int.asInternal (toInteger $ begin + delta)
-                , Test.Int.asInternal (toInteger begin)
+                , Test.Int.asInternal (toInteger $ end + delta)
+                , Test.Int.asInternal (toInteger end)
                 ]
         (===) expect actual
     , testPropertyWithSolver "∀ b s e (e > length b). substr b s e = ⊥" $ do
