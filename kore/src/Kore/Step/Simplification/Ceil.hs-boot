@@ -1,7 +1,6 @@
 module Kore.Step.Simplification.Ceil
     ( makeEvaluate
     , makeEvaluateTerm
-    , simplifyEvaluated
     ) where
 
 import Kore.Internal.Condition
