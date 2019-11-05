@@ -32,7 +32,7 @@ data Prim rule
     | TriviallyValid
     | DerivePar [rule]
     | DeriveSeq [rule]
-    deriving (Show)
+    deriving (Show, Functor, Foldable)
 
 {- | The state of the all-path reachability proof strategy for @goal@.
  -}

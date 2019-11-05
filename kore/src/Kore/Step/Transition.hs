@@ -13,6 +13,7 @@ module Kore.Step.Transition
     , scatter
     , addRule
     , addRules
+    , mapRule
     -- * Re-exports
     , Seq
     ) where
@@ -160,3 +161,6 @@ addRules = TransitionT . Accum.add . Seq.fromList . Foldable.toList
  -}
 addRule :: Monad m => rule -> TransitionT rule m ()
 addRule = TransitionT . Accum.add . Seq.singleton
+
+mapRule :: Monad m => (rule -> rule') -> (rule' -> rule) -> TransitionT rule m a -> TransitionT rule' m a
+mapRule _ _ _ = undefined

@@ -40,6 +40,10 @@ import Data.Maybe
     )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
+    ( Typeable
+    )
+import qualified Data.Typeable as Typeable
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
@@ -329,6 +333,12 @@ instance  Debug (Rule (AllPathRule Variable))
 
 instance  Diff (Rule (AllPathRule Variable))
 
+instance ClaimExtractor (AllPathRule Variable) where
+    extractClaim sentence =
+        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
+            Right (AllPathClaimPattern claim) -> Just claim
+            _ -> Nothing
+
 instance Goal (ReachabilityRule Variable) where
 
     data Rule (ReachabilityRule Variable) = APRule (Rule (AllPathRule Variable))
@@ -341,15 +351,33 @@ instance Goal (ReachabilityRule Variable) where
     type ProofState (ReachabilityRule Variable) a =
         ProofState.ProofState a
 
-    transitionRule = undefined
+    --transitionRule
+    --    :: (MonadCatch m, MonadSimplify m)
+    --    => ProofState.Prim (ReachabilityRule Variable)
+    --    -> ProofState.ProofState (ReachabilityRule Variable)
+    --    -> Strategy.TransitionT (Rule (ReachabilityRule Variable)) m (ProofState.ProofState (ReachabilityRule Variable))
+    transitionRule prim proofState =
+        Strategy.mapRule APRule f $ fmap AllPath <$> transitionRule @(AllPathRule Variable) (fmap toRuleAllPath $ myFilter isAllPath prim) (fmap toAllPath $ proofState)
 
     strategy goals rules = undefined
 
-instance ClaimExtractor (AllPathRule Variable) where
-    extractClaim sentence =
-        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
-            Right (AllPathClaimPattern claim) -> Just claim
-            _ -> Nothing
+isAllPath :: ReachabilityRule Variable -> Bool
+isAllPath (AllPath _) = True
+isAllPath _         = False
+
+toRuleAllPath :: ReachabilityRule Variable -> Rule (AllPathRule Variable)
+toRuleAllPath (AllPath rule) = coerce rule
+toRuleAllPath _ = error "impossible case"
+
+f :: Rule (ReachabilityRule Variable) -> Rule (AllPathRule Variable)
+f (APRule rule) = rule
+f _             = error "impossible case"
+
+toAllPath :: ReachabilityRule Variable -> AllPathRule Variable
+toAllPath (AllPath rule) = rule
+toAllPath _ = error "impossible case"
+
+myFilter = undefined
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
