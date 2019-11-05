@@ -38,6 +38,8 @@ module Kore.Internal.TermLike
     , mkApplyAlias
     , mkApplySymbol
     , mkBottom
+    , mkInternalBytes
+    , mkInternalBytes'
     , mkBuiltin
     , mkBuiltinList
     , mkBuiltinMap
@@ -95,6 +97,7 @@ module Kore.Internal.TermLike
     , pattern ApplyAlias_
     , pattern App_
     , pattern Bottom_
+    , pattern Bytes_
     , pattern Builtin_
     , pattern BuiltinBool_
     , pattern BuiltinInt_
@@ -133,6 +136,7 @@ module Kore.Internal.TermLike
     , CofreeF (..), Comonad (..)
     , Sort (..), SortActual (..), SortVariable (..)
     , stringMetaSort
+    , module Kore.Internal.InternalBytes
     , module Kore.Syntax.And
     , module Kore.Syntax.Application
     , module Kore.Syntax.Bottom
@@ -173,6 +177,9 @@ import Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import Data.Align
 import qualified Data.Bifunctor as Bifunctor
+import Data.ByteString
+    ( ByteString
+    )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import Data.Function
@@ -223,6 +230,7 @@ import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
+import Kore.Internal.InternalBytes
 import Kore.Internal.Symbol hiding
     ( isNonSimplifiable
     )
@@ -335,6 +343,7 @@ data TermLikeF variable child
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
+    | InternalBytesF !(Const InternalBytes child)
     | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
@@ -421,6 +430,7 @@ traverseVariablesF traversing =
         OrF orP -> pure (OrF orP)
         RewritesF rewP -> pure (RewritesF rewP)
         StringLiteralF strP -> pure (StringLiteralF strP)
+        InternalBytesF bytesP -> pure (InternalBytesF bytesP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
@@ -1095,6 +1105,7 @@ forceSort forcedSort = Recursive.apo forceSortWorker
                 BuiltinF _ -> illSorted
                 DomainValueF _ -> illSorted
                 StringLiteralF _ -> illSorted
+                InternalBytesF _ -> illSorted
                 VariableF _ -> illSorted
                 InhabitantF _ -> illSorted
 
@@ -1880,6 +1891,30 @@ mkStringLiteral
 mkStringLiteral =
     updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
 
+mkInternalBytes
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Sort
+    -> Symbol
+    -> ByteString
+    -> TermLike variable
+mkInternalBytes sort symbol value =
+    updateCallStack . synthesize . InternalBytesF . Const
+        $ InternalBytes
+            { bytesSort = sort
+            , bytesValue = value
+            , string2BytesSymbol = symbol
+            }
+
+mkInternalBytes'
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => InternalBytes
+    -> TermLike variable
+mkInternalBytes' = updateCallStack . synthesize . InternalBytesF . Const
+
 mkInhabitant
     :: GHC.HasCallStack
     => Ord variable
@@ -2060,6 +2095,12 @@ pattern Bottom_
     :: Sort
     -> TermLike variable
 
+pattern Bytes_
+    :: Sort
+    -> Symbol
+    -> ByteString
+    -> TermLike variable
+
 pattern Ceil_
     :: Sort
     -> Sort
@@ -2208,6 +2249,11 @@ pattern App_ applicationSymbolOrAlias applicationChildren <-
 
 pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom { bottomSort })
+
+pattern Bytes_ bytesSort string2BytesSymbol bytesValue <-
+    (Recursive.project -> _ :< InternalBytesF (Const InternalBytes
+        { bytesSort, string2BytesSymbol, bytesValue }
+    ))
 
 pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
     (Recursive.project ->

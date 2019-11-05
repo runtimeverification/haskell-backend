@@ -8,11 +8,15 @@ module Kore.Builtin.External
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import Data.Functor.Const
+    ( Const (..)
+    )
 import qualified Data.Functor.Foldable as Recursive
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin.Bool.Bool as Bool
+import qualified Kore.Builtin.Encoding as E
 import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.List.List as List
 import qualified Kore.Builtin.Map.Map as Map
@@ -104,6 +108,17 @@ externalize =
             RewritesF rewritesF -> Syntax.RewritesF rewritesF
             StringLiteralF stringLiteralF ->
                 Syntax.StringLiteralF stringLiteralF
+            InternalBytesF
+                (Const InternalBytes { bytesValue, string2BytesSymbol }) ->
+                Syntax.ApplicationF $ Application
+                    { applicationSymbolOrAlias =
+                        Symbol.toSymbolOrAlias string2BytesSymbol
+                    , applicationChildren =
+                        [ String.asInternal
+                            (head $ symbolParams string2BytesSymbol)
+                            $ E.decode8Bit bytesValue
+                        ]
+                    }
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF

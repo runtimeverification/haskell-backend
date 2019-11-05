@@ -267,6 +267,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (TopF _) = term
     checkTermF (VariableF _) = term
     checkTermF (StringLiteralF _) = term
+    checkTermF (InternalBytesF _) = term
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
 

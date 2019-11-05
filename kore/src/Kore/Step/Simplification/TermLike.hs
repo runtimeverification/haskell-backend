@@ -21,10 +21,12 @@ import Data.Maybe
     ( fromMaybe
     )
 import qualified Data.Set as Set
+import qualified Data.Text.Encoding as E
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import qualified Kore.Builtin.String.String as String
 import Kore.Internal.Condition
     ( Condition
     )
@@ -41,7 +43,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Symbol (..)
+    , TermLike
     , TermLikeF (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
@@ -95,6 +98,9 @@ import qualified Kore.Step.Simplification.In as In
     ( simplify
     )
 import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
     ( simplify
     )
 import qualified Kore.Step.Simplification.Mu as Mu
@@ -277,6 +283,8 @@ simplifyInternal term predicate =
                 --
                 StringLiteralF stringLiteralF ->
                     return $ StringLiteral.simplify (getConst stringLiteralF)
+                InternalBytesF internalBytesF ->
+                    return $ InternalBytes.simplify (getConst internalBytesF)
                 VariableF variableF ->
                     return $ Variable.simplify (getConst variableF)
       where

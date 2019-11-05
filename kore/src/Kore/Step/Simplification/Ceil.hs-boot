@@ -1,6 +1,7 @@
 module Kore.Step.Simplification.Ceil
     ( makeEvaluate
     , makeEvaluateTerm
+    , simplifyEvaluated
     ) where
 
 import Kore.Internal.Condition
@@ -45,3 +46,12 @@ makeEvaluateTerm
     => Condition variable
     -> TermLike variable
     -> simplifier (OrCondition variable)
+
+simplifyEvaluated
+    ::  ( SimplifierVariable variable
+        , MonadSimplify simplifier
+        , WithLog LogMessage simplifier
+        )
+    => Condition variable
+    -> OrPattern variable
+    -> simplifier (OrPattern variable)
