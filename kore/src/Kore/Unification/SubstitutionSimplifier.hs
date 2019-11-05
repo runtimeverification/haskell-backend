@@ -20,6 +20,9 @@ import Control.Monad.State.Strict
     , evalStateT
     )
 import qualified Control.Monad.Trans as Trans
+import Control.Monad.Trans.Accum
+    ( AccumT
+    )
 import qualified Control.Monad.Trans.Accum as Accum
 import Data.Function
     ( (&)
@@ -32,15 +35,11 @@ import Kore.Internal.Condition
     , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
@@ -134,45 +133,40 @@ substitutionSimplifier =
     simplifyNormalization condition0 normalization = do
         updateCount variables
         flip Accum.execAccumT condition0 $ do
-            simplified1 <- collectConditions <$> Trans.lift (traverse simplify normalized)
-            let (normalized', condition1) = Conditional.splitTerm simplified1
-                substitution = Map.fromList normalized'
+            normalized' <- traverse simplify normalized
+            let substitution = Map.fromList normalized'
                 denormalized' = (fmap . fmap) (TermLike.substitute substitution) denormalized
-            Accum.add condition1
-            simplified2 <- collectConditions <$> Trans.lift (traverse simplify denormalized')
-            let (denormalized'', condition2) = Conditional.splitTerm simplified2
-            Accum.add condition2
+            denormalized'' <- traverse simplify denormalized'
             Accum.add $ Condition.fromSubstitution $ Substitution.wrap normalized'
             Accum.add $ Condition.fromSubstitution $ Substitution.wrap denormalized''
       where
         Normalization { normalized, denormalized } = normalization
         (variables, _) = unzip denormalized
 
-    collectConditions
-        :: (Traversable t, SubstitutionVariable variable)
-        => t (Conditional variable a)
-        -> Conditional variable (t a)
-    collectConditions = sequenceA
-
     simplify
         :: (MonadSimplify simplifier, SimplifierVariable variable)
         => (UnifiedVariable variable, TermLike variable)
-        -> simplifier (Conditional variable (UnifiedVariable variable, TermLike variable))
+        -> AccumT (Condition variable) simplifier (UnifiedVariable variable, TermLike variable)
     simplify subst@(uVar, _) =
         case uVar of
-            SetVar _ -> return (pure subst)
-            ElemVar _ -> collectConditions <$> traverse simplify1 subst
+            SetVar _ -> return subst
+            ElemVar _ -> traverse simplify1 subst
 
     simplify1
         :: (MonadSimplify simplifier, SimplifierVariable variable)
         => TermLike variable
-        -> simplifier (Pattern variable)
+        -> AccumT (Condition variable) simplifier (TermLike variable)
     simplify1 termLike = do
         orPattern <- Simplifier.simplifyTerm termLike
         case OrPattern.toPatterns orPattern of
-            [        ] -> return $ Pattern.bottomOf (TermLike.termLikeSort termLike)
-            [pattern1] -> return pattern1
-            _          -> return $ Pattern.fromTermLike termLike
+            [        ] -> do
+                Accum.add Condition.bottom
+                return termLike
+            [pattern1] -> do
+                let (termLike1, condition) = Pattern.splitTerm pattern1
+                Accum.add condition
+                return termLike1
+            _          -> return termLike
 
     deduplicate substitution =
         deduplicateSubstitution unificationMakeAnd substitution & Trans.lift
