@@ -98,7 +98,7 @@ module Kore.Internal.TermLike
     , pattern ApplyAlias_
     , pattern App_
     , pattern Bottom_
-    , pattern Bytes_
+    , pattern InternalBytes_
     , pattern Builtin_
     , pattern BuiltinBool_
     , pattern BuiltinInt_
@@ -2130,7 +2130,7 @@ pattern Bottom_
     :: Sort
     -> TermLike variable
 
-pattern Bytes_
+pattern InternalBytes_
     :: Sort
     -> Symbol
     -> ByteString
@@ -2285,7 +2285,7 @@ pattern App_ applicationSymbolOrAlias applicationChildren <-
 pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom { bottomSort })
 
-pattern Bytes_ bytesSort string2BytesSymbol bytesValue <-
+pattern InternalBytes_ bytesSort string2BytesSymbol bytesValue <-
     (Recursive.project -> _ :< InternalBytesF (Const InternalBytes
         { bytesSort, string2BytesSymbol, bytesValue }
     ))

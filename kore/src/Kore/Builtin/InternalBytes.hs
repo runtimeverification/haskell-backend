@@ -115,7 +115,7 @@ expectBuiltinBytes
     -> MaybeT m (Symbol, ByteString)
 expectBuiltinBytes ctx =
     \case
-        Bytes_ _ symbol bytesValue -> return (symbol, bytesValue)
+        InternalBytes_ _ symbol bytesValue -> return (symbol, bytesValue)
         _ ->
             Builtin.verifierBug
             $ Text.unpack ctx ++ ": Term not a bytes value"
