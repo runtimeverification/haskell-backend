@@ -19,6 +19,9 @@ module Kore.Step.Transition
     ) where
 
 import Control.Applicative
+import Control.Lens.Combinators
+    ( dimap
+    )
 import Control.Monad.Catch
     ( MonadCatch (catch)
     , MonadThrow (throwM)
@@ -163,4 +166,5 @@ addRule :: Monad m => rule -> TransitionT rule m ()
 addRule = TransitionT . Accum.add . Seq.singleton
 
 mapRule :: Monad m => (rule -> rule') -> (rule' -> rule) -> TransitionT rule m a -> TransitionT rule' m a
-mapRule _ _ _ = undefined
+mapRule f g trans = TransitionT (AccumT (dimap (fmap g) (fmap . fmap . fmap $ f) (runAccumT . getTransitionT $ trans)))
+--
