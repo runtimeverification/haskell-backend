@@ -20,6 +20,7 @@ import Control.Monad.State.Strict
     , evalStateT
     )
 import qualified Control.Monad.Trans as Trans
+import qualified Control.Monad.Trans.Accum as Accum
 import Data.Function
     ( (&)
     )
@@ -47,6 +48,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.AndTerms
     ( termUnification
+    )
+import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
@@ -129,21 +133,17 @@ substitutionSimplifier =
         ->  StateT DenormalizedCount unifier (Condition variable)
     simplifyNormalization condition0 normalization = do
         updateCount variables
-        simplified1 <- collectConditions <$> Trans.lift (traverse simplify normalized)
-        let (normalized', condition1) = Conditional.splitTerm simplified1
-            substitution = Map.fromList normalized'
-            denormalized' = (fmap . fmap) (TermLike.substitute substitution) denormalized
-        simplified2 <- collectConditions <$> Trans.lift (traverse simplify denormalized')
-        let (denormalized'', condition2) = Conditional.splitTerm simplified2
-            substitution1 = Condition.fromSubstitution (Substitution.wrap normalized')
-            substitution2 = Condition.fromSubstitution (Substitution.wrap denormalized'')
-        (return . mconcat)
-            [ condition0
-            , condition1
-            , condition2
-            , substitution1
-            , substitution2
-            ]
+        flip Accum.execAccumT condition0 $ do
+            simplified1 <- collectConditions <$> Trans.lift (traverse simplify normalized)
+            let (normalized', condition1) = Conditional.splitTerm simplified1
+                substitution = Map.fromList normalized'
+                denormalized' = (fmap . fmap) (TermLike.substitute substitution) denormalized
+            Accum.add condition1
+            simplified2 <- collectConditions <$> Trans.lift (traverse simplify denormalized')
+            let (denormalized'', condition2) = Conditional.splitTerm simplified2
+            Accum.add condition2
+            Accum.add $ Condition.fromSubstitution $ Substitution.wrap normalized'
+            Accum.add $ Condition.fromSubstitution $ Substitution.wrap denormalized''
       where
         Normalization { normalized, denormalized } = normalization
         (variables, _) = unzip denormalized
@@ -155,18 +155,18 @@ substitutionSimplifier =
     collectConditions = sequenceA
 
     simplify
-        :: SimplifierVariable variable
+        :: (MonadSimplify simplifier, SimplifierVariable variable)
         => (UnifiedVariable variable, TermLike variable)
-        -> unifier (Conditional variable (UnifiedVariable variable, TermLike variable))
+        -> simplifier (Conditional variable (UnifiedVariable variable, TermLike variable))
     simplify subst@(uVar, _) =
         case uVar of
             SetVar _ -> return (pure subst)
             ElemVar _ -> collectConditions <$> traverse simplify1 subst
 
     simplify1
-        :: SimplifierVariable variable
+        :: (MonadSimplify simplifier, SimplifierVariable variable)
         => TermLike variable
-        -> unifier (Pattern variable)
+        -> simplifier (Pattern variable)
     simplify1 termLike = do
         orPattern <- Simplifier.simplifyTerm termLike
         case OrPattern.toPatterns orPattern of
