@@ -21,6 +21,9 @@ module Debug
     ) where
 
 import Control.Comonad.Trans.Cofree
+import Data.ByteString
+    ( ByteString
+    )
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import Data.Functor.Const
@@ -256,6 +259,9 @@ instance {-# OVERLAPS #-} Debug String where
     debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug Text where
+    debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
+
+instance Debug ByteString where
     debugPrec a = \p -> Pretty.pretty (showsPrec p a "")
 
 instance Debug Void
@@ -509,6 +515,9 @@ instance Diff Bool where
 instance (Debug a, Diff a) => Diff [a]
 
 instance {-# OVERLAPS #-} Diff String where
+    diffPrec = diffPrecEq
+
+instance Diff ByteString where
     diffPrec = diffPrecEq
 
 instance Diff Text where
