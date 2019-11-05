@@ -10,6 +10,7 @@ module Kore.Step.Rule
     , RewriteRule (..)
     , OnePathRule (..)
     , AllPathRule (..)
+    , ReachabilityRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
     , allPathGlobally

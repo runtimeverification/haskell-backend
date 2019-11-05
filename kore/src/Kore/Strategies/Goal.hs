@@ -76,6 +76,7 @@ import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
     , QualifiedAxiomPattern (..)
+    , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , fromSentenceAxiom
@@ -327,6 +328,22 @@ instance SOP.HasDatatypeInfo (Rule (AllPathRule Variable))
 instance  Debug (Rule (AllPathRule Variable))
 
 instance  Diff (Rule (AllPathRule Variable))
+
+instance Goal (ReachabilityRule Variable) where
+
+    data Rule (ReachabilityRule Variable) = APRule (Rule (AllPathRule Variable))
+                                          | OPRule (Rule (OnePathRule Variable))
+        deriving (GHC.Generic, Show)
+
+    type Prim (ReachabilityRule Variable) =
+        ProofState.Prim (Rule (ReachabilityRule Variable))
+
+    type ProofState (ReachabilityRule Variable) a =
+        ProofState.ProofState a
+
+    transitionRule = undefined
+
+    strategy goals rules = undefined
 
 instance ClaimExtractor (AllPathRule Variable) where
     extractClaim sentence =
