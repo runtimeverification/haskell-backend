@@ -35,6 +35,7 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
     ( Symbol
+    , bytesSort
     )
 import Kore.Syntax.Definition as Syntax
 
@@ -616,6 +617,63 @@ string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
     & hook "STRING.string2token"
 
+-- * Bytes
+
+bytes2stringBytesSymbol :: Internal.Symbol
+bytes2stringBytesSymbol =
+    builtinSymbol "bytes2stringBytes" stringSort [bytesSort]
+        & hook "BYTES.bytes2string"
+
+string2bytesBytesSymbol :: Internal.Symbol
+string2bytesBytesSymbol =
+    builtinSymbol "string2bytesBytes" bytesSort [stringSort]
+        & hook "BYTES.string2bytes"
+
+updateBytesSymbol :: Internal.Symbol
+updateBytesSymbol =
+    builtinSymbol "updateBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.update"
+
+getBytesSymbol :: Internal.Symbol
+getBytesSymbol =
+    builtinSymbol "getBytes" intSort [bytesSort, intSort]
+        & hook "BYTES.get"
+
+substrBytesSymbol :: Internal.Symbol
+substrBytesSymbol =
+    builtinSymbol "substrBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.substr"
+
+replaceAtBytesSymbol :: Internal.Symbol
+replaceAtBytesSymbol =
+    builtinSymbol "replaceAtBytes" bytesSort [bytesSort, intSort, bytesSort]
+        & hook "BYTES.replaceAt"
+
+padRightBytesSymbol :: Internal.Symbol
+padRightBytesSymbol =
+    builtinSymbol "padRightBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.padRight"
+
+padLeftBytesSymbol :: Internal.Symbol
+padLeftBytesSymbol =
+    builtinSymbol "padLeftBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.padLeft"
+
+reverseBytesSymbol :: Internal.Symbol
+reverseBytesSymbol =
+    builtinSymbol "reverseBytes" bytesSort [bytesSort]
+        & hook "BYTES.reverse"
+
+lengthBytesSymbol :: Internal.Symbol
+lengthBytesSymbol =
+    builtinSymbol "lengthBytes" intSort [bytesSort]
+        & hook "BYTES.length"
+
+concatBytesSymbol :: Internal.Symbol
+concatBytesSymbol =
+    builtinSymbol "concatBytes" bytesSort [bytesSort, bytesSort]
+        & hook "BYTES.concat"
+
 -- * Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
@@ -978,6 +1036,21 @@ userTokenSortDecl =
         userTokenSort
         [ hasDomainValuesAttribute ]
 
+-- ** Bytes
+
+bytesSort :: Sort
+bytesSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Bytes"
+        , sortActualSorts = []
+        }
+
+bytesSortDecl :: ParsedSentence
+bytesSortDecl =
+    hookedSortDecl
+        bytesSort
+        [ hookAttribute "BYTES.Bytes" ]
+
 -- -------------------------------------------------------------
 -- * Modules
 
@@ -1327,6 +1400,35 @@ stringModule =
             ]
         }
 
+-- ** BYTES
+
+bytesModuleName :: ModuleName
+bytesModuleName = ModuleName "BYTES"
+
+-- | Declare the @BYTES@ builtins.
+bytesModule :: ParsedModule
+bytesModule =
+    Module
+        { moduleName = bytesModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importParsedModule stringModuleName
+            , importParsedModule intModuleName
+            , bytesSortDecl
+            , hookedSymbolDecl bytes2stringBytesSymbol
+            , hookedSymbolDecl string2bytesBytesSymbol
+            , hookedSymbolDecl updateBytesSymbol
+            , hookedSymbolDecl getBytesSymbol
+            , hookedSymbolDecl substrBytesSymbol
+            , hookedSymbolDecl replaceAtBytesSymbol
+            , hookedSymbolDecl padRightBytesSymbol
+            , hookedSymbolDecl padLeftBytesSymbol
+            , hookedSymbolDecl reverseBytesSymbol
+            , hookedSymbolDecl lengthBytesSymbol
+            , hookedSymbolDecl concatBytesSymbol
+            ]
+        }
+
 -- ** KRYPTO
 
 kryptoModuleName :: ModuleName
@@ -1369,6 +1471,7 @@ testModule =
             , importParsedModule pairModuleName
             , importParsedModule setModuleName
             , importParsedModule stringModuleName
+            , importParsedModule bytesModuleName
             , importParsedModule kryptoModuleName
             ]
         }
@@ -1389,6 +1492,7 @@ testDefinition =
             , pairModule
             , setModule
             , stringModule
+            , bytesModule
             , kryptoModule
             , testModule
             ]

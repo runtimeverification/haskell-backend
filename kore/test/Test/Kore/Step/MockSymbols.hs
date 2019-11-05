@@ -50,6 +50,9 @@ import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
+import qualified Kore.Builtin.List as List
+import qualified Kore.Builtin.Map as Map
+import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.String as Builtin.String
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
@@ -65,6 +68,12 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Sort
+import Kore.Step.Axiom.EvaluationStrategy
+    ( builtinEvaluation
+    )
+import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
+    ( AxiomIdentifier (..)
+    )
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
@@ -1612,3 +1621,47 @@ generatorSetup =
         }
   where
     doesNotHaveArguments Symbol {symbolParams} = null symbolParams
+
+builtinSimplifiers :: BuiltinAndAxiomSimplifierMap
+builtinSimplifiers =
+    Map.fromList
+        [   ( AxiomIdentifier.Application unitMapId
+            , builtinEvaluation Map.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application elementMapId
+            , builtinEvaluation Map.evalElement
+            )
+        ,   ( AxiomIdentifier.Application concatMapId
+            , builtinEvaluation Map.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application unitSetId
+            , builtinEvaluation Set.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application elementSetId
+            , builtinEvaluation Set.evalElement
+            )
+        ,   ( AxiomIdentifier.Application concatSetId
+            , builtinEvaluation Set.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application unitListId
+            , builtinEvaluation List.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application elementListId
+            , builtinEvaluation List.evalElement
+            )
+        ,   ( AxiomIdentifier.Application concatListId
+            , builtinEvaluation List.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application tdivIntId
+            , builtinEvaluation
+                (Builtin.Int.builtinFunctions Map.! Builtin.Int.tdivKey)
+            )
+        ,   ( AxiomIdentifier.Application lessIntId
+            , builtinEvaluation
+                (Builtin.Int.builtinFunctions Map.! Builtin.Int.ltKey)
+            )
+        ,   ( AxiomIdentifier.Application greaterEqIntId
+            , builtinEvaluation
+                (Builtin.Int.builtinFunctions Map.! Builtin.Int.geKey)
+            )
+        ]
