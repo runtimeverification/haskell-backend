@@ -132,16 +132,31 @@ substitutionSimplifier =
         =>  Condition variable
         ->  Normalization variable
         ->  StateT DenormalizedCount unifier (Condition variable)
-    simplifyNormalization condition0 normalization0 = do
+    simplifyNormalization condition0 normalization = do
         updateCount variables
-        flip Accum.execAccumT condition0 $ do
-            normalization1 <- Lens.traverseOf (field @"normalized".Lens.traversed) simplify normalization0
-            let normalization2 = applyNormalized normalization1
-            normalization3 <- Lens.traverseOf (field @"denormalized".Lens.traversed) simplify normalization2
-            Accum.add $ Condition.fromSubstitution $ Substitution.wrapNormalization normalization3
+        flip Accum.execAccumT condition0 $
+            return normalization
+            >>= simplifyNormalized
+            >>= return . applyNormalized
+            >>= simplifyDenormalized
+            >>= addNormalization
       where
-        Normalization { denormalized } = normalization0
+        Normalization { denormalized } = normalization
         (variables, _) = unzip denormalized
+
+    simplifyNormalized
+        :: (MonadSimplify simplifier, SimplifierVariable variable)
+        => Normalization variable
+        -> AccumT (Condition variable) simplifier (Normalization variable)
+    simplifyNormalized =
+        Lens.traverseOf (field @"normalized" . Lens.traversed) simplify
+
+    simplifyDenormalized
+        :: (MonadSimplify simplifier, SimplifierVariable variable)
+        => Normalization variable
+        -> AccumT (Condition variable) simplifier (Normalization variable)
+    simplifyDenormalized =
+        Lens.traverseOf (field @"denormalized" . Lens.traversed) simplify
 
     applyNormalized
         :: SubstitutionVariable variable
@@ -157,6 +172,13 @@ substitutionSimplifier =
             }
       where
         substitution = Map.fromList normalized
+
+    addNormalization
+        :: (Monad monad, SimplifierVariable variable)
+        => Normalization variable
+        -> AccumT (Condition variable) monad ()
+    addNormalization =
+        Accum.add . Condition.fromSubstitution . Substitution.wrapNormalization
 
     simplify
         :: (MonadSimplify simplifier, SimplifierVariable variable)
