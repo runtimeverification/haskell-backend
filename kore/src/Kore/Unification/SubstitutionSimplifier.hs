@@ -65,6 +65,7 @@ import Kore.Substitute
 import Kore.Unification.Error
 import Kore.Unification.Substitution
     ( Normalization (..)
+    , SingleSubstitution
     , Substitution
     , UnwrappedSubstitution
     )
@@ -180,8 +181,8 @@ substitutionSimplifier =
 
     simplify
         :: (MonadSimplify simplifier, SimplifierVariable variable)
-        => (UnifiedVariable variable, TermLike variable)
-        -> AccumT (Condition variable) simplifier (UnifiedVariable variable, TermLike variable)
+        => SingleSubstitution variable
+        -> AccumT (Condition variable) simplifier (SingleSubstitution variable)
     simplify subst@(uVar, _) =
         case uVar of
             SetVar _ -> return subst
