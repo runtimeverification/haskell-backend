@@ -4,6 +4,7 @@ module Test.Kore.Step.Function.Integration
     , test_List
     , test_lookupMap
     , test_updateMap
+    , test_updateList
     , test_Ceil
     ) where
 
@@ -955,6 +956,89 @@ listSimplifiers =
     removeMapId =
         AxiomIdentifier.Application
         $ symbolConstructor Builtin.removeMapSymbol
+
+
+test_updateList :: [TestTree]
+test_updateList =
+    [ notApplies "different concrete indices"
+        [updateListSimplifier]
+        (updateList
+            (updateList singletonList (mkInt 0) (mkInt 1))
+            (mkInt 1)
+            (mkInt 2)
+        )
+    , applies "same concrete indices"
+        [updateListSimplifier]
+        (updateList
+            (updateList singletonList (mkInt 0) (mkInt 1))
+            (mkInt 0)
+            (mkInt 2)
+        )
+    , notApplies "different abstract keys; evaluates requires with SMT"
+        [updateListSimplifier]
+        (updateList
+            (updateList varL (mkElemVar xInt) (mkInt 1))
+            (addInt (mkElemVar xInt) (mkInt 1))
+            (mkInt 2)
+        )
+    , notApplies "different keys; evaluates requires with function rule"
+        [updateListSimplifier]
+        (updateList
+            (updateList Builtin.unitList (mkInt 0) (mkInt 1))
+            (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
+            (mkInt 2)
+        )
+    , equals "different keys; evaluates updateList"
+        (updateList
+            (updateList twoElementList (mkInt 0) (mkInt 1))
+            (addInt (mkInt 0) (Builtin.dummyInt (mkInt 1)))
+            (mkInt 2)
+        )
+        [mkList [mkInt 1, mkInt 2]]
+    , equals "different negative keys; evaluates updateList"
+        (updateList
+            (updateList twoElementList (mkInt (-2)) (mkInt 1))
+            (addInt (mkInt 0) (Builtin.dummyInt (mkInt (-1))))
+            (mkInt 2)
+        )
+        [mkList [mkInt 1, mkInt 2]]
+    , equals "negative index outside rage"
+        (updateList singletonList (mkInt (-2)) (mkInt 1))
+        [mkBottom_]
+    , equals "positive index outside rage"
+        (updateList singletonList (mkInt 1) (mkInt 1))
+        [mkBottom_]
+    , applies "same abstract key"
+        [updateListSimplifier]
+        (updateList
+            (updateList singletonList (mkElemVar xInt) (mkInt 1))
+            (mkElemVar xInt)
+            (mkInt 2)
+        )
+    ]
+
+singletonList :: TermLike Variable
+singletonList = Builtin.elementList (mkInt 0)
+
+twoElementList :: TermLike Variable
+twoElementList = Builtin.concatList singletonList singletonList
+
+updateList
+    :: TermLike Variable -- ^ List
+    -> TermLike Variable -- ^ Index
+    -> TermLike Variable -- ^ Value
+    -> TermLike Variable
+updateList = Builtin.updateList
+
+updateListSimplifier :: EqualityRule Variable
+updateListSimplifier =
+    axiom
+        (updateList (updateList varL u v) x y)
+        (updateList varL u y)
+        (makeEqualsPredicate (Builtin.keqBool (injK u) (injK x)) (mkBool True))
+  where
+    [u, v, x, y] = mkElemVar <$> [uInt, vInt, xInt, yInt]
+    injK = Builtin.inj Builtin.kSort
 
 test_lookupMap :: [TestTree]
 test_lookupMap =

@@ -80,12 +80,9 @@ unparseConcat
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
 unparseConcat unitSymbol concatSymbol =
-    \case
-        [] -> applyUnit
-        xs -> foldr1 applyConcat xs
+    unparseAssoc' (unparse concatSymbol) applyUnit
   where
     applyUnit = unparse unitSymbol <> noArguments
-    applyConcat set1 set2 = unparse concatSymbol <> arguments' [set1, set2]
 
 -- * Builtin List
 

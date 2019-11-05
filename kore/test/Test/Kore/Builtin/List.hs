@@ -39,6 +39,9 @@ genInteger = Gen.integral (Range.linear (-1024) 1024)
 genSeqInteger :: Gen (Seq Integer)
 genSeqInteger = Gen.seq (Range.linear 0 16) genInteger
 
+genSeqIndex :: Gen Integer
+genSeqIndex = Gen.integral (Range.linear (-20) 20)
+
 test_getUnit :: TestTree
 test_getUnit =
     testPropertyWithSolver "get{}(unit{}(), _) === \\bottom{}()" $ do
@@ -95,6 +98,32 @@ test_getLastElement =
         let expectGet = Test.Int.asPartialPattern value
         (===) expectGet   =<< evaluateT patGet
         (===) Pattern.top =<< evaluateT predicate
+
+test_GetUpdate :: TestTree
+test_GetUpdate =
+    testPropertyWithSolver
+    "get{}(update{}(map, ix, val), ix) === val"
+    prop
+  where
+    prop = do
+        values <- forAll genSeqInteger
+        value  <- forAll Test.Int.genIntegerPattern
+        ix <- forAll genSeqIndex
+        let len = fromIntegral $ length values
+            patValues = asTermLike $ Test.Int.asInternal <$> values
+            patUpdated = updateList patValues (Test.Int.asInternal ix) value
+        if (-len) <= ix && ix < len then do
+            let patGet = getList patUpdated $ Test.Int.asInternal ix
+                predicate = mkEquals_
+                    patGet
+                    value
+                expect = Pattern.fromTermLike value
+            (===) Pattern.top  =<< evaluateT predicate
+            (===) expect =<< evaluateT patGet
+        else do
+            let predicate = mkEquals_ mkBottom_ patUpdated
+            (===) Pattern.bottom =<< evaluateT patUpdated
+            (===) Pattern.top =<< evaluateT predicate
 
 test_concatUnit :: TestTree
 test_concatUnit =

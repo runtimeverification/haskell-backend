@@ -50,9 +50,7 @@ import Control.Applicative
 import Control.Error
     ( MaybeT
     )
-import Control.Monad
-    ( join
-    )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe
     ( mapMaybeT
@@ -167,6 +165,10 @@ symbolVerifiers =
     , ( getKey
       , Builtin.verifySymbol acceptAnySort [assertSort, Int.assertSort]
       )
+    ,   ( updateKey
+        , Builtin.verifySymbol assertSort
+            [assertSort, Int.assertSort, acceptAnySort]
+        )
     ]
 
 {- | Abort function evaluation if the argument is not a List domain value.
@@ -198,7 +200,7 @@ expectConcreteBuiltinList
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Seq (TermLike Concrete))
 expectConcreteBuiltinList ctx =
-    Monad.Trans.Maybe.mapMaybeT (fmap join)
+    Monad.Trans.Maybe.mapMaybeT (fmap Monad.join)
         . fmap (traverse Builtin.toKey)
         . expectBuiltinList ctx
 
@@ -226,14 +228,9 @@ evalGet :: Builtin.Function
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
-    evalGet0
-        :: (InternalVariable variable, MonadSimplify simplifier)
-        => Sort
-        -> [TermLike variable]
-        -> simplifier (AttemptedAxiom variable)
+    evalGet0 :: Builtin.FunctionImplementation
     evalGet0 _ = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+        Builtin.getAttemptedAxiom $ do
             let (_list, _ix) =
                     case arguments of
                         [_list, _ix] -> (_list, _ix)
@@ -254,10 +251,29 @@ evalGet =
                     (Builtin.appliedFunction . maybeBottom)
                         (Seq.lookup ix _list)
             emptyList <|> bothConcrete
-        )
       where
         maybeBottom =
             maybe Pattern.bottom Pattern.fromTermLike
+
+evalUpdate :: Builtin.Function
+evalUpdate =
+    Builtin.functionEvaluator evalUpdate0
+  where
+    evalUpdate0 :: Builtin.FunctionImplementation
+    evalUpdate0 resultSort [_list, _ix, value] =
+        Builtin.getAttemptedAxiom $ do
+            _list <- expectBuiltinList getKey _list
+            _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
+            let len = Seq.length _list
+                ix
+                  | _ix < 0 =
+                    -- negative indices count from end of list
+                    _ix + len
+                  | otherwise = _ix
+            if ix >= 0 && ix < len
+                then returnList resultSort (Seq.update ix value _list)
+                else Builtin.appliedFunction Pattern.bottom
+    evalUpdate0 _ _ = Builtin.wrongArity updateKey
 
 evalUnit :: Builtin.Function
 evalUnit =
@@ -314,6 +330,7 @@ builtinFunctions =
         , (elementKey, evalElement)
         , (unitKey, evalUnit)
         , (getKey, evalGet)
+        , (updateKey, evalUpdate)
         ]
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
