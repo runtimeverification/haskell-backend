@@ -85,7 +85,7 @@ test_simplifyCondition =
                 (Condition.fromSubstitution . Substitution.wrap)
                     [(x, Mock.functional10 (mkVar x))]
         actual <- normalizeExcept input
-        assertEqual "Expected SubstitutionError" expect actual
+        assertEqual "Expected \\top" expect actual
     ]
   where
     existsPredicate =
