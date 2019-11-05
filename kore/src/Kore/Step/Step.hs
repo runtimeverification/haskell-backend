@@ -481,7 +481,7 @@ recoveryFunctionLikeResults initial unifier = do
             , "doesn't imply rule condition "
             , Pretty.indent 4 $ unparse alpha_p
             ]
-        let alpha_t_sorted = fullyOverrideSort (termLikeSort phi_t) alpha_t
+        let alpha_t_sorted = fullyOverrideSort' (termLikeSort phi_t) alpha_t
         Monad.when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
             [ "Couldn't recovery error: "
             , Pretty.indent 4 (Pretty.pretty err)
@@ -491,6 +491,9 @@ recoveryFunctionLikeResults initial unifier = do
             , Pretty.indent 4 $ unparse phi_t
             ]
         unifier
+    fullyOverrideSort' sort term
+      | sort == termLikeSort term = term
+      | otherwise = fullyOverrideSort sort term
 
 finalizeRulesSequence
     ::  forall unifier variable
