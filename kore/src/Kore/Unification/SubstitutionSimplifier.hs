@@ -29,12 +29,14 @@ import Data.Function
     ( (&)
     )
 import Data.Generics.Product.Fields
+import Data.Map.Strict
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
 
 import qualified Branch as BranchT
 import Kore.Internal.Condition
     ( Condition
-    , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrCondition
@@ -99,27 +101,29 @@ substitutionSimplifier =
         => Substitution variable
         -> unifier (OrCondition variable)
     worker substitution =
-        flip evalStateT maxBound
-        $ OrCondition.fromCondition <$> loop (Condition.fromSubstitution substitution)
+        loop substitution
+        & flip Accum.execAccumT mempty
+        & flip evalStateT maxBound
+        & fmap OrCondition.fromCondition
 
     loop
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  Condition variable
-        ->  StateT DenormalizedCount unifier (Condition variable)
-    loop Conditional { term = (), predicate, substitution } = do
-        (predicate', deduplicated) <- deduplicate substitution
-        let predicates = fromPredicates [predicate, predicate']
+        =>  Substitution variable
+        ->  AccumT (Condition variable) (StateT DenormalizedCount unifier) ()
+    loop substitution = do
+        deduplicated <- deduplicate substitution
         case Substitution.normalize deduplicated of
-            Nothing -> return Condition.bottom
+            Nothing -> do
+                Accum.add Condition.bottom
+                return ()
             Just normalization@Normalization { denormalized }
-              | null denormalized -> return $ predicates <> condition
+              | null denormalized -> do
+                Accum.add $ Condition.fromNormalizationSimplified normalization
+                return ()
               | otherwise ->
                 simplifyNormalization normalization
-                & flip Accum.execAccumT predicates
-                & (>>= loop)
-              where
-                condition = Condition.fromNormalizationSimplified normalization
+                >>= loop . Substitution.wrapNormalization
 
     updateCount
         :: SimplifierVariable variable
@@ -137,7 +141,7 @@ substitutionSimplifier =
         ::  forall variable
         .   SubstitutionVariable variable
         =>  Normalization variable
-        ->  AccumT (Condition variable) (StateT DenormalizedCount unifier) ()
+        ->  AccumT (Condition variable) (StateT DenormalizedCount unifier) (Normalization variable)
     simplifyNormalization normalization = do
         let Normalization { denormalized } = normalization
         Trans.lift $ updateCount denormalized
@@ -145,7 +149,6 @@ substitutionSimplifier =
             >>= simplifyNormalized
             >>= return . applyNormalized
             >>= simplifyDenormalized
-            >>= addNormalization
 
     simplifyNormalized
         :: (MonadSimplify simplifier, SimplifierVariable variable)
@@ -173,13 +176,6 @@ substitutionSimplifier =
       where
         substitute = TermLike.substitute (Map.fromList normalized)
 
-    addNormalization
-        :: (Monad monad, SimplifierVariable variable)
-        => Normalization variable
-        -> AccumT (Condition variable) monad ()
-    addNormalization =
-        Accum.add . Condition.fromSubstitution . Substitution.wrapNormalization
-
     simplify
         :: (MonadSimplify simplifier, SimplifierVariable variable)
         => SingleSubstitution variable
@@ -205,10 +201,17 @@ substitutionSimplifier =
                 return termLike1
             _          -> return termLike
 
-    deduplicate substitution =
-        deduplicateSubstitution unificationMakeAnd substitution & Trans.lift
-
-    fromPredicates predicates = mconcat (map Condition.fromPredicate predicates)
+    deduplicate
+        :: SimplifierVariable variable
+        => Substitution variable
+        -> AccumT (Condition variable) (StateT DenormalizedCount unifier)
+            (Map (UnifiedVariable variable) (TermLike variable))
+    deduplicate substitution = do
+        (predicate, substitution') <-
+            deduplicateSubstitution unificationMakeAnd substitution
+            & Trans.lift . Trans.lift
+        Accum.add $ Condition.fromPredicate predicate
+        return substitution'
 
     simplifiableCycle variables =
         (Trans.lift . throwSubstitutionError) (SimplifiableCycle variables)
