@@ -108,6 +108,9 @@ import qualified Kore.Step.Simplification.In as In
 import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
     ( simplify
     )
+import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.Mu as Mu
     ( simplify
     )
@@ -420,6 +423,8 @@ simplifyInternal term predicate = do
             --
             StringLiteralF stringLiteralF ->
                 return $ StringLiteral.simplify (getConst stringLiteralF)
+            InternalBytesF internalBytesF ->
+                return $ InternalBytes.simplify (getConst internalBytesF)
             VariableF variableF ->
                 return $ Variable.simplify (getConst variableF)
 
