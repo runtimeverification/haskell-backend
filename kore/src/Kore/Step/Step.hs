@@ -71,13 +71,13 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Predicate.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
 import qualified Kore.Logger as Log
+import Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Step
 import Kore.Step.Rule
@@ -447,17 +447,17 @@ recoveryFunctionLikeResults initial unifier = do
         Left err -> moreChecksAfterError err
   where
     moreChecksAfterError err = do
-        rules <- (fmap Step.appliedRule) . Step.results <$> unifier
+        rules <- fmap Step.appliedRule . Step.results <$> unifier
         let
-            rule = case Seq.length rules of 
+            rule = case Seq.length rules of
                 1 -> Seq.index rules 0
-                _ -> error $ show $ Pretty.vsep $
+                _ -> error $ show $ Pretty.vsep
                         [ "Couldn't recovery error: "
                         , Pretty.indent 4 (Pretty.pretty err)
                         , "Expected singleton list of rules but found: "
                         , (Pretty.indent 4 . Pretty.pretty . show) rules
                         ]
-            
+
             Conditional { term = ruleTerm, substitution = ruleSubstitution } = rule
             RulePattern { left = alpha_t', requires = alpha_p'} = ruleTerm
 
@@ -467,13 +467,13 @@ recoveryFunctionLikeResults initial unifier = do
             alpha_p = Predicate.substitute substitution' alpha_p'
             phi_p = predicate initial
             phi_t = term initial
-    
-        res1 <- SMT.Evaluator.evaluate 
+
+        res1 <- SMT.Evaluator.evaluate
                     $ Predicate.makeAndPredicate
                         phi_p
                         (Predicate.makeNotPredicate alpha_p)
 
-        Monad.when (res1 /= Just False) $ error $ show $ Pretty.vsep $
+        Monad.when (res1 /= Just False) $ error $ show $ Pretty.vsep
             [ "Couldn't recovery error: "
             , Pretty.indent 4 (Pretty.pretty err)
             , "Configuration condition "
@@ -481,15 +481,15 @@ recoveryFunctionLikeResults initial unifier = do
             , "doesn't imply rule condition "
             , Pretty.indent 4 $ unparse alpha_p
             ]
-        Monad.when (phi_t /= alpha_t) $ error $ show $ Pretty.vsep $
+        let alpha_t_sorted = fullyOverrideSort (termLikeSort phi_t) alpha_t
+        Monad.when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
             [ "Couldn't recovery error: "
             , Pretty.indent 4 (Pretty.pretty err)
             , "Rule lhs "
-            , Pretty.indent 4 $ unparse alpha_t
+            , Pretty.indent 4 $ unparse alpha_t'
             , "doesn't match configuration"
             , Pretty.indent 4 $ unparse phi_t
             ]
-        
         unifier
 
 finalizeRulesSequence
