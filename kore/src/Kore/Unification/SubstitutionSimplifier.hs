@@ -11,6 +11,7 @@ module Kore.Unification.SubstitutionSimplifier
     , module Kore.Step.Simplification.SubstitutionSimplifier
     ) where
 
+import qualified Control.Lens as Lens
 import Control.Monad
     ( unless
     )
@@ -27,6 +28,7 @@ import qualified Control.Monad.Trans.Accum as Accum
 import Data.Function
     ( (&)
     )
+import Data.Generics.Product.Fields
 import qualified Data.Map.Strict as Map
 
 import qualified Branch as BranchT
@@ -130,18 +132,31 @@ substitutionSimplifier =
         =>  Condition variable
         ->  Normalization variable
         ->  StateT DenormalizedCount unifier (Condition variable)
-    simplifyNormalization condition0 normalization = do
+    simplifyNormalization condition0 normalization0 = do
         updateCount variables
         flip Accum.execAccumT condition0 $ do
-            normalized' <- traverse simplify normalized
-            let substitution = Map.fromList normalized'
-                denormalized' = (fmap . fmap) (TermLike.substitute substitution) denormalized
-            denormalized'' <- traverse simplify denormalized'
-            Accum.add $ Condition.fromSubstitution $ Substitution.wrap normalized'
-            Accum.add $ Condition.fromSubstitution $ Substitution.wrap denormalized''
+            normalization1 <- Lens.traverseOf (field @"normalized".Lens.traversed) simplify normalization0
+            let normalization2 = applyNormalized normalization1
+            normalization3 <- Lens.traverseOf (field @"denormalized".Lens.traversed) simplify normalization2
+            Accum.add $ Condition.fromSubstitution $ Substitution.wrapNormalization normalization3
       where
-        Normalization { normalized, denormalized } = normalization
+        Normalization { denormalized } = normalization0
         (variables, _) = unzip denormalized
+
+    applyNormalized
+        :: SubstitutionVariable variable
+        => Normalization variable
+        -> Normalization variable
+    applyNormalized Normalization { normalized, denormalized } =
+        Normalization
+            { normalized
+            , denormalized =
+                (fmap . fmap)
+                    (TermLike.substitute substitution)
+                    denormalized
+            }
+      where
+        substitution = Map.fromList normalized
 
     simplify
         :: (MonadSimplify simplifier, SimplifierVariable variable)
