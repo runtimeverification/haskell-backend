@@ -66,6 +66,7 @@ import Kore.Unification.Error
 import Kore.Unification.Substitution
     ( Normalization (..)
     , Substitution
+    , UnwrappedSubstitution
     )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.SubstitutionNormalization as Substitution
@@ -118,13 +119,15 @@ substitutionSimplifier =
 
     updateCount
         :: SimplifierVariable variable
-        => [UnifiedVariable variable]
+        => UnwrappedSubstitution variable
         -> StateT DenormalizedCount unifier ()
-    updateCount variables = do
+    updateCount denorm = do
         lastCount <- State.get
         let thisCount = length variables
         unless (thisCount < lastCount) (simplifiableCycle variables)
         State.put thisCount
+      where
+        (variables, _) = unzip denorm
 
     simplifyNormalization
         ::  forall variable
@@ -132,17 +135,15 @@ substitutionSimplifier =
         =>  Condition variable
         ->  Normalization variable
         ->  StateT DenormalizedCount unifier (Condition variable)
-    simplifyNormalization condition0 normalization = do
-        updateCount variables
-        flip Accum.execAccumT condition0 $
-            return normalization
+    simplifyNormalization condition normalization = do
+        let Normalization { denormalized } = normalization
+        updateCount denormalized
+        return normalization
             >>= simplifyNormalized
             >>= return . applyNormalized
             >>= simplifyDenormalized
             >>= addNormalization
-      where
-        Normalization { denormalized } = normalization
-        (variables, _) = unzip denormalized
+            & flip Accum.execAccumT condition
 
     simplifyNormalized
         :: (MonadSimplify simplifier, SimplifierVariable variable)
@@ -165,13 +166,10 @@ substitutionSimplifier =
     applyNormalized Normalization { normalized, denormalized } =
         Normalization
             { normalized
-            , denormalized =
-                (fmap . fmap)
-                    (TermLike.substitute substitution)
-                    denormalized
+            , denormalized = (fmap . fmap) substitute denormalized
             }
       where
-        substitution = Map.fromList normalized
+        substitute = TermLike.substitute (Map.fromList normalized)
 
     addNormalization
         :: (Monad monad, SimplifierVariable variable)
