@@ -224,7 +224,7 @@ evalSubstr =
             (symbol, _bytes) <- expectBuiltinBytes substrKey _bytes
             _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
             _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
-            if (_start < 0) || (_end > BS.length _bytes) || (_end - _start <= 0)
+            if (_start < 0) || (_end > BS.length _bytes) || (_end - _start < 0)
                 then Builtin.appliedFunction Pattern.bottom
                 else
                     Builtin.appliedFunction
