@@ -102,12 +102,6 @@ test_SubstitutionSimplifier =
         , test "length 2, beside unrelated substitution"
             [(x, f (mkVar y)), (y, g (mkVar x)), (z, a)]
             [ Normalization [(z, a)] [(x, f (mkVar y)), (y, g (mkVar x))] ]
-        , test "length 2, with And"
-            [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
-            [ Normalization
-                []
-                [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
-            ]
         , test "two cycles"
             [(x, f (mkVar x)), (y, g (mkVar y)), (z, c)]
             [ Normalization [(z, c)] [(x, f (mkVar x)), (y, g (mkVar y))] ]
