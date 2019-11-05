@@ -10,6 +10,7 @@ Portability : portable
 
 module Kore.Unification.Substitution
     ( Substitution
+    , SingleSubstitution
     , UnwrappedSubstitution
     , unwrap
     , toMap
@@ -157,8 +158,9 @@ instance Ord variable => Semigroup (Substitution variable) where
 instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
-type UnwrappedSubstitution variable =
-    [(UnifiedVariable variable, TermLike variable)]
+type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
+
+type UnwrappedSubstitution variable = [SingleSubstitution variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
