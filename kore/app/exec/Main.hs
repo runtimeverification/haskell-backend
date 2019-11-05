@@ -466,14 +466,21 @@ koreMerge execOptions mergeOptions = do
     definition <- loadDefinitions [definitionFileName]
     let KoreExecOptions {mainModuleName} = execOptions
     mainModule <- loadModule mainModuleName definition
+    let KoreExecOptions { patternFileName } = execOptions
+    maybeInitial <- case patternFileName of
+        Nothing -> return Nothing
+        Just _ -> do
+            initial <- loadPattern mainModule patternFileName
+            return (Just initial)
     let KoreMergeOptions {rulesFileName} = mergeOptions
     ruleIds <- lift $ loadRuleIds rulesFileName
     let KoreMergeOptions {maybeBatchSize} = mergeOptions
     eitherMergedRule <- execute execOptions mainModule $
         case maybeBatchSize of
             Just batchSize ->
-                mergeRulesConsecutiveBatches batchSize mainModule ruleIds
-            Nothing -> mergeAllRules mainModule ruleIds
+                mergeRulesConsecutiveBatches
+                    batchSize mainModule ruleIds maybeInitial
+            Nothing -> mergeAllRules mainModule ruleIds maybeInitial
     case eitherMergedRule of
         (Left err) -> do
             lift $ Text.putStrLn err
