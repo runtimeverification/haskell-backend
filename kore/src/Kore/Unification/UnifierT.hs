@@ -21,20 +21,11 @@ import Control.Applicative
 import Control.Error
 import Control.Monad
     ( MonadPlus
-    , unless
     )
 import qualified Control.Monad.Except as Error
 import qualified Control.Monad.Morph as Morph
-import Control.Monad.State.Strict
-    ( StateT
-    , evalStateT
-    )
-import qualified Control.Monad.State.Strict as State
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
-    )
-import Data.Function
-    ( (&)
     )
 import Data.Map.Strict
     ( Map
@@ -135,14 +126,10 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
 
     simplifyCondition condition =
         simplifyCondition' condition
-        & BranchT.mapBranchT (flip evalStateT maxBound)
       where
         ConditionSimplifier simplifyCondition' =
             ConditionSimplifier.create substitutionSimplifier
     {-# INLINE simplifyCondition #-}
-
--- | The number of denormalized substitutions.
-type DenormalizedCount = Int
 
 {- | A 'SubstitutionSimplifier' to use during unification.
 
@@ -153,7 +140,7 @@ If the 'Substitution' cannot be normalized, this simplifier uses
 substitutionSimplifier
     :: forall unifier
     .  MonadUnify unifier
-    => SubstitutionSimplifier (StateT DenormalizedCount unifier)
+    => SubstitutionSimplifier unifier
 substitutionSimplifier =
     SubstitutionSimplifier worker
   where
@@ -161,39 +148,33 @@ substitutionSimplifier =
         :: forall variable
         .  SubstitutionVariable variable
         => Substitution variable
-        -> StateT DenormalizedCount unifier (OrCondition variable)
+        -> unifier (OrCondition variable)
     worker substitution = do
         deduplicated <-
             deduplicateSubstitution
                 unificationMakeAnd
                 substitution
-            & lift
         OrCondition.fromCondition <$> normalize1 deduplicated
 
     normalizeSubstitution'
         :: forall variable
         .  SubstitutionVariable variable
         => Map (UnifiedVariable variable) (TermLike variable)
-        -> StateT DenormalizedCount unifier (Condition variable)
+        -> unifier (Condition variable)
     normalizeSubstitution' =
         maybe bottom fromNormalization . normalize
       where
         bottom = return Condition.bottom
         fromNormalization normalization@Normalization { denormalized }
           | null denormalized =
-            pure $ Condition.fromNormalization normalization
-          | otherwise = do
-            let denormalizedCount = length denormalized
-            lastDenormalizedCount <- State.get
-            unless (denormalizedCount < lastDenormalizedCount)
-                (simplifiableCycle variables)
-            State.put denormalizedCount
-            return $ Condition.fromNormalization normalization
+            pure $ Condition.fromNormalizationSimplified normalization
+          | otherwise =
+            simplifiableCycle variables
           where
             (variables, _) = unzip denormalized
 
     simplifiableCycle variables =
-        (lift . throwSubstitutionError) (SimplifiableCycle variables)
+        throwSubstitutionError (SimplifiableCycle variables)
 
     normalize1
         ::  forall variable
@@ -201,7 +182,7 @@ substitutionSimplifier =
         =>  ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
-        ->  StateT DenormalizedCount unifier (Condition variable)
+        ->  unifier (Condition variable)
     normalize1 (predicate, deduplicated) = do
         normalized <- normalizeSubstitution' deduplicated
         return $ Condition.fromPredicate predicate <> normalized

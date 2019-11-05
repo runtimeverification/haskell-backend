@@ -6,9 +6,6 @@ module Test.Kore.Step.Simplification.SubstitutionSimplifier
 
 import Test.Tasty
 
-import Control.Monad.State.Strict
-    ( evalStateT
-    )
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.Condition as Condition
@@ -198,8 +195,7 @@ test_SubstitutionSimplifier =
                 let SubstitutionSimplifier { simplifySubstitution } =
                         Unification.substitutionSimplifier
                 actual <-
-                    runSimplifier Mock.env
-                    . runUnifierT . flip evalStateT 0
+                    runSimplifier Mock.env . runUnifierT
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
