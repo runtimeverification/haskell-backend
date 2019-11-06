@@ -34,19 +34,13 @@ test_forallSimplification =
     [ testCase "Forall - or distribution"
         -- forall(a or b) = forall(a) or forall(b)
         (assertEqual ""
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkForall Mock.x something1OfX
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                , Conditional
-                    { term = mkForall Mock.x something2OfX
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-            )
+            Conditional
+                { term = mkOr
+                    (mkForall Mock.x something1OfX)
+                    (mkForall Mock.x something2OfX)
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
             (evaluate
                 (makeForall
                     Mock.x
@@ -58,9 +52,7 @@ test_forallSimplification =
         (do
             -- forall(top) = top
             assertEqual "forall(top)"
-                (OrPattern.fromPatterns
-                    [ Pattern.top ]
-                )
+                Pattern.top
                 (evaluate
                     (makeForall
                         Mock.x
@@ -69,9 +61,7 @@ test_forallSimplification =
                 )
             -- forall(bottom) = bottom
             assertEqual "forall(bottom)"
-                (OrPattern.fromPatterns
-                    []
-                )
+                Pattern.bottom
                 (evaluate
                     (makeForall
                         Mock.x
@@ -296,7 +286,7 @@ makeForall variable patterns =
 testSort :: Sort
 testSort = Mock.testSort
 
-evaluate :: Forall Sort Variable (OrPattern Variable) -> OrPattern Variable
+evaluate :: Forall Sort Variable (OrPattern Variable) -> Pattern Variable
 evaluate = Forall.simplify
 
 makeEvaluate :: ElementVariable Variable -> Pattern Variable -> Pattern Variable

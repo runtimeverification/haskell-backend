@@ -7,7 +7,9 @@ import Test.Tasty
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
     ( bottom
     )
@@ -25,10 +27,10 @@ test_bottomSimplification :: [TestTree]
 test_bottomSimplification =
     [ testCase "Bottom evaluates to bottom"
         (assertEqual ""
-            (OrPattern.fromPatterns [ Pattern.bottom ])
+            Pattern.bottom
             (evaluate Bottom { bottomSort = Mock.testSort })
         )
     ]
 
-evaluate :: Bottom Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: Bottom Sort (OrPattern Variable) -> Pattern Variable
 evaluate = simplify

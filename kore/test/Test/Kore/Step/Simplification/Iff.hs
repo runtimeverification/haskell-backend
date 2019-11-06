@@ -5,8 +5,6 @@ module Test.Kore.Step.Simplification.Iff
 
 import Test.Tasty
 
-import qualified Data.Function as Function
-
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -30,59 +28,50 @@ import Kore.Variables.UnifiedVariable
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 import qualified Test.Terse as Terse
 
 test_simplify :: [TestTree]
 test_simplify =
-    [ testGroup "Boolean operations"
-        (testSimplifyBoolean <$> [minBound..] <*> [minBound..])
-    , testGroup "Half-Boolean operations"
-        [ (top   , termA ) `becomes` [termA]     $ "iff(⊤, a) = a"
-        , (termA , top   ) `becomes` [termA]     $ "iff(a, ⊤) = a"
-        , (bottom, termA ) `becomes` [termNotA]  $ "iff(⊤, a) = ¬a"
-        , (termA , bottom) `becomes` [termNotA]  $ "iff(a, ⊤) = ¬a"
+    [ testGroup "Half-Boolean operations"
+        [ (top   , termA ) `becomes` termA     $ "iff(⊤, a) = a"
+        , (termA , top   ) `becomes` termA     $ "iff(a, ⊤) = a"
+        , (bottom, termA ) `becomes` termNotA  $ "iff(⊤, a) = ¬a"
+        , (termA , bottom) `becomes` termNotA  $ "iff(a, ⊤) = ¬a"
         ]
     ]
   where
-    becomes (a, b) rs name =
+    becomes (a, b) expect name =
         testCase name $ do
-            let expect = OrPattern.fromPatterns rs
-            actual <- simplify $ makeIff [a] [b]
+            let actual = simplify $ makeIff [a] [b]
             assertEqual "" expect actual
 
 test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
-    [ testGroup "Boolean operations"
-        (testEvaluateBoolean <$> [minBound..] <*> [minBound..])
-    , testGroup "Half-Boolean operations"
-        [ (top   , termA ) `becomes` [termA]     $ "iff(⊤, a) = a"
-        , (termA , top   ) `becomes` [termA]     $ "iff(a, ⊤) = a"
-        , (bottom, termA ) `becomes` [termNotA]  $ "iff(⊤, a) = ¬a"
-        , (termA , bottom) `becomes` [termNotA]  $ "iff(a, ⊤) = ¬a"
+    [ testGroup "Half-Boolean operations"
+        [ (top   , termA ) `becomes` termA     $ "iff(⊤, a) = a"
+        , (termA , top   ) `becomes` termA     $ "iff(a, ⊤) = a"
+        , (bottom, termA ) `becomes` termNotA  $ "iff(⊤, a) = ¬a"
+        , (termA , bottom) `becomes` termNotA  $ "iff(a, ⊤) = ¬a"
         ]
     , testCase "iff with predicates and substitutions"
         -- iff(top and predicate1 and subst1, top and predicate2 and subst2)
         --     = top and (iff(predicate1 and subst1, predicate2 and subst2)
         (assertEqual "iff(top and predicate, top and predicate)"
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate =
-                        makeIffPredicate
-                            (makeAndPredicate
-                                (makeCeilPredicate Mock.cf)
-                                (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
-                            )
-                            (makeAndPredicate
-                                (makeCeilPredicate Mock.cg)
-                                (makeEqualsPredicate (mkElemVar Mock.y) Mock.b)
-                            )
-                    , substitution = mempty
-                    }
-                ]
-            )
+            Conditional
+                { term = mkTop_
+                , predicate =
+                    makeIffPredicate
+                        (makeAndPredicate
+                            (makeCeilPredicate Mock.cf)
+                            (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
+                        )
+                        (makeAndPredicate
+                            (makeCeilPredicate Mock.cg)
+                            (makeEqualsPredicate (mkElemVar Mock.y) Mock.b)
+                        )
+                , substitution = mempty
+                }
             ( makeEvaluate
                 Conditional
                     { term = mkTop_
@@ -100,29 +89,26 @@ test_makeEvaluate =
         )
     , testCase "iff with generic patterns"
         (assertEqual "iff(generic, generic)"
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        mkIff
+            Conditional
+                { term =
+                    mkIff
+                        (mkAnd
                             (mkAnd
-                                (mkAnd
-                                    (Mock.f Mock.a)
-                                    (mkCeil_ Mock.cf)
-                                )
-                                (mkEquals_ (mkElemVar Mock.x) Mock.a)
+                                (Mock.f Mock.a)
+                                (mkCeil_ Mock.cf)
                             )
+                            (mkEquals_ (mkElemVar Mock.x) Mock.a)
+                        )
+                        (mkAnd
                             (mkAnd
-                                (mkAnd
-                                    (Mock.g Mock.b)
-                                    (mkCeil_ Mock.cg)
-                                )
-                                (mkEquals_ (mkElemVar Mock.y) Mock.b)
+                                (Mock.g Mock.b)
+                                (mkCeil_ Mock.cg)
                             )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-            )
+                            (mkEquals_ (mkElemVar Mock.y) Mock.b)
+                        )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
             ( makeEvaluate
                 Conditional
                     { term = Mock.f Mock.a
@@ -140,38 +126,7 @@ test_makeEvaluate =
         )
     ]
   where
-    becomes (a, b) rs =
-        Terse.equals
-            (makeEvaluate a b)
-            (OrPattern.fromPatterns rs)
-
-testSimplifyBoolean :: HasCallStack => Bool -> Bool -> TestTree
-testSimplifyBoolean a b =
-    testCase ("iff(" ++ nameBool a ++ ", " ++ nameBool b ++ ")") $ do
-        actual <- simplify $ makeIff [valueBool a] [valueBool b]
-        let expect = OrPattern.fromPatterns [valueBool r]
-        assertEqual ("expected: " ++ nameBool r) expect actual
-  where
-    r = a == b
-
-testEvaluateBoolean :: HasCallStack => Bool -> Bool -> TestTree
-testEvaluateBoolean a b =
-    Terse.equals
-        (OrPattern.fromPatterns [valueBool r])
-        (Function.on makeEvaluate valueBool a b)
-        ("iff(" ++ nameBool a ++ ", " ++ nameBool b ++ ")")
-  where
-    r = a == b
-
-nameBool :: Bool -> String
-nameBool x
-    | x = "⊤"
-    | otherwise = "⊥"
-
-valueBool :: Bool -> Pattern Variable
-valueBool x
-    | x = Pattern.top
-    | otherwise = Pattern.bottom
+    becomes (a, b) r = Terse.equals (makeEvaluate a b) r
 
 termA :: Pattern Variable
 termA =
@@ -198,13 +153,11 @@ makeIff first second =
 
 simplify
     :: Iff Sort (OrPattern Variable)
-    -> IO (OrPattern Variable)
-simplify = runSimplifier mockEnv . Iff.simplify
-  where
-    mockEnv = Mock.env
+    -> Pattern Variable
+simplify = Iff.simplify
 
 makeEvaluate
     :: Pattern Variable
     -> Pattern Variable
-    -> OrPattern Variable
+    -> Pattern Variable
 makeEvaluate = Iff.makeEvaluate

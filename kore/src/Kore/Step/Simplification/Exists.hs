@@ -47,7 +47,9 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-    ( splitTerm
+    ( bottom
+    , splitTerm
+    , top
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
@@ -130,7 +132,7 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Exists Sort variable (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
 simplify Exists { existsVariable, existsChild } =
     simplifyEvaluated existsVariable existsChild
 
@@ -151,13 +153,13 @@ simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
 simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified  = return simplified
-  | OrPattern.isFalse simplified = return simplified
+  | OrPattern.isTrue simplified  = return Pattern.top
+  | OrPattern.isFalse simplified = return Pattern.bottom
   | otherwise = do
     evaluated <- traverse (makeEvaluate variable) simplified
-    return (OrPattern.flatten evaluated)
+    return (OrPattern.toPattern evaluated)
 
 {-| evaluates an 'Exists' given its two 'Pattern' children.
 
@@ -167,9 +169,9 @@ makeEvaluate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> Pattern variable
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
 makeEvaluate variable original
-  = fmap OrPattern.fromPatterns $ Branch.gather $ do
+  = fmap (OrPattern.toPattern . OrPattern.fromPatterns) $ Branch.gather $ do
     normalized <- simplifyCondition original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of

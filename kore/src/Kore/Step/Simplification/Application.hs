@@ -59,7 +59,7 @@ simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
     -> Application Symbol (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
 simplify predicate application = do
     evaluated <-
         traverse
@@ -71,7 +71,7 @@ simplify predicate application = do
         (symbolConstructor symbol)
         (length childrenCrossProduct)
         (length result)
-    return result
+    return (OrPattern.toPattern result)
   where
     Application
         { applicationSymbolOrAlias = symbol

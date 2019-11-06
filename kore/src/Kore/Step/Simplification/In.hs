@@ -48,7 +48,7 @@ simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
     -> In Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
 simplify predicate In { inContainedChild = first, inContainingChild = second } =
     simplifyEvaluatedIn predicate first second
 
@@ -71,37 +71,43 @@ simplifyEvaluatedIn
     => Condition variable
     -> OrPattern variable
     -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
 simplifyEvaluatedIn predicate first second
-  | OrPattern.isFalse first  = return OrPattern.bottom
-  | OrPattern.isFalse second = return OrPattern.bottom
+  | OrPattern.isFalse first  = return Pattern.bottom
+  | OrPattern.isFalse second = return Pattern.bottom
 
-  | OrPattern.isTrue first = Ceil.simplifyEvaluated predicate second
-  | OrPattern.isTrue second = Ceil.simplifyEvaluated predicate first
+  | OrPattern.isTrue first =
+    OrPattern.toPattern <$> Ceil.simplifyEvaluated predicate second
+  | OrPattern.isTrue second =
+    OrPattern.toPattern <$> Ceil.simplifyEvaluated predicate first
 
-  | otherwise =
-    OrPattern.flatten <$> sequence
-                            (makeEvaluateIn predicate <$> first <*> second)
+  | otherwise = do
+    resultOr <- sequence (makeEvaluateIn predicate <$> first <*> second)
+    -- Merge the or if needed, in order to allow its resimplification
+    -- by the or simplifier.
+    return (OrPattern.toPattern resultOr)
 
 makeEvaluateIn
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
     -> Pattern variable
     -> Pattern variable
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
 makeEvaluateIn predicate first second
-  | Pattern.isTop first = Ceil.makeEvaluate predicate second
-  | Pattern.isTop second = Ceil.makeEvaluate predicate first
-  | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
+  | Pattern.isTop first =
+    OrPattern.toPattern <$> Ceil.makeEvaluate predicate second
+  | Pattern.isTop second =
+    OrPattern.toPattern <$> Ceil.makeEvaluate predicate first
+  | Pattern.isBottom first || Pattern.isBottom second = return Pattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> OrPattern variable
+    -> Pattern variable
 makeEvaluateNonBoolIn patt1 patt2 =
-    OrPattern.fromPattern Conditional
+    Conditional
         { term = mkTop_
         , predicate =
             Predicate.markSimplified

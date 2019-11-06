@@ -52,14 +52,11 @@ test_floorSimplification =
     [ testCase "Floor - or distribution"
         -- floor(a or b) = (top and floor(a)) or (top and floor(b))
         (assertEqual ""
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate = makeFloorPredicate (mkOr a b)
-                    , substitution = mempty
-                    }
-                ]
-            )
+            Conditional
+                { term = mkTop_
+                , predicate = makeFloorPredicate (mkOr a b)
+                , substitution = mempty
+                }
             (evaluate
                 (makeFloor
                     [aExpanded, bExpanded]
@@ -70,9 +67,7 @@ test_floorSimplification =
         (do
             -- floor(top) = top
             assertEqual "floor(top)"
-                (OrPattern.fromPatterns
-                    [ Pattern.top ]
-                )
+                Pattern.top
                 (evaluate
                     (makeFloor
                         [Pattern.top]
@@ -80,9 +75,7 @@ test_floorSimplification =
                 )
             -- floor(bottom) = bottom
             assertEqual "floor(bottom)"
-                (OrPattern.fromPatterns
-                    []
-                )
+                Pattern.bottom
                 (evaluate
                     (makeFloor
                         []
@@ -92,9 +85,7 @@ test_floorSimplification =
     , testCase "Floor - bool operations" $
         -- floor(top{testSort}) = top
         assertEqual "floor(top)"
-            (OrPattern.fromPatterns
-                [ Pattern.top ]
-            )
+            Pattern.top
             (evaluate
                 (makeFloor
                     [ Pattern.fromConditionSorted testSort Condition.top ]
@@ -104,17 +95,13 @@ test_floorSimplification =
         (do
             -- floor(top) = top
             assertEqual "floor(top)"
-                (OrPattern.fromPatterns
-                    [ Pattern.top ]
-                )
+                Pattern.top
                 (makeEvaluate
                     (Pattern.top :: Pattern Variable)
                 )
             -- floor(bottom) = bottom
             assertEqual "floor(bottom)"
-                (OrPattern.fromPatterns
-                    []
-                )
+                Pattern.bottom
                 (makeEvaluate
                     (Pattern.bottom :: Pattern Variable)
                 )
@@ -123,17 +110,14 @@ test_floorSimplification =
         -- floor(term and predicate and subst)
         --     = top and (floor(term) and predicate) and subst
         (assertEqual "floor(top)"
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkTop_
-                    , predicate =
-                        makeAndPredicate
-                            (makeFloorPredicate a)
-                            (makeEqualsPredicate fOfA gOfA)
-                    , substitution = Substitution.wrap [(ElemVar x, fOfB)]
-                    }
-                ]
-            )
+            Conditional
+                { term = mkTop_
+                , predicate =
+                    makeAndPredicate
+                        (makeFloorPredicate a)
+                        (makeEqualsPredicate fOfA gOfA)
+                , substitution = Substitution.wrap [(ElemVar x, fOfB)]
+                }
             (makeEvaluate
                 Conditional
                     { term = a
@@ -186,8 +170,8 @@ makeFloor patterns =
         , floorChild       = OrPattern.fromPatterns patterns
         }
 
-evaluate :: Floor Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: Floor Sort (OrPattern Variable) -> Pattern Variable
 evaluate = simplify
 
-makeEvaluate :: Pattern Variable -> OrPattern Variable
+makeEvaluate :: Pattern Variable -> Pattern Variable
 makeEvaluate = makeEvaluateFloor

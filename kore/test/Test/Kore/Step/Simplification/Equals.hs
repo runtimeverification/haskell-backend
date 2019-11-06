@@ -30,9 +30,6 @@ import Kore.Internal.Predicate
     , makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
-    , makeIffPredicate
-    , makeImpliesPredicate
-    , makeMultipleAndPredicate
     , makeNotPredicate
     , makeOrPredicate
     , makeTruePredicate
@@ -92,7 +89,13 @@ test_equalsSimplification_Or_Pattern =
         assertEqual "" expect actual
 
     , testCase "a != bottom" $ do
-        let expect = OrPattern.fromPatterns []
+        let expect = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkOr mkBottom_ (mkAnd mkBottom_ mkTop_)
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+                ]
         actual <-
             evaluateOr
                 Equals
@@ -144,30 +147,29 @@ test_equalsSimplification_Or_Pattern =
         let expect =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeMultipleAndPredicate
-                                [ makeCeilPredicate Mock.cf
-                                , makeImpliesPredicate
-                                    (makeCeilPredicate Mock.cg)
-                                    (makeEqualsPredicate Mock.cf Mock.cg)
-                                , makeImpliesPredicate
-                                    (makeCeilPredicate Mock.ch)
-                                    (makeEqualsPredicate Mock.cf Mock.ch)
-                                , makeOrPredicate
-                                    (makeCeilPredicate Mock.cg)
-                                    (makeCeilPredicate Mock.ch)
-                                ]
-                        , substitution = mempty
-                        }
-                    ,  Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeMultipleAndPredicate
-                                [ makeNotPredicate $ makeCeilPredicate Mock.cf
-                                , makeNotPredicate $ makeCeilPredicate Mock.cg
-                                , makeNotPredicate $ makeCeilPredicate Mock.ch
-                                ]
+                        { term = mkOr
+                            (mkAnd
+                                (mkAnd
+                                    (mkNot (mkCeil_ Mock.cf))
+                                    (mkNot (mkCeil_ Mock.cg))
+                                )
+                                (mkNot (mkCeil_ Mock.ch))
+                            )
+                            (mkAnd
+                                (mkOr (mkCeil_ Mock.cg) (mkCeil_ Mock.ch))
+                                (mkAnd
+                                    (mkImplies (mkCeil_ Mock.cg)
+                                        (mkEquals_ Mock.cf Mock.cg)
+                                    )
+                                    (mkAnd
+                                        (mkImplies (mkCeil_ Mock.ch)
+                                            (mkEquals_ Mock.cf Mock.ch)
+                                        )
+                                        (mkCeil_ Mock.cf)
+                                    )
+                                )
+                            )
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ]
@@ -215,55 +217,54 @@ test_equalsSimplification_Or_Pattern =
         let expect =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeMultipleAndPredicate
-                                [ definedF
-                                , definedG
-                                , makeImpliesPredicate
-                                    definedGWithSubstitution
-                                    (makeEqualsPredicate Mock.cf Mock.cg)
-                                , makeImpliesPredicate
-                                    definedH
-                                    (makeEqualsPredicate Mock.cf Mock.ch)
-                                ]
-                        , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.x, Mock.a)]
-                        }
-                    , Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeMultipleAndPredicate
-                                [ definedF
-                                , definedH
-                                , makeImpliesPredicate
-                                    definedGWithSubstitution
-                                    (makeEqualsPredicate Mock.cf Mock.cg)
-                                , makeImpliesPredicate
-                                    definedH
-                                    (makeEqualsPredicate Mock.cf Mock.ch)
-                                ]
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeMultipleAndPredicate
-                                [ makeNotPredicate definedGWithSubstitution
-                                , makeNotPredicate definedF
-                                , makeNotPredicate definedH
-                                ]
+                        { term = mkOr
+                            (mkAnd
+                                (mkAnd
+                                    (mkNot
+                                        (mkAnd
+                                            (mkCeil_ Mock.cg)
+                                            (mkEquals_
+                                                (mkElemVar Mock.x)
+                                                Mock.a
+                                            )
+                                        )
+                                    )
+                                    (mkNot (mkCeil_ Mock.cf))
+                                )
+                                (mkNot (mkCeil_ Mock.ch))
+                            )
+                            (mkAnd
+                                (mkOr
+                                    (mkAnd
+                                        (mkCeil_ Mock.cg)
+                                        (mkEquals_ (mkElemVar Mock.x) Mock.a)
+                                    )
+                                    (mkCeil_ Mock.ch)
+                                )
+                                (mkAnd
+                                    (mkImplies
+                                        (mkAnd
+                                            (mkCeil_ Mock.cg)
+                                            (mkEquals_
+                                                (mkElemVar Mock.x)
+                                                Mock.a
+                                            )
+                                        )
+                                        (mkEquals_ Mock.cf Mock.cg)
+                                    )
+                                    (mkAnd
+                                        (mkImplies
+                                            (mkCeil_ Mock.ch)
+                                            (mkEquals_ Mock.cf Mock.ch)
+                                        )
+                                        (mkCeil_ Mock.cf)
+                                    )
+                                )
+                            )
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ]
-              where
-                definedF = makeCeilPredicate Mock.cf
-                definedG = makeCeilPredicate Mock.cg
-                definedGWithSubstitution =
-                    makeAndPredicate
-                        (makeCeilPredicate Mock.cg)
-                        (makeEqualsPredicate (mkElemVar Mock.x) Mock.a)
-                definedH = makeCeilPredicate Mock.ch
             first =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -321,11 +322,10 @@ test_equalsSimplification_Pattern =
         let expect =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeIffPredicate
-                                (makeEqualsPredicate fOfA fOfB)
-                                (makeEqualsPredicate gOfA gOfB)
+                        { term = mkIff
+                            (mkEquals_ fOfA fOfB)
+                            (mkEquals_ gOfA gOfB)
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ]
@@ -342,16 +342,16 @@ test_equalsSimplification_Pattern =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
+        assertBool "" (not (OrPattern.isSimplified actual))
 
     , testCase "sorted equals predicate" $ do
         let expect =
                 OrPattern.fromPatterns
                     [ Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeIffPredicate
-                                (makeEqualsPredicate fOfA fOfB)
-                                (makeEqualsPredicate gOfA gOfB)
+                        { term = mkIff
+                            (mkEquals_ fOfA fOfB)
+                            (mkEquals_ gOfA gOfB)
+                        , predicate = makeTruePredicate
                         , substitution = mempty
                         }
                     ]

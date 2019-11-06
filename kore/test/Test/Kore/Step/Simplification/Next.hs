@@ -25,14 +25,11 @@ test_nextSimplification :: [TestTree]
 test_nextSimplification =
     [ testCase "Next evaluates to Next"
         (assertEqual ""
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkNext Mock.a
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-            )
+            Conditional
+                { term = mkNext Mock.a
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
             (evaluate
                 (makeNext
                     [ Conditional
@@ -46,19 +43,16 @@ test_nextSimplification =
         )
     , testCase "Next collapses or"
         (assertEqual ""
-            (OrPattern.fromPatterns
-                [ Conditional
-                    { term =
-                        mkNext
-                            (mkOr
-                                Mock.a
-                                (mkAnd Mock.b (mkEquals_ Mock.a Mock.b))
-                            )
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
-            )
+            Conditional
+                { term =
+                    mkNext
+                        (mkOr
+                            Mock.a
+                            (mkAnd Mock.b (mkEquals_ Mock.a Mock.b))
+                        )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
             (evaluate
                 (makeNext
                     [ Conditional
@@ -81,7 +75,7 @@ findSort :: [Pattern Variable] -> Sort
 findSort [] = Mock.testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
-evaluate :: Next Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: Next Sort (OrPattern Variable) -> Pattern Variable
 evaluate = simplify
 
 makeNext

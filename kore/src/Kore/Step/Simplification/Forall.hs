@@ -77,7 +77,7 @@ simplify it this way.
 simplify
     :: InternalVariable variable
     => Forall Sort variable (OrPattern variable)
-    -> OrPattern variable
+    -> Pattern variable
 simplify Forall { forallVariable, forallChild } =
     simplifyEvaluated forallVariable forallChild
 
@@ -98,11 +98,12 @@ simplifyEvaluated
     :: InternalVariable variable
     => ElementVariable variable
     -> OrPattern variable
-    -> OrPattern variable
+    -> Pattern variable
 simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified  = simplified
-  | OrPattern.isFalse simplified = simplified
-  | otherwise                    = makeEvaluate variable <$> simplified
+  | OrPattern.isTrue simplified  = Pattern.top
+  | OrPattern.isFalse simplified = Pattern.bottom
+  | otherwise                    =
+    OrPattern.toPattern $ makeEvaluate variable <$> simplified
 
 {-| evaluates an 'Forall' given its two 'Pattern' children.
 

@@ -43,7 +43,7 @@ floor(a and b) = floor(a) and floor(b).
 simplify
     :: InternalVariable variable
     => Floor Sort (OrPattern variable)
-    -> OrPattern variable
+    -> Pattern variable
 simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
@@ -63,7 +63,7 @@ to carry around.
 simplifyEvaluatedFloor
     :: InternalVariable variable
     => OrPattern variable
-    -> OrPattern variable
+    -> Pattern variable
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
@@ -76,24 +76,25 @@ See 'simplify' for details.
 makeEvaluateFloor
     :: InternalVariable variable
     => Pattern variable
-    -> OrPattern variable
+    -> Pattern variable
 makeEvaluateFloor child
-  | Pattern.isTop child    = OrPattern.top
-  | Pattern.isBottom child = OrPattern.bottom
+  | Pattern.isTop child    = Pattern.top
+  | Pattern.isBottom child = Pattern.bottom
   | otherwise              = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
     :: InternalVariable variable
     => Pattern variable
-    -> OrPattern variable
+    -> Pattern variable
 makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
-    OrPattern.fromPattern patt {term = mkTop_}  -- remove the term's sort
+    patt {term = mkTop_}  -- remove the term's sort
+
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
     Conditional {term, predicate, substitution}
   =
-    OrPattern.fromPattern Conditional
+    Conditional
         { term = mkTop_
         , predicate = Predicate.markSimplified
             $ makeAndPredicate (makeFloorPredicate term) predicate

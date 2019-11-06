@@ -4,11 +4,13 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.Mu
     ( simplify
-    , makeEvaluate
     ) where
 
 import Kore.Internal.OrPattern
     ( OrPattern
+    )
+import qualified Kore.Internal.OrPattern as OrPattern
+    ( toPattern
     )
 import Kore.Internal.Pattern
     ( Pattern
@@ -35,8 +37,9 @@ child.
 simplify
     :: InternalVariable variable
     => Mu variable (OrPattern variable)
-    -> OrPattern variable
-simplify Mu { muVariable, muChild } = makeEvaluate muVariable <$> muChild
+    -> Pattern variable
+simplify Mu { muVariable, muChild } =
+    OrPattern.toPattern (makeEvaluate muVariable <$> muChild)
 
 {-| evaluates a 'Mu' given its two 'Pattern' children.
 

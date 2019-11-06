@@ -18,6 +18,10 @@ import Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
@@ -26,9 +30,9 @@ an or containing a term made of that value.
 simplify
     :: InternalVariable variable
     => DomainValue Sort (OrPattern variable)
-    -> OrPattern variable
+    -> Pattern variable
 simplify builtin =
-    MultiOr.filterOr $ do
+    OrPattern.toPattern . MultiOr.filterOr $ do
         child <- simplifyDomainValue builtin
         return (markSimplified . mkDomainValue <$> child)
 

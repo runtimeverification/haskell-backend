@@ -48,28 +48,19 @@ test_applicationSimplification =
         -- sigma(a or b, c or d) =
         --     sigma(b, d) or sigma(b, c) or sigma(a, d) or sigma(a, c)
         let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = Mock.sigma Mock.a Mock.c
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = Mock.sigma Mock.a Mock.d
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    , Conditional
-                        { term = Mock.sigma Mock.b Mock.c
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ,  Conditional
-                        { term = Mock.sigma Mock.b Mock.d
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                Conditional
+                    { term = mkOr
+                        (Mock.sigma Mock.a Mock.c)
+                        (mkOr
+                            (Mock.sigma Mock.a Mock.d)
+                            (mkOr
+                                (Mock.sigma Mock.b Mock.c)
+                                (Mock.sigma Mock.b Mock.d)
+                            )
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
         actual <-
             evaluate
                 Map.empty
@@ -83,7 +74,7 @@ test_applicationSimplification =
 
     , testCase "Application - bottom child makes everything bottom" $ do
         -- sigma(a or b, bottom) = bottom
-        let expect = OrPattern.fromPatterns [ Pattern.bottom ]
+        let expect = Pattern.bottom
         actual <-
             evaluate
                 Map.empty
@@ -97,9 +88,8 @@ test_applicationSimplification =
 
     , testCase "Application - preserves sort for top child" $ do
         -- sigma(a, top) = top
-        let expect = OrPattern.fromPatterns
-                [ Pattern.fromTermLike (Mock.sigma Mock.a (mkTop Mock.testSort))
-                ]
+        let expect =
+                Pattern.fromTermLike (Mock.sigma Mock.a (mkTop Mock.testSort))
         actual <-
             evaluate
                 Map.empty
@@ -113,7 +103,7 @@ test_applicationSimplification =
 
     , testCase "Applies functions" $ do
         -- f(a) evaluated to g(a).
-        let expect = OrPattern.fromPatterns [ gOfAExpanded ]
+        let expect = gOfAExpanded
         actual <-
             evaluate
                 (Map.singleton
@@ -139,19 +129,17 @@ test_applicationSimplification =
             --        and (f(a)=f(b) and g(a)=g(b))
             --        and [x=f(a), y=g(a)]
             let expect =
-                    OrPattern.fromPatterns
-                        [ Conditional
-                            { term = Mock.sigma Mock.a Mock.b
-                            , predicate =
-                                makeAndPredicate
-                                    (makeEqualsPredicate fOfA fOfB)
-                                    (makeEqualsPredicate gOfA gOfB)
-                            , substitution = Substitution.unsafeWrap
-                                [ (ElemVar Mock.x, fOfA)
-                                , (ElemVar Mock.y, gOfA)
-                                ]
-                            }
-                        ]
+                    Conditional
+                        { term = Mock.sigma Mock.a Mock.b
+                        , predicate =
+                            makeAndPredicate
+                                (makeEqualsPredicate fOfA fOfB)
+                                (makeEqualsPredicate gOfA gOfB)
+                        , substitution = Substitution.unsafeWrap
+                            [ (ElemVar Mock.x, fOfA)
+                            , (ElemVar Mock.y, gOfA)
+                            ]
+                        }
             actual <-
                 evaluate
                     Map.empty
@@ -185,24 +173,22 @@ test_applicationSimplification =
             let ElementVariable z = Mock.z
                 z' = ElementVariable z { variableCounter = Just (Element 1) }
                 expect =
-                    OrPattern.fromPatterns
-                        [ Conditional
-                            { term = fOfA
-                            , predicate =
-                                makeAndPredicate
-                                    (makeAndPredicate
-                                        (makeEqualsPredicate fOfA fOfB)
-                                        (makeEqualsPredicate fOfA gOfA)
-                                    )
-                                    (makeEqualsPredicate gOfA gOfB)
-                            , substitution =
-                                Substitution.unsafeWrap $ List.sortOn fst
-                                    [ (ElemVar z', gOfB)
-                                    , (ElemVar Mock.x, fOfA)
-                                    , (ElemVar Mock.y, gOfA)
-                                    ]
-                            }
-                        ]
+                    Conditional
+                        { term = fOfA
+                        , predicate =
+                            makeAndPredicate
+                                (makeAndPredicate
+                                    (makeEqualsPredicate fOfA fOfB)
+                                    (makeEqualsPredicate fOfA gOfA)
+                                )
+                                (makeEqualsPredicate gOfA gOfB)
+                        , substitution =
+                            Substitution.unsafeWrap $ List.sortOn fst
+                                [ (ElemVar z', gOfB)
+                                , (ElemVar Mock.x, fOfA)
+                                , (ElemVar Mock.y, gOfA)
+                                ]
+                        }
             actual <-
                 let
                     zvar
@@ -311,7 +297,7 @@ evaluate
     :: BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> Application Symbol (OrPattern Variable)
-    -> IO (OrPattern Variable)
+    -> IO (Pattern Variable)
 evaluate simplifierAxioms = runSimplifier mockEnv . simplify Condition.top
   where
     mockEnv = Mock.env { simplifierAxioms }

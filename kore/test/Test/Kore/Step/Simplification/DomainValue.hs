@@ -8,6 +8,12 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( fromTermLike
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.DomainValue
     ( simplify
@@ -22,7 +28,7 @@ test_simplify :: [TestTree]
 test_simplify =
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqual ""
-            (OrPattern.fromTermLike $ mkDomainValue
+            (Pattern.fromTermLike $ mkDomainValue
                 DomainValue
                     { domainValueSort = testSort
                     , domainValueChild = mkStringLiteral "a"
@@ -37,5 +43,5 @@ test_simplify =
         )
     ]
 
-evaluate :: DomainValue Sort (OrPattern Variable) -> OrPattern Variable
+evaluate :: DomainValue Sort (OrPattern Variable) -> Pattern Variable
 evaluate = simplify

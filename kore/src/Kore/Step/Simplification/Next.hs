@@ -15,6 +15,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
@@ -32,15 +35,15 @@ Right now this does not do any actual simplification.
 simplify
     :: InternalVariable variable
     => Next Sort (OrPattern variable)
-    -> OrPattern variable
+    -> Pattern variable
 simplify Next { nextChild = child } = simplifyEvaluated child
 
 simplifyEvaluated
     :: InternalVariable variable
     => OrPattern variable
-    -> OrPattern variable
+    -> Pattern variable
 simplifyEvaluated simplified =
-    OrPattern.fromTermLike
+    Pattern.fromTermLike
     $ TermLike.markSimplified
     $ mkNext
     $ Pattern.toTermLike

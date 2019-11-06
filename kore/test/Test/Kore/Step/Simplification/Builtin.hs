@@ -28,18 +28,18 @@ import Test.Tasty.HUnit.Ext
 test_simplify :: [TestTree]
 test_simplify =
     [ testGroup "List"
-        [ becomes "\\bottom element" (mkList [bottom]) []
+        [ becomes "\\bottom element" (mkList [bottom]) Pattern.bottom
         ]
     , testGroup "Map"
-        [ becomes "\\bottom value" (mkMap [(a, bottom)] []) []
-        , becomes "\\bottom key" (mkMap [(bottom, a)] []) []
-        , becomes "\\bottom term" (mkMap [(a, b)] [bottom]) []
-        , becomes "duplicate key" (mkMap [(a, b), (a, c)] []) []
+        [ becomes "\\bottom value" (mkMap [(a, bottom)] []) Pattern.bottom
+        , becomes "\\bottom key" (mkMap [(bottom, a)] []) Pattern.bottom
+        , becomes "\\bottom term" (mkMap [(a, b)] [bottom]) Pattern.bottom
+        , becomes "duplicate key" (mkMap [(a, b), (a, c)] []) Pattern.bottom
         ]
     , testGroup "Set"
-        [ becomes "\\bottom element" (mkSet [bottom] []) []
-        , becomes "\\bottom term" (mkSet [] [bottom]) []
-        , becomes "duplicate key" (mkSet [a, a] []) []
+        [ becomes "\\bottom element" (mkSet [bottom] []) Pattern.bottom
+        , becomes "\\bottom term" (mkSet [] [bottom]) Pattern.bottom
+        , becomes "duplicate key" (mkSet [a, a] []) Pattern.bottom
         ]
     ]
   where
@@ -51,12 +51,12 @@ test_simplify =
         :: GHC.HasCallStack
         => TestName
         -> Builtin (OrPattern Variable)
-        -> [Pattern Variable]
+        -> Pattern Variable
         -> TestTree
     becomes name origin expect =
         testCase name
         $ assertEqual ""
-            (OrPattern.fromPatterns expect)
+            expect
             (evaluate origin)
 
 mkMap :: [(child, child)] -> [child] -> Builtin (child)
@@ -97,5 +97,5 @@ mkList children =
         , builtinListChild = Seq.fromList children
         }
 
-evaluate :: Builtin (OrPattern Variable) -> OrPattern Variable
+evaluate :: Builtin (OrPattern Variable) -> Pattern Variable
 evaluate = simplify

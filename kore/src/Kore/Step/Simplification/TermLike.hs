@@ -360,9 +360,10 @@ simplifyInternal term predicate = do
             --
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
-            ApplySymbolF applySymbolF ->
-                Application.simplify predicate
+            ApplySymbolF applySymbolF -> OrPattern.fromPattern <$>
+                (Application.simplify predicate
                     =<< simplifyChildren applySymbolF
+                )
             CeilF ceilF ->
                 Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->
@@ -373,51 +374,69 @@ simplifyInternal term predicate = do
                             Binding.existsBinder
                             refreshBinder
                             exists
-                in  Exists.simplify =<< simplifyChildren fresh
+                in OrPattern.fromPattern <$>
+                    (Exists.simplify =<< simplifyChildren fresh)
             IffF iffF ->
-                Iff.simplify =<< simplifyChildren iffF
+                (OrPattern.fromPattern . Iff.simplify)
+                    <$> simplifyChildren iffF
             ImpliesF impliesF ->
-                Implies.simplify =<< simplifyChildren impliesF
-            InF inF ->
-                In.simplify predicate =<< simplifyChildren inF
+                (OrPattern.fromPattern . Implies.simplify)
+                    <$> simplifyChildren impliesF
+            InF inF -> OrPattern.fromPattern <$>
+                (In.simplify predicate =<< simplifyChildren inF)
             NotF notF ->
                 Not.simplify =<< simplifyChildren notF
             --
             BottomF bottomF ->
-                Bottom.simplify <$> simplifyChildren bottomF
+                OrPattern.fromPattern . Bottom.simplify
+                    <$> simplifyChildren bottomF
             BuiltinF builtinF ->
-                Builtin.simplify <$> simplifyChildren builtinF
+                OrPattern.fromPattern . Builtin.simplify
+                    <$> simplifyChildren builtinF
             DomainValueF domainValueF ->
-                DomainValue.simplify <$> simplifyChildren domainValueF
-            FloorF floorF -> Floor.simplify <$> simplifyChildren floorF
+                OrPattern.fromPattern . DomainValue.simplify
+                    <$> simplifyChildren domainValueF
+            FloorF floorF ->
+                OrPattern.fromPattern . Floor.simplify
+                    <$> simplifyChildren floorF
             ForallF forall ->
                 let fresh =
                         Lens.over
                             Binding.forallBinder
                             refreshBinder
                             forall
-                in  Forall.simplify <$> simplifyChildren fresh
+                in OrPattern.fromPattern . Forall.simplify
+                    <$> simplifyChildren fresh
             InhabitantF inhF ->
-                Inhabitant.simplify <$> simplifyChildren inhF
+                OrPattern.fromPattern . Inhabitant.simplify
+                    <$> simplifyChildren inhF
             MuF mu ->
                 let fresh = Lens.over Binding.muBinder refreshBinder mu
-                in  Mu.simplify <$> simplifyChildren fresh
+                in OrPattern.fromPattern . Mu.simplify
+                    <$> simplifyChildren fresh
             NuF nu ->
                 let fresh = Lens.over Binding.nuBinder refreshBinder nu
-                in  Nu.simplify <$> simplifyChildren fresh
+                in OrPattern.fromPattern . Nu.simplify
+                    <$> simplifyChildren fresh
             -- TODO(virgil): Move next up through patterns.
-            NextF nextF -> Next.simplify <$> simplifyChildren nextF
+            NextF nextF ->
+                OrPattern.fromPattern . Next.simplify <$> simplifyChildren nextF
             OrF orF -> Or.simplify <$> simplifyChildren orF
             RewritesF rewritesF ->
-                Rewrites.simplify <$> simplifyChildren rewritesF
-            TopF topF -> Top.simplify <$> simplifyChildren topF
+                OrPattern.fromPattern . Rewrites.simplify
+                    <$> simplifyChildren rewritesF
+            TopF topF ->
+                OrPattern.fromPattern . Top.simplify <$> simplifyChildren topF
             --
             StringLiteralF stringLiteralF ->
-                return $ StringLiteral.simplify (getConst stringLiteralF)
+                return $ OrPattern.fromPattern
+                $ StringLiteral.simplify (getConst stringLiteralF)
             InternalBytesF internalBytesF ->
-                return $ InternalBytes.simplify (getConst internalBytesF)
+                return $ OrPattern.fromPattern
+                    $ InternalBytes.simplify (getConst internalBytesF)
             VariableF variableF ->
-                return $ Variable.simplify (getConst variableF)
+                return $ OrPattern.fromPattern
+                    $ Variable.simplify (getConst variableF)
 
     refreshBinder
         :: Binding.Binder (UnifiedVariable variable) (TermLike variable)

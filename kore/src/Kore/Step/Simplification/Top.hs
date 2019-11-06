@@ -11,10 +11,12 @@ module Kore.Step.Simplification.Top
     ( simplify
     ) where
 
-import Kore.Internal.OrPattern
-    ( OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
+    ( top
+    )
 import Kore.Internal.Variable
 import Kore.Sort
 import Kore.Syntax.Top
@@ -25,5 +27,5 @@ import Kore.Syntax.Top
 simplify
     :: InternalVariable variable
     => Top Sort child
-    -> OrPattern variable
-simplify _ = OrPattern.top
+    -> Pattern variable
+simplify _ = Pattern.top

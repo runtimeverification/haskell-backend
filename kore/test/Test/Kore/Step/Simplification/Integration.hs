@@ -32,8 +32,7 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
+    ( makeCeilPredicate
     , makeEqualsPredicate
     , makeFloorPredicate
     , makeIffPredicate
@@ -621,60 +620,38 @@ test_simplificationIntegration =
                 [ Conditional
                     { term = mkTop_
                     , predicate = makeInPredicate
-                        (mkNu iz (Mock.builtinInt 595))
-                        (mkAnd
-                            (Mock.tdivInt mkTop_ mkTop_)
+                            (mkNu iz (Mock.builtinInt 595))
                             (mkAnd
-                                (mkCeil_
-                                    (mkNot
-                                        (mkNu mx
-                                            (mkRewrites
-                                                mkBottom_
-                                                Mock.aSubOthersort
+                                (Mock.tdivInt mkTop_ mkTop_)
+                                (mkAnd
+                                    (mkEquals_
+                                        (Mock.g
+                                            (Mock.functionalConstr30
+                                                (Mock.functionalTopConstr21
+                                                    Mock.ch
+                                                    Mock.aTopSort
+                                                )
+                                                (mkIff Mock.plain00 Mock.d)
+                                                Mock.cg
                                             )
                                         )
+                                        Mock.functionalInjective00
                                     )
-                                )
-                                (mkEquals_
-                                    (Mock.g
-                                        (Mock.functionalConstr30
-                                            (Mock.functionalTopConstr21
-                                                Mock.ch
-                                                Mock.aTopSort
+                                    (mkOr
+                                        (mkCeil_
+                                            (mkNot
+                                                (mkNu mx
+                                                    (mkRewrites
+                                                        mkBottom_
+                                                        Mock.aSubOthersort
+                                                    )
+                                                )
                                             )
-                                            (mkIff Mock.plain00 Mock.d)
-                                            Mock.cg
                                         )
+                                        (mkNot (mkFloor_ (Mock.builtinList [])))
                                     )
-                                    Mock.functionalInjective00
                                 )
                             )
-                        )
-                    , substitution = mempty
-                    }
-                , Conditional
-                    { term = mkTop_
-                    , predicate = makeInPredicate
-                        (mkNu iz (Mock.builtinInt 595))
-                        (mkAnd
-                            (Mock.tdivInt mkTop_ mkTop_)
-                            (mkAnd
-                                (mkEquals_
-                                    (Mock.g
-                                        (Mock.functionalConstr30
-                                            (Mock.functionalTopConstr21
-                                                Mock.ch
-                                                Mock.aTopSort
-                                            )
-                                            (mkIff Mock.plain00 Mock.d)
-                                            Mock.cg
-                                        )
-                                    )
-                                    Mock.functionalInjective00
-                                )
-                                (mkNot (mkFloor_ (Mock.builtinList [])))
-                            )
-                        )
                     , substitution = mempty
                     }
                 ]
@@ -779,34 +756,26 @@ test_simplificationIntegration =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeAndPredicate
-                        (makeImpliesPredicate
+                    , predicate = makeImpliesPredicate
+                        (makeOrPredicate
                             (makeInPredicate
                                 (mkMu k
                                     (asInternal (Set.fromList [Mock.a]))
                                 )
                                 (Mock.fSet mkTop_)
                             )
-                            (makeIffPredicate
-                                (makeFloorPredicate
-                                    (mkEvaluated (mkBottom Mock.testSort))
-                                )
-                                (makeEqualsPredicate Mock.aSubSubsort mkTop_)
-                            )
-                        )
-                        (makeImpliesPredicate
                             (makeInPredicate
                                 (mkMu k
                                     (mkEvaluated Mock.unitSet)
                                 )
                                 (Mock.fSet mkTop_)
                             )
-                            (makeIffPredicate
-                                (makeFloorPredicate
-                                    (mkEvaluated (mkBottom Mock.testSort))
-                                )
-                                (makeEqualsPredicate Mock.aSubSubsort mkTop_)
+                        )
+                        (makeIffPredicate
+                            (makeFloorPredicate
+                                (mkEvaluated (mkBottom Mock.testSort))
                             )
+                            (makeEqualsPredicate Mock.aSubSubsort mkTop_)
                         )
                     , substitution = mempty
                     }
@@ -914,6 +883,25 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "in-or simplification" $ do
+        let expected = OrPattern.fromPatterns
+                [Conditional
+                    { term = mkTop_
+                    , predicate = makeOrPredicate
+                        (makeInPredicate Mock.cf Mock.ch)
+                        (makeInPredicate Mock.cg Mock.ch)
+                    , substitution = mempty
+                    }
+                ]
+        actual <- evaluate
+            Conditional
+                { term = mkIn_
+                    (mkOr Mock.cf Mock.cg)
+                    Mock.ch
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "" expected actual
     ]
 
 

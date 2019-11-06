@@ -30,7 +30,7 @@ TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 simplify
     :: InternalVariable variable
     => Rewrites Sort (OrPattern variable)
-    -> OrPattern variable
+    -> Pattern variable
 simplify
     Rewrites
         { rewritesFirst = first
@@ -56,7 +56,7 @@ simplifyEvaluatedRewrites
     :: InternalVariable variable
     => OrPattern variable
     -> OrPattern variable
-    -> OrPattern variable
+    -> Pattern variable
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrPattern.toPattern first)
@@ -66,9 +66,9 @@ makeEvaluateRewrites
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> OrPattern variable
+    -> Pattern variable
 makeEvaluateRewrites first second =
-    OrPattern.fromTermLike
+    Pattern.fromTermLike
     $ TermLike.markSimplified
     $ mkRewrites
         (Pattern.toTermLike first)

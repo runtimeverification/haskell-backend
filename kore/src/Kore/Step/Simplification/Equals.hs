@@ -63,13 +63,6 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
     , makeEvaluateTerm
     )
-import qualified Kore.Step.Simplification.Iff as Iff
-    ( makeEvaluate
-    , simplifyEvaluated
-    )
-import qualified Kore.Step.Simplification.Implies as Implies
-    ( simplifyEvaluated
-    )
 import qualified Kore.Step.Simplification.Not as Not
     ( simplifyEvaluated
     , simplifyEvaluatedPredicate
@@ -204,7 +197,13 @@ simplifyEvaluated predicate first second
                 makeEvaluateFunctionalOr predicate secondP firstPatterns
         _
             | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                Iff.simplifyEvaluated first second
+                return $ OrPattern.fromPattern
+                    (Pattern.fromTermLike
+                        (mkIff
+                            (OrPattern.toTermLike first)
+                            (OrPattern.toTermLike second)
+                        )
+                    )
             | otherwise ->
                 makeEvaluate
                     (OrPattern.toPattern first)
@@ -237,19 +236,29 @@ makeEvaluateFunctionalOr predicate first seconds = do
         mapM
             (makeEvaluateEqualsIfSecondNotBottom first)
             (zip seconds secondCeils)
-    oneIsNotBottomEquals <-
-        foldM
-            And.simplifyEvaluated
-            firstCeil
-            (oneNotBottom : firstEqualsSeconds)
-    return (MultiOr.merge allAreBottom oneIsNotBottomEquals)
+    let oneIsNotBottomEquals =
+            foldr
+                mkAnd
+                (OrPattern.toTermLike firstCeil)
+                (OrPattern.toTermLike oneNotBottom : firstEqualsSeconds)
+    return
+        (OrPattern.fromTermLike
+            (mkOr
+                (OrPattern.toTermLike allAreBottom)
+                oneIsNotBottomEquals
+            )
+        )
   where
     makeEvaluateEqualsIfSecondNotBottom
         Conditional {term = firstTerm}
         (Conditional {term = secondTerm}, secondCeil)
       = do
         equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-        Implies.simplifyEvaluated secondCeil equality
+        return
+            (mkImplies
+                (OrPattern.toTermLike secondCeil)
+                (OrPattern.toTermLike equality)
+            )
 
 {-| evaluates an 'Equals' given its two 'Pattern' children.
 
@@ -266,10 +275,10 @@ makeEvaluate
     second@Conditional { term = Top_ _ }
     _
   =
-    return
-        (Iff.makeEvaluate
-            first {term = mkTop_}   -- remove the term's sort
-            second {term = mkTop_}  -- remove the term's sort
+    return $ OrPattern.fromPattern $ Pattern.fromTermLike
+        (mkIff
+            (Pattern.toTermLike first {term = mkTop_})
+            (Pattern.toTermLike second {term = mkTop_})
         )
 makeEvaluate
     Conditional

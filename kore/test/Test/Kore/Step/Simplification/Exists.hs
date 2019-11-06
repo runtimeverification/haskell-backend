@@ -127,21 +127,22 @@ test_simplify =
                         , (Pretty.indent 4 . Pretty.vsep)
                             (unparse <$> expected)
                         , "actual:"
-                        , (Pretty.indent 4 . Pretty.vsep)
-                            (unparse <$> OrPattern.toPatterns actual)
+                        , Pretty.indent 4 (unparse actual)
                         ]
-            assertEqual message expected (OrPattern.toPatterns actual)
+            assertEqual message
+                (OrPattern.toPattern (OrPattern.fromPatterns expected))
+                actual
 
 test_makeEvaluate :: [TestTree]
 test_makeEvaluate =
     [ testGroup "Exists - Predicates"
         [ testCase "Top" $ do
-            let expect = OrPattern.fromPatterns [ Pattern.top ]
+            let expect = Pattern.top
             actual <- makeEvaluate Mock.x (Pattern.top :: Pattern Variable)
             assertEqual "" expect actual
 
         , testCase " Bottom" $ do
-            let expect = OrPattern.fromPatterns []
+            let expect = Pattern.bottom
             actual <- makeEvaluate Mock.x (Pattern.bottom :: Pattern Variable)
             assertEqual "" expect actual
         ]
@@ -149,16 +150,13 @@ test_makeEvaluate =
     , testCase "exists applies substitution if possible" $ do
         -- exists x . (t(x) and p(x) and [x = alpha, others])
         --    = t(alpha) and p(alpha) and [others]
-        let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = Mock.f gOfA
-                        , predicate =
-                            makeCeilPredicate (Mock.h gOfA)
-                        , substitution = Substitution.unsafeWrap
-                            [(ElemVar Mock.y, fOfA)]
-                        }
-                    ]
+        let expect = Conditional
+                { term = Mock.f gOfA
+                , predicate =
+                    makeCeilPredicate (Mock.h gOfA)
+                , substitution = Substitution.unsafeWrap
+                    [(ElemVar Mock.y, fOfA)]
+                }
         actual <-
             makeEvaluate
                 Mock.x
@@ -175,14 +173,11 @@ test_makeEvaluate =
         -- exists x . (t and p and s)
         --    = t and p and s
         --    if t, p, s do not depend on x.
-        let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = fOfA
-                        , predicate = makeCeilPredicate gOfA
-                        , substitution = mempty
-                        }
-                    ]
+        let expect = Conditional
+                { term = fOfA
+                , predicate = makeCeilPredicate gOfA
+                , substitution = mempty
+                }
         actual <-
             makeEvaluate
                 Mock.x
@@ -197,14 +192,11 @@ test_makeEvaluate =
         -- exists x . (t(x) and p and s)
         --    = (exists x . t(x)) and p and s
         --    if p, s do not depend on x.
-        let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkExists Mock.x fOfX
-                        , predicate = makeCeilPredicate gOfA
-                        , substitution = mempty
-                        }
-                    ]
+        let expect = Conditional
+                { term = mkExists Mock.x fOfX
+                , predicate = makeCeilPredicate gOfA
+                , substitution = mempty
+                }
         actual <-
             makeEvaluate
                 Mock.x
@@ -219,15 +211,12 @@ test_makeEvaluate =
         -- exists x . (t and p(x) and s)
         --    = t and (exists x . p(x)) and s
         --    if t, s do not depend on x.
-        let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = fOfA
-                        , predicate =
-                            makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
-                        , substitution = mempty
-                        }
-                    ]
+        let expect = Conditional
+                { term = fOfA
+                , predicate =
+                    makeExistsPredicate Mock.x (makeCeilPredicate fOfX)
+                , substitution = mempty
+                }
         actual <-
             makeEvaluate
                 Mock.x
@@ -252,7 +241,7 @@ test_makeEvaluate =
     , testCase "exists reevaluates" $ do
         -- exists x . (top and (f(x) = f(g(a)) and [x=g(a)])
         --    = top.s
-        let expect = OrPattern.fromPatterns [ Pattern.top ]
+        let expect = Pattern.top
         actual <-
             makeEvaluate
                 Mock.x
@@ -265,13 +254,11 @@ test_makeEvaluate =
     , testCase "exists matches equality if result is top" $ do
         -- exists x . (f(x) = f(a))
         --    = top.s
-        let expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term = fOfA
-                    , predicate = makeTruePredicate
-                    , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
-                    }
-                ]
+        let expect = Conditional
+                { term = fOfA
+                , predicate = makeTruePredicate
+                , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
+                }
         actual <-
             makeEvaluate
                 Mock.x
@@ -284,19 +271,17 @@ test_makeEvaluate =
     , testCase "exists does not match equality if free var in subst" $ do
         -- exists x . (f(x) = f(a)) and (y=f(x))
         --    = exists x . (f(x) = f(a)) and (y=f(x))
-        let expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term = fOfA
-                    , predicate =
-                        makeExistsPredicate
-                            Mock.x
-                            (makeAndPredicate
-                                (makeEqualsPredicate fOfX (Mock.f Mock.a))
-                                (makeEqualsPredicate (mkElemVar Mock.y) fOfX)
-                            )
-                    , substitution = Substitution.wrap [(ElemVar Mock.z, fOfA)]
-                    }
-                ]
+        let expect = Conditional
+                { term = fOfA
+                , predicate =
+                    makeExistsPredicate
+                        Mock.x
+                        (makeAndPredicate
+                            (makeEqualsPredicate fOfX (Mock.f Mock.a))
+                            (makeEqualsPredicate (mkElemVar Mock.y) fOfX)
+                        )
+                , substitution = Substitution.wrap [(ElemVar Mock.z, fOfA)]
+                }
         actual <-
             makeEvaluate
                 Mock.x
@@ -342,12 +327,12 @@ testSort = Mock.testSort
 
 simplify
     :: Exists Sort Variable (OrPattern Variable)
-    -> IO (OrPattern Variable)
+    -> IO (Pattern Variable)
 simplify = runSimplifier Mock.env . Exists.simplify
 
 makeEvaluate
     :: ElementVariable Variable
     -> Pattern Variable
-    -> IO (OrPattern Variable)
+    -> IO (Pattern Variable)
 makeEvaluate variable child =
     runSimplifier Mock.env $ Exists.makeEvaluate variable child

@@ -4,12 +4,12 @@ module Test.Kore.Step.Simplification.StringLiteral
 
 import Test.Tasty
 
-import Kore.Internal.OrPattern
-    ( OrPattern
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
     )
-import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Pattern
-    ( Conditional (..)
+    ( Pattern
     )
 import Kore.Internal.Predicate
     ( makeTruePredicate
@@ -25,19 +25,16 @@ test_stringLiteralSimplification :: [TestTree]
 test_stringLiteralSimplification =
     [ testCase "StringLiteral evaluates to StringLiteral"
         (assertEqual ""
-            (OrPattern.fromPatterns
-                [ Conditional
+            Conditional
                     { term = mkStringLiteral "a"
                     , predicate = makeTruePredicate
                     , substitution = mempty
                     }
-                ]
-            )
             (evaluate
                 (StringLiteral "a")
             )
         )
     ]
 
-evaluate :: StringLiteral -> OrPattern Variable
+evaluate :: StringLiteral -> Pattern Variable
 evaluate = simplify

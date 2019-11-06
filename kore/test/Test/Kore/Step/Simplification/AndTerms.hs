@@ -37,6 +37,7 @@ import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
+    , makeOrPredicate
     , makeTruePredicate
     )
 import Kore.Internal.TermLike as TermLike
@@ -1054,13 +1055,9 @@ test_equalsTermsSimplification =
             expected = Just
                 [ Conditional
                     { term = ()
-                    , predicate = makeEqualsPredicate (Mock.f Mock.a) Mock.a
-                    , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeEqualsPredicate (Mock.f Mock.b) Mock.b
+                    , predicate = makeOrPredicate
+                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.cf)]
                     }
@@ -1104,38 +1101,14 @@ test_equalsTermsSimplification =
                 [ Conditional
                     { term = ()
                     , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
-                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
-                    , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.cf)
-                        , (ElemVar Mock.var_x_1, Mock.cg)
-                        ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
-                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
-                    , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.cf)
-                        , (ElemVar Mock.var_x_1, Mock.cg)
-                        ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
-                        (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
-                    , substitution = Substitution.unsafeWrap
-                        [ (ElemVar Mock.x, Mock.cf)
-                        , (ElemVar Mock.var_x_1, Mock.cg)
-                        ]
-                    }
-                , Conditional
-                    { term = ()
-                    , predicate = makeAndPredicate
-                        (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
-                        (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
+                        (makeOrPredicate
+                            (makeEqualsPredicate (Mock.f Mock.a) Mock.a)
+                            (makeEqualsPredicate (Mock.f Mock.b) Mock.b)
+                        )
+                        (makeOrPredicate
+                            (makeEqualsPredicate (Mock.g Mock.a) Mock.a)
+                            (makeEqualsPredicate (Mock.g Mock.b) Mock.b)
+                        )
                     , substitution = Substitution.unsafeWrap
                         [ (ElemVar Mock.x, Mock.cf)
                         , (ElemVar Mock.var_x_1, Mock.cg)
@@ -1203,7 +1176,10 @@ test_equalsTermsSimplification =
                 ]
         actual <- simplifyEquals
             simplifiers
-            (Mock.functionalConstr20 (mkElemVar Mock.x) (mkElemVar Mock.var_x_1))
+            (Mock.functionalConstr20
+                (mkElemVar Mock.x)
+                (mkElemVar Mock.var_x_1)
+            )
             (Mock.functionalConstr20 Mock.cf Mock.cg)
         assertEqual "" expected actual
     , testCase "handles set ambiguity" $ do

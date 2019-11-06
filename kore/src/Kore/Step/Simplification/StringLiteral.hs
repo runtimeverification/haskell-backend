@@ -11,14 +11,16 @@ module Kore.Step.Simplification.StringLiteral
     ( simplify
     ) where
 
-import Kore.Internal.OrPattern
-    ( OrPattern
+import Kore.Internal.Pattern
+    ( Pattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.Pattern as Pattern
+    ( fromTermLike
+    )
 import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'StringLiteral' pattern, which means returning
 an or containing a term made of that literal.
 -}
-simplify :: InternalVariable variable => StringLiteral -> OrPattern variable
-simplify (StringLiteral str) = OrPattern.fromTermLike $ mkStringLiteral str
+simplify :: InternalVariable variable => StringLiteral -> Pattern variable
+simplify (StringLiteral str) = Pattern.fromTermLike $ mkStringLiteral str

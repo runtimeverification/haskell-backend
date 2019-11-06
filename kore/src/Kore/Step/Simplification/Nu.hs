@@ -4,12 +4,12 @@ License     : NCSA
 -}
 module Kore.Step.Simplification.Nu
     ( simplify
-    , makeEvaluate
     ) where
 
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -35,8 +35,9 @@ child.
 simplify
     :: InternalVariable variable
     => Nu variable (OrPattern variable)
-    -> OrPattern variable
-simplify Nu { nuVariable, nuChild } = makeEvaluate nuVariable <$> nuChild
+    -> Pattern variable
+simplify Nu { nuVariable, nuChild } =
+    OrPattern.toPattern (makeEvaluate nuVariable <$> nuChild)
 
 {-| evaluates a 'Nu' given its two 'Pattern' children.
 
