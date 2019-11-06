@@ -31,6 +31,7 @@ module Kore.Unification.Substitution
     , reverseIfRhsIsVar
     , Normalization (..)
     , wrapNormalization
+    , applyNormalized
     ) where
 
 import Control.DeepSeq
@@ -66,6 +67,7 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Debug
 import Kore.Internal.TermLike
     ( InternalVariable
+    , SubstitutionVariable
     , TermLike
     , pattern Var_
     , mkVar
@@ -507,3 +509,16 @@ instance Monoid (Normalization variable) where
 wrapNormalization :: Normalization variable -> Substitution variable
 wrapNormalization Normalization { normalized, denormalized } =
     wrap (normalized <> denormalized)
+
+-- | Substitute the 'normalized' part into the 'denormalized' part.
+applyNormalized
+    :: SubstitutionVariable variable
+    => Normalization variable
+    -> Normalization variable
+applyNormalized Normalization { normalized, denormalized } =
+    Normalization
+        { normalized
+        , denormalized = (fmap . fmap) substitute denormalized
+        }
+    where
+    substitute = TermLike.substitute (Map.fromList normalized)
