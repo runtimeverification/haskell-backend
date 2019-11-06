@@ -59,7 +59,7 @@ normalize conditional@Conditional { substitution } = do
     applyTermPredicate =
         Pattern.andCondition conditional { substitution = mempty }
     SubstitutionSimplifier { simplifySubstitution } =
-        SubstitutionSimplifier.simplification
+        SubstitutionSimplifier.substitutionSimplifier
 
 normalizeExcept
     ::  forall unifier variable term

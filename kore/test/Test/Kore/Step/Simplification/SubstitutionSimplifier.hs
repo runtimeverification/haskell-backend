@@ -14,18 +14,18 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as Simplification
 import Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationOrSubstitutionError (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
+import qualified Kore.Unification.SubstitutionSimplifier as Unification
+    ( substitutionSimplifier
+    )
 import Kore.Unification.UnifierT
     ( runUnifierT
-    )
-import qualified Kore.Unification.UnifierT as Unification
-    ( substitutionSimplifier
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -187,7 +187,7 @@ test_SubstitutionSimplifier =
         testGroup testName
             [ testCase "simplification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        SubstitutionSimplifier.simplification
+                        Simplification.substitutionSimplifier
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
                 let expect = Condition.fromNormalizationSimplified <$> results
                     actualConditions = OrCondition.toConditions actual
