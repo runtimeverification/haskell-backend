@@ -239,6 +239,22 @@ addPredicate
     -> state ()
 addPredicate = addCondition . Condition.fromPredicate
 
+addSubstitution
+    :: SimplifierVariable variable
+    => MonadState (Private variable) state
+    => Substitution variable
+    -> state ()
+addSubstitution = addCondition . Condition.fromSubstitution
+
+takeSubstitution
+    :: SimplifierVariable variable
+    => MonadState (Private variable) state
+    => state (Substitution variable)
+takeSubstitution = do
+    substitution <- Lens.use (field @"accum".field @"substitution")
+    Lens.assign (field @"accum".field @"substitution") mempty
+    return substitution
+
 addNormalization
     :: SimplifierVariable variable
     => MonadState (Private variable) state
