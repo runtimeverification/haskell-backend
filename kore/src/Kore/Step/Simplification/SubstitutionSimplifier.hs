@@ -73,6 +73,7 @@ import Kore.Internal.TermLike
     , TermLikeF (..)
     , mkAnd
     )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( Predicate
     )
@@ -324,7 +325,9 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
     simplifyTermLike
         :: TermLike variable
         -> StateT (Private variable) simplifier (TermLike variable)
-    simplifyTermLike termLike = do
+    simplifyTermLike termLike
+      | TermLike.isSimplified termLike = return termLike
+      | otherwise = do
         orPattern <- simplifyTerm termLike
         case OrPattern.toPatterns orPattern of
             [        ] -> do
@@ -334,7 +337,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
                 let (termLike1, condition) = Pattern.splitTerm pattern1
                 addCondition condition
                 return termLike1
-            _          -> return termLike
+            _          -> return (TermLike.markSimplified termLike)
 
     deduplicate
         ::  Substitution variable
