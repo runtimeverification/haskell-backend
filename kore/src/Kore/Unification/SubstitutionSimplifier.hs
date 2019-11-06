@@ -22,8 +22,7 @@ import Control.Lens
     )
 import qualified Control.Lens as Lens
 import Control.Monad
-    ( unless
-    , (>=>)
+    ( (>=>)
     )
 import Control.Monad.State.Strict
     ( MonadState
@@ -80,6 +79,7 @@ import Kore.Unification.Substitution
     ( Normalization (..)
     , SingleSubstitution
     , Substitution
+    , UnwrappedSubstitution
     )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.SubstitutionNormalization as Substitution
@@ -109,13 +109,20 @@ substitutionSimplifier =
         => Substitution variable
         -> unifier (OrCondition variable)
     worker substitution = do
-        (normalization, Private { accum = condition }) <- loop & flip runStateT private
-        case normalization of
+        (result, Private { accum = condition }) <- loop & flip runStateT private
+        case result of
             Nothing -> empty
-            Just _ -> do
-                let conditions = OrCondition.fromCondition condition
+            Just normalization@Normalization { denormalized }
+              | null denormalized -> do
+                let normalizationCondition =
+                        Condition.fromNormalizationSimplified normalization
+                    conditions =
+                        OrCondition.fromCondition
+                        $ condition <> normalizationCondition
                 TopBottom.guardAgainstBottom conditions
                 return conditions
+              | otherwise ->
+                simplifiableCycle denormalized
       where
         private =
             Private
@@ -133,28 +140,22 @@ substitutionSimplifier =
             >>= deduplicate
             >>= (Substitution.normalize >>> traverse simplifyNormalization)
         substitution <- takeSubstitution
+        lastCount <- Lens.use (field @"count")
         case simplified of
             Nothing -> do
                 return simplified
             Just normalization@Normalization { denormalized }
               | null denormalized, Substitution.null substitution -> do
-                addNormalization normalization
+                return simplified
+              | thisCount >= lastCount, thisCount /= 0 ->
                 return simplified
               | otherwise -> do
+                Lens.assign (field @"count") thisCount
                 addSubstitution substitution
                 addSubstitution $ Substitution.wrapNormalization normalization
                 loop
-
-    updateCount
-        :: SimplifierVariable variable
-        => Normalization variable
-        -> StateT (Private variable) unifier (Normalization variable)
-    updateCount normalization@Normalization { denormalized } = do
-        lastCount <- Lens.use (field @"count")
-        let thisCount = length denormalized
-        unless (thisCount < lastCount || thisCount == 0) (simplifiableCycle denormalized)
-        Lens.assign (field @"count") thisCount
-        return normalization
+              where
+                thisCount = length denormalized
 
     simplifyNormalization
         ::  forall variable
@@ -162,7 +163,7 @@ substitutionSimplifier =
         =>  Normalization variable
         ->  StateT (Private variable) unifier (Normalization variable)
     simplifyNormalization =
-        updateCount
+        return
         >=> simplifyNormalized
         >=> return . applyNormalized
         >=> simplifyDenormalized
@@ -230,8 +231,12 @@ substitutionSimplifier =
         addPredicate predicate
         return substitution'
 
+    simplifiableCycle
+        :: SimplifierVariable variable
+        => UnwrappedSubstitution variable
+        -> unifier a
     simplifiableCycle denorm =
-        (Trans.lift . throwSubstitutionError) (SimplifiableCycle variables)
+        throwSubstitutionError (SimplifiableCycle variables)
       where
         (variables, _) = unzip denorm
 
@@ -273,13 +278,6 @@ takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty
     return substitution
-
-addNormalization
-    :: SimplifierVariable variable
-    => MonadState (Private variable) state
-    => Normalization variable
-    -> state ()
-addNormalization = addCondition . Condition.fromNormalizationSimplified
 
 unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =
