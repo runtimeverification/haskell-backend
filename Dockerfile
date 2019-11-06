@@ -11,7 +11,16 @@ RUN    apt update                                                               
            libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev libtool             \
            libyaml-cpp-dev libz3-dev make maven opam openjdk-8-jdk pandoc        \
            pkg-config python3 python-pygments python-recommonmark python-sphinx  \
-           time z3 zlib1g-dev
+           time zlib1g-dev
+
+RUN    git clone 'https://github.com/z3prover/z3' --branch=z3-4.6.0 \
+    && cd z3                                                        \
+    && python scripts/mk_make.py                                    \
+    && cd build                                                     \
+    && make -j8                                                     \
+    && make install                                                 \
+    && cd ../..                                                     \
+    && rm -rf z3
 
 RUN update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
