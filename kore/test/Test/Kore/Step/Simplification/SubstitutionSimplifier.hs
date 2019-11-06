@@ -152,6 +152,9 @@ test_SubstitutionSimplifier =
         , test "beside simplifiable cycle"
             [(x, sigma (f (mkVar x)) (mkVar x))]
             []
+        , test "length 2, with And"
+            [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
+            []
         ]
     , testGroup "set variable non-simplifiable cycle"
         [ test "alone"
