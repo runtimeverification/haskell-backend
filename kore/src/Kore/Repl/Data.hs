@@ -351,8 +351,8 @@ helpText =
     \                                      these scopes are used for filtering\
                                            \ the logged information, for example,\
                                            \ '[]' will log all scopes\n\
-    \                                      <type> can be 'none', 'stdout',\
-                                           \ or 'file filename'\n\
+    \                                      <type> can be 'stdout' or\n\
+                                           \'file filename'\n\
     \exit                                  exits the repl\
     \\n\n\
     \Available modifiers:\n\
