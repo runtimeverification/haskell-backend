@@ -79,6 +79,8 @@ import Kore.Logger
 import qualified Kore.Logger as Log
 import Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
+import qualified Kore.Step.Result as Result
+import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
 import Kore.Step.Rule
     ( RewriteRule (..)
@@ -424,12 +426,19 @@ assertFunctionLikeResults
     -> unifier (Results variable)
     -> unifier (Results variable)
 assertFunctionLikeResults initial unifier = do
-    results <- Step.results <$> unifier
-    let unifiedRules = Step.appliedRule <$> results
+    results <- Results.results <$> unifier
+    let unifiedRules = Result.appliedRule <$> results
     case checkFunctionLike unifiedRules (term initial) of
         Left err -> error err
         _        -> unifier
 
+{-
+This is implementing the ideas from the [Applying axioms by matching]
+(https://github.com/kframework/kore/blob/master/docs/2019-09-25-Applying-Axioms-By-Matching.md)
+design doc, which checks that the unified lhs of the rule fully matches
+(is equal to) the configuration term and that the lhs predicate is
+implied by the configuration predicate.
+-}
 recoveryFunctionLikeResults
     ::  forall unifier variable
     .   ( SimplifierVariable variable
@@ -440,33 +449,33 @@ recoveryFunctionLikeResults
     -> unifier (Results variable)
     -> unifier (Results variable)
 recoveryFunctionLikeResults initial unifier = do
-    results <- Step.results <$> unifier
-    let unifiedRules = Step.appliedRule <$> results
-    case checkFunctionLike unifiedRules (term initial) of
+    results <- Results.results <$> unifier
+    let appliedRules = Result.appliedRule <$> results
+    case checkFunctionLike appliedRules (Conditional.term initial) of
         Right _  -> unifier
-        Left err -> moreChecksAfterError err
+        Left err -> moreChecksAfterError appliedRules err
   where
-    moreChecksAfterError err = do
-        rules <- fmap Step.appliedRule . Step.results <$> unifier
+    moreChecksAfterError appliedRules err = do
         let
-            rule = case Seq.length rules of
-                1 -> Seq.index rules 0
+            appliedRule = case Seq.length appliedRules of
+                1 -> Seq.index appliedRules 0
                 _ -> error $ show $ Pretty.vsep
-                        [ "Couldn't recover simplification coverage error: "
-                        , Pretty.indent 4 (Pretty.pretty err)
-                        , "Expected singleton list of rules but found: "
-                        , (Pretty.indent 4 . Pretty.pretty . show) rules
+                        [ "Expected singleton list of rules but found: "
+                        , (Pretty.indent 4 . Pretty.pretty . show) appliedRules
+                        , "This should be imposssible, as simplifiers for \
+                          \simplification are built from a single rule."
                         ]
 
-            Conditional { term = ruleTerm, substitution = ruleSubstitution } = rule
+            Conditional { term = ruleTerm, substitution = ruleSubstitution } =
+                appliedRule
             RulePattern { left = alpha_t', requires = alpha_p'} = ruleTerm
 
             substitution' = Substitution.toMap ruleSubstitution
 
             alpha_t = TermLike.substitute substitution' alpha_t'
             alpha_p = Predicate.substitute substitution' alpha_p'
-            phi_p = predicate initial
-            phi_t = term initial
+            phi_p = Conditional.predicate initial
+            phi_t = Conditional.term initial
 
         res1 <- SMT.Evaluator.evaluate
                     $ Predicate.makeAndPredicate
