@@ -258,8 +258,8 @@ termLikeGen = do
         Just result -> return result
   where
     limitTermDepth (Range.Size s)
-      | s < 10 = Range.Size s
-      | otherwise = Range.Size 10
+      | s < 5 = Range.Size s
+      | otherwise = Range.Size 5
 
 termLikeGenImpl :: Range.Size -> Sort -> Gen (Maybe (TermLike Variable))
 termLikeGenImpl (Range.Size size) requestedSort = do

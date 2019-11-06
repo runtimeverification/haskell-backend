@@ -25,7 +25,7 @@ testPropertyWithSolver
     -> PropertyT SMT ()
     -> TestTree
 testPropertyWithSolver str =
-    testProperty str . Hedgehog.property . Morph.hoist runSMT
+    testProperty str . Hedgehog.withTests 100000 . Hedgehog.withDiscards 1000 . Hedgehog.property . Morph.hoist runSMT
 
 testCaseWithSMT :: String -> SMT () -> TestTree
 testCaseWithSMT str = testCase str . runSMT
