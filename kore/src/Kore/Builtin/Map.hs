@@ -329,9 +329,10 @@ evalUpdate =
                         _ -> Builtin.wrongArity Map.updateKey
             _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.updateKey _map
-            returnConcreteMap
-                resultSort
-                (Map.insert _key (Domain.MapValue value) _map)
+            TermLike.assertNonSimplifiableKeys (_key : Map.keys _map)
+                $ returnConcreteMap
+                    resultSort
+                    (Map.insert _key (Domain.MapValue value) _map)
 
 evalInKeys :: Builtin.Function
 evalInKeys =
