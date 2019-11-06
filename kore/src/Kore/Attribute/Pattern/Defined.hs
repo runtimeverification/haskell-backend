@@ -21,6 +21,9 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.InternalBytes
+    ( InternalBytes
+    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
@@ -178,6 +181,11 @@ instance Synthetic Defined (Top sort) where
 
 -- | A 'StringLiteral' pattern is always 'Defined'.
 instance Synthetic Defined (Const StringLiteral) where
+    synthetic = const (Defined True)
+    {-# INLINE synthetic #-}
+
+-- | A 'Bytes' pattern is always 'Defined'.
+instance Synthetic Defined (Const InternalBytes) where
     synthetic = const (Defined True)
     {-# INLINE synthetic #-}
 
