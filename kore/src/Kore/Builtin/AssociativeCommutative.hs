@@ -64,7 +64,6 @@ import qualified Data.Reflection as Reflection
 import Data.Text.Prettyprint.Doc
     ( Doc
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import GHC.Stack
     ( HasCallStack
     )
@@ -426,23 +425,10 @@ updateConcreteElements
     -> [(TermLike Concrete, value)]
     -> Maybe (Map (TermLike Concrete) value)
 updateConcreteElements elems newElems =
-    assertNonSimplifiable allKeys
+    TermLike.assertNonSimplifiableKeys allKeys
         $ Foldable.foldrM (uncurry insertMissing) elems newElems
       where
         allKeys = Map.keys elems <> fmap fst newElems
-        assertNonSimplifiable :: [TermLike Concrete] -> a -> a
-        assertNonSimplifiable keys a
-            | any (not . TermLike.isNonSimplifiable) keys =
-                let simplifiableKeys =
-                        filter (not . TermLike.isNonSimplifiable) keys
-                in
-                    (error . show . Pretty.vsep) $
-                        [ "Maps and sets can only contain concrete keys\
-                          \ (resp. elements) which are non-simplifiable."
-                        , Pretty.indent 2 "Simplifiable keys:"
-                        ]
-                        <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
-            | otherwise = a
 
 {- | Sort the abstract elements.
 

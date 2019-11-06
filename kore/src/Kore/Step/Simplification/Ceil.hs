@@ -22,7 +22,6 @@ import Data.Maybe
     ( fromMaybe
     )
 
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
     ( isTotal
     )
@@ -300,14 +299,14 @@ makeEvaluateNormalizedAc
         , concreteElements
         , opaque = []
         }
-  = Just $ do
+  = TermLike.assertNonSimplifiableKeys concreteKeys . Just $ do
     variableKeyConditions <- mapM
                                 (makeEvaluateTerm configurationCondition)
                                 variableKeys
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
 
-    assertNonSimplifiable concreteKeys
+
     elementsWithVariablesDistinct <-
         evaluateDistinct variableKeys concreteKeys
     let allConditions :: [OrCondition variable]
@@ -318,23 +317,6 @@ makeEvaluateNormalizedAc
             ++ elementsWithVariablesDistinct
     And.simplifyEvaluatedMultiPredicate (MultiAnd.make allConditions)
   where
-    assertNonSimplifiable
-        :: [TermLike variable]
-        -> simplifier ()
-    assertNonSimplifiable keys =
-        if any (not . TermLike.isNonSimplifiable) keys
-            then
-                let simplifiableKeys =
-                        filter (not . TermLike.isNonSimplifiable) keys
-                in
-                    (error . show . Pretty.vsep) $
-                        [ "Maps and sets can only contain concrete keys\
-                          \ (resp. elements) which are non-simplifiable."
-                        , Pretty.indent 2 "Simplifiable keys:"
-                        ]
-                        <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
-            else return ()
-
     concreteElementsList
         ::  [   ( TermLike variable
                 , Domain.Value normalized (TermLike variable)
