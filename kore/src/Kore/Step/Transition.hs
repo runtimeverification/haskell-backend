@@ -167,4 +167,3 @@ addRule = TransitionT . Accum.add . Seq.singleton
 
 mapRule :: Monad m => (rule -> rule') -> (rule' -> rule) -> TransitionT rule m a -> TransitionT rule' m a
 mapRule f g trans = TransitionT (AccumT (dimap (fmap g) (fmap . fmap . fmap $ f) (runAccumT . getTransitionT $ trans)))
---
