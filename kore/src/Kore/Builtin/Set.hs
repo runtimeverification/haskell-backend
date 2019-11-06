@@ -247,7 +247,8 @@ evalElement =
                 [_elem] ->
                     case TermLike.asConcrete _elem of
                         Just concrete ->
-                            returnConcreteSet
+                            TermLike.assertNonSimplifiableKeys [_elem]
+                            $ returnConcreteSet
                                 resultSort
                                 (Map.singleton concrete Domain.SetValue)
                         Nothing ->
