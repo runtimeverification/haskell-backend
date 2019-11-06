@@ -17,6 +17,7 @@ import qualified Control.Lens.Combinators as Lens
 import Control.Monad
     ( unless
     )
+import qualified Control.Monad.Trans as Monad.Trans
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
@@ -45,6 +46,8 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
     ( Conditional (..)
     , andCondition
+    , splitTerm
+    , withCondition
     )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
@@ -62,6 +65,8 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( isPredicate
+    , makeTruePredicate
+    , unwrapPredicate
     )
 import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Profiler.Profile as Profiler
@@ -146,6 +151,7 @@ import Kore.TopBottom
     )
 import qualified Kore.Unification.Substitution as Substitution
     ( toMap
+    , variables
     )
 import Kore.Unparser
     ( unparse
@@ -158,6 +164,8 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+
+import Debug.Trace
 
 -- TODO(virgil): Add a Simplifiable class and make all pattern types
 -- instances of that.
@@ -247,57 +255,169 @@ simplifyInternal term predicate = do
     simplifyInternalWorker termLike
         | TermLike.isSimplified termLike
         = case Predicate.makePredicate termLike of
-            Left _ -> return . OrPattern.fromTermLike $ termLike
-            Right termPredicate ->
+            Left _ -> do
+                traceM
+                    (  "simplifyInternalWorker.1 "
+                    ++ show (length (show termLike))
+                    )
+                return . OrPattern.fromTermLike $ termLike
+            Right termPredicate -> do
+                traceM
+                    (  "simplifyInternalWorker.2 "
+                    ++ show (length (show termLike))
+                    )
                 return
-                $ OrPattern.fromPattern
-                $ Pattern.fromCondition
-                $ assertConditionSimplified termLike
-                $ Condition.fromPredicate termPredicate
+                    $ OrPattern.fromPattern
+                    $ Pattern.fromCondition
+                    $ assertConditionSimplified termLike
+                    $ Condition.fromPredicate termPredicate
         | otherwise
         = assertTermNotPredicate $ tracer termLike $ do
+            traceM
+                (  "simplifyInternalWorker.3 "
+                ++ show (length (show termLike))
+                )
             termOr <- descendAndSimplify termLike
+            traceM
+                (  "simplifyInternalWorker.4 "
+                ++ show (length (show termLike))
+                )
             returnIfSimplifiedOrContinue
                 termLike
                 (OrPattern.toPatterns termOr)
                 (do
-                    termPredicateList <- BranchT.gather $ do
-                        termOrElement <- BranchT.scatter termOr
-                        simplified <- normalize termOrElement
-                        return (applySubstitution simplified)
+                    traceM
+                        (  "simplifyInternalWorker.5 "
+                        ++ show (length (show termLike))
+                        )
+                    termPredicateList <- do
+                        result <-
+                            mapM simplifyPredicate (OrPattern.toPatterns termOr)
+                        return (concat result)
 
+                    traceM
+                        (  "simplifyInternalWorker.6 "
+                        ++ show (length (show termLike))
+                        )
                     returnIfSimplifiedOrContinue
                         termLike
                         termPredicateList
                         (do
+                            traceM
+                                (  "simplifyInternalWorker.7 "
+                                ++ show (length (show termLike))
+                                )
                             resultsList <- mapM resimplify termPredicateList
+                            traceM
+                                (  "simplifyInternalWorker.8 "
+                                ++ show (length (show termLike))
+                                )
                             return (MultiOr.mergeAll resultsList)
                         )
                 )
       where
 
-        normalize
+        normalizeSubstitution
             ::  forall any'
             .   Conditional variable any'
             ->  BranchT simplifier (Conditional variable any')
-        normalize conditional@Conditional { substitution } = do
+        normalizeSubstitution conditional@Conditional { substitution } = do
             let conditional' = conditional { Conditional.substitution = mempty }
             predicate' <- simplifySubstitution substitution
             return $ Conditional.andCondition conditional' predicate'
 
-        resimplify :: Pattern variable -> simplifier (OrPattern variable)
-        resimplify result = do
-            let (resultTerm, resultPredicate) = Pattern.splitTerm result
-            simplified <- simplifyInternalWorker resultTerm
-            return ((`Conditional.andCondition` resultPredicate) <$> simplified)
+        simplifyPredicate
+            :: Pattern variable
+            -> simplifier [Pattern variable]
+        simplifyPredicate patt = do
+            normalizedList <- BranchT.gather $ normalizeSubstitution patt
+            let substitutedList =
+                    fmap applyConditionSubstitution normalizedList
+                simplifyWithPair condition@Conditional {predicate = predicate'}
+                  = do
+                    simplified <- simplifyInternalWorker
+                        $ unwrapPredicate predicate'
+                    return (condition, simplified)
 
-        applySubstitution :: Pattern variable -> Pattern variable
-        applySubstitution
+            simplifiedOrList <- mapM simplifyWithPair substitutedList
+
+            let toPredicateSafe patt'
+                  | isTop pattTerm = pattCondition
+                  | isBottom pattTerm = Condition.bottom
+                  | otherwise = error
+                        (  "Expected top/bottom term when simplifying "
+                        ++ "predicate, but got:"
+                        ++ unparseToString pattTerm
+                        )
+                  where
+                    (pattTerm, pattCondition) = Pattern.splitTerm patt'
+                mergeOr
+                    :: (Pattern variable, OrPattern variable)
+                    -> [Pattern variable]
+                mergeOr (patt', orPattern) =
+                    map
+                        ( Conditional.andCondition
+                            patt' {Conditional.predicate = makeTruePredicate}
+                        . toPredicateSafe
+                        )
+                        (OrPattern.toPatterns orPattern)
+                mergedList = concatMap mergeOr simplifiedOrList
+                renormalizeSubstitution
+                    :: Pattern variable -> simplifier [Pattern variable]
+                renormalizeSubstitution patt' = BranchT.gather $ do
+                    Conditional
+                        { term = ()
+                        , predicate = renormalizedPredicate
+                        , substitution = renormalizedSubstitution
+                        }
+                        <- normalizeSubstitution pattCondition
+                    unless (isTop renormalizedPredicate)
+                        (error
+                            (  "expected top predicate when renormalizing "
+                            ++ "substitution, but got:"
+                            ++ unparseToString renormalizedPredicate
+                            )
+                        )
+                    let mergedNormalizedCondition = pattCondition
+                            { Conditional.substitution =
+                                renormalizedSubstitution
+                            }
+                        mergedNormalized = Conditional.withCondition
+                            pattTerm
+                            mergedNormalizedCondition
+                    if fullySimplified mergedNormalizedCondition
+                        then return mergedNormalized
+                        else do
+                            result <- Monad.Trans.lift $
+                                simplifyPredicate mergedNormalized
+                            BranchT.scatter result
+                  where
+                    (pattTerm, pattCondition) = Conditional.splitTerm patt'
+            resultList <- mapM renormalizeSubstitution mergedList
+            return (concat resultList)
+
+
+        fullySimplified :: Condition variable -> Bool
+        fullySimplified Conditional { predicate = predicate', substitution } =
+            Predicate.isFreeOf predicate' variables
+          where
+            variables = Substitution.variables substitution
+
+
+        resimplify :: Pattern variable -> simplifier (OrPattern variable)
+        resimplify result = fmap OrPattern.fromPatterns . BranchT.gather $ do
+            let (resultTerm, resultPredicate) = Pattern.splitTerm result
+            simplifiedOr <- Monad.Trans.lift $ simplifyInternalWorker resultTerm
+            simplified <- BranchT.scatter simplifiedOr
+            return (simplified `Conditional.andCondition` resultPredicate)
+
+        applyConditionSubstitution
+            :: Conditional variable any -> Conditional variable any
+        applyConditionSubstitution
             Conditional {term = term', predicate = predicate', substitution}
           =
             Conditional
-                { term =
-                    TermLike.substitute (Substitution.toMap substitution) term'
+                { term = term'
                 , predicate =
                     Predicate.substitute
                         (Substitution.toMap substitution)
@@ -368,6 +488,7 @@ simplifyInternal term predicate = do
                     Conditional {substitution} -> substitution == mempty
             termAsPredicate =
                 Condition.fromPredicate <$> Predicate.makePredicate term
+
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =

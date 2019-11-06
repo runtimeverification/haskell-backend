@@ -48,7 +48,7 @@ test_simplify =
     , [substForXWithCycleY]
         `simplifiesTo`
         [Pattern.fromCondition predicateCycleY]
-        $ "discharge substitution with cycle"
+        $ "zzzdischarge substitution with cycle"
     , [substToX]         `simplifiesTo` [top]
         $ "discharge reverse substitution"
     , [substOfX]         `simplifiesTo` [quantifySubstitution substOfX]
