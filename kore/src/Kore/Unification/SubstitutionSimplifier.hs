@@ -17,6 +17,7 @@ import Control.Applicative
 import Control.Category
     ( (>>>)
     )
+import qualified Control.Exception as Exception
 import Control.Lens
     ( (<>=)
     )
@@ -101,34 +102,49 @@ substitutionSimplifier
     .  MonadUnify unifier
     => SubstitutionSimplifier unifier
 substitutionSimplifier =
-    SubstitutionSimplifier worker
+    SubstitutionSimplifier wrapper
   where
-    worker
+    wrapper
         :: forall variable
         .  SubstitutionVariable variable
         => Substitution variable
         -> unifier (OrCondition variable)
+    wrapper substitution = do
+        (predicate, result) <- worker substitution
+        condition <- maybe empty fromNormalization result
+        let condition' = Condition.fromPredicate predicate <> condition
+            conditions = OrCondition.fromCondition condition'
+        TopBottom.guardAgainstBottom conditions
+        return conditions
+
+    fromNormalization
+        :: SimplifierVariable variable
+        => Normalization variable
+        -> unifier (Condition variable)
+    fromNormalization normalization@Normalization { denormalized }
+      | null denormalized =
+        return (Condition.fromNormalizationSimplified normalization)
+      | otherwise =
+        simplifiableCycle denormalized
+
+    worker
+        :: forall variable
+        .  SubstitutionVariable variable
+        => Substitution variable
+        -> unifier (Predicate variable, Maybe (Normalization variable))
     worker substitution = do
-        (result, Private { accum = condition }) <- loop & flip runStateT private
-        case result of
-            Nothing -> empty
-            Just normalization@Normalization { denormalized }
-              | null denormalized -> do
-                let normalizationCondition =
-                        Condition.fromNormalizationSimplified normalization
-                    conditions =
-                        OrCondition.fromCondition
-                        $ condition <> normalizationCondition
-                TopBottom.guardAgainstBottom conditions
-                return conditions
-              | otherwise ->
-                simplifiableCycle denormalized
+        (result, Private { accum = condition }) <- runStateT loop private
+        (assertNullSubstitution condition . return)
+            (Condition.predicate condition, result)
       where
         private =
             Private
                 { count = maxBound
                 , accum = Condition.fromSubstitution substitution
                 }
+
+    assertNullSubstitution =
+        Exception.assert . Substitution.null . Condition.substitution
 
     loop
         ::  forall variable
@@ -142,20 +158,19 @@ substitutionSimplifier =
         substitution <- takeSubstitution
         lastCount <- Lens.use (field @"count")
         case simplified of
-            Nothing -> do
-                return simplified
             Just normalization@Normalization { denormalized }
-              | null denormalized, Substitution.null substitution -> do
-                return simplified
-              | thisCount >= lastCount, thisCount /= 0 ->
-                return simplified
-              | otherwise -> do
+              | not fullySimplified, makingProgress -> do
                 Lens.assign (field @"count") thisCount
                 addSubstitution substitution
                 addSubstitution $ Substitution.wrapNormalization normalization
                 loop
               where
+                fullySimplified =
+                    null denormalized && Substitution.null substitution
+                makingProgress =
+                    thisCount < lastCount || null denormalized
                 thisCount = length denormalized
+            _ -> return simplified
 
     simplifyNormalization
         ::  forall variable
