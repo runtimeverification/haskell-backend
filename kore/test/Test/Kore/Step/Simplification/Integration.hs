@@ -739,7 +739,7 @@ test_simplificationIntegration =
                         (makeImpliesPredicate
                             (makeInPredicate
                                 (mkMu k
-                                    (asInternal (Set.fromList [Mock.ch]))
+                                    (asInternal (Set.fromList [Mock.a]))
                                 )
                                 (Mock.fSet mkTop_)
                             )
@@ -775,7 +775,7 @@ test_simplificationIntegration =
                             (mkMu k
                                 (mkOr
                                     (mkEvaluated Mock.unitSet)
-                                    (mkExists mw (Mock.elementSet Mock.ch))
+                                    (mkExists mw (Mock.elementSet Mock.a))
                                 )
                             )
                             (Mock.fSet (mkFloor_ (mkTop Mock.mapSort)))

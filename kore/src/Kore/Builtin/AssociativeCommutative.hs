@@ -110,7 +110,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort
     )

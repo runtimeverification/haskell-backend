@@ -68,9 +68,6 @@ import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
-import Kore.Unparser
-    ( unparse
-    )
 
 {-| Simplify a 'Ceil' of 'OrPattern'.
 
@@ -243,7 +240,7 @@ makeEvaluateBuiltin
     predicate
     patt@(Domain.BuiltinMap Domain.InternalAc
         {builtinAcChild}
-        )
+    )
   =
     fromMaybe
         (return unsimplified)
