@@ -14,9 +14,6 @@ module Kore.Unification.SubstitutionSimplifier
 import Control.Applicative
     ( Alternative (..)
     )
-import Control.Category
-    ( (>>>)
-    )
 import qualified Control.Exception as Exception
 import Control.Lens
     ( (<>=)
@@ -38,7 +35,6 @@ import Data.Generics.Product.Fields
 import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 
 import qualified Branch as BranchT
@@ -55,7 +51,6 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( TermLike
     )
-import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( Predicate
     )
@@ -110,7 +105,7 @@ substitutionSimplifier =
         => Substitution variable
         -> unifier (OrCondition variable)
     wrapper substitution = do
-        (predicate, result) <- worker substitution
+        (predicate, result) <- simplifySubstitutionWorker substitution
         condition <- maybe empty fromNormalization result
         let condition' = Condition.fromPredicate predicate <> condition
             conditions = OrCondition.fromCondition condition'
@@ -127,34 +122,40 @@ substitutionSimplifier =
       | otherwise =
         simplifiableCycle denormalized
 
-    worker
-        :: forall variable
-        .  SubstitutionVariable variable
-        => Substitution variable
-        -> unifier (Predicate variable, Maybe (Normalization variable))
-    worker substitution = do
-        (result, Private { accum = condition }) <- runStateT loop private
-        (assertNullSubstitution condition . return)
-            (Condition.predicate condition, result)
+    simplifiableCycle
+        :: SimplifierVariable variable
+        => UnwrappedSubstitution variable
+        -> unifier a
+    simplifiableCycle denorm =
+        throwSubstitutionError (SimplifiableCycle variables)
       where
-        private =
-            Private
-                { count = maxBound
-                , accum = Condition.fromSubstitution substitution
-                }
+        (variables, _) = unzip denorm
 
+simplifySubstitutionWorker
+    :: forall variable unifier
+    .  SubstitutionVariable variable
+    => MonadUnify unifier
+    => Substitution variable
+    -> unifier (Predicate variable, Maybe (Normalization variable))
+simplifySubstitutionWorker = \substitution -> do
+    (result, Private { accum = condition }) <-
+        runStateT loop Private
+            { count = maxBound
+            , accum = Condition.fromSubstitution substitution
+            }
+    (assertNullSubstitution condition . return)
+        (Condition.predicate condition, result)
+  where
     assertNullSubstitution =
         Exception.assert . Substitution.null . Condition.substitution
 
-    loop
-        ::  forall variable
-        .   SubstitutionVariable variable
-        =>  StateT (Private variable) unifier (Maybe (Normalization variable))
+    loop :: StateT (Private variable) unifier (Maybe (Normalization variable))
     loop = do
         simplified <-
             takeSubstitution
             >>= deduplicate
-            >>= (Substitution.normalize >>> traverse simplifyNormalization)
+            >>= return . Substitution.normalize
+            >>= traverse simplifyNormalizationOnce
         substitution <- takeSubstitution
         lastCount <- Lens.use (field @"count")
         case simplified of
@@ -164,7 +165,7 @@ substitutionSimplifier =
                 addSubstitution substitution
                 addSubstitution $ Substitution.wrapNormalization normalization
                 loop
-              where
+                where
                 fullySimplified =
                     null denormalized && Substitution.null substitution
                 makingProgress =
@@ -172,15 +173,15 @@ substitutionSimplifier =
                 thisCount = length denormalized
             _ -> return simplified
 
-    simplifyNormalization
-        ::  forall variable
-        .   SubstitutionVariable variable
+    simplifyNormalizationOnce
+        ::  SubstitutionVariable variable
+        =>  MonadSimplify simplifier
         =>  Normalization variable
-        ->  StateT (Private variable) unifier (Normalization variable)
-    simplifyNormalization =
+        ->  StateT (Private variable) simplifier (Normalization variable)
+    simplifyNormalizationOnce =
         return
         >=> simplifyNormalized
-        >=> return . applyNormalized
+        >=> return . Substitution.applyNormalized
         >=> simplifyDenormalized
 
     simplifyNormalized
@@ -188,41 +189,33 @@ substitutionSimplifier =
         => Normalization variable
         -> StateT (Private variable) simplifier (Normalization variable)
     simplifyNormalized =
-        Lens.traverseOf (field @"normalized" . Lens.traversed) simplify
+        Lens.traverseOf
+            (field @"normalized" . Lens.traversed)
+            simplifySingleSubstitution
 
     simplifyDenormalized
         :: (MonadSimplify simplifier, SimplifierVariable variable)
         => Normalization variable
         -> StateT (Private variable) simplifier (Normalization variable)
     simplifyDenormalized =
-        Lens.traverseOf (field @"denormalized" . Lens.traversed) simplify
+        Lens.traverseOf
+            (field @"denormalized" . Lens.traversed)
+            simplifySingleSubstitution
 
-    applyNormalized
-        :: SubstitutionVariable variable
-        => Normalization variable
-        -> Normalization variable
-    applyNormalized Normalization { normalized, denormalized } =
-        Normalization
-            { normalized
-            , denormalized = (fmap . fmap) substitute denormalized
-            }
-      where
-        substitute = TermLike.substitute (Map.fromList normalized)
-
-    simplify
+    simplifySingleSubstitution
         :: (MonadSimplify simplifier, SimplifierVariable variable)
         => SingleSubstitution variable
         -> StateT (Private variable) simplifier (SingleSubstitution variable)
-    simplify subst@(uVar, _) =
+    simplifySingleSubstitution subst@(uVar, _) =
         case uVar of
             SetVar _ -> return subst
-            ElemVar _ -> traverse simplify1 subst
+            ElemVar _ -> traverse simplifyTermLike subst
 
-    simplify1
+    simplifyTermLike
         :: (MonadSimplify simplifier, SimplifierVariable variable)
         => TermLike variable
         -> StateT (Private variable) simplifier (TermLike variable)
-    simplify1 termLike = do
+    simplifyTermLike termLike = do
         orPattern <- Simplifier.simplifyTerm termLike
         case OrPattern.toPatterns orPattern of
             [        ] -> do
@@ -245,15 +238,6 @@ substitutionSimplifier =
             & Trans.lift
         addPredicate predicate
         return substitution'
-
-    simplifiableCycle
-        :: SimplifierVariable variable
-        => UnwrappedSubstitution variable
-        -> unifier a
-    simplifiableCycle denorm =
-        throwSubstitutionError (SimplifiableCycle variables)
-      where
-        (variables, _) = unzip denorm
 
 data Private variable =
     Private
