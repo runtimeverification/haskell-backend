@@ -599,7 +599,7 @@ runWithState command axioms claims claim stateTransformer
         output' <- readIORef output
         return $ Result output' c s
   where
-    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
+    logOptions = Logger.KoreLogOptions Logger.LogStdErr Logger.Debug mempty
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig logger . Kore.runSimplifier testEnv
 
