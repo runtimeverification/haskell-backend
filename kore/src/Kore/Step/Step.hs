@@ -452,7 +452,7 @@ recoveryFunctionLikeResults initial unifier = do
             rule = case Seq.length rules of
                 1 -> Seq.index rules 0
                 _ -> error $ show $ Pretty.vsep
-                        [ "Couldn't recovery error: "
+                        [ "Couldn't recover simplification coverage error: "
                         , Pretty.indent 4 (Pretty.pretty err)
                         , "Expected singleton list of rules but found: "
                         , (Pretty.indent 4 . Pretty.pretty . show) rules
@@ -474,7 +474,7 @@ recoveryFunctionLikeResults initial unifier = do
                         (Predicate.makeNotPredicate alpha_p)
 
         Monad.when (res1 /= Just False) $ error $ show $ Pretty.vsep
-            [ "Couldn't recovery error: "
+            [ "Couldn't recover simplification coverage error: "
             , Pretty.indent 4 (Pretty.pretty err)
             , "Configuration condition "
             , Pretty.indent 4 $ unparse phi_p
@@ -483,7 +483,7 @@ recoveryFunctionLikeResults initial unifier = do
             ]
         let alpha_t_sorted = fullyOverrideSort' (termLikeSort phi_t) alpha_t
         Monad.when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
-            [ "Couldn't recovery error: "
+            [ "Couldn't recover simplification coverage error: "
             , Pretty.indent 4 (Pretty.pretty err)
             , "Rule lhs "
             , Pretty.indent 4 $ unparse alpha_t'
