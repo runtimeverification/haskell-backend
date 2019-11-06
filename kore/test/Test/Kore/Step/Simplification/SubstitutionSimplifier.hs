@@ -197,8 +197,7 @@ test_SubstitutionSimplifier =
                 let SubstitutionSimplifier { simplifySubstitution } =
                         Unification.substitutionSimplifier
                 actual <-
-                    runSimplifier Mock.env
-                    . runUnifierT
+                    runSimplifier Mock.env . runUnifierT
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
@@ -208,7 +207,9 @@ test_SubstitutionSimplifier =
                         Left
                         $ SubstitutionError
                         $ SimplifiableCycle (fst <$> denormalized)
-                    expect = (: []) <$> traverse expect1 results
+                    expect
+                      | null results = Right []
+                      | otherwise    = (: []) <$> traverse expect1 results
                     actualConditions = map OrCondition.toConditions <$> actual
                     actualSubstitutions =
                         (map . map) Condition.substitution <$> actualConditions
