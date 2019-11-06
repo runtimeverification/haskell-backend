@@ -277,7 +277,7 @@ logScope =
 logType :: Parser LogType
 logType = logStdOut <|> logFile
   where
-    logStdOut = LogToStdOut <$  literal "stdout"
+    logStdOut = LogToStdOut <$  literal "stderr"
     logFile   = LogToFile   <$$> literal "file" *> quotedOrWordWithout ""
 
 redirect :: ReplCommand -> Parser ReplCommand

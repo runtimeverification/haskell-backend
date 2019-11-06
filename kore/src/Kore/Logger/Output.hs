@@ -172,7 +172,8 @@ parseKoreLogOptions =
             "warning"  -> pure Warning
             "error"    -> pure Error
             "critical" -> pure Critical
-            _          -> pure Warning
+            ""         -> pure Warning
+            _          -> Nothing
     parseScope =
         option
             parseCommaSeparatedScopes
