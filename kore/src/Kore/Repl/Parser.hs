@@ -275,9 +275,8 @@ logScope =
             <* optional (literal ",")
 
 logType :: Parser LogType
-logType = noLogging <|> logStdOut <|> logFile
+logType = logStdOut <|> logFile
   where
-    noLogging = NoLogging   <$  literal "none"
     logStdOut = LogToStdOut <$  literal "stdout"
     logFile   = LogToFile   <$$> literal "file" *> quotedOrWordWithout ""
 
