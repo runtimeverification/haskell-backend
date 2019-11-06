@@ -80,8 +80,10 @@ test_simplify =
     substForX =
         (Pattern.topOf Mock.testSort)
             { substitution = Substitution.unsafeWrap
-                [ ( ElemVar Mock.x
-                  , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))]
+                [   ( ElemVar Mock.x
+                    , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z)
+                    )
+                ]
             }
     substToX =
         (Pattern.topOf Mock.testSort)
@@ -103,8 +105,11 @@ test_simplify =
             (Predicate.makeCeilPredicate (f y))
             (Predicate.makeEqualsPredicate y (f y))
     substCycleY =
-        (Condition.fromSubstitution . Substitution.wrap)
-            [(ElemVar Mock.y, f y)]
+        mconcat
+            [ Condition.fromPredicate (Predicate.makeCeilPredicate (f y))
+            , (Condition.fromSubstitution . Substitution.wrap)
+                [(ElemVar Mock.y, f y)]
+            ]
     substForXWithCycleY = substForX `Pattern.andCondition` substCycleY
 
     simplifiesTo
