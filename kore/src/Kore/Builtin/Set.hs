@@ -402,7 +402,9 @@ evalList2set =
                         [_map] -> _map
                         _      -> Builtin.wrongArity Set.list2setKey
             _list <- List.expectConcreteBuiltinList Set.list2setKey _list
-            let _set = Map.fromList
+            let _set =
+                    TermLike.assertNonSimplifiableKeys _list
+                        $ Map.fromList
                             $ fmap (\x -> (x, Domain.SetValue))
                             $ Foldable.toList _list
             returnConcreteSet resultSort _set

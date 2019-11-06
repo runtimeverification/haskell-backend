@@ -997,13 +997,14 @@ isNonSimplifiable =
 
 assertNonSimplifiableKeys
     :: SortedVariable variable
-    => [TermLike variable]
+    => Foldable t
+    => t (TermLike variable)
     -> a
     -> a
 assertNonSimplifiableKeys keys a
     | any (not . isNonSimplifiable) keys =
         let simplifiableKeys =
-                filter (not . isNonSimplifiable) keys
+                filter (not . isNonSimplifiable) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Maps and sets can only contain concrete keys\
