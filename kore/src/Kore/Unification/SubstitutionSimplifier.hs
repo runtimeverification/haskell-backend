@@ -11,6 +11,12 @@ module Kore.Unification.SubstitutionSimplifier
     , module Kore.Step.Simplification.SubstitutionSimplifier
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Category
+    ( (>>>)
+    )
 import Control.Lens
     ( (<>=)
     )
@@ -22,7 +28,7 @@ import Control.Monad
 import Control.Monad.State.Strict
     ( MonadState
     , StateT
-    , execStateT
+    , runStateT
     )
 import qualified Control.Monad.Trans as Trans
 import Data.Function
@@ -103,12 +109,13 @@ substitutionSimplifier =
         => Substitution variable
         -> unifier (OrCondition variable)
     worker substitution = do
-        conditions <-
-            loop
-            & flip execStateT private
-            & fmap (OrCondition.fromCondition . accum)
-        TopBottom.guardAgainstBottom conditions
-        return conditions
+        (normalization, Private { accum = condition }) <- loop & flip runStateT private
+        case normalization of
+            Nothing -> empty
+            Just _ -> do
+                let conditions = OrCondition.fromCondition condition
+                TopBottom.guardAgainstBottom conditions
+                return conditions
       where
         private =
             Private
@@ -119,22 +126,22 @@ substitutionSimplifier =
     loop
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  StateT (Private variable) unifier ()
+        =>  StateT (Private variable) unifier (Maybe (Normalization variable))
     loop = do
+        simplified <-
+            takeSubstitution
+            >>= deduplicate
+            >>= (Substitution.normalize >>> traverse simplifyNormalization)
         substitution <- takeSubstitution
-        deduplicated <- deduplicate substitution
-        simplified <- traverse simplifyNormalization (Substitution.normalize deduplicated)
-        substitution' <- takeSubstitution
         case simplified of
             Nothing -> do
-                addCondition Condition.bottom
-                return ()
+                return simplified
             Just normalization@Normalization { denormalized }
-              | null denormalized, Substitution.null substitution' -> do
+              | null denormalized, Substitution.null substitution -> do
                 addNormalization normalization
-                return ()
+                return simplified
               | otherwise -> do
-                addSubstitution substitution'
+                addSubstitution substitution
                 addSubstitution $ Substitution.wrapNormalization normalization
                 loop
 
