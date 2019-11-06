@@ -123,16 +123,19 @@ substitutionSimplifier =
     loop = do
         substitution <- takeSubstitution
         deduplicated <- deduplicate substitution
-        case Substitution.normalize deduplicated of
+        simplified <- traverse simplifyNormalization (Substitution.normalize deduplicated)
+        substitution' <- takeSubstitution
+        case simplified of
             Nothing -> do
                 addCondition Condition.bottom
                 return ()
             Just normalization@Normalization { denormalized }
-              | null denormalized -> do
+              | null denormalized, Substitution.null substitution' -> do
                 addNormalization normalization
                 return ()
               | otherwise -> do
-                simplifyNormalization normalization
+                addSubstitution substitution'
+                addSubstitution $ Substitution.wrapNormalization normalization
                 loop
 
     updateCount
@@ -142,7 +145,7 @@ substitutionSimplifier =
     updateCount normalization@Normalization { denormalized } = do
         lastCount <- Lens.use (field @"count")
         let thisCount = length denormalized
-        unless (thisCount < lastCount) (simplifiableCycle denormalized)
+        unless (thisCount < lastCount || thisCount == 0) (simplifiableCycle denormalized)
         Lens.assign (field @"count") thisCount
         return normalization
 
@@ -150,13 +153,12 @@ substitutionSimplifier =
         ::  forall variable
         .   SubstitutionVariable variable
         =>  Normalization variable
-        ->  StateT (Private variable) unifier ()
+        ->  StateT (Private variable) unifier (Normalization variable)
     simplifyNormalization =
         updateCount
         >=> simplifyNormalized
         >=> return . applyNormalized
         >=> simplifyDenormalized
-        >=> addSubstitution . Substitution.wrapNormalization
 
     simplifyNormalized
         :: (MonadSimplify simplifier, SimplifierVariable variable)
