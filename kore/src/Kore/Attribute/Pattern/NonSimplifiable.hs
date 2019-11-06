@@ -22,6 +22,9 @@ import Kore.Domain.Builtin
 import Kore.Internal.Alias
     ( Alias
     )
+import Kore.Internal.InternalBytes
+    ( InternalBytes
+    )
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -174,6 +177,10 @@ instance Synthetic NonSimplifiable (Const (UnifiedVariable variable)) where
     synthetic = const (NonSimplifiable Nothing)
 
 instance Synthetic NonSimplifiable (Const StringLiteral) where
+    synthetic = const (NonSimplifiable . Just $ ConstructorLikeHead)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable (Const InternalBytes) where
     synthetic = const (NonSimplifiable . Just $ ConstructorLikeHead)
     {-# INLINE synthetic #-}
 

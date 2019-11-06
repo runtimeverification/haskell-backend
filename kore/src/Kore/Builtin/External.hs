@@ -8,6 +8,9 @@ module Kore.Builtin.External
     ) where
 
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import Data.Functor.Const
+    ( Const (..)
+    )
 import qualified Data.Functor.Foldable as Recursive
 import qualified GHC.Stack as GHC
 
@@ -20,6 +23,7 @@ import qualified Kore.Builtin.Set.Set as Set
 import qualified Kore.Builtin.String.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Alias as Alias
+import qualified Kore.Internal.InternalBytes as InternalBytes
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
@@ -104,6 +108,12 @@ externalize =
             RewritesF rewritesF -> Syntax.RewritesF rewritesF
             StringLiteralF stringLiteralF ->
                 Syntax.StringLiteralF stringLiteralF
+            InternalBytesF
+                (Const internalBytes) ->
+                    Syntax.ApplicationF
+                    . fmap String.asTermLike
+                    . InternalBytes.toApplication
+                    $ internalBytes
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
