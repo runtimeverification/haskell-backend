@@ -17,6 +17,7 @@ import Control.Lens
 import qualified Control.Lens as Lens
 import Control.Monad
     ( unless
+    , (>=>)
     )
 import Control.Monad.State.Strict
     ( MonadState
@@ -67,12 +68,12 @@ import Kore.Step.Simplification.SubstitutionSimplifier
 import Kore.Substitute
     ( SubstitutionVariable
     )
+import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Error
 import Kore.Unification.Substitution
     ( Normalization (..)
     , SingleSubstitution
     , Substitution
-    , UnwrappedSubstitution
     )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.SubstitutionNormalization as Substitution
@@ -101,17 +102,26 @@ substitutionSimplifier =
         .  SubstitutionVariable variable
         => Substitution variable
         -> unifier (OrCondition variable)
-    worker substitution =
-        loop substitution
-        & flip execStateT Private { count = maxBound, accum = mempty }
-        & fmap (OrCondition.fromCondition . accum)
+    worker substitution = do
+        conditions <-
+            loop
+            & flip execStateT private
+            & fmap (OrCondition.fromCondition . accum)
+        TopBottom.guardAgainstBottom conditions
+        return conditions
+      where
+        private =
+            Private
+                { count = maxBound
+                , accum = Condition.fromSubstitution substitution
+                }
 
     loop
         ::  forall variable
         .   SubstitutionVariable variable
-        =>  Substitution variable
-        ->  StateT (Private variable) unifier ()
-    loop substitution = do
+        =>  StateT (Private variable) unifier ()
+    loop = do
+        substitution <- takeSubstitution
         deduplicated <- deduplicate substitution
         case Substitution.normalize deduplicated of
             Nothing -> do
@@ -121,34 +131,32 @@ substitutionSimplifier =
               | null denormalized -> do
                 addNormalization normalization
                 return ()
-              | otherwise ->
+              | otherwise -> do
                 simplifyNormalization normalization
-                >>= loop . Substitution.wrapNormalization
+                loop
 
     updateCount
         :: SimplifierVariable variable
-        => UnwrappedSubstitution variable
-        -> StateT (Private variable) unifier ()
-    updateCount denorm = do
+        => Normalization variable
+        -> StateT (Private variable) unifier (Normalization variable)
+    updateCount normalization@Normalization { denormalized } = do
         lastCount <- Lens.use (field @"count")
-        let thisCount = length variables
-        unless (thisCount < lastCount) (simplifiableCycle variables)
+        let thisCount = length denormalized
+        unless (thisCount < lastCount) (simplifiableCycle denormalized)
         Lens.assign (field @"count") thisCount
-      where
-        (variables, _) = unzip denorm
+        return normalization
 
     simplifyNormalization
         ::  forall variable
         .   SubstitutionVariable variable
         =>  Normalization variable
-        ->  StateT (Private variable) unifier (Normalization variable)
-    simplifyNormalization normalization = do
-        let Normalization { denormalized } = normalization
-        updateCount denormalized
-        return normalization
-            >>= simplifyNormalized
-            >>= return . applyNormalized
-            >>= simplifyDenormalized
+        ->  StateT (Private variable) unifier ()
+    simplifyNormalization =
+        updateCount
+        >=> simplifyNormalized
+        >=> return . applyNormalized
+        >=> simplifyDenormalized
+        >=> addSubstitution . Substitution.wrapNormalization
 
     simplifyNormalized
         :: (MonadSimplify simplifier, SimplifierVariable variable)
@@ -213,8 +221,10 @@ substitutionSimplifier =
         addPredicate predicate
         return substitution'
 
-    simplifiableCycle variables =
+    simplifiableCycle denorm =
         (Trans.lift . throwSubstitutionError) (SimplifiableCycle variables)
+      where
+        (variables, _) = unzip denorm
 
 data Private variable =
     Private
