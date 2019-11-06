@@ -187,12 +187,18 @@ test_SubstitutionSimplifier =
                         SubstitutionSimplifier.simplification
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
                 let expect = Condition.fromNormalizationSimplified <$> results
-                assertEqual "" expect (OrCondition.toConditions actual)
+                    actualConditions = OrCondition.toConditions actual
+                    actualSubstitutions =
+                        Condition.substitution <$> actualConditions
+                assertEqual "" expect actualConditions
+                assertBool "Expected normalized substitutions"
+                    (all Substitution.isNormalized actualSubstitutions)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
                         Unification.substitutionSimplifier
                 actual <-
-                    runSimplifier Mock.env . runUnifierT
+                    runSimplifier Mock.env
+                    . runUnifierT
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
@@ -203,7 +209,13 @@ test_SubstitutionSimplifier =
                         $ SubstitutionError
                         $ SimplifiableCycle (fst <$> denormalized)
                     expect = (: []) <$> traverse expect1 results
-                assertEqual "" expect (map OrCondition.toConditions <$> actual)
+                    actualConditions = map OrCondition.toConditions <$> actual
+                    actualSubstitutions =
+                        (map . map) Condition.substitution <$> actualConditions
+                    allNormalized = (all . all . all) Substitution.isNormalized
+                assertEqual "" expect actualConditions
+                assertBool "Expected normalized substitutions"
+                    (allNormalized actualSubstitutions)
             ]
 
 x, y, z, xs, ys :: UnifiedVariable Variable
