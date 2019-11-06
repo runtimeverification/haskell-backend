@@ -206,7 +206,7 @@ makeKoreLogger
     -> LogAction m Text
     -> LogAction m SomeEntry
 makeKoreLogger minSeverity currentScope logToText =
-    Colog.cfilter (withSomeEntry (shouldLog minSeverity currentScope))
+    Colog.cfilter (shouldLog minSeverity currentScope)
         . Colog.cmapM withTimestamp
         $ contramap messageToText logToText
   where
@@ -257,7 +257,7 @@ swappableLogger mvar =
 
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
 defaultLogPretty scopedEntry =
-    case toLogMessage' <$> unwrapScope scopedEntry of
+    case toLogMessage <$> unwrapScope scopedEntry of
         (scope, LogMessage { severity, message, callstack }) ->
             Pretty.hsep
                 [ Pretty.brackets (Pretty.pretty severity)
@@ -267,9 +267,6 @@ defaultLogPretty scopedEntry =
                 , Pretty.brackets (formatCallstack callstack)
                 ]
   where
-    toLogMessage' :: SomeEntry -> LogMessage
-    toLogMessage' (SomeEntry entry) = toLogMessage entry
-
     prettyScope :: [Scope] -> Pretty.Doc ann
     prettyScope =
         mconcat
