@@ -272,7 +272,8 @@ evalElement =
                         _ -> Builtin.wrongArity Map.elementKey
             case TermLike.asConcrete _key of
                 Just concrete ->
-                    returnConcreteMap
+                    TermLike.assertNonSimplifiableKeys [_key]
+                    $ returnConcreteMap
                         resultSort
                         (Map.singleton concrete (Domain.MapValue _value))
                 Nothing ->
