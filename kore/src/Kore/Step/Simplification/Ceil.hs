@@ -328,8 +328,8 @@ makeEvaluateNormalizedAc
                         filter (not . TermLike.isNonSimplifiable) keys
                 in
                     (error . show . Pretty.vsep) $
-                        [ "Maps can only contain concrete keys\
-                        \ which are non-simplifiable."
+                        [ "Maps and sets can only contain concrete keys\
+                          \ (resp. elements) which are non-simplifiable."
                         , Pretty.indent 2 "Simplifiable keys:"
                         ]
                         <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
