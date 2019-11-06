@@ -51,6 +51,9 @@ test_SubstitutionSimplifier =
     , test "unnormalized substitution, variable under symbol"
         [(y, sigma (mkVar x) b), (x, a)]
         [ Normalization [(x, a), (y, sigma a b)] [] ]
+    , test "simplification generates substitution"
+        [(x, sigma (mkAnd a (mkVar y)) b)]
+        [ Normalization [(x, sigma a b), (y, a)] [] ]
     , testGroup "element-variable-only cycle"
         [ test "length 1, alone"
             [(x, mkVar x)]
