@@ -20,7 +20,15 @@
             ),
             VarDotVar0:SortGeneratedCounterCell{}
         ),
-        \top{SortGeneratedTopCell{}}()
+        \ceil{SortMap{}, SortGeneratedTopCell{}}(
+            Lbl'Unds'Map'Unds'{}(
+                Lbl'UndsPipe'-'-GT-Unds'{}(
+                    inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                    VarI:SortKItem{}
+                ),
+                VarDotVar3:SortMap{}
+            )
+        )
     ),
     Lbl'-LT-'generatedTop'-GT-'{}(
         Lbl'-LT-'T'-GT-'{}(
