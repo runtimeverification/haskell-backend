@@ -458,7 +458,7 @@ recoveryFunctionLikeResults initial unifier = do
     moreChecksAfterError appliedRules err = do
         let
             appliedRule = case Seq.length appliedRules of
-                1 -> Seq.index appliedRules 0
+                rule Seq.:< Seq.EmptyL -> rule
                 _ -> error $ show $ Pretty.vsep
                         [ "Expected singleton list of rules but found: "
                         , (Pretty.indent 4 . Pretty.pretty . show) appliedRules
