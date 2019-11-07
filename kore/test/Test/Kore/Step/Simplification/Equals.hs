@@ -25,13 +25,17 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Conditional
+import qualified Kore.Internal.Pattern as Pattern
+    ( fromCondition
+    , isSimplified
+    , top
+    )
 import Kore.Internal.Predicate
-    ( pattern PredicateFalse
-    , makeAndPredicate
+    ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
+    , makeFalsePredicate
     , makeNotPredicate
-    , makeOrPredicate
     , makeTruePredicate
     )
 import Kore.Internal.TermLike
@@ -53,7 +57,7 @@ import Test.Tasty.HUnit.Ext
 test_equalsSimplification_Or_Pattern :: [TestTree]
 test_equalsSimplification_Or_Pattern =
     [ testCase "bottom == bottom" $ do
-        let expect = OrPattern.fromPatterns [ Conditional.top ]
+        let expect = Pattern.top
         actual <-
             evaluateOr
                 Equals
@@ -65,7 +69,7 @@ test_equalsSimplification_Or_Pattern =
         assertEqual "" expect actual
 
     , testCase "a == a" $ do
-        let expect = OrPattern.fromPatterns [ Conditional.top ]
+        let expect = Pattern.top
         actual <-
             evaluateOr
                 Equals
@@ -89,13 +93,20 @@ test_equalsSimplification_Or_Pattern =
         assertEqual "" expect actual
 
     , testCase "a != bottom" $ do
-        let expect = OrPattern.fromPatterns
-                [ Conditional
-                    { term = mkOr mkBottom_ (mkAnd mkBottom_ mkTop_)
-                    , predicate = makeTruePredicate
-                    , substitution = mempty
-                    }
-                ]
+        let expect = Conditional
+                { term = mkOr
+                    (mkAnd
+                        (mkNot (mkCeil_ Mock.a))
+                        mkTop_
+                        --(mkNot (mkCeil_ mkBottom_))
+                    )
+                    (mkAnd
+                        mkBottom_
+                        (mkCeil_ Mock.a)
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
         actual <-
             evaluateOr
                 Equals
@@ -114,13 +125,11 @@ test_equalsSimplification_Or_Pattern =
 
     , testCase "f(a) vs g(a)" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkTop_
-                        , predicate = makeEqualsPredicate fOfA gOfA
-                        , substitution = mempty
-                        }
-                    ]
+                Conditional
+                    { term = mkTop_
+                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , substitution = mempty
+                    }
         actual <-
             evaluateOr
                 Equals
@@ -145,34 +154,42 @@ test_equalsSimplification_Or_Pattern =
 
     , testCase "f vs g or h" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkOr
+                Conditional
+                    { term = mkOr
+                        (mkAnd
+                            (mkNot (mkCeil_ Mock.cf))
                             (mkAnd
+                                (mkNot (mkCeil_ Mock.cg))
                                 (mkAnd
-                                    (mkNot (mkCeil_ Mock.cf))
-                                    (mkNot (mkCeil_ Mock.cg))
-                                )
-                                (mkNot (mkCeil_ Mock.ch))
-                            )
-                            (mkAnd
-                                (mkOr (mkCeil_ Mock.cg) (mkCeil_ Mock.ch))
-                                (mkAnd
-                                    (mkImplies (mkCeil_ Mock.cg)
-                                        (mkEquals_ Mock.cf Mock.cg)
-                                    )
-                                    (mkAnd
-                                        (mkImplies (mkCeil_ Mock.ch)
-                                            (mkEquals_ Mock.cf Mock.ch)
-                                        )
-                                        (mkCeil_ Mock.cf)
-                                    )
+                                    (mkNot (mkCeil_ Mock.ch))
+                                    mkTop_
                                 )
                             )
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+
+                        )
+                        (mkAnd
+                            (mkOr
+                                (mkOr
+                                    mkBottom_
+                                    (mkCeil_ Mock.cg)
+                                )
+                                (mkCeil_ Mock.ch)
+                            )
+                            (mkAnd
+                                (mkImplies (mkCeil_ Mock.cg)
+                                    (mkEquals_ Mock.cf Mock.cg)
+                                )
+                                (mkAnd
+                                    (mkImplies (mkCeil_ Mock.ch)
+                                        (mkEquals_ Mock.cf Mock.ch)
+                                    )
+                                    (mkCeil_ Mock.cf)
+                                )
+                            )
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
             first =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -215,56 +232,66 @@ test_equalsSimplification_Or_Pattern =
 
     , testCase "f vs g[x = a] or h" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkOr
+                Conditional
+                    { term = mkOr
+                        (mkAnd
+                            (mkNot (mkCeil_ Mock.cf))
                             (mkAnd
-                                (mkAnd
-                                    (mkNot
+                                (mkNot
+                                    (mkCeil_
                                         (mkAnd
-                                            (mkCeil_ Mock.cg)
+                                            Mock.cg
                                             (mkEquals_
                                                 (mkElemVar Mock.x)
                                                 Mock.a
                                             )
                                         )
                                     )
-                                    (mkNot (mkCeil_ Mock.cf))
                                 )
-                                (mkNot (mkCeil_ Mock.ch))
+                                (mkAnd
+                                    (mkNot (mkCeil_ Mock.ch))
+                                    mkTop_
+                                )
+                            )
+                        )
+                        (mkAnd
+                            (mkOr
+                                (mkOr
+                                    mkBottom_
+                                    (mkCeil_
+                                        (mkAnd
+                                            Mock.cg
+                                            (mkEquals_ (mkElemVar Mock.x) Mock.a)
+                                        )
+                                    )
+                                )
+                                (mkCeil_ Mock.ch)
                             )
                             (mkAnd
-                                (mkOr
-                                    (mkAnd
-                                        (mkCeil_ Mock.cg)
-                                        (mkEquals_ (mkElemVar Mock.x) Mock.a)
+                                (mkImplies
+                                    (mkCeil_
+                                        (mkAnd
+                                            Mock.cg
+                                            (mkEquals_
+                                                (mkElemVar Mock.x)
+                                                Mock.a
+                                            )
+                                        )
                                     )
-                                    (mkCeil_ Mock.ch)
+                                    (mkEquals_ Mock.cf Mock.cg)
                                 )
                                 (mkAnd
                                     (mkImplies
-                                        (mkAnd
-                                            (mkCeil_ Mock.cg)
-                                            (mkEquals_
-                                                (mkElemVar Mock.x)
-                                                Mock.a
-                                            )
-                                        )
-                                        (mkEquals_ Mock.cf Mock.cg)
+                                        (mkCeil_ Mock.ch)
+                                        (mkEquals_ Mock.cf Mock.ch)
                                     )
-                                    (mkAnd
-                                        (mkImplies
-                                            (mkCeil_ Mock.ch)
-                                            (mkEquals_ Mock.cf Mock.ch)
-                                        )
-                                        (mkCeil_ Mock.cf)
-                                    )
+                                    (mkCeil_ Mock.cf)
                                 )
                             )
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
             first =
                 OrPattern.fromPatterns
                     [ Conditional
@@ -320,15 +347,13 @@ test_equalsSimplification_Pattern :: [TestTree]
 test_equalsSimplification_Pattern =
     [ testCase "predicate-substitution vs predicate-substitution" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkIff
-                            (mkEquals_ fOfA fOfB)
-                            (mkEquals_ gOfA gOfB)
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                Conditional
+                    { term = mkIff
+                        (mkEquals_ fOfA fOfB)
+                        (mkEquals_ gOfA gOfB)
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
         actual <-
             evaluate
                 Conditional
@@ -342,19 +367,17 @@ test_equalsSimplification_Pattern =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-        assertBool "" (not (OrPattern.isSimplified actual))
+        assertBool "" (not (Pattern.isSimplified actual))
 
     , testCase "sorted equals predicate" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkIff
-                            (mkEquals_ fOfA fOfB)
-                            (mkEquals_ gOfA gOfB)
-                        , predicate = makeTruePredicate
-                        , substitution = mempty
-                        }
-                    ]
+                Conditional
+                    { term = mkIff
+                        (mkEquals_ fOfA fOfB)
+                        (mkEquals_ gOfA gOfB)
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
         actual <-
             evaluate
                 Conditional
@@ -371,41 +394,46 @@ test_equalsSimplification_Pattern =
 
     , testCase "constructor-patt vs constructor-patt" $ do
         let expect =
-                OrPattern.fromPatterns
-                    [ Conditional
-                        { term = mkTop_
-                        , predicate =
-                            makeOrPredicate
-                                (makeAndPredicate
-                                    (makeAndPredicate
-                                        (makeAndPredicate
-                                            (makeAndPredicate
-                                                (makeCeilPredicate hOfA)
-                                                (makeCeilPredicate hOfB)
-                                            )
-                                            (makeEqualsPredicate fOfA fOfB)
-                                        )
-                                        (makeEqualsPredicate gOfA gOfB)
-                                    )
-                                    (makeEqualsPredicate hOfA hOfB)
-                                )
-                                (makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeAndPredicate
-                                            (makeCeilPredicate hOfA)
-                                            (makeEqualsPredicate fOfA fOfB)
-                                        )
-                                    )
-                                    (makeNotPredicate
-                                        (makeAndPredicate
-                                            (makeCeilPredicate hOfB)
-                                            (makeEqualsPredicate gOfA gOfB)
-                                        )
+                Conditional
+                    { term = mkOr
+                        (mkAnd
+                            (mkEquals_ hOfA hOfB)
+                            (mkAnd
+                                (mkCeil_
+                                    (mkAnd
+                                        (Mock.functionalConstr10 hOfA)
+                                        (mkEquals_ fOfA fOfB)
                                     )
                                 )
-                        , substitution = mempty
-                        }
-                    ]
+                                (mkCeil_
+                                    (mkAnd
+                                        (Mock.functionalConstr10 hOfB)
+                                        (mkEquals_ gOfA gOfB)
+                                    )
+                                )
+                            )
+                        )
+                        (mkAnd
+                            (mkNot
+                                (mkCeil_
+                                    (mkAnd
+                                        (Mock.functionalConstr10 hOfA)
+                                        (mkEquals_ fOfA fOfB)
+                                    )
+                                )
+                            )
+                            (mkNot
+                                (mkCeil_
+                                    (mkAnd
+                                        (Mock.functionalConstr10 hOfB)
+                                        (mkEquals_ gOfA gOfB)
+                                    )
+                                )
+                            )
+                        )
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
         actual <-
             evaluate
                 Conditional
@@ -484,8 +512,28 @@ test_equalsSimplification_TermLike =
             (mkStringLiteral "b")
         )
     , testCase "a != bottom"
-        (assertTermEquals
-            Condition.bottomCondition
+        (assertTermEqualsPattern
+            Conditional
+                { term = mkOr
+                    (mkAnd
+                        mkBottom_
+                        (mkAnd
+                            (mkCeil_ mkBottom_)
+                            (mkCeil_ Mock.a)
+                        )
+                    )
+                    (mkAnd
+                        (mkNot (mkCeil_ mkBottom_))
+                        (mkNot (mkCeil_ Mock.a))
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+            Conditional
+                { term = ()
+                , predicate = makeFalsePredicate
+                , substitution = mempty
+                }
             mkBottom_
             Mock.a
         )
@@ -827,8 +875,7 @@ assertTermEqualsGeneric
     -> TermLike Variable
     -> Assertion
 assertTermEqualsGeneric expectPure =
-    assertTermEqualsMultiGeneric [expectPure]
-
+    assertTermEqualsMultiGeneric [Pattern.fromCondition expectPure] [expectPure]
 
 assertTermEqualsMulti
     :: HasCallStack
@@ -836,18 +883,50 @@ assertTermEqualsMulti
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
-assertTermEqualsMulti = assertTermEqualsMultiGeneric
+assertTermEqualsMulti conditions =
+    assertTermEqualsMultiGeneric
+        (Pattern.fromCondition <$> conditions)
+        conditions
 
-assertTermEqualsMultiGeneric
+assertTermEqualsPattern
     :: HasCallStack
-    => [Condition Variable]
+    => Pattern Variable
+    -> Condition Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO ()
+assertTermEqualsPattern = assertTermEqualsGenericPattern
+
+assertTermEqualsGenericPattern
+    :: HasCallStack
+    => Pattern Variable
+    -> Condition Variable
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
-assertTermEqualsMultiGeneric expectPure first second = do
-    let expectExpanded =
-            OrPattern.fromPatterns
-                (map predSubstToPattern expectPure)
+assertTermEqualsGenericPattern expectPure expectPureCondition =
+    assertTermEqualsMultiPattern [expectPure] [expectPureCondition]
+
+assertTermEqualsMultiPattern
+    :: HasCallStack
+    => [Pattern Variable]
+    -> [Condition Variable]
+    -> TermLike Variable
+    -> TermLike Variable
+    -> IO ()
+assertTermEqualsMultiPattern = assertTermEqualsMultiGeneric
+
+assertTermEqualsMultiGeneric
+    :: HasCallStack
+    => [Pattern Variable]
+    -> [Condition Variable]
+    -> TermLike Variable
+    -> TermLike Variable
+    -> Assertion
+assertTermEqualsMultiGeneric expectPure expectPureCondition first second = do
+    let expectExpanded :: Pattern Variable
+        expectExpanded =
+            OrPattern.toPattern $ OrPattern.fromPatterns expectPure
     actualExpanded <- evaluate (termToPattern first) (termToPattern second)
     assertEqual
         "Pattern"
@@ -856,7 +935,7 @@ assertTermEqualsMultiGeneric expectPure first second = do
     actualPure <- evaluateTermsGeneric first second
     assertEqual
         "PureMLPattern"
-        (MultiOr.make expectPure)
+        (MultiOr.make expectPureCondition)
         actualPure
   where
     termToPattern :: TermLike Variable -> Pattern Variable
@@ -868,6 +947,7 @@ assertTermEqualsMultiGeneric expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
+    {-
     predSubstToPattern :: Condition Variable -> Pattern Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
@@ -881,6 +961,7 @@ assertTermEqualsMultiGeneric expectPure first second = do
             , predicate = predicate
             , substitution = substitution
             }
+            -}
 
 fOfA :: TermLike Variable
 fOfA = Mock.f Mock.a
@@ -930,7 +1011,7 @@ testSort2 =
 
 evaluateOr
     :: Equals Sort (OrPattern Variable)
-    -> IO (OrPattern Variable)
+    -> IO (Pattern Variable)
 evaluateOr =
     runSimplifier mockEnv . simplify Condition.top
   where
@@ -939,7 +1020,7 @@ evaluateOr =
 evaluate
     :: Pattern Variable
     -> Pattern Variable
-    -> IO (OrPattern Variable)
+    -> IO (Pattern Variable)
 evaluate first second =
     runSimplifier mockEnv
     $ makeEvaluate first second Condition.top

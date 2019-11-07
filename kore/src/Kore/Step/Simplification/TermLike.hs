@@ -366,8 +366,8 @@ simplifyInternal term predicate = do
                 )
             CeilF ceilF ->
                 Ceil.simplify predicate =<< simplifyChildren ceilF
-            EqualsF equalsF ->
-                Equals.simplify predicate =<< simplifyChildren equalsF
+            EqualsF equalsF -> OrPattern.fromPattern <$>
+                (Equals.simplify predicate =<< simplifyChildren equalsF)
             ExistsF exists ->
                 let fresh =
                         Lens.over

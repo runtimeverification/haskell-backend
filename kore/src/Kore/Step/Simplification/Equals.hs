@@ -17,9 +17,6 @@ module Kore.Step.Simplification.Equals
 import Control.Error
     ( MaybeT (..)
     )
-import Control.Monad
-    ( foldM
-    )
 import Data.List
     ( foldl'
     )
@@ -50,27 +47,38 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.And as And
-    ( simplifyEvaluated
+    ( TermLike
+    , pattern Top_
+    , isFunctionPattern
+    , mkAnd
+    , mkBottom_
+    , mkCeil_
+    , mkIff
+    , mkImplies
+    , mkNot
+    , mkOr
+    , mkTop_
     )
-import qualified Kore.Step.Simplification.AndPredicates as And
+import Kore.Sort
+    ( Sort
+    )
+import Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
     )
 import Kore.Step.Simplification.AndTerms
     ( maybeTermEquals
     )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluate
-    , makeEvaluateTerm
+    ( makeEvaluateTerm
     )
-import qualified Kore.Step.Simplification.Not as Not
-    ( simplifyEvaluated
-    , simplifyEvaluatedPredicate
-    )
-import qualified Kore.Step.Simplification.Or as Or
-    ( simplifyEvaluated
+import Kore.Step.Simplification.Not as Not
+    ( simplifyEvaluatedPredicate
     )
 import Kore.Step.Simplification.Simplify
+import Kore.Syntax.Equals
+    ( Equals (Equals)
+    )
+import qualified Kore.Syntax.Equals as Equals.DoNotUse
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( runUnifierT
@@ -158,9 +166,12 @@ simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
     -> Equals Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify predicate Equals { equalsFirst = first, equalsSecond = second } =
-    simplifyEvaluated predicate first second
+    -> simplifier (Pattern variable)
+simplify
+    configurationCondition
+    Equals { equalsFirst = first, equalsSecond = second }
+  =
+    simplifyEvaluated first second configurationCondition
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -177,38 +188,36 @@ carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => OrPattern variable
     -> OrPattern variable
-    -> OrPattern variable
-    -> simplifier (OrPattern variable)
-simplifyEvaluated predicate first second
-  | first == second = return OrPattern.top
+    -> Condition variable
+    -> simplifier (Pattern variable)
+simplifyEvaluated first second configurationCondition
+  | first == second = return Pattern.top
   -- TODO: Maybe simplify equalities with top and bottom to ceil and floor
   | otherwise = do
     let isFunctionConditional Conditional {term} = isFunctionPattern term
     case (firstPatterns, secondPatterns) of
         ([firstP], [secondP]) ->
-            makeEvaluate firstP secondP predicate
+            makeEvaluate firstP secondP configurationCondition
         ([firstP], _)
             | isFunctionConditional firstP ->
-                makeEvaluateFunctionalOr predicate firstP secondPatterns
+                makeEvaluateFunctionalOr firstP secondPatterns
         (_, [secondP])
             | isFunctionConditional secondP ->
-                makeEvaluateFunctionalOr predicate secondP firstPatterns
+                makeEvaluateFunctionalOr secondP firstPatterns
         _
             | OrPattern.isPredicate first && OrPattern.isPredicate second ->
-                return $ OrPattern.fromPattern
-                    (Pattern.fromTermLike
-                        (mkIff
-                            (OrPattern.toTermLike first)
-                            (OrPattern.toTermLike second)
-                        )
+                return $ Pattern.fromTermLike
+                    (mkIff
+                        (OrPattern.toTermLike first)
+                        (OrPattern.toTermLike second)
                     )
             | otherwise ->
                 makeEvaluate
                     (OrPattern.toPattern first)
                     (OrPattern.toPattern second)
-                    predicate
+                    configurationCondition
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -216,35 +225,33 @@ simplifyEvaluated predicate first second
 makeEvaluateFunctionalOr
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
-    -> Pattern variable
+    => Pattern variable
     -> [Pattern variable]
-    -> simplifier (OrPattern variable)
-makeEvaluateFunctionalOr predicate first seconds = do
-    firstCeil <- Ceil.makeEvaluate predicate first
-    secondCeilsWithProofs <- mapM (Ceil.makeEvaluate predicate) seconds
-    firstNotCeil <- Not.simplifyEvaluated firstCeil
-    let secondCeils = secondCeilsWithProofs
-    secondNotCeils <- traverse Not.simplifyEvaluated secondCeils
-    let oneNotBottom = foldl' Or.simplifyEvaluated OrPattern.bottom secondCeils
-    allAreBottom <-
-        foldM
-            And.simplifyEvaluated
-            (OrPattern.fromPatterns [Pattern.top])
-            (firstNotCeil : secondNotCeils)
+    -> simplifier (Pattern variable)
+makeEvaluateFunctionalOr first seconds = do
+    let secondCeils = map (mkCeil_ . Pattern.toTermLike) seconds
     firstEqualsSeconds <-
         mapM
             (makeEvaluateEqualsIfSecondNotBottom first)
             (zip seconds secondCeils)
-    let oneIsNotBottomEquals =
+
+    let firstCeil = mkCeil_ (Pattern.toTermLike first)
+        secondNotCeils = map mkNot secondCeils
+        oneNotBottom = foldl' mkOr mkBottom_ secondCeils
+        allAreBottom =
             foldr
                 mkAnd
-                (OrPattern.toTermLike firstCeil)
-                (OrPattern.toTermLike oneNotBottom : firstEqualsSeconds)
+                mkTop_
+                (mkNot firstCeil : secondNotCeils)
+        oneIsNotBottomEquals =
+            foldr
+                mkAnd
+                firstCeil
+                (oneNotBottom : firstEqualsSeconds)
     return
-        (OrPattern.fromTermLike
+        (Pattern.fromTermLike
             (mkOr
-                (OrPattern.toTermLike allAreBottom)
+                allAreBottom
                 oneIsNotBottomEquals
             )
         )
@@ -256,7 +263,7 @@ makeEvaluateFunctionalOr predicate first seconds = do
         equality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
         return
             (mkImplies
-                (OrPattern.toTermLike secondCeil)
+                secondCeil
                 (OrPattern.toTermLike equality)
             )
 
@@ -269,13 +276,16 @@ makeEvaluate
     => Pattern variable
     -> Pattern variable
     -> Condition variable
-    -> simplifier (OrPattern variable)
+    -> simplifier (Pattern variable)
+makeEvaluate first second _
+  | first == second
+  = return Pattern.top
 makeEvaluate
     first@Conditional { term = Top_ _ }
     second@Conditional { term = Top_ _ }
     _
   =
-    return $ OrPattern.fromPattern $ Pattern.fromTermLike
+    return $ Pattern.fromTermLike
         (mkIff
             (Pattern.toTermLike first {term = mkTop_})
             (Pattern.toTermLike second {term = mkTop_})
@@ -291,27 +301,33 @@ makeEvaluate
         , predicate = PredicateTrue
         , substitution = (Substitution.unwrap -> [])
         }
-    predicate
+    configurationCondition
   = do
-    result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
-    return (Pattern.fromCondition <$> result)
-
+    result <-
+        makeEvaluateTermsToPredicate firstTerm secondTerm configurationCondition
+    return (OrPattern.toPattern (Pattern.fromCondition <$> result))
 makeEvaluate
     first@Conditional { term = firstTerm }
     second@Conditional { term = secondTerm }
-    predicate
+    _
   = do
-    let first' = first { term = if termsAreEqual then mkTop_ else firstTerm }
-    firstCeil <- Ceil.makeEvaluate predicate first'
-    let second' = second { term = if termsAreEqual then mkTop_ else secondTerm }
-    secondCeil <- Ceil.makeEvaluate predicate second'
-    firstCeilNegation <- Not.simplifyEvaluated firstCeil
-    secondCeilNegation <- Not.simplifyEvaluated secondCeil
     termEquality <- makeEvaluateTermsAssumesNoBottom firstTerm secondTerm
-    negationAnd <- And.simplifyEvaluated firstCeilNegation secondCeilNegation
-    ceilAnd <- And.simplifyEvaluated firstCeil secondCeil
-    equalityAnd <- And.simplifyEvaluated termEquality ceilAnd
-    return $ Or.simplifyEvaluated equalityAnd negationAnd
+    let firstCeil =
+            (mkCeil_ . Pattern.toTermLike)
+                first { term = if termsAreEqual then mkTop_ else firstTerm }
+        secondCeil =
+            (mkCeil_ . Pattern.toTermLike)
+                second { term = if termsAreEqual then mkTop_ else secondTerm }
+    return
+        (Pattern.fromTermLike
+            (mkOr
+                (mkAnd
+                    (OrPattern.toTermLike termEquality)
+                    (mkAnd firstCeil secondCeil)
+                )
+                (mkAnd (mkNot firstCeil) (mkNot secondCeil))
+            )
+        )
   where
     termsAreEqual = firstTerm == secondTerm
 
