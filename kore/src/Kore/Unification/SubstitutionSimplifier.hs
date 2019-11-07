@@ -14,6 +14,12 @@ module Kore.Unification.SubstitutionSimplifier
 import Control.Applicative
     ( Alternative (..)
     )
+import Control.Error
+    ( maybeT
+    )
+import Data.Function
+    ( (&)
+    )
 
 import qualified Branch as BranchT
 import Kore.Internal.Condition
@@ -65,8 +71,8 @@ substitutionSimplifier =
         => Substitution variable
         -> unifier (OrCondition variable)
     wrapper substitution = do
-        (predicate, result) <- worker substitution
-        condition <- maybe empty fromNormalization result
+        (predicate, result) <- worker substitution & maybeT empty return
+        condition <- fromNormalization result
         let condition' = Condition.fromPredicate predicate <> condition
             conditions = OrCondition.fromCondition condition'
         TopBottom.guardAgainstBottom conditions
@@ -95,6 +101,6 @@ unificationMakeAnd =
   where
     makeAnd termLike1 termLike2 condition = do
         unified <- termUnification termLike1 termLike2
-        BranchT.alternate
-            $ Simplifier.simplifyCondition
-            $ Pattern.andCondition unified condition
+        Pattern.andCondition unified condition
+            & Simplifier.simplifyCondition
+            & BranchT.alternate

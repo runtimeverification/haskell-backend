@@ -17,14 +17,15 @@ import Control.Applicative
     ( Alternative (..)
     )
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Error
+    ( MaybeT
+    , maybeT
+    )
 import Control.Exception as Exception
 import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
     , (>=>)
-    )
-import Control.Monad.State.Class
-    ( MonadState
     )
 import Control.Monad.State.Strict
     ( StateT
@@ -130,14 +131,13 @@ substitutionSimplifier =
         -> simplifier (OrCondition variable)
     wrapper substitution =
         fmap OrCondition.fromConditions . Branch.gather $ do
-            (predicate, result) <- worker substitution
-            condition <- maybe empty fromNormalization result
+            (predicate, result) <- worker substitution & maybeT empty return
+            let condition = Condition.fromNormalizationSimplified result
             let condition' = Condition.fromPredicate predicate <> condition
             TopBottom.guardAgainstBottom condition'
             return condition'
       where
         worker = simplifySubstitutionWorker simplifierMakeAnd
-        fromNormalization = return . Condition.fromNormalizationSimplified
 
 -- * Implementation
 
@@ -253,7 +253,7 @@ simplifySubstitutionWorker
     => MonadSimplify simplifier
     => MakeAnd simplifier
     -> Substitution variable
-    -> simplifier (Predicate variable, Maybe (Normalization variable))
+    -> MaybeT simplifier (Predicate variable, Normalization variable)
 simplifySubstitutionWorker makeAnd' = \substitution -> do
     (result, Private { accum = condition }) <-
         runStateT loop Private
@@ -266,6 +266,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
     assertNullSubstitution =
         Exception.assert . Substitution.null . Condition.substitution
 
+    loop :: Impl variable simplifier (Normalization variable)
     loop = do
         simplified <-
             takeSubstitution
@@ -275,23 +276,24 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
         substitution <- takeSubstitution
         lastCount <- Lens.use (field @"count")
         case simplified of
+            Nothing -> empty
             Just normalization@Normalization { denormalized }
               | not fullySimplified, makingProgress -> do
                 Lens.assign (field @"count") thisCount
                 addSubstitution substitution
                 addSubstitution $ Substitution.wrapNormalization normalization
                 loop
+              | otherwise -> return normalization
               where
                 fullySimplified =
                     null denormalized && Substitution.null substitution
                 makingProgress =
                     thisCount < lastCount || null denormalized
                 thisCount = length denormalized
-            _ -> return simplified
 
     simplifyNormalizationOnce
         ::  Normalization variable
-        ->  StateT (Private variable) simplifier (Normalization variable)
+        ->  Impl variable simplifier (Normalization variable)
     simplifyNormalizationOnce =
         return
         >=> simplifyNormalized
@@ -300,7 +302,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
 
     simplifyNormalized
         :: Normalization variable
-        -> StateT (Private variable) simplifier (Normalization variable)
+        -> Impl variable simplifier (Normalization variable)
     simplifyNormalized =
         Lens.traverseOf
             (field @"normalized" . Lens.traversed)
@@ -308,7 +310,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
 
     simplifyDenormalized
         :: Normalization variable
-        -> StateT (Private variable) simplifier (Normalization variable)
+        -> Impl variable simplifier (Normalization variable)
     simplifyDenormalized =
         Lens.traverseOf
             (field @"denormalized" . Lens.traversed)
@@ -316,7 +318,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
 
     simplifySingleSubstitution
         :: SingleSubstitution variable
-        -> StateT (Private variable) simplifier (SingleSubstitution variable)
+        -> Impl variable simplifier (SingleSubstitution variable)
     simplifySingleSubstitution subst@(uVar, _) =
         case uVar of
             SetVar _ -> return subst
@@ -324,7 +326,7 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
 
     simplifyTermLike
         :: TermLike variable
-        -> StateT (Private variable) simplifier (TermLike variable)
+        -> Impl variable simplifier (TermLike variable)
     simplifyTermLike termLike
       | TermLike.isSimplified termLike = return termLike
       | otherwise = do
@@ -341,12 +343,12 @@ simplifySubstitutionWorker makeAnd' = \substitution -> do
 
     deduplicate
         ::  Substitution variable
-        ->  StateT (Private variable) simplifier
+        ->  Impl variable simplifier
                 (Map (UnifiedVariable variable) (TermLike variable))
     deduplicate substitution = do
         (predicate, substitution') <-
             deduplicateSubstitution makeAnd' substitution
-            & Trans.lift
+            & Trans.lift . Trans.lift
         addPredicate predicate
         return substitution'
 
@@ -359,31 +361,42 @@ data Private variable =
         }
     deriving (GHC.Generic)
 
+{- | The 'Impl'ementation of the generic 'SubstitutionSimplifier'.
+
+The 'MaybeT' transformer layer is used for short-circuiting: if any individual
+substitution in unsatisfiable (@\\bottom@) then the entire substitution is also.
+
+ -}
+type Impl variable simplifier = StateT (Private variable) (MaybeT simplifier)
+
 addCondition
     :: SubstitutionVariable variable
-    => MonadState (Private variable) state
+    => Monad simplifier
     => Condition variable
-    -> state ()
-addCondition condition = Lens.modifying (field @"accum") (mappend condition)
+    -> Impl variable simplifier ()
+addCondition condition
+  | TopBottom.isBottom condition = empty
+  | otherwise =
+    Lens.modifying (field @"accum") (mappend condition)
 
 addPredicate
     :: SubstitutionVariable variable
-    => MonadState (Private variable) state
+    => Monad simplifier
     => Predicate variable
-    -> state ()
+    -> Impl variable simplifier ()
 addPredicate = addCondition . Condition.fromPredicate
 
 addSubstitution
     :: SubstitutionVariable variable
-    => MonadState (Private variable) state
+    => Monad simplifier
     => Substitution variable
-    -> state ()
+    -> Impl variable simplifier ()
 addSubstitution = addCondition . Condition.fromSubstitution
 
 takeSubstitution
     :: SubstitutionVariable variable
-    => MonadState (Private variable) state
-    => state (Substitution variable)
+    => Monad simplifier
+    => Impl variable simplifier (Substitution variable)
 takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty
