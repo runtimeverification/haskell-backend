@@ -436,7 +436,7 @@ attribute.
 ~~~
     hooked-symbol string2token(String{}) : TokenSort{}
         [hook{}("STRING.string2token")]
-~~
+~~~
 
 ## MAP
 
@@ -599,6 +599,18 @@ of the list and negative indices count from the end. The first element is
         [hook{}("LIST.concat")]
 ~~~
 
+### LIST.update
+
+Update an element from the list by index. Positive indices count from the
+beginning of the list and negative indices count from the end. The first element
+is `\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
+`\bottom{}()` if the index is out-of-bounds.
+
+~~~
+    hooked-symbol update{}(List{}, Int{}, Elem{}) : List{}
+        [hook{}("LIST.update")]
+~~~
+
 ## SET
 
 Depends on `BOOL`.
@@ -703,3 +715,133 @@ If-then-else: if condition then something, else something else.
     hooked-symbol ite{}(Bool{}, Item{}, Item{}) : Item{}
         [hook{}("KEQUAL.ite")]
 ~~~
+
+## KRYPTO
+
+All hash functions in this module interpret their input string as a sequence of 8-bit bytes
+and output the digest in base-16 encoding
+(a sequence of hexademical numerals `[0-9a-f]` each corresponding to 4 bits).
+
+### KRYPTO.keccak256
+
+Compute the Keccak-256 hash of the input string.
+
+~~~
+    hooked-symbol keccak256{}(String{}) : String{}
+        [hook{}("KRYPTO.keccak256")]
+~~~
+
+### KRYPTO.ripemd160
+
+Compute the RIPEMD-160 hash of the input string.
+
+~~~
+    hooked-symbol ripemd160{}(String{}) : String{}
+        [hook{}("KRYPTO.ripemd160")]
+~~~
+
+### KRYPTO.sha256
+
+Compute the SHA256 hash of the input string.
+
+~~~
+    hooked-symbol sha256{}(String{}) : String{}
+        [hook{}("KRYPTO.sha256")]
+~~~
+
+### KRYPTO.sha3256
+
+Compute the SHA3-256 hash of the input string.
+
+~~~
+    hooked-symbol sha3256{}(String{}) : String{}
+        [hook{}("KRYPTO.sha3256")]
+~~~
+
+## BYTES
+
+Represents a sequence of bytes with update/get/padding operations as well as
+conversions to/from strings.
+
+### BYTES.bytes2string
+Conversion to `String`.
+
+~~~
+    hooked-symbol bytes2string{}(Bytes{}) : String{}
+        [hook{}("BYTES.string2bytes")]
+~~~
+
+### BYTES.bytes2string
+Conversion to `String`. Expects all characters to be in the '\0' .. '\255'
+range.
+
+~~~
+    hooked-symbol string2bytes{}(String{}) : Bytes{}
+        [hook{}("BYTES.bytes2string")]
+~~~
+
+### BYTES.update
+Updates the byte array at the provided index with the provided value. Value
+should be in the '\0' .. '\255' range.
+
+~~~
+    hooked-symbol update{}(Bytes{}, Int{}, Int{}) : Bytes{}
+        [hook{}("BYTES.update")]
+~~~
+
+### BYTES.substr
+Get a substring using start and end indices.
+
+~~~
+    hooked-symbol substr{}(Bytes{}, Int{}, Int{}) : Bytes{}
+        [hook{}("BYTES.substr")]
+~~~
+
+### BYTES.replaceAt
+Replace the contents within a byte array at the given index, with the provided
+byte array.
+
+~~~
+    hooked-symbol replaceAt{}(Bytes{}, Int{}, Bytes{}) : Bytes{}
+        [hook{}("BYTES.replaceAt")]
+~~~
+
+### BYTES.padRight
+Pads the bytes string at the right to have at least of the specified length,
+using the provided value.
+
+~~~
+    hooked-symbol padRight{}(Bytes{}, Int{}, Int{}) : Bytes{}
+        [hook{}("BYTES.padRight")]
+~~~
+
+### BYTES.padLeft
+Pads the bytes string at the left to have at least of the specified length,
+using the provided value.
+
+~~~
+    hooked-symbol padLeft{}(Bytes{}, Int{}, Int{}) : Bytes{}
+        [hook{}("BYTES.padLeft")]
+~~~
+
+### BYTES.reverse
+
+~~~
+    hooked-symbol reverse{}(Bytes{}) : Bytes{}
+        [hook{}("BYTES.reverse")]
+~~~
+
+### BYTES.length
+
+~~~
+    hooked-symbol length{}(Bytes{}) : Int{}
+        [hook{}("BYTES.length")]
+~~~
+
+### BYTES.concat
+
+~~~
+    hooked-symbol concat{}(Bytes{}, Bytes{}) : Bytes{}
+        [hook{}("BYTES.concat")]
+~~~
+

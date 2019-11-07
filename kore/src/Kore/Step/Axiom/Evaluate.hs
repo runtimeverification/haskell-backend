@@ -56,7 +56,7 @@ import Kore.Step.Step
     ( UnificationProcedure (..)
     )
 import qualified Kore.Step.Step as Step
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
 
 evaluateAxioms
@@ -135,15 +135,15 @@ evaluateAxioms
         RulePattern.mapVariables fromVariable rule
 
     applyRules (Step.toConfigurationVariables -> initial) rules
-      = Monad.Unify.runUnifierT
+      = Unifier.runUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =
-        Monad.Unify.runUnifierT (unification pattern1 pattern2)
-        >>= either (couldNotMatch pattern1 pattern2) Monad.Unify.scatter
+        Unifier.runUnifierT (unification pattern1 pattern2)
+        >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
 
     couldNotMatch pattern1 pattern2 _ =
-        Monad.Unify.explainAndReturnBottom
+        Unifier.explainAndReturnBottom
             "Could not match patterns"
             pattern1
             pattern2

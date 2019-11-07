@@ -39,6 +39,9 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
@@ -55,10 +58,6 @@ import Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Unifier
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
-    )
-
-import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
-    ( termUnification
     )
 
 simplifyAnds

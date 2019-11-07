@@ -87,6 +87,7 @@ import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
@@ -97,7 +98,7 @@ import Kore.Unification.Error
     ( UnificationOrSubstitutionError
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString
     )
@@ -174,7 +175,8 @@ testMetadataTools = MetadataTools.build verifiedModule
 
 testConditionSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
-testConditionSimplifier = Simplifier.Condition.create
+testConditionSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule

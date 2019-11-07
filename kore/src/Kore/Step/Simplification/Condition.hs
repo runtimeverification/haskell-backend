@@ -28,8 +28,8 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
-import Kore.Step.Substitution
-    ( normalize
+import Kore.Step.Simplification.SubstitutionSimplifier
+    ( SubstitutionSimplifier (..)
     )
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
@@ -37,8 +37,12 @@ import Kore.Unparser
 
 {- | Create a 'ConditionSimplifier' using 'simplify'.
 -}
-create :: MonadSimplify simplifier => ConditionSimplifier simplifier
-create = ConditionSimplifier simplify
+create
+    :: MonadSimplify simplifier
+    => SubstitutionSimplifier simplifier
+    -> ConditionSimplifier simplifier
+create substitutionSimplifier =
+    ConditionSimplifier $ simplify substitutionSimplifier
 
 {- | Simplify a 'Condition'.
 
@@ -54,9 +58,11 @@ simplify
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Conditional variable any
+    =>  SubstitutionSimplifier simplifier
+    ->  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
-simplify initial = normalize initial >>= worker
+simplify SubstitutionSimplifier { simplifySubstitution } initial =
+    normalize initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
@@ -65,6 +71,9 @@ simplify initial = normalize initial >>= worker
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
+        -- Check for full simplification *after* normalization. Simplification
+        -- may have produced irrelevant substitutions that become relevant after
+        -- normalization.
         if fullySimplified normalized
             then return normalized { term }
             else worker normalized { term }
@@ -73,6 +82,16 @@ simplify initial = normalize initial >>= worker
         Predicate.isFreeOf predicate variables
       where
         variables = Substitution.variables substitution
+
+    normalize
+        ::  forall any'
+        .   Conditional variable any'
+        ->  BranchT simplifier (Conditional variable any')
+    normalize conditional@Conditional { substitution } = do
+        let conditional' = conditional { substitution = mempty }
+        predicates' <- Monad.Trans.lift $ simplifySubstitution substitution
+        predicate' <- Branch.scatter predicates'
+        return $ Conditional.andCondition conditional' predicate'
 
 {- | Simplify the 'Predicate' once.
 

@@ -74,6 +74,7 @@ import GHC.Stack
 import Options.Applicative
     ( InfoMod
     , Parser
+    , ReadM
     , argument
     , disabled
     , execParser
@@ -85,6 +86,7 @@ import Options.Applicative
     , info
     , internal
     , long
+    , maybeReader
     , metavar
     , option
     , readerError
@@ -132,6 +134,9 @@ import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
     ( version
+    )
+import Text.Read
+    ( readMaybe
     )
 
 type Main = LoggerT IO
@@ -200,17 +205,36 @@ data KoreMergeOptions =
     KoreMergeOptions
         { rulesFileName     :: !FilePath
         -- ^ Name for file containing a sequence of rules to merge.
+        , maybeBatchSize    :: Maybe Int
         }
 
 parseKoreMergeOptions :: Parser KoreMergeOptions
 parseKoreMergeOptions =
     KoreMergeOptions
     <$> strOption
-            (  metavar "MERGE_RULES_FILE"
-            <> long "merge-rules"
-            <> help
-                "List of rules to merge."
-            )
+        (  metavar "MERGE_RULES_FILE"
+        <> long "merge-rules"
+        <> help
+            "List of rules to merge."
+        )
+    <*> option
+        maybePositiveIntReader
+        (  metavar "MERGE_BATCH_SIZE"
+        <> long "merge-batch-size"
+        <> help
+            "The size of a merge batch."
+        <> value Nothing
+        )
+
+maybePositiveIntReader :: ReadM (Maybe Int)
+maybePositiveIntReader = maybeReader maybeHelper
+  where
+    maybeHelper :: String -> Maybe (Maybe Int)
+    maybeHelper s = do
+        i <- readMaybe s
+        if i <= 1
+            then Nothing
+            else return (Just i)
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}

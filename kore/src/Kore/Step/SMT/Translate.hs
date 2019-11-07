@@ -126,6 +126,7 @@ translatePredicate translateUninterpreted predicate =
             RewritesF _ -> empty
             VariableF _ -> empty
             StringLiteralF _ -> empty
+            InternalBytesF _ -> empty
             InhabitantF _ -> empty
 
     translatePredicateAnd And { andFirst, andSecond } =

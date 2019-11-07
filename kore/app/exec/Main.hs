@@ -468,8 +468,12 @@ koreMerge execOptions mergeOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreMergeOptions {rulesFileName} = mergeOptions
     ruleIds <- lift $ loadRuleIds rulesFileName
+    let KoreMergeOptions {maybeBatchSize} = mergeOptions
     eitherMergedRule <- execute execOptions mainModule $
-        mergeRules mainModule ruleIds
+        case maybeBatchSize of
+            Just batchSize ->
+                mergeRulesConsecutiveBatches batchSize mainModule ruleIds
+            Nothing -> mergeAllRules mainModule ruleIds
     case eitherMergedRule of
         (Left err) -> do
             lift $ Text.putStrLn err

@@ -46,11 +46,14 @@ test_simplifyEvaluated =
     [ [Pattern.top] `becomes_` []
     , [] `becomes_` [Pattern.top]
     , [termX] `becomes_` [termNotX]
+    , [termNotX] `becomes_` [termX]
     , [equalsXA] `becomes_` [notEqualsXA]
     , equalsXAWithSortedBottom `patternBecomes` [Pattern.top]
     , [substXA] `becomes_` [notEqualsXA]
     , [equalsXA, equalsXB] `becomes_` [neitherXAB]
     , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
+    , [termXAndY] `becomes_` [termNotX, termNotY]
+    , [termNotXAndY] `becomes_` [termX, termNotY]
     ]
   where
     becomes_
@@ -99,8 +102,20 @@ test_simplifyEvaluated =
 termX :: Pattern Variable
 termX = Pattern.fromTermLike (mkElemVar Mock.x)
 
+termY :: Pattern Variable
+termY = Pattern.fromTermLike (mkElemVar Mock.y)
+
+termXAndY :: Pattern Variable
+termXAndY = mkAnd <$> termX <*> termY
+
+termNotXAndY :: Pattern Variable
+termNotXAndY = mkAnd <$> termNotX <*> termY
+
 termNotX :: Pattern Variable
 termNotX = mkNot <$> termX
+
+termNotY :: Pattern Variable
+termNotY = mkNot <$> termY
 
 xAndEqualsXA :: Pattern Variable
 xAndEqualsXA = const <$> termX <*> equalsXA

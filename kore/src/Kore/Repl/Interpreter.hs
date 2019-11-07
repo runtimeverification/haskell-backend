@@ -319,14 +319,11 @@ exit
 exit = do
     proofs <- allProofs
     ofile <- Lens.view (field @"outputFile")
-    let fileName =
-            fromMaybe (error "Output file not specified") (unOutputFile ofile)
     onePathClaims <- generateInProgressOPClaims
     sort <- currentClaimSort
     let conj = conjOfOnePathClaims onePathClaims sort
-    liftIO $ writeFile
-            fileName
-            ( unparseToString conj )
+        printTerm = maybe putStrLn writeFile (unOutputFile ofile)
+    liftIO . printTerm . unparseToString $ conj
     if isCompleted (Map.elems proofs)
        then return SuccessStop
        else return FailStop

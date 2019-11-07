@@ -29,6 +29,13 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Map as Map
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import Kore.Attribute.Hook
@@ -56,9 +63,6 @@ import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import Kore.Logger.WarnMissingHook
-    ( warnMissingHook
-    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -71,7 +75,6 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
-import qualified Kore.Step.Merging.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
@@ -80,6 +83,7 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
 import Kore.TopBottom
+import Kore.Unparser
 
 {-| Evaluates functions on an application pattern.
 -}
@@ -116,9 +120,7 @@ evaluateApplication
           -- present, we assume that startup is finished, but we should really
           -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
-          = do
-            warnMissingHook hook symbol
-            pure unevaluated
+          = criticalMissingHook symbol hook
           | otherwise = return unevaluated
 
     results <-
@@ -184,6 +186,23 @@ evaluateApplication
         record key term
       | otherwise
       = return ()
+
+criticalMissingHook :: Symbol -> Text -> a
+criticalMissingHook symbol hookName =
+    (error . show . Pretty.vsep)
+        [ "Error: missing hook"
+        , "Symbol"
+        , Pretty.indent 4 (unparse symbol)
+        , "declared with attribute"
+        , Pretty.indent 4 (unparse attribute)
+        , "We don't recognize that hook and it was not given any rules."
+        , "Please open a feature request at"
+        , Pretty.indent 4 "https://github.com/kframework/kore/issues"
+        , "and include the text of this message."
+        , "Workaround: Give rules for" <+> unparse symbol
+        ]
+  where
+    attribute = hookAttribute hookName
 
 {-| Evaluates axioms on patterns.
 -}
@@ -359,11 +378,10 @@ reevaluateFunctions
     -> simplifier (OrPattern variable)
 reevaluateFunctions predicate rewriting = do
     let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
-    simplifiedTerms <- simplifyConditionalTermToOr predicate rewritingTerm
-    merged <- OrPattern.mergeWithPredicate rewritingCondition simplifiedTerms
     orResults <- BranchT.gather $ do
-        simplifiedTerm <- BranchT.scatter merged
-        simplifyCondition simplifiedTerm
+        simplifiedTerm <- simplifyConditionalTerm predicate rewritingTerm
+        simplifyCondition
+            $ Pattern.andCondition simplifiedTerm rewritingCondition
     return (OrPattern.fromPatterns orResults)
 
 {-| Ands the given condition-substitution to the given function evaluation.
@@ -384,8 +402,12 @@ mergeWithConditionAndSubstitution
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
-    evaluatedResults <- OrPattern.mergeWithPredicate toMerge results
-    evaluatedRemainders <- OrPattern.mergeWithPredicate toMerge remainders
+    evaluatedResults <- fmap OrPattern.fromPatterns . BranchT.gather $ do
+        result <- BranchT.scatter results
+        simplifyCondition $ Pattern.andCondition result toMerge
+    evaluatedRemainders <- fmap OrPattern.fromPatterns . BranchT.gather $ do
+        remainder <- BranchT.scatter remainders
+        simplifyCondition $ Pattern.andCondition remainder toMerge
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = evaluatedResults
         , remainders = evaluatedRemainders

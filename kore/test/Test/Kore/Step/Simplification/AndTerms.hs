@@ -45,18 +45,22 @@ import Kore.Step.Rule
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
     )
+import Kore.Step.Simplification.And
+    ( termAnd
+    )
 import Kore.Step.Simplification.AndTerms
     ( functionAnd
-    , termAnd
-    , termEquals
     , termUnification
+    )
+import Kore.Step.Simplification.Equals
+    ( termEquals
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Sentence
     ( SentenceAlias
     )
 import qualified Kore.Unification.Substitution as Substitution
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     )

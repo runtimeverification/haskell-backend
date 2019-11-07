@@ -97,11 +97,11 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Unification.Error
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( MonadUnify
     , UnifierT (..)
     )
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparse
     )

@@ -66,7 +66,7 @@ import Kore.TopBottom
 import Kore.Unification.Procedure
     ( unificationProcedure
     )
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Unifier
 
 {-| Which configurations are considered for matching?
 
@@ -136,7 +136,7 @@ matchWith
     -> MaybeT m (OrCondition variable)
 matchWith e1 e2 = do
     eitherUnifiers <-
-        Monad.Trans.lift $ Monad.Unify.runUnifierT
+        Monad.Trans.lift $ Unifier.runUnifierT
         $ unificationProcedure t1 t2
     let
         maybeUnifiers :: Maybe [Condition variable]
