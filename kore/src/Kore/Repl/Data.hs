@@ -175,7 +175,7 @@ data ReplAlias = ReplAlias
 
 data LogType
     = NoLogging
-    | LogToStdOut
+    | LogToStdErr
     | LogToFile !FilePath
     deriving (Eq, Show)
 

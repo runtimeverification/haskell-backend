@@ -497,7 +497,7 @@ logUpdatesState =
         axioms  = []
         claim   = emptyClaim
         command =
-            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdOut
+            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdErr
     in do
         Result { output, continue, state } <-
             run command axioms [claim] claim
@@ -505,7 +505,7 @@ logUpdatesState =
         continue `equals`     Continue
         state
             `hasLogging`
-            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdOut)
+            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdErr)
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
