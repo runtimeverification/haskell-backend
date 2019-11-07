@@ -118,8 +118,7 @@ import Kore.Syntax.ElementVariable
     ( ElementVariable (getElementVariable)
     )
 import Kore.Syntax.Variable
-    ( SortedVariable
-    , sortedVariableSort
+    ( sortedVariableSort
     )
 import Kore.Unification.Unify
     ( MonadUnify
@@ -763,10 +762,7 @@ unifyEqualsNormalized
     sort1 = termLikeSort first
 
     normalize1
-        ::  ( MonadUnify unifier
-            , Ord variable
-            )
-        => TermLike variable
+        :: TermLike variable
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
         case toNormalized patt of
@@ -1181,8 +1177,7 @@ The keys of the two structures are assumend to be disjoint.
 -}
 unifyEqualsElementLists
     ::  forall normalized variable unifier
-    .   ( Domain.AcWrapper normalized
-        , SimplifierVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , TermWrapper normalized
         , Traversable (Domain.Value normalized)
@@ -1364,8 +1359,7 @@ unifyOpaqueVariable
 
 noCheckUnifyOpaqueChildren
     ::  ( MonadUnify unifier
-        , Ord variable
-        , SortedVariable variable
+        , InternalVariable variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike.ElementVariable variable

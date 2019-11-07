@@ -14,7 +14,11 @@ Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
 
-module Kore.AST.Common where
+module Kore.AST.Common
+    ( MLPatternType (..)
+    , allPatternTypes
+    , patternString
+    ) where
 
 import Data.Hashable
 import Data.String

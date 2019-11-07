@@ -1,7 +1,22 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
-module Test.Kore.Step.Strategy where
+module Test.Kore.Step.Strategy
+    ( prop_SeqContinueIdentity
+    , prop_SeqStuckDominate
+    , prop_AndStuckIdentity
+    , prop_OrStuckIdentity
+    , prop_Stuck
+    , prop_Continue
+    , test_And
+    , test_Or
+    , prop_stepLimit
+    , prop_pickLongest
+    , prop_pickFinal
+    , prop_pickOne
+    , prop_pickStar
+    , prop_pickPlus
+    ) where
 
 import Test.QuickCheck.Instances ()
 import Test.Tasty
@@ -96,9 +111,6 @@ and = Strategy.and
 or :: Strategy Prim -> Strategy Prim -> Strategy Prim
 or = Strategy.or
 
-many :: Strategy Prim -> Strategy Prim
-many = Strategy.many
-
 stuck :: Strategy Prim
 stuck = Strategy.stuck
 
@@ -113,9 +125,6 @@ const = apply . Const
 
 succ_ :: Strategy Prim
 succ_ = apply Succ
-
-unlimited :: Limit Natural
-unlimited = Unlimited
 
 runStrategy
     :: [Strategy Prim]

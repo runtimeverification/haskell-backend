@@ -679,6 +679,10 @@ instance SortedVariable V where
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
 
+instance Unparse V where
+    unparse = error "Not implemented"
+    unparse2 = error "Not implemented"
+
 newtype W = W String
     deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -694,6 +698,10 @@ instance SortedVariable W where
     sortedVariableSort _ = sortVar
     fromVariable = error "Not implemented"
     toVariable = error "Not implemented"
+
+instance Unparse W where
+    unparse = error "Not implemented"
+    unparse2 = error "Not implemented"
 
 showVar :: V -> W
 showVar (V i) = W (show i)

@@ -132,7 +132,7 @@ instance TopBottom patt => TopBottom (GenericPredicate patt) where
     isBottom (GenericPredicate patt) = isBottom patt
 
 instance
-    (Ord variable, SortedVariable variable)
+    InternalVariable variable
     => Unparse (GenericPredicate (TermLike variable))
   where
     unparse predicate =
@@ -192,7 +192,7 @@ the resulting pattern into a particular sort.
 
  -}
 fromPredicate
-    :: (SortedVariable variable, Unparse variable, HasCallStack)
+    :: (InternalVariable variable, HasCallStack)
     => Sort  -- ^ Sort of resulting pattern
     -> Predicate variable
     -> TermLike variable
@@ -204,7 +204,7 @@ This is a safe operation because predicates are flexibly sorted.
 
  -}
 coerceSort
-    :: (SortedVariable variable, Unparse variable)
+    :: InternalVariable variable
     => Sort
     -> Predicate variable
     -> Predicate variable
@@ -622,10 +622,7 @@ mapVariables f = fmap (TermLike.mapVariables f)
 
 {- | Extract the set of free variables from a @Predicate@.
 -}
-freeVariables
-    :: Ord variable
-    => Predicate variable
-    -> FreeVariables variable
+freeVariables :: Predicate variable -> FreeVariables variable
 freeVariables = TermLike.freeVariables . unwrapPredicate
 
 isSimplified :: Predicate variable -> Bool
@@ -651,10 +648,7 @@ isFreeOf
 isFreeOf predicate =
     Set.disjoint (getFreeVariables $ freeVariables predicate)
 
-freeElementVariables
-    :: Ord variable
-    => Predicate variable
-    -> [ElementVariable variable]
+freeElementVariables :: Predicate variable -> [ElementVariable variable]
 freeElementVariables =
     getFreeElementVariables . Kore.Predicate.Predicate.freeVariables
 

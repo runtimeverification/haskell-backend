@@ -83,12 +83,12 @@ top = fromCondition Condition.top
 
 {-| 'isFalse' checks if the 'OrCondition' is composed only of bottom items.
 -}
-isFalse :: Ord variable => OrCondition variable -> Bool
+isFalse :: OrCondition variable -> Bool
 isFalse = isBottom
 
 {-| 'isTrue' checks if the 'OrCondition' has a single top pattern.
 -}
-isTrue :: Ord variable => OrCondition variable -> Bool
+isTrue :: OrCondition variable -> Bool
 isTrue = isTop
 
 toConditions :: OrCondition variable -> [Condition variable]

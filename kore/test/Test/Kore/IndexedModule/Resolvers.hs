@@ -1,4 +1,7 @@
-module Test.Kore.IndexedModule.Resolvers where
+module Test.Kore.IndexedModule.Resolvers
+    ( test_resolvers
+    , test_resolver_undefined_messages
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -9,6 +12,9 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 import qualified Data.Ord
 
 import Kore.ASTVerifier.DefinitionVerifier
@@ -152,14 +158,19 @@ testDefinition =
             ]
         }
 
-indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
-Right indexedModules =
-    verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
+indexedModules
+    :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
+indexedModules =
+    assertRight $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 
 testIndexedModule, testIndexedObjectModule
     :: VerifiedModule Attribute.Symbol Attribute.Axiom
-Just testIndexedModule = Map.lookup testMainModuleName indexedModules
-Just testIndexedObjectModule = Map.lookup testObjectModuleName indexedModules
+testIndexedModule =
+    fromMaybe (error $ "Missing module: " ++ show testMainModuleName)
+    $ Map.lookup testMainModuleName indexedModules
+testIndexedObjectModule =
+    fromMaybe (error $ "Missing module: " ++ show testObjectModuleName)
+    $ Map.lookup testObjectModuleName indexedModules
 
 test_resolvers :: [TestTree]
 test_resolvers =

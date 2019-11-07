@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Idem where
+module Test.Kore.Attribute.Idem
+    ( test_idem
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

@@ -244,7 +244,7 @@ isSatisfiableSubstitution (variable, termLike) =
     pattern.
  -}
 getDependencies
-    :: (Ord variable, Show variable)
+    :: Ord variable
     => Set (UnifiedVariable variable)  -- ^ interesting variables
     -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
@@ -264,9 +264,7 @@ getDependencies interesting var termLike =
     pattern.
  -}
 getNonSimplifiableDependencies
-    ::  ( Ord variable
-        , Show variable
-        )
+    :: Ord variable
     => Set (UnifiedVariable variable)  -- ^ interesting variables
     -> UnifiedVariable variable  -- ^ substitution variable
     -> TermLike variable  -- ^ substitution pattern
@@ -277,7 +275,8 @@ getNonSimplifiableDependencies interesting var termLike =
         _ -> Recursive.fold (nonSimplifiableAbove interesting) termLike
 
 nonSimplifiableAbove
-    :: forall variable. (Ord variable, Show variable)
+    :: forall variable
+    .  Ord variable
     => Set (UnifiedVariable variable)
     -> Base (TermLike variable) (Set (UnifiedVariable variable))
     -> Set (UnifiedVariable variable)

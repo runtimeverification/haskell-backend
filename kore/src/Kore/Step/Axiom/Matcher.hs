@@ -100,7 +100,6 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
-import Kore.Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
     ( FreshVariable
@@ -188,7 +187,7 @@ matchIncremental termLike1 termLike2 =
         $ unsupportedPatterns "Unknown match case" termLike1 termLike2
 
 matchEqualHeads
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: MonadUnify unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 -- Terminal patterns
@@ -516,7 +515,6 @@ setSubstitute sVariable termLike = do
 
 substituteTermLike
     :: MatchingVariable variable
-    => (Show variable, Unparse variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> TermLike variable
     -> TermLike variable
@@ -639,7 +637,7 @@ rightAlignLists internal1 internal2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
 matchNormalizedAc
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: MonadUnify unifier
     => (Pair (Builtin.Value normalized (TermLike variable)) -> MatcherT variable unifier ())
     ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
         -> TermLike variable

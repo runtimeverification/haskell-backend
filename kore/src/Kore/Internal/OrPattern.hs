@@ -98,7 +98,7 @@ bottom = fromPatterns []
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
 -}
-isFalse :: Ord variable => OrPattern variable -> Bool
+isFalse :: OrPattern variable -> Bool
 isFalse = isBottom
 
 {- | @\\top@
@@ -113,7 +113,7 @@ top = fromPattern Pattern.top
 
 {-| 'isTrue' checks if the 'Or' has a single top pattern.
 -}
-isTrue :: Ord variable => OrPattern variable -> Bool
+isTrue :: OrPattern variable -> Bool
 isTrue = isTop
 
 {-| 'toPattern' transforms an 'OrPattern' into a 'Pattern.Pattern'.

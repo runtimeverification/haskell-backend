@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 {-|
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA

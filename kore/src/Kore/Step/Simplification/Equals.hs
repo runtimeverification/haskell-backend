@@ -45,7 +45,6 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
 import Kore.Predicate.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate
@@ -415,9 +414,7 @@ termEqualsAnd p1 p2 =
 
     maybeTermEqualsWorker
         :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
+        .  MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
@@ -425,9 +422,7 @@ termEqualsAnd p1 p2 =
 
     termEqualsAndWorker
         :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
+        .  MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> unifier (Pattern variable)

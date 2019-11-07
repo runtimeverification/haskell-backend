@@ -50,7 +50,6 @@ import Kore.Internal.TermLike
     ( ElementVariable
     , InternalVariable
     , Sort
-    , SortedVariable
     , TermLike
     , mkAnd
     , mkBottom
@@ -78,13 +77,13 @@ program configuration for Kore execution.
 type Pattern variable = Conditional variable (TermLike variable)
 
 fromCondition
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Condition variable
     -> Pattern variable
 fromCondition = (<$) mkTop_
 
 fromConditionSorted
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Sort
     -> Condition variable
     -> Pattern variable

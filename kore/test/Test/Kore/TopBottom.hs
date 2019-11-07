@@ -1,4 +1,7 @@
-module Test.Kore.TopBottom where
+module Test.Kore.TopBottom
+    ( test_TermLike
+    , test_Predicate
+    ) where
 
 import qualified Test.Tasty as Tasty
 

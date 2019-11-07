@@ -297,7 +297,7 @@ simplificationEvaluator
 simplificationEvaluator = firstFullEvaluation
 
 makeApplication
-    :: (Ord variable, Show variable, HasCallStack)
+    :: Ord variable
     => Symbol
     -> [[Pattern variable]]
     -> Application Symbol (OrPattern variable)

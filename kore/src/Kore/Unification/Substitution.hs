@@ -176,7 +176,7 @@ See also: 'fromMap'
 
  -}
 toMap
-    :: (HasCallStack, Ord variable)
+    :: HasCallStack
     => Substitution variable
     -> Map (UnifiedVariable variable) (TermLike variable)
 toMap (Substitution _) =
@@ -239,8 +239,7 @@ orderRenaming (uVar1, Var_ uVar2)
 orderRenaming subst = subst
 
 fromMap
-    :: Ord variable
-    => Map (UnifiedVariable variable) (TermLike variable)
+    :: Map (UnifiedVariable variable) (TermLike variable)
     -> Substitution variable
 fromMap = wrap . Map.toList
 

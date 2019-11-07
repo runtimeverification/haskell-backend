@@ -15,9 +15,6 @@ module Kore.Step.Substitution
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
-import GHC.Stack
-    ( HasCallStack
-    )
 
 import Branch
 import Kore.Internal.Condition
@@ -28,10 +25,6 @@ import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Logger
-    ( LogMessage
-    , WithLog
-    )
 import Kore.Predicate.Predicate
     ( Predicate
     )
@@ -80,11 +73,9 @@ normalize conditional@Conditional { term, predicate, substitution } = do
         Unifier.substitutionSimplifier
 
 normalizeExcept
-    ::  forall unifier variable term
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable term
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Conditional variable term
     -> unifier (Conditional variable term)
 normalizeExcept conditional =
@@ -98,12 +89,9 @@ If it does not know how to merge the substitutions, it will transform them into
 predicates and redo the merge.
 -}
 mergePredicatesAndSubstitutions
-    ::  forall variable simplifier
-    .   ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , HasCallStack
-        , WithLog LogMessage simplifier
-        )
+    :: forall variable simplifier
+    .  SimplifierVariable variable
+    => MonadSimplify simplifier
     => [Predicate variable]
     -> [Substitution variable]
     -> BranchT simplifier (Condition variable)

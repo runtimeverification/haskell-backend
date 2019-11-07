@@ -1,4 +1,10 @@
-module Test.Kore.Step where
+module Test.Kore.Step
+    ( test_constructorRewriting
+    , test_ruleThatDoesn'tApply
+    , test_stepStrategy
+    , test_SMT
+    , test_unificationError
+    ) where
 
 import Test.Tasty
 
@@ -52,7 +58,6 @@ import Kore.Predicate.Predicate
     )
 import Kore.Sort
     ( Sort (..)
-    , SortActual (SortActual)
     )
 import Kore.Step
 import Kore.Step.Rule
@@ -64,9 +69,6 @@ import Kore.Step.Rule as RulePattern
     , rulePattern
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Syntax.Application
-    ( SymbolOrAlias (symbolOrAliasConstructor)
-    )
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
     ( Variable (..)
@@ -153,7 +155,6 @@ compareTo (Expect expected) actual = assertEqual "" (pure expected) actual
     {- Types used in this file -}
 
 type CommonTermLike = TermLike Variable
-type CommonPattern = Pattern Variable
 
 -- Test types
 type TestPattern = CommonTermLike
@@ -175,13 +176,6 @@ var :: Text -> TestPattern
 var name =
     mkElemVar $ ElementVariable $ Variable (testId name) mempty Mock.testSort
 -- can the above be more abstract?
-
-sort :: Text -> Sort
-sort name =
-    SortActualSort $ SortActual
-      { sortActualName = testId name
-      , sortActualSorts = []
-      }
 
 rewritesTo :: TestPattern -> TestPattern -> RewriteRule Variable
 rewritesTo = (RewriteRule .) . rulePattern
@@ -205,18 +199,6 @@ rewriteIdentity =
     RewriteRule $ rulePattern
         (mkElemVar (x1 Mock.testSort))
         (mkElemVar (x1 Mock.testSort))
-
-setRewriteIdentity :: RewriteRule Variable
-setRewriteIdentity =
-    RewriteRule $ rulePattern
-        (Mock.mkTestUnifiedVariable "@x")
-        (Mock.mkTestUnifiedVariable "@x")
-
-setRewriteFnIdentity :: RewriteRule Variable
-setRewriteFnIdentity =
-    RewriteRule $ rulePattern
-        (Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x"))
-        (Mock.mkTestUnifiedVariable "@x")
 
 rewriteImplies :: RewriteRule Variable
 rewriteImplies =
@@ -308,14 +290,6 @@ initialIdentity =
         , substitution = mempty
         }
 
-initialFnIdentity :: Pattern Variable
-initialFnIdentity =
-    Conditional
-        { term = Mock.functionalConstr10 (mkElemVar (v1 Mock.testSort))
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-
 expectIdentity :: [Pattern Variable]
 expectIdentity = [initialIdentity]
 
@@ -324,18 +298,6 @@ actualIdentity =
     runStep
         initialIdentity
         [ rewriteIdentity ]
-
-setActualIdentity :: IO [Pattern Variable]
-setActualIdentity =
-    runStep
-        initialIdentity
-        [ setRewriteIdentity ]
-
-setActualFnIdentity :: IO [Pattern Variable]
-setActualFnIdentity =
-    runStep
-        initialFnIdentity
-        [ setRewriteFnIdentity ]
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
@@ -496,24 +458,6 @@ actualUnificationError =
             }
         [axiomMetaSigmaId]
 
-functionalConstructorAttributes :: Attribute.Symbol
-functionalConstructorAttributes =
-    Attribute.defaultSymbolAttributes
-        { Attribute.constructor = Attribute.Constructor True
-        , Attribute.functional = Attribute.Functional True
-        , Attribute.function = Attribute.Function True
-        , Attribute.injective = Attribute.Injective True
-        }
-
-mockSymbolAttributes :: SymbolOrAlias -> Attribute.Symbol
-mockSymbolAttributes patternHead
-  | symbolOrAliasConstructor patternHead == iId =
-    Attribute.defaultSymbolAttributes
-  | otherwise =
-    functionalConstructorAttributes
-  where
-    iId = symbolConstructor iSymbol
-
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
     { sortAttributes = const def
@@ -575,13 +519,6 @@ gSymbol = symbol "#g" & functional & constructor
 metaG :: TermLike Variable -> TermLike Variable
 metaG p = mkApplySymbol gSymbol [p]
 
-
-hSymbol :: Symbol
-hSymbol = symbol "#h" & functional & constructor
-
-metaH :: TermLike Variable -> TermLike Variable
-metaH p = mkApplySymbol hSymbol [p]
-
 iSymbol :: Symbol
 iSymbol = symbol "#i"
 
@@ -607,13 +544,3 @@ runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
     $ runStrategy transitionRule [allRewrites axioms] configuration
-
-runSteps
-    :: Pattern Variable
-    -- ^left-hand-side of unification
-    -> [RewriteRule Variable]
-    -> IO (Pattern Variable)
-runSteps configuration axioms =
-    (<$>) pickLongest
-    $ runSimplifier mockEnv
-    $ runStrategy transitionRule (repeat $ allRewrites axioms) configuration

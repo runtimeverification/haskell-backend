@@ -1,4 +1,60 @@
-module Test.Kore.Builtin.Set where
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
+module Test.Kore.Builtin.Set
+    ( test_unit
+    , test_getUnit
+    , test_inElement
+    , test_inConcat
+    , test_concatUnit
+    , test_concatAssociates
+    , test_concatNormalizes
+    , test_difference
+    , test_toList
+    , test_size
+    , test_intersection_unit
+    , test_intersection_idem
+    , test_list2set
+    , test_symbolic
+    , test_unifyConcreteIdem
+    , test_unifyConcreteDistinct
+    , test_unifyFramingVariable
+    , test_unifySelectFromEmpty
+    , test_unifySelectFromSingleton
+    , test_unifySelectFromSingletonWithoutLeftovers
+    , test_unifySelectFromTwoElementSet
+    , test_unifySelectTwoFromTwoElementSet
+    , test_unifyConcatElemVarVsElemSet
+    , test_unifyConcatElemVarVsElemElem
+    , test_unifyConcatElemElemVsElemConcrete
+    , test_unifyConcatElemElemVsElemElem
+    , test_unifyConcatElemConcatVsElemConcrete
+    , test_unifyConcatElemConcreteVsElemConcrete1
+    , test_unifyConcatElemConcreteVsElemConcrete2
+    , test_unifyConcatElemConcreteVsElemConcrete3
+    , test_unifyConcatElemConcreteVsElemConcrete4
+    , test_unifyConcatElemConcreteVsElemConcrete5
+    , test_unifyConcatElemVsElem
+    , test_unifyConcatElemVsElemConcrete1
+    , test_unifyConcatElemVsElemConcrete2
+    , test_unifyConcatElemVsElemElem
+    , test_unifyConcatElemVsElemConcat
+    , test_unifyConcatElemVsElemVar
+    , test_unifyConcatElemElemVsElemConcat
+    , test_unifyConcatElemElemVsElemConcatSet
+    , test_unifyFnSelectFromSingleton
+    , test_unify_concat_xSet_unit_unit_vs_unit
+    , test_unifyMultipleIdenticalOpaqueSets
+    , test_concretizeKeys
+    , test_concretizeKeysAxiom
+    , test_isBuiltin
+    , hprop_unparse
+    --
+    , genSetPattern
+    , genSetConcreteIntegerPattern
+    , asTermLike
+    , normalizedSet
+    , asInternal
+    ) where
 
 import Hedgehog hiding
     ( Concrete
@@ -26,21 +82,14 @@ import GHC.Stack as GHC
     ( HasCallStack
     )
 
-import Kore.Attribute.Hook
-    ( Hook
-    )
-import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Builtin.Set.Set as Set
 import Kore.Domain.Builtin
-    ( NormalizedAc (NormalizedAc)
+    ( NormalizedAc
     , NormalizedSet
     )
 import qualified Kore.Domain.Builtin as Domain
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( MultiOr (..)
@@ -1622,9 +1671,6 @@ test_isBuiltin =
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> genConcreteSet)
 
-mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
-
 -- use as (pat1 `unifiesWith` pat2) expect
 unifiesWith
     :: HasCallStack
@@ -1694,18 +1740,6 @@ asTermLike =
     . builtinSet
     . Foldable.toList
 
--- | Specialize 'Set.asPattern' to the builtin sort 'setSort' and concrete
--- elements.
-asPattern :: Set (TermLike Concrete) -> Pattern Variable
-asPattern concreteSet =
-    Reflection.give testMetadataTools
-    $ Ac.asPattern setSort
-    $ Domain.wrapAc NormalizedAc
-        { elementsWithVariables = []
-        , concreteElements = Map.fromSet (const Domain.SetValue) concreteSet
-        , opaque = []
-        }
-
 -- | Specialize 'Set.builtinSet' to the builtin sort 'setSort'.
 asInternal :: Set (TermLike Concrete) -> TermLike Variable
 asInternal =
@@ -1724,8 +1758,7 @@ It is an error if the collection cannot be normalized.
 
  -}
 normalizedSet
-    :: GHC.HasCallStack
-    => [TermLike Variable]
+    :: [TermLike Variable]
     -- ^ (abstract or concrete) elements
     -> [TermLike Variable]
     -- ^ opaque terms

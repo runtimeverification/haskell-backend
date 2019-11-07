@@ -59,10 +59,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Logger
-    ( LogMessage
-    , WithLog
-    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -207,11 +203,9 @@ criticalMissingHook symbol hookName =
 {-| Evaluates axioms on patterns.
 -}
 evaluatePattern
-    ::  forall variable simplifier
-    .   ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: forall variable simplifier
+    .  SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -- ^ The predicate from the configuration
     -> Condition variable
@@ -239,11 +233,9 @@ evaluatePattern
 Returns Nothing if there is no axiom for the pattern's identifier.
 -}
 maybeEvaluatePattern
-    ::  forall variable simplifier
-    .   ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: forall variable simplifier
+    .  SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -- ^ Aggregated children predicate and substitution.
     -> TermLike variable
@@ -335,7 +327,7 @@ maybeEvaluatePattern
         reevaluateFunctions configurationCondition toSimplify
 
 evaluateSortInjection
-    :: Ord variable
+    :: InternalVariable variable
     => Application Symbol (TermLike variable)
     -> Application Symbol (TermLike variable)
 evaluateSortInjection ap
@@ -344,7 +336,7 @@ evaluateSortInjection ap
     App_ apHeadChild grandChildren
       | Symbol.isSortInjection apHeadChild ->
         let
-            [fromSort', toSort'] = symbolParams apHeadChild
+            (fromSort', toSort') = sortInjectionSorts apHeadChild
             apHeadNew = updateSortInjectionSource apHead fromSort'
             resultApp = apHeadNew grandChildren
         in
@@ -353,8 +345,8 @@ evaluateSortInjection ap
   | otherwise = ap
   where
     apHead = applicationSymbolOrAlias ap
-    [fromSort, _] = symbolParams apHead
-    [apChild] = applicationChildren ap
+    (fromSort, _) = sortInjectionSorts apHead
+    apChild = sortInjectionChild ap
     updateSortInjectionSource head1 fromSort1 children =
         Application
             { applicationSymbolOrAlias =
@@ -362,16 +354,36 @@ evaluateSortInjection ap
             , applicationChildren = children
             }
       where
-        [_, toSort1] = symbolParams head1
+        (_, toSort1) = sortInjectionSorts head1
+
+sortInjectionChild :: Unparse a => Application Symbol a -> a
+sortInjectionChild application =
+    case applicationChildren application of
+        [child] -> child
+        _ ->
+            (error . show . Pretty.vsep)
+                [ "Sort injection pattern"
+                , Pretty.indent 4 (unparse application)
+                , "should have one argument."
+                ]
+
+sortInjectionSorts :: Symbol -> (Sort, Sort)
+sortInjectionSorts symbol =
+    case symbolParams symbol of
+        [fromSort, toSort] -> (fromSort, toSort)
+        _ ->
+            (error . show . Pretty.vsep)
+                [ "Sort injection symbol"
+                , Pretty.indent 4 (unparse symbol)
+                , "should have two sort parameters."
+                ]
 
 {-| 'reevaluateFunctions' re-evaluates functions after a user-defined function
 was evaluated.
 -}
 reevaluateFunctions
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> Pattern variable
     -- ^ Function evaluation result.
@@ -387,10 +399,8 @@ reevaluateFunctions predicate rewriting = do
 {-| Ands the given condition-substitution to the given function evaluation.
 -}
 mergeWithConditionAndSubstitution
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -- ^ Condition and substitution to add.
     -> AttemptedAxiom variable

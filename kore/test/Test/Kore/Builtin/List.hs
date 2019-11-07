@@ -1,4 +1,18 @@
-module Test.Kore.Builtin.List where
+module Test.Kore.Builtin.List
+    ( test_getUnit
+    , test_getFirstElement
+    , test_getLastElement
+    , test_GetUpdate
+    , test_concatUnit
+    , test_concatAssociates
+    , test_simplify
+    , test_isBuiltin
+    , hprop_unparse
+    --
+    , asInternal
+    , asTermLike
+    , genSeqInteger
+    ) where
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
@@ -13,14 +27,7 @@ import Data.Sequence
     )
 import qualified Data.Sequence as Seq
 
-import Kore.Attribute.Hook
-    ( Hook
-    )
-import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 
@@ -200,9 +207,6 @@ test_isBuiltin =
         assertBool "" (not (List.isSymbolUnit Mock.aSymbol))
         assertBool "" (not (List.isSymbolUnit Mock.concatListSymbol))
     ]
-
-mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asTermLike

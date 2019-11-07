@@ -676,7 +676,7 @@ test_verifyBinder =
             let
                 original = Builtin.externalize expect
                 verifier = verifyStandalonePattern Nothing original
-                Right actual = runPatternVerifier context verifier
+                actual = assertRight $ runPatternVerifier context verifier
             assertEqual "" expect actual
             on (assertEqual "") Internal.extractAttributes expect actual
     testVerifyExists =
@@ -1312,8 +1312,7 @@ testsForUnifiedPatternInTopLevelContext
         sortVariables
 
 testsForUnifiedPatternInTopLevelGenericContext
-    :: HasCallStack
-    => NamePrefix
+    :: NamePrefix
     -> DeclaredSort
     -> SortVariablesThatMustBeDeclared
     -> [ParsedSentence]

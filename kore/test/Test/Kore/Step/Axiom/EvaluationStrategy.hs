@@ -1,4 +1,9 @@
-module Test.Kore.Step.Axiom.EvaluationStrategy where
+module Test.Kore.Step.Axiom.EvaluationStrategy
+    ( test_definitionEvaluation
+    , test_firstFullEvaluation
+    , test_simplifierWithFallback
+    , test_builtinEvaluation
+    ) where
 
 import Test.Tasty
 
@@ -558,13 +563,6 @@ axiomEvaluator
     -> BuiltinAndAxiomSimplifier
 axiomEvaluator left right =
     simplificationEvaluation (axiom left right makeTruePredicate)
-
-axiomEvaluatorWithRemainder
-    :: TermLike Variable
-    -> TermLike Variable
-    -> BuiltinAndAxiomSimplifier
-axiomEvaluatorWithRemainder left right =
-    definitionEvaluation [axiom left right makeTruePredicate]
 
 axiom
     :: TermLike Variable

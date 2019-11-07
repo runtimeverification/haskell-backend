@@ -325,7 +325,7 @@ newtype ConditionSimplifier monad =
             -> BranchT monad (Conditional variable term)
         }
 
-emptyConditionSimplifier :: Monad monad => ConditionSimplifier monad
+emptyConditionSimplifier :: ConditionSimplifier monad
 emptyConditionSimplifier = ConditionSimplifier return
 
 liftConditionSimplifier

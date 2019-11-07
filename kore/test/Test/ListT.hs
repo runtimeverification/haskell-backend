@@ -1,4 +1,18 @@
-module Test.ListT where
+module Test.ListT
+    ( hprop_Functor_Identity
+    , hprop_Functor_Composition
+    , hprop_Applicative_Identity
+    , hprop_Applicative_Composition
+    , hprop_Applicative_Homomorphism
+    , hprop_Applicative_Interchange
+    , hprop_Alternative_Identity
+    , hprop_Alternative_Annihilator
+    , hprop_Alternative_Associative
+    , hprop_Monad_LeftUnit
+    , hprop_Monad_RightUnit
+    , hprop_Monad_Associative
+    , test_ListT_Reader
+    ) where
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen

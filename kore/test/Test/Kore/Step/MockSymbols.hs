@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Test.Kore.Step.MockSymbols where
 
 {- Intended usage:

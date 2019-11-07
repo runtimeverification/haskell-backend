@@ -51,10 +51,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Logger
-    ( LogMessage
-    , WithLog
-    )
 import Kore.Predicate.Predicate
     ( makeCeilPredicate
     , makeTruePredicate
@@ -105,10 +101,8 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -119,10 +113,8 @@ simplifyEvaluated predicate child =
 for details.
 -}
 makeEvaluate
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
@@ -132,10 +124,8 @@ makeEvaluate predicate child
   | otherwise              = makeEvaluateNonBoolCeil predicate child
 
 makeEvaluateNonBoolCeil
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
@@ -161,11 +151,9 @@ makeEvaluateNonBoolCeil predicate patt@Conditional {term}
 -- NOTE (hs-boot): Please update Ceil.hs-boot file when changing the
 -- signature.
 makeEvaluateTerm
-    ::  forall variable simplifier
-    .   ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: forall variable simplifier
+    .  SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> TermLike variable
     -> simplifier (OrCondition variable)
@@ -229,10 +217,8 @@ makeEvaluateTerm
 -}
 makeEvaluateBuiltin
     :: forall variable simplifier
-    .   ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    .  SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> Builtin (TermLike variable)
     -> simplifier (OrCondition variable)

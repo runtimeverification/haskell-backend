@@ -161,7 +161,7 @@ class Debug a where
 
     debugPrec :: a -> Int -> Doc ann
     default debugPrec
-        :: (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
+        :: (HasDatatypeInfo a, All2 Debug (Code a))
         => a
         -> Int  -- ^ surrounding precedence
         -> Doc ann
@@ -392,7 +392,7 @@ class Diff a where
      -}
     diffPrec :: a -> a -> Maybe (Int -> Doc ann)
     default diffPrec
-        :: (Debug a, Generic a, HasDatatypeInfo a, All2 Diff (Code a))
+        :: (Debug a, HasDatatypeInfo a, All2 Diff (Code a))
         => a
         -> a
         -> Maybe (Int -> Doc ann)
@@ -440,7 +440,7 @@ the difference.
  -}
 diffPrecGeneric
     :: forall a ann
-    .  (Debug a, Generic a, HasDatatypeInfo a, All2 Diff (Code a))
+    .  (Debug a, HasDatatypeInfo a, All2 Diff (Code a))
     => a
     -> a
     -> Maybe (Int -> Doc ann)

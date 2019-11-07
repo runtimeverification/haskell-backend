@@ -1,4 +1,8 @@
-module Test.Kore.IndexedModule.MetadataTools (test_metadataTools) where
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
+module Test.Kore.IndexedModule.MetadataTools
+    ( test_metadataTools
+    ) where
 
 import Test.Tasty
     ( TestTree

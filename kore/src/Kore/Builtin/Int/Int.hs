@@ -94,7 +94,7 @@ asBuiltin builtinIntSort builtinIntValue =
 
  -}
 asTermLike
-    :: (Ord variable, SortedVariable variable)
+    :: InternalVariable variable
     => Domain.InternalInt  -- ^ builtin value to render
     -> TermLike variable
 asTermLike builtin =
