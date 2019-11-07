@@ -13,15 +13,12 @@ module Kore.Step.Transition
     , scatter
     , addRule
     , addRules
-    , mapRule
+    , mapRules
     -- * Re-exports
     , Seq
     ) where
 
 import Control.Applicative
-import Control.Lens.Combinators
-    ( dimap
-    )
 import Control.Monad.Catch
     ( MonadCatch (catch)
     , MonadThrow (throwM)
@@ -134,7 +131,7 @@ runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
 tryTransitionT
     :: Monad m
     => TransitionT rule m a
-    -> TransitionT rule m [(a, Seq rule)]
+    -> TransitionT rule' m [(a, Seq rule)]
 tryTransitionT = Monad.Trans.lift . runTransitionT
 
 mapTransitionT
@@ -165,5 +162,8 @@ addRules = TransitionT . Accum.add . Seq.fromList . Foldable.toList
 addRule :: Monad m => rule -> TransitionT rule m ()
 addRule = TransitionT . Accum.add . Seq.singleton
 
-mapRule :: Monad m => (rule -> rule') -> (rule' -> rule) -> TransitionT rule m a -> TransitionT rule' m a
-mapRule f g trans = TransitionT (AccumT (dimap (fmap g) (fmap . fmap . fmap $ f) (runAccumT . getTransitionT $ trans)))
+mapRules :: Monad m => (rule -> rule') -> TransitionT rule m a -> TransitionT rule' m a
+mapRules f trans = do
+    results <- tryTransitionT trans
+    let results' = map (fmap (fmap f)) results
+    scatter results'

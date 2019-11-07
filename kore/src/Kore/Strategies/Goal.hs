@@ -35,15 +35,15 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.Maybe
-    ( mapMaybe
-    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
     )
 import qualified Data.Typeable as Typeable
+import Data.Witherable
+    ( mapMaybe
+    )
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
@@ -101,6 +101,7 @@ import Kore.Step.Strategy
     ( Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( Prim
     , ProofState
@@ -359,44 +360,41 @@ instance Goal (ReachabilityRule Variable) where
     transitionRule prim proofstate =
         case proofstate of
             Goal (OnePath rule) ->
-                Strategy.mapRule
+                Strategy.mapRules
                     OPRule
-                    ruleReachToRuleOnePath
                     $ (fmap . fmap) OnePath
                         $ transitionRule (primRuleOnePath prim) (proofStateOnePath proofstate)
             Goal (AllPath rule) ->
-                Strategy.mapRule
+                Strategy.mapRules
                     APRule
-                    ruleReachToRuleAllPath
                     $ (fmap . fmap) AllPath
                         $ transitionRule (primRuleAllPath prim) (proofStateAllPath proofstate)
             GoalRewritten (OnePath rule) ->
-                Strategy.mapRule
+                Strategy.mapRules
                     OPRule
-                    ruleReachToRuleOnePath
                     $ (fmap . fmap) OnePath
                         $ transitionRule (primRuleOnePath prim) (proofStateOnePath proofstate)
             GoalRewritten (AllPath rule) ->
-                Strategy.mapRule
-                    APRule
-                    ruleReachToRuleAllPath
-                    $ (fmap . fmap) AllPath
-                        $ transitionRule (primRuleAllPath prim) (proofStateAllPath proofstate)
+                Transition.mapRules APRule
+                $ fmap allPathProofState
+                $ transitionRule (primRuleAllPath prim) (GoalRewritten rule)
             GoalRemainder (OnePath rule) ->
-                Strategy.mapRule
+                Strategy.mapRules
                     OPRule
-                    ruleReachToRuleOnePath
                     $ (fmap . fmap) OnePath
                         $ transitionRule (primRuleOnePath prim) (proofStateOnePath proofstate)
             GoalRemainder (AllPath rule) ->
-                Strategy.mapRule
-                    APRule
-                    ruleReachToRuleAllPath
-                    $ (fmap . fmap) AllPath
-                        $ transitionRule (primRuleAllPath prim) (proofStateAllPath proofstate)
+                Transition.mapRules APRule
+                $ fmap allPathProofState
+                $ transitionRule (primRuleAllPath prim) (GoalRemainder rule)
             _ -> empty
 
     strategy goals rules = undefined
+
+allPathProofState
+    :: ProofState (AllPathRule Variable) (AllPathRule Variable)
+    -> ProofState (ReachabilityRule Variable) (ReachabilityRule Variable)
+allPathProofState = fmap AllPath
 
 primRuleOnePath :: ProofState.Prim (Rule (ReachabilityRule Variable)) -> ProofState.Prim (Rule (OnePathRule Variable))
 primRuleOnePath prim = fmap toRuleOnePath $ myFilter isRuleOnePath prim
@@ -408,13 +406,11 @@ primRuleOnePath prim = fmap toRuleOnePath $ myFilter isRuleOnePath prim
             _ -> prim'
 
 primRuleAllPath :: ProofState.Prim (Rule (ReachabilityRule Variable)) -> ProofState.Prim (Rule (AllPathRule Variable))
-primRuleAllPath prim = fmap toRuleAllPath $ myFilter isRuleAllPath prim
-  where
-    myFilter predFunc prim' =
-        case prim' of
-            DerivePar rules -> DerivePar $ filter predFunc rules
-            DeriveSeq rules -> DeriveSeq $ filter predFunc rules
-            _ -> prim'
+primRuleAllPath = mapMaybe maybeAllPathRule
+
+maybeAllPathRule :: Rule (ReachabilityRule Variable) -> Maybe (Rule (AllPathRule Variable))
+maybeAllPathRule (APRule rule) = Just rule
+maybeAllPathRule _             = Nothing
 
 proofStateOnePath :: ProofState.ProofState (ReachabilityRule Variable) -> ProofState.ProofState (OnePathRule Variable)
 proofStateOnePath = fmap toOnePath

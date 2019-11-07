@@ -12,11 +12,13 @@ module Kore.Strategies.ProofState
     ) where
 
 import Data.Hashable
+import Data.Witherable
+    ( Filterable (..)
+    )
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
-
 
 {- | The primitive transitions of the all-path reachability proof strategy.
  -}
@@ -33,6 +35,16 @@ data Prim rule
     | DerivePar [rule]
     | DeriveSeq [rule]
     deriving (Show, Functor, Foldable)
+
+instance Filterable Prim where
+    mapMaybe _ CheckProven        = CheckProven
+    mapMaybe _ CheckGoalRemainder = CheckGoalRemainder
+    mapMaybe _ ResetGoal          = ResetGoal
+    mapMaybe _ Simplify           = Simplify
+    mapMaybe _ RemoveDestination  = RemoveDestination
+    mapMaybe _ TriviallyValid     = TriviallyValid
+    mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
+    mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
 
 {- | The state of the all-path reachability proof strategy for @goal@.
  -}
