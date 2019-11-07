@@ -520,5 +520,5 @@ applyNormalized Normalization { normalized, denormalized } =
         { normalized
         , denormalized = (fmap . fmap) substitute denormalized
         }
-    where
+  where
     substitute = TermLike.substitute (Map.fromList normalized)
