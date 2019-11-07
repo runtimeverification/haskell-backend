@@ -16,10 +16,12 @@ This module is intended to be imported qualified.
 module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.DomainValueVerifiers
+    , Builtin.ApplicationVerifiers
     , Builtin.Function
     , Builtin
     , Builtin.SymbolVerifier (..)
     , Builtin.SortVerifier (..)
+    , Builtin.ApplicationVerifier (..)
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
     , Builtin.verifyDomainValue
@@ -117,6 +119,8 @@ koreVerifiers =
             , (Int.sort, Int.patternVerifier)
             , (String.sort, String.patternVerifier)
             ]
+    , applicationVerifiers =
+        HashMap.empty
     }
 
 {- | Construct an evaluation context for Kore builtin functions.

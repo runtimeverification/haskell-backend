@@ -22,6 +22,7 @@ module Kore.Builtin.Builtin
     , SortDeclVerifier, SortDeclVerifiers
     , DomainValueVerifier, DomainValueVerifiers
     , SortVerifier (..)
+    , ApplicationVerifier (..), ApplicationVerifiers
     , Function
     , Parser
     , symbolVerifier
@@ -246,6 +247,17 @@ type DomainValueVerifier child =
 -- builtin
 type DomainValueVerifiers child = HashMap Text (DomainValueVerifier child)
 
+-- | Verify (and internalize) an application pattern.
+newtype ApplicationVerifier patternType =
+    ApplicationVerifier
+        { runApplicationVerifier
+            :: Application Symbol patternType
+            -> Either (Error VerifyError) (TermLikeF Variable patternType)
+        }
+
+type ApplicationVerifiers patternType =
+    HashMap Text (ApplicationVerifier patternType)
+
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -253,6 +265,7 @@ data Verifiers = Verifiers
     { sortDeclVerifiers    :: SortDeclVerifiers
     , symbolVerifiers      :: SymbolVerifiers
     , domainValueVerifiers :: DomainValueVerifiers Verified.Pattern
+    , applicationVerifiers :: ApplicationVerifiers Verified.Pattern
     }
 
 {- | Look up and apply a builtin sort declaration verifier.
