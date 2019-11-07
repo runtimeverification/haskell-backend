@@ -499,6 +499,9 @@ recoveryFunctionLikeResults initial unifier = do
             , "doesn't match configuration"
             , Pretty.indent 4 $ unparse phi_t
             ]
+        -- what we would like to check above is that phi_p -> phi_t = alpha_t,
+        -- but that's hard to do for non-functional patterns,
+        -- so we check for (syntactic) equality instead.
         unifier
     fullyOverrideSort' sort term
       | sort == termLikeSort term = term
