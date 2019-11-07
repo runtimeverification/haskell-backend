@@ -670,6 +670,7 @@ test_verifyBinder =
                 Builtin.verifiedModule
                 & IndexedModule.eraseAxiomAttributes
             , builtinDomainValueVerifiers = mempty
+            , builtinApplicationVerifiers = mempty
             }
     testVerifyBinder name expect =
         testCase name $ do

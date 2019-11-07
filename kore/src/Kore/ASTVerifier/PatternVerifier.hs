@@ -35,6 +35,7 @@ import Data.Function
     ( (&)
     )
 import qualified Data.Functor.Foldable as Recursive
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map as Map
 import Data.Set
     ( Set
@@ -99,6 +100,8 @@ data Context =
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
+        , builtinApplicationVerifiers
+            :: !(Builtin.ApplicationVerifiers Verified.Pattern)
         }
 
 newtype PatternVerifier a =
@@ -589,9 +592,18 @@ verifyApplication application = do
   where
     symbolOrAlias = applicationSymbolOrAlias application
     verifyApplyAlias' = Internal.ApplyAliasF <$> verifyApplyAlias application
-    verifyApplySymbol' =
-        Internal.ApplySymbolF
-        <$> verifyApplySymbol Internal.termLikeSort application
+    verifyApplySymbol' = do
+        application' <- verifyApplySymbol Internal.termLikeSort application
+        Context { builtinApplicationVerifiers } <- Reader.ask
+        let builtinVerifier = do
+                hook <- Attribute.getHook . Attribute.hook . Internal.symbolAttributes $ applicationSymbolOrAlias application'
+                HashMap.lookup hook builtinApplicationVerifiers
+        Trans.lift . PatternVerifier . Trans.lift
+            $ maybe
+                (return . Internal.ApplySymbolF)
+                Builtin.runApplicationVerifier
+                builtinVerifier
+            $ application'
 
 verifyBinder
     :: Traversable binder
@@ -667,8 +679,7 @@ verifyDomainValue domain = do
     verifySortHasDomainValues patternSort
     domain' <- sequence domain
     verified <-
-        PatternVerifier
-        $ Reader.lift
+        PatternVerifier . Reader.lift
         $ Builtin.verifyDomainValue
             builtinDomainValueVerifiers
             lookupSortDeclaration'

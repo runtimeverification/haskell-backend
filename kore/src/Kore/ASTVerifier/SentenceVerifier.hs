@@ -154,6 +154,8 @@ askPatternContext variables = do
     return PatternVerifier.Context
         { builtinDomainValueVerifiers =
             Builtin.domainValueVerifiers builtinVerifiers
+        , builtinApplicationVerifiers =
+            Builtin.applicationVerifiers builtinVerifiers
         , indexedModule =
             verifiedModule
             & IndexedModule.eraseAxiomAttributes

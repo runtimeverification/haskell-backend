@@ -390,7 +390,8 @@ mainPatternVerify verifiedModule patt = do
             (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
     either (error . printError) return verifyResult
   where
-    Builtin.Verifiers { domainValueVerifiers } = Builtin.koreVerifiers
+    Builtin.Verifiers { domainValueVerifiers, applicationVerifiers } =
+        Builtin.koreVerifiers
     context =
         PatternVerifier.Context
             { indexedModule =
@@ -399,6 +400,7 @@ mainPatternVerify verifiedModule patt = do
             , declaredSortVariables = Set.empty
             , declaredVariables = emptyDeclaredVariables
             , builtinDomainValueVerifiers = domainValueVerifiers
+            , builtinApplicationVerifiers = applicationVerifiers
             }
 
 lookupMainModule
