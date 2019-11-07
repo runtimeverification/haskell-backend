@@ -48,6 +48,7 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.List as List
@@ -1598,7 +1599,7 @@ env =
 generatorSetup :: ConsistentKore.Setup
 generatorSetup =
     ConsistentKore.Setup
-        { allSymbols = filter doesNotHaveArguments symbols
+        { allSymbols = filter restrictedSymbol symbols
         , allAliases = []
         , allSorts = map fst sortAttributesMapping
         , freeElementVariables = Set.empty
@@ -1620,7 +1621,15 @@ generatorSetup =
         , metadataTools = metadataTools
         }
   where
+    restrictedSymbol symbol' =
+        doesNotHaveArguments symbol' && preservesNonSimplifiable symbol'
     doesNotHaveArguments Symbol {symbolParams} = null symbolParams
+    preservesNonSimplifiable Symbol {symbolAttributes} =
+        Attribute.constructor symbolAttributes == Attribute.Constructor True
+        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "MAP.element")
+        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "MAP.concat")
+        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "SET.element")
+        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "SET.concat")
 
 builtinSimplifiers :: BuiltinAndAxiomSimplifierMap
 builtinSimplifiers =
