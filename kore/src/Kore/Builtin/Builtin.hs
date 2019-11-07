@@ -244,7 +244,7 @@ type DomainValueVerifier child =
 
 -- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each
 -- builtin
-type DomainValueVerifiers child = (HashMap Text (DomainValueVerifier child))
+type DomainValueVerifiers child = HashMap Text (DomainValueVerifier child)
 
 
 {- | Verify builtin sorts, symbols, and patterns.
