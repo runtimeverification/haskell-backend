@@ -351,11 +351,6 @@ instance Goal (ReachabilityRule Variable) where
     type ProofState (ReachabilityRule Variable) a =
         ProofState.ProofState a
 
-    --transitionRule
-    --    :: (MonadCatch m, MonadSimplify m)
-    --    => ProofState.Prim (ReachabilityRule Variable)
-    --    -> ProofState.ProofState (ReachabilityRule Variable)
-    --    -> Strategy.TransitionT (Rule (ReachabilityRule Variable)) m (ProofState.ProofState (ReachabilityRule Variable))
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
         => Prim (ReachabilityRule Variable)
@@ -369,15 +364,37 @@ instance Goal (ReachabilityRule Variable) where
                     ruleReachToRuleOnePath
                     $ (fmap . fmap) OnePath
                         $ transitionRule (primRuleOnePath prim) (proofStateOnePath proofstate)
-            Goal (AllPath rule) -> undefined
-            GoalRewritten (OnePath rule) -> undefined
-            GoalRewritten (AllPath rule) -> undefined
-            GoalRemainder (OnePath rule) -> undefined
-            GoalRemainder (AllPath rule) -> undefined
+            Goal (AllPath rule) ->
+                Strategy.mapRule
+                    APRule
+                    ruleReachToRuleAllPath
+                    $ (fmap . fmap) AllPath
+                        $ transitionRule (primRuleAllPath prim) (proofStateAllPath proofstate)
+            GoalRewritten (OnePath rule) ->
+                Strategy.mapRule
+                    OPRule
+                    ruleReachToRuleOnePath
+                    $ (fmap . fmap) OnePath
+                        $ transitionRule (primRuleOnePath prim) (proofStateOnePath proofstate)
+            GoalRewritten (AllPath rule) ->
+                Strategy.mapRule
+                    APRule
+                    ruleReachToRuleAllPath
+                    $ (fmap . fmap) AllPath
+                        $ transitionRule (primRuleAllPath prim) (proofStateAllPath proofstate)
+            GoalRemainder (OnePath rule) ->
+                Strategy.mapRule
+                    OPRule
+                    ruleReachToRuleOnePath
+                    $ (fmap . fmap) OnePath
+                        $ transitionRule (primRuleOnePath prim) (proofStateOnePath proofstate)
+            GoalRemainder (AllPath rule) ->
+                Strategy.mapRule
+                    APRule
+                    ruleReachToRuleAllPath
+                    $ (fmap . fmap) AllPath
+                        $ transitionRule (primRuleAllPath prim) (proofStateAllPath proofstate)
             _ -> empty
-
-
-        -- Strategy.mapRule APRule f $ fmap AllPath <$> transitionRule @(AllPathRule Variable) (fmap toRuleAllPath $ myFilter isAllPath prim) (fmap toAllPath $ proofState)
 
     strategy goals rules = undefined
 
@@ -390,17 +407,28 @@ primRuleOnePath prim = fmap toRuleOnePath $ myFilter isRuleOnePath prim
             DeriveSeq rules -> DeriveSeq $ filter predFunc rules
             _ -> prim'
 
+primRuleAllPath :: ProofState.Prim (Rule (ReachabilityRule Variable)) -> ProofState.Prim (Rule (AllPathRule Variable))
+primRuleAllPath prim = fmap toRuleAllPath $ myFilter isRuleAllPath prim
+  where
+    myFilter predFunc prim' =
+        case prim' of
+            DerivePar rules -> DerivePar $ filter predFunc rules
+            DeriveSeq rules -> DeriveSeq $ filter predFunc rules
+            _ -> prim'
 
 proofStateOnePath :: ProofState.ProofState (ReachabilityRule Variable) -> ProofState.ProofState (OnePathRule Variable)
-proofStateOnePath = undefined
+proofStateOnePath = fmap toOnePath
 
-isAllPath :: ReachabilityRule Variable -> Bool
-isAllPath (AllPath _) = True
-isAllPath _         = False
+proofStateAllPath :: ProofState.ProofState (ReachabilityRule Variable) -> ProofState.ProofState (AllPathRule Variable)
+proofStateAllPath = fmap toAllPath
 
 isRuleOnePath :: Rule (ReachabilityRule Variable) -> Bool
 isRuleOnePath (OPRule _) = True
 isRuleOnePath _         = False
+
+isRuleAllPath :: Rule (ReachabilityRule Variable) -> Bool
+isRuleAllPath (APRule _) = True
+isRuleAllPath _         = False
 
 toRuleAllPath :: Rule (ReachabilityRule Variable) -> Rule (AllPathRule Variable)
 toRuleAllPath (APRule rule) = coerce rule
@@ -410,17 +438,21 @@ toRuleOnePath :: Rule (ReachabilityRule Variable) -> Rule (OnePathRule Variable)
 toRuleOnePath (OPRule rule) = coerce rule
 toRuleOnePath _ = error "impossible case"
 
-f :: Rule (ReachabilityRule Variable) -> Rule (AllPathRule Variable)
-f (APRule rule) = rule
-f _             = error "impossible case"
-
 ruleReachToRuleOnePath :: Rule (ReachabilityRule Variable) -> Rule (OnePathRule Variable)
 ruleReachToRuleOnePath (OPRule rule) = rule
 ruleReachToRuleOnePath _             = error "impossible case"
 
+ruleReachToRuleAllPath :: Rule (ReachabilityRule Variable) -> Rule (AllPathRule Variable)
+ruleReachToRuleAllPath (APRule rule) = rule
+ruleReachToRuleAllPath _             = error "impossible case"
+
 toAllPath :: ReachabilityRule Variable -> AllPathRule Variable
 toAllPath (AllPath rule) = rule
 toAllPath _ = error "impossible case"
+
+toOnePath :: ReachabilityRule Variable -> OnePathRule Variable
+toOnePath (OnePath rule) = rule
+toOnePath _ = error "impossible case"
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
