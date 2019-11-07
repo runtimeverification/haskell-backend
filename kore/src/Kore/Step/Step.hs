@@ -457,14 +457,16 @@ recoveryFunctionLikeResults initial unifier = do
   where
     moreChecksAfterError appliedRules err = do
         let
-            appliedRule = case Seq.length appliedRules of
-                rule Seq.:< Seq.EmptyL -> rule
-                _ -> error $ show $ Pretty.vsep
-                        [ "Expected singleton list of rules but found: "
-                        , (Pretty.indent 4 . Pretty.pretty . show) appliedRules
-                        , "This should be imposssible, as simplifiers for \
-                          \simplification are built from a single rule."
-                        ]
+            appliedRule =
+                case appliedRules of
+                    rule Seq.:<| Seq.Empty -> rule
+                    _ -> error $ show $ Pretty.vsep
+                            [ "Expected singleton list of rules but found: "
+                            , (Pretty.indent 4 . Pretty.vsep . Foldable.toList)
+                                (Pretty.pretty . term <$> appliedRules)
+                            , "This should be imposssible, as simplifiers for \
+                            \simplification are built from a single rule."
+                            ]
 
             Conditional { term = ruleTerm, substitution = ruleSubstitution } =
                 appliedRule
