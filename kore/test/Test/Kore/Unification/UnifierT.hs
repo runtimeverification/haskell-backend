@@ -1,11 +1,12 @@
 module Test.Kore.Unification.UnifierT
     ( test_mergeAndNormalizeSubstitutions
-    , test_simplifyPredicate
+    , test_simplifyCondition
     ) where
 
 import Test.Tasty
 
 import qualified Data.Foldable as Foldable
+import qualified Data.Map.Strict as Map
 
 import qualified Branch
 import Kore.Internal.Condition
@@ -19,9 +20,19 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.TermLike
 import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
+import Kore.Step.Rule
+    ( EqualityRule (..)
+    , rulePattern
+    )
 import qualified Kore.Step.Simplification.Condition as Condition
+import Kore.Step.Simplification.Data
+    ( Env (..)
+    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
 import qualified Kore.Unification.Substitution as Substitution
@@ -34,8 +45,8 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import qualified Test.Kore.Step.Simplification as Test
 import Test.Tasty.HUnit.Ext
 
-test_simplifyPredicate :: [TestTree]
-test_simplifyPredicate =
+test_simplifyCondition :: [TestTree]
+test_simplifyCondition =
     [ testCase "predicate = \\bottom" $ do
         let expect = mempty
         actual <- normalize Condition.bottomCondition
@@ -59,6 +70,22 @@ test_simplifyPredicate =
             (Right $ MultiOr.make [expect])
             actual
         Foldable.traverse_ assertNormalizedPredicatesMulti actual
+    , testCase "x = f(x)" $ do
+        let x = ElemVar Mock.x
+            expect = (Left . SubstitutionError) (SimplifiableCycle [x])
+            input =
+                (Condition.fromSubstitution . Substitution.wrap)
+                    [(x, Mock.f (mkVar x))]
+        actual <- normalizeExcept input
+        assertEqual "Expected SubstitutionError" expect actual
+    , testCase "x = id(x)" $ do
+        let x = ElemVar Mock.x
+            expect = Right (OrCondition.fromCondition Condition.top)
+            input =
+                (Condition.fromSubstitution . Substitution.wrap)
+                    [(x, Mock.functional10 (mkVar x))]
+        actual <- normalizeExcept input
+        assertEqual "Expected \\top" expect actual
     ]
   where
     existsPredicate =
@@ -364,7 +391,19 @@ normalizeExcept predicated =
     $ Branch.alternate
     $ Simplifier.simplifyCondition predicated
   where
-    mockEnv = Mock.env
+    mockEnv = Mock.env { simplifierAxioms }
+    simplifierAxioms =
+        -- Use Mock.functional10 as the identity function.
+        Map.fromList
+            [   ( Axiom.Identifier.Application Mock.functional10Id
+                , EvaluationStrategy.definitionEvaluation
+                    [ EqualityRule $ rulePattern
+                        (Mock.functional10 (mkElemVar Mock.x))
+                        (mkElemVar Mock.x)
+                    ]
+                )
+            ]
+
 
 -- | Check that 'Condition.substitution' is normalized for all arguments.
 assertNormalizedPredicates :: Foldable f => f [Condition Variable] -> Assertion
