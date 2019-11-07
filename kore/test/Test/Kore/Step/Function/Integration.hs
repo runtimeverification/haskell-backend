@@ -1335,7 +1335,7 @@ testMetadataTools = MetadataTools.build verifiedModule
 testConditionSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
 testConditionSimplifier =
-    Simplifier.Condition.create SubstitutionSimplifier.simplification
+    Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
