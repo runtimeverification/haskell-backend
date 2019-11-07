@@ -356,28 +356,71 @@ instance Goal (ReachabilityRule Variable) where
     --    => ProofState.Prim (ReachabilityRule Variable)
     --    -> ProofState.ProofState (ReachabilityRule Variable)
     --    -> Strategy.TransitionT (Rule (ReachabilityRule Variable)) m (ProofState.ProofState (ReachabilityRule Variable))
-    transitionRule prim proofState =
-        Strategy.mapRule APRule f $ fmap AllPath <$> transitionRule @(AllPathRule Variable) (fmap toRuleAllPath $ myFilter isAllPath prim) (fmap toAllPath $ proofState)
+    transitionRule
+        :: (MonadCatch m, MonadSimplify m)
+        => Prim (ReachabilityRule Variable)
+        -> ProofState (ReachabilityRule Variable) (ReachabilityRule Variable)
+        -> Strategy.TransitionT (Rule (ReachabilityRule Variable)) m (ProofState (ReachabilityRule Variable) (ReachabilityRule Variable))
+    transitionRule prim proofstate =
+        case proofstate of
+            Goal (OnePath rule) ->
+                Strategy.mapRule
+                    OPRule
+                    ruleReachToRuleOnePath
+                    $ (fmap . fmap) OnePath
+                        $ transitionRule (primRuleOnePath prim) (proofStateOnePath proofstate)
+            Goal (AllPath rule) -> undefined
+            GoalRewritten (OnePath rule) -> undefined
+            GoalRewritten (AllPath rule) -> undefined
+            GoalRemainder (OnePath rule) -> undefined
+            GoalRemainder (AllPath rule) -> undefined
+            _ -> empty
+
+
+        -- Strategy.mapRule APRule f $ fmap AllPath <$> transitionRule @(AllPathRule Variable) (fmap toRuleAllPath $ myFilter isAllPath prim) (fmap toAllPath $ proofState)
 
     strategy goals rules = undefined
+
+primRuleOnePath :: ProofState.Prim (Rule (ReachabilityRule Variable)) -> ProofState.Prim (Rule (OnePathRule Variable))
+primRuleOnePath prim = fmap toRuleOnePath $ myFilter isRuleOnePath prim
+  where
+    myFilter predFunc prim' =
+        case prim' of
+            DerivePar rules -> DerivePar $ filter predFunc rules
+            DeriveSeq rules -> DeriveSeq $ filter predFunc rules
+            _ -> prim'
+
+
+proofStateOnePath :: ProofState.ProofState (ReachabilityRule Variable) -> ProofState.ProofState (OnePathRule Variable)
+proofStateOnePath = undefined
 
 isAllPath :: ReachabilityRule Variable -> Bool
 isAllPath (AllPath _) = True
 isAllPath _         = False
 
-toRuleAllPath :: ReachabilityRule Variable -> Rule (AllPathRule Variable)
-toRuleAllPath (AllPath rule) = coerce rule
+isRuleOnePath :: Rule (ReachabilityRule Variable) -> Bool
+isRuleOnePath (OPRule _) = True
+isRuleOnePath _         = False
+
+toRuleAllPath :: Rule (ReachabilityRule Variable) -> Rule (AllPathRule Variable)
+toRuleAllPath (APRule rule) = coerce rule
 toRuleAllPath _ = error "impossible case"
+
+toRuleOnePath :: Rule (ReachabilityRule Variable) -> Rule (OnePathRule Variable)
+toRuleOnePath (OPRule rule) = coerce rule
+toRuleOnePath _ = error "impossible case"
 
 f :: Rule (ReachabilityRule Variable) -> Rule (AllPathRule Variable)
 f (APRule rule) = rule
 f _             = error "impossible case"
 
+ruleReachToRuleOnePath :: Rule (ReachabilityRule Variable) -> Rule (OnePathRule Variable)
+ruleReachToRuleOnePath (OPRule rule) = rule
+ruleReachToRuleOnePath _             = error "impossible case"
+
 toAllPath :: ReachabilityRule Variable -> AllPathRule Variable
 toAllPath (AllPath rule) = rule
 toAllPath _ = error "impossible case"
-
-myFilter = undefined
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
