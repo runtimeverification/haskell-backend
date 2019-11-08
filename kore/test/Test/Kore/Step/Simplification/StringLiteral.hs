@@ -11,10 +11,10 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     )
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.StringLiteral
     ( simplify
     )

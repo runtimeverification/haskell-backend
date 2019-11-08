@@ -44,13 +44,13 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
     )

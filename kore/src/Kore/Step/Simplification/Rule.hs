@@ -21,13 +21,13 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( pattern PredicateTrue
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( pattern PredicateTrue
-    )
 import Kore.Step.Rule
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

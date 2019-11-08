@@ -25,8 +25,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Conditional
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( pattern PredicateFalse
     , makeAndPredicate
     , makeCeilPredicate
@@ -38,6 +37,7 @@ import Kore.Predicate.Predicate
     , makeOrPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate

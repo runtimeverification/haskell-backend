@@ -30,11 +30,11 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
 import Kore.Step.Simplification.Simplify

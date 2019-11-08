@@ -67,17 +67,15 @@ import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeCeilPredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeCeilPredicate
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.AndTerms
     ( SortInjectionMatch (SortInjectionMatch)
     , simplifySortInjections

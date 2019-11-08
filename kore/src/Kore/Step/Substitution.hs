@@ -25,14 +25,14 @@ import Kore.Internal.Condition
     , Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)

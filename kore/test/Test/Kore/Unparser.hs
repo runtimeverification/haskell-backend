@@ -18,13 +18,13 @@ import qualified GHC.Generics as GHC
 
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Parser.Lexeme
-import Kore.Parser.Parser
-import Kore.Parser.ParserUtils
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeCeilPredicate
     , makeMultipleAndPredicate
     )
+import Kore.Parser.Lexeme
+import Kore.Parser.Parser
+import Kore.Parser.ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
 import qualified Kore.Unification.Substitution as Substitution

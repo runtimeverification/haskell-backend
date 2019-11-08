@@ -367,7 +367,7 @@ newtype BuiltinAndAxiomSimplifier =
     -- TODO (thomas.tuegel): Rename me!
     BuiltinAndAxiomSimplifier
         { runBuiltinAndAxiomSimplifier
-            ::  forall variable simplifier
+            :: forall variable simplifier
             .  (SimplifierVariable variable, MonadSimplify simplifier)
             => TermLike variable
             -> Condition variable
