@@ -308,6 +308,50 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
+    -- Checks that `f(x/x)` fails to simplify to x/x
+    -- because x != 0 is not implied by the configuration
+    , testCase "non function-like simplification with remainder" $ do
+        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
+        assertErrorIO
+            (assertSubstring "" "doesn't imply rule condition")
+            (evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [   (AxiomIdentifier.Application Mock.fIntId
+                            ,   [ EqualityRule $ rulePattern
+                                    (Mock.fInt (mkElemVar Mock.xInt))
+                                    (mkElemVar Mock.xInt)
+                                ]
+                            )
+                        ,   (AxiomIdentifier.Ceil
+                                (AxiomIdentifier.Application Mock.tdivIntId)
+                            ,   [ EqualityRule
+                                  $ conditionalSimplificationRulePattern
+                                    (mkCeil testSortVariable
+                                        $ Mock.tdivInt
+                                            (mkElemVar Mock.xInt)
+                                            (mkElemVar Mock.xInt)
+                                    )
+                                    (makeNotPredicate $ makeEqualsPredicate
+                                        (mkElemVar Mock.xInt)
+                                        (Mock.builtinInt 0)
+                                    )
+                                    (mkTop testSortVariable)
+                                ]
+                            )
+                        ]
+                    )
+                )
+                Conditional
+                    { term =
+                        Mock.fInt
+                        $ Mock.tdivInt
+                            (mkElemVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+            )
     , testCase "exists variable equality" $ do
         let
             expect = OrPattern.top
@@ -883,6 +927,17 @@ simplificationRulePattern left right =
         (Simplification True)
   where
     patt = rulePattern left right
+
+conditionalSimplificationRulePattern
+    :: InternalVariable variable
+    => TermLike variable
+    -> Predicate.Predicate variable
+    -> TermLike variable
+    -> RulePattern variable
+conditionalSimplificationRulePattern left requires right =
+    patt & Lens.set (field @"requires") requires
+  where
+    patt = simplificationRulePattern left right
 
 test_substitute :: [TestTree]
 test_substitute =

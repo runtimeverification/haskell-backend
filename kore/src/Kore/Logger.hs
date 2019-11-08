@@ -313,4 +313,3 @@ instance Monad m => MonadLog (LoggerT m) where
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
     {-# INLINE lift #-}
-
