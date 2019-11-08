@@ -101,20 +101,22 @@ import Control.Monad.Reader
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Label as AttrLabel
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import Kore.Internal.Pattern
     ( toTermLike
     )
-import qualified Kore.Internal.Predicate as IPredicate
+import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( Sort
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
-import Kore.Predicate.Predicate as Predicate
 import Kore.Repl.Data
 import Kore.Step.Rule
     ( RewriteRule (..)
@@ -433,7 +435,7 @@ liftSimplifierWithLogger mLogger simplifier = do
     logTypeToLogger =
         \case
             NoLogging   -> pure (mempty, Nothing)
-            LogToStdOut -> pure (Logger.logTextStderr, Nothing)
+            LogToStdErr -> pure (Logger.logTextStderr, Nothing)
             LogToFile file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
                 pure (Logger.logTextHandle handle, Just handle)
@@ -497,7 +499,7 @@ runUnifier
     => MonadIO m
     => TermLike Variable
     -> TermLike Variable
-    -> t m (Either ReplOutput (NonEmpty (IPredicate.Predicate Variable)))
+    -> t m (Either ReplOutput (NonEmpty (Condition Variable)))
 runUnifier first second = do
     unifier <- asks unifier
     mvar <- asks logger

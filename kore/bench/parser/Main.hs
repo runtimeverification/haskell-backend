@@ -2,20 +2,12 @@ module Main where
 
 import Criterion.Main
 
-import Data.Proxy
-    ( Proxy (Proxy)
-    )
 import System.FilePath
     ( takeFileName
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( defaultAttributesVerification
-    , verifyDefinition
-    )
-import qualified Kore.Attribute.Axiom as Attribute
-import Kore.Attribute.Symbol
-    ( StepperAttributes
+    ( verifyDefinition
     )
 import qualified Kore.Builtin as Builtin
 import Kore.Parser
@@ -105,15 +97,7 @@ verify filename =
     -- Runs once per benchmark iteration.
     verify1 defn =
         case
-            verifyDefinition
-                attributesVerification
-                Builtin.koreVerifiers
-                defn
+            verifyDefinition Builtin.koreVerifiers defn
           of
             Left err -> error (show err)
             Right _ -> ()
-      where
-        attributesVerification =
-            defaultAttributesVerification
-            (Proxy @StepperAttributes)
-            (Proxy @Attribute.Axiom)

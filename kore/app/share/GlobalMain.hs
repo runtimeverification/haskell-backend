@@ -44,9 +44,6 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Semigroup
     ( (<>)
     )
@@ -88,8 +85,10 @@ import Options.Applicative
     , info
     , internal
     , long
+    , maybeReader
     , metavar
     , option
+    , optional
     , readerError
     , str
     , strOption
@@ -105,8 +104,7 @@ import System.Clock
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( defaultAttributesVerification
-    , verifyAndIndexDefinitionWithBase
+    ( verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -136,6 +134,9 @@ import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
     ( version
+    )
+import Text.Read
+    ( readMaybe
     )
 
 type Main = LoggerT IO
@@ -204,17 +205,27 @@ data KoreMergeOptions =
     KoreMergeOptions
         { rulesFileName     :: !FilePath
         -- ^ Name for file containing a sequence of rules to merge.
+        , maybeBatchSize    :: Maybe Int
         }
 
 parseKoreMergeOptions :: Parser KoreMergeOptions
 parseKoreMergeOptions =
     KoreMergeOptions
     <$> strOption
-            (  metavar "MERGE_RULES_FILE"
-            <> long "merge-rules"
+        (  metavar "MERGE_RULES_FILE"
+        <> long "merge-rules"
+        <> help
+            "List of rules to merge."
+        )
+    <*> optional
+        (option
+            (maybeReader readMaybe)
+            (  metavar "MERGE_BATCH_SIZE"
+            <> long "merge-batch-size"
             <> help
-                "List of rules to merge."
+                "The size of a merge batch."
             )
+        )
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}
@@ -418,18 +429,14 @@ verifyDefinitionWithBase
 verifyDefinitionWithBase
     alreadyVerified
     definition
-  =
-    let attributesVerification = defaultAttributesVerification Proxy Proxy
-    in do
-      verifyResult <-
-        clockSomething "Verifying the definition"
-            (verifyAndIndexDefinitionWithBase
-                alreadyVerified
-                attributesVerification
-                Builtin.koreVerifiers
-                definition
-            )
-      case verifyResult of
+  = do
+    verifyResult <- clockSomething "Verifying the definition"
+        (verifyAndIndexDefinitionWithBase
+            alreadyVerified
+            Builtin.koreVerifiers
+            definition
+        )
+    case verifyResult of
         Left err1               -> error (printError err1)
         Right indexedDefinition -> return indexedDefinition
 

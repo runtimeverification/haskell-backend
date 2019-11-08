@@ -52,24 +52,26 @@ import Data.Set
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
+import qualified Branch
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
@@ -77,6 +79,8 @@ import Kore.Logger
     )
 import qualified Kore.Logger as Log
 import qualified Kore.Step.Remainder as Remainder
+import qualified Kore.Step.Result as Result
+import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
 import Kore.Step.Rule
     ( RewriteRule (..)
@@ -85,8 +89,10 @@ import Kore.Step.Rule
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
 import Kore.Step.Simplification.Simplify
+    ( MonadSimplify
+    )
+import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Substitution as Substitution
 import qualified Kore.TopBottom as TopBottom
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
@@ -117,7 +123,7 @@ newtype UnificationProcedure =
         .  (SimplifierVariable variable, MonadUnify unifier)
         => TermLike variable
         -> TermLike variable
-        -> unifier (Predicate variable)
+        -> unifier (Condition variable)
         )
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
@@ -236,8 +242,8 @@ unifyRule
     -- Combine the unification solution with the rule's requirement clause,
     let
         RulePattern { requires = ruleRequires } = rule'
-        requires' = Predicate.fromPredicate ruleRequires
-    unification' <- Substitution.normalizeExcept (unification <> requires')
+        requires' = Condition.fromPredicate ruleRequires
+    unification' <- simplifyPredicate (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
 
 unifyRules
@@ -268,11 +274,11 @@ applyInitialConditions
         , MonadUnify unifier
         , WithLog LogMessage unifier
         )
-    => Predicate variable
+    => Condition variable
     -- ^ Initial conditions
-    -> Predicate variable
+    -> Condition variable
     -- ^ Unification conditions
-    -> unifier (OrPredicate variable)
+    -> unifier (OrCondition variable)
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
 applyInitialConditions initial unification = do
@@ -281,7 +287,7 @@ applyInitialConditions initial unification = do
     applied <-
         Monad.liftM MultiOr.make
         $ Monad.Unify.gather
-        $ Substitution.normalizeExcept (initial <> unification)
+        $ simplifyPredicate (initial <> unification)
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'applied' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
@@ -309,7 +315,7 @@ finalizeAppliedRule
         )
     => RulePattern variable
     -- ^ Applied rule
-    -> OrPredicate variable
+    -> OrCondition variable
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
 finalizeAppliedRule renamedRule appliedConditions =
@@ -322,8 +328,9 @@ finalizeAppliedRule renamedRule appliedConditions =
         -- unifyRule.
         let
             RulePattern { ensures } = renamedRule
-            ensuresCondition = Predicate.fromPredicate ensures
-        finalCondition <- normalize (appliedCondition <> ensuresCondition)
+            ensuresCondition = Condition.fromPredicate ensures
+            preFinalCondition = appliedCondition <> ensuresCondition
+        finalCondition <- simplifyPredicate preFinalCondition
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
@@ -332,8 +339,6 @@ finalizeAppliedRule renamedRule appliedConditions =
             RulePattern { right = finalTerm } = renamedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
         return finalCondition { Pattern.term = finalTerm' }
-
-    normalize = Substitution.normalizeExcept
 
 {- | Apply the remainder predicate to the given initial configuration.
 
@@ -346,14 +351,14 @@ applyRemainder
         )
     => Pattern variable
     -- ^ Initial configuration
-    -> Predicate variable
+    -> Condition variable
     -- ^ Remainder
     -> unifier (Pattern variable)
 applyRemainder initial remainder = do
     let final = initial `Conditional.andCondition` remainder
         finalCondition = Conditional.withoutTerm final
         Conditional { Conditional.term = finalTerm } = final
-    normalizedCondition <- Substitution.normalizeExcept finalCondition
+    normalizedCondition <- simplifyPredicate finalCondition
     return normalizedCondition { Conditional.term = finalTerm }
 
 toAxiomVariables
@@ -403,7 +408,7 @@ finalizeRulesParallel
 finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
-        remainder = Predicate.fromPredicate (Remainder.remainder' unifications)
+        remainder = Condition.fromPredicate (Remainder.remainder' unifications)
     remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
     return Step.Results
         { results = Seq.fromList results
@@ -421,12 +426,19 @@ assertFunctionLikeResults
     -> unifier (Results variable)
     -> unifier (Results variable)
 assertFunctionLikeResults initial unifier = do
-    results <- Step.results <$> unifier
-    let unifiedRules = Step.appliedRule <$> results
+    results <- Results.results <$> unifier
+    let unifiedRules = Result.appliedRule <$> results
     case checkFunctionLike unifiedRules (term initial) of
         Left err -> error err
         _        -> unifier
 
+{-
+This is implementing the ideas from the [Applying axioms by matching]
+(https://github.com/kframework/kore/blob/master/docs/2019-09-25-Applying-Axioms-By-Matching.md)
+design doc, which checks that the unified lhs of the rule fully matches
+(is equal to) the configuration term and that the lhs predicate is
+implied by the configuration predicate.
+-}
 recoveryFunctionLikeResults
     ::  forall unifier variable
     .   ( SimplifierVariable variable
@@ -436,7 +448,66 @@ recoveryFunctionLikeResults
     => Pattern (Target variable)
     -> unifier (Results variable)
     -> unifier (Results variable)
-recoveryFunctionLikeResults _ = id
+recoveryFunctionLikeResults initial unifier = do
+    results <- Results.results <$> unifier
+    let appliedRules = Result.appliedRule <$> results
+    case checkFunctionLike appliedRules (Conditional.term initial) of
+        Right _  -> unifier
+        Left err -> moreChecksAfterError appliedRules err
+  where
+    moreChecksAfterError appliedRules err = do
+        let
+            appliedRule =
+                case appliedRules of
+                    rule Seq.:<| Seq.Empty -> rule
+                    _ -> error $ show $ Pretty.vsep
+                            [ "Expected singleton list of rules but found: "
+                            , (Pretty.indent 4 . Pretty.vsep . Foldable.toList)
+                                (Pretty.pretty . term <$> appliedRules)
+                            , "This should be imposssible, as simplifiers for \
+                            \simplification are built from a single rule."
+                            ]
+
+            Conditional { term = ruleTerm, substitution = ruleSubstitution } =
+                appliedRule
+            RulePattern { left = alpha_t', requires = alpha_p'} = ruleTerm
+
+            substitution' = Substitution.toMap ruleSubstitution
+
+            alpha_t = TermLike.substitute substitution' alpha_t'
+            alpha_p = Predicate.substitute substitution' alpha_p'
+            phi_p = Conditional.predicate initial
+            phi_t = Conditional.term initial
+
+        res1 <- SMT.Evaluator.evaluate
+                    $ Predicate.makeAndPredicate
+                        phi_p
+                        (Predicate.makeNotPredicate alpha_p)
+
+        Monad.when (res1 /= Just False) $ error $ show $ Pretty.vsep
+            [ "Couldn't recover simplification coverage error: "
+            , Pretty.indent 4 (Pretty.pretty err)
+            , "Configuration condition "
+            , Pretty.indent 4 $ unparse phi_p
+            , "doesn't imply rule condition "
+            , Pretty.indent 4 $ unparse alpha_p
+            ]
+        let alpha_t_sorted = fullyOverrideSort' (termLikeSort phi_t) alpha_t
+        Monad.when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
+            [ "Couldn't recover simplification coverage error: "
+            , Pretty.indent 4 (Pretty.pretty err)
+            , "Rule lhs "
+            , Pretty.indent 4 $ unparse alpha_t'
+            , "doesn't match configuration"
+            , Pretty.indent 4 $ unparse phi_t
+            ]
+        -- what we would like to check above is that phi_p -> phi_t = alpha_t,
+        -- but that's hard to do for non-functional patterns,
+        -- so we check for (syntactic) equality instead.
+        unifier
+    fullyOverrideSort' sort term
+      | sort == termLikeSort term = term
+      | otherwise = fullyOverrideSort sort term
 
 finalizeRulesSequence
     ::  forall unifier variable
@@ -464,14 +535,14 @@ finalizeRulesSequence initial unifiedRules
     initialTerm = Conditional.term initial
     finalizeRuleSequence'
         :: UnifiedRule (Target variable)
-        -> State.StateT (Predicate (Target variable)) unifier [Result variable]
+        -> State.StateT (Condition (Target variable)) unifier [Result variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
         results <- Monad.Trans.lift $ finalizeRule remainderPattern unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
-                Predicate.fromPredicate
+                Condition.fromPredicate
                 $ Remainder.remainder'
                 $ MultiOr.singleton unification
         State.put (remainder `Conditional.andCondition` remainder')
@@ -683,3 +754,14 @@ applyRewriteRulesSequence
         unificationProcedure
         initialConfig
         (getRewriteRule <$> rewriteRules)
+
+simplifyPredicate
+    ::  forall unifier variable term
+    .   ( SimplifierVariable variable
+        , MonadUnify unifier
+        , WithLog LogMessage unifier
+        )
+    => Conditional variable term
+    -> unifier (Conditional variable term)
+simplifyPredicate conditional =
+    Branch.alternate (Simplifier.simplifyCondition conditional)

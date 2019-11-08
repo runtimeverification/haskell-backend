@@ -11,14 +11,12 @@ import Test.Tasty.HUnit
     , testCase
     )
 
-import Data.Proxy
 import Data.Text
     ( Text
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
-import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Debug
@@ -103,11 +101,7 @@ expectSuccess description unverifiedDefinition =
             ++ printDefinition unverifiedDefinition
             )
             verifySuccess
-            (verifyDefinition
-                attributesVerificationForTests
-                Builtin.koreVerifiers
-                unverifiedDefinition
-            )
+            (verifyDefinition Builtin.koreVerifiers unverifiedDefinition)
         )
 
 expectFailureWithError
@@ -120,10 +114,7 @@ expectFailureWithError description expectedError unverifiedDefinition =
     testCase
         description
         (case
-            verifyDefinition
-                attributesVerificationForTests
-                Builtin.koreVerifiers
-                unverifiedDefinition
+            verifyDefinition Builtin.koreVerifiers unverifiedDefinition
           of
             Right _ ->
                 assertFailure
@@ -137,10 +128,6 @@ expectFailureWithError description expectedError unverifiedDefinition =
                     )
                     expectedError actualError
         )
-
-attributesVerificationForTests
-    :: AttributesVerification Attribute.Symbol Attribute.Axiom
-attributesVerificationForTests = defaultAttributesVerification Proxy Proxy
 
 printDefinition :: ParsedDefinition -> String
 printDefinition definition =

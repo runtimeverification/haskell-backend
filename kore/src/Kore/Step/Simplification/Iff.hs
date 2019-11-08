@@ -19,11 +19,11 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Not as Not
     ( makeEvaluate
     , simplifyEvaluated
@@ -121,15 +121,15 @@ makeEvaluateNonBoolIff
         [ Conditional
             { term = firstTerm
             , predicate =
-                Syntax.Predicate.markSimplified
-                $ Syntax.Predicate.makeIffPredicate
-                    (Syntax.Predicate.makeAndPredicate
+                Predicate.markSimplified
+                $ Predicate.makeIffPredicate
+                    (Predicate.makeAndPredicate
                         firstPredicate
-                        (Syntax.Predicate.fromSubstitution firstSubstitution)
+                        (Predicate.fromSubstitution firstSubstitution)
                     )
-                    (Syntax.Predicate.makeAndPredicate
+                    (Predicate.makeAndPredicate
                         secondPredicate
-                        (Syntax.Predicate.fromSubstitution secondSubstitution)
+                        (Predicate.fromSubstitution secondSubstitution)
                     )
             , substitution = mempty
             }

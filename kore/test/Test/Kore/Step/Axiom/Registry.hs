@@ -17,9 +17,6 @@ import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Text
     ( Text
     )
@@ -27,7 +24,7 @@ import Data.Text
 import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Simplification
-    ( simplificationSymbol
+    ( simplificationAttribute
     )
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
@@ -118,12 +115,21 @@ testDef =
         (ModuleName "test")
         [ simpleSortSentence (SortName "S")
         , simpleSymbolSentence (SymbolName "s") (SortName "S")
+            & (updateAttributes . Attributes)
+                [ Attribute.functionalAttribute
+                , Attribute.constructorAttribute
+                ]
         , simpleSymbolSentence (SymbolName "t") (SortName "S")
+            & (updateAttributes . Attributes)
+                [ Attribute.functionalAttribute
+                , Attribute.constructorAttribute
+                ]
         , symbolSentenceWithParametersAndArguments
             (SymbolName "inj")
             [sortVar, sortVar1]
             sortVar1S
             [sortVarS]
+            & updateAttributes (Attributes [Attribute.functionAttribute])
         , updateAttributes
             (Attributes
                 [ Attribute.functionAttribute
@@ -213,8 +219,7 @@ testDef =
             }
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar]
-            , sentenceAxiomAttributes =
-                Attributes [ attributePattern_ simplificationSymbol ]
+            , sentenceAxiomAttributes = Attributes [simplificationAttribute]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -230,19 +235,13 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalize $ mkTop sortS
-            }
-        , SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = [sortVar]
-            , sentenceAxiomAttributes = Attributes []
-            , sentenceAxiomPattern =
                 Builtin.externalize $ mkRewrites
                     (mkAnd mkTop_ (mkApplySymbol fHead []))
                     (mkAnd mkTop_ (mkApplySymbol tHead []))
             }
         , SentenceAxiomSentence SentenceAxiom
             { sentenceAxiomParameters = [sortVar, sortVar1]
-            , sentenceAxiomAttributes = Attributes []
+            , sentenceAxiomAttributes = Attributes [simplificationAttribute]
             , sentenceAxiomPattern =
                 Builtin.externalize $ mkImplies
                     (mkTop sortVarS)
@@ -259,11 +258,7 @@ testDef =
 testIndexedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
 testIndexedModule =
     let
-        attributesVerification = defaultAttributesVerification Proxy Proxy
-        verifyResult = verifyAndIndexDefinition
-            attributesVerification
-            Builtin.koreVerifiers
-            testDef
+        verifyResult = verifyAndIndexDefinition Builtin.koreVerifiers testDef
     in
         case verifyResult of
             Left err1            -> error (printError err1)

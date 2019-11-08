@@ -197,7 +197,7 @@ parse = Text.pack <$> Parsec.many Parsec.anySingle
  -}
 expectBuiltinString
     :: Monad m
-    => Text  -- ^ Context for error message
+    => String  -- ^ Context for error message
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m Text
 expectBuiltinString ctx =
@@ -210,7 +210,7 @@ expectBuiltinString ctx =
                     Domain.InternalString { internalStringValue } = internal
                 _ ->
                     Builtin.verifierBug
-                    $ Text.unpack ctx ++ ": Domain value is not a string"
+                    $ ctx ++ ": Domain value is not a string"
         _ -> empty
 
 
@@ -220,7 +220,7 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
     substr :: Int -> Int -> Text -> Text
     substr startIndex endIndex =
         Text.take (endIndex - startIndex) . Text.drop startIndex
-    evalSubstr0 _ resultSort arguments =
+    evalSubstr0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_str, _start, _end) =
                     case arguments of
@@ -236,7 +236,7 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
 evalLength :: Builtin.Function
 evalLength = Builtin.functionEvaluator evalLength0
   where
-    evalLength0 _ resultSort arguments =
+    evalLength0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
@@ -253,7 +253,7 @@ evalFind = Builtin.functionEvaluator evalFind0
   where
     maybeNotFound :: Maybe Int -> Integer
     maybeNotFound = maybe (-1) toInteger
-    evalFind0 _ resultSort arguments =
+    evalFind0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_str, _substr, _idx) =
                     case arguments of
@@ -272,7 +272,7 @@ evalFind = Builtin.functionEvaluator evalFind0
 evalString2Base :: Builtin.Function
 evalString2Base = Builtin.functionEvaluator evalString2Base0
   where
-    evalString2Base0 _ resultSort arguments =
+    evalString2Base0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let (_str, _base) =
                     case arguments of
@@ -301,7 +301,7 @@ evalString2Base = Builtin.functionEvaluator evalString2Base0
 evalString2Int :: Builtin.Function
 evalString2Int = Builtin.functionEvaluator evalString2Int0
   where
-    evalString2Int0 _ resultSort arguments =
+    evalString2Int0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
@@ -319,7 +319,7 @@ evalString2Int = Builtin.functionEvaluator evalString2Int0
 evalChr :: Builtin.Function
 evalChr = Builtin.functionEvaluator evalChr0
   where
-    evalChr0 _ resultSort arguments =
+    evalChr0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _n =
                     case arguments of
@@ -333,7 +333,7 @@ evalChr = Builtin.functionEvaluator evalChr0
 evalOrd :: Builtin.Function
 evalOrd = Builtin.functionEvaluator evalOrd0
   where
-    evalOrd0 _ resultSort arguments =
+    evalOrd0 resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let _str =
                     case arguments of
@@ -354,7 +354,7 @@ evalOrd = Builtin.functionEvaluator evalOrd0
 evalToken2String :: Builtin.Function
 evalToken2String = Builtin.functionEvaluator evalToken2String0
   where
-      evalToken2String0 _ resultSort arguments =
+      evalToken2String0 resultSort arguments =
           Builtin.getAttemptedAxiom $ do
               let _dv =
                       case arguments of
@@ -366,7 +366,7 @@ evalToken2String = Builtin.functionEvaluator evalToken2String0
 evalString2Token :: Builtin.Function
 evalString2Token = Builtin.functionEvaluator evalString2Token0
   where
-      evalString2Token0 _ resultSort arguments =
+      evalString2Token0 resultSort arguments =
           Builtin.getAttemptedAxiom $ do
               let _str =
                       case arguments of

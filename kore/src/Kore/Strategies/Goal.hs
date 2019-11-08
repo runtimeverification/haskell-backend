@@ -4,8 +4,10 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , ClaimExtractor (..)
     , Rule (..)
     , TransitionRuleTemplate (..)
+    , extractClaims
     , unprovenNodes
     , proven
     , onePathFirstStep
@@ -48,19 +50,24 @@ import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.Debug
+import Kore.IndexedModule.IndexedModule
+    ( IndexedModule (indexedModuleClaims)
+    , VerifiedModule
+    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( mkAnd
     )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -68,8 +75,10 @@ import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
+    , QualifiedAxiomPattern (..)
     , RewriteRule (..)
     , RulePattern (..)
+    , fromSentenceAxiom
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -92,11 +101,15 @@ import Kore.Strategies.ProofState hiding
     , ProofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
+import qualified Kore.Syntax.Sentence as Syntax
+import Kore.Syntax.Variable
+    ( Variable
+    )
 import Kore.TopBottom
     ( isBottom
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
@@ -106,6 +119,7 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar)
     , isElemVar
     )
+import qualified Kore.Verified as Verified
 
 {- | The final nodes of an execution graph which were not proven.
 
@@ -149,6 +163,23 @@ class Goal goal where
         -> [Rule goal]
         -> [Strategy (Prim goal)]
 
+class ClaimExtractor claim where
+    extractClaim
+        :: Verified.SentenceClaim
+        ->  Maybe claim
+
+-- | Extracts all One-Path claims from a verified module.
+extractClaims
+    :: ClaimExtractor claim
+    => VerifiedModule declAtts axiomAtts
+    -- ^'IndexedModule' containing the definition
+    -> [(axiomAtts, claim)]
+extractClaims idxMod =
+    mapMaybe
+        -- applying on second component
+        (traverse extractClaim)
+        (indexedModuleClaims idxMod)
+
 {- NOTE: Non-deterministic semantics
 
 The current implementation of one-path verification assumes that the proof goal
@@ -191,16 +222,16 @@ Things to note when implementing your own:
 2. You can return an infinite list.
 -}
 
-instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
+instance Goal (OnePathRule Variable) where
 
-    newtype Rule (OnePathRule variable) =
-        OnePathRewriteRule { unRule :: RewriteRule variable }
+    newtype Rule (OnePathRule Variable) =
+        OnePathRewriteRule { unRule :: RewriteRule Variable }
         deriving (GHC.Generic, Show, Unparse)
 
-    type Prim (OnePathRule variable) =
-        ProofState.Prim (Rule (OnePathRule variable))
+    type Prim (OnePathRule Variable) =
+        ProofState.Prim (Rule (OnePathRule Variable))
 
-    type ProofState (OnePathRule variable) a =
+    type ProofState (OnePathRule Variable) a =
         ProofState.ProofState a
 
     transitionRule =
@@ -233,24 +264,30 @@ instance (SimplifierVariable variable) => Goal (OnePathRule variable) where
             . getOnePathRule
             <$> goals
 
-instance SOP.Generic (Rule (OnePathRule variable))
+instance SOP.Generic (Rule (OnePathRule Variable))
 
-instance SOP.HasDatatypeInfo (Rule (OnePathRule variable))
+instance SOP.HasDatatypeInfo (Rule (OnePathRule Variable))
 
-instance Debug variable => Debug (Rule (OnePathRule variable))
+instance Debug (Rule (OnePathRule Variable))
 
-instance (Debug variable, Diff variable) => Diff (Rule (OnePathRule variable))
+instance Diff (Rule (OnePathRule Variable))
 
-instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
+instance ClaimExtractor (OnePathRule Variable) where
+    extractClaim sentence =
+        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
+            Right (OnePathClaimPattern claim) -> Just claim
+            _ -> Nothing
 
-    newtype Rule (AllPathRule variable) =
-        AllPathRewriteRule { unRule :: RewriteRule variable }
+instance Goal (AllPathRule Variable) where
+
+    newtype Rule (AllPathRule Variable) =
+        AllPathRewriteRule { unRule :: RewriteRule Variable }
         deriving (GHC.Generic, Show, Unparse)
 
-    type Prim (AllPathRule variable) =
-        ProofState.Prim (Rule (AllPathRule variable))
+    type Prim (AllPathRule Variable) =
+        ProofState.Prim (Rule (AllPathRule Variable))
 
-    type ProofState (AllPathRule variable) a =
+    type ProofState (AllPathRule Variable) a =
         ProofState.ProofState a
 
     transitionRule =
@@ -283,13 +320,19 @@ instance (SimplifierVariable variable) => Goal (AllPathRule variable) where
             . getAllPathRule
             <$> goals
 
-instance SOP.Generic (Rule (AllPathRule variable))
+instance SOP.Generic (Rule (AllPathRule Variable))
 
-instance SOP.HasDatatypeInfo (Rule (AllPathRule variable))
+instance SOP.HasDatatypeInfo (Rule (AllPathRule Variable))
 
-instance Debug variable => Debug (Rule (AllPathRule variable))
+instance  Debug (Rule (AllPathRule Variable))
 
-instance (Debug variable, Diff variable) => Diff (Rule (AllPathRule variable))
+instance  Diff (Rule (AllPathRule Variable))
+
+instance ClaimExtractor (AllPathRule Variable) where
+    extractClaim sentence =
+        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
+            Right (AllPathClaimPattern claim) -> Just claim
+            _ -> Nothing
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
@@ -442,8 +485,8 @@ onePathFollowupStep claims axioms =
         ]
 
 allPathFirstStep
-    :: [Rule (AllPathRule variable)]
-    -> Strategy (Prim (AllPathRule variable))
+    :: [Rule (AllPathRule Variable)]
+    -> Strategy (Prim (AllPathRule Variable))
 allPathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -462,9 +505,9 @@ allPathFirstStep axioms =
         ]
 
 allPathFollowupStep
-    :: [Rule (AllPathRule variable)]
-    -> [Rule (AllPathRule variable)]
-    -> Strategy (Prim (AllPathRule variable))
+    :: [Rule (AllPathRule Variable)]
+    -> [Rule (AllPathRule Variable)]
+    -> Strategy (Prim (AllPathRule Variable))
 allPathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
@@ -543,7 +586,8 @@ isTriviallyValid
 isTriviallyValid = isBottom . RulePattern.left . coerce
 
 isTrusted
-    :: SimplifierVariable variable
+    :: forall goal variable
+     . SimplifierVariable variable
     => Goal goal
     => Coercible goal (RulePattern variable)
     => goal -> Bool
@@ -686,9 +730,9 @@ makeRuleFromPatterns
     -> Pattern variable
     -> rule
 makeRuleFromPatterns configuration destination =
-    let (left, Conditional.toPredicate -> requires) =
+    let (left, Condition.toPredicate -> requires) =
             Pattern.splitTerm configuration
-        (right, Conditional.toPredicate -> ensures) =
+        (right, Condition.toPredicate -> ensures) =
             Pattern.splitTerm destination
     in coerce RulePattern
         { left
@@ -707,7 +751,7 @@ removalPredicate
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> Syntax.Predicate variable
+    -> Predicate variable
 removalPredicate destination config =
     let
         -- The variables of the destination that are missing from the
@@ -723,7 +767,8 @@ removalPredicate destination config =
             $ Set.difference destinationVariables configVariables
         extraElementVariables = [v | ElemVar v <- extraVariables]
         extraNonElemVariables = filter (not . isElemVar) extraVariables
-        quantifyPredicate = Predicate.makeMultipleExists extraElementVariables
+        quantifyPredicate =
+            Predicate.makeMultipleExists extraElementVariables
     in
         if not (null extraNonElemVariables)
         then error

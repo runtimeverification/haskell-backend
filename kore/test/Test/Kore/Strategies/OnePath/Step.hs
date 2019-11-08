@@ -34,20 +34,20 @@ import Kore.Internal.Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-    ( TermLike
-    )
-import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
     , makeMultipleAndPredicate
     , makeNotPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Internal.Predicate
     ( Predicate
     )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Rule
     ( OnePathRule (..)
     , RewriteRule (RewriteRule)
@@ -532,7 +532,7 @@ simpleRewrite left right =
 rewriteWithPredicate
     :: TermLike Variable
     -> TermLike Variable
-    -> Syntax.Predicate Variable
+    -> Predicate Variable
     -> Rule (OnePathRule Variable)
 rewriteWithPredicate left right predicate =
     OnePathRewriteRule

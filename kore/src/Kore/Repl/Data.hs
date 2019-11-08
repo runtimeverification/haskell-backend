@@ -75,7 +75,9 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
 
-import qualified Kore.Internal.Predicate as IPredicate
+import Kore.Internal.Condition
+    ( Condition
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -95,11 +97,11 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Unification.Error
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( MonadUnify
     , UnifierT (..)
     )
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparse
     )
@@ -173,7 +175,7 @@ data ReplAlias = ReplAlias
 
 data LogType
     = NoLogging
-    | LogToStdOut
+    | LogToStdErr
     | LogToFile !FilePath
     deriving (Eq, Show)
 
@@ -349,8 +351,8 @@ helpText =
     \                                      these scopes are used for filtering\
                                            \ the logged information, for example,\
                                            \ '[]' will log all scopes\n\
-    \                                      <type> can be 'none', 'stdout',\
-                                           \ or 'file filename'\n\
+    \                                      <type> can be 'stderr' or\n\
+                                           \'file filename'\n\
     \exit                                  exits the repl\
     \\n\n\
     \Available modifiers:\n\
@@ -451,7 +453,7 @@ data Config claim m = Config
     , unifier
         :: TermLike Variable
         -> TermLike Variable
-        -> UnifierWithExplanation m (IPredicate.Predicate Variable)
+        -> UnifierWithExplanation m (Condition Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
     --   where we discard the result since we are looking for unification
     --   failures

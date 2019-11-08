@@ -46,14 +46,14 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Logger
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Profiler.Profile as Profile
     ( smtDecision
     )
@@ -90,12 +90,12 @@ instance
     , Show variable
     , Unparse variable
     )
-    => Evaluable (Syntax.Predicate variable)
+    => Evaluable (Predicate variable)
   where
     evaluate predicate =
         case predicate of
-            Syntax.Predicate.PredicateTrue -> return (Just True)
-            Syntax.Predicate.PredicateFalse -> return (Just False)
+            Predicate.PredicateTrue -> return (Just True)
+            Predicate.PredicateFalse -> return (Just False)
             _ -> decidePredicate predicate
 
 instance
@@ -149,7 +149,7 @@ decidePredicate
         , SortedVariable variable
         , MonadSimplify simplifier
         )
-    => Syntax.Predicate variable
+    => Predicate variable
     -> simplifier (Maybe Bool)
 decidePredicate korePredicate =
     withLogScope "decidePredicate" $ SMT.withSolver $ runMaybeT $ do
@@ -176,7 +176,7 @@ goTranslatePredicate
         , MonadSimplify m
         )
     => SmtMetadataTools Attribute.Symbol
-    -> Syntax.Predicate variable
+    -> Predicate variable
     -> MaybeT m SExpr
 goTranslatePredicate tools predicate = evalTranslator translator
   where

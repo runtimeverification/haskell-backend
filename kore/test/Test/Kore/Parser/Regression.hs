@@ -25,7 +25,6 @@ import Data.ByteString.Lazy
     )
 import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy.Char8
 import Data.Function
-import Data.Proxy
 import System.Directory
     ( getCurrentDirectory
     , setCurrentDirectory
@@ -37,8 +36,6 @@ import System.FilePath
     )
 
 import Kore.ASTVerifier.DefinitionVerifier
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin as Builtin
 import Kore.Error
 import Kore.Parser
@@ -91,11 +88,8 @@ toByteString (Right _) = ByteString.Lazy.Char8.empty
 
 verify :: ParsedDefinition -> Either String ParsedDefinition
 verify definition =
-    verifyDefinition attrVerify Builtin.koreVerifiers definition
+    verifyDefinition Builtin.koreVerifiers definition
     & bimap printError (const definition)
-  where
-    attrVerify :: AttributesVerification Attribute.Symbol Attribute.Axiom
-    attrVerify = defaultAttributesVerification Proxy Proxy
 
 runParser :: String -> VerifyRequest -> IO ByteString
 runParser inputFileName verifyRequest = do

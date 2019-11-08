@@ -5,6 +5,7 @@ License     : NCSA
 
 module Kore.Step.Rule.Combine
     ( mergeRules
+    , mergeRulesConsecutiveBatches
     , mergeRulesPredicate
     ) where
 
@@ -28,27 +29,25 @@ import qualified Branch as BranchT
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (FreeVariables)
     )
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
-import qualified Kore.Internal.Predicate as Predicate
-    ( fromPredicate
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
+    , makeMultipleAndPredicate
+    , makeTruePredicate
     )
 import Kore.Internal.TermLike
     ( mkAnd
     )
 import Kore.Internal.Variable
     ( InternalVariable
-    )
-import Kore.Predicate.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeMultipleAndPredicate
-    , makeTruePredicate
-    )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
     )
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)
@@ -63,7 +62,7 @@ import qualified Kore.Step.Rule as Rule.DoNotUse
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
-    , simplifyPredicate
+    , simplifyCondition
     )
 import qualified Kore.Step.SMT.Evaluator as SMT
     ( evaluate
@@ -93,7 +92,7 @@ See docs/2019-09-09-Combining-Rewrite-Axioms.md for details.
 mergeRulesPredicate
     :: SubstitutionVariable variable
     => [RewriteRule variable]
-    -> Syntax.Predicate variable
+    -> Predicate variable
 mergeRulesPredicate rules =
     mergeDisjointVarRulesPredicate
     $ renameRulesVariables rules
@@ -101,7 +100,7 @@ mergeRulesPredicate rules =
 mergeDisjointVarRulesPredicate
     :: SubstitutionVariable variable
     => [RewriteRule variable]
-    -> Syntax.Predicate variable
+    -> Predicate variable
 mergeDisjointVarRulesPredicate rules =
     makeMultipleAndPredicate
     $ map mergeRulePairPredicate
@@ -115,7 +114,7 @@ makeConsecutivePairs (a1 : a2 : as) = (a1, a2) : makeConsecutivePairs (a2 : as)
 mergeRulePairPredicate
     :: InternalVariable variable
     => (RewriteRule variable, RewriteRule variable)
-    -> Syntax.Predicate variable
+    -> Predicate variable
 mergeRulePairPredicate
     ( RewriteRule RulePattern {right = right1, ensures = ensures1}
     , RewriteRule RulePattern
@@ -158,7 +157,7 @@ renameRuleVariable
 
     (FreeVariables ruleVariables) = RulePattern.freeVariables rulePattern
 
-    (FreeVariables newRuleVariables) = RulePattern.freeVariables rulePattern
+    (FreeVariables newRuleVariables) = RulePattern.freeVariables newRulePattern
 
     (_, newRulePattern) =
         refreshRulePattern (FreeVariables usedVariables) rulePattern
@@ -171,7 +170,7 @@ mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
     BranchT.gather $ do
         Conditional {term = (), predicate, substitution} <-
-            simplifyPredicate . Predicate.fromPredicate
+            simplifyCondition . Condition.fromPredicate
             $ makeAndPredicate firstRequires mergedPredicate
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of
@@ -201,3 +200,30 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
         firstRule
     RewriteRule RulePattern {right = lastRight, ensures = lastEnsures} =
         last rules
+
+{-| Merge rules in consecutive batches.
+
+As an example, when trying to merge rules 1..9 in batches of 4, it
+first merges rules 1, 2, 3 and 4 into rule 4', then rules 4', 5, 6, 7
+into rule 7', then returns the result of merging 7', 8 and 9.
+-}
+mergeRulesConsecutiveBatches
+    :: (MonadSimplify simplifier, SimplifierVariable variable)
+    => Int
+    -- ^ Batch size
+    -> NonEmpty (RewriteRule variable)
+    -- Rules to merge
+    -> simplifier [RewriteRule variable]
+mergeRulesConsecutiveBatches
+    batchSize
+    (rule :| rules)
+  | batchSize <= 1 = error ("Invalid group size: " ++ show batchSize)
+  | null rules = return [rule]
+  | otherwise = do
+    let (rulesBatch, remainder) = splitAt (batchSize - 1) rules
+    mergedRulesList <- mergeRules (rule :| rulesBatch)
+    BranchT.gather $ do
+        mergedRule <- BranchT.scatter mergedRulesList
+        allMerged <-
+            mergeRulesConsecutiveBatches batchSize (mergedRule :| remainder)
+        BranchT.scatter allMerged

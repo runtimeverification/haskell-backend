@@ -2,11 +2,11 @@ module Test.Kore.Step.Remainder where
 
 import Test.Tasty
 
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
 import qualified Kore.Step.Remainder as Remainder
 import Kore.Syntax.Variable
     ( Variable

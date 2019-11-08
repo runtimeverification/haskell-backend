@@ -22,8 +22,7 @@ module Kore.Step.Rule
     , fromSentenceAxiom
     , fromSentence
     , extractRewriteAxioms
-    , extractOnePathClaims
-    , extractAllPathClaims
+    , extractReachabilityRule
     , extractImplicationClaims
     , applySubstitution
     , mkRewriteAxiom
@@ -37,6 +36,9 @@ module Kore.Step.Rule
     , Kore.Step.Rule.substitute
     ) where
 
+import Control.DeepSeq
+    ( NFData
+    )
 import Control.Exception
     ( assert
     )
@@ -60,6 +62,12 @@ import GHC.Stack
     )
 
 import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom.Constructor
+    ( isConstructor
+    )
+import Kore.Attribute.Functional
+    ( isDeclaredFunctional
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
@@ -68,6 +76,9 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Priority
     ( getPriority
     )
+import Kore.Attribute.Subsort
+    ( getSubsorts
+    )
 import Kore.Debug
 import Kore.Error
 import Kore.IndexedModule.IndexedModule
@@ -75,6 +86,10 @@ import Kore.Internal.Alias
     ( Alias (..)
     )
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( pattern And_
     , pattern ApplyAlias_
@@ -92,6 +107,7 @@ import Kore.Internal.TermLike
     , mkCeil
     , mkEquals
     , mkImplies
+    , mkNot
     , mkRewrites
     , mkTop
     , mkTop_
@@ -102,10 +118,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     )
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
@@ -143,6 +155,9 @@ import Kore.Variables.UnifiedVariable
 import qualified Kore.Verified as Verified
 
 newtype AxiomPatternError = AxiomPatternError ()
+    deriving (GHC.Generic)
+
+instance NFData AxiomPatternError
 
 {- | Normal rewriting and function axioms, claims and patterns.
 
@@ -160,6 +175,8 @@ data RulePattern variable = RulePattern
 deriving instance Eq variable => Eq (RulePattern variable)
 deriving instance Ord variable => Ord (RulePattern variable)
 deriving instance Show variable => Show (RulePattern variable)
+
+instance NFData variable => NFData (RulePattern variable)
 
 instance SOP.Generic (RulePattern variable)
 
@@ -212,17 +229,23 @@ newtype EqualityRule variable =
     EqualityRule { getEqualityRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData variable => NFData (EqualityRule variable)
+
 instance SOP.Generic (EqualityRule variable)
 
 instance SOP.HasDatatypeInfo (EqualityRule variable)
 
 instance Debug variable => Debug (EqualityRule variable)
 
+instance (Debug variable, Diff variable) => Diff (EqualityRule variable)
+
 {-  | Rewrite-based rule pattern.
 -}
 newtype RewriteRule variable =
     RewriteRule { getRewriteRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData variable => NFData (RewriteRule variable)
 
 instance SOP.Generic (RewriteRule variable)
 
@@ -251,11 +274,15 @@ newtype ImplicationRule variable =
     ImplicationRule { getImplicationRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData variable => NFData (ImplicationRule variable)
+
 instance SOP.Generic (ImplicationRule variable)
 
 instance SOP.HasDatatypeInfo (ImplicationRule variable)
 
 instance Debug variable => Debug (ImplicationRule variable)
+
+instance (Debug variable, Diff variable) => Diff (ImplicationRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -292,6 +319,8 @@ newtype OnePathRule variable =
     OnePathRule { getOnePathRule :: RulePattern variable }
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData variable => NFData (OnePathRule variable)
+
 instance SOP.Generic (OnePathRule variable)
 
 instance SOP.HasDatatypeInfo (OnePathRule variable)
@@ -311,14 +340,49 @@ instance TopBottom (OnePathRule variable) where
     isTop _ = False
     isBottom _ = False
 
+{-  | Unified One-Path and All-Path Claim rule pattern.
+-}
+data ReachabilityRule variable
+    = OnePath !(OnePathRule variable)
+    | AllPath !(AllPathRule variable)
+    deriving (Eq, GHC.Generic, Ord, Show)
+
+instance NFData variable => NFData (ReachabilityRule variable)
+
+instance SOP.Generic (ReachabilityRule variable)
+
+instance SOP.HasDatatypeInfo (ReachabilityRule variable)
+
+instance Debug variable => Debug (ReachabilityRule variable)
+
+instance (Debug variable, Diff variable) => Diff (ReachabilityRule variable)
+
+instance
+    (Ord variable, SortedVariable variable, Unparse variable)
+    => Unparse (ReachabilityRule variable)
+  where
+    unparse = unparse . reachabilityRuleToPattern
+    unparse2 = unparse2 . reachabilityRuleToPattern
+
+instance TopBottom (ReachabilityRule variable) where
+    isTop _ = False
+    isBottom _ = False
+
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule variable =
     AllPathRule { getAllPathRule :: RulePattern variable }
+    deriving (Eq, GHC.Generic, Ord, Show)
 
-deriving instance Eq variable => Eq (AllPathRule variable)
-deriving instance Ord variable => Ord (AllPathRule variable)
-deriving instance Show variable => Show (AllPathRule variable)
+instance NFData variable => NFData (AllPathRule variable)
+
+instance SOP.Generic (AllPathRule variable)
+
+instance SOP.HasDatatypeInfo (AllPathRule variable)
+
+instance Debug variable => Debug (AllPathRule variable)
+
+instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance
     (Ord variable, SortedVariable variable, Unparse variable)
@@ -340,12 +404,19 @@ data QualifiedAxiomPattern variable
     | OnePathClaimPattern (OnePathRule variable)
     | AllPathClaimPattern (AllPathRule variable)
     | ImplicationAxiomPattern (ImplicationRule variable)
+    deriving (Eq, GHC.Generic, Ord, Show)
     -- TODO(virgil): Rename the above since it applies to all sorts of axioms,
     -- not only to function-related ones.
 
-deriving instance Eq variable => Eq (QualifiedAxiomPattern variable)
-deriving instance Ord variable => Ord (QualifiedAxiomPattern variable)
-deriving instance Show variable => Show (QualifiedAxiomPattern variable)
+instance NFData variable => NFData (QualifiedAxiomPattern variable)
+
+instance SOP.Generic (QualifiedAxiomPattern variable)
+
+instance SOP.HasDatatypeInfo (QualifiedAxiomPattern variable)
+
+instance (Debug variable) => Debug (QualifiedAxiomPattern variable)
+
+instance (Debug variable, Diff variable) => Diff (QualifiedAxiomPattern variable)
 
 {- | Does the axiom pattern represent a heating rule?
  -}
@@ -389,44 +460,14 @@ extractRewriteAxiomFrom sentence =
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
 
--- | Extracts all One-Path claims from a verified module.
-extractOnePathClaims
-    :: VerifiedModule declAtts axiomAtts
-    -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, OnePathRule Variable)]
-extractOnePathClaims idxMod =
-    mapMaybe
-        -- applying on second component
-        (traverse extractOnePathClaimFrom)
-        (indexedModuleClaims idxMod)
-
-extractOnePathClaimFrom
+extractReachabilityRule
     :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
-    -> Maybe (OnePathRule Variable)
-extractOnePathClaimFrom sentence =
+    -> Maybe (ReachabilityRule Variable)
+extractReachabilityRule sentence =
     case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
-        Right (OnePathClaimPattern claim) -> Just claim
-        _ -> Nothing
-
--- | Extracts all All-Path claims from a verified definition.
-extractAllPathClaims
-    :: VerifiedModule declAtts axiomAtts
-    -- ^'IndexedModule' containing the definition
-    -> [(axiomAtts, AllPathRule Variable)]
-extractAllPathClaims idxMod =
-    mapMaybe
-        -- applying on second component
-        (traverse extractAllPathClaimFrom)
-        (indexedModuleClaims idxMod)
-
-extractAllPathClaimFrom
-    :: Verified.SentenceClaim
-    -- ^ Sentence to extract axiom pattern from
-    -> Maybe (AllPathRule Variable)
-extractAllPathClaimFrom sentence =
-    case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
-        Right (AllPathClaimPattern claim) -> Just claim
+        Right (OnePathClaimPattern claim) -> Just (OnePath claim)
+        Right (AllPathClaimPattern claim) -> Just (AllPath claim)
         _ -> Nothing
 
 -- | Extract all 'ImplicationRule' claims matching a given @level@ from
@@ -555,33 +596,67 @@ wAF sort = Alias
     , aliasRight = mkTop sort
     }
 
+reachabilityRuleToPattern
+    :: Ord variable
+    => SortedVariable variable
+    => Unparse variable
+    => ReachabilityRule variable
+    -> TermLike variable
+reachabilityRuleToPattern = \case
+    OnePath r -> onePathRuleToPattern r
+    AllPath r -> allPathRuleToPattern r
+
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
 @patternToAxiomPattern@ returns an error if the given 'CommonPattern' does
 not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
-    :: Attribute.Axiom
-    -> TermLike Variable
-    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern Variable)
-patternToAxiomPattern attributes pat
-  | isJust . getPriority . Attribute.priority $ attributes =
+    :: Debug variable
+    => Show variable
+    => Unparse variable
+    => SortedVariable variable
+    => FreshVariable variable
+    => Attribute.Axiom
+    -> TermLike variable
+    -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
+patternToAxiomPattern attributes pat =
     case pat of
+        Rewrites_ _ (ApplyAlias_ alias params) rhs ->
+            case substituteInAlias alias params of
+                And_ _ requires lhs ->
+                    patternToAxiomPattern
+                        attributes
+                        (mkRewrites (mkAnd requires lhs) rhs)
+                _ -> (error . show. Pretty.vsep)
+                        [ "LHS alias of rule is ill-formed."
+                        , Pretty.indent 4 $ unparse pat
+                        ]
+        Rewrites_ _ (And_ _ (Not_ _ antiLeft) (ApplyAlias_ alias params)) rhs
+            -> case substituteInAlias alias params of
+                And_ _ requires lhs ->
+                    patternToAxiomPattern
+                        attributes
+                        (mkRewrites
+                            (mkAnd (mkNot antiLeft) (mkAnd requires lhs))
+                            rhs
+                        )
+                _ -> (error . show. Pretty.vsep)
+                        [ "LHS alias of rule is ill-formed."
+                        , Pretty.indent 4 $ unparse pat
+                        ]
         Rewrites_ _
             (And_ _ (Not_ _ antiLeft) (And_ _ requires lhs))
-            (And_ _ ensures rhs) ->
-                        pure $ RewriteAxiomPattern $ RewriteRule RulePattern
-                            { left = lhs
-                            , antiLeft = Just antiLeft
-                            , right = rhs
-                            , requires = Predicate.wrapPredicate requires
-                            , ensures = Predicate.wrapPredicate ensures
-                            , attributes
-                            }
-        _ -> koreFail "Rule is ill-formed with respect\
-                      \ to the priority attribute."
-  | otherwise =
-    case pat of
+            (And_ _ ensures rhs)
+            | isJust . getPriority . Attribute.priority $ attributes  ->
+                pure $ RewriteAxiomPattern $ RewriteRule RulePattern
+                    { left = lhs
+                    , antiLeft = Just antiLeft
+                    , right = rhs
+                    , requires = Predicate.wrapPredicate requires
+                    , ensures = Predicate.wrapPredicate ensures
+                    , attributes
+                    }
         -- normal rewrite axioms
         -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
         -- quantifiers.
@@ -594,13 +669,6 @@ patternToAxiomPattern attributes pat
                 , ensures = Predicate.wrapPredicate ensures
                 , attributes
                 }
-        Rewrites_ _ (ApplyAlias_ alias params) rhs ->
-            case substituteInAlias alias params of
-               And_ _ requires lhs ->
-                   patternToAxiomPattern
-                       attributes
-                       (mkRewrites (mkAnd requires lhs) rhs)
-               _ -> koreFail "LHS alias of rule is ill-formed."
         -- Reachability claims
         Implies_ _ (And_ _ requires lhs) (ApplyAlias_ op [And_ _ ensures rhs])
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
@@ -656,7 +724,15 @@ patternToAxiomPattern attributes pat
                     , ensures = Predicate.makeTruePredicate
                     , attributes
                     }
-        _ -> koreFail "Unsupported pattern type in axiom"
+        _
+            | (isDeclaredFunctional . Attribute.functional $ attributes)
+            || (isConstructor . Attribute.constructor $ attributes)
+            || (not . null . getSubsorts . Attribute.subsorts $ attributes)
+            -> koreFail "Patterns of this type do not represent rules"
+            | otherwise -> (error . show. Pretty.vsep)
+                    [ "Unsupported pattern type in axiom"
+                    , Pretty.indent 4 $ unparse pat
+                    ]
       where
         isModalSymbol symbol
             | headName == allPathGlobally = True

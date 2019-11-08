@@ -11,6 +11,7 @@ module Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate
     , simplify
+    , termEquals
     ) where
 
 import Control.Error
@@ -25,33 +26,39 @@ import Data.List
 import Data.Maybe
     ( fromMaybe
     )
+import qualified GHC.Stack as GHC
 
+import Branch
+    ( BranchT
+    )
+import qualified Branch as BranchT
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
-import qualified Kore.Internal.OrPredicate as OrPredicate
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
     )
 import qualified Kore.Step.Simplification.AndPredicates as And
     ( simplifyEvaluatedMultiPredicate
     )
-import qualified Kore.Step.Simplification.AndTerms as AndTerms
-    ( termEquals
+import Kore.Step.Simplification.AndTerms
+    ( maybeTermEquals
     )
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluate
@@ -59,6 +66,7 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     )
 import qualified Kore.Step.Simplification.Iff as Iff
     ( makeEvaluate
+    , simplifyEvaluated
     )
 import qualified Kore.Step.Simplification.Implies as Implies
     ( simplifyEvaluated
@@ -72,6 +80,12 @@ import qualified Kore.Step.Simplification.Or as Or
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
+import Kore.Unification.UnifierT
+    ( runUnifierT
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
 
 {-|'simplify' simplifies an 'Equals' pattern made of 'OrPattern's.
 
@@ -150,7 +164,7 @@ Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Equals Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify predicate Equals { equalsFirst = first, equalsSecond = second } =
@@ -171,7 +185,7 @@ carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -181,18 +195,22 @@ simplifyEvaluated predicate first second
   | otherwise = do
     let isFunctionConditional Conditional {term} = isFunctionPattern term
     case (firstPatterns, secondPatterns) of
-        ([firstP], [secondP]) -> makeEvaluate firstP secondP predicate
+        ([firstP], [secondP]) ->
+            makeEvaluate firstP secondP predicate
         ([firstP], _)
             | isFunctionConditional firstP ->
                 makeEvaluateFunctionalOr predicate firstP secondPatterns
         (_, [secondP])
             | isFunctionConditional secondP ->
                 makeEvaluateFunctionalOr predicate secondP firstPatterns
-        _ ->
-            makeEvaluate
-                (OrPattern.toPattern first)
-                (OrPattern.toPattern second)
-                predicate
+        _
+            | OrPattern.isPredicate first && OrPattern.isPredicate second ->
+                Iff.simplifyEvaluated first second
+            | otherwise ->
+                makeEvaluate
+                    (OrPattern.toPattern first)
+                    (OrPattern.toPattern second)
+                    predicate
   where
     firstPatterns = MultiOr.extractPatterns first
     secondPatterns = MultiOr.extractPatterns second
@@ -200,7 +218,7 @@ simplifyEvaluated predicate first second
 makeEvaluateFunctionalOr
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Predicate variable
+    => Condition variable
     -> Pattern variable
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
@@ -242,7 +260,7 @@ makeEvaluate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Pattern variable
     -> Pattern variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (OrPattern variable)
 makeEvaluate
     first@Conditional { term = Top_ _ }
@@ -268,7 +286,7 @@ makeEvaluate
     predicate
   = do
     result <- makeEvaluateTermsToPredicate firstTerm secondTerm predicate
-    return (Pattern.fromPredicate <$> result)
+    return (Pattern.fromCondition <$> result)
 
 makeEvaluate
     first@Conditional { term = firstTerm }
@@ -307,7 +325,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
             Conditional
                 { term = mkTop_
                 , predicate =
-                    Syntax.Predicate.markSimplified
+                    Predicate.markSimplified
                     $ makeEqualsPredicate firstTerm secondTerm
                 , substitution = mempty
                 }
@@ -321,8 +339,8 @@ makeEvaluateTermsAssumesNoBottomMaybe
     -> TermLike variable
     -> MaybeT simplifier (OrPattern variable)
 makeEvaluateTermsAssumesNoBottomMaybe first second = do
-    result <- AndTerms.termEquals first second
-    return (Pattern.fromPredicate <$> result)
+    result <- termEquals first second
+    return (Pattern.fromCondition <$> result)
 
 {-| Combines two terms with 'Equals' into a predicate-substitution.
 
@@ -338,24 +356,96 @@ makeEvaluateTermsToPredicate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => TermLike variable
     -> TermLike variable
-    -> Predicate variable
-    -> simplifier (OrPredicate variable)
-makeEvaluateTermsToPredicate first second configurationPredicate
-  | first == second = return OrPredicate.top
+    -> Condition variable
+    -> simplifier (OrCondition variable)
+makeEvaluateTermsToPredicate first second configurationCondition
+  | first == second = return OrCondition.top
   | otherwise = do
-    result <- runMaybeT $ AndTerms.termEquals first second
+    result <- runMaybeT $ termEquals first second
     case result of
         Nothing ->
             return
-                $ OrPredicate.fromPredicate . Predicate.fromPredicate
-                $ Syntax.Predicate.markSimplified
+                $ OrCondition.fromCondition . Condition.fromPredicate
+                $ Predicate.markSimplified
                 $ makeEqualsPredicate first second
         Just predicatedOr -> do
-            firstCeilOr <- Ceil.makeEvaluateTerm configurationPredicate first
-            secondCeilOr <- Ceil.makeEvaluateTerm configurationPredicate second
+            firstCeilOr <- Ceil.makeEvaluateTerm configurationCondition first
+            secondCeilOr <- Ceil.makeEvaluateTerm configurationCondition second
             firstCeilNegation <- Not.simplifyEvaluatedPredicate firstCeilOr
             secondCeilNegation <- Not.simplifyEvaluatedPredicate secondCeilOr
             ceilNegationAnd <- And.simplifyEvaluatedMultiPredicate
                 (MultiAnd.make [firstCeilNegation, secondCeilNegation])
 
             return $ MultiOr.merge predicatedOr ceilNegationAnd
+
+{- | Simplify an equality relation of two patterns.
+
+@termEquals@ assumes the result will be part of a predicate with a special
+condition for testing @⊥ = ⊥@ equality.
+
+The comment for 'Kore.Step.Simplification.And.simplify' describes all
+the special cases handled by this.
+
+ -}
+termEquals
+    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT simplifier (OrCondition variable)
+termEquals first second = MaybeT $ do
+    maybeResults <- BranchT.gather $ runMaybeT $ termEqualsAnd first second
+    case sequence maybeResults of
+        Nothing -> return Nothing
+        Just results -> return $ Just $
+            MultiOr.make (map Condition.eraseConditionalTerm results)
+
+termEqualsAnd
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    => GHC.HasCallStack
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT (BranchT simplifier) (Pattern variable)
+termEqualsAnd p1 p2 =
+    MaybeT $ run $ maybeTermEqualsWorker p1 p2
+  where
+    run it = (runUnifierT . runMaybeT) it >>= either missingCase BranchT.scatter
+    missingCase = const (return Nothing)
+
+    maybeTermEqualsWorker
+        :: forall unifier
+        .   ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
+        => TermLike variable
+        -> TermLike variable
+        -> MaybeT unifier (Pattern variable)
+    maybeTermEqualsWorker = maybeTermEquals termEqualsAndWorker
+
+    termEqualsAndWorker
+        :: forall unifier
+        .   ( MonadUnify unifier
+            , Logger.WithLog Logger.LogMessage unifier
+            )
+        => TermLike variable
+        -> TermLike variable
+        -> unifier (Pattern variable)
+    termEqualsAndWorker first second =
+        either ignoreErrors scatterResults
+        =<< (runUnifierT . runMaybeT) (maybeTermEqualsWorker first second)
+      where
+        ignoreErrors _ = return equalsPredicate
+        scatterResults =
+            maybe
+                (return equalsPredicate) -- default if no results
+                (BranchT.alternate . BranchT.scatter)
+            . sequence
+        equalsPredicate =
+            Conditional
+                { term = mkTop_
+                , predicate =
+                    Predicate.markSimplified
+                    $ makeEqualsPredicate first second
+                , substitution = mempty
+                }

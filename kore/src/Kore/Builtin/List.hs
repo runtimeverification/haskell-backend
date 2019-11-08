@@ -50,9 +50,7 @@ import Control.Applicative
 import Control.Error
     ( MaybeT
     )
-import Control.Monad
-    ( join
-    )
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Control.Monad.Trans.Maybe as Monad.Trans.Maybe
     ( mapMaybeT
@@ -88,6 +86,20 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
+    ( pattern App_
+    , Builtin
+    , pattern Builtin_
+    , Concrete
+    , InternalVariable
+    , Sort
+    , TermLike
+    , pattern Var_
+    , mkBuiltin
+    , mkSort
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
 import Kore.Step.Simplification.SimplificationType
     ( SimplificationType
     )
@@ -153,6 +165,10 @@ symbolVerifiers =
     , ( getKey
       , Builtin.verifySymbol acceptAnySort [assertSort, Int.assertSort]
       )
+    ,   ( updateKey
+        , Builtin.verifySymbol assertSort
+            [assertSort, Int.assertSort, acceptAnySort]
+        )
     ]
 
 {- | Abort function evaluation if the argument is not a List domain value.
@@ -184,7 +200,7 @@ expectConcreteBuiltinList
     -> TermLike variable  -- ^ Operand pattern
     -> MaybeT m (Seq (TermLike Concrete))
 expectConcreteBuiltinList ctx =
-    Monad.Trans.Maybe.mapMaybeT (fmap join)
+    Monad.Trans.Maybe.mapMaybeT (fmap Monad.join)
         . fmap (traverse Builtin.toKey)
         . expectBuiltinList ctx
 
@@ -203,7 +219,7 @@ evalElement :: Builtin.Function
 evalElement =
     Builtin.functionEvaluator evalElement0
   where
-    evalElement0 _ resultSort =
+    evalElement0 resultSort =
         \case
             [elem'] -> returnList resultSort (Seq.singleton elem')
             _ -> Builtin.wrongArity elementKey
@@ -212,15 +228,9 @@ evalGet :: Builtin.Function
 evalGet =
     Builtin.functionEvaluator evalGet0
   where
-    evalGet0
-        :: (InternalVariable variable, MonadSimplify simplifier)
-        => TermLikeSimplifier
-        -> Sort
-        -> [TermLike variable]
-        -> simplifier (AttemptedAxiom variable)
-    evalGet0 _ _ = \arguments ->
-        Builtin.getAttemptedAxiom
-        (do
+    evalGet0 :: Builtin.FunctionImplementation
+    evalGet0 _ = \arguments ->
+        Builtin.getAttemptedAxiom $ do
             let (_list, _ix) =
                     case arguments of
                         [_list, _ix] -> (_list, _ix)
@@ -241,16 +251,35 @@ evalGet =
                     (Builtin.appliedFunction . maybeBottom)
                         (Seq.lookup ix _list)
             emptyList <|> bothConcrete
-        )
       where
         maybeBottom =
             maybe Pattern.bottom Pattern.fromTermLike
+
+evalUpdate :: Builtin.Function
+evalUpdate =
+    Builtin.functionEvaluator evalUpdate0
+  where
+    evalUpdate0 :: Builtin.FunctionImplementation
+    evalUpdate0 resultSort [_list, _ix, value] =
+        Builtin.getAttemptedAxiom $ do
+            _list <- expectBuiltinList getKey _list
+            _ix <- fromInteger <$> Int.expectBuiltinInt getKey _ix
+            let len = Seq.length _list
+                ix
+                  | _ix < 0 =
+                    -- negative indices count from end of list
+                    _ix + len
+                  | otherwise = _ix
+            if ix >= 0 && ix < len
+                then returnList resultSort (Seq.update ix value _list)
+                else Builtin.appliedFunction Pattern.bottom
+    evalUpdate0 _ _ = Builtin.wrongArity updateKey
 
 evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
   where
-    evalUnit0 _ resultSort =
+    evalUnit0 resultSort =
         \case
             [] -> returnList resultSort Seq.empty
             _ -> Builtin.wrongArity "LIST.unit"
@@ -261,11 +290,10 @@ evalConcat =
   where
     evalConcat0
         :: (InternalVariable variable, MonadSimplify simplifier)
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> simplifier (AttemptedAxiom variable)
-    evalConcat0 _ resultSort = \arguments ->
+    evalConcat0 resultSort = \arguments ->
         Builtin.getAttemptedAxiom $ do
             let (_list1, _list2) =
                     case arguments of
@@ -302,6 +330,7 @@ builtinFunctions =
         , (elementKey, evalElement)
         , (unitKey, evalUnit)
         , (getKey, evalGet)
+        , (updateKey, evalUpdate)
         ]
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
@@ -329,11 +358,11 @@ unifyEquals
   =
     unifyEquals0 first second
   where
-    propagatePredicates
+    propagateConditions
         :: Traversable t
         => t (Conditional variable a)
         -> Conditional variable (t a)
-    propagatePredicates = sequenceA
+    propagateConditions = sequenceA
 
     unifyEquals0
         :: TermLike variable
@@ -385,8 +414,10 @@ unifyEquals
         Reflection.give tools $ do
             unified <- sequence $ Seq.zipWith simplifyChild list1 list2
             let
-                propagatedUnified = propagatePredicates unified
-                result = asInternal tools builtinListSort <$> propagatedUnified
+                propagatedUnified = propagateConditions unified
+                result =
+                    (TermLike.markSimplified . asInternal tools builtinListSort)
+                    <$> propagatedUnified
             return result
       where
         Domain.InternalList { builtinListSort } = builtin1
@@ -412,7 +443,8 @@ unifyEquals
                     builtin1 { Domain.builtinListChild = prefix1 }
                     builtin2
             suffixUnified <- simplifyChild frame2 listSuffix1
-            let result = mkBuiltin internal1 <$ prefixUnified <* suffixUnified
+            let result = TermLike.markSimplified (mkBuiltin internal1)
+                    <$ prefixUnified <* suffixUnified
             return result
       where
         internal1 = Domain.BuiltinList builtin1
