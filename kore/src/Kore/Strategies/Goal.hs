@@ -393,7 +393,6 @@ instance Goal (ReachabilityRule Variable) where
                     CheckProven -> empty
                     _ -> return proofstate
 
-
     strategy
         :: ReachabilityRule Variable
         -> [ReachabilityRule Variable]
