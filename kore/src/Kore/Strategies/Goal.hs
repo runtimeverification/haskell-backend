@@ -402,13 +402,13 @@ instance Goal (ReachabilityRule Variable) where
     strategy goal claims axioms =
         case goal of
             OnePath rule ->
-                (fmap . fmap . fmap) OPRule
+                reachabilityOnePathStrategy
                 $ strategy
                     rule
                     (mapMaybe maybeOnePath claims)
                     (mapMaybe maybeOnePathRule axioms)
             AllPath rule ->
-                (fmap . fmap . fmap) APRule
+                reachabilityAllPathStrategy
                 $ strategy
                     rule
                     (mapMaybe maybeAllPath claims)
@@ -421,6 +421,18 @@ maybeOnePath _ = Nothing
 maybeAllPath :: ReachabilityRule Variable -> Maybe (AllPathRule Variable)
 maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
+
+reachabilityOnePathStrategy
+    :: [Strategy (Prim (OnePathRule Variable))]
+    -> [Strategy (Prim (ReachabilityRule Variable))]
+reachabilityOnePathStrategy strategy' =
+    (fmap . fmap . fmap) OPRule strategy'
+
+reachabilityAllPathStrategy
+    :: [Strategy (Prim (AllPathRule Variable))]
+    -> [Strategy (Prim (ReachabilityRule Variable))]
+reachabilityAllPathStrategy strategy' =
+    (fmap . fmap . fmap) APRule strategy'
 
 allPathProofState
     :: ProofState (AllPathRule Variable) (AllPathRule Variable)

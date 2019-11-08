@@ -162,7 +162,11 @@ addRules = TransitionT . Accum.add . Seq.fromList . Foldable.toList
 addRule :: Monad m => rule -> TransitionT rule m ()
 addRule = TransitionT . Accum.add . Seq.singleton
 
-mapRules :: Monad m => (rule -> rule') -> TransitionT rule m a -> TransitionT rule' m a
+mapRules
+    :: Monad m
+    => (rule -> rule')
+    -> TransitionT rule m a
+    -> TransitionT rule' m a
 mapRules f trans = do
     results <- tryTransitionT trans
     let results' = map (fmap (fmap f)) results
