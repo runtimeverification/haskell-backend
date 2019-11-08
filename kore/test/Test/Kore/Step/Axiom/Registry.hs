@@ -235,12 +235,6 @@ testDef =
             { sentenceAxiomParameters = [sortVar]
             , sentenceAxiomAttributes = Attributes []
             , sentenceAxiomPattern =
-                Builtin.externalize $ mkTop sortS
-            }
-        , SentenceAxiomSentence SentenceAxiom
-            { sentenceAxiomParameters = [sortVar]
-            , sentenceAxiomAttributes = Attributes []
-            , sentenceAxiomPattern =
                 Builtin.externalize $ mkRewrites
                     (mkAnd mkTop_ (mkApplySymbol fHead []))
                     (mkAnd mkTop_ (mkApplySymbol tHead []))

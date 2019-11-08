@@ -60,6 +60,7 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import Kore.Builtin.External
 import qualified Kore.Builtin.Int as Int
+import qualified Kore.Builtin.InternalBytes as InternalBytes
 import qualified Kore.Builtin.KEqual as KEqual
 import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.List as List
@@ -99,6 +100,7 @@ koreVerifiers =
         <> Map.sortDeclVerifiers
         <> Set.sortDeclVerifiers
         <> String.sortDeclVerifiers
+        <> InternalBytes.sortDeclVerifiers
     , symbolVerifiers =
            Bool.symbolVerifiers
         <> Int.symbolVerifiers
@@ -108,6 +110,7 @@ koreVerifiers =
         <> Set.symbolVerifiers
         <> String.symbolVerifiers
         <> Krypto.symbolVerifiers
+        <> InternalBytes.symbolVerifiers
     , domainValueVerifiers =
         HashMap.fromList
             [ (Bool.sort, Bool.patternVerifier)
@@ -141,6 +144,7 @@ koreEvaluators = evaluators builtins
             , Set.builtinFunctions
             , String.builtinFunctions
             , Krypto.builtinFunctions
+            , InternalBytes.builtinFunctions
             ]
 
 {- | Construct an evaluation context for the given builtin functions.
@@ -206,6 +210,7 @@ internalize tools =
             List.internalize tools
         .   Map.internalize tools
         .   Set.internalize tools
+        .   InternalBytes.internalize
 
 {- | Renormalize builtin types after substitution.
  -}

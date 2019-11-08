@@ -71,6 +71,9 @@ simplify SubstitutionSimplifier { simplifySubstitution } initial =
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
+        -- Check for full simplification *after* normalization. Simplification
+        -- may have produced irrelevant substitutions that become relevant after
+        -- normalization.
         if fullySimplified normalized
             then return normalized { term }
             else worker normalized { term }

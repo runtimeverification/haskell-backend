@@ -21,6 +21,9 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.InternalBytes
+    ( InternalBytes
+    )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
@@ -179,6 +182,11 @@ instance Synthetic Functional (Const (UnifiedVariable variable)) where
 
 -- | A 'StringLiteral' pattern is always 'Functional'.
 instance Synthetic Functional (Const StringLiteral) where
+    synthetic = const (Functional True)
+    {-# INLINE synthetic #-}
+
+-- | A 'Bytes' pattern is always 'Functional'.
+instance Synthetic Functional (Const InternalBytes) where
     synthetic = const (Functional True)
     {-# INLINE synthetic #-}
 

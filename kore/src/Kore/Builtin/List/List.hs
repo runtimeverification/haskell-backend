@@ -16,11 +16,12 @@ module Kore.Builtin.List.List
     , isSymbolConcat
     , isSymbolElement
     , isSymbolUnit
-      -- * keys
+      -- * Keys
     , concatKey
     , elementKey
     , unitKey
     , getKey
+    , updateKey
     ) where
 
 import qualified Data.Function as Function
@@ -185,3 +186,6 @@ unitKey = "LIST.unit"
 
 getKey :: IsString s => s
 getKey = "LIST.get"
+
+updateKey :: IsString s => s
+updateKey = "LIST.update"

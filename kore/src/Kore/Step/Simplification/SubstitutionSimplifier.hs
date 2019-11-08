@@ -6,20 +6,37 @@ License     : NCSA
 
 module Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
-    , simplification
+    , substitutionSimplifier
+    , simplifySubstitutionWorker
     , MakeAnd (..)
     , deduplicateSubstitution
     , simplifyAnds
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
 import qualified Control.Comonad.Trans.Cofree as Cofree
+import Control.Error
+    ( MaybeT
+    , maybeT
+    )
+import Control.Exception as Exception
+import qualified Control.Lens as Lens
 import Control.Monad
     ( foldM
+    , (>=>)
     )
+import Control.Monad.State.Strict
+    ( StateT
+    , runStateT
+    )
+import qualified Control.Monad.Trans as Trans
 import Data.Function
     ( (&)
     )
 import qualified Data.Functor.Foldable as Recursive
+import Data.Generics.Product
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
@@ -28,6 +45,7 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import qualified GHC.Generics as GHC
 
 import Branch
     ( BranchT
@@ -45,18 +63,18 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
+import Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( And (..)
-    , pattern And_
     , TermLike
     , TermLikeF (..)
     , mkAnd
-    , mkVar
     )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
     ( Predicate
     )
@@ -64,20 +82,23 @@ import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , simplifyConditionalTerm
+    , simplifyTerm
     )
 import Kore.Substitute
     ( SubstitutionVariable
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
-    ( Substitution
+    ( Normalization (..)
+    , SingleSubstitution
+    , Substitution
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
     ( normalize
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
+    ( UnifiedVariable (..)
     )
 
 newtype SubstitutionSimplifier simplifier =
@@ -96,49 +117,29 @@ denormalized part into the predicate, but returns the normalized part as a
 substitution.
 
  -}
-simplification
+substitutionSimplifier
     :: forall simplifier
     .  MonadSimplify simplifier
     => SubstitutionSimplifier simplifier
-simplification =
-    SubstitutionSimplifier { simplifySubstitution }
+substitutionSimplifier =
+    SubstitutionSimplifier wrapper
   where
-    makeAnd' = simplifierMakeAnd
-    simplifySubstitution
+    wrapper
         :: forall variable
         .  SubstitutionVariable variable
         => Substitution variable
         -> simplifier (OrCondition variable)
-    simplifySubstitution substitution = do
-        deduplicated <-
-            -- TODO (thomas.tuegel): If substitution de-duplication fails with a
-            -- unification error, this will still discard the entire
-            -- substitution into the predicate. Fortunately, that seems to be
-            -- rare enough to discount for now.
-            deduplicateSubstitution makeAnd' substitution
-            & Branch.gather
-        OrCondition.fromConditions
-            <$> traverse (normalize1 . promoteUnsimplified) deduplicated
+    wrapper substitution =
+        fmap OrCondition.fromConditions . Branch.gather $ do
+            (predicate, result) <- worker substitution & maybeT empty return
+            let condition = Condition.fromNormalizationSimplified result
+            let condition' = Condition.fromPredicate predicate <> condition
+            TopBottom.guardAgainstBottom condition'
+            return condition'
+      where
+        worker = simplifySubstitutionWorker simplifierMakeAnd
 
-    isAnd (And_ _ _ _) = True
-    isAnd _            = False
-
-    promoteUnsimplified (predicate, substitutions) =
-        let (unsimplified, simplified) = Map.partition isAnd substitutions
-            predicate' =
-                Predicate.makeMultipleAndPredicate
-                . (:) predicate
-                . map mkUnsimplified
-                $ Map.toList unsimplified
-            mkUnsimplified (mkVar -> variable, termLike) =
-                Predicate.makeEqualsPredicate variable termLike
-        in (predicate', simplified)
-
-    normalize1 (predicate, substitutions) = do
-        let normalized =
-                maybe Condition.bottom Condition.fromNormalization
-                $ normalize substitutions
-        return $ Condition.fromPredicate predicate <> normalized
+-- * Implementation
 
 -- | Interface for constructing a simplified 'And' pattern.
 newtype MakeAnd monad =
@@ -245,3 +246,167 @@ deduplicateSubstitution makeAnd' =
         :: Map key (Conditional variable term)
         -> Conditional variable (Map key term)
     collectConditions = sequenceA
+
+simplifySubstitutionWorker
+    :: forall variable simplifier
+    .  SubstitutionVariable variable
+    => MonadSimplify simplifier
+    => MakeAnd simplifier
+    -> Substitution variable
+    -> MaybeT simplifier (Predicate variable, Normalization variable)
+simplifySubstitutionWorker makeAnd' = \substitution -> do
+    (result, Private { accum = condition }) <-
+        runStateT loop Private
+            { count = maxBound
+            , accum = Condition.fromSubstitution substitution
+            }
+    (assertNullSubstitution condition . return)
+        (Condition.predicate condition, result)
+  where
+    assertNullSubstitution =
+        Exception.assert . Substitution.null . Condition.substitution
+
+    loop :: Impl variable simplifier (Normalization variable)
+    loop = do
+        simplified <-
+            takeSubstitution
+            >>= deduplicate
+            >>= return . normalize
+            >>= traverse simplifyNormalizationOnce
+        substitution <- takeSubstitution
+        lastCount <- Lens.use (field @"count")
+        case simplified of
+            Nothing -> empty
+            Just normalization@Normalization { denormalized }
+              | not fullySimplified, makingProgress -> do
+                Lens.assign (field @"count") thisCount
+                addSubstitution substitution
+                addSubstitution $ Substitution.wrapNormalization normalization
+                loop
+              | otherwise -> return normalization
+              where
+                fullySimplified =
+                    null denormalized && Substitution.null substitution
+                makingProgress =
+                    thisCount < lastCount || null denormalized
+                thisCount = length denormalized
+
+    simplifyNormalizationOnce
+        ::  Normalization variable
+        ->  Impl variable simplifier (Normalization variable)
+    simplifyNormalizationOnce =
+        return
+        >=> simplifyNormalized
+        >=> return . Substitution.applyNormalized
+        >=> simplifyDenormalized
+
+    simplifyNormalized
+        :: Normalization variable
+        -> Impl variable simplifier (Normalization variable)
+    simplifyNormalized =
+        Lens.traverseOf
+            (field @"normalized" . Lens.traversed)
+            simplifySingleSubstitution
+
+    simplifyDenormalized
+        :: Normalization variable
+        -> Impl variable simplifier (Normalization variable)
+    simplifyDenormalized =
+        Lens.traverseOf
+            (field @"denormalized" . Lens.traversed)
+            simplifySingleSubstitution
+
+    simplifySingleSubstitution
+        :: SingleSubstitution variable
+        -> Impl variable simplifier (SingleSubstitution variable)
+    simplifySingleSubstitution subst@(uVar, termLike) =
+        case uVar of
+            SetVar _ -> return subst
+            ElemVar _
+              | TermLike.isSimplified termLike -> return subst
+              | otherwise -> do
+                termLike' <- simplifyTermLike termLike
+                -- simplifyTermLike returns the unsimplified input in the event
+                -- that simplification resulted in a disjunction. We may mark
+                -- the result simplified anyway because uVar is singular, so:
+                --   1. termLike is function-like, so
+                --   2. it eventually reduces to a single term, so if it has not
+                --   3. we need a substitution to evaluate it, and
+                --   4. substitution resets the simplified marker.
+                return (uVar, TermLike.markSimplified termLike')
+
+    simplifyTermLike
+        :: TermLike variable
+        -> Impl variable simplifier (TermLike variable)
+    simplifyTermLike termLike = do
+        orPattern <- simplifyTerm termLike
+        case OrPattern.toPatterns orPattern of
+            [        ] -> do
+                addCondition Condition.bottom
+                return termLike
+            [pattern1] -> do
+                let (termLike1, condition) = Pattern.splitTerm pattern1
+                addCondition condition
+                return termLike1
+            _          -> return termLike
+
+    deduplicate
+        ::  Substitution variable
+        ->  Impl variable simplifier
+                (Map (UnifiedVariable variable) (TermLike variable))
+    deduplicate substitution = do
+        (predicate, substitution') <-
+            deduplicateSubstitution makeAnd' substitution
+            & Trans.lift . Trans.lift
+        addPredicate predicate
+        return substitution'
+
+data Private variable =
+    Private
+        { accum :: !(Condition variable)
+        -- ^ The current condition, accumulated during simplification.
+        , count :: !Int
+        -- ^ The current number of denormalized substitutions.
+        }
+    deriving (GHC.Generic)
+
+{- | The 'Impl'ementation of the generic 'SubstitutionSimplifier'.
+
+The 'MaybeT' transformer layer is used for short-circuiting: if any individual
+substitution in unsatisfiable (@\\bottom@) then the entire substitution is also.
+
+ -}
+type Impl variable simplifier = StateT (Private variable) (MaybeT simplifier)
+
+addCondition
+    :: SubstitutionVariable variable
+    => Monad simplifier
+    => Condition variable
+    -> Impl variable simplifier ()
+addCondition condition
+  | TopBottom.isBottom condition = empty
+  | otherwise =
+    Lens.modifying (field @"accum") (mappend condition)
+
+addPredicate
+    :: SubstitutionVariable variable
+    => Monad simplifier
+    => Predicate variable
+    -> Impl variable simplifier ()
+addPredicate = addCondition . Condition.fromPredicate
+
+addSubstitution
+    :: SubstitutionVariable variable
+    => Monad simplifier
+    => Substitution variable
+    -> Impl variable simplifier ()
+addSubstitution = addCondition . Condition.fromSubstitution
+
+takeSubstitution
+    :: SubstitutionVariable variable
+    => Monad simplifier
+    => Impl variable simplifier (Substitution variable)
+takeSubstitution = do
+    substitution <- Lens.use (field @"accum".field @"substitution")
+    Lens.assign (field @"accum".field @"substitution") mempty
+    return substitution

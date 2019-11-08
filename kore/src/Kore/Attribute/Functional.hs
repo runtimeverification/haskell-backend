@@ -19,6 +19,9 @@ import Kore.Attribute.Parser as Parser
 import Kore.Debug
 
 {- | @Functional@ represents the @functional@ attribute for symbols.
+
+Note: This attribute is also used to annotate axioms stating functionality
+constraints.
  -}
 newtype Functional = Functional { isDeclaredFunctional :: Bool }
     deriving (GHC.Generic, Eq, Ord, Show)

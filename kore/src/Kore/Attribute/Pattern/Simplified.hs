@@ -19,6 +19,9 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
+import Kore.Internal.InternalBytes
+    ( InternalBytes
+    )
 import Kore.Syntax
 import Kore.Variables.UnifiedVariable
 
@@ -66,6 +69,10 @@ instance Synthetic Simplified (Top sort) where
     {-# INLINE synthetic #-}
 
 instance Synthetic Simplified (Const StringLiteral) where
+    synthetic = alwaysSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified (Const InternalBytes) where
     synthetic = alwaysSimplified
     {-# INLINE synthetic #-}
 
