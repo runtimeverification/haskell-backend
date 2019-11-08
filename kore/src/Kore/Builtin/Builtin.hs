@@ -22,7 +22,8 @@ module Kore.Builtin.Builtin
     , SortDeclVerifier, SortDeclVerifiers
     , DomainValueVerifier, DomainValueVerifiers
     , SortVerifier (..)
-    , ApplicationVerifier (..), SymbolKey (..), ApplicationVerifiers
+    , ApplicationVerifier (..), SymbolKey(..), ApplicationVerifiers
+    , lookupApplicationVerifier
     , Function
     , Parser
     , symbolVerifier
@@ -128,6 +129,9 @@ import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol (..)
+    )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Error
 import Kore.Error
     ( Error
@@ -269,6 +273,23 @@ instance Hashable SymbolKey
 
 type ApplicationVerifiers patternType =
     HashMap SymbolKey (ApplicationVerifier patternType)
+
+lookupApplicationVerifier
+    :: Symbol
+    -> ApplicationVerifiers patternType
+    -> Maybe (ApplicationVerifier patternType)
+lookupApplicationVerifier symbol verifiers = do
+    key <- getHook symbol <|> getKlabel symbol
+    HashMap.lookup key verifiers
+  where
+    getHook =
+        fmap HookedSymbolKey
+        . Attribute.Symbol.getHook . Attribute.Symbol.hook
+        . symbolAttributes
+    getKlabel =
+        fmap KlabelSymbolKey
+        . Attribute.Symbol.getKlabel . Attribute.Symbol.klabel
+        . symbolAttributes
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}

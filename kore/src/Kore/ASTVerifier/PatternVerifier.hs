@@ -35,7 +35,6 @@ import Data.Function
     ( (&)
     )
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Map as Map
 import Data.Set
     ( Set
@@ -595,9 +594,11 @@ verifyApplication application = do
     verifyApplySymbol' = do
         application' <- verifyApplySymbol Internal.termLikeSort application
         Context { builtinApplicationVerifiers } <- Reader.ask
-        let builtinVerifier = do
-                hook <- Attribute.getHook . Attribute.hook . Internal.symbolAttributes $ applicationSymbolOrAlias application'
-                HashMap.lookup hook builtinApplicationVerifiers
+        let symbol = applicationSymbolOrAlias application'
+            builtinVerifier =
+                Builtin.lookupApplicationVerifier
+                    symbol
+                    builtinApplicationVerifiers
         Trans.lift . PatternVerifier . Trans.lift
             $ maybe
                 (return . Internal.ApplySymbolF)
