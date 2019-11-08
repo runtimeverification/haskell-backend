@@ -50,6 +50,7 @@ import Kore.Predicate.Predicate
     )
 import Kore.Step.Rule
     ( OnePathRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     )
@@ -103,7 +104,7 @@ test_onePathStrategy =
                 Mock.a
                 Mock.a
             )
-            [simpleRewrite Mock.a Mock.b]
+            [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqual ""
             (ProofState.Goal $ makeOnePathRule Mock.a Mock.a)
@@ -116,7 +117,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             (Limit 1)
             (makeOnePathRule Mock.a Mock.a)
-            [simpleRewrite Mock.a Mock.b]
+            [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqual "" ProofState.Proven _actual
 
@@ -128,7 +129,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             (Limit 1)
             (makeOnePathRule Mock.a Mock.d)
-            [simpleRewrite Mock.a Mock.b]
+            [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         assertEqual ""
             (ProofState.Goal $ makeOnePathRule Mock.c Mock.d)
@@ -145,7 +146,7 @@ test_onePathStrategy =
                 Mock.a
                 Mock.b
             )
-            [simpleRewrite Mock.b Mock.c]
+            [makeOnePathRule Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
@@ -161,7 +162,7 @@ test_onePathStrategy =
         [ _actual1 ] <- runOnePathSteps
             (Limit 2)
             (makeOnePathRule Mock.a Mock.e)
-            [simpleRewrite Mock.b Mock.c]
+            [makeOnePathRule Mock.b Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
@@ -183,7 +184,7 @@ test_onePathStrategy =
         [ _actual ] <- runOnePathSteps
             (Limit 2)
             (makeOnePathRule Mock.a Mock.e)
-            [simpleRewrite Mock.e Mock.c]
+            [makeOnePathRule Mock.e Mock.c]
             [ simpleRewrite Mock.b Mock.d
             , simpleRewrite Mock.a Mock.b
             ]
@@ -216,8 +217,8 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                [ makeOnePathRule (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
                 [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
                 , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
@@ -294,7 +295,7 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                [ makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
                 ]
                 [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
                 , simpleRewrite
@@ -546,15 +547,19 @@ rewriteWithPredicate left right predicate =
         }
 
 runSteps
-    :: ( ExecutionGraph
-            (ProofState (OnePathRule Variable) (OnePathRule Variable))
-            (Rule (OnePathRule Variable))
+    :: Goal goal
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Show goal
+    => Show (Rule goal)
+    => ( ExecutionGraph
+            (ProofState goal goal)
+            (Rule goal)
        -> Maybe (ExecutionGraph b c)
        )
     -> (ExecutionGraph b c -> a)
-    -> OnePathRule Variable
+    -> goal
     -- ^left-hand-side of unification
-    -> [Strategy (Prim (OnePathRule Variable))]
+    -> [Strategy (Prim goal)]
     -> IO a
 runSteps graphFilter picker configuration strategy' =
     (<$>) picker
@@ -570,12 +575,17 @@ runSteps graphFilter picker configuration strategy' =
     Env {metadataTools} = mockEnv
 
 runOnePathSteps
-    :: Limit Natural
-    -> OnePathRule Variable
+    :: Goal goal
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Show goal
+    => Show (Rule goal)
+    => Ord goal
+    => Limit Natural
+    -> goal
     -- ^left-hand-side of unification
-    -> [Rule (OnePathRule Variable)]
-    -> [Rule (OnePathRule Variable)]
-    -> IO [ProofState (OnePathRule Variable) (OnePathRule Variable)]
+    -> [goal]
+    -> [Rule goal]
+    -> IO [ProofState goal goal]
 runOnePathSteps
     stepLimit
     goal
@@ -588,12 +598,6 @@ runOnePathSteps
         goal
         (Limit.takeWithin
             stepLimit
-            ( onePathFirstStep rewrites
-            : repeat
-                (onePathFollowupStep
-                    coinductiveRewrites
-                    rewrites
-                )
-            )
+            (strategy goal coinductiveRewrites rewrites)
         )
     return (sort $ nub result)
