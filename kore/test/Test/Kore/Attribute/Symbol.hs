@@ -3,6 +3,7 @@ module Test.Kore.Attribute.Symbol
     , test_Anywhere
     , test_Memo
     , test_Klabel
+    , test_SymbolKywd
     ) where
 
 import Test.Tasty
@@ -155,4 +156,14 @@ test_Klabel =
     , testCase "defaultSymbolAttributes" $ assertEqual "[]"
         (Right def)
         (klabel <$> parse [])
+    ]
+
+test_SymbolKywd :: [TestTree]
+test_SymbolKywd =
+    [ testCase "parseAttribute" $ assertEqual "[symbolKywd{}()]"
+        (Right SymbolKywd { isSymbolKywd = True })
+        (symbolKywd <$> parse [ symbolKywdAttribute ])
+    , testCase "defaultSymbolAttributes" $ assertEqual "[]"
+        (Right def)
+        (symbolKywd <$> parse [])
     ]

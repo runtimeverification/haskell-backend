@@ -46,6 +46,7 @@ symbolAttributeGen =
         <*> smthookAttributeGen
         <*> memoAttributeGen
         <*> klabelAttributeGen
+        <*> symbolKywdAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -79,3 +80,6 @@ memoAttributeGen = Attribute.Memo <$> Gen.bool
 
 klabelAttributeGen :: Gen Attribute.Klabel
 klabelAttributeGen = pure Default.def
+
+symbolKywdAttributeGen :: Gen Attribute.SymbolKywd
+symbolKywdAttributeGen = Attribute.SymbolKywd <$> Gen.bool
