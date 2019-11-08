@@ -22,7 +22,7 @@ module Kore.Builtin.Builtin
     , SortDeclVerifier, SortDeclVerifiers
     , DomainValueVerifier, DomainValueVerifiers
     , SortVerifier (..)
-    , ApplicationVerifier (..), ApplicationVerifiers
+    , ApplicationVerifier (..), SymbolKey (..), ApplicationVerifiers
     , Function
     , Parser
     , symbolVerifier
@@ -83,6 +83,9 @@ import Control.Monad
 import qualified Control.Monad as Monad
 import Data.Function
 import qualified Data.Functor.Foldable as Recursive
+import Data.Hashable
+    ( Hashable
+    )
 import Data.HashMap.Strict
     ( HashMap
     )
@@ -94,6 +97,7 @@ import qualified Data.Text as Text
 import Data.Void
     ( Void
     )
+import qualified GHC.Generics as GHC
 import GHC.Stack
     ( HasCallStack
     )
@@ -255,9 +259,16 @@ newtype ApplicationVerifier patternType =
             -> Either (Error VerifyError) (TermLikeF Variable patternType)
         }
 
-type ApplicationVerifiers patternType =
-    HashMap Text (ApplicationVerifier patternType)
+data SymbolKey
+    = HookedSymbolKey !Text
+    | KlabelSymbolKey !Text
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
 
+instance Hashable SymbolKey
+
+type ApplicationVerifiers patternType =
+    HashMap SymbolKey (ApplicationVerifier patternType)
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
