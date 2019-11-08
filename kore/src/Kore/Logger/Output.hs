@@ -94,10 +94,8 @@ import Kore.Logger
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
 data KoreLogType
-    = LogNone
-    -- ^ do not log when no '--log' is passed
-    | LogStdErr
-    -- ^ log to StdOut when '--log StdOut' is passed
+    = LogStdErr
+    -- ^ log to StdErr when '--log StdErr' is passed
     | LogFileText
     -- ^ log to "./kore-(date).log" when '--log FileText' is passed
     deriving (Read)
@@ -125,8 +123,6 @@ withLogger
     -> IO a
 withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
-        LogNone     ->
-            cont mempty
         LogStdErr   ->
             cont (stderrLogger logLevel logScopes)
         LogFileText -> do
@@ -150,7 +146,7 @@ runLoggerT options = withLogger options . runReaderT . getLoggerT
 parseKoreLogOptions :: Parser KoreLogOptions
 parseKoreLogOptions =
     KoreLogOptions
-    <$> (parseType <|> pure LogNone)
+    <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
     <*> (parseScope <|> pure mempty)
   where
@@ -158,11 +154,10 @@ parseKoreLogOptions =
         option
             (maybeReader parseTypeString)
             $ long "log"
-            <> help "Log type: none, stdout, filetext"
+            <> help "Log type: stderr, filetext"
     parseTypeString =
         \case
-            "none"     -> pure LogNone
-            "stdout"   -> pure LogStdErr
+            "stderr"   -> pure LogStdErr
             "filetext" -> pure LogFileText
             _          -> Nothing
     parseLevel =
@@ -177,6 +172,7 @@ parseKoreLogOptions =
             "warning"  -> pure Warning
             "error"    -> pure Error
             "critical" -> pure Critical
+            ""         -> pure Warning
             _          -> Nothing
     parseScope =
         option
