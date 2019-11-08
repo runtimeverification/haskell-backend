@@ -36,17 +36,17 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeNotPredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( mkAnd
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
-import Kore.Predicate.Predicate
-    ( makeAndPredicate
-    , makeNotPredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
@@ -138,7 +138,7 @@ a negated @Internal.Condition@.
 
 I.e. if we want to simplify @not (predicate and substitution)@, we may pass
 @predicate and substitution@ to this function, which will convert
-@predicate and substitution@ into a @Kore.Predicate.Predicate@ and will apply
+@predicate and substitution@ into a @Kore.Internal.Predicate@ and will apply
 a @not@ on top of that.
 -}
 makeEvaluatePredicate

@@ -23,8 +23,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
     , makeFalsePredicate
@@ -32,7 +31,8 @@ import Kore.Predicate.Predicate
     , makeOrPredicate
     , makeTruePredicate
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
+import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Evaluate as Kore
 import Kore.Step.Rule
     ( EqualityRule (..)

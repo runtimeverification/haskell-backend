@@ -16,17 +16,17 @@ import qualified Kore.Internal.OrPattern as OrPattern
     ( bottom
     , top
     )
-import Kore.Internal.TermLike
-    ( TermLike
-    , mkElemVar
-    )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkElemVar
     )
 import Kore.Step.Simplification.OrPattern
 import Kore.Syntax.Variable

@@ -222,16 +222,16 @@ evaluatePattern
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
-    configurationPredicate
-    childrenPredicate
+    configurationCondition
+    childrenCondition
     patt
     defaultValue
   =
     maybeEvaluatePattern
-        childrenPredicate
+        childrenCondition
         patt
         defaultValue
-        configurationPredicate
+        configurationCondition
     & maybeT (return defaultValue) return
 
 {-| Evaluates axioms on patterns.

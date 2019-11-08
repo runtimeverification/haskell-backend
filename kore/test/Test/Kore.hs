@@ -53,6 +53,10 @@ import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (ApplicationSorts)
     )
 import qualified Kore.Internal.ApplicationSorts as ApplicationSorts.DoNotUse
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Internal
     ( Symbol (Symbol)
     )
@@ -69,10 +73,6 @@ import Kore.Parser
     , asParsedPattern
     )
 import Kore.Parser.Lexeme
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Syntax.Definition
 import qualified Kore.Syntax.PatternF as Syntax
 import Kore.Variables.UnifiedVariable
