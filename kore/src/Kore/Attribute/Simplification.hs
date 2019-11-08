@@ -21,7 +21,6 @@ module Kore.Attribute.Simplification
     , simplificationId, simplificationSymbol, simplificationAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -63,15 +62,5 @@ simplificationAttribute :: AttributePattern
 simplificationAttribute = attributePattern_ simplificationSymbol
 
 instance ParseAttributes Simplification where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Simplification { isSimplification } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isSimplification failDuplicate'
-            return Simplification { isSimplification = True }
-        withApplication' = Parser.withApplication simplificationId
-        failDuplicate' = Parser.failDuplicate simplificationId
-
-    toAttributes Simplification { isSimplification } =
-        Attributes [simplificationAttribute | isSimplification]
+    parseAttribute = parseBoolAttribute simplificationId
+    toAttributes = toBoolAttributes simplificationAttribute

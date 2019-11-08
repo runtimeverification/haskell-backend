@@ -9,7 +9,6 @@ module Kore.Attribute.Symbol.SymbolKywd
     , symbolKywdId, symbolKywdSymbol, symbolKywdAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import Data.Monoid
     ( Any (..)
     )
@@ -54,15 +53,5 @@ symbolKywdAttribute :: AttributePattern
 symbolKywdAttribute = attributePattern_ symbolKywdSymbol
 
 instance ParseAttributes SymbolKywd where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args SymbolKywd { isSymbolKywd } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isSymbolKywd failDuplicate'
-            return SymbolKywd { isSymbolKywd = True }
-        withApplication' = Parser.withApplication symbolKywdId
-        failDuplicate' = Parser.failDuplicate symbolKywdId
-
-    toAttributes SymbolKywd { isSymbolKywd } =
-        Attributes [symbolKywdAttribute | isSymbolKywd]
+    parseAttribute = parseBoolAttribute symbolKywdId
+    toAttributes = toBoolAttributes symbolKywdAttribute
