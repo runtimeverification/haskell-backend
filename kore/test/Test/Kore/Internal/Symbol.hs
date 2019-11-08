@@ -45,6 +45,7 @@ symbolAttributeGen =
         <*> smtlibAttributeGen
         <*> smthookAttributeGen
         <*> memoAttributeGen
+        <*> klabelAttributeGen
 
 functionAttributeGen :: Gen Attribute.Function
 functionAttributeGen = Attribute.Function <$> Gen.bool
@@ -75,3 +76,6 @@ smthookAttributeGen = pure Default.def
 
 memoAttributeGen :: Gen Attribute.Memo
 memoAttributeGen = Attribute.Memo <$> Gen.bool
+
+klabelAttributeGen :: Gen Attribute.Klabel
+klabelAttributeGen = pure Default.def

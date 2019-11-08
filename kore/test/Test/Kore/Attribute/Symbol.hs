@@ -2,6 +2,7 @@ module Test.Kore.Attribute.Symbol
     ( test_stepperAttributes
     , test_Anywhere
     , test_Memo
+    , test_Klabel
     ) where
 
 import Test.Tasty
@@ -144,4 +145,14 @@ test_Memo =
     , testCase "defaultSymbolAttributes" $ assertEqual "[]"
         (Right def)
         (memo <$> parse [])
+    ]
+
+test_Klabel :: [TestTree]
+test_Klabel =
+    [ testCase "parseAttribute" $ assertEqual "[klabel{}(\"string\")]"
+        (Right Klabel { getKlabel = Just "string" })
+        (klabel <$> parse [ klabelAttribute "string" ])
+    , testCase "defaultSymbolAttributes" $ assertEqual "[]"
+        (Right def)
+        (klabel <$> parse [])
     ]
