@@ -11,15 +11,15 @@ import Prelude hiding
     , or
     )
 
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , Variable
     )
 import qualified Kore.Internal.TermLike as AST
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.TopBottom as TopBottom
 
 import qualified Test.Kore.Step.MockSymbols as Mock

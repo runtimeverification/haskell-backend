@@ -22,14 +22,14 @@ import qualified Kore.Internal.Pattern as Pattern
     , fromConditionSorted
     , top
     )
-import Kore.Internal.Symbol
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
     , makeFloorPredicate
     , makeTruePredicate
     )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.Floor
     ( makeEvaluateFloor
     , simplify

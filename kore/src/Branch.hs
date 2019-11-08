@@ -87,7 +87,11 @@ deriving instance MonadSMT m => MonadSMT (BranchT m)
 
 deriving instance MonadProfiler m => MonadProfiler (BranchT m)
 
-mapBranchT :: Monad m => (forall x. m x -> m x) -> BranchT m a -> BranchT m a
+mapBranchT
+    :: (Monad m, Monad n)
+    => (forall x. m x -> n x)
+    -> BranchT m a
+    -> BranchT n a
 mapBranchT f (BranchT listT) = BranchT (ListT.mapListT f listT)
 
 {- | Collect results from many simplification branches into one result.

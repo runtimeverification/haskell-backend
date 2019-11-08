@@ -26,17 +26,17 @@ import qualified Kore.Internal.MultiOr as MultiOr
     ( make
     )
 import Kore.Internal.Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
     , makeFalsePredicate
     , makeNotPredicate
     , makeTruePredicate
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Data as Kore
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Syntax.Variable
@@ -54,7 +54,7 @@ import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Definition as Builtin
 import qualified Test.Kore.Builtin.Int as Builtin.Int
-import Test.Kore.Predicate.Predicate ()
+import Test.Kore.Internal.Predicate ()
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import qualified Test.Kore.Step.Simplification as Test

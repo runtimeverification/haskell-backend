@@ -13,15 +13,15 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeExistsPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
@@ -80,8 +80,10 @@ test_simplify =
     substForX =
         (Pattern.topOf Mock.testSort)
             { substitution = Substitution.unsafeWrap
-                [ ( ElemVar Mock.x
-                  , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))]
+                [   ( ElemVar Mock.x
+                    , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z)
+                    )
+                ]
             }
     substToX =
         (Pattern.topOf Mock.testSort)
@@ -103,8 +105,11 @@ test_simplify =
             (Predicate.makeCeilPredicate (f y))
             (Predicate.makeEqualsPredicate y (f y))
     substCycleY =
-        (Condition.fromSubstitution . Substitution.wrap)
-            [(ElemVar Mock.y, f y)]
+        mconcat
+            [ Condition.fromPredicate (Predicate.makeCeilPredicate (f y))
+            , (Condition.fromSubstitution . Substitution.wrap)
+                [(ElemVar Mock.y, f y)]
+            ]
     substForXWithCycleY = substForX `Pattern.andCondition` substCycleY
 
     simplifiesTo

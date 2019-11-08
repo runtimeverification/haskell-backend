@@ -497,7 +497,7 @@ logUpdatesState =
         axioms  = []
         claim   = emptyClaim
         command =
-            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdOut
+            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdErr
     in do
         Result { output, continue, state } <-
             run command axioms [claim] claim
@@ -505,7 +505,7 @@ logUpdatesState =
         continue `equals`     Continue
         state
             `hasLogging`
-            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdOut)
+            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdErr)
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
@@ -599,7 +599,7 @@ runWithState command axioms claims claim stateTransformer
         output' <- readIORef output
         return $ Result output' c s
   where
-    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
+    logOptions = Logger.KoreLogOptions Logger.LogStdErr Logger.Debug mempty
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig logger . Kore.runSimplifier testEnv
 

@@ -32,9 +32,6 @@ import qualified Branch as BranchT
     , scatter
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Condition
-    ( Condition
-    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -47,19 +44,13 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( isPredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Profiler.Profile as Profiler
     ( identifierSimplification
     )
@@ -297,7 +288,7 @@ simplifyInternal term predicate = do
                 -- Top or Bottom.
                 hasPredicateTerm Conditional { term = term' }
                   | isTop term' || isBottom term' = False
-                  | otherwise                     = isPredicate term'
+                  | otherwise                     = Predicate.isPredicate term'
                 unsimplified =
                     filter hasPredicateTerm $ OrPattern.toPatterns results
             if null unsimplified

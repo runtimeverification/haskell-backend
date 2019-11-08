@@ -21,13 +21,13 @@ import qualified Kore.Internal.Pattern as Internal
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Internal.Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate
     , makeFalsePredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable

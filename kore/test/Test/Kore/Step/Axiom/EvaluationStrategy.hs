@@ -23,13 +23,13 @@ import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Pattern as Pattern
     ( Conditional (..)
     )
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     , makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)

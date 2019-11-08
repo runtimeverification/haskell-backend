@@ -28,6 +28,7 @@ import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import Kore.ModelChecker.Step
@@ -44,7 +45,6 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     ( Transition
     , transitionRule
     )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Rule
     ( ImplicationRule (ImplicationRule)
     , RewriteRule

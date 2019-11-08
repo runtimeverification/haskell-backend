@@ -30,6 +30,13 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
     ( MetadataTools (..)
     )
+import Kore.Internal.Predicate
+    ( makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -41,13 +48,6 @@ import Kore.Internal.TermLike
     ( TermLike
     , mkApplySymbol
     , mkElemVar
-    )
-import Kore.Predicate.Predicate
-    ( makeEqualsPredicate
-    , makeTruePredicate
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
     )
 import Kore.Step.Rule
     ( OnePathRule (OnePathRule)

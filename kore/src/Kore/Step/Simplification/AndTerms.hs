@@ -60,16 +60,16 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Symbol as Symbol
-import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( pattern PredicateTrue
     , makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Symbol as Symbol
+import Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     )

@@ -36,6 +36,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
+import qualified Kore.Logger as Logger
 import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Rule
@@ -52,8 +53,6 @@ import qualified Kore.Step.Step as Step
 import Kore.Unparser
     ( unparse
     )
-
-import qualified Kore.Logger as Logger
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}

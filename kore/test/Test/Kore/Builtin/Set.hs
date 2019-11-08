@@ -95,10 +95,10 @@ import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate as Predicate hiding
+import Kore.Internal.Predicate as Predicate hiding
     ( fromSubstitution
     )
+import Kore.Internal.TermLike
 import Kore.Sort
     ( Sort
     )

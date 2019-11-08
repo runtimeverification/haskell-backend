@@ -1,14 +1,10 @@
-{-|
-Module      : Kore.Predicate.Predicate
-Description : Data structure holding a predicate and basic tools like
-              predicate constructors.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : virgil.serbanuta@runtimeverification.com
-Stability   : experimental
-Portability : portable
+
 -}
-module Kore.Predicate.Predicate
+
+module Kore.Internal.Predicate
     ( Predicate -- Constructor not exported on purpose
     , pattern PredicateFalse
     , pattern PredicateTrue
@@ -38,9 +34,9 @@ module Kore.Predicate.Predicate
     , markSimplified
     , freeVariables
     , isFreeOf
-    , Kore.Predicate.Predicate.freeElementVariables
-    , Kore.Predicate.Predicate.hasFreeVariable
-    , Kore.Predicate.Predicate.mapVariables
+    , freeElementVariables
+    , hasFreeVariable
+    , mapVariables
     , singleSubstitutionToPredicate
     , stringFromPredicate
     , coerceSort
@@ -48,7 +44,7 @@ module Kore.Predicate.Predicate
     , fromSubstitution
     , unwrapPredicate
     , wrapPredicate
-    , Kore.Predicate.Predicate.substitute
+    , substitute
     ) where
 
 import Control.DeepSeq
@@ -92,8 +88,11 @@ import Kore.Error
     )
 import Kore.Internal.TermLike hiding
     ( freeVariables
+    , hasFreeVariable
     , isSimplified
+    , mapVariables
     , markSimplified
+    , substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.TopBottom
@@ -649,16 +648,14 @@ isFreeOf predicate =
     Set.disjoint (getFreeVariables $ freeVariables predicate)
 
 freeElementVariables :: Predicate variable -> [ElementVariable variable]
-freeElementVariables =
-    getFreeElementVariables . Kore.Predicate.Predicate.freeVariables
+freeElementVariables = getFreeElementVariables . freeVariables
 
 hasFreeVariable
     :: Ord variable
     => UnifiedVariable variable
     -> Predicate variable
     -> Bool
-hasFreeVariable variable =
-    isFreeVariable variable . Kore.Predicate.Predicate.freeVariables
+hasFreeVariable variable = isFreeVariable variable . freeVariables
 
 singleSubstitutionToPredicate
     :: InternalVariable variable

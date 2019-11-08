@@ -36,6 +36,13 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeEqualsPredicate
+    , makeTruePredicate
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import Kore.Internal.Symbol
     ( Symbol (Symbol, symbolConstructor)
     , constructor
@@ -49,13 +56,6 @@ import Kore.Internal.TermLike
     , mkImplies
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeEqualsPredicate
-    , makeTruePredicate
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
 import Kore.Sort
     ( Sort (..)
     )

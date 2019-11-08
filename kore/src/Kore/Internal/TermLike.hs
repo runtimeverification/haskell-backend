@@ -1434,7 +1434,7 @@ mkBottom bottomSort =
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use
+This should not be used outside "Kore.Internal.Predicate"; please use
 'mkBottom' instead.
 
 See also: 'mkBottom'
@@ -1465,7 +1465,7 @@ mkCeil ceilResultSort ceilChild =
 
 {- | Construct a 'Ceil' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use 'mkCeil'
+This should not be used outside "Kore.Internal.Predicate"; please use 'mkCeil'
 instead.
 
 See also: 'mkCeil'
@@ -1551,7 +1551,7 @@ mkEquals equalsResultSort t1 =
 
 {- | Construct a 'Equals' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use
+This should not be used outside "Kore.Internal.Predicate"; please use
 'mkEquals' instead.
 
 See also: 'mkEquals'
@@ -1609,7 +1609,7 @@ mkFloor floorResultSort floorChild =
 
 {- | Construct a 'Floor' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use 'mkFloor'
+This should not be used outside "Kore.Internal.Predicate"; please use 'mkFloor'
 instead.
 
 See also: 'mkFloor'
@@ -1702,7 +1702,7 @@ mkIn inResultSort t1 t2 = updateCallStack $ makeSortsAgree mkInWorker t1 t2
 
 {- | Construct a 'In' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use 'mkIn'
+This should not be used outside "Kore.Internal.Predicate"; please use 'mkIn'
 instead.
 
 See also: 'mkIn'
@@ -1811,7 +1811,7 @@ mkTop topSort =
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use
+This should not be used outside "Kore.Internal.Predicate"; please use
 'mkTop' instead.
 
 See also: 'mkTop'

@@ -87,14 +87,14 @@ import Kore.Internal.MultiOr
     )
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeTruePredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( asConcrete
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeTruePredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Rule
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable

@@ -33,13 +33,13 @@ import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
     ( axiomPatternsToEvaluators
