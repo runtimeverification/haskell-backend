@@ -75,10 +75,12 @@ import Options.Applicative
     ( InfoMod
     , Parser
     , argument
+    , defaultPrefs
     , disabled
-    , execParser
+    , execParserPure
     , flag
     , flag'
+    , handleParseResult
     , help
     , helper
     , hidden
@@ -102,6 +104,7 @@ import System.Clock
     , diffTimeSpec
     , getTime
     )
+import qualified System.Environment as Env
 
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinitionWithBase
@@ -295,17 +298,28 @@ commandLineParse
     :: Parser a                -- ^ local options parser
     -> InfoMod (MainOptions a) -- ^ local parser info modifiers
     -> IO (MainOptions a)
-commandLineParse localCommandLineParser modifiers =
-    execParser
-    $ info
-        ( MainOptions
-            <$> globalCommandLineParser
-            <*> (   Just <$> localCommandLineParser
-                <|> pure Nothing
+commandLineParse localCommandLineParser modifiers = do
+    args' <- Env.getArgs
+    env <- Env.lookupEnv "KORE_EXEC_OPTS"
+    let
+        args = case env of
+            Nothing -> args'
+            Just opts -> args' <> words opts
+        parseResult = execParserPure
+            defaultPrefs
+            ( info
+                ( MainOptions
+                    <$> globalCommandLineParser
+                    <*> (   Just <$> localCommandLineParser
+                        <|> pure Nothing
+                        )
+                <**> helper
                 )
-        <**> helper
-        )
-        modifiers
+                modifiers
+            )
+            args
+    handleParseResult parseResult
+
 
 
 ----------------------
