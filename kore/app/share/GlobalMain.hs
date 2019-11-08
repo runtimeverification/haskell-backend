@@ -310,7 +310,7 @@ commandLineParse localCommandLineParser modifiers = do
             ( info
                 ( MainOptions
                     <$> globalCommandLineParser
-                    <*> (   Just <$> localCommandLineParser
+                    <*> ( optional localCommandLineParser
                         <|> pure Nothing
                         )
                 <**> helper
