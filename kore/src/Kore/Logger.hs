@@ -126,7 +126,7 @@ instance Pretty.Pretty Scope where
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
 data LogMessage = LogMessage
-    { message   :: !Text
+    { message   :: Text
     -- ^ message being logged
     , severity  :: !Severity
     -- ^ log level / severity of message
