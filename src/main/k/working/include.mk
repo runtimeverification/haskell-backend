@@ -57,7 +57,8 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 
 %.merge-output: %.merge $(DEFINITION) $(KORE_EXEC)
-	$(KORE_EXEC) $(DEFINITION) --module $(MODULE_NAME) --merge-rules $< --output $@
+	$(KORE_EXEC) $(DEFINITION) --module $(MODULE_NAME) --merge-rules $< \
+		--output $@
 
 %.repl.output: % $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE) --output-file $@
