@@ -110,13 +110,13 @@ import Kore.Internal.Conditional
 import Kore.Internal.Pattern
     ( toTermLike
     )
+import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( Sort
     , TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
-import Kore.Predicate.Predicate as Predicate
 import Kore.Repl.Data
 import Kore.Step.Rule
     ( RewriteRule (..)

@@ -34,11 +34,7 @@ import Kore.Internal.Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-    ( TermLike
-    )
-import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeEqualsPredicate
@@ -46,6 +42,13 @@ import Kore.Predicate.Predicate
     , makeNotPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Rule
     ( OnePathRule (..)
     , ReachabilityRule (..)

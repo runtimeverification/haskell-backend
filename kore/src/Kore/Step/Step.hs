@@ -71,13 +71,13 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
 import qualified Kore.Logger as Log
-import Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results

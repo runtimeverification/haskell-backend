@@ -23,10 +23,10 @@ import Kore.Internal.OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
 import Kore.Step.Simplification.Simplify
