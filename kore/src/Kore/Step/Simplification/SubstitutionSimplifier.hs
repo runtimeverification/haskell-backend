@@ -45,6 +45,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( isJust
+    )
 import qualified GHC.Generics as GHC
 
 import Branch
@@ -99,6 +102,7 @@ import Kore.Unification.SubstitutionNormalization
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
+    , isSetVar
     )
 
 newtype SubstitutionSimplifier simplifier =
@@ -208,8 +212,23 @@ deduplicateSubstitution
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution makeAnd' =
-    worker Predicate.makeTruePredicate . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate . checkSetVars . Substitution.toMultiMap
   where
+    checkSetVars checkedMap
+      | Map.null problematicSubmap = checkedMap
+      | otherwise = (error . unlines)
+        [ "found SetVar key:"
+        , show key
+        , "with non-singleton list of assignments as value:"
+        , show value
+        ]
+        where
+            problematicSubmap =
+                Map.filterWithKey
+                    (\k v -> isSetVar k && (not . isJust . getSingleton) v)
+                    checkedMap
+            (key, value) = head $ Map.toList problematicSubmap
+
     simplifyAnds' = simplifyAnds makeAnd'
     worker
         ::  Predicate variable
