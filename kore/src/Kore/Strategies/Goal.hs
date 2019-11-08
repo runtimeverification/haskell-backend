@@ -388,7 +388,11 @@ instance Goal (ReachabilityRule Variable) where
                 Transition.mapRules APRule
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
-            Proven -> empty
+            Proven ->
+                case prim of
+                    CheckProven -> empty
+                    _ -> return proofstate
+
 
     strategy
         :: ReachabilityRule Variable

@@ -39,14 +39,12 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Predicate.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeEqualsPredicate
     , makeMultipleAndPredicate
     , makeNotPredicate
     , makeTruePredicate
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
     )
 import Kore.Step.Rule
     ( OnePathRule (..)
@@ -91,6 +89,13 @@ makeOnePathRule term dest =
         (fromTermLike term)
         (fromTermLike dest)
 
+makeReachabilityOnePathRule :: TermLike Variable -> TermLike Variable -> ReachabilityRule Variable
+makeReachabilityOnePathRule term dest =
+    OnePath . OnePathRule
+    $ makeRuleFromPatterns
+        (fromTermLike term)
+        (fromTermLike dest)
+
 test_onePathStrategy :: [TestTree]
 test_onePathStrategy =
     [ testCase "Runs zero steps" $ do
@@ -106,10 +111,21 @@ test_onePathStrategy =
             )
             [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
+        [ actualReach ] <- runOnePathSteps
+            (Limit 0)
+            (makeReachabilityOnePathRule
+                Mock.a
+                Mock.a
+            )
+            [makeReachabilityOnePathRule Mock.a Mock.b]
+            [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual ""
             (ProofState.Goal $ makeOnePathRule Mock.a Mock.a)
             actual
-    , testCase "Axiom priority, first step" $ do
+        assertEqual "onepath == reachability onepath"
+            (fmap OnePath actual)
+            actualReach
+    , testCase "FAILINGTEST Axiom priority, first step" $ do
         -- Goal: a => a
         -- Coinductive axiom: a => b
         -- Normal axiom: a => c
@@ -119,7 +135,15 @@ test_onePathStrategy =
             (makeOnePathRule Mock.a Mock.a)
             [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
+        [ _actualReach ] <- runOnePathSteps
+            (Limit 1)
+            (makeReachabilityOnePathRule Mock.a Mock.a)
+            [makeReachabilityOnePathRule Mock.a Mock.b]
+            [simpleReachabilityRewrite Mock.a Mock.c]
         assertEqual "" ProofState.Proven _actual
+        assertEqual "onepath == reachability onepath"
+            (fmap OnePath _actual)
+            _actualReach
 
         -- Goal: a => d
         -- Coinductive axiom: a => b
@@ -521,6 +545,21 @@ simpleRewrite
     -> Rule (OnePathRule Variable)
 simpleRewrite left right =
     OnePathRewriteRule
+    $ RewriteRule RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , right = right
+        , requires = makeTruePredicate
+        , ensures = makeTruePredicate
+        , attributes = def
+        }
+
+simpleReachabilityRewrite
+    :: TermLike Variable
+    -> TermLike Variable
+    -> Rule (ReachabilityRule Variable)
+simpleReachabilityRewrite left right =
+    OPRule . OnePathRewriteRule
     $ RewriteRule RulePattern
         { left = left
         , antiLeft = Nothing
