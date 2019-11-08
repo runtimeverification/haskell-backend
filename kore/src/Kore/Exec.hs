@@ -44,9 +44,6 @@ import Data.Coerce
     ( Coercible
     , coerce
     )
-import Data.Default
-    ( Default (..)
-    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -100,7 +97,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeMultipleOrPredicate
-    , makeTruePredicate
     , unwrapPredicate
     )
 import Kore.Internal.TermLike
@@ -405,8 +401,6 @@ mergeAllRules
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> Maybe (TermLike Variable)
-    -- ^ Initial configuration
     -> smt (Either Text [RewriteRule Variable])
 mergeAllRules = mergeRules Rules.mergeRules
 
@@ -423,8 +417,6 @@ mergeRulesConsecutiveBatches
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> Maybe (TermLike Variable)
-    -- ^ Initial configuration
     -> smt (Either Text [RewriteRule Variable])
 mergeRulesConsecutiveBatches batchSize =
     mergeRules (Rules.mergeRulesConsecutiveBatches batchSize)
@@ -444,10 +436,8 @@ mergeRules
     -- ^ The main module
     -> [Text]
     -- ^ The list of rules to merge
-    -> Maybe (TermLike Variable)
-    -- ^ Initial configuration
     -> smt (Either Text [RewriteRule Variable])
-mergeRules ruleMerger verifiedModule ruleNames maybeInitialConfiguration =
+mergeRules ruleMerger verifiedModule ruleNames =
     evalSimplifier verifiedModule
     $ initialize verifiedModule
     $ \initialized -> do
@@ -458,19 +448,7 @@ mergeRules ruleMerger verifiedModule ruleNames maybeInitialConfiguration =
                 rules <- extractRules rewriteRules ruleNames
                 case rules of
                     [] -> Left "Empty rule list."
-                    (r : rs) -> case maybeInitialConfiguration of
-                        Nothing -> Right (r :| rs)
-                        Just cfg -> Right (identityRule cfg :| r : rs)
-
-            identityRule :: TermLike Variable -> RewriteRule Variable
-            identityRule term = RewriteRule RulePattern
-                { left = term
-                , requires = makeTruePredicate
-                , antiLeft = Nothing
-                , right = term
-                , ensures = makeTruePredicate
-                , attributes = def
-                }
+                    (r : rs) -> Right (r :| rs)
 
         case nonEmptyRules of
             (Left left) -> return (Left left)
