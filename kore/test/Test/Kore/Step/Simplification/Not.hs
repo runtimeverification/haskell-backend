@@ -22,11 +22,11 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Unification.Substitution
     ( Substitution

@@ -26,10 +26,10 @@ import Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeFalsePredicate
     )
+import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.

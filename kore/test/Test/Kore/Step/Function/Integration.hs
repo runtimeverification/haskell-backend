@@ -50,17 +50,17 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Symbol
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , definitionEvaluation
