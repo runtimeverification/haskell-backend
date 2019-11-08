@@ -27,31 +27,14 @@ import qualified Control.Monad.Morph as Morph
 import Control.Monad.Trans.Class
     ( MonadTrans (..)
     )
-import Data.Map.Strict
-    ( Map
-    )
 
 import Branch
     ( BranchT
     )
 import qualified Branch as BranchT
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-    ( TermLike
-    )
 import Kore.Logger
     ( MonadLog (..)
-    )
-import Kore.Predicate.Predicate
-    ( Predicate
     )
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -68,23 +51,12 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( MakeAnd (..)
-    , SubstitutionSimplifier (..)
-    , deduplicateSubstitution
-    )
-import Kore.Substitute
-    ( SubstitutionVariable
     )
 import Kore.Unification.Error
-import Kore.Unification.Substitution
-    ( Substitution
-    )
-import Kore.Unification.SubstitutionNormalization
-    ( normalizeSubstitution
+import Kore.Unification.SubstitutionSimplifier
+    ( substitutionSimplifier
     )
 import Kore.Unification.Unify
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable
-    )
 import SMT
     ( MonadSMT (..)
     )
@@ -123,56 +95,12 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
                 )
     {-# INLINE localSimplifierAxioms #-}
 
-    simplifyCondition = simplifyCondition'
+    simplifyCondition condition =
+        simplifyCondition' condition
       where
         ConditionSimplifier simplifyCondition' =
             ConditionSimplifier.create substitutionSimplifier
     {-# INLINE simplifyCondition #-}
-
-{- | A 'SubstitutionSimplifier' to use during unification.
-
-If the 'Substitution' cannot be normalized, this simplifier uses
-'Unifier.throwSubstitutionError'.
-
- -}
-substitutionSimplifier
-    :: forall unifier
-    .  MonadUnify unifier
-    => SubstitutionSimplifier unifier
-substitutionSimplifier =
-    SubstitutionSimplifier worker
-  where
-    worker
-        :: forall variable
-        .  SubstitutionVariable variable
-        => Substitution variable
-        -> unifier (OrCondition variable)
-    worker substitution =
-        fmap OrCondition.fromConditions . gather $ do
-            deduplicated <-
-                deduplicateSubstitution
-                    unificationMakeAnd
-                    substitution
-            normalize1 deduplicated
-
-    normalizeSubstitution'
-        :: forall variable
-        .  SubstitutionVariable variable
-        => Map (UnifiedVariable variable) (TermLike variable)
-        -> unifier (Condition variable)
-    normalizeSubstitution' =
-        either throwSubstitutionError return . normalizeSubstitution
-
-    normalize1
-        ::  forall variable
-        .   SubstitutionVariable variable
-        =>  ( Predicate variable
-            , Map (UnifiedVariable variable) (TermLike variable)
-            )
-        ->  unifier (Condition variable)
-    normalize1 (predicate, deduplicated) = do
-        normalized <- normalizeSubstitution' deduplicated
-        return $ Condition.fromPredicate predicate <> normalized
 
 instance MonadSimplify m => MonadUnify (UnifierT m) where
     throwSubstitutionError =
