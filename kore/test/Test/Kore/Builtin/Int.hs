@@ -31,8 +31,8 @@ import GHC.Integer.Logarithms
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Pattern
+import Kore.Internal.Predicate
 import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
 
 import Test.Kore
     ( elementVariableGen

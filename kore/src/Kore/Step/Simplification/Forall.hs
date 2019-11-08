@@ -37,6 +37,9 @@ import qualified Kore.Internal.Pattern as Pattern
     , toTermLike
     , top
     )
+import Kore.Internal.Predicate
+    ( makeForallPredicate
+    )
 import Kore.Internal.TermLike
     ( ElementVariable
     , Forall (Forall)
@@ -49,9 +52,6 @@ import qualified Kore.Internal.TermLike as TermLike
     , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import Kore.Predicate.Predicate
-    ( makeForallPredicate
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )

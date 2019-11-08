@@ -39,11 +39,11 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeCeilPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )

@@ -71,6 +71,7 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
@@ -78,6 +79,8 @@ import Kore.Logger
     )
 import qualified Kore.Logger as Log
 import qualified Kore.Step.Remainder as Remainder
+import qualified Kore.Step.Result as Result
+import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
 import Kore.Step.Rule
     ( RewriteRule (..)
@@ -423,12 +426,19 @@ assertFunctionLikeResults
     -> unifier (Results variable)
     -> unifier (Results variable)
 assertFunctionLikeResults initial unifier = do
-    results <- Step.results <$> unifier
-    let unifiedRules = Step.appliedRule <$> results
+    results <- Results.results <$> unifier
+    let unifiedRules = Result.appliedRule <$> results
     case checkFunctionLike unifiedRules (term initial) of
         Left err -> error err
         _        -> unifier
 
+{-
+This is implementing the ideas from the [Applying axioms by matching]
+(https://github.com/kframework/kore/blob/master/docs/2019-09-25-Applying-Axioms-By-Matching.md)
+design doc, which checks that the unified lhs of the rule fully matches
+(is equal to) the configuration term and that the lhs predicate is
+implied by the configuration predicate.
+-}
 recoveryFunctionLikeResults
     ::  forall unifier variable
     .   ( SimplifierVariable variable
@@ -438,7 +448,66 @@ recoveryFunctionLikeResults
     => Pattern (Target variable)
     -> unifier (Results variable)
     -> unifier (Results variable)
-recoveryFunctionLikeResults _ = id
+recoveryFunctionLikeResults initial unifier = do
+    results <- Results.results <$> unifier
+    let appliedRules = Result.appliedRule <$> results
+    case checkFunctionLike appliedRules (Conditional.term initial) of
+        Right _  -> unifier
+        Left err -> moreChecksAfterError appliedRules err
+  where
+    moreChecksAfterError appliedRules err = do
+        let
+            appliedRule =
+                case appliedRules of
+                    rule Seq.:<| Seq.Empty -> rule
+                    _ -> error $ show $ Pretty.vsep
+                            [ "Expected singleton list of rules but found: "
+                            , (Pretty.indent 4 . Pretty.vsep . Foldable.toList)
+                                (Pretty.pretty . term <$> appliedRules)
+                            , "This should be imposssible, as simplifiers for \
+                            \simplification are built from a single rule."
+                            ]
+
+            Conditional { term = ruleTerm, substitution = ruleSubstitution } =
+                appliedRule
+            RulePattern { left = alpha_t', requires = alpha_p'} = ruleTerm
+
+            substitution' = Substitution.toMap ruleSubstitution
+
+            alpha_t = TermLike.substitute substitution' alpha_t'
+            alpha_p = Predicate.substitute substitution' alpha_p'
+            phi_p = Conditional.predicate initial
+            phi_t = Conditional.term initial
+
+        res1 <- SMT.Evaluator.evaluate
+                    $ Predicate.makeAndPredicate
+                        phi_p
+                        (Predicate.makeNotPredicate alpha_p)
+
+        Monad.when (res1 /= Just False) $ error $ show $ Pretty.vsep
+            [ "Couldn't recover simplification coverage error: "
+            , Pretty.indent 4 (Pretty.pretty err)
+            , "Configuration condition "
+            , Pretty.indent 4 $ unparse phi_p
+            , "doesn't imply rule condition "
+            , Pretty.indent 4 $ unparse alpha_p
+            ]
+        let alpha_t_sorted = fullyOverrideSort' (termLikeSort phi_t) alpha_t
+        Monad.when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
+            [ "Couldn't recover simplification coverage error: "
+            , Pretty.indent 4 (Pretty.pretty err)
+            , "Rule lhs "
+            , Pretty.indent 4 $ unparse alpha_t'
+            , "doesn't match configuration"
+            , Pretty.indent 4 $ unparse phi_t
+            ]
+        -- what we would like to check above is that phi_p -> phi_t = alpha_t,
+        -- but that's hard to do for non-functional patterns,
+        -- so we check for (syntactic) equality instead.
+        unifier
+    fullyOverrideSort' sort term
+      | sort == termLikeSort term = term
+      | otherwise = fullyOverrideSort sort term
 
 finalizeRulesSequence
     ::  forall unifier variable
