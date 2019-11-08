@@ -37,10 +37,6 @@ import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Typeable
-    ( Typeable
-    )
-import qualified Data.Typeable as Typeable
 import Data.Witherable
     ( mapMaybe
     )
@@ -165,7 +161,8 @@ class Goal goal where
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 
     strategy
-        :: [goal]
+        :: goal
+        -> [goal]
         -> [Rule goal]
         -> [Strategy (Prim goal)]
 
@@ -255,7 +252,7 @@ instance Goal (OnePathRule Variable) where
                     deriveSeq
                 }
 
-    strategy goals rules =
+    strategy _ goals rules =
         onePathFirstStep rewrites
         : repeat
             ( onePathFollowupStep
@@ -311,7 +308,7 @@ instance Goal (AllPathRule Variable) where
                     deriveSeq
                 }
 
-    strategy goals rules =
+    strategy _ goals rules =
         allPathFirstStep rewrites
         : repeat
             ( allPathFollowupStep
@@ -355,8 +352,16 @@ instance Goal (ReachabilityRule Variable) where
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
         => Prim (ReachabilityRule Variable)
-        -> ProofState (ReachabilityRule Variable) (ReachabilityRule Variable)
-        -> Strategy.TransitionT (Rule (ReachabilityRule Variable)) m (ProofState (ReachabilityRule Variable) (ReachabilityRule Variable))
+        -> ProofState
+            (ReachabilityRule Variable)
+            (ReachabilityRule Variable)
+        -> Strategy.TransitionT
+            (Rule (ReachabilityRule Variable))
+            m
+            ( ProofState
+                (ReachabilityRule Variable)
+                (ReachabilityRule Variable)
+            )
     transitionRule prim proofstate =
         case proofstate of
             Goal (OnePath rule) ->
@@ -383,9 +388,14 @@ instance Goal (ReachabilityRule Variable) where
                 Transition.mapRules APRule
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
-            _ -> empty
+            Proven -> empty
 
-    strategy goals rules = undefined
+    strategy
+        :: ReachabilityRule Variable
+        -> [ReachabilityRule Variable]
+        -> [Rule (ReachabilityRule Variable)]
+        -> [Strategy (Prim (ReachabilityRule Variable))]
+    strategy = undefined
 
 allPathProofState
     :: ProofState (AllPathRule Variable) (AllPathRule Variable)
@@ -407,11 +417,15 @@ primRuleAllPath
     -> ProofState.Prim (Rule (AllPathRule Variable))
 primRuleAllPath = mapMaybe maybeAllPathRule
 
-maybeAllPathRule :: Rule (ReachabilityRule Variable) -> Maybe (Rule (AllPathRule Variable))
+maybeAllPathRule
+    :: Rule (ReachabilityRule Variable)
+    -> Maybe (Rule (AllPathRule Variable))
 maybeAllPathRule (APRule rule) = Just rule
 maybeAllPathRule _             = Nothing
 
-maybeOnePathRule :: Rule (ReachabilityRule Variable) -> Maybe (Rule (OnePathRule Variable))
+maybeOnePathRule
+    :: Rule (ReachabilityRule Variable)
+    -> Maybe (Rule (OnePathRule Variable))
 maybeOnePathRule (OPRule rule) = Just rule
 maybeOnePathRule _             = Nothing
 
