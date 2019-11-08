@@ -34,7 +34,7 @@ data Prim rule
     | TriviallyValid
     | DerivePar [rule]
     | DeriveSeq [rule]
-    deriving (Show, Functor, Foldable)
+    deriving (Show, Functor)
 
 instance Filterable Prim where
     mapMaybe _ CheckProven        = CheckProven
