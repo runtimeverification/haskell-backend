@@ -35,6 +35,10 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -42,10 +46,6 @@ import qualified Kore.Internal.TermLike as TermLike
     ( isSimplified
     )
 import Kore.Internal.Variable
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Substitute
     ( SubstitutionVariable
     )
@@ -189,4 +189,3 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
             :: (UnifiedVariable variable, TermLike variable)
             -> TermLike variable
         dropVariable = snd
-

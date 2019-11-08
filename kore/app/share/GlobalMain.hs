@@ -74,7 +74,6 @@ import GHC.Stack
 import Options.Applicative
     ( InfoMod
     , Parser
-    , ReadM
     , argument
     , disabled
     , execParser
@@ -89,6 +88,7 @@ import Options.Applicative
     , maybeReader
     , metavar
     , option
+    , optional
     , readerError
     , str
     , strOption
@@ -217,24 +217,15 @@ parseKoreMergeOptions =
         <> help
             "List of rules to merge."
         )
-    <*> option
-        maybePositiveIntReader
-        (  metavar "MERGE_BATCH_SIZE"
-        <> long "merge-batch-size"
-        <> help
-            "The size of a merge batch."
-        <> value Nothing
+    <*> optional
+        (option
+            (maybeReader readMaybe)
+            (  metavar "MERGE_BATCH_SIZE"
+            <> long "merge-batch-size"
+            <> help
+                "The size of a merge batch."
+            )
         )
-
-maybePositiveIntReader :: ReadM (Maybe Int)
-maybePositiveIntReader = maybeReader maybeHelper
-  where
-    maybeHelper :: String -> Maybe (Maybe Int)
-    maybeHelper s = do
-        i <- readMaybe s
-        if i <= 1
-            then Nothing
-            else return (Just i)
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}

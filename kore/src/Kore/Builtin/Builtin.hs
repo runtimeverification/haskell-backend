@@ -157,11 +157,11 @@ import Kore.Internal.Pattern as Pattern
     , top
     , withCondition
     )
-import Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeEqualsPredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Proof.Value as Value
 import Kore.Sort
     ( predicateSort

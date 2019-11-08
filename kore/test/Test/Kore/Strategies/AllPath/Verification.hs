@@ -19,12 +19,12 @@ import Kore.Internal.Pattern as Conditional
     ( Conditional (..)
     )
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( AllPathRule (..)
     , RewriteRule (..)

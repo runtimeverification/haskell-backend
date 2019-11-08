@@ -29,8 +29,7 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate as Predicate
+import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
@@ -38,6 +37,7 @@ import Kore.Predicate.Predicate as Predicate
     , makeNotPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
