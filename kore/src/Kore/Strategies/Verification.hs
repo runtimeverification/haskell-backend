@@ -64,9 +64,7 @@ type CommonProofState  = ProofState.ProofState (Pattern Variable)
 {- | Class type for claim-like rules
 -}
 type Claim claim =
-    ( Coercible (RulePattern Variable) claim
-    , Coercible (Rule claim) (RulePattern Variable)
-    , Coercible (RulePattern Variable) (Rule claim)
+    ( Coercible (Rule claim) (RulePattern Variable)
     , Coercible claim (RulePattern Variable)
     , Unparse claim
     , Unparse (Rule claim)
