@@ -103,13 +103,14 @@ verify
     => Show claim
     => Show (Rule claim)
     => (MonadCatch m, MonadSimplify m)
-    => [Strategy (Prim claim)]
+    => [claim]
+    -> [Rule claim]
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify strategy' =
-    mapM_ (verifyClaim strategy')
+verify claims axioms =
+    mapM_ (verifyClaim claims axioms)
 
 verifyClaim
     :: forall claim m
@@ -118,11 +119,13 @@ verifyClaim
     => Claim claim
     => Show claim
     => Show (Rule claim)
-    => [Strategy (Prim claim)]
+    => [claim]
+    -> [Rule claim]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
 verifyClaim
-    strategy'
+    claims
+    axioms
     (goal, stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
@@ -131,7 +134,7 @@ verifyClaim
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
-                strategy'
+                (strategy goal claims axioms)
     executionGraph <-
         runStrategy
             (modifiedTransitionRule destination) limitedStrategy startPattern

@@ -70,6 +70,7 @@ dependencies:
   - transformers
   - unliftio-core
   - unordered-containers
+  - witherable
 
 build-tools:
   - tasty-discover
