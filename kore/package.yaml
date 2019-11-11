@@ -131,7 +131,7 @@ executables:
     source-dirs:
       - app/exec
       - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8 -T"
     dependencies:
       - kore
 
@@ -167,7 +167,7 @@ tests:
     main: Test.hs
     source-dirs:
       - test
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8 -T"
     dependencies:
       - kore
       - call-stack
@@ -183,6 +183,7 @@ tests:
       - tasty-golden
       - tasty-quickcheck
       - template-haskell
+      - temporary
 
 benchmarks:
   kore-parser-benchmark:
