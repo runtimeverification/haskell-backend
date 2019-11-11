@@ -331,9 +331,10 @@ evalUpdate =
             _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.updateKey _map
             TermLike.assertNonSimplifiableKeys (_key : Map.keys _map)
-                $ returnConcreteMap
-                    resultSort
-                    (Map.insert _key (Domain.MapValue value) _map)
+                $ return ()
+            returnConcreteMap
+                resultSort
+                (Map.insert _key (Domain.MapValue value) _map)
 
 evalInKeys :: Builtin.Function
 evalInKeys =
