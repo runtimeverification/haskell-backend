@@ -11,7 +11,6 @@ module Kore.Attribute.Injective
     , injectiveId, injectiveSymbol, injectiveAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -59,15 +58,5 @@ injectiveAttribute :: AttributePattern
 injectiveAttribute = attributePattern_ injectiveSymbol
 
 instance ParseAttributes Injective where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Injective { isDeclaredInjective } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isDeclaredInjective failDuplicate'
-            return Injective { isDeclaredInjective = True }
-        withApplication' = Parser.withApplication injectiveId
-        failDuplicate' = Parser.failDuplicate injectiveId
-
-    toAttributes Injective { isDeclaredInjective } =
-        Attributes [injectiveAttribute | isDeclaredInjective]
+    parseAttribute = parseBoolAttribute injectiveId
+    toAttributes = toBoolAttributes injectiveAttribute

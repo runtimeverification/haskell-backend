@@ -30,6 +30,8 @@ module Kore.Attribute.Parser
       -- * Parsers
     , failDuplicate
     , failConflicting
+    , parseBoolAttribute
+    , toBoolAttributes
     , withApplication
     , getZeroParams
     , getTwoParams
@@ -65,6 +67,7 @@ import Control.Monad.Except
     ( MonadError
     )
 import qualified Control.Monad.Except as Monad.Except
+import Data.Coerce
 import Data.Default
     ( Default (..)
     )
@@ -168,6 +171,25 @@ failConflicting idents =
     Kore.Error.koreFail
         ("conflicting attributes: "
             ++ List.intercalate ", " (getIdForError <$> idents))
+
+toBoolAttributes
+    :: Coercible attr Bool => AttributePattern -> attr -> Attributes
+toBoolAttributes pattern1 attr =
+    Attributes [pattern1 | coerce attr]
+
+parseBoolAttribute
+    :: (Coercible attr Bool, Coercible Bool attr)
+    => Id -> AttributePattern -> attr -> Parser attr
+parseBoolAttribute ident =
+    withApplication' $ \params args attr -> do
+        getZeroParams params
+        getZeroArguments args
+        Monad.when (coerce attr) failDuplicate'
+        return (coerce True)
+  where
+    withApplication' = withApplication ident
+    failDuplicate' = failDuplicate ident
+
 
 withApplication
     :: Id

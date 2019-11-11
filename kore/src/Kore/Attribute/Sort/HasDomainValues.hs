@@ -11,7 +11,6 @@ module Kore.Attribute.Sort.HasDomainValues
     , hasDomainValuesId, hasDomainValuesSymbol, hasDomainValuesAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -56,17 +55,5 @@ hasDomainValuesAttribute :: AttributePattern
 hasDomainValuesAttribute = attributePattern hasDomainValuesSymbol []
 
 instance ParseAttributes HasDomainValues where
-    parseAttribute =
-        withApplication' $ \params args HasDomainValues { getHasDomainValues }
-            -> do
-                Parser.getZeroParams params
-                Parser.getZeroArguments args
-                Monad.when getHasDomainValues failDuplicate'
-                return HasDomainValues { getHasDomainValues = True }
-      where
-        withApplication' = Parser.withApplication hasDomainValuesId
-        failDuplicate' = Parser.failDuplicate hasDomainValuesId
-
-    toAttributes HasDomainValues { getHasDomainValues } =
-        Attributes $
-            if getHasDomainValues then [hasDomainValuesAttribute] else []
+    parseAttribute = parseBoolAttribute hasDomainValuesId
+    toAttributes = toBoolAttributes hasDomainValuesAttribute
