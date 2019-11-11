@@ -25,6 +25,7 @@ description: Please see the [README](README.md) file.
 
 dependencies:
   - base >= 4.7
+  - aeson
   - array
   - bytestring >= 0.10
   - comonad
