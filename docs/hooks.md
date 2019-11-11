@@ -545,7 +545,7 @@ the result is `\dv{Bool{}}("false")`.
 
 ### MAP.values
 
-TODO: add description
+Takes a map and returns the list of its values.
 
 ~~~
     hooked-symbol values{}(Map{}) : List{}
