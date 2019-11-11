@@ -95,9 +95,10 @@ import Kore.Logger
 -- the logger will operate.
 data KoreLogType
     = LogStdErr
-    -- ^ log to StdErr when '--log StdErr' is passed
-    | LogFileText
-    -- ^ log to "./kore-(date).log" when '--log FileText' is passed
+    -- ^ log to StdErr when '--log stderr' is passed
+    | LogFileText FilePath
+    -- ^ log to specified file path when '--log <filepath>' is passed.
+    -- Default is "./kore-(date).log"
     deriving (Read)
 
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
@@ -125,9 +126,12 @@ withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
         LogStdErr   ->
             cont (stderrLogger logLevel logScopes)
-        LogFileText -> do
-            fileName <- getKoreLogFileName
-            Colog.withLogTextFile fileName
+        LogFileText filePath -> do
+            defaultFileName <- getKoreLogFileName
+            let filePath'
+                  | null filePath = defaultFileName
+                  | otherwise = filePath
+            Colog.withLogTextFile filePath'
                 $ cont . makeKoreLogger logLevel logScopes
   where
     getKoreLogFileName :: IO String
@@ -154,12 +158,13 @@ parseKoreLogOptions =
         option
             (maybeReader parseTypeString)
             $ long "log"
-            <> help "Log type: stderr, filetext"
+            <> help "Logging destination: stderr or <filepath>;\
+                    \ If <filepath> is the empty string, the logs will be\
+                    \ printed to \"./kore-(date).log\""
     parseTypeString =
         \case
-            "stderr"   -> pure LogStdErr
-            "filetext" -> pure LogFileText
-            _          -> Nothing
+            "stderr" -> pure LogStdErr
+            filePath -> pure $ LogFileText filePath
     parseLevel =
         option
             (maybeReader parseSeverity)

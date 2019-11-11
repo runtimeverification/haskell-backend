@@ -351,9 +351,8 @@ helpText =
     \                                      these scopes are used for filtering\
                                            \ the logged information, for example,\
                                            \ '[]' will log all scopes\n\
-    \                                      <type> can be 'stderr' or 'filetext';\
-                                           \ the latter prints the output to\
-                                           \ \"./kore-(date).log\"\n\
+    \                                      <type> can be 'stderr' or\n\
+                                           \'file filename'\n\
     \exit                                  exits the repl\
     \\n\n\
     \Available modifiers:\n\
