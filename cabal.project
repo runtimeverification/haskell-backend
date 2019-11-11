@@ -6,3 +6,6 @@ allow-newer:
 
 package *
   ghc-options: -fhide-source-paths
+
+package kore
+  ghc-options: -Wall -Werror
