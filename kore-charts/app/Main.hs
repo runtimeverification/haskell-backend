@@ -5,6 +5,7 @@ import Prelude hiding (filter)
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Catch
+import Data.Bifunctor
 import Data.Foldable
 import Data.Function
 import Data.Traversable
@@ -15,12 +16,15 @@ import Data.Aeson (FromJSON)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as Lazy (ByteString)
 import Data.Map (Map)
+import Data.Semigroup (Max (..))
+import Data.Semigroup (Min (..))
 import Data.Scientific (Scientific)
 import GHC.Generics (Generic)
 
 import Control.Lens ((.~))
 import Control.Lens ((.=))
 import Data.Default (def)
+import Data.Maybe (fromMaybe)
 import Data.Monoid (First (getFirst))
 
 import qualified Data.Aeson as Aeson
@@ -56,6 +60,24 @@ main = do
         lastBuild = Set.findMax buildNumbers
         buildRange = (firstBuild, lastBuild)
         resident_mbytes = (/ 1000) . resident_kbytes
+        xAxis =
+            Chart.scaledAxis def
+            $ bimap fromBuildNumber fromBuildNumber buildRange
+        yAxisFrom project =
+            Chart.scaledAxis def
+            $ bimap fromInteger fromInteger yRange
+          where
+            yRange = (yMin, yMax)
+            yMin =
+                floor . fromScientific . getMin . fromMaybe 0
+                $ (foldMap . foldMap) (Just . Min . project) testProfiles
+            yMax =
+                ceiling . fromScientific . getMax . fromMaybe 0
+                $ (foldMap . foldMap) (Just . Max . project) testProfiles
+        series =
+            [ ("user time / s", user_sec)
+            , ("max. residency / Mbyte", resident_mbytes)
+            ]
         grid =
             Chart.aboveN $ do
                 (test, profiles) <- Map.toList testProfiles
@@ -69,14 +91,15 @@ main = do
                         def
                         & Chart.font_size .~ 14
                         & Chart.font_weight .~ Chart.FontWeightBold
-                    layout' = layoutTest buildRange profiles
+                    layout' yAxis = layoutTest (xAxis, yAxis) profiles
                 return
                     $ Chart.wideAbove title
                     $ Chart.besideN
                     $ map Chart.layoutToGrid
-                        [ layout' "user time (s)"           user_sec
-                        , layout' "max. residency (Mbytes)" resident_mbytes
-                        ]
+                    $ do
+                        (seriesTitle, project) <- series
+                        let yAxis = yAxisFrom project
+                        [layout' yAxis seriesTitle project]
     let fileOptions = def & Chart.Backend.fo_size .~ (800, 400 * Set.size tests)
     _ <-
         Chart.gridToRenderable grid
@@ -84,27 +107,30 @@ main = do
         & Chart.Backend.renderableToFile fileOptions "kore-charts.png"
     return ()
 
+fromBuildNumber :: BuildNumber -> Double
+fromBuildNumber = fromInteger . unBuildNumber
+
+fromScientific :: Scientific -> Double
+fromScientific = logBase 10 . Scientific.toRealFloat
+
 layoutTest
-    :: (BuildNumber, BuildNumber)
+    :: (Chart.AxisFn Double, Chart.AxisFn Double)
     -> Map BuildNumber Profile
     -> String
     -> (Profile -> Scientific)
     -> Chart.Layout Double Double
-layoutTest (beg, end) profiles title select = Chart.execEC $ do
-    let xRange = (double beg, double end)
-        points =
+layoutTest (xAxis, yAxis) profiles title select = Chart.execEC $ do
+    let points =
             profiles
-            & Map.map (logBase 10 . Scientific.toRealFloat) . Map.map select
-            & Map.mapKeys double
+            & Map.map fromScientific . Map.map select
+            & Map.mapKeys fromBuildNumber
             & Map.toAscList
-        yRange = (0, (fromInteger . ceiling . maximum) (snd <$> points))
-    Chart.layout_x_axis . Chart.laxis_generate .= Chart.scaledAxis def xRange
+    Chart.layout_x_axis . Chart.laxis_generate .= xAxis
     Chart.layout_x_axis . Chart.laxis_title .= "Build number"
-    Chart.layout_y_axis . Chart.laxis_generate .= Chart.scaledAxis def yRange
+    Chart.layout_y_axis . Chart.laxis_generate .= yAxis
     Chart.layout_y_axis . Chart.laxis_title .= "log_10(" <> title <> ")"
     Chart.plot $ Chart.line "" [ points ]
   where
-    double = fromInteger . unBuildNumber
 
 testProfile :: Map BuildNumber BuildProfile -> String -> Map BuildNumber Profile
 testProfile buildProfiles test = mapMaybe (Map.lookup test) buildProfiles
