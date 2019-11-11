@@ -48,6 +48,9 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( isJust
     )
+import Data.Monoid
+    ( Any (..)
+    )
 import qualified GHC.Generics as GHC
 
 import Branch
@@ -214,22 +217,17 @@ deduplicateSubstitution
 deduplicateSubstitution makeAnd' =
     worker Predicate.makeTruePredicate . checkSetVars . Substitution.toMultiMap
   where
-    checkSetVars checkedMap
-      | Map.null problematicSubmap = checkedMap
-      | otherwise = (error . unlines)
-        [ "found SetVar key:"
-        , show key
-        , "with non-singleton list of assignments as value:"
-        , show value
-        ]
+    checkSetVars m
+      | isProblematic m = error
+        "Found SetVar key with non-singleton list of assignments as value."
+      | otherwise = m
         where
-            problematicSubmap =
-                Map.filterWithKey
-                    (\k v -> isSetVar k && (not . isJust . getSingleton) v)
-                    checkedMap
-            (key, value) = head $ Map.toList problematicSubmap
+            isProblematic = getAny . Map.foldMapWithKey
+                (\k v -> Any $ isSetVar k && isNotSingleton v)
+            isNotSingleton = not . isJust . getSingleton
 
     simplifyAnds' = simplifyAnds makeAnd'
+
     worker
         ::  Predicate variable
         ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
