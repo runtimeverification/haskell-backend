@@ -5,8 +5,14 @@ module Test.Kore.Step.Rule
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
+import Test.Tasty.HUnit.Ext
 
+import Control.DeepSeq
+    ( force
+    )
+import Control.Exception
+    ( evaluate
+    )
 import Data.Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
@@ -32,10 +38,10 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts (..)
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( freeVariables
     )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Rule hiding
     ( freeVariables
     )
@@ -120,7 +126,6 @@ axiomPatternsUnitTests =
                         }
                 indexedDefinition =
                     verifyAndIndexDefinition
-                        DoNotVerifyAttributes
                         Builtin.koreVerifiers
                         Definition
                             { definitionAttributes = Attributes []
@@ -128,17 +133,9 @@ axiomPatternsUnitTests =
                             }
             in
                 testCase "definition containing I1:AInt => I2:AInt"
-                $ assertEqual ""
-                    [ RewriteRule RulePattern
-                        { left = varI1
-                        , antiLeft = Nothing
-                        , right = varI2
-                        , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                        , ensures = Predicate.wrapPredicate (mkTop sortAInt)
-                        , attributes = def
-                        }
-                    ]
-                    (extractRewriteAxioms
+                $ assertErrorIO
+                    (assertSubstring "" "Unsupported pattern type in axiom")
+                    (evaluate $ force $ extractRewriteAxioms
                         (extractIndexedModule "TEST" indexedDefinition)
                     )
         , testCase "\\ceil(I1:AInt <= I2:AInt)" $ do
@@ -151,22 +148,23 @@ axiomPatternsUnitTests =
                 )
                 (Rule.fromSentence $ mkCeilAxiom term)
         , testCase "(I1:AInt => I2:AInt)::KItem"
-            (assertEqual ""
-                (koreFail "Unsupported pattern type in axiom")
-                (Rule.fromSentenceAxiom
-                    (mkAxiom_
-                        (applySymbol
-                            symbolInj
-                            [sortAInt, sortKItem]
-                            [ mkRewrites
-                                (mkAnd mkTop_ varI1)
-                                (mkAnd mkTop_ varI2)
-                            ]
+            $ assertErrorIO
+                (assertSubstring "" "Unsupported pattern type in axiom")
+                (evaluate $ force
+                    (Rule.fromSentenceAxiom
+                        (mkAxiom_
+                            (applySymbol
+                                symbolInj
+                                [sortAInt, sortKItem]
+                                [ mkRewrites
+                                    (mkAnd mkTop_ varI1)
+                                    (mkAnd mkTop_ varI2)
+                                ]
+                            )
                         )
                     )
                 )
-            )
-        ]
+            ]
 
 axiomPatternsIntegrationTests :: TestTree
 axiomPatternsIntegrationTests =

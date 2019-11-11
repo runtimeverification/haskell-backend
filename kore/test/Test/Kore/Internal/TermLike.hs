@@ -12,6 +12,10 @@ import Data.Sup
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (FreeVariables)
     )
+import Kore.Domain.Builtin
+    ( Builtin (..)
+    , InternalInt (..)
+    )
 import Kore.Internal.TermLike
 import Kore.Variables.Fresh
     ( refreshVariable
@@ -282,6 +286,46 @@ test_refreshVariables =
                 term
             )
             expected
+
+test_hasConstructorLikeTop :: [TestTree]
+test_hasConstructorLikeTop =
+    [ testCase "hasConstructorLikeTop"
+        (do
+            assertEqual "ApplySymbolF is constructor-like-top"
+                True
+                $ isConstructorLikeTop (mkApplySymbol Mock.aSymbol [])
+            let
+                dv :: DomainValue Sort (TermLike Variable)
+                dv = DomainValue
+                        { domainValueSort = Mock.testSort
+                        , domainValueChild = mkStringLiteral "a"
+                        }
+
+            assertEqual "DomainValueF is constructor-like-top"
+                True
+                $ isConstructorLikeTop (mkDomainValue dv)
+            let
+                b :: Kore.Domain.Builtin.Builtin key child
+                b = BuiltinInt
+                        (InternalInt
+                            { builtinIntSort = Mock.intSort
+                            , builtinIntValue = 1
+                            }
+                        )
+            assertEqual "BuiltinF is constructor-like-top"
+                True
+                (isConstructorLikeTop $ mkBuiltin b)
+            assertEqual "StringLiteralF is constructor-like-top"
+                True
+                (isConstructorLikeTop $ mkStringLiteral "")
+            assertEqual "AndF is not is constructor-like-top"
+                False
+                (isConstructorLikeTop $ mkAnd Mock.a Mock.b)
+        )
+    ]
+  where
+    isConstructorLikeTop :: TermLike Variable -> Bool
+    isConstructorLikeTop = hasConstructorLikeTop
 
 x :: ElementVariable Variable
 x = Mock.x

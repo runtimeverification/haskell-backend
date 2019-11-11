@@ -25,20 +25,23 @@ import Data.Map.Strict
 import qualified Data.Map.Strict as Map
 
 import qualified Branch
+import Kore.Internal.Condition
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( Conditional (..)
+    ( Predicate
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
+import Kore.Step.Simplification.AndTerms
+    ( termUnification
     )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
@@ -55,10 +58,6 @@ import Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Unifier
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
-    )
-
-import {-# SOURCE #-} Kore.Step.Simplification.AndTerms
-    ( termUnification
     )
 
 simplifyAnds
@@ -98,17 +97,17 @@ deduplicateSubstitution
         )
     =>  Substitution variable
     ->  unifier
-            ( Syntax.Predicate variable
+            ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution =
-    worker Syntax.Predicate.makeTruePredicate . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate . Substitution.toMultiMap
   where
     worker
-        ::  Syntax.Predicate variable
+        ::  Predicate variable
         ->  Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
         ->  unifier
-                ( Syntax.Predicate variable
+                ( Predicate variable
                 , Map (UnifiedVariable variable) (TermLike variable)
                 )
     worker predicate substitutions
@@ -124,7 +123,7 @@ deduplicateSubstitution =
             -- New conditions produced by simplification.
             Conditional { predicate = predicate' } = simplified
             predicate'' =
-                Syntax.Predicate.makeAndPredicate predicate predicate'
+                Predicate.makeAndPredicate predicate predicate'
             -- New substitutions produced by simplification.
             Conditional { substitution } = simplified
             substitutions'' =
@@ -163,7 +162,7 @@ normalizeOnce Conditional { term, predicate, substitution } = do
         Conditional { predicate = normalizedPredicate } = normalized
 
         mergedPredicate =
-            Syntax.Predicate.makeMultipleAndPredicate
+            Predicate.makeMultipleAndPredicate
                 [predicate, deduplicatedPredicate, normalizedPredicate]
 
     TopBottom.guardAgainstBottom mergedPredicate
@@ -187,5 +186,5 @@ normalizeExcept
 normalizeExcept conditional = do
     normalized <- normalizeOnce conditional
     let (term, predicate') = Conditional.splitTerm normalized
-    simplified <- Branch.alternate $ Simplifier.simplifyPredicate predicate'
+    simplified <- Branch.alternate $ Simplifier.simplifyCondition predicate'
     return simplified { term }

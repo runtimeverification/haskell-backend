@@ -9,6 +9,14 @@ import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
 
+import Kore.Internal.Predicate
+    ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeMultipleAndPredicate
+    , makeTruePredicate
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -16,16 +24,6 @@ import Kore.Internal.TermLike
     )
 import Kore.Logger.Output
     ( emptyLogger
-    )
-import Kore.Predicate.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeMultipleAndPredicate
-    , makeTruePredicate
-    )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
     )
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)
@@ -47,7 +45,7 @@ import Test.Tasty.HUnit.Ext
 class RewriteRuleBase base where
     rewritesTo :: base Variable -> base Variable -> RewriteRule Variable
 
-newtype Pair variable = Pair (TermLike variable, Syntax.Predicate variable)
+newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
 instance RewriteRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
@@ -135,6 +133,20 @@ test_combineRulesPredicate =
                     Pair (Mock.h x, makeCeilPredicate (Mock.h Mock.a))
                 ]
         in assertEqual "" expected actual
+    , testCase "Three rules case" $
+        let expected =
+                makeMultipleAndPredicate
+                    [ makeCeilPredicate (mkAnd Mock.a (mkElemVar Mock.var_x_0))
+                    , makeCeilPredicate (mkAnd Mock.b (mkElemVar Mock.var_x_1))
+                    ]
+
+            actual = mergeRulesPredicate
+                [ mkElemVar Mock.x `rewritesTo` Mock.a
+                , mkElemVar Mock.x `rewritesTo` Mock.b
+                , mkElemVar Mock.x `rewritesTo` Mock.c
+                ]
+        in assertEqual "" expected actual
+
     ]
   where
     x :: TermLike Variable
@@ -234,6 +246,43 @@ test_combineRules =
     x0 = mkElemVar Mock.var_x_0
     y = mkElemVar Mock.y
 
+test_combineRulesGrouped :: [TestTree]
+test_combineRulesGrouped =
+    [ testCase "One rule" $ do
+        let expected = [Mock.a `rewritesTo` Mock.cf]
+
+        actual <- runMergeRulesGrouped [ Mock.a `rewritesTo` Mock.cf ]
+
+        assertEqual "" expected actual
+    , testCase "Two rules" $ do
+        let expected = [Mock.a `rewritesTo` Mock.cf]
+
+        actual <- runMergeRules
+            [ Mock.a `rewritesTo` Mock.b
+            , Mock.b `rewritesTo` Mock.cf
+            ]
+
+        assertEqual "" expected actual
+    , testCase "Two rules" $ do
+        let expected =
+                [   Mock.functionalConstr10
+                        (Mock.functionalConstr11 (Mock.functionalConstr12 z))
+                    `rewritesTo` z
+                ]
+
+        actual <- runMergeRules
+            [ Mock.functionalConstr10 x `rewritesTo` x
+            , Mock.functionalConstr11 y `rewritesTo` y
+            , Mock.functionalConstr12 z `rewritesTo` z
+            ]
+
+        assertEqual "" expected actual
+    ]
+  where
+    x = mkElemVar Mock.x
+    y = mkElemVar Mock.y
+    z = mkElemVar Mock.z
+
 runMergeRules
     :: [RewriteRule Variable]
     -> IO [RewriteRule Variable]
@@ -242,3 +291,12 @@ runMergeRules (rule : rules) =
     $ runSimplifier Mock.env
     $ mergeRules (rule :| rules)
 runMergeRules [] = error "Unexpected empty list of rules."
+
+runMergeRulesGrouped
+    :: [RewriteRule Variable]
+    -> IO [RewriteRule Variable]
+runMergeRulesGrouped (rule : rules) =
+    SMT.runSMT SMT.defaultConfig emptyLogger
+    $ runSimplifier Mock.env
+    $ mergeRulesConsecutiveBatches 2 (rule :| rules)
+runMergeRulesGrouped [] = error "Unexpected empty list of rules."

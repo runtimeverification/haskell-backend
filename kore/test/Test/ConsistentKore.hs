@@ -32,7 +32,6 @@ import qualified Data.Set as Set
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
@@ -73,7 +72,6 @@ import Kore.Internal.TermLike
     , mkBottom
     , mkBuiltin
     , mkCeil
-    , mkDomainValue
     , mkElemVar
     , mkEquals
     , mkEvaluated
@@ -95,10 +93,6 @@ import Kore.Internal.TermLike
 import Kore.Sort
     ( Sort
     )
-import Kore.Syntax.DomainValue
-    ( DomainValue (DomainValue)
-    )
-import qualified Kore.Syntax.DomainValue as DomainValue.DoNotUse
 import Kore.Syntax.ElementVariable
     ( ElementVariable (ElementVariable)
     )
@@ -203,7 +197,11 @@ addQuantifiedElementVariable
 termLikeGen :: Gen (TermLike Variable)
 termLikeGen = do
     topSort <- sortGen
-    Gen.sized (\size -> termLikeGenImpl size topSort)
+    Gen.scale limitTermDepth $ Gen.sized (\size -> termLikeGenImpl size topSort)
+  where
+    limitTermDepth (Range.Size s)
+      | s < 10 = Range.Size s
+      | otherwise = Range.Size 10
 
 termLikeGenImpl :: Range.Size -> Sort -> Gen (TermLike Variable)
 termLikeGenImpl (Range.Size size) requestedSort = do
@@ -250,7 +248,9 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (BottomF _) = term
     checkTermF (CeilF _) = term
     checkTermF (DomainValueF _) = term
-    checkTermF (BuiltinF _) = term
+    checkTermF (BuiltinF _) = term  -- the ones that are easy to generated are
+                                    -- supposed to be internalized in normal
+                                    -- use.
     checkTermF (EqualsF _) = term
     checkTermF (ExistsF _) = term
     checkTermF (FloorF _) = term
@@ -267,6 +267,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (TopF _) = term
     checkTermF (VariableF _) = term
     checkTermF (StringLiteralF _) = term
+    checkTermF (InternalBytesF _) = term
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
 
@@ -294,11 +295,6 @@ termGenerators = do
             ]
         literals = catMaybes
             [ maybeStringLiteralGenerator setup ]
-        dv = catMaybes
-            [ maybeIntDVGenerator setup
-            , maybeBoolDVGenerator setup
-            , maybeStringDVGenerator setup
-            ]
     variable <- allVariableGenerators
     symbol <- symbolGenerators
     alias <- aliasGenerators
@@ -306,7 +302,6 @@ termGenerators = do
     return
         (       groupBySort generators
         `merge` groupBySort literals
-        `merge` groupBySort dv
         `merge` wrap variable
         `merge` symbol
         `merge` alias
@@ -643,44 +638,8 @@ maybeSetBuiltinGenerator Setup { maybeSetSorts } =
         Nothing -> Nothing
         Just _ -> error "Not implemented yet."
 
-maybeStringDVGenerator :: Setup -> Maybe TermGenerator
-maybeStringDVGenerator Setup { maybeStringBuiltinSort } =
-    maybeDVGenerator maybeStringBuiltinSort stringGen
-
 stringGen :: Gen Text
 stringGen = Gen.text (Range.linear 0 64) (Reader.lift Gen.unicode)
-
-maybeIntDVGenerator :: Setup -> Maybe TermGenerator
-maybeIntDVGenerator Setup { maybeIntSort } =
-    maybeDVGenerator
-        maybeIntSort
-        (Text.pack . show <$> Gen.int (Range.constant 0 2000))
-
-maybeBoolDVGenerator :: Setup -> Maybe TermGenerator
-maybeBoolDVGenerator Setup { maybeBoolSort } =
-    maybeDVGenerator maybeBoolSort (Text.pack . show <$> Gen.bool)
-
-maybeDVGenerator
-    :: Maybe Sort
-    -> Gen Text
-    -> Maybe TermGenerator
-maybeDVGenerator maybeSort valueGenerator = do
-    dvSort <- maybeSort
-    return TermGenerator
-        { arity = 0
-        , sort = SpecificSort dvSort
-        , generator = dvGenerator dvSort
-        }
-  where
-    dvGenerator domainValueSort _childGenerator resultSort = do
-        Monad.when (domainValueSort /= resultSort) (error "Sort mismatch.")
-        value <- valueGenerator
-        return
-            (mkDomainValue DomainValue
-                { domainValueSort
-                , domainValueChild = mkStringLiteral value
-                }
-            )
 
 symbolGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 symbolGenerators = do

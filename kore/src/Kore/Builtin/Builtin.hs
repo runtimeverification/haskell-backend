@@ -139,6 +139,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.Condition as Condition
+    ( topTODO
+    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
@@ -147,15 +150,19 @@ import Kore.Internal.Pattern
 import Kore.Internal.Pattern as Pattern
     ( fromTermLike
     , top
+    , withCondition
     )
+import Kore.Internal.Predicate
+    ( makeEqualsPredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeCeilPredicate
-    , makeEqualsPredicate
-    )
 import qualified Kore.Proof.Value as Value
 import Kore.Sort
     ( predicateSort
+    )
+import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
+    ( makeEvaluateTerm
     )
 import Kore.Step.Simplification.SimplificationType as SimplificationType
     ( SimplificationType (..)
@@ -164,12 +171,10 @@ import Kore.Step.Simplification.Simplify
     ( AttemptedAxiom (..)
     , AttemptedAxiomResults (AttemptedAxiomResults)
     , BuiltinAndAxiomSimplifier (BuiltinAndAxiomSimplifier)
-    , BuiltinAndAxiomSimplifierMap
     , MonadSimplify
-    , TermLikeSimplifier
+    , SimplifierVariable
     , applicationAxiomSimplifier
     )
-import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
@@ -178,6 +183,12 @@ import Kore.Syntax.Definition
     , ParsedSentenceSymbol
     , SentenceSort (..)
     , SentenceSymbol (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    )
+import qualified Kore.Unification.Unify as Monad.Unify
+    ( scatter
     )
 import Kore.Unparser
 import qualified Kore.Verified as Verified
@@ -294,7 +305,7 @@ notImplemented :: Function
 notImplemented =
     BuiltinAndAxiomSimplifier notImplemented0
   where
-    notImplemented0 _ _ _ _ = pure NotApplicable
+    notImplemented0 _ _ = pure NotApplicable
 
 {- | Verify a builtin sort declaration.
 
@@ -654,11 +665,10 @@ unaryOperator
     unaryOperator0
         :: InternalVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    unaryOperator0 _ resultSort children =
+    unaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a] -> do
                 -- Apply the operator to a domain value
@@ -703,11 +713,10 @@ binaryOperator
     binaryOperator0
         :: SimplifierVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    binaryOperator0 _ resultSort children =
+    binaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [BuiltinF a, BuiltinF b] -> do
                 -- Apply the operator to two domain values
@@ -752,11 +761,10 @@ ternaryOperator
     ternaryOperator0
         :: SimplifierVariable variable
         => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => Sort
         -> [TermLike variable]
         -> m (AttemptedAxiom variable)
-    ternaryOperator0 _ resultSort children =
+    ternaryOperator0 resultSort children =
         case Cofree.tailF . Recursive.project <$> children of
             [ BuiltinF a, BuiltinF b, BuiltinF c ] -> do
                 -- Apply the operator to three domain values
@@ -766,13 +774,12 @@ ternaryOperator
             _ -> wrongArity (Text.unpack ctx)
 
 type FunctionImplementation
-    = forall variable m
+    = forall variable simplifier
         .  SimplifierVariable variable
-        => MonadSimplify m
-        => TermLikeSimplifier
-        -> Sort
+        => MonadSimplify simplifier
+        => Sort
         -> [TermLike variable]
-        -> m (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
 functionEvaluator impl =
@@ -781,15 +788,12 @@ functionEvaluator impl =
     evaluator
         :: SimplifierVariable variable
         => MonadSimplify simplifier
-        => TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> CofreeF
+        => CofreeF
             (Application Symbol)
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator simplifier _axiomIdToSimplifier (valid :< app) =
-        impl simplifier resultSort applicationChildren
+    evaluator (valid :< app) = impl resultSort applicationChildren
       where
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
@@ -983,19 +987,19 @@ getAttemptedAxiom attempt =
 
 -- | Return an unsolved unification problem.
 unifyEqualsUnsolved
-    :: (Monad m, SimplifierVariable variable)
+    :: (MonadUnify unifier, SimplifierVariable variable)
     => SimplificationType
     -> TermLike variable
     -> TermLike variable
-    -> m (Pattern variable)
-unifyEqualsUnsolved SimplificationType.And a b =
-    let
-        unified = mkAnd a b
-        predicate = makeCeilPredicate unified
-    in
-        return (pure unified) { predicate }
+    -> unifier (Pattern variable)
+unifyEqualsUnsolved SimplificationType.And a b = do
+    let unified = TermLike.markSimplified $ mkAnd a b
+    orCondition <- Ceil.makeEvaluateTerm Condition.topTODO unified
+    predicate <- Monad.Unify.scatter orCondition
+    return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
-    return Pattern.top {predicate = makeEqualsPredicate a b}
+    return Pattern.top
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
 
 makeDomainValueTerm
     :: InternalVariable variable
@@ -1003,11 +1007,10 @@ makeDomainValueTerm
     -> Text
     -> TermLike variable
 makeDomainValueTerm sort stringLiteral =
-    mkDomainValue
-    $ DomainValue
-          { domainValueSort = sort
-          , domainValueChild = mkStringLiteral stringLiteral
-          }
+    mkDomainValue DomainValue
+        { domainValueSort = sort
+        , domainValueChild = mkStringLiteral stringLiteral
+        }
 
 makeDomainValuePattern
     :: InternalVariable variable

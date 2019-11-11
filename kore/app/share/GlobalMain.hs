@@ -44,9 +44,6 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Semigroup
     ( (<>)
     )
@@ -78,18 +75,22 @@ import Options.Applicative
     ( InfoMod
     , Parser
     , argument
+    , defaultPrefs
     , disabled
-    , execParser
+    , execParserPure
     , flag
     , flag'
+    , handleParseResult
     , help
     , helper
     , hidden
     , info
     , internal
     , long
+    , maybeReader
     , metavar
     , option
+    , optional
     , readerError
     , str
     , strOption
@@ -103,11 +104,10 @@ import System.Clock
     , diffTimeSpec
     , getTime
     )
+import qualified System.Environment as Env
 
 import Kore.ASTVerifier.DefinitionVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
-    , defaultAttributesVerification
-    , verifyAndIndexDefinitionWithBase
+    ( verifyAndIndexDefinitionWithBase
     )
 import Kore.ASTVerifier.PatternVerifier as PatternVerifier
 import qualified Kore.Attribute.Axiom as Attribute
@@ -137,6 +137,9 @@ import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
     ( version
+    )
+import Text.Read
+    ( readMaybe
     )
 
 type Main = LoggerT IO
@@ -205,17 +208,27 @@ data KoreMergeOptions =
     KoreMergeOptions
         { rulesFileName     :: !FilePath
         -- ^ Name for file containing a sequence of rules to merge.
+        , maybeBatchSize    :: Maybe Int
         }
 
 parseKoreMergeOptions :: Parser KoreMergeOptions
 parseKoreMergeOptions =
     KoreMergeOptions
     <$> strOption
-            (  metavar "MERGE_RULES_FILE"
-            <> long "merge-rules"
+        (  metavar "MERGE_RULES_FILE"
+        <> long "merge-rules"
+        <> help
+            "List of rules to merge."
+        )
+    <*> optional
+        (option
+            (maybeReader readMaybe)
+            (  metavar "MERGE_BATCH_SIZE"
+            <> long "merge-batch-size"
             <> help
-                "List of rules to merge."
+                "The size of a merge batch."
             )
+        )
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}
@@ -285,17 +298,26 @@ commandLineParse
     :: Parser a                -- ^ local options parser
     -> InfoMod (MainOptions a) -- ^ local parser info modifiers
     -> IO (MainOptions a)
-commandLineParse localCommandLineParser modifiers =
-    execParser
-    $ info
-        ( MainOptions
-            <$> globalCommandLineParser
-            <*> (   Just <$> localCommandLineParser
-                <|> pure Nothing
+commandLineParse localCommandLineParser modifiers = do
+    args' <- Env.getArgs
+    env <- Env.lookupEnv "KORE_EXEC_OPTS"
+    let
+        args = case env of
+            Nothing -> args'
+            Just opts -> args' <> words opts
+        parseResult = execParserPure
+            defaultPrefs
+            ( info
+                ( MainOptions
+                    <$> globalCommandLineParser
+                    <*> optional localCommandLineParser
+                <**> helper
                 )
-        <**> helper
-        )
-        modifiers
+                modifiers
+            )
+            args
+    handleParseResult parseResult
+
 
 
 ----------------------
@@ -348,11 +370,14 @@ clockSomethingIO description something = do
     return x
   where
     logMessage end start =
-        Logger.LogMessage
+        Logger.WithScope
+            (mkMessage start end)
+            (Scope "TimingInfo")
+    mkMessage start end =
+        SomeEntry $ Logger.LogMessage
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
             , severity = Logger.Info
-            , scope = [Scope "TimingInfo"]
             , callstack = emptyCallStack
             }
 
@@ -406,8 +431,6 @@ verifyDefinitionWithBase
         , Map.Map Text AstLocation
         )
     -- ^ already verified definition
-    -> Bool
-    -- ^ whether to check (True) or ignore attributes during verification
     -> ParsedDefinition
     -- ^ Parsed definition to check well-formedness
     -> Main
@@ -417,23 +440,15 @@ verifyDefinitionWithBase
         )
 verifyDefinitionWithBase
     alreadyVerified
-    willChkAttr
     definition
-  =
-    let attributesVerification =
-            if willChkAttr
-            then defaultAttributesVerification Proxy Proxy
-            else DoNotVerifyAttributes
-    in do
-      verifyResult <-
-        clockSomething "Verifying the definition"
-            (verifyAndIndexDefinitionWithBase
-                alreadyVerified
-                attributesVerification
-                Builtin.koreVerifiers
-                definition
-            )
-      case verifyResult of
+  = do
+    verifyResult <- clockSomething "Verifying the definition"
+        (verifyAndIndexDefinitionWithBase
+            alreadyVerified
+            Builtin.koreVerifiers
+            definition
+        )
+    case verifyResult of
         Left err1               -> error (printError err1)
         Right indexedDefinition -> return indexedDefinition
 
@@ -464,7 +479,7 @@ type LoadedDefinition = (Map ModuleName LoadedModule, Map Text AstLocation)
 
 loadDefinitions :: [FilePath] -> Main LoadedDefinition
 loadDefinitions filePaths =
-    Monad.foldM (\loaded -> verifyDefinitionWithBase loaded True) mempty
+    Monad.foldM verifyDefinitionWithBase mempty
     =<< traverse parseDefinition filePaths
 
 loadModule :: ModuleName -> LoadedDefinition -> Main LoadedModule

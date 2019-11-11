@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 module Kore.Step.Simplification.OrPattern
-    ( simplifyPredicatesWithSmt
+    ( simplifyConditionsWithSmt
     ) where
 
 import qualified Control.Comonad as Comonad
@@ -23,37 +23,37 @@ import Kore.Internal.OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     )
-import qualified Kore.Predicate.Predicate as Syntax
+import Kore.Internal.Predicate
     ( Predicate
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
-    , simplifyPredicate
+    , simplifyCondition
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
 
-simplifyPredicatesWithSmt
+simplifyConditionsWithSmt
     ::  forall variable simplifier
     .   (MonadSimplify simplifier, SimplifierVariable variable)
-    => Syntax.Predicate variable
+    => Predicate variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyPredicatesWithSmt predicate' unsimplified = do
+simplifyConditionsWithSmt predicate' unsimplified = do
     simplifiedWrappedPatterns <-
         fmap MultiOr.make . BranchT.gather $ do
             unsimplified1 <- BranchT.scatter unsimplified
-            simplified <- simplifyPredicate unsimplified1
+            simplified <- simplifyCondition unsimplified1
             -- Wrapping the original patterns as their own terms in order to be
             -- able to retrieve them unchanged after adding predicate' to them,
             -- simplification and SMT filtering
             let wrapped = addPredicate $ conditionalAsTerm simplified
-            resimplified <- simplifyPredicate wrapped
+            resimplified <- simplifyCondition wrapped
             return resimplified
     filteredWrappedPatterns <-
         SMT.Evaluator.filterMultiOr simplifiedWrappedPatterns

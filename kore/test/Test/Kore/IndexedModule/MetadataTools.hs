@@ -70,10 +70,7 @@ testSubsorts =
     moduleIndex ::
         Map.Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
     Right moduleIndex =
-        verifyAndIndexDefinition
-            DoNotVerifyAttributes
-            Builtin.koreVerifiers
-            testSubsortDefinition
+        verifyAndIndexDefinition Builtin.koreVerifiers testSubsortDefinition
     meta :: MetadataTools () () Attribute.Symbol
     meta =
         extractMetadataTools

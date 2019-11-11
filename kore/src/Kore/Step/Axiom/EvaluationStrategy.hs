@@ -25,29 +25,30 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Rule
-    ( EqualityRule
+    ( EqualityRule (..)
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
-    , hasRemainders
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
+import qualified Kore.Step.Step as Step
 import Kore.Unparser
     ( unparse
     )
@@ -72,20 +73,30 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier
-        (\_ _ term predicate ->
-            evaluateAxioms rules term (Predicate.toPredicate predicate)
-        )
+    BuiltinAndAxiomSimplifier $ \term predicate -> do
+        let ea = evaluateAxioms
+                    rules
+                    term
+                    (Condition.toPredicate predicate)
+        res <- Step.assertFunctionLikeResults
+                (Step.toConfigurationVariables (Pattern.fromTermLike term))
+                ea
+        return $ resultsToAttemptedAxiom res
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
     :: EqualityRule Variable
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
-    BuiltinAndAxiomSimplifier
-        (\_ _ term predicate ->
-            evaluateAxioms [rule] term (Predicate.toPredicate predicate)
-        )
+    BuiltinAndAxiomSimplifier $ \term predicate -> do
+        let ea = evaluateAxioms
+                    [rule]
+                    term
+                    (Condition.toPredicate predicate)
+        res <- Step.recoveryFunctionLikeResults
+                (Step.toConfigurationVariables (Pattern.fromTermLike term))
+                ea
+        return $ resultsToAttemptedAxiom res
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -105,14 +116,16 @@ totalDefinitionEvaluation rules =
     totalDefinitionEvaluationWorker
         :: forall variable simplifier
         .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => TermLikeSimplifier
-        -> BuiltinAndAxiomSimplifierMap
-        -> TermLike variable
-        -> Predicate variable
+        => TermLike variable
+        -> Condition variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker _ _ term predicate = do
-        result <- evaluateAxioms rules term (Predicate.toPredicate predicate)
-        if AttemptedAxiom.hasRemainders result
+    totalDefinitionEvaluationWorker term predicate = do
+        result0 <- evaluateAxioms
+                    rules
+                    term
+                    (Condition.toPredicate predicate)
+        let result = resultsToAttemptedAxiom result0
+        if hasRemainders result
             then return AttemptedAxiom.NotApplicable
             else return result
 
@@ -154,25 +167,16 @@ evaluateBuiltin
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => BuiltinAndAxiomSimplifier
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
 evaluateBuiltin
     (BuiltinAndAxiomSimplifier builtinEvaluator)
-    simplifier
-    axiomIdToSimplifier
     patt
     predicate
   = do
-    result <-
-        builtinEvaluator
-            simplifier
-            axiomIdToSimplifier
-            patt
-            predicate
+    result <- builtinEvaluator patt predicate
     case result of
         AttemptedAxiom.NotApplicable
           | App_ appHead children <- patt
@@ -193,28 +197,18 @@ applyFirstSimplifierThatWorks
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
-    -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
-applyFirstSimplifierThatWorks [] _ _ _ _ _ =
+applyFirstSimplifierThatWorks [] _ _ _ =
     return AttemptedAxiom.NotApplicable
 applyFirstSimplifierThatWorks
     (BuiltinAndAxiomSimplifier evaluator : evaluators)
     multipleResults
-    simplifier
-    axiomIdToSimplifier
     patt
     predicate
   = do
-    applicationResult <-
-        evaluator
-            simplifier
-            axiomIdToSimplifier
-            patt
-            predicate
+    applicationResult <- evaluator patt predicate
 
     case applicationResult of
         AttemptedAxiom.Applied AttemptedAxiomResults
@@ -245,8 +239,10 @@ applyFirstSimplifierThatWorks
               Logger.logWarning
                   . Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep
                   $ [ "Simplification result with remainder:"
-                    , Pretty.indent 2 "input:"
+                    , Pretty.indent 2 "input pattern:"
                     , Pretty.indent 4 (unparse patt)
+                    , Pretty.indent 2 "input predicate:"
+                    , Pretty.indent 4 (unparse predicate)
                     , Pretty.indent 2 "results:"
                     , (Pretty.indent 4 . Pretty.vsep)
                         (unparse <$> Foldable.toList orResults)
@@ -265,7 +261,5 @@ applyFirstSimplifierThatWorks
         applyFirstSimplifierThatWorks
             evaluators
             multipleResults
-            simplifier
-            axiomIdToSimplifier
             patt
             predicate

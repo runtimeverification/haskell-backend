@@ -6,6 +6,9 @@ import Test.Tasty
 
 import qualified Data.Default as Default
 
+import qualified Kore.Internal.Condition as Condition
+    ( top
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -16,20 +19,17 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
     ( bottom
-    , fromPredicateSorted
+    , fromConditionSorted
     , top
     )
-import qualified Kore.Internal.Predicate as Predicate
-    ( top
-    )
-import Kore.Internal.Symbol
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
     , makeFloorPredicate
     , makeTruePredicate
     )
+import Kore.Internal.Symbol
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.Floor
     ( makeEvaluateFloor
     , simplify
@@ -97,7 +97,7 @@ test_floorSimplification =
             )
             (evaluate
                 (makeFloor
-                    [ Pattern.fromPredicateSorted testSort Predicate.top ]
+                    [ Pattern.fromConditionSorted testSort Condition.top ]
                 )
             )
     , testCase "expanded Floor - bool operations"

@@ -17,32 +17,35 @@ builtin modules.
 module Kore.Builtin.Krypto
     ( symbolVerifiers
     , builtinFunctions
-    , keccakKey
     , signatureToKey
+    -- * Constants
+    , keccak256Key
+    , sha256Key
+    , sha3256Key
+    , ripemd160Key
+    , ecdsaRecoverKey
     ) where
 
 
 import Control.Exception.Base
     ( assert
     )
-import GHC.Stack
-    ( HasCallStack
-    )
-
 import Crypto.Hash
-    ( Digest
-    , Keccak_256
-    , hash
+    ( HashAlgorithm
+    , Keccak_256 (..)
+    , RIPEMD160 (..)
+    , SHA256 (..)
+    , SHA3_256 (..)
+    , hashWith
     )
 import Crypto.PubKey.ECC.Prim
 import Crypto.PubKey.ECC.Types
-
 import Data.Bits
 import Data.ByteString
     ( ByteString
     )
 import qualified Data.ByteString as ByteString
-import Data.Char
+import Data.Char as Char
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map
     ( Map
@@ -59,16 +62,24 @@ import qualified Data.Text as Text
 import Data.Word
     ( Word8
     )
+import GHC.Stack
+    ( HasCallStack
+    )
+import Kore.Builtin.Encoding
+    ( encode8Bit
+    )
 
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.String as String
 
-keccakKey, ecsdaRecover :: IsString s => s
-
-keccakKey = "KRYPTO.keccak256"
-
-ecsdaRecover = "KRYPTO.ecdsaRecover"
+keccak256Key, ecdsaRecoverKey, sha256Key, sha3256Key, ripemd160Key
+    :: IsString s => s
+keccak256Key = "KRYPTO.keccak256"
+ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
+sha256Key = "KRYPTO.sha256"
+sha3256Key = "KRYPTO.sha3256"
+ripemd160Key = "KRYPTO.ripemd160"
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -78,10 +89,11 @@ ecsdaRecover = "KRYPTO.ecdsaRecover"
 symbolVerifiers :: Builtin.SymbolVerifiers
 symbolVerifiers =
     HashMap.fromList
-    [ ( keccakKey
-      , Builtin.verifySymbol String.assertSort [String.assertSort]
-      )
-    , (ecsdaRecover
+    [ (keccak256Key, verifyHashFunction)
+    , (sha256Key, verifyHashFunction)
+    , (sha3256Key, verifyHashFunction)
+    , (ripemd160Key, verifyHashFunction)
+    , (ecdsaRecoverKey
       , Builtin.verifySymbol
             String.assertSort
             [ String.assertSort
@@ -97,39 +109,63 @@ symbolVerifiers =
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
-        [ (keccakKey, evalKeccak)
-        , (ecsdaRecover, evalECDSARecover)
+        [ (keccak256Key, evalKeccak)
+        , (sha256Key, evalSha256)
+        , (sha3256Key, evalSha3256)
+        , (ripemd160Key, evalRipemd160)
+        , (ecdsaRecoverKey, evalECDSARecover)
         ]
 
-evalKeccak :: Builtin.Function
-evalKeccak =
-    Builtin.functionEvaluator evalKeccak0
+verifyHashFunction :: Builtin.SymbolVerifier
+verifyHashFunction = Builtin.verifySymbol String.assertSort [String.assertSort]
+
+{- | A function evaluator for builtin hash function hooks.
+
+The symbol's argument must be a string which will be interpreted as a sequence
+of 8-bit bytes. The result is the hash as a string in big-endian base-16
+encoding.
+
+ -}
+evalHashFunction
+    :: HashAlgorithm algorithm
+    => String  -- ^ hook name for error messages
+    -> algorithm  -- ^ hash function
+    -> Builtin.Function
+evalHashFunction context algorithm =
+    Builtin.functionEvaluator evalHashFunctionWorker
   where
-    evalKeccak0 :: Builtin.FunctionImplementation
-    evalKeccak0 _ resultSort arguments =
+    evalHashFunctionWorker :: Builtin.FunctionImplementation
+    evalHashFunctionWorker resultSort arguments =
         Builtin.getAttemptedAxiom $ do
             let
                 arg =
                     case arguments of
                       [input] -> input
-                      _ -> Builtin.wrongArity keccakKey
-            str <- String.expectBuiltinString keccakKey arg
-            let
-                digest :: Digest Keccak_256
-                digest =
-                    hash
-                    $ ByteString.pack
-                    $ map (fromIntegral . ord)
-                    $ Text.unpack str
+                      _ -> Builtin.wrongArity context
+            str <- String.expectBuiltinString context arg
+            let bytes = encode8Bit str
+                digest = hashWith algorithm bytes
                 result = fromString (show digest)
             Builtin.appliedFunction $ String.asPattern resultSort result
+
+evalKeccak :: Builtin.Function
+evalKeccak = evalHashFunction keccak256Key Keccak_256
+
+evalSha256 :: Builtin.Function
+evalSha256 = evalHashFunction sha256Key SHA256
+
+evalSha3256 :: Builtin.Function
+evalSha3256 = evalHashFunction sha3256Key SHA3_256
+
+evalRipemd160 :: Builtin.Function
+evalRipemd160 = evalHashFunction ripemd160Key RIPEMD160
 
 evalECDSARecover :: Builtin.Function
 evalECDSARecover =
     Builtin.functionEvaluator eval0
   where
     eval0 :: Builtin.FunctionImplementation
-    eval0 _ resultSort [messageHash0, v0, r0, s0] =
+    eval0 resultSort [messageHash0, v0, r0, s0] =
         Builtin.getAttemptedAxiom $ do
             messageHash <- string2Integer . Text.unpack
                     <$> String.expectBuiltinString "" messageHash0
@@ -144,7 +180,7 @@ evalECDSARecover =
                 $ byteString2String
                 $ pad 64 0
                 $ signatureToKey messageHash r s v
-    eval0 _ _ _ = Builtin.wrongArity ecsdaRecover
+    eval0 _ _ = Builtin.wrongArity ecdsaRecoverKey
 
 pad :: Int -> Word8 -> ByteString -> ByteString
 pad n w s = ByteString.append s padding

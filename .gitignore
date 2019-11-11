@@ -13,6 +13,7 @@ target
 *.blg
 *.log
 *.out
+*.merge-output
 *.synctex.gz
 !docs/hash-symbol.pdf
 *.fdb_latexmk

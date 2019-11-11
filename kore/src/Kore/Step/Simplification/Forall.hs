@@ -12,6 +12,12 @@ module Kore.Step.Simplification.Forall
     , makeEvaluate
     ) where
 
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    , hasFreeVariable
+    , markSimplified
+    , toPredicate
+    )
 import qualified Kore.Internal.Conditional as Conditional
     ( withCondition
     )
@@ -31,11 +37,8 @@ import qualified Kore.Internal.Pattern as Pattern
     , toTermLike
     , top
     )
-import qualified Kore.Internal.Predicate as Predicate
-    ( fromPredicate
-    , hasFreeVariable
-    , markSimplified
-    , toPredicate
+import Kore.Internal.Predicate
+    ( makeForallPredicate
     )
 import Kore.Internal.TermLike
     ( ElementVariable
@@ -49,9 +52,6 @@ import qualified Kore.Internal.TermLike as TermLike
     , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
-import Kore.Predicate.Predicate
-    ( makeForallPredicate
-    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -116,15 +116,15 @@ makeEvaluate
 makeEvaluate variable patt
   | Pattern.isTop patt    = Pattern.top
   | Pattern.isBottom patt = Pattern.bottom
-  | not variableInTerm && not variableInPredicate = patt
+  | not variableInTerm && not variableInCondition = patt
   | predicateIsBoolean =
     TermLike.markSimplified (mkForall variable term)
     `Conditional.withCondition` predicate
   | termIsBoolean =
     term
-    `Conditional.withCondition` Predicate.markSimplified
-        (Predicate.fromPredicate
-            (makeForallPredicate variable (Predicate.toPredicate predicate))
+    `Conditional.withCondition` Condition.markSimplified
+        (Condition.fromPredicate
+            (makeForallPredicate variable (Condition.toPredicate predicate))
         )
   | otherwise =
     Pattern.fromTermLike
@@ -135,6 +135,6 @@ makeEvaluate variable patt
     (term, predicate) = Pattern.splitTerm patt
     unifiedVariable = ElemVar variable
     variableInTerm = TermLike.hasFreeVariable unifiedVariable term
-    variableInPredicate = Predicate.hasFreeVariable unifiedVariable predicate
+    variableInCondition = Condition.hasFreeVariable unifiedVariable predicate
     termIsBoolean = isTop term || isBottom term
     predicateIsBoolean = isTop predicate || isBottom predicate

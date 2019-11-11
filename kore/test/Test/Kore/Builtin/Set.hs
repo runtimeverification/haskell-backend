@@ -41,15 +41,15 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
 import Kore.Internal.Pattern as Pattern
-import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate as Predicate hiding
+import Kore.Internal.Predicate as Predicate hiding
     ( fromSubstitution
     )
+import Kore.Internal.TermLike
 import Kore.Sort
     ( Sort
     )
@@ -74,7 +74,7 @@ import qualified Kore.Syntax.Variable as DoNotUse
     ( Variable (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unification.Unify
+import Kore.Unification.UnifierT
     ( runUnifierT
     )
 import Kore.Variables.UnifiedVariable
@@ -1682,7 +1682,7 @@ unifiedBy (termLike1, termLike2) substitution testName =
             $ termUnification termLike1 termLike2
         Trans.liftIO $ assertEqual "" [expect] (Pattern.withoutTerm <$> actual)
   where
-    expect = Predicate.fromSubstitution $ Substitution.unsafeWrap substitution
+    expect = Condition.fromSubstitution $ Substitution.unsafeWrap substitution
 
 -- | Specialize 'Set.asTermLike' to the builtin sort 'setSort'.
 asTermLike

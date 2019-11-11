@@ -42,10 +42,10 @@ import qualified Data.Set as Set
 
 import Data.Graph.TopologicalSort
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Kore.Internal.Predicate
-    ( Predicate
+import Kore.Internal.Condition
+    ( Condition
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import Kore.Substitute
@@ -76,15 +76,15 @@ normalizeSubstitution
     :: forall variable
     .  SubstitutionVariable variable
     => Map (UnifiedVariable variable) (TermLike variable)
-    -> Either SubstitutionError (Predicate variable)
+    -> Either SubstitutionError (Condition variable)
 normalizeSubstitution substitution =
     maybe bottom fromNormalization $ normalize substitution
   where
-    bottom = return Predicate.bottom
+    bottom = return Condition.bottom
     fromNormalization Normalization { normalized, denormalized }
       | null denormalized =
         pure
-        $ Predicate.fromSubstitution
+        $ Condition.fromSubstitution
         $ Substitution.unsafeWrap normalized
       | otherwise =
         throwError (SimplifiableCycle variables)
@@ -143,10 +143,24 @@ normalize (dropTrivialSubstitutions -> substitution) =
     mixedCtorCycle _ = empty
 
     simplifiableCycle (Set.fromList -> variables) = do
-        let denormalized = Map.toList $ Map.restrictKeys substitution variables
-            substitution' = Map.withoutKeys substitution variables
+        let -- Variables with simplifiable dependencies
+            simplifiable = Set.filter (isSimplifiable variables) variables
+            denormalized =
+                Map.toList $ Map.restrictKeys substitution simplifiable
+            substitution' = Map.withoutKeys substitution simplifiable
+        -- Partially normalize the substitution by separating variables with
+        -- simplifiable dependencies.
         normalization <- normalize substitution'
         pure $ normalization <> mempty { denormalized }
+
+    isSimplifiable cycleVariables variable =
+        allDeps /= nonSimplDeps
+      where
+        allDeps = cycleDeps allDependencies
+        nonSimplDeps = cycleDeps nonSimplifiableDependencies
+        cycleDeps deps =
+            Set.intersection cycleVariables . Set.fromList
+            <$> Map.lookup variable deps
 
     assignBottom
         :: Map (UnifiedVariable variable) (TermLike variable)

@@ -15,7 +15,7 @@ module Kore.Internal.Conditional
     , andPredicate
     , Kore.Internal.Conditional.freeVariables
     , splitTerm
-    , toPredicate
+    , isPredicate
     , Kore.Internal.Conditional.mapVariables
     , isNormalized
     ) where
@@ -41,6 +41,11 @@ import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
     )
 import Kore.Debug
+import Kore.Internal.Predicate
+    ( Predicate
+    , singleSubstitutionToPredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( InternalVariable
     , Sort
@@ -48,11 +53,6 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as Internal
-import Kore.Predicate.Predicate
-    ( Predicate
-    , singleSubstitutionToPredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -336,27 +336,13 @@ freeVariables getFreeVariables Conditional { term, predicate, substitution } =
     <> Predicate.freeVariables predicate
     <> Substitution.freeVariables substitution
 
-{- | Transform a predicate and substitution into a predicate only.
-
-@toPredicate@ is intended for generalizing the 'Predicate' and 'Substitution' of
-a 'PredicateSubstition' into only a 'Predicate'; i.e. when @term ~ ()@,
-
-> Conditional variable term ~ Predicate variable
-
-@toPredicate@ is also used to extract the 'Predicate' and 'Substitution' while
-discarding the 'term'.
-
-See also: 'Predicate.fromSubstitution'.
-
+{- | Check if a Conditional can be reduced to a Predicate.
 -}
-toPredicate
-    :: InternalVariable variable
+isPredicate
+    :: TopBottom term
     => Conditional variable term
-    -> Predicate variable
-toPredicate Conditional { predicate, substitution } =
-    Predicate.makeAndPredicate
-        predicate
-        (Predicate.fromSubstitution substitution)
+    -> Bool
+isPredicate Conditional {term} = isTop term
 
 {- | Transform all variables (free and quantified) in a 'Conditional' term.
 

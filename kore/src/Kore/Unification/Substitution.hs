@@ -10,10 +10,12 @@ Portability : portable
 
 module Kore.Unification.Substitution
     ( Substitution
+    , SingleSubstitution
     , UnwrappedSubstitution
     , unwrap
     , toMap
     , toMultiMap
+    , orderRenaming
     , fromMap
     , singleton
     , wrap
@@ -28,6 +30,8 @@ module Kore.Unification.Substitution
     , partition
     , reverseIfRhsIsVar
     , Normalization (..)
+    , wrapNormalization
+    , applyNormalized
     ) where
 
 import Control.DeepSeq
@@ -63,6 +67,7 @@ import Kore.Attribute.Pattern.FreeVariables
 import Kore.Debug
 import Kore.Internal.TermLike
     ( InternalVariable
+    , SubstitutionVariable
     , TermLike
     , pattern Var_
     , mkVar
@@ -155,8 +160,9 @@ instance Ord variable => Semigroup (Substitution variable) where
 instance Ord variable => Monoid (Substitution variable) where
     mempty = NormalizedSubstitution mempty
 
-type UnwrappedSubstitution variable =
-    [(UnifiedVariable variable, TermLike variable)]
+type SingleSubstitution variable = (UnifiedVariable variable, TermLike variable)
+
+type UnwrappedSubstitution variable = [SingleSubstitution variable]
 
 -- | Unwrap the 'Substitution' to its inner list of substitutions.
 unwrap
@@ -188,24 +194,9 @@ toMultiMap
     -> Map (UnifiedVariable variable) (NonEmpty (TermLike variable))
 toMultiMap =
     Foldable.foldl' insertSubstitution Map.empty
-    . map sortRenamedVariable
+    . map orderRenaming
     . unwrap
   where
-    {- | Sort variable-renaming substitutions.
-
-    Variable-renaming substitutions are sorted so that the greater variable is
-    substituted in place of the lesser. Consistent ordering prevents
-    variable-only cycles.
-
-    -}
-    sortRenamedVariable
-        :: InternalVariable variable
-        => (UnifiedVariable variable, TermLike variable)
-        -> (UnifiedVariable variable, TermLike variable)
-    sortRenamedVariable (variable1, Var_ variable2)
-      | variable2 < variable1 = (variable2, mkVar variable1)
-    sortRenamedVariable subst = subst
-
     insertSubstitution
         :: forall variable1 term
         .  Ord variable1
@@ -215,6 +206,42 @@ toMultiMap =
     insertSubstitution multiMap (variable, termLike) =
         let push = (termLike :|) . maybe [] Foldable.toList
         in Map.alter (Just . push) variable multiMap
+
+{- | Apply a normal order to variable-renaming substitutions.
+
+A variable-renaming substitution has one of the forms,
+
+@
+x:S{} = y:S{}
+\@X:S{} = \@Y:S{}
+@
+
+These are __not__ variable-renaming substitutions because they change variable
+types:
+
+@
+x:S{} = \@Y:S{}
+\@X:S{} = y:S{}
+@
+
+Variable-renaming substitutions are sorted so that the greater variable is
+substituted in place of the lesser. Consistent ordering prevents variable-only
+cycles.
+
+ -}
+orderRenaming
+    :: InternalVariable variable
+    => (UnifiedVariable variable, TermLike variable)
+    -> (UnifiedVariable variable, TermLike variable)
+orderRenaming (uVar1, Var_ uVar2)
+  | ElemVar eVar1 <- uVar1
+  , ElemVar eVar2 <- uVar2
+  , eVar2 < eVar1 = (uVar2, mkVar uVar1)
+
+  | SetVar sVar1 <- uVar1
+  , SetVar sVar2 <- uVar2
+  , sVar2 < sVar1 = (uVar2, mkVar uVar1)
+orderRenaming subst = subst
 
 fromMap
     :: Ord variable
@@ -478,3 +505,20 @@ instance Semigroup (Normalization variable) where
 
 instance Monoid (Normalization variable) where
     mempty = Normalization mempty mempty
+
+wrapNormalization :: Normalization variable -> Substitution variable
+wrapNormalization Normalization { normalized, denormalized } =
+    wrap (normalized <> denormalized)
+
+-- | Substitute the 'normalized' part into the 'denormalized' part.
+applyNormalized
+    :: SubstitutionVariable variable
+    => Normalization variable
+    -> Normalization variable
+applyNormalized Normalization { normalized, denormalized } =
+    Normalization
+        { normalized
+        , denormalized = (fmap . fmap) substitute denormalized
+        }
+  where
+    substitute = TermLike.substitute (Map.fromList normalized)

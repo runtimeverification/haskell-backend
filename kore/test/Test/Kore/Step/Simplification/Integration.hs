@@ -5,11 +5,17 @@ module Test.Kore.Step.Simplification.Integration
     , test_substitute
     ) where
 
+import qualified Control.Lens as Lens
 import qualified Data.Default as Default
+import Data.Function
+    ( (&)
+    )
+import Data.Generics.Product
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Test.Tasty
 
+import Kore.Attribute.Simplification
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.List as List
@@ -25,8 +31,7 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
@@ -35,9 +40,11 @@ import Kore.Predicate.Predicate
     , makeImpliesPredicate
     , makeInPredicate
     , makeNotPredicate
+    , makeOrPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , simplifierWithFallback
@@ -242,7 +249,8 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
-    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the identity function and `#ceil(x/y) => y != 0`
+    -- Checks that `f(x/x)` evaluates to `x/x and x != 0` when `f` is the
+    -- identity function and `#ceil(x/y) => y != 0`
     , testCase "function application introduces definedness condition" $ do
         let testSortVariable = SortVariableSort $ SortVariable (testId "s")
             expect =
@@ -255,8 +263,8 @@ test_simplificationIntegration =
                     , predicate =
                         makeNotPredicate
                         $ makeEqualsPredicate
-                           (mkElemVar Mock.xInt)
-                           (Mock.builtinInt 0)
+                            (mkElemVar Mock.xInt)
+                            (Mock.builtinInt 0)
                     , substitution = mempty
                     }
                 ]
@@ -264,29 +272,29 @@ test_simplificationIntegration =
             evaluateWithAxioms
                 ( axiomPatternsToEvaluators
                     ( Map.fromList
-                        [ (AxiomIdentifier.Application Mock.fIntId
-                          , [ EqualityRule $ rulePattern
-                                (Mock.fInt (mkElemVar Mock.xInt))
-                                (mkElemVar Mock.xInt)
-                            ]
-                          )
-                        , (AxiomIdentifier.Ceil (AxiomIdentifier.Application Mock.tdivIntId)
-                          , [ EqualityRule $ rulePattern
-                                (mkCeil testSortVariable
-                                    $ Mock.tdivInt
-                                        (mkElemVar Mock.xInt)
-                                        (mkElemVar Mock.yInt)
-                                )
-                                (mkCeil testSortVariable
-                                    . mkNot
-                                    $ mkEquals testSortVariable
-                                        (mkElemVar Mock.yInt)
-                                        (Mock.builtinInt 0)
+                        [   (AxiomIdentifier.Application Mock.fIntId
+                            ,   [ EqualityRule $ rulePattern
+                                    (Mock.fInt (mkElemVar Mock.xInt))
+                                    (mkElemVar Mock.xInt)
+                                ]
+                            )
+                        ,   (AxiomIdentifier.Ceil
+                                (AxiomIdentifier.Application Mock.tdivIntId)
+                            ,   [ EqualityRule $ simplificationRulePattern
+                                    (mkCeil testSortVariable
+                                        $ Mock.tdivInt
+                                            (mkElemVar Mock.xInt)
+                                            (mkElemVar Mock.yInt)
+                                    )
+                                    (mkCeil testSortVariable
+                                        . mkNot
+                                        $ mkEquals testSortVariable
+                                            (mkElemVar Mock.yInt)
+                                            (Mock.builtinInt 0)
 
-                                )
-                            ]
-
-                          )
+                                    )
+                                ]
+                            )
                         ]
                     )
                 )
@@ -300,6 +308,50 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
+    -- Checks that `f(x/x)` fails to simplify to x/x
+    -- because x != 0 is not implied by the configuration
+    , testCase "non function-like simplification with remainder" $ do
+        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
+        assertErrorIO
+            (assertSubstring "" "doesn't imply rule condition")
+            (evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [   (AxiomIdentifier.Application Mock.fIntId
+                            ,   [ EqualityRule $ rulePattern
+                                    (Mock.fInt (mkElemVar Mock.xInt))
+                                    (mkElemVar Mock.xInt)
+                                ]
+                            )
+                        ,   (AxiomIdentifier.Ceil
+                                (AxiomIdentifier.Application Mock.tdivIntId)
+                            ,   [ EqualityRule
+                                  $ conditionalSimplificationRulePattern
+                                    (mkCeil testSortVariable
+                                        $ Mock.tdivInt
+                                            (mkElemVar Mock.xInt)
+                                            (mkElemVar Mock.xInt)
+                                    )
+                                    (makeNotPredicate $ makeEqualsPredicate
+                                        (mkElemVar Mock.xInt)
+                                        (Mock.builtinInt 0)
+                                    )
+                                    (mkTop testSortVariable)
+                                ]
+                            )
+                        ]
+                    )
+                )
+                Conditional
+                    { term =
+                        Mock.fInt
+                        $ Mock.tdivInt
+                            (mkElemVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+            )
     , testCase "exists variable equality" $ do
         let
             expect = OrPattern.top
@@ -526,6 +578,40 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
+    , testCase "Or to pattern" $ do
+        let expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkTop_
+                    , predicate = makeIffPredicate
+                        (makeOrPredicate
+                            (makeInPredicate
+                                (mkCeil_ Mock.cf)
+                                (mkCeil_ Mock.cg)
+                            )
+                            (makeInPredicate
+                                (mkCeil_ Mock.cf)
+                                (asInternal (Set.fromList []))
+                            )
+                        )
+                        (makeCeilPredicate Mock.ch)
+                    , substitution = mempty
+                    }
+                ]
+        actual <- evaluate
+            Conditional
+                { term = mkIff
+                    (mkIn Mock.boolSort
+                        (mkCeil_ Mock.cf)
+                        (mkOr
+                            Mock.unitSet
+                            (mkCeil_ Mock.cg)
+                        )
+                    )
+                    (mkCeil_ Mock.ch)
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "" expected actual
     , testCase "Sort matching" $ do
         let mx = SetVariable $ Variable (testId "mx") mempty Mock.subOthersort
             iz = SetVariable $ Variable (testId "iz") mempty Mock.intSort
@@ -635,6 +721,30 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
+    , testCase "Builtin and simplification failure" $ do
+        let m = SetVariable $ Variable (testId "m") mempty Mock.listSort
+            ue = SetVariable $ Variable (testId "ue") mempty Mock.listSort
+        actual <- evaluate
+            Conditional
+                { term = mkAnd
+                    (Mock.concatList
+                        (mkImplies
+                            (mkImplies mkBottom_ mkTop_)
+                            (mkIn_ Mock.cfSort0 Mock.cgSort0)
+                        )
+                        (mkImplies
+                            (mkAnd
+                                (mkMu m mkBottom_)
+                                mkBottom_
+                            )
+                            (mkImplies Mock.unitList (mkNu ue Mock.unitList))
+                        )
+                    )
+                    Mock.unitList
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
     , testCase "Forall simplification" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
@@ -658,6 +768,14 @@ test_simplificationIntegration =
                 }
         assertEqual "" expected actual
     , testCase "Implies simplification" $ do
+        let zz = ElementVariable
+                $ Variable (testId "zz") mempty Mock.subOthersort
+            mci = ElementVariable
+                $ Variable (testId "mci") mempty Mock.subOthersort
+            mw = ElementVariable
+                $ Variable (testId "mw") mempty Mock.subOthersort
+            k = SetVariable $ Variable (testId "k") mempty Mock.setSort
+
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
@@ -727,13 +845,99 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
+    , testCase "Ceil simplification" $ do
+        actual <- evaluate
+            Conditional
+                { term = mkCeil Mock.topSort
+                    (mkForall Mock.x
+                        (Mock.concatSet
+                            (mkEvaluated (mkEvaluated (mkTop Mock.setSort)))
+                            (mkEvaluated (mkEvaluated (mkTop Mock.setSort)))
+                        )
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
+    , testCase "Equals-in simplification" $ do
+        let gt = SetVariable $ Variable (testId "gt") mempty Mock.stringSort
+            g = SetVariable $ Variable (testId "g") mempty Mock.testSort1
+        actual <- evaluate
+            Conditional
+                { term = mkNu gt
+                    (mkEquals_
+                        (mkIn_
+                            mkTop_
+                            (mkNu g (mkOr Mock.aSort1 (mkSetVar g)))
+                        )
+                        mkTop_
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "And-list simplification" $ do
+        actual <- evaluate
+            Conditional
+                { term = mkAnd
+                    (Mock.elementList Mock.plain00)
+                    (Mock.elementList Mock.functional00)
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "Distributed equals simplification" $ do
+        let k = SetVariable $ Variable (testId "k") mempty Mock.stringSort
+        actual <- evaluate
+            Conditional
+                { term = mkMu k
+                    (mkEquals_
+                        (Mock.functionalConstr21 Mock.cf Mock.cf)
+                        (Mock.functionalConstr21 Mock.ch Mock.cg)
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "nu-floor-in-or simplification" $ do
+        let q = SetVariable $ Variable (testId "q") mempty Mock.otherSort
+        actual <- evaluate
+            Conditional
+                { term = mkNu q
+                    (mkFloor_
+                        (mkIn_
+                            (Mock.g Mock.ch)
+                            (mkOr Mock.cf Mock.cg)
+                        )
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
     ]
-  where
-    zz = ElementVariable $ Variable (testId "zz") mempty Mock.subOthersort
-    mci = ElementVariable $ Variable (testId "mci") mempty Mock.subOthersort
-    mw = ElementVariable $ Variable (testId "mw") mempty Mock.subOthersort
-    k = SetVariable $ Variable (testId "k") mempty Mock.setSort
 
+
+simplificationRulePattern
+    :: InternalVariable variable
+    => TermLike variable
+    -> TermLike variable
+    -> RulePattern variable
+simplificationRulePattern left right =
+    patt & Lens.set (field @"attributes" . field @"simplification")
+        (Simplification True)
+  where
+    patt = rulePattern left right
+
+conditionalSimplificationRulePattern
+    :: InternalVariable variable
+    => TermLike variable
+    -> Predicate.Predicate variable
+    -> TermLike variable
+    -> RulePattern variable
+conditionalSimplificationRulePattern left requires right =
+    patt & Lens.set (field @"requires") requires
+  where
+    patt = simplificationRulePattern left right
 
 test_substitute :: [TestTree]
 test_substitute =
@@ -744,7 +948,7 @@ test_substitute =
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
-                                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                                (Mock.functionalConstr10 Mock.a)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -773,7 +977,7 @@ test_substitute =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
                         { term =
-                            Mock.functionalConstr20 Mock.a (mkElemVar Mock.y)
+                            Mock.functionalConstr20 Mock.a Mock.a
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -807,7 +1011,7 @@ test_substituteMap =
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testMapX
+                        { term = Mock.functionalConstr20 Mock.a testMapA
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -841,7 +1045,7 @@ test_substituteList =
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testListX
+                        { term = Mock.functionalConstr20 Mock.a testListA
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -890,14 +1094,32 @@ builtinAxioms =
         ,   ( AxiomIdentifier.Application Mock.elementMapId
             , builtinEvaluation Map.evalElement
             )
-        ,   ( AxiomIdentifier.Application Mock.unitSetId
-            , builtinEvaluation Set.evalUnit
+        ,   ( AxiomIdentifier.Application Mock.unitMapId
+            , builtinEvaluation Map.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application Mock.concatSetId
+            , builtinEvaluation Set.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application Mock.concatSetId
+            , builtinEvaluation Set.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.elementSetId
             , builtinEvaluation Set.evalElement
             )
+        ,   ( AxiomIdentifier.Application Mock.unitSetId
+            , builtinEvaluation Set.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application Mock.concatListId
+            , builtinEvaluation List.evalConcat
+            )
+        ,   ( AxiomIdentifier.Application Mock.elementListId
+            , builtinEvaluation List.evalElement
+            )
         ,   ( AxiomIdentifier.Application Mock.unitListId
             , builtinEvaluation List.evalUnit
+            )
+        ,   ( AxiomIdentifier.Application Mock.concatListId
+            , builtinEvaluation List.evalConcat
             )
         ,   ( AxiomIdentifier.Application Mock.tdivIntId
             , builtinEvaluation (Int.builtinFunctions Map.! Int.tdivKey)

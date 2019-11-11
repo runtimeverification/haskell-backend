@@ -9,6 +9,16 @@ import Data.Default
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    , makeNotPredicate
+    , makeTruePredicate
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -19,21 +29,12 @@ import Kore.Internal.TermLike
 import Kore.Logger.Output
     ( emptyLogger
     )
-import Kore.Predicate.Predicate
-    ( makeEqualsPredicate
-    , makeTruePredicate
-    )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
-    )
 import Kore.Step.Rule
     ( OnePathRule (OnePathRule)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
 import Kore.Step.Rule.Simplify
-    ( simplifyOnePathRuleLhs
-    )
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )
@@ -48,7 +49,7 @@ import Test.Tasty.HUnit.Ext
 class OnePathRuleBase base where
     rewritesTo :: base Variable -> base Variable -> OnePathRule Variable
 
-newtype Pair variable = Pair (TermLike variable, Syntax.Predicate variable)
+newtype Pair variable = Pair (TermLike variable, Predicate variable)
 
 instance OnePathRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
@@ -153,6 +154,52 @@ test_simplifyRule =
             )
 
         assertEqual "" expected actual
+    , testCase "Case where f(x) is defined;\
+               \ Case where it is not is simplified" $ do
+        let expected =
+                [   Pair (Mock.f x, makeCeilPredicate (Mock.f x))
+                    `rewritesTo`
+                    Pair (Mock.a, makeTruePredicate)
+                ]
+
+        actual <- runSimplifyRule
+            (   Pair (Mock.f x, makeTruePredicate)
+                `rewritesTo`
+                Pair (Mock.a, makeTruePredicate)
+            )
+
+        assertEqual "" expected actual
+    , testCase "f(x) is always defined" $ do
+        let expected =
+                [ Mock.functional10 x `rewritesTo` Mock.a
+                ]
+
+        actual <- runSimplifyRule
+            (   Pair (Mock.functional10 x, makeTruePredicate)
+                `rewritesTo`
+                Pair (Mock.a, makeTruePredicate)
+            )
+
+        assertEqual "" expected actual
+    , testCase "Predicate simplification removes trivial claim" $ do
+        let expected = []
+        actual <- runSimplifyRule
+            ( Pair
+                ( Mock.b
+                , makeAndPredicate
+                    (makeNotPredicate
+                        (makeEqualsPredicate x Mock.b)
+                    )
+                    (makeNotPredicate
+                        (makeNotPredicate
+                            (makeEqualsPredicate x Mock.b)
+                        )
+                    )
+                )
+              `rewritesTo`
+              Pair (Mock.a, makeTruePredicate)
+            )
+        assertEqual "" expected actual
     ]
   where
     x = mkElemVar Mock.x
@@ -164,4 +211,4 @@ runSimplifyRule rule =
     fmap MultiAnd.extractPatterns
     $ SMT.runSMT SMT.defaultConfig emptyLogger
     $ runSimplifier Mock.env
-    $ simplifyOnePathRuleLhs rule
+    $ simplifyRuleLhs rule

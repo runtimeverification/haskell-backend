@@ -9,19 +9,19 @@ import qualified Data.Map as Map
 import qualified Data.Sup as Sup
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Domain.Builtin as Domain
+import Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
@@ -105,7 +105,7 @@ test_ceilSimplification =
             -- ceil(top{testSort}) = top
             actual1 <- evaluate
                 (makeCeil
-                    [Pattern.fromPredicateSorted Mock.testSort Predicate.top]
+                    [Pattern.fromConditionSorted Mock.testSort Condition.top]
                 )
             assertEqual "ceil(top)"
                 (OrPattern.fromPatterns
@@ -392,8 +392,8 @@ test_ceilSimplification =
             -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
             let original = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
                 expected =
-                    OrPattern.fromPattern . Pattern.fromPredicate
-                    . Predicate.fromPredicate
+                    OrPattern.fromPattern . Pattern.fromCondition
+                    . Condition.fromPredicate
                     $ makeAndPredicate
                         (makeCeilPredicate fOfB)
                         (makeCeilPredicate gOfB)
@@ -411,8 +411,8 @@ test_ceilSimplification =
                         [(mkElemVar Mock.x, mkElemVar Mock.y)]
                         [Mock.m]
                 expected =
-                    OrPattern.fromPattern . Pattern.fromPredicate
-                    . Predicate.fromPredicate . makeCeilPredicate
+                    OrPattern.fromPattern . Pattern.fromCondition
+                    . Condition.fromPredicate . makeCeilPredicate
                     $ Mock.framedMap
                         [(mkElemVar Mock.x, mkElemVar Mock.y)]
                         [Mock.m]
@@ -485,6 +485,33 @@ test_ceilSimplification =
                 , substitution = mempty
                 }
         assertEqual "ceil(set)" expected actual
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "ceil with opaque sets" $ do
+        let
+            expected = OrPattern.fromPatterns
+                [ Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate
+                        (asInternalSet
+                            ( emptyNormalizedSet
+                            `with` OpaqueSet fOfXset
+                            `with` OpaqueSet fOfYset
+                            )
+                        )
+                    , substitution = mempty
+                    }
+                ]
+        actual <- makeEvaluate
+            Conditional
+                { term = asInternalSet $
+                    emptyNormalizedSet
+                        `with` OpaqueSet fOfXset
+                        `with` OpaqueSet fOfYset
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "ceil(set set)" expected actual
+        assertBool "" (OrPattern.isSimplified actual)
     ]
   where
     fOfA :: TermLike Variable
@@ -497,6 +524,8 @@ test_ceilSimplification =
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXset :: TermLike Variable
     fOfXset = Mock.fSet (mkElemVar Mock.xSet)
+    fOfYset :: TermLike Variable
+    fOfYset = Mock.fSet (mkElemVar Mock.ySet)
     somethingOfA = Mock.plain10 Mock.a
     somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Conditional
@@ -527,12 +556,10 @@ appliedMockEvaluator result =
 mockEvaluator
     :: MonadSimplify simplifier
     => AttemptedAxiom variable
-    -> TermLikeSimplifier
-    -> BuiltinAndAxiomSimplifierMap
     -> TermLike variable
-    -> Predicate variable
+    -> Condition variable
     -> simplifier (AttemptedAxiom variable)
-mockEvaluator evaluation _ _ _ _ = return evaluation
+mockEvaluator evaluation _ _ = return evaluation
 
 mapVariables
     ::  ( FreshVariable variable
@@ -561,7 +588,7 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate ceil =
     runSimplifier mockEnv
-    $ Ceil.simplify Predicate.top ceil
+    $ Ceil.simplify Condition.top ceil
   where
     mockEnv = Mock.env
 
@@ -577,6 +604,6 @@ makeEvaluateWithAxioms
     -> IO (OrPattern Variable)
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     runSimplifier mockEnv
-    $ Ceil.makeEvaluate Predicate.top child
+    $ Ceil.makeEvaluate Condition.top child
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

@@ -38,6 +38,7 @@ import Kore.Attribute.Hook
     )
 import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
+import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Map.Map as Map
 import Kore.Domain.Builtin
@@ -52,14 +53,14 @@ import Kore.Internal.MultiOr
     )
 import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeTruePredicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( asConcrete
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeTruePredicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Rule
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
@@ -416,6 +417,23 @@ test_inKeysElement =
                 predicate = mkEquals_ (Test.Bool.asInternal True) patInKeys
             (===) (Test.Bool.asPattern True) =<< evaluateT patInKeys
             (===) Pattern.top                =<< evaluateT predicate
+        )
+
+test_values :: TestTree
+test_values =
+    testPropertyWithSolver
+        "MAP.values"
+        (do
+            map1 <- forAll (genConcreteMap genIntegerPattern)
+            let values = Map.elems map1
+                patConcreteValues =
+                    Builtin.List.asTermLike $ builtinList values
+                patMap = asTermLike map1
+                patValues = valuesMap patMap
+                predicate = mkEquals_ patConcreteValues patValues
+            expect <- evaluateT patValues
+            (===) expect      =<< evaluateT patConcreteValues
+            (===) Pattern.top =<< evaluateT predicate
         )
 
 -- | Check that simplification is carried out on map elements.
@@ -1216,9 +1234,9 @@ mkIntVar variableName =
         Variable
             { variableName, variableCounter = mempty, variableSort = intSort }
 
-mockSubstitutionSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
-mockSubstitutionSimplifier = PredicateSimplifier return
+mockConditionSimplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+mockConditionSimplifier = ConditionSimplifier return
 
 asVariableName :: ElementVariable Variable -> Id
 asVariableName = variableName . getElementVariable

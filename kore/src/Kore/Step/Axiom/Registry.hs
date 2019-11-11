@@ -12,6 +12,7 @@ module Kore.Step.Axiom.Registry
     , axiomPatternsToEvaluators
     ) where
 
+import qualified Control.Exception as Exception
 import qualified Data.Foldable as Foldable
 import Data.List
     ( partition
@@ -33,10 +34,13 @@ import Kore.Attribute.Axiom
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Overload
+import qualified Kore.Attribute.Pattern as Pattern
 import Kore.Attribute.Simplification
     ( Simplification (..)
     )
 import Kore.Attribute.Symbol
+    ( StepperAttributes
+    )
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -142,7 +146,7 @@ axiomPatternsToEvaluators =
                 Just (symbolId, simplifierWithFallback sEvaluator dEvaluator)
       where
         simplifications, evaluations :: [EqualityRule Variable]
-        (simplifications, evaluations) =
+        (simplifications, filter (not . ignoreDefinition) -> evaluations) =
             partition isSimplificationRule equalities
           where
             isSimplificationRule (EqualityRule RulePattern { attributes }) =
@@ -161,26 +165,35 @@ axiomPatternsToEvaluators =
                 then Nothing
                 else Just (definitionEvaluation evaluations)
 
-{- | Return the evaluator corresponding to the 'EqualityRule'.
+{- | Should we ignore the 'EqualityRule' for evaluation or simplification?
 
-@ignoreEqualityRule@ returns 'Nothing' if the 'EqualityRule' should not be
-used as an evaluator, such as if it is an associativity or commutativity
-axiom; this is determined by checking the 'Attribute.Axiom' attributes.
+@ignoreEqualityRule@ returns 'True' if the 'EqualityRule' should not be used in
+evaluation or simplification, such as if it is an associativity or commutativity
+axiom.
 
  -}
 ignoreEqualityRule :: EqualityRule Variable -> Bool
 ignoreEqualityRule (EqualityRule RulePattern { attributes })
-    | isAssoc = True
-    | isComm = True
-    -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
-    -- extraction of their axioms.
-    | isUnit = True
-    | isIdem = True
-    | Just _ <- getOverload = True
-    | otherwise = False
+  | isAssoc = True
+  | isComm = True
+  -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
+  -- extraction of their axioms.
+  | isUnit = True
+  | isIdem = True
+  | Just _ <- getOverload = True
+  | otherwise = False
   where
     Assoc { isAssoc } = Attribute.assoc attributes
     Comm { isComm } = Attribute.comm attributes
     Unit { isUnit } = Attribute.unit attributes
     Idem { isIdem } = Attribute.idem attributes
     Overload { getOverload } = Attribute.overload attributes
+
+{- | Should we ignore the 'EqualityRule' for evaluating function definitions?
+ -}
+ignoreDefinition :: EqualityRule Variable -> Bool
+ignoreDefinition (EqualityRule RulePattern { left }) =
+    Exception.assert isLeftFunctionLike False
+  where
+    isLeftFunctionLike =
+        (Pattern.isFunction . Pattern.function) (extractAttributes left)

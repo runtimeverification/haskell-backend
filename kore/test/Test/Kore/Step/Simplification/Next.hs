@@ -9,11 +9,11 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.Next
     ( simplify
     )

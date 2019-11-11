@@ -4,7 +4,7 @@ module Test.Kore.Builtin.Builtin
     , hpropUnparse
     , testMetadataTools
     , testEnv
-    , testSubstitutionSimplifier
+    , testConditionSimplifier
     , testTermLikeSimplifier
     , testEvaluators
     , testSymbolWithSolver
@@ -34,7 +34,6 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
-import Data.Proxy
 import GHC.Stack
     ( HasCallStack
     )
@@ -60,6 +59,9 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import Kore.Internal.Condition as Condition
+    ( top
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -68,9 +70,6 @@ import Kore.Internal.OrPattern
     )
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import Kore.Internal.Predicate as Predicate
-    ( top
     )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike
@@ -84,10 +83,11 @@ import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( RewriteRule
     )
+import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
-import qualified Kore.Step.Simplification.Predicate as Simplifier.Predicate
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
 import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
@@ -98,7 +98,7 @@ import Kore.Unification.Error
     ( UnificationOrSubstitutionError
     )
 import qualified Kore.Unification.Procedure as Unification
-import qualified Kore.Unification.Unify as Monad.Unify
+import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString
     )
@@ -154,9 +154,7 @@ verify
         (Map
             ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
         )
-verify = verifyAndIndexDefinition attrVerify Builtin.koreVerifiers
-  where
-    attrVerify = defaultAttributesVerification Proxy Proxy
+verify = verifyAndIndexDefinition Builtin.koreVerifiers
 
 verifiedModules
     :: Map ModuleName (VerifiedModule StepperAttributes Attribute.Axiom)
@@ -175,9 +173,10 @@ indexedModule =
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
 
-testSubstitutionSimplifier
-    :: MonadSimplify simplifier => PredicateSimplifier simplifier
-testSubstitutionSimplifier = Simplifier.Predicate.create
+testConditionSimplifier
+    :: MonadSimplify simplifier => ConditionSimplifier simplifier
+testConditionSimplifier =
+    Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 testEvaluators :: BuiltinAndAxiomSimplifierMap
 testEvaluators = Builtin.koreEvaluators verifiedModule
@@ -190,13 +189,13 @@ testEnv =
     Env
         { metadataTools = testMetadataTools
         , simplifierTermLike = testTermLikeSimplifier
-        , simplifierPredicate = testSubstitutionSimplifier
+        , simplifierCondition = testConditionSimplifier
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         }
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
-evaluate = runSimplifier testEnv . (`TermLike.simplify` Predicate.top)
+evaluate = runSimplifier testEnv . (`TermLike.simplify` Condition.top)
 
 evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
 evaluateT = Trans.lift . evaluate
@@ -205,7 +204,7 @@ evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
 evaluateToList =
     fmap MultiOr.extractPatterns
     . runSimplifier testEnv
-    . TermLike.simplifyToOr Predicate.top
+    . TermLike.simplifyToOr Condition.top
 
 runStep
     :: Pattern Variable

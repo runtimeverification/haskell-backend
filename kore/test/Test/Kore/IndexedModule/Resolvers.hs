@@ -154,10 +154,7 @@ testDefinition =
 
 indexedModules :: Map ModuleName (VerifiedModule Attribute.Symbol Attribute.Axiom)
 Right indexedModules =
-    verifyAndIndexDefinition
-        DoNotVerifyAttributes
-        Builtin.koreVerifiers
-        testDefinition
+    verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
 
 testIndexedModule, testIndexedObjectModule
     :: VerifiedModule Attribute.Symbol Attribute.Axiom

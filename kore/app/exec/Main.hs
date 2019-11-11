@@ -22,6 +22,9 @@ import qualified Data.Foldable as Foldable
 import Data.List
     ( intercalate
     )
+import Data.Proxy
+    ( Proxy (..)
+    )
 import Data.Reflection
 import Data.Semigroup
     ( (<>)
@@ -92,6 +95,9 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
+import Kore.Internal.Predicate
+    ( makePredicate
+    )
 import Kore.Internal.TermLike
 import Kore.Logger.Output
     ( KoreLogOptions (..)
@@ -108,18 +114,22 @@ import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
     )
-import Kore.Predicate.Predicate
-    ( makePredicate
-    )
 import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step
+import Kore.Step.Rule
+    ( OnePathRule (..)
+    , RewriteRule (..)
+    )
 import Kore.Step.Search
     ( SearchType (..)
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
+import Kore.Strategies.Goal
+    ( Rule (OnePathRewriteRule)
+    )
 import Kore.Syntax.Definition
     ( ModuleName (..)
     )
@@ -439,7 +449,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove stepLimit mainModule specModule
+                <$> prove stepLimit mainModule specModule (Proxy @(OnePathRule Variable))
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -458,8 +468,12 @@ koreMerge execOptions mergeOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreMergeOptions {rulesFileName} = mergeOptions
     ruleIds <- lift $ loadRuleIds rulesFileName
+    let KoreMergeOptions {maybeBatchSize} = mergeOptions
     eitherMergedRule <- execute execOptions mainModule $
-        mergeRules mainModule ruleIds
+        case maybeBatchSize of
+            Just batchSize ->
+                mergeRulesConsecutiveBatches batchSize mainModule ruleIds
+            Nothing -> mergeAllRules mainModule ruleIds
     case eitherMergedRule of
         (Left err) -> do
             lift $ Text.putStrLn err

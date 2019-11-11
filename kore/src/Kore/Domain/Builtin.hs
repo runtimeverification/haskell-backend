@@ -32,7 +32,6 @@ module Kore.Domain.Builtin
     , InternalInt (..)
     , InternalBool (..)
     , InternalString (..)
-    , Domain (..)
     ) where
 
 import Control.DeepSeq
@@ -63,7 +62,6 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import Kore.Domain.Class
 import Kore.Internal.Symbol
 import Kore.Syntax
 import Kore.Unparser
@@ -82,12 +80,9 @@ unparseConcat
     -> [Pretty.Doc ann]      -- ^ children
     -> Pretty.Doc ann
 unparseConcat unitSymbol concatSymbol =
-    \case
-        [] -> applyUnit
-        xs -> foldr1 applyConcat xs
+    unparseAssoc' (unparse concatSymbol) applyUnit
   where
     applyUnit = unparse unitSymbol <> noArguments
-    applyConcat set1 set2 = unparse concatSymbol <> arguments' [set1, set2]
 
 -- * Builtin List
 
@@ -567,7 +562,7 @@ instance Unparse InternalInt where
     unparse InternalInt { builtinIntSort, builtinIntValue } =
         "\\dv"
         <> parameters [builtinIntSort]
-        <> arguments' [Pretty.dquotes $ Pretty.pretty builtinIntValue]
+        <> Pretty.parens (Pretty.dquotes $ Pretty.pretty builtinIntValue)
 
     unparse2 InternalInt { builtinIntSort, builtinIntValue } =
         "\\dv2"
@@ -601,7 +596,7 @@ instance Unparse InternalBool where
     unparse InternalBool { builtinBoolSort, builtinBoolValue } =
         "\\dv"
         <> parameters [builtinBoolSort]
-        <> arguments' [Pretty.dquotes value]
+        <> Pretty.parens (Pretty.dquotes value)
       where
         value
           | builtinBoolValue = "true"
@@ -643,7 +638,7 @@ instance Unparse InternalString where
     unparse InternalString { internalStringSort, internalStringValue } =
         "\\dv"
         <> parameters [internalStringSort]
-        <> arguments [StringLiteral internalStringValue]
+        <> Pretty.parens (unparse $ StringLiteral internalStringValue)
 
     unparse2 InternalString { internalStringSort, internalStringValue } =
         "\\dv2"
@@ -698,32 +693,3 @@ instance Synthetic Sort (Builtin key) where
 instance Ord variable => Synthetic (FreeVariables variable) (Builtin key) where
     synthetic = Foldable.fold
     {-# INLINE synthetic #-}
-
-instance Domain (Builtin key) where
-    lensDomainValue mapDomainValue builtin =
-        getBuiltin <$> mapDomainValue original
-      where
-        original =
-            DomainValue
-                { domainValueChild = builtin
-                , domainValueSort = builtinSort builtin
-                }
-        getBuiltin
-            :: forall child
-            .  DomainValue Sort (Builtin key child)
-            -> Builtin key child
-        getBuiltin DomainValue { domainValueSort, domainValueChild } =
-            case domainValueChild of
-                BuiltinInt internal ->
-                    BuiltinInt internal { builtinIntSort = domainValueSort }
-                BuiltinBool internal ->
-                    BuiltinBool internal { builtinBoolSort = domainValueSort }
-                BuiltinString internal ->
-                    BuiltinString internal
-                        { internalStringSort = domainValueSort }
-                BuiltinMap internal ->
-                    BuiltinMap internal { builtinAcSort = domainValueSort }
-                BuiltinList internal ->
-                    BuiltinList internal { builtinListSort = domainValueSort }
-                BuiltinSet internal ->
-                    BuiltinSet internal { builtinAcSort = domainValueSort }

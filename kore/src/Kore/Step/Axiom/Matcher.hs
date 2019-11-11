@@ -59,25 +59,23 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.List as List
 import qualified Kore.Domain.Builtin as Builtin
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.MultiAnd
     ( MultiAnd
     )
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
     ( Predicate
+    , makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
     ( substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Predicate.Predicate
-    ( makeCeilPredicate
-    )
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import Kore.Step.Simplification.AndTerms
     ( SortInjectionMatch (SortInjectionMatch)
     , simplifySortInjections
@@ -147,7 +145,7 @@ matchIncremental
     .  (MatchingVariable variable, MonadUnify unifier)
     => TermLike variable
     -> TermLike variable
-    -> unifier (Predicate variable)
+    -> unifier (Condition variable)
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
@@ -167,17 +165,17 @@ matchIncremental termLike1 termLike2 =
     free2 = (getFreeVariables . TermLike.freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
-    done :: MatcherT variable unifier (Predicate variable)
+    done :: MatcherT variable unifier (Condition variable)
     done = do
         final@MatcherState { queued, deferred } <- Monad.State.get
         let isDone = null queued && null deferred
         Monad.unless isDone throwUnknown
         let MatcherState { predicate, substitution } = final
             predicate' =
-                Predicate.fromPredicate
+                Condition.fromPredicate
                 $ MultiAnd.toPredicate predicate
             substitution' =
-                Predicate.fromSubstitution
+                Condition.fromSubstitution
                 $ Substitution.fromMap substitution
             solution = predicate' <> substitution'
         return solution
@@ -380,7 +378,7 @@ data MatcherState variable =
         -- information.
         , substitution :: !(Map (UnifiedVariable variable) (TermLike variable))
         -- ^ Matching solution: Substitutions for target variables.
-        , predicate :: !(MultiAnd (Syntax.Predicate variable))
+        , predicate :: !(MultiAnd (Predicate variable))
         -- ^ Matching solution: Additional constraints.
         , bound :: !(Set (UnifiedVariable variable))
         -- ^ Bound variable that must not escape in the solution.
@@ -463,7 +461,7 @@ substitute eVariable termLike = do
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
-    field @"predicate" . Lens.mapped %= Syntax.Predicate.substitute subst
+    field @"predicate" . Lens.mapped %= Predicate.substitute subst
 
     return ()
   where
@@ -504,7 +502,7 @@ setSubstitute sVariable termLike = do
 
     -- Apply the substitution to the accumulated matching solution.
     field @"substitution" . Lens.mapped %= substitute1
-    field @"predicate" . Lens.mapped %= Syntax.Predicate.substitute subst
+    field @"predicate" . Lens.mapped %= Predicate.substitute subst
 
     return ()
   where

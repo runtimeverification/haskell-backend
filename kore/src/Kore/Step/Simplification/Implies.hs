@@ -18,8 +18,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluatedMultiple
     )
@@ -146,15 +146,15 @@ makeEvaluateImpliesNonBool
         [ Conditional
             { term = firstTerm
             , predicate =
-                Syntax.Predicate.markSimplified
-                $ Syntax.Predicate.makeImpliesPredicate
-                    (Syntax.Predicate.makeAndPredicate
+                Predicate.markSimplified
+                $ Predicate.makeImpliesPredicate
+                    (Predicate.makeAndPredicate
                         firstPredicate
-                        (Syntax.Predicate.fromSubstitution firstSubstitution)
+                        (Predicate.fromSubstitution firstSubstitution)
                     )
-                    (Syntax.Predicate.makeAndPredicate
+                    (Predicate.makeAndPredicate
                         secondPredicate
-                        (Syntax.Predicate.fromSubstitution secondSubstitution)
+                        (Predicate.fromSubstitution secondSubstitution)
                     )
             , substitution = mempty
             }
@@ -168,7 +168,7 @@ makeEvaluateImpliesNonBool
                 $ mkImplies
                     (Pattern.toTermLike pattern1)
                     (Pattern.toTermLike pattern2)
-            , predicate = Syntax.Predicate.makeTruePredicate
+            , predicate = Predicate.makeTruePredicate
             , substitution = mempty
             }
         ]

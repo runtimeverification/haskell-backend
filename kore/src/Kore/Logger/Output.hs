@@ -94,10 +94,8 @@ import Kore.Logger
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
 data KoreLogType
-    = LogNone
-    -- ^ do not log when no '--log' is passed
-    | LogStdErr
-    -- ^ log to StdOut when '--log StdOut' is passed
+    = LogStdErr
+    -- ^ log to StdErr when '--log StdErr' is passed
     | LogFileText
     -- ^ log to "./kore-(date).log" when '--log FileText' is passed
     deriving (Read)
@@ -125,8 +123,6 @@ withLogger
     -> IO a
 withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
-        LogNone     ->
-            cont mempty
         LogStdErr   ->
             cont (stderrLogger logLevel logScopes)
         LogFileText -> do
@@ -150,7 +146,7 @@ runLoggerT options = withLogger options . runReaderT . getLoggerT
 parseKoreLogOptions :: Parser KoreLogOptions
 parseKoreLogOptions =
     KoreLogOptions
-    <$> (parseType <|> pure LogNone)
+    <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
     <*> (parseScope <|> pure mempty)
   where
@@ -158,11 +154,10 @@ parseKoreLogOptions =
         option
             (maybeReader parseTypeString)
             $ long "log"
-            <> help "Log type: none, stdout, filetext"
+            <> help "Log type: stderr, filetext"
     parseTypeString =
         \case
-            "none"     -> pure LogNone
-            "stdout"   -> pure LogStdErr
+            "stderr"   -> pure LogStdErr
             "filetext" -> pure LogFileText
             _          -> Nothing
     parseLevel =
@@ -177,6 +172,7 @@ parseKoreLogOptions =
             "warning"  -> pure Warning
             "error"    -> pure Error
             "critical" -> pure Critical
+            ""         -> pure Warning
             _          -> Nothing
     parseScope =
         option
@@ -206,16 +202,16 @@ makeKoreLogger
     -> LogAction m Text
     -> LogAction m SomeEntry
 makeKoreLogger minSeverity currentScope logToText =
-    Colog.cfilter (withSomeEntry (shouldLog minSeverity currentScope))
+    Colog.cfilter (shouldLog minSeverity currentScope)
         . Colog.cmapM withTimestamp
         $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
-    messageToText (WithTimestamp (SomeEntry entry) localTime) =
+    messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         $ Pretty.brackets (formattedTime localTime)
-        <> defaultLogPretty (toLogMessage entry)
+        <> defaultLogPretty entry
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
 
 -- | Adds the current timestamp to a log entry.
@@ -255,15 +251,17 @@ swappableLogger mvar =
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
 
-defaultLogPretty :: LogMessage -> Pretty.Doc ann
-defaultLogPretty LogMessage { severity, scope, message, callstack } =
-    Pretty.hsep
-        [ Pretty.brackets (Pretty.pretty severity)
-        , Pretty.brackets (prettyScope scope)
-        , ":"
-        , Pretty.pretty message
-        , Pretty.brackets (formatCallstack callstack)
-        ]
+defaultLogPretty :: SomeEntry -> Pretty.Doc ann
+defaultLogPretty scopedEntry =
+    case toLogMessage <$> unwrapScope scopedEntry of
+        (scope, LogMessage { severity, message, callstack }) ->
+            Pretty.hsep
+                [ Pretty.brackets (Pretty.pretty severity)
+                , Pretty.brackets (prettyScope $ reverse scope)
+                , ":"
+                , Pretty.pretty message
+                , Pretty.brackets (formatCallstack callstack)
+                ]
   where
     prettyScope :: [Scope] -> Pretty.Doc ann
     prettyScope =
@@ -276,4 +274,11 @@ defaultLogPretty LogMessage { severity, scope, message, callstack } =
       | otherwise                     = callStackToBuilder cs
     callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
     callStackToBuilder = Pretty.pretty . prettyCallStack . popCallStack
+
+unwrapScope :: SomeEntry -> ([Scope], SomeEntry)
+unwrapScope se =
+    case fromEntry se of
+        Nothing -> ([], se)
+        Just WithScope { entry, scope } ->
+            (scope : fst (unwrapScope entry), entry)
 

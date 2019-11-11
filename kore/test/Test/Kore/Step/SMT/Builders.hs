@@ -1,6 +1,7 @@
 module Test.Kore.Step.SMT.Builders
     ( emptyModule
     , sortDeclaration
+    , hookedSortDeclaration
     , symbolDeclaration
 
     , indexModule
@@ -23,9 +24,6 @@ import Data.Text
     ( Text
     )
 
-import Kore.ASTVerifier.AttributesVerifier
-    ( AttributesVerification (DoNotVerifyAttributes)
-    )
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinition
     )
@@ -116,7 +114,6 @@ indexModules moduleName modules =
             )
     perhapsIndexedDefinition =
         verifyAndIndexDefinition
-            DoNotVerifyAttributes  -- TODO: Verify attributes.
             Builtin.koreVerifiers
             Definition
                 { definitionAttributes = Attributes []
@@ -161,6 +158,17 @@ emptyModule name =
 sortDeclaration :: Text -> ParsedSentence
 sortDeclaration name =
     asSentence
+        (SentenceSort
+            { sentenceSortName = testId name
+            , sentenceSortParameters = []
+            , sentenceSortAttributes = Attributes []
+            }
+        :: SentenceSort ParsedPattern
+        )
+
+hookedSortDeclaration :: Text -> ParsedSentence
+hookedSortDeclaration name =
+    (asSentence . SentenceHookedSort)
         (SentenceSort
             { sentenceSortName = testId name
             , sentenceSortParameters = []

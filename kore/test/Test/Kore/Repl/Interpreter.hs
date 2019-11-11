@@ -45,10 +45,10 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Map.Strict as StrictMap
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Builtin.Int as Int
-import Kore.Internal.Predicate
-    ( Predicate
+import Kore.Internal.Condition
+    ( Condition
     )
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -328,7 +328,7 @@ unificationSuccess = do
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByIndex . Left $ AxiomIndex 0
-        expectedOutput = formatUnifiers (Predicate.top :| [])
+        expectedOutput = formatUnifiers (Condition.top :| [])
 
     Result { output, continue, state } <- run command axioms [claim] claim
     output `equalsOutput` expectedOutput
@@ -344,7 +344,7 @@ unificationSuccessWithName = do
         axioms = [ axiom ]
         claim = zeroToTen
         command = Try . ByName . RuleName $ "0to1"
-        expectedOutput = formatUnifiers (Predicate.top :| [])
+        expectedOutput = formatUnifiers (Condition.top :| [])
 
     Result { output, continue, state } <- run command axioms [claim] claim
     output `equalsOutput` expectedOutput
@@ -497,7 +497,7 @@ logUpdatesState =
         axioms  = []
         claim   = emptyClaim
         command =
-            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdOut
+            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdErr
     in do
         Result { output, continue, state } <-
             run command axioms [claim] claim
@@ -505,7 +505,7 @@ logUpdatesState =
         continue `equals`     Continue
         state
             `hasLogging`
-            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdOut)
+            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdErr)
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
@@ -599,7 +599,7 @@ runWithState command axioms claims claim stateTransformer
         output' <- readIORef output
         return $ Result output' c s
   where
-    logOptions = Logger.KoreLogOptions Logger.LogNone Logger.Debug mempty
+    logOptions = Logger.KoreLogOptions Logger.LogStdErr Logger.Debug mempty
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig logger . Kore.runSimplifier testEnv
 
@@ -712,5 +712,5 @@ formatUnificationError info first second = do
         empty
     return $ formatUnificationMessage res
 
-formatUnifiers :: NonEmpty (Predicate Variable) -> ReplOutput
+formatUnifiers :: NonEmpty (Condition Variable) -> ReplOutput
 formatUnifiers = formatUnificationMessage . Right

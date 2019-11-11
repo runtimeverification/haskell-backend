@@ -9,6 +9,11 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
+import Kore.Internal.Condition
+    ( Condition
+    , andCondition
+    )
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -19,14 +24,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , andCondition
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Predicate.Predicate as Syntax
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Syntax.Predicate
 import qualified Kore.Step.Simplification.Implies as Implies
 
 import Kore.Unparser
@@ -95,35 +95,35 @@ equalsXB = fromPredicate equalsXB_
 equalsXC :: Pattern Variable
 equalsXC = fromPredicate equalsXC_
 
-equalsXA_ :: Syntax.Predicate Variable
-equalsXA_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+equalsXA_ :: Predicate Variable
+equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 
-equalsXB_ :: Syntax.Predicate Variable
-equalsXB_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
+equalsXB_ :: Predicate Variable
+equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
-equalsXC_ :: Syntax.Predicate Variable
-equalsXC_ = Syntax.Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.c
+equalsXC_ :: Predicate Variable
+equalsXC_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.c
 
 impliesEqualsXAEqualsXB :: Pattern Variable
 impliesEqualsXAEqualsXB = fromPredicate $
-    Syntax.Predicate.makeImpliesPredicate equalsXA_ equalsXB_
+    Predicate.makeImpliesPredicate equalsXA_ equalsXB_
 
 impliesEqualsXAEqualsXC :: Pattern Variable
 impliesEqualsXAEqualsXC = fromPredicate $
-    Syntax.Predicate.makeImpliesPredicate equalsXA_ equalsXC_
+    Predicate.makeImpliesPredicate equalsXA_ equalsXC_
 
-impliesEqualsXBEqualsXC_ :: Predicate Variable
-impliesEqualsXBEqualsXC_ = Predicate.fromPredicate $
-    Syntax.Predicate.makeImpliesPredicate equalsXB_ equalsXC_
+impliesEqualsXBEqualsXC_ :: Condition Variable
+impliesEqualsXBEqualsXC_ = Condition.fromPredicate $
+    Predicate.makeImpliesPredicate equalsXB_ equalsXC_
 
 forceTermSort :: Pattern Variable -> Pattern Variable
 forceTermSort = fmap (forceSort Mock.testSort)
 
-fromPredicate :: Syntax.Predicate Variable -> Pattern Variable
+fromPredicate :: Predicate Variable -> Pattern Variable
 fromPredicate =
     forceTermSort
-    . Pattern.fromPredicate
-    . Predicate.fromPredicate
+    . Pattern.fromCondition
+    . Condition.fromPredicate
 
 simplifyEvaluated
     :: OrPattern Variable

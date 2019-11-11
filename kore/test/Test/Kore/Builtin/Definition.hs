@@ -35,6 +35,7 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
     ( Symbol
+    , bytesSort
     )
 import Kore.Syntax.Definition as Syntax
 
@@ -52,6 +53,7 @@ builtinSymbol name resultSort operandSorts =
         , symbolAttributes = Default.def
         , symbolSorts = applicationSorts operandSorts resultSort
         }
+    & function
 
 unarySymbol :: Text -> Sort -> Internal.Symbol
 unarySymbol name sort = builtinSymbol name sort [sort]
@@ -344,6 +346,10 @@ getListSymbol =
 sizeListSymbol :: Internal.Symbol
 sizeListSymbol = builtinSymbol "sizeList" intSort [listSort] & hook "LIST.size"
 
+updateListSymbol :: Internal.Symbol
+updateListSymbol = builtinSymbol "updateList" listSort
+    [listSort, intSort, intSort] & hook "LIST.update"
+
 unitList :: TermLike Variable
 unitList = mkApplySymbol unitListSymbol []
 
@@ -353,8 +359,18 @@ elementList x = mkApplySymbol elementListSymbol [x]
 concatList :: TermLike Variable -> TermLike Variable -> TermLike Variable
 concatList x y = mkApplySymbol concatListSymbol [x, y]
 
+getList :: TermLike Variable -> TermLike Variable -> TermLike Variable
+getList list poz = mkApplySymbol getListSymbol [list, poz]
+
 sizeList :: TermLike Variable -> TermLike Variable
 sizeList l = mkApplySymbol sizeListSymbol [l]
+
+updateList
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
 
 -- ** Map
 
@@ -401,6 +417,10 @@ removeAllMapSymbol =
 sizeMapSymbol :: Internal.Symbol
 sizeMapSymbol =
     builtinSymbol "sizeMap" intSort [mapSort] & hook "MAP.size"
+
+valuesMapSymbol :: Internal.Symbol
+valuesMapSymbol =
+    builtinSymbol "valuesMap" listSort [mapSort] & hook "MAP.values"
 
 unitMap :: TermLike Variable
 unitMap = mkApplySymbol unitMapSymbol []
@@ -458,6 +478,11 @@ sizeMap
     -> TermLike Variable
 sizeMap map' = mkApplySymbol sizeMapSymbol [map']
 
+valuesMap
+    :: TermLike Variable
+    -> TermLike Variable
+valuesMap map' = mkApplySymbol valuesMapSymbol [map']
+
 -- ** Pair
 
 pairSymbol :: Sort -> Sort -> Internal.Symbol
@@ -469,6 +494,7 @@ pairSymbol lSort rSort =
         , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
         }
     & constructor
+    & functional
 
 pair :: TermLike Variable -> TermLike Variable -> TermLike Variable
 pair l r =
@@ -591,6 +617,63 @@ string2TokenStringSymbol =
     builtinSymbol "string2tokenString" userTokenSort [stringSort]
     & hook "STRING.string2token"
 
+-- * Bytes
+
+bytes2stringBytesSymbol :: Internal.Symbol
+bytes2stringBytesSymbol =
+    builtinSymbol "bytes2stringBytes" stringSort [bytesSort]
+        & hook "BYTES.bytes2string"
+
+string2bytesBytesSymbol :: Internal.Symbol
+string2bytesBytesSymbol =
+    builtinSymbol "string2bytesBytes" bytesSort [stringSort]
+        & hook "BYTES.string2bytes"
+
+updateBytesSymbol :: Internal.Symbol
+updateBytesSymbol =
+    builtinSymbol "updateBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.update"
+
+getBytesSymbol :: Internal.Symbol
+getBytesSymbol =
+    builtinSymbol "getBytes" intSort [bytesSort, intSort]
+        & hook "BYTES.get"
+
+substrBytesSymbol :: Internal.Symbol
+substrBytesSymbol =
+    builtinSymbol "substrBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.substr"
+
+replaceAtBytesSymbol :: Internal.Symbol
+replaceAtBytesSymbol =
+    builtinSymbol "replaceAtBytes" bytesSort [bytesSort, intSort, bytesSort]
+        & hook "BYTES.replaceAt"
+
+padRightBytesSymbol :: Internal.Symbol
+padRightBytesSymbol =
+    builtinSymbol "padRightBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.padRight"
+
+padLeftBytesSymbol :: Internal.Symbol
+padLeftBytesSymbol =
+    builtinSymbol "padLeftBytes" bytesSort [bytesSort, intSort, intSort]
+        & hook "BYTES.padLeft"
+
+reverseBytesSymbol :: Internal.Symbol
+reverseBytesSymbol =
+    builtinSymbol "reverseBytes" bytesSort [bytesSort]
+        & hook "BYTES.reverse"
+
+lengthBytesSymbol :: Internal.Symbol
+lengthBytesSymbol =
+    builtinSymbol "lengthBytes" intSort [bytesSort]
+        & hook "BYTES.length"
+
+concatBytesSymbol :: Internal.Symbol
+concatBytesSymbol =
+    builtinSymbol "concatBytes" bytesSort [bytesSort, bytesSort]
+        & hook "BYTES.concat"
+
 -- * Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
@@ -601,10 +684,45 @@ ecdsaRecoverSymbol =
         [stringSort, intSort, stringSort, stringSort]
     & hook "KRYPTO.ecdsaRecover"
 
-keccakSymbol :: Internal.Symbol
-keccakSymbol =
+keccak256Symbol :: Internal.Symbol
+keccak256Symbol =
     builtinSymbol "keccak256Krypto" stringSort [stringSort]
     & hook "KRYPTO.keccak256"
+
+sha256Symbol :: Internal.Symbol
+sha256Symbol =
+    builtinSymbol "sha256Krypto" stringSort [stringSort]
+    & hook "KRYPTO.sha256"
+
+sha3256Symbol :: Internal.Symbol
+sha3256Symbol =
+    builtinSymbol "sha3256Krypto" stringSort [stringSort]
+    & hook "KRYPTO.sha3256"
+
+ripemd160Symbol :: Internal.Symbol
+ripemd160Symbol =
+    builtinSymbol "ripemd160Krypto" stringSort [stringSort]
+    & hook "KRYPTO.ripemd160"
+
+ecdsaRecoverKrypto
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+ecdsaRecoverKrypto m v r s = mkApplySymbol ecdsaRecoverSymbol [m, v, r, s]
+
+keccak256Krypto :: TermLike Variable -> TermLike Variable
+keccak256Krypto message = mkApplySymbol keccak256Symbol [message]
+
+sha256Krypto :: TermLike Variable -> TermLike Variable
+sha256Krypto message = mkApplySymbol sha256Symbol [message]
+
+sha3256Krypto :: TermLike Variable -> TermLike Variable
+sha3256Krypto message = mkApplySymbol sha3256Symbol [message]
+
+ripemd160Krypto :: TermLike Variable -> TermLike Variable
+ripemd160Krypto message = mkApplySymbol ripemd160Symbol [message]
 
 -- -------------------------------------------------------------
 -- * Sorts
@@ -918,6 +1036,21 @@ userTokenSortDecl =
         userTokenSort
         [ hasDomainValuesAttribute ]
 
+-- ** Bytes
+
+bytesSort :: Sort
+bytesSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Bytes"
+        , sortActualSorts = []
+        }
+
+bytesSortDecl :: ParsedSentence
+bytesSortDecl =
+    hookedSortDecl
+        bytesSort
+        [ hookAttribute "BYTES.Bytes" ]
+
 -- -------------------------------------------------------------
 -- * Modules
 
@@ -1123,6 +1256,7 @@ listModule =
             , hookedSymbolDecl elementListSymbol
             , hookedSymbolDecl concatListSymbol
             , hookedSymbolDecl getListSymbol
+            , hookedSymbolDecl updateListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol
@@ -1157,6 +1291,7 @@ mapModule =
             , hookedSymbolDecl removeMapSymbol
             , hookedSymbolDecl removeAllMapSymbol
             , hookedSymbolDecl sizeMapSymbol
+            , hookedSymbolDecl valuesMapSymbol
             ]
         }
 
@@ -1265,6 +1400,35 @@ stringModule =
             ]
         }
 
+-- ** BYTES
+
+bytesModuleName :: ModuleName
+bytesModuleName = ModuleName "BYTES"
+
+-- | Declare the @BYTES@ builtins.
+bytesModule :: ParsedModule
+bytesModule =
+    Module
+        { moduleName = bytesModuleName
+        , moduleAttributes = Attributes []
+        , moduleSentences =
+            [ importParsedModule stringModuleName
+            , importParsedModule intModuleName
+            , bytesSortDecl
+            , hookedSymbolDecl bytes2stringBytesSymbol
+            , hookedSymbolDecl string2bytesBytesSymbol
+            , hookedSymbolDecl updateBytesSymbol
+            , hookedSymbolDecl getBytesSymbol
+            , hookedSymbolDecl substrBytesSymbol
+            , hookedSymbolDecl replaceAtBytesSymbol
+            , hookedSymbolDecl padRightBytesSymbol
+            , hookedSymbolDecl padLeftBytesSymbol
+            , hookedSymbolDecl reverseBytesSymbol
+            , hookedSymbolDecl lengthBytesSymbol
+            , hookedSymbolDecl concatBytesSymbol
+            ]
+        }
+
 -- ** KRYPTO
 
 kryptoModuleName :: ModuleName
@@ -1281,7 +1445,10 @@ kryptoModule =
             , importParsedModule intModuleName
             , importParsedModule listModuleName
             , hookedSymbolDecl ecdsaRecoverSymbol
-            , hookedSymbolDecl keccakSymbol
+            , hookedSymbolDecl keccak256Symbol
+            , hookedSymbolDecl sha256Symbol
+            , hookedSymbolDecl sha3256Symbol
+            , hookedSymbolDecl ripemd160Symbol
             ]
         }
 
@@ -1304,6 +1471,7 @@ testModule =
             , importParsedModule pairModuleName
             , importParsedModule setModuleName
             , importParsedModule stringModuleName
+            , importParsedModule bytesModuleName
             , importParsedModule kryptoModuleName
             ]
         }
@@ -1324,6 +1492,7 @@ testDefinition =
             , pairModule
             , setModule
             , stringModule
+            , bytesModule
             , kryptoModule
             , testModule
             ]

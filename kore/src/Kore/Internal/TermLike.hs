@@ -13,10 +13,12 @@ module Kore.Internal.TermLike
     , Builtin
     , extractAttributes
     , isSimplified
+    , isNonSimplifiable
     , markSimplified
     , isFunctionPattern
     , isFunctionalPattern
     , isDefinedPattern
+    , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
     , termLikeSort
@@ -31,11 +33,14 @@ module Kore.Internal.TermLike
     , externalizeFreshVariables
     -- * Utility functions for dealing with sorts
     , forceSort
+    , fullyOverrideSort
     -- * Pure Kore pattern constructors
     , mkAnd
     , mkApplyAlias
     , mkApplySymbol
     , mkBottom
+    , mkInternalBytes
+    , mkInternalBytes'
     , mkBuiltin
     , mkBuiltinList
     , mkBuiltinMap
@@ -93,6 +98,7 @@ module Kore.Internal.TermLike
     , pattern ApplyAlias_
     , pattern App_
     , pattern Bottom_
+    , pattern InternalBytes_
     , pattern Builtin_
     , pattern BuiltinBool_
     , pattern BuiltinInt_
@@ -131,6 +137,7 @@ module Kore.Internal.TermLike
     , CofreeF (..), Comonad (..)
     , Sort (..), SortActual (..), SortVariable (..)
     , stringMetaSort
+    , module Kore.Internal.InternalBytes
     , module Kore.Syntax.And
     , module Kore.Syntax.Application
     , module Kore.Syntax.Bottom
@@ -171,6 +178,9 @@ import Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import Data.Align
 import qualified Data.Bifunctor as Bifunctor
+import Data.ByteString
+    ( ByteString
+    )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import Data.Function
@@ -211,19 +221,20 @@ import qualified Kore.Attribute.Pattern as Attribute
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
-    )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
+import qualified Kore.Attribute.Pattern.NonSimplifiable as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
-import Kore.Internal.Symbol
+import Kore.Internal.InternalBytes
+import Kore.Internal.Symbol hiding
+    ( isNonSimplifiable
+    )
 import Kore.Internal.Variable
 import Kore.Sort
 import qualified Kore.Substitute as Substitute
@@ -333,15 +344,19 @@ data TermLikeF variable child
     | BuiltinF       !(Builtin child)
     | EvaluatedF     !(Evaluated child)
     | StringLiteralF !(Const StringLiteral child)
+    | InternalBytesF !(Const InternalBytes child)
     | VariableF      !(Const (UnifiedVariable variable) child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic, GHC.Generic1)
     deriving
-        ( Synthetic (FreeVariables variable), Synthetic Sort
-        , Synthetic Pattern.Functional, Synthetic Pattern.Function
+        ( Synthetic (FreeVariables variable)
+        , Synthetic Sort
+        , Synthetic Pattern.Functional
+        , Synthetic Pattern.Function
         , Synthetic Pattern.Defined
         , Synthetic Pattern.Simplified
+        , Synthetic Pattern.NonSimplifiable
         ) via (Generically1 (TermLikeF variable))
 
 instance SOP.Generic (TermLikeF variable child)
@@ -416,6 +431,7 @@ traverseVariablesF traversing =
         OrF orP -> pure (OrF orP)
         RewritesF rewP -> pure (RewritesF rewP)
         StringLiteralF strP -> pure (StringLiteralF strP)
+        InternalBytesF bytesP -> pure (InternalBytesF bytesP)
         TopF topP -> pure (TopF topP)
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
@@ -662,6 +678,28 @@ refreshVariables
 isFunctionPattern :: TermLike variable -> Bool
 isFunctionPattern =
     Pattern.isFunction . Attribute.function . extractAttributes
+
+{- | Does the 'TermLike' have a constructor-like top?
+
+A pattern is 'ConstructorLikeTop' if it is one of the following:
+
+- A 'StringLiteral'
+- A 'DomainValue'
+- A 'Builtin'
+- An 'Application' whose head is a constructor symbol
+ -}
+hasConstructorLikeTop :: TermLike variable -> Bool
+hasConstructorLikeTop = \case
+    App_ symbol _ -> isConstructor symbol
+    DV_ _ _ -> True
+    BuiltinBool_ _ -> True
+    BuiltinInt_ _ -> True
+    BuiltinList_ _ -> True
+    BuiltinMap_ _ -> True
+    BuiltinSet_ _ -> True
+    BuiltinString_ _ -> True
+    StringLiteral_ _ -> True
+    _ -> False
 
 {- | Is the 'TermLike' functional?
  -}
@@ -960,6 +998,13 @@ externalizeFreshVariables termLike =
 isSimplified :: TermLike variable -> Bool
 isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
 
+isNonSimplifiable :: TermLike variable -> Bool
+isNonSimplifiable =
+    isJust
+    . Pattern.isNonSimplifiable
+    . Attribute.nonSimplifiable
+    . extractAttributes
+
 {- | Mark a 'TermLike' as fully simplified.
 
 The pattern is fully simplified if we do not know how to simplify it any
@@ -991,78 +1036,113 @@ forceSort forcedSort = Recursive.apo forceSortWorker
             (case attrs of
                 Attribute.Pattern { patternSort = sort }
                   | sort == forcedSort    -> Left <$> pattern'
-                  | sort == predicateSort -> forceSortWorkerPredicate
-                  | otherwise             -> illSorted
+                  | sort == predicateSort ->
+                    forceSortPredicate forcedSort original
+                  | otherwise             -> illSorted forcedSort original
             )
-      where
-        illSorted =
-            (error . show . Pretty.vsep)
-            [ Pretty.cat
-                [ "Could not force pattern to sort "
-                , Pretty.squotes (unparse forcedSort)
-                , ", instead it has sort "
-                , Pretty.squotes (unparse (termLikeSort original))
-                , ":"
-                ]
-            , Pretty.indent 4 (unparse original)
-            ]
-        forceSortWorkerPredicate =
-            case pattern' of
-                -- Recurse
-                EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
-                -- Predicates: Force sort and stop.
-                BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
-                TopF top' -> TopF top' { topSort = forcedSort }
-                CeilF ceil' -> CeilF (Left <$> ceil'')
-                  where
-                    ceil'' = ceil' { ceilResultSort = forcedSort }
-                FloorF floor' -> FloorF (Left <$> floor'')
-                  where
-                    floor'' = floor' { floorResultSort = forcedSort }
-                EqualsF equals' -> EqualsF (Left <$> equals'')
-                  where
-                    equals'' = equals' { equalsResultSort = forcedSort }
-                InF in' -> InF (Left <$> in'')
-                  where
-                    in'' = in' { inResultSort = forcedSort }
-                -- Connectives: Force sort and recurse.
-                AndF and' -> AndF (Right <$> and'')
-                  where
-                    and'' = and' { andSort = forcedSort }
-                OrF or' -> OrF (Right <$> or'')
-                  where
-                    or'' = or' { orSort = forcedSort }
-                IffF iff' -> IffF (Right <$> iff'')
-                  where
-                    iff'' = iff' { iffSort = forcedSort }
-                ImpliesF implies' -> ImpliesF (Right <$> implies'')
-                  where
-                    implies'' = implies' { impliesSort = forcedSort }
-                NotF not' -> NotF (Right <$> not'')
-                  where
-                    not'' = not' { notSort = forcedSort }
-                NextF next' -> NextF (Right <$> next'')
-                  where
-                    next'' = next' { nextSort = forcedSort }
-                RewritesF rewrites' -> RewritesF (Right <$> rewrites'')
-                  where
-                    rewrites'' = rewrites' { rewritesSort = forcedSort }
-                ExistsF exists' -> ExistsF (Right <$> exists'')
-                  where
-                    exists'' = exists' { existsSort = forcedSort }
-                ForallF forall' -> ForallF (Right <$> forall'')
-                  where
-                    forall'' = forall' { forallSort = forcedSort }
-                -- Rigid: These patterns should never have sort _PREDICATE{}.
-                MuF _ -> illSorted
-                NuF _ -> illSorted
-                ApplySymbolF _ -> illSorted
-                ApplyAliasF _ -> illSorted
-                BuiltinF _ -> illSorted
-                DomainValueF _ -> illSorted
-                StringLiteralF _ -> illSorted
-                VariableF _ -> illSorted
-                InhabitantF _ -> illSorted
+
+{-| Attempts to modify the pattern to have the given sort, ignoring the
+previous sort and without assuming that the pattern's sorts are consistent.
+-}
+fullyOverrideSort
+    :: forall variable
+    .  (SortedVariable variable, Unparse variable, GHC.HasCallStack)
+    => Sort
+    -> TermLike variable
+    -> TermLike variable
+fullyOverrideSort forcedSort = Recursive.apo overrideSortWorker
+  where
+    overrideSortWorker
+        :: TermLike variable
+        -> Base
+            (TermLike variable)
+            (Either (TermLike variable) (TermLike variable))
+    overrideSortWorker original@(Recursive.project -> attrs :< _) =
+        (:<)
+            (attrs { Attribute.patternSort = forcedSort })
+            (forceSortPredicate forcedSort original)
+
+illSorted
+    :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
+    => Sort -> TermLike variable -> a
+illSorted forcedSort original =
+    (error . show . Pretty.vsep)
+    [ Pretty.cat
+        [ "Could not force pattern to sort "
+        , Pretty.squotes (unparse forcedSort)
+        , ", instead it has sort "
+        , Pretty.squotes (unparse (termLikeSort original))
+        , ":"
+        ]
+    , Pretty.indent 4 (unparse original)
+    ]
+
+forceSortPredicate
+    :: (SortedVariable variable, Unparse variable, GHC.HasCallStack)
+    => Sort
+    -> TermLike variable
+    -> TermLikeF variable (Either (TermLike variable) (TermLike variable))
+forceSortPredicate
+    forcedSort
+    original@(Recursive.project -> _ :< pattern')
+  =
+    case pattern' of
+        -- Recurse
+        EvaluatedF evaluated -> EvaluatedF (Right <$> evaluated)
+        -- Predicates: Force sort and stop.
+        BottomF bottom' -> BottomF bottom' { bottomSort = forcedSort }
+        TopF top' -> TopF top' { topSort = forcedSort }
+        CeilF ceil' -> CeilF (Left <$> ceil'')
+            where
+            ceil'' = ceil' { ceilResultSort = forcedSort }
+        FloorF floor' -> FloorF (Left <$> floor'')
+            where
+            floor'' = floor' { floorResultSort = forcedSort }
+        EqualsF equals' -> EqualsF (Left <$> equals'')
+            where
+            equals'' = equals' { equalsResultSort = forcedSort }
+        InF in' -> InF (Left <$> in'')
+            where
+            in'' = in' { inResultSort = forcedSort }
+        -- Connectives: Force sort and recurse.
+        AndF and' -> AndF (Right <$> and'')
+            where
+            and'' = and' { andSort = forcedSort }
+        OrF or' -> OrF (Right <$> or'')
+            where
+            or'' = or' { orSort = forcedSort }
+        IffF iff' -> IffF (Right <$> iff'')
+            where
+            iff'' = iff' { iffSort = forcedSort }
+        ImpliesF implies' -> ImpliesF (Right <$> implies'')
+            where
+            implies'' = implies' { impliesSort = forcedSort }
+        NotF not' -> NotF (Right <$> not'')
+            where
+            not'' = not' { notSort = forcedSort }
+        NextF next' -> NextF (Right <$> next'')
+            where
+            next'' = next' { nextSort = forcedSort }
+        RewritesF rewrites' -> RewritesF (Right <$> rewrites'')
+            where
+            rewrites'' = rewrites' { rewritesSort = forcedSort }
+        ExistsF exists' -> ExistsF (Right <$> exists'')
+            where
+            exists'' = exists' { existsSort = forcedSort }
+        ForallF forall' -> ForallF (Right <$> forall'')
+            where
+            forall'' = forall' { forallSort = forcedSort }
+        -- Rigid: These patterns should never have sort _PREDICATE{}.
+        MuF _ -> illSorted forcedSort original
+        NuF _ -> illSorted forcedSort original
+        ApplySymbolF _ -> illSorted forcedSort original
+        ApplyAliasF _ -> illSorted forcedSort original
+        BuiltinF _ -> illSorted forcedSort original
+        DomainValueF _ -> illSorted forcedSort original
+        StringLiteralF _ -> illSorted forcedSort original
+        VariableF _ -> illSorted forcedSort original
+        InternalBytesF _ -> illSorted forcedSort original
+        InhabitantF _ -> illSorted forcedSort original
 
 {- | Call the argument function with two patterns whose sorts agree.
 
@@ -1376,7 +1456,7 @@ mkBottom bottomSort =
 
 {- | Construct a 'Bottom' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use
+This should not be used outside "Kore.Internal.Predicate"; please use
 'mkBottom' instead.
 
 See also: 'mkBottom'
@@ -1409,7 +1489,7 @@ mkCeil ceilResultSort ceilChild =
 
 {- | Construct a 'Ceil' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use 'mkCeil'
+This should not be used outside "Kore.Internal.Predicate"; please use 'mkCeil'
 instead.
 
 See also: 'mkCeil'
@@ -1503,7 +1583,7 @@ mkEquals equalsResultSort t1 =
 
 {- | Construct a 'Equals' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use
+This should not be used outside "Kore.Internal.Predicate"; please use
 'mkEquals' instead.
 
 See also: 'mkEquals'
@@ -1566,7 +1646,7 @@ mkFloor floorResultSort floorChild =
 
 {- | Construct a 'Floor' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use 'mkFloor'
+This should not be used outside "Kore.Internal.Predicate"; please use 'mkFloor'
 instead.
 
 See also: 'mkFloor'
@@ -1670,7 +1750,7 @@ mkIn inResultSort t1 t2 = updateCallStack $ makeSortsAgree mkInWorker t1 t2
 
 {- | Construct a 'In' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use 'mkIn'
+This should not be used outside "Kore.Internal.Predicate"; please use 'mkIn'
 instead.
 
 See also: 'mkIn'
@@ -1792,7 +1872,7 @@ mkTop topSort =
 
 {- | Construct a 'Top' pattern in 'predicateSort'.
 
-This should not be used outside "Kore.Predicate.Predicate"; please use
+This should not be used outside "Kore.Internal.Predicate"; please use
 'mkTop' instead.
 
 See also: 'mkTop'
@@ -1845,6 +1925,30 @@ mkStringLiteral
     -> TermLike variable
 mkStringLiteral =
     updateCallStack . synthesize . StringLiteralF . Const . StringLiteral
+
+mkInternalBytes
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Sort
+    -> Symbol
+    -> ByteString
+    -> TermLike variable
+mkInternalBytes sort symbol value =
+    updateCallStack . synthesize . InternalBytesF . Const
+        $ InternalBytes
+            { bytesSort = sort
+            , bytesValue = value
+            , string2BytesSymbol = symbol
+            }
+
+mkInternalBytes'
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => InternalBytes
+    -> TermLike variable
+mkInternalBytes' = updateCallStack . synthesize . InternalBytesF . Const
 
 mkInhabitant
     :: GHC.HasCallStack
@@ -2026,6 +2130,12 @@ pattern Bottom_
     :: Sort
     -> TermLike variable
 
+pattern InternalBytes_
+    :: Sort
+    -> Symbol
+    -> ByteString
+    -> TermLike variable
+
 pattern Ceil_
     :: Sort
     -> Sort
@@ -2174,6 +2284,11 @@ pattern App_ applicationSymbolOrAlias applicationChildren <-
 
 pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom { bottomSort })
+
+pattern InternalBytes_ bytesSort string2BytesSymbol bytesValue <-
+    (Recursive.project -> _ :< InternalBytesF (Const InternalBytes
+        { bytesSort, string2BytesSymbol, bytesValue }
+    ))
 
 pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
     (Recursive.project ->

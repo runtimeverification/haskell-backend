@@ -15,7 +15,7 @@ import Data.Map.Strict
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
-import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.TermLike
 import Kore.TopBottom
     ( isBottom
@@ -285,7 +285,7 @@ test_normalize =
                 let expect
                       | null denormalized =
                         Right
-                        $ Predicate.fromSubstitution
+                        $ Condition.fromSubstitution
                         $ Substitution.wrap normalized
                       | otherwise =
                         Left $ SimplifiableCycle (fst <$> denormalized)

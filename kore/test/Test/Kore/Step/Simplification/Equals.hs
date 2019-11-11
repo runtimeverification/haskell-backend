@@ -8,25 +8,24 @@ import Test.Tasty
 
 import qualified Data.Foldable as Foldable
 
+import Kore.Internal.Condition
+    ( Condition
+    , Conditional (..)
+    )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.OrPredicate
-    ( OrPredicate
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Conditional
 import Kore.Internal.Predicate
-    ( Conditional (..)
-    , Predicate
-    )
-import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
     ( pattern PredicateFalse
     , makeAndPredicate
     , makeCeilPredicate
@@ -38,6 +37,7 @@ import Kore.Predicate.Predicate
     , makeOrPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Simplification.Equals
     ( makeEvaluate
     , makeEvaluateTermsToPredicate
@@ -425,13 +425,13 @@ test_equalsSimplification_TermLike :: [TestTree]
 test_equalsSimplification_TermLike =
     [ testCase "bottom == bottom"
         (assertTermEquals
-            Predicate.topPredicate
+            Condition.topCondition
             mkBottom_
             mkBottom_
         )
     , testCase "domain-value == domain-value"
         (assertTermEquals
-            Predicate.topPredicate
+            Condition.topCondition
             (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "a"
@@ -445,7 +445,7 @@ test_equalsSimplification_TermLike =
         )
     , testCase "domain-value != domain-value"
         (assertTermEquals
-            Predicate.bottomPredicate
+            Condition.bottomCondition
             (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "a"
@@ -459,7 +459,7 @@ test_equalsSimplification_TermLike =
         )
     , testCase "domain-value != domain-value because of sorts"
         (assertTermEquals
-            Predicate.bottomPredicate
+            Condition.bottomCondition
             (mkDomainValue DomainValue
                 { domainValueSort = testSort
                 , domainValueChild = mkStringLiteral "a"
@@ -473,25 +473,25 @@ test_equalsSimplification_TermLike =
         )
     , testCase "\"a\" == \"a\""
         (assertTermEqualsGeneric
-            Predicate.topPredicate
+            Condition.topCondition
             (mkStringLiteral "a")
             (mkStringLiteral "a")
         )
     , testCase "\"a\" != \"b\""
         (assertTermEqualsGeneric
-            Predicate.bottomPredicate
+            Condition.bottomCondition
             (mkStringLiteral "a")
             (mkStringLiteral "b")
         )
     , testCase "a != bottom"
         (assertTermEquals
-            Predicate.bottomPredicate
+            Condition.bottomCondition
             mkBottom_
             Mock.a
         )
     , testCase "a == a"
         (assertTermEquals
-            Predicate.topPredicate
+            Condition.topCondition
             Mock.a
             Mock.a
         )
@@ -507,26 +507,26 @@ test_equalsSimplification_TermLike =
         )
     , testCase "constructor1(a) vs constructor1(a)"
         (assertTermEquals
-            Predicate.topPredicate
+            Condition.topCondition
             constructor1OfA
             constructor1OfA
         )
     , testCase
         "functionalconstructor1(a) vs functionalconstructor2(a)"
         (assertTermEquals
-            Predicate.bottomPredicate
+            Condition.bottomCondition
             functionalConstructor1OfA
             functionalConstructor2OfA
         )
     , testCase "constructor1(a) vs constructor2(a)"
         (assertTermEquals
-            Predicate.bottomPredicate
+            Condition.bottomCondition
             constructor1OfA
             constructor2OfA
         )
     , testCase "constructor1(f(a)) vs constructor1(f(a))"
         (assertTermEquals
-            Predicate.topPredicate
+            Condition.topCondition
             (Mock.constr10 fOfA)
             (Mock.constr10 fOfA)
         )
@@ -672,7 +672,7 @@ test_equalsSimplification_TermLike =
             )
         , testCase "concrete Map, different keys"
             (assertTermEquals
-                Predicate.bottomPredicate
+                Condition.bottomCondition
                 (Mock.builtinMap [(Mock.a, Mock.b)])
                 (Mock.builtinMap [(Mock.b, mkElemVar Mock.x)])
             )
@@ -775,7 +775,7 @@ test_equalsSimplification_TermLike =
         ,
             let term3 = Mock.builtinList [Mock.a, Mock.a]
                 term4 = Mock.builtinList [Mock.a, Mock.b]
-                unified34 = Predicate.bottomPredicate
+                unified34 = Condition.bottomCondition
             in
                 testCase "[same head, different head]"
                     (assertTermEquals
@@ -791,7 +791,7 @@ test_equalsSimplification_TermLike =
             in
                 testCase "[a] `concat` x /\\ [a, b] "
                     (assertTermEquals
-                        (Predicate.fromSingleSubstitution
+                        (Condition.fromSingleSubstitution
                             (ElemVar x, Mock.builtinList [Mock.b])
                         )
                         term5
@@ -803,7 +803,7 @@ test_equalsSimplification_TermLike =
             in
                 testCase "different lengths"
                     (assertTermEquals
-                        Predicate.bottomPredicate
+                        Condition.bottomCondition
                         term7
                         term8
                     )
@@ -814,7 +814,7 @@ test_equalsSimplification_TermLike =
 
 assertTermEquals
     :: HasCallStack
-    => Predicate Variable
+    => Condition Variable
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -822,7 +822,7 @@ assertTermEquals = assertTermEqualsGeneric
 
 assertTermEqualsGeneric
     :: HasCallStack
-    => Predicate Variable
+    => Condition Variable
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -832,7 +832,7 @@ assertTermEqualsGeneric expectPure =
 
 assertTermEqualsMulti
     :: HasCallStack
-    => [Predicate Variable]
+    => [Condition Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> IO ()
@@ -840,7 +840,7 @@ assertTermEqualsMulti = assertTermEqualsMultiGeneric
 
 assertTermEqualsMultiGeneric
     :: HasCallStack
-    => [Predicate Variable]
+    => [Condition Variable]
     -> TermLike Variable
     -> TermLike Variable
     -> Assertion
@@ -868,7 +868,7 @@ assertTermEqualsMultiGeneric expectPure first second = do
             , predicate = makeTruePredicate
             , substitution = mempty
             }
-    predSubstToPattern :: Predicate Variable -> Pattern Variable
+    predSubstToPattern :: Condition Variable -> Pattern Variable
     predSubstToPattern
         Conditional {predicate = PredicateFalse}
       =
@@ -932,7 +932,7 @@ evaluateOr
     :: Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluateOr =
-    runSimplifier mockEnv . simplify Predicate.top
+    runSimplifier mockEnv . simplify Condition.top
   where
     mockEnv = Mock.env
 
@@ -942,16 +942,16 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate first second =
     runSimplifier mockEnv
-    $ makeEvaluate first second Predicate.top
+    $ makeEvaluate first second Condition.top
   where
     mockEnv = Mock.env
 
 evaluateTermsGeneric
     :: TermLike Variable
     -> TermLike Variable
-    -> IO (OrPredicate Variable)
+    -> IO (OrCondition Variable)
 evaluateTermsGeneric first second =
     runSimplifier mockEnv
-    $ makeEvaluateTermsToPredicate first second Predicate.top
+    $ makeEvaluateTermsToPredicate first second Condition.top
   where
     mockEnv = Mock.env

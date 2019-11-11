@@ -219,7 +219,7 @@ test_runStrategy =
         . unAllPathIdentity
         $ Strategy.runStrategy
             Goal.transitionRule
-            (Goal.strategy [unRule goal] axioms)
+            (Goal.strategy (unRule goal) [unRule goal] axioms)
             (ProofState.Goal . unRule $ goal)
     disproves
         :: HasCallStack
@@ -307,7 +307,7 @@ instance Goal.Goal Goal where
 
     type ProofState Goal a = ProofState.ProofState a
 
-    strategy goals rules =
+    strategy _ goals rules =
         firstStep : repeat nextStep
       where
         firstStep =
@@ -462,7 +462,7 @@ instance MonadSimplify AllPathIdentity where
     askMetadataTools = undefined
     askSimplifierTermLike = undefined
     localSimplifierTermLike = undefined
-    simplifyPredicate = undefined
+    simplifyCondition = undefined
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined
