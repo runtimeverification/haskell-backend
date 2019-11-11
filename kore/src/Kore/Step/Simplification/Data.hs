@@ -198,7 +198,8 @@ evalSimplifier verifiedModule simplifier = do
     -- knowledge of the patterns which are internalized.
     earlyMetadataTools = MetadataTools.build verifiedModule
     simplifierTermLike = Simplifier.create
-    simplifierCondition = Condition.create SubstitutionSimplifier.simplification
+    substitutionSimplifier = SubstitutionSimplifier.substitutionSimplifier
+    simplifierCondition = Condition.create substitutionSimplifier
     -- Initialize without any builtin or axiom simplifiers.
     earlySimplifierAxioms = Map.empty
 

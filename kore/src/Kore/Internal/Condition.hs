@@ -21,7 +21,7 @@ module Kore.Internal.Condition
     , freeVariables
     , hasFreeVariable
     , Kore.Internal.Condition.mapVariables
-    , fromNormalization
+    , fromNormalizationSimplified
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
@@ -35,11 +35,17 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.Variable
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
+    ( TermLike
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( isSimplified
+    )
+import Kore.Internal.Variable
 import Kore.Substitute
     ( SubstitutionVariable
     )
@@ -156,17 +162,30 @@ The 'normalized' part becomes the normalized 'substitution', while the
 'denormalized' part is converted into an ordinary 'predicate'.
 
  -}
-fromNormalization
+fromNormalizationSimplified
     :: SubstitutionVariable variable
     => Normalization variable
     -> Condition variable
-fromNormalization Normalization { normalized, denormalized } =
+fromNormalizationSimplified Normalization { normalized, denormalized } =
     predicate' <> substitution'
   where
     predicate' =
         Conditional.fromPredicate
+        . markSimplifiedIfChildrenSimplified denormalized
         . Predicate.fromSubstitution
         $ Substitution.wrap denormalized
     substitution' =
         Conditional.fromSubstitution
         $ Substitution.unsafeWrap normalized
+    markSimplifiedIfChildrenSimplified childrenList result =
+        if childrenAreSimplified
+            then Predicate.markSimplified result
+            else result
+      where
+        childrenAreSimplified =
+            all (TermLike.isSimplified) (map dropVariable childrenList)
+
+        dropVariable
+            :: (UnifiedVariable variable, TermLike variable)
+            -> TermLike variable
+        dropVariable = snd

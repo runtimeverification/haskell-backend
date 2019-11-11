@@ -31,8 +31,7 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
@@ -44,7 +43,8 @@ import Kore.Predicate.Predicate
     , makeOrPredicate
     , makeTruePredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
     , simplifierWithFallback
@@ -308,6 +308,50 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
         assertEqual "" expect actual
+    -- Checks that `f(x/x)` fails to simplify to x/x
+    -- because x != 0 is not implied by the configuration
+    , testCase "non function-like simplification with remainder" $ do
+        let testSortVariable = SortVariableSort $ SortVariable (testId "s")
+        assertErrorIO
+            (assertSubstring "" "doesn't imply rule condition")
+            (evaluateWithAxioms
+                ( axiomPatternsToEvaluators
+                    ( Map.fromList
+                        [   (AxiomIdentifier.Application Mock.fIntId
+                            ,   [ EqualityRule $ rulePattern
+                                    (Mock.fInt (mkElemVar Mock.xInt))
+                                    (mkElemVar Mock.xInt)
+                                ]
+                            )
+                        ,   (AxiomIdentifier.Ceil
+                                (AxiomIdentifier.Application Mock.tdivIntId)
+                            ,   [ EqualityRule
+                                  $ conditionalSimplificationRulePattern
+                                    (mkCeil testSortVariable
+                                        $ Mock.tdivInt
+                                            (mkElemVar Mock.xInt)
+                                            (mkElemVar Mock.xInt)
+                                    )
+                                    (makeNotPredicate $ makeEqualsPredicate
+                                        (mkElemVar Mock.xInt)
+                                        (Mock.builtinInt 0)
+                                    )
+                                    (mkTop testSortVariable)
+                                ]
+                            )
+                        ]
+                    )
+                )
+                Conditional
+                    { term =
+                        Mock.fInt
+                        $ Mock.tdivInt
+                            (mkElemVar Mock.xInt)
+                            (mkElemVar Mock.xInt)
+                    , predicate = makeTruePredicate
+                    , substitution = mempty
+                    }
+            )
     , testCase "exists variable equality" $ do
         let
             expect = OrPattern.top
@@ -814,7 +858,7 @@ test_simplificationIntegration =
                 , predicate = makeTruePredicate
                 , substitution = mempty
                 }
-        assertBool "" (OrPattern.isSimplified actual)
+        assertBool "Expecting simplification" (OrPattern.isSimplified actual)
     , testCase "Equals-in simplification" $ do
         let gt = SetVariable $ Variable (testId "gt") mempty Mock.stringSort
             g = SetVariable $ Variable (testId "g") mempty Mock.testSort1
@@ -842,6 +886,34 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "Distributed equals simplification" $ do
+        let k = SetVariable $ Variable (testId "k") mempty Mock.stringSort
+        actual <- evaluate
+            Conditional
+                { term = mkMu k
+                    (mkEquals_
+                        (Mock.functionalConstr21 Mock.cf Mock.cf)
+                        (Mock.functionalConstr21 Mock.ch Mock.cg)
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "nu-floor-in-or simplification" $ do
+        let q = SetVariable $ Variable (testId "q") mempty Mock.otherSort
+        actual <- evaluate
+            Conditional
+                { term = mkNu q
+                    (mkFloor_
+                        (mkIn_
+                            (Mock.g Mock.ch)
+                            (mkOr Mock.cf Mock.cg)
+                        )
+                    )
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
     ]
 
 
@@ -856,6 +928,17 @@ simplificationRulePattern left right =
   where
     patt = rulePattern left right
 
+conditionalSimplificationRulePattern
+    :: InternalVariable variable
+    => TermLike variable
+    -> Predicate.Predicate variable
+    -> TermLike variable
+    -> RulePattern variable
+conditionalSimplificationRulePattern left requires right =
+    patt & Lens.set (field @"requires") requires
+  where
+    patt = simplificationRulePattern left right
+
 test_substitute :: [TestTree]
 test_substitute =
     [ testCase "Substitution under unary functional constructor" $ do
@@ -865,7 +948,7 @@ test_substitute =
                         { term =
                             Mock.functionalConstr20
                                 Mock.a
-                                (Mock.functionalConstr10 (mkElemVar Mock.x))
+                                (Mock.functionalConstr10 Mock.a)
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -894,7 +977,7 @@ test_substitute =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
                         { term =
-                            Mock.functionalConstr20 Mock.a (mkElemVar Mock.y)
+                            Mock.functionalConstr20 Mock.a Mock.a
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -928,7 +1011,7 @@ test_substituteMap =
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testMapX
+                        { term = Mock.functionalConstr20 Mock.a testMapA
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
@@ -962,7 +1045,7 @@ test_substituteList =
             expect =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
-                        { term = Mock.functionalConstr20 Mock.a testListX
+                        { term = Mock.functionalConstr20 Mock.a testListA
                         , predicate = makeTruePredicate
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)

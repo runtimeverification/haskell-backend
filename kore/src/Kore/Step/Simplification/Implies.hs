@@ -18,8 +18,8 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Predicate.Predicate as Predicate
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluatedMultiple
     )

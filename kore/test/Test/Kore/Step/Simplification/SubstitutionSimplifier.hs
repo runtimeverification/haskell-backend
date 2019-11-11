@@ -14,18 +14,18 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
-import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as Simplification
 import Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationOrSubstitutionError (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.SubstitutionNormalization
+import qualified Kore.Unification.SubstitutionSimplifier as Unification
+    ( substitutionSimplifier
+    )
 import Kore.Unification.UnifierT
     ( runUnifierT
-    )
-import qualified Kore.Unification.UnifierT as Unification
-    ( substitutionSimplifier
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -51,6 +51,9 @@ test_SubstitutionSimplifier =
     , test "unnormalized substitution, variable under symbol"
         [(y, sigma (mkVar x) b), (x, a)]
         [ Normalization [(x, a), (y, sigma a b)] [] ]
+    , test "simplification generates substitution"
+        [(x, sigma (mkAnd a (mkVar y)) b)]
+        [ Normalization [(x, sigma a b), (y, a)] [] ]
     , testGroup "element-variable-only cycle"
         [ test "length 1, alone"
             [(x, mkVar x)]
@@ -102,12 +105,6 @@ test_SubstitutionSimplifier =
         , test "length 2, beside unrelated substitution"
             [(x, f (mkVar y)), (y, g (mkVar x)), (z, a)]
             [ Normalization [(z, a)] [(x, f (mkVar y)), (y, g (mkVar x))] ]
-        , test "length 2, with And"
-            [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
-            [ Normalization
-                []
-                [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
-            ]
         , test "two cycles"
             [(x, f (mkVar x)), (y, g (mkVar y)), (z, c)]
             [ Normalization [(z, c)] [(x, f (mkVar x)), (y, g (mkVar y))] ]
@@ -158,6 +155,9 @@ test_SubstitutionSimplifier =
         , test "beside simplifiable cycle"
             [(x, sigma (f (mkVar x)) (mkVar x))]
             []
+        , test "length 2, with And"
+            [(x, mkAnd (mkVar y) a), (y, mkAnd (mkVar x) b)]
+            []
         ]
     , testGroup "set variable non-simplifiable cycle"
         [ test "alone"
@@ -187,26 +187,39 @@ test_SubstitutionSimplifier =
         testGroup testName
             [ testCase "simplification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
-                        SubstitutionSimplifier.simplification
+                        Simplification.substitutionSimplifier
                 actual <- runSimplifier Mock.env $ simplifySubstitution input
-                let expect = Condition.fromNormalization <$> results
-                assertEqual "" expect (OrCondition.toConditions actual)
+                let expect = Condition.fromNormalizationSimplified <$> results
+                    actualConditions = OrCondition.toConditions actual
+                    actualSubstitutions =
+                        Condition.substitution <$> actualConditions
+                assertEqual "" expect actualConditions
+                assertBool "Expected normalized substitutions"
+                    (all Substitution.isNormalized actualSubstitutions)
             , testCase "unification" $ do
                 let SubstitutionSimplifier { simplifySubstitution } =
                         Unification.substitutionSimplifier
                 actual <-
-                    runSimplifier Mock.env
-                    . runUnifierT
+                    runSimplifier Mock.env . runUnifierT
                     $ simplifySubstitution input
                 let expect1 normalization@Normalization { denormalized }
                       | null denormalized =
-                        Right $ Condition.fromNormalization normalization
+                        Right $
+                            Condition.fromNormalizationSimplified normalization
                       | otherwise =
                         Left
                         $ SubstitutionError
                         $ SimplifiableCycle (fst <$> denormalized)
-                    expect = (: []) <$> traverse expect1 results
-                assertEqual "" expect (map OrCondition.toConditions <$> actual)
+                    expect
+                      | null results = Right []
+                      | otherwise    = (: []) <$> traverse expect1 results
+                    actualConditions = map OrCondition.toConditions <$> actual
+                    actualSubstitutions =
+                        (map . map) Condition.substitution <$> actualConditions
+                    allNormalized = (all . all . all) Substitution.isNormalized
+                assertEqual "" expect actualConditions
+                assertBool "Expected normalized substitutions"
+                    (allNormalized actualSubstitutions)
             ]
 
 x, y, z, xs, ys :: UnifiedVariable Variable

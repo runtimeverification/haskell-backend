@@ -75,18 +75,22 @@ import Options.Applicative
     ( InfoMod
     , Parser
     , argument
+    , defaultPrefs
     , disabled
-    , execParser
+    , execParserPure
     , flag
     , flag'
+    , handleParseResult
     , help
     , helper
     , hidden
     , info
     , internal
     , long
+    , maybeReader
     , metavar
     , option
+    , optional
     , readerError
     , str
     , strOption
@@ -100,6 +104,7 @@ import System.Clock
     , diffTimeSpec
     , getTime
     )
+import qualified System.Environment as Env
 
 import Kore.ASTVerifier.DefinitionVerifier
     ( verifyAndIndexDefinitionWithBase
@@ -132,6 +137,9 @@ import Kore.Syntax.Definition
 import qualified Kore.Verified as Verified
 import qualified Paths_kore as MetaData
     ( version
+    )
+import Text.Read
+    ( readMaybe
     )
 
 type Main = LoggerT IO
@@ -200,17 +208,27 @@ data KoreMergeOptions =
     KoreMergeOptions
         { rulesFileName     :: !FilePath
         -- ^ Name for file containing a sequence of rules to merge.
+        , maybeBatchSize    :: Maybe Int
         }
 
 parseKoreMergeOptions :: Parser KoreMergeOptions
 parseKoreMergeOptions =
     KoreMergeOptions
     <$> strOption
-            (  metavar "MERGE_RULES_FILE"
-            <> long "merge-rules"
+        (  metavar "MERGE_RULES_FILE"
+        <> long "merge-rules"
+        <> help
+            "List of rules to merge."
+        )
+    <*> optional
+        (option
+            (maybeReader readMaybe)
+            (  metavar "MERGE_BATCH_SIZE"
+            <> long "merge-batch-size"
             <> help
-                "List of rules to merge."
+                "The size of a merge batch."
             )
+        )
 
 {- | Record Type containing common command-line arguments for each executable in
 the project -}
@@ -280,17 +298,26 @@ commandLineParse
     :: Parser a                -- ^ local options parser
     -> InfoMod (MainOptions a) -- ^ local parser info modifiers
     -> IO (MainOptions a)
-commandLineParse localCommandLineParser modifiers =
-    execParser
-    $ info
-        ( MainOptions
-            <$> globalCommandLineParser
-            <*> (   Just <$> localCommandLineParser
-                <|> pure Nothing
+commandLineParse localCommandLineParser modifiers = do
+    args' <- Env.getArgs
+    env <- Env.lookupEnv "KORE_EXEC_OPTS"
+    let
+        args = case env of
+            Nothing -> args'
+            Just opts -> args' <> words opts
+        parseResult = execParserPure
+            defaultPrefs
+            ( info
+                ( MainOptions
+                    <$> globalCommandLineParser
+                    <*> optional localCommandLineParser
+                <**> helper
                 )
-        <**> helper
-        )
-        modifiers
+                modifiers
+            )
+            args
+    handleParseResult parseResult
+
 
 
 ----------------------

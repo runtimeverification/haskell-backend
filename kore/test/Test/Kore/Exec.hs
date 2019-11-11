@@ -41,10 +41,10 @@ import Kore.Exec
 import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step
     ( allRewrites
     , anyRewrite

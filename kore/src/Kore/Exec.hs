@@ -12,7 +12,8 @@ module Kore.Exec
     ( exec
     , execGetExitCode
     , extractRules
-    , mergeRules
+    , mergeAllRules
+    , mergeRulesConsecutiveBatches
     , search
     , prove
     , proveWithRepl
@@ -94,13 +95,13 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.TermLike
-import qualified Kore.Logger as Log
-import qualified Kore.ModelChecker.Bounded as Bounded
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeMultipleOrPredicate
     , unwrapPredicate
     )
+import Kore.Internal.TermLike
+import qualified Kore.Logger as Log
+import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -124,6 +125,7 @@ import Kore.Step.Rule as RulePattern
     )
 import qualified Kore.Step.Rule.Combine as Rules
     ( mergeRules
+    , mergeRulesConsecutiveBatches
     )
 import Kore.Step.Rule.Expand
     ( ExpandSingleConstructors (..)
@@ -315,7 +317,8 @@ prove limit definitionModule specModule claimProxy =
         result <-
             runExceptT
             $ verify
-                (Goal.strategy claims axioms)
+                claims
+                axioms
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
@@ -389,7 +392,7 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             (head claims, limit)
 
 -- | Rule merging
-mergeRules
+mergeAllRules
     ::  ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadSMT smt
@@ -400,7 +403,42 @@ mergeRules
     -> [Text]
     -- ^ The list of rules to merge
     -> smt (Either Text [RewriteRule Variable])
-mergeRules verifiedModule ruleNames =
+mergeAllRules = mergeRules Rules.mergeRules
+
+-- | Rule merging
+mergeRulesConsecutiveBatches
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadProfiler smt
+        , MonadSMT smt
+        , MonadUnliftIO smt
+        )
+    => Int
+    -- ^ Batch size
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The main module
+    -> [Text]
+    -- ^ The list of rules to merge
+    -> smt (Either Text [RewriteRule Variable])
+mergeRulesConsecutiveBatches batchSize =
+    mergeRules (Rules.mergeRulesConsecutiveBatches batchSize)
+
+-- | Rule merging in batches
+mergeRules
+    ::  ( Log.WithLog Log.LogMessage smt
+        , MonadProfiler smt
+        , MonadSMT smt
+        , MonadUnliftIO smt
+        )
+    =>  (  NonEmpty (RewriteRule Variable)
+        -> Simplifier.SimplifierT smt [RewriteRule Variable]
+        )
+    -- ^ The rule merger
+    -> VerifiedModule StepperAttributes Attribute.Axiom
+    -- ^ The main module
+    -> [Text]
+    -- ^ The list of rules to merge
+    -> smt (Either Text [RewriteRule Variable])
+mergeRules ruleMerger verifiedModule ruleNames =
     evalSimplifier verifiedModule
     $ initialize verifiedModule
     $ \initialized -> do
@@ -415,7 +453,7 @@ mergeRules verifiedModule ruleNames =
 
         case nonEmptyRules of
             (Left left) -> return (Left left)
-            (Right rules) -> Right <$> Rules.mergeRules rules
+            (Right rules) -> Right <$> ruleMerger rules
 
 extractRules
     :: [RewriteRule Variable]

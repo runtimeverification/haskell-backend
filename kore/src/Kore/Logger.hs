@@ -25,7 +25,6 @@ module Kore.Logger
     , LoggerT (..)
     , SomeEntry (..)
     , someEntry
-    , withSomeEntry
     , Entry (..)
     , MonadLog (..)
     ) where
@@ -127,7 +126,7 @@ instance Pretty.Pretty Scope where
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
 data LogMessage = LogMessage
-    { message   :: !Text
+    { message   :: Text
     -- ^ message being logged
     , severity  :: !Severity
     -- ^ log level / severity of message
@@ -216,11 +215,11 @@ instance Entry WithScope where
     shouldLog
         minSeverity
         currentScope
-        WithScope { entry = SomeEntry entry, scope }
+        WithScope { entry, scope }
       = scope `Set.member` currentScope
         || shouldLog minSeverity currentScope entry
 
-    toLogMessage WithScope { entry = SomeEntry entry } = toLogMessage entry
+    toLogMessage WithScope { entry } = toLogMessage entry
 
 withLogScope
     :: forall m a
@@ -263,11 +262,10 @@ someEntry = Lens.prism' toEntry fromEntry
 data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
-withSomeEntry
-    :: (forall entry. Entry entry => entry -> a)
-    -> SomeEntry
-    -> a
-withSomeEntry f (SomeEntry entry) = f entry
+instance Entry SomeEntry where
+    shouldLog severity setScope (SomeEntry entry) =
+        shouldLog severity setScope entry
+    toLogMessage (SomeEntry entry) = toLogMessage entry
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
@@ -315,4 +313,3 @@ instance Monad m => MonadLog (LoggerT m) where
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
     {-# INLINE lift #-}
-

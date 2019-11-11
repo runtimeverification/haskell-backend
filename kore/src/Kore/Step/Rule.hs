@@ -10,6 +10,7 @@ module Kore.Step.Rule
     , RewriteRule (..)
     , OnePathRule (..)
     , AllPathRule (..)
+    , ReachabilityRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
     , allPathGlobally
@@ -86,6 +87,10 @@ import Kore.Internal.Alias
     ( Alias (..)
     )
 import Kore.Internal.ApplicationSorts
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( pattern And_
     , pattern ApplyAlias_
@@ -114,10 +119,6 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     )
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)

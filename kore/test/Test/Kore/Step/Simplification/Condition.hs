@@ -16,12 +16,12 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.TermLike
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
     , makeTruePredicate
     )
+import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( firstFullEvaluation
     )
@@ -276,7 +276,7 @@ runSimplifier patternSimplifierMap predicate =
   where
     env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
     ConditionSimplifier simplifier =
-        Condition.create SubstitutionSimplifier.simplification
+        Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 simplificationEvaluator
     :: [BuiltinAndAxiomSimplifier]

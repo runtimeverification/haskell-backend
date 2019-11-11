@@ -22,11 +22,11 @@ import Kore.Internal.Pattern
     , Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     , unwrapPredicate
     )
-import qualified Kore.Predicate.Predicate as Predicate
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -71,6 +71,9 @@ simplify SubstitutionSimplifier { simplifySubstitution } initial =
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
+        -- Check for full simplification *after* normalization. Simplification
+        -- may have produced irrelevant substitutions that become relevant after
+        -- normalization.
         if fullySimplified normalized
             then return normalized { term }
             else worker normalized { term }

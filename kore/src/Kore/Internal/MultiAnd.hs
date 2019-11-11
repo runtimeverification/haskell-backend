@@ -32,12 +32,12 @@ import GHC.Generics
     ( Generic
     )
 
-import Kore.Internal.Variable
-import Kore.Predicate.Predicate
+import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeTruePredicate
     )
+import Kore.Internal.Variable
 import Kore.TopBottom
     ( TopBottom (..)
     )

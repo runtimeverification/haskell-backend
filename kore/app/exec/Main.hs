@@ -95,6 +95,9 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
+import Kore.Internal.Predicate
+    ( makePredicate
+    )
 import Kore.Internal.TermLike
 import Kore.Logger.Output
     ( KoreLogOptions (..)
@@ -110,9 +113,6 @@ import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
-    )
-import Kore.Predicate.Predicate
-    ( makePredicate
     )
 import Kore.Profiler.Data
     ( MonadProfiler
@@ -468,8 +468,12 @@ koreMerge execOptions mergeOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreMergeOptions {rulesFileName} = mergeOptions
     ruleIds <- lift $ loadRuleIds rulesFileName
+    let KoreMergeOptions {maybeBatchSize} = mergeOptions
     eitherMergedRule <- execute execOptions mainModule $
-        mergeRules mainModule ruleIds
+        case maybeBatchSize of
+            Just batchSize ->
+                mergeRulesConsecutiveBatches batchSize mainModule ruleIds
+            Nothing -> mergeAllRules mainModule ruleIds
     case eitherMergedRule of
         (Left err) -> do
             lift $ Text.putStrLn err
