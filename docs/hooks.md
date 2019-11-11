@@ -543,6 +543,15 @@ the result is `\dv{Bool{}}("false")`.
         [hook{}("MAP.in_keys")]
 ~~~
 
+### MAP.keys
+
+Takes a map and returns a set of its keys.
+
+~~~
+    hooked-symbol keys{}(Map{}) : Set{}
+        [hook{}("MAP.keys")]
+~~~
+
 ### MAP.values
 
 Takes a map and returns a list of its values.
