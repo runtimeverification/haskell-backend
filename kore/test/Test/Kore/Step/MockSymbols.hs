@@ -1584,7 +1584,7 @@ axiomSimplifiers = Map.empty
 predicateSimplifier
     :: MonadSimplify simplifier => ConditionSimplifier simplifier
 predicateSimplifier =
-    Simplifier.Condition.create SubstitutionSimplifier.simplification
+    Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
 env :: MonadSimplify simplifier => Env simplifier
 env =

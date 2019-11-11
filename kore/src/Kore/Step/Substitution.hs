@@ -24,26 +24,23 @@ import Kore.Internal.Condition
     ( Condition
     , Conditional (..)
     )
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Logger
     ( LogMessage
     , WithLog
     )
-import Kore.Predicate.Predicate
-    ( Predicate
-    )
-import qualified Kore.Predicate.Predicate as Predicate
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
     )
+import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import Kore.Unification.Substitution
     ( Substitution
     )
-import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Unification.Unify
     ( MonadUnify
     , SimplifierVariable
@@ -55,29 +52,14 @@ normalize
     .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Conditional variable term
     -> BranchT simplifier (Conditional variable term)
-normalize conditional@Conditional { term, predicate, substitution } = do
-    -- We collect all the results here because we should promote the
-    -- substitution to the predicate when there is an error on *any* branch.
-    results <-
-        Monad.Trans.lift . Unifier.runUnifierT
-        $ simplifySubstitution substitution
-    case results of
-        Right normal -> scatter (applyTermPredicate <$> MultiOr.mergeAll normal)
-        Left _ -> do
-            let combined =
-                    Condition.fromPredicate
-                    . Predicate.markSimplified
-                    $ Predicate.makeAndPredicate predicate
-                    -- TODO (thomas.tuegel): Promoting the entire substitution
-                    -- to the predicate is a problem. We should only promote the
-                    -- part which has cyclic dependencies.
-                    $ Predicate.fromSubstitution substitution
-            return (Conditional.withCondition term combined)
+normalize conditional@Conditional { substitution } = do
+    results <- Monad.Trans.lift $ simplifySubstitution substitution
+    scatter (applyTermPredicate <$> results)
   where
     applyTermPredicate =
         Pattern.andCondition conditional { substitution = mempty }
     SubstitutionSimplifier { simplifySubstitution } =
-        Unifier.substitutionSimplifier
+        SubstitutionSimplifier.substitutionSimplifier
 
 normalizeExcept
     ::  forall unifier variable term

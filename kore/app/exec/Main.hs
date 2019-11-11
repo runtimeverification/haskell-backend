@@ -95,6 +95,9 @@ import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
     )
+import Kore.Internal.Predicate
+    ( makePredicate
+    )
 import Kore.Internal.TermLike
 import Kore.Logger.Output
     ( KoreLogOptions (..)
@@ -110,9 +113,6 @@ import qualified Kore.ModelChecker.Bounded as Bounded
 import Kore.Parser
     ( ParsedPattern
     , parseKorePattern
-    )
-import Kore.Predicate.Predicate
-    ( makePredicate
     )
 import Kore.Profiler.Data
     ( MonadProfiler
