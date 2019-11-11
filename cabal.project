@@ -1,0 +1,8 @@
+packages:
+  kore
+
+allow-newer:
+  ghc-trace-events:base
+
+package *
+  ghc-options: -fhide-source-paths
