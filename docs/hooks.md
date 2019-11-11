@@ -545,7 +545,7 @@ the result is `\dv{Bool{}}("false")`.
 
 ### MAP.values
 
-Takes a map and returns the list of its values.
+Takes a map and returns a list of its values.
 
 ~~~
     hooked-symbol values{}(Map{}) : List{}
@@ -622,7 +622,7 @@ is `\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
 
 ### LIST.in
 
-TODO: add description
+Is a value an element of the given list?
 
 ~~~
     hooked-symbol in{}(Elem{}, List{}) : Bool{}
