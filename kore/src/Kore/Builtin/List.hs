@@ -350,6 +350,7 @@ builtinFunctions =
         , (unitKey, evalUnit)
         , (getKey, evalGet)
         , (updateKey, evalUpdate)
+        , (inKey, evalIn)
         ]
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
