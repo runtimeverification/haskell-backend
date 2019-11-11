@@ -65,34 +65,10 @@ import Numeric.Natural
 
 type CommonProofState  = ProofState.ProofState (Pattern Variable)
 
-class ToRulePattern rule where
-    toRulePattern :: rule -> RulePattern Variable
-
-instance ToRulePattern (OnePathRule Variable) where
-    toRulePattern = coerce
-
-instance ToRulePattern (Rule (OnePathRule Variable)) where
-    toRulePattern = coerce
-
-instance ToRulePattern (AllPathRule Variable) where
-    toRulePattern = coerce
-
-instance ToRulePattern (Rule (AllPathRule Variable)) where
-    toRulePattern = coerce
-
-instance ToRulePattern (ReachabilityRule Variable) where
-    toRulePattern (OnePath rule) = coerce rule
-    toRulePattern (AllPath rule) = coerce rule
-
-instance ToRulePattern (Rule (ReachabilityRule Variable)) where
-    toRulePattern (OPRule rule) = coerce rule
-    toRulePattern (APRule rule) = coerce rule
-
 {- | Class type for claim-like rules
 -}
 type Claim claim =
     ( Coercible (Rule claim) (RulePattern Variable)
-    , Coercible claim (RulePattern Variable)
     , ToRulePattern claim
     , Unparse claim
     , Unparse (Rule claim)

@@ -4,6 +4,7 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , ToRulePattern (..)
     , ClaimExtractor (..)
     , Rule (..)
     , TransitionRuleTemplate (..)
@@ -924,8 +925,31 @@ getConfiguration (coerce -> RulePattern { left, requires }) =
 getDestination
     :: forall rule variable
     .  Ord variable
-    => Coercible rule (RulePattern variable)
+    => ToRulePattern rule
     => rule
     -> Pattern variable
-getDestination (coerce -> RulePattern { right, ensures }) =
+getDestination (toRulePattern -> RulePattern { right, ensures }) =
     Pattern.withCondition right (Conditional.fromPredicate ensures)
+
+class ToRulePattern rule where
+    toRulePattern :: rule -> RulePattern Variable
+
+instance ToRulePattern (OnePathRule Variable) where
+    toRulePattern = coerce
+
+instance ToRulePattern (Rule (OnePathRule Variable)) where
+    toRulePattern = coerce
+
+instance ToRulePattern (AllPathRule Variable) where
+    toRulePattern = coerce
+
+instance ToRulePattern (Rule (AllPathRule Variable)) where
+    toRulePattern = coerce
+
+instance ToRulePattern (ReachabilityRule Variable) where
+    toRulePattern (OnePath rule) = coerce rule
+    toRulePattern (AllPath rule) = coerce rule
+
+instance ToRulePattern (Rule (ReachabilityRule Variable)) where
+    toRulePattern (OPRule rule) = coerce rule
+    toRulePattern (APRule rule) = coerce rule
