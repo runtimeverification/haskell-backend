@@ -45,9 +45,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
     ( TermLike
     )
-import Kore.Internal.TermLike
-    ( TermLike
-    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Rule
     ( OnePathRule (..)
