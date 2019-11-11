@@ -82,14 +82,20 @@ import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 
-makeOnePathRule :: TermLike Variable -> TermLike Variable -> OnePathRule Variable
+makeOnePathRule
+    :: TermLike Variable
+    -> TermLike Variable
+    -> OnePathRule Variable
 makeOnePathRule term dest =
     OnePathRule
     $ makeRuleFromPatterns
         (fromTermLike term)
         (fromTermLike dest)
 
-makeReachabilityOnePathRule :: TermLike Variable -> TermLike Variable -> ReachabilityRule Variable
+makeReachabilityOnePathRule
+    :: TermLike Variable
+    -> TermLike Variable
+    -> ReachabilityRule Variable
 makeReachabilityOnePathRule term dest =
     OnePath (makeOnePathRule term dest)
 
@@ -299,12 +305,22 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ makeReachabilityOnePathRule (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , makeReachabilityOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                [ makeReachabilityOnePathRule
+                    (Mock.functionalConstr11 Mock.a)
+                    (Mock.g Mock.a)
+                , makeReachabilityOnePathRule
+                    (Mock.functionalConstr11 Mock.b)
+                    (Mock.f Mock.b)
                 ]
-                [ simpleReachabilityRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-                , simpleReachabilityRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
-                , simpleReachabilityRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
+                [ simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.a)
+                    (Mock.g Mock.a)
+                , simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.b)
+                    (Mock.g Mock.b)
+                , simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.c)
+                    (Mock.f Mock.c)
                 , simpleReachabilityRewrite
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                     (Mock.h (TermLike.mkElemVar Mock.y))
@@ -317,7 +333,9 @@ test_onePathStrategy =
                     ( Conditional
                         { term = Mock.f Mock.b
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(ElemVar Mock.x, Mock.b)]
                         }
                     )
                     (fromTermLike $ Mock.functionalConstr11 Mock.a)
@@ -325,7 +343,9 @@ test_onePathStrategy =
                     ( Conditional
                         { term = Mock.f Mock.c
                         , predicate = makeTruePredicate
-                        , substitution = Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(ElemVar Mock.x, Mock.c)]
                         }
                     )
                     (fromTermLike $ Mock.functionalConstr11 Mock.a)
@@ -394,9 +414,13 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
                 )
-                [ makeReachabilityOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                [ makeReachabilityOnePathRule
+                    (Mock.functionalConstr11 Mock.b)
+                    (Mock.f Mock.b)
                 ]
-                [ simpleReachabilityRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
+                [ simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.c)
+                    (Mock.f Mock.c)
                 , simpleReachabilityRewrite
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
