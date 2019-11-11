@@ -135,8 +135,7 @@ test_inUnit =
     prop = do
         value <- forAll genInteger
         let patValue = Test.Int.asInternal value
-            patUnit = mkApplySymbol unitListSymbol []
-            patIn = mkApplySymbol inListSymbol [patValue, patUnit]
+            patIn = inList patValue unitList
             patFalse = Test.Bool.asInternal False
             predicate = mkEquals_ patFalse patIn
         (===) (Test.Bool.asPattern False) =<< evaluateT patIn
@@ -151,8 +150,8 @@ test_inElement =
     prop = do
         value <- forAll genInteger
         let patValue = Test.Int.asInternal value
-            patElement = mkApplySymbol elementListSymbol [patValue]
-            patIn = mkApplySymbol inListSymbol [patValue, patElement]
+            patElement = elementList patValue
+            patIn = inList patValue patElement
             patTrue = Test.Bool.asInternal True
             predicate = mkEquals_ patIn patTrue
         (===) (Test.Bool.asPattern True) =<< evaluateT patIn
@@ -169,9 +168,9 @@ test_inConcat =
         values <- forAll genSeqInteger
         let patValue = Test.Int.asInternal value
             patValues = asTermLike (Test.Int.asInternal <$> values)
-            patElement = mkApplySymbol elementListSymbol [patValue]
-            patConcat = mkApplySymbol concatListSymbol [patValues, patElement]
-            patIn = mkApplySymbol inListSymbol [patValue, patConcat]
+            patElement = elementList patValue
+            patConcat = concatList patValues patElement
+            patIn = inList patValue patConcat
             patTrue = Test.Bool.asInternal True
             predicate = mkEquals_ patIn patTrue
         (===) (Test.Bool.asPattern True) =<< evaluateT patIn
