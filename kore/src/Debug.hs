@@ -32,6 +32,7 @@ import Data.Functor.Const
 import Data.Functor.Identity
     ( Identity
     )
+import Data.Int
 import Data.Map
     ( Map
     )
@@ -66,6 +67,7 @@ import Data.Typeable
 import Data.Void
     ( Void
     )
+import Data.Word
 import Debug.Trace
     ( traceM
     )
@@ -278,6 +280,15 @@ instance Debug Integer where
 
 instance Debug Int where
     debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
+
+instance Debug Int64 where
+    debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
+
+instance Debug Word32 where
+    debugPrec x = \_ -> Pretty.pretty x
+
+instance Debug Word64 where
+    debugPrec x = \_ -> Pretty.pretty x
 
 instance Debug Char where
     debugPrec x = \_ -> Pretty.squotes (Pretty.pretty x)
@@ -536,6 +547,15 @@ instance Diff Integer where
     diffPrec = diffPrecEq
 
 instance Diff Int where
+    diffPrec = diffPrecEq
+
+instance Diff Int64 where
+    diffPrec = diffPrecEq
+
+instance Diff Word32 where
+    diffPrec = diffPrecEq
+
+instance Diff Word64 where
     diffPrec = diffPrecEq
 
 instance Diff Char where
