@@ -195,8 +195,8 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> [claim]
     addIndexesToClaims len cls =
         fmap
-            (coerce . addIndex)
-            (zip (fmap coerce cls) [len..])
+            (ruleToGoal . addIndex)
+            (zip (fmap goalToRule cls) [len..])
 
     addIndex
         :: (axiom, Int)
@@ -210,10 +210,11 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> axiom
     modifyAttribute att rule =
         let rp = axiomToRulePatt rule in
-            coerce $ rp { Rule.attributes = att }
+            fromRulePattern rule
+                $ rp { Rule.attributes = att }
 
     axiomToRulePatt :: axiom -> Rule.RulePattern Variable
-    axiomToRulePatt = coerce
+    axiomToRulePatt = toRulePattern
 
     getAttribute :: axiom -> Attribute.Axiom
     getAttribute = Rule.attributes . axiomToRulePatt

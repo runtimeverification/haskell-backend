@@ -53,8 +53,7 @@ import Data.Bitraversable
     , bitraverse
     )
 import Data.Coerce
-    ( Coercible
-    , coerce
+    ( coerce
     )
 import qualified Data.Default as Default
 import Data.Foldable
@@ -145,7 +144,7 @@ emptyExecutionGraph
     => axiom ~ Rule claim
     => claim -> ExecutionGraph axiom
 emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
+    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
   where
     extractConfig
         :: RewriteRule Variable
@@ -185,8 +184,7 @@ getAxiomByIndex index = Lens.preuse $ field @"axioms" . Lens.element index
 getAxiomByName
     :: MonadState (ReplState claim) m
     => axiom ~ Rule claim
-    => Coercible axiom (RulePattern Variable)
-    => Coercible (RulePattern Variable) axiom
+    => ToRulePattern axiom
     => String
     -- ^ label attribute
     -> m (Maybe axiom)
@@ -234,7 +232,7 @@ getAxiomOrClaimByName (RuleName name) = do
             return . Just . Left $ axiom
 
 isNameEqual
-    :: Coercible rule (RulePattern Variable)
+    :: ToRulePattern rule
     => String -> rule -> Bool
 isNameEqual name rule =
     maybe
@@ -246,12 +244,12 @@ isNameEqual name rule =
         )
 
 getNameText
-    :: Coercible rule (RulePattern Variable)
+    :: ToRulePattern rule
     => rule -> AttrLabel.Label
 getNameText =
     Attribute.label
     . attributes
-    . coerce
+    . toRulePattern
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
@@ -267,12 +265,12 @@ getAxiomOrClaimByIndex =
             (getClaimByIndex . coerce)
 
 getInternalIdentifier
-    :: Coercible rule (RulePattern Variable)
+    :: ToRulePattern rule
     => rule -> Attribute.RuleIndex
 getInternalIdentifier =
     Attribute.identifier
     . Rule.attributes
-    . coerce
+    . toRulePattern
 
 -- | Update the currently selected claim to prove.
 switchToProof
@@ -616,9 +614,9 @@ createOnePathClaim (claim, cpattern) =
     $ Rule.RulePattern
         { left = cpattern
         , antiLeft = Nothing
-        , right = Rule.right . coerce $ claim
+        , right = Rule.right . toRulePattern $ claim
         , requires = Predicate.makeTruePredicate
-        , ensures = Rule.ensures . coerce $ claim
+        , ensures = Rule.ensures . toRulePattern $ claim
         , attributes = Default.def
         }
 
@@ -660,7 +658,7 @@ generateInProgressOPClaims = do
         -> [Rule.OnePathRule Variable]
     notStartedOPClaims graphs claims =
         Rule.OnePathRule
-        . coerce
+        . toRulePattern
         <$> filter (not . isTrusted)
                 ( (claims !!)
                 . unClaimIndex
@@ -702,7 +700,7 @@ currentClaimSort = do
     return . TermLike.termLikeSort
         . Rule.onePathRuleToPattern
         . Rule.OnePathRule
-        . coerce
+        . toRulePattern
         $ claims
 
 sortLeafsByType :: InnerGraph axiom -> Map.Map NodeState [Graph.Node]

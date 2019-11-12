@@ -73,10 +73,6 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import Control.Monad.Trans.Except
     ( runExceptT
     )
-import Data.Coerce
-    ( Coercible
-    , coerce
-    )
 import qualified Data.Foldable as Foldable
 import Data.Functor
     ( ($>)
@@ -357,8 +353,7 @@ showClaim =
 showAxiom
     :: MonadState (ReplState claim) m
     => axiom ~ Rule claim
-    => Coercible axiom (RulePattern Variable)
-    => Coercible (RulePattern Variable) axiom
+    => ToRulePattern axiom
     => Unparse axiom
     => MonadWriter ReplOutput m
     => Either AxiomIndex RuleName
@@ -627,7 +622,7 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex . coerce $ rule
+            let ruleIndex = getRuleIndex . toRulePattern $ rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
@@ -872,7 +867,7 @@ tryAxiomClaimWorker mode ref = do
         first' = TermLike.refreshVariables (TermLike.freeVariables second) first
 
     extractLeftPattern :: Either axiom claim -> TermLike Variable
-    extractLeftPattern = left . either coerce coerce
+    extractLeftPattern = left . either toRulePattern toRulePattern
 
 -- | Removes specified node and all its child nodes.
 clear
@@ -1101,7 +1096,7 @@ recursiveForcedStep n node
 
 -- | Display a rule as a String.
 showRewriteRule
-    :: Coercible (RulePattern Variable) rule
+    :: ToRulePattern rule
     => Unparse rule
     => rule
     -> ReplOutput
@@ -1110,7 +1105,7 @@ showRewriteRule rule =
     <> makeAuxReplOutput
         (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
-    rule' = coerce rule
+    rule' = toRulePattern rule
 
     extractSourceAndLocation
         :: RulePattern Variable
@@ -1172,14 +1167,14 @@ printNotFound = putStrLn' "Variable or index not found"
 -- parameter is needed in order to distinguish between axioms and claims and
 -- represents the number of available axioms.
 showDotGraph
-    :: Coercible axiom (RulePattern Variable)
+    :: ToRulePattern axiom
     => Int -> InnerGraph axiom -> IO ()
 showDotGraph len =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
 
 saveDotGraph
-    :: Coercible axiom (RulePattern Variable)
+    :: ToRulePattern axiom
     => Int
     -> InnerGraph axiom
     -> FilePath
@@ -1196,7 +1191,7 @@ saveDotGraph len gr file =
         $ path <> ".jpeg"
 
 graphParams
-    :: Coercible axiom (RulePattern Variable)
+    :: ToRulePattern axiom
     => Int
     -> Graph.GraphvizParams
          Graph.Node

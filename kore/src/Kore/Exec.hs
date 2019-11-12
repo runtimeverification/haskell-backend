@@ -543,8 +543,8 @@ simplifyRuleOnSecond
     => (Attribute.Axiom, claim)
     -> simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond (atts, rule) = do
-    rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
-    return (atts, coerce . getRewriteRule $ rule')
+    rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
+    return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Construct an execution graph for the given input pattern.
 execute

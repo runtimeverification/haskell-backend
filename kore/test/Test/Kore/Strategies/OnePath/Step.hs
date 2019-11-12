@@ -51,6 +51,7 @@ import Kore.Step.Rule
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
+    , rulePattern
     )
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -87,10 +88,7 @@ makeOnePathRule
     -> TermLike Variable
     -> OnePathRule Variable
 makeOnePathRule term dest =
-    OnePathRule
-    $ makeRuleFromPatterns
-        (fromTermLike term)
-        (fromTermLike dest)
+    OnePathRule $ rulePattern term dest
 
 makeReachabilityOnePathRule
     :: TermLike Variable
@@ -329,8 +327,8 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expected =
-                [ ProofState.Goal $ makeRuleFromPatterns
-                    ( Conditional
+                [ ProofState.Goal $ makeOnePathRule
+                    ( toTermLike $ Conditional
                         { term = Mock.f Mock.b
                         , predicate = makeTruePredicate
                         , substitution =
@@ -338,9 +336,9 @@ test_onePathStrategy =
                                 [(ElemVar Mock.x, Mock.b)]
                         }
                     )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.Goal $ makeRuleFromPatterns
-                    ( Conditional
+                    (Mock.functionalConstr11 Mock.a)
+                , ProofState.Goal $ makeOnePathRule
+                    ( toTermLike $ Conditional
                         { term = Mock.f Mock.c
                         , predicate = makeTruePredicate
                         , substitution =
@@ -348,9 +346,9 @@ test_onePathStrategy =
                                 [(ElemVar Mock.x, Mock.c)]
                         }
                     )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.Goal $ makeRuleFromPatterns
-                    ( Conditional
+                    (Mock.functionalConstr11 Mock.a)
+                , ProofState.Goal $ makeOnePathRule
+                    ( toTermLike $ Conditional
                         { term = Mock.h (TermLike.mkElemVar Mock.x)
                         , predicate =  -- TODO(virgil): Better and simplification.
                             makeAndPredicate
@@ -375,7 +373,7 @@ test_onePathStrategy =
                         , substitution = mempty
                         }
                     )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                    (Mock.functionalConstr11 Mock.a)
                 ]
         assertEqual ""
             expected
@@ -429,24 +427,26 @@ test_onePathStrategy =
             equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
             equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
         assertEqual ""
-            [ ProofState.Goal $ makeRuleFromPatterns
-                Conditional
+            [ ProofState.Goal $ makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.f Mock.b
                     , predicate = makeTruePredicate
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                     }
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
-            , ProofState.Goal $ makeRuleFromPatterns
-                Conditional
+                )
+                (Mock.functionalConstr11 Mock.a)
+            , ProofState.Goal $ makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.f Mock.c
                     , predicate = makeTruePredicate
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
                     }
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
-            , ProofState.GoalRemainder $ makeRuleFromPatterns
-                Conditional
+                )
+                (Mock.functionalConstr11 Mock.a)
+            , ProofState.GoalRemainder $ makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
                     , predicate =
                         makeMultipleAndPredicate
@@ -456,7 +456,8 @@ test_onePathStrategy =
                             ]
                     , substitution = mempty
                     }
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                )
+                (Mock.functionalConstr11 Mock.a)
             ]
             [ _actual1
             , _actual2
@@ -499,8 +500,8 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         assertEqual ""
-            [ ProofState.GoalRemainder $ makeRuleFromPatterns
-                ( Conditional
+            [ ProofState.GoalRemainder $ makeOnePathRule
+                ( toTermLike Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate =
                         makeNotPredicate
@@ -510,7 +511,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (fromTermLike Mock.a)
+                Mock.a
             , ProofState.Proven
             ]
             [ _actual1
@@ -573,8 +574,8 @@ test_onePathStrategy =
         -- Expected: a | f(b) < 0
         [ _actual ] <- runOnePathSteps
             (Limit 1)
-            (makeRuleFromPatterns
-                (Conditional
+            (makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate
                         (Mock.lessInt
@@ -585,7 +586,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (fromTermLike Mock.a)
+                Mock.a
             )
             []
             [ rewriteWithPredicate
@@ -611,8 +612,8 @@ test_onePathStrategy =
             ]
         [ _actualReach ] <- runOnePathSteps
             (Limit 1)
-            (OnePath $ makeRuleFromPatterns
-                (Conditional
+            (OnePath $ makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate
                         (Mock.lessInt
@@ -623,7 +624,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (fromTermLike Mock.a)
+                Mock.a
             )
             []
             [ rewriteReachabilityWithPredicate
@@ -648,8 +649,8 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.Goal $ makeRuleFromPatterns
-                ( Conditional
+            [ ProofState.Goal $ makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.a
                     , predicate =
                         makeEqualsPredicate
@@ -661,7 +662,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (fromTermLike Mock.a)
+                Mock.a
             ]
             [ _actual
             ]
@@ -675,8 +676,8 @@ test_onePathStrategy =
         -- Expected: a | f(b) < 0
         [ _actual ] <- runOnePathSteps
             (Limit 1)
-            (makeRuleFromPatterns
-                (Conditional
+            (makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate
                         (Mock.lessInt
@@ -687,7 +688,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (Pattern.fromTermLike Mock.a)
+                Mock.a
             )
             []
             [ rewriteWithPredicate
@@ -703,8 +704,8 @@ test_onePathStrategy =
             ]
         [ _actualReach ] <- runOnePathSteps
             (Limit 1)
-            (OnePath $ makeRuleFromPatterns
-                (Conditional
+            (OnePath $ makeOnePathRule
+                (toTermLike Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate = makeEqualsPredicate
                         (Mock.lessInt
@@ -715,7 +716,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (Pattern.fromTermLike Mock.a)
+                Mock.a
             )
             []
             [ rewriteReachabilityWithPredicate
@@ -730,8 +731,8 @@ test_onePathStrategy =
                 )
             ]
         assertEqual ""
-            [ ProofState.Goal $ makeRuleFromPatterns
-                ( Conditional
+            [ ProofState.Goal $ makeOnePathRule
+                ( toTermLike Conditional
                     { term = Mock.a
                     , predicate =
                         makeEqualsPredicate
@@ -743,7 +744,7 @@ test_onePathStrategy =
                     , substitution = mempty
                     }
                 )
-                (Pattern.fromTermLike Mock.a)
+                Mock.a
             ]
             [ _actual ]
         assertEqual "onepath == reachability onepath"

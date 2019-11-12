@@ -68,50 +68,6 @@ import Numeric.Natural
 
 type CommonProofState  = ProofState.ProofState (Pattern Variable)
 
-class ToRulePattern rule where
-    toRulePattern :: rule -> RulePattern Variable
-
-instance ToRulePattern (OnePathRule Variable) where
-    toRulePattern = coerce
-
-instance ToRulePattern (Rule (OnePathRule Variable)) where
-    toRulePattern = coerce
-
-instance ToRulePattern (AllPathRule Variable) where
-    toRulePattern = coerce
-
-instance ToRulePattern (Rule (AllPathRule Variable)) where
-    toRulePattern = coerce
-
-instance ToRulePattern (ReachabilityRule Variable) where
-    toRulePattern (OnePath rule) = toRulePattern rule
-    toRulePattern (AllPath rule) = toRulePattern rule
-
-instance ToRulePattern (Rule (ReachabilityRule Variable)) where
-    toRulePattern (OPRule rule) = toRulePattern rule
-    toRulePattern (APRule rule) = toRulePattern rule
-
-class FromRulePattern rule where
-    fromRulePattern :: rule -> RulePattern Variable -> rule
-
-instance FromRulePattern (OnePathRule Variable) where
-    fromRulePattern _ = coerce
-
-instance FromRulePattern (Rule (OnePathRule Variable)) where
-    fromRulePattern _ = coerce
-
-instance FromRulePattern (AllPathRule Variable) where
-    fromRulePattern _ = coerce
-
-instance FromRulePattern (Rule (AllPathRule Variable)) where
-    fromRulePattern _ = coerce
-
-instance FromRulePattern (ReachabilityRule Variable) where
-    fromRulePattern (OnePath _) rulePat =
-        OnePath $ coerce rulePat
-    fromRulePattern (AllPath _) rulePat =
-        AllPath $ coerce rulePat
-
 instance FromRulePattern (Rule (ReachabilityRule Variable)) where
     fromRulePattern (OPRule _) rulePat =
         OPRule $ coerce rulePat
@@ -186,8 +142,8 @@ verifyClaim
     (goal, stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = ProofState.Goal $ getClaimConfiguration goal
-        destination = getClaimDestination goal
+        startPattern = ProofState.Goal $ getConfiguration goal
+        destination = getDestination goal
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
@@ -269,43 +225,6 @@ transitionRule'
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' ruleType destination prim state = do
-    let goal = flip (makeClaimRuleFromPatterns ruleType) destination <$> state
+    let goal = flip (makeRuleFromPatterns ruleType) destination <$> state
     next <- transitionRule prim goal
-    pure $ fmap getClaimConfiguration next
-
-getClaimConfiguration
-    :: forall claim
-    .  Claim claim
-    => claim
-    -> Pattern Variable
-getClaimConfiguration (toRulePattern -> RulePattern { left, requires }) =
-    Pattern.withCondition left (Conditional.fromPredicate requires)
-
-getClaimDestination
-    :: forall claim
-    .  Claim claim
-    => claim
-    -> Pattern Variable
-getClaimDestination (toRulePattern -> RulePattern { right, ensures }) =
-    Pattern.withCondition right (Conditional.fromPredicate ensures)
-
-makeClaimRuleFromPatterns
-    :: forall rule
-    .  FromRulePattern rule
-    => rule
-    -> Pattern Variable
-    -> Pattern Variable
-    -> rule
-makeClaimRuleFromPatterns ruleType configuration destination =
-    let (left, Condition.toPredicate -> requires) =
-            Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures) =
-            Pattern.splitTerm destination
-    in fromRulePattern ruleType $ RulePattern
-        { left
-        , antiLeft = Nothing
-        , right
-        , requires
-        , ensures
-        , attributes = Default.def
-        }
+    pure $ fmap getConfiguration next
