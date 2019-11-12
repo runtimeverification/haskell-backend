@@ -9,7 +9,6 @@ module Kore.Attribute.Symbol.Memo
     , memoId, memoSymbol, memoAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import Data.Monoid
     ( Any (..)
     )
@@ -54,15 +53,5 @@ memoAttribute :: AttributePattern
 memoAttribute = attributePattern_ memoSymbol
 
 instance ParseAttributes Memo where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Memo { isMemo } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isMemo failDuplicate'
-            return Memo { isMemo = True }
-        withApplication' = Parser.withApplication memoId
-        failDuplicate' = Parser.failDuplicate memoId
-
-    toAttributes Memo { isMemo } =
-        Attributes [memoAttribute | isMemo]
+    parseAttribute = parseBoolAttribute memoId
+    toAttributes = toBoolAttributes memoAttribute

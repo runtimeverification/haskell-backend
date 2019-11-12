@@ -15,7 +15,6 @@ module Kore.Attribute.Trusted
     , trustedId, trustedSymbol, trustedAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -57,15 +56,5 @@ trustedAttribute :: AttributePattern
 trustedAttribute = attributePattern_ trustedSymbol
 
 instance ParseAttributes Trusted where
-    parseAttribute =
-        withApplication' $ \params args Trusted { isTrusted } -> do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isTrusted failDuplicate'
-            return Trusted { isTrusted = True }
-      where
-        withApplication' = Parser.withApplication trustedId
-        failDuplicate' = Parser.failDuplicate trustedId
-
-    toAttributes Trusted { isTrusted } =
-        Attributes [trustedAttribute | isTrusted]
+    parseAttribute = parseBoolAttribute trustedId
+    toAttributes = toBoolAttributes trustedAttribute
