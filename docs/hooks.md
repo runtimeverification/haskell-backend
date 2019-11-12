@@ -543,6 +543,24 @@ the result is `\dv{Bool{}}("false")`.
         [hook{}("MAP.in_keys")]
 ~~~
 
+### MAP.keys
+
+Takes a map and returns a set of its keys.
+
+~~~
+    hooked-symbol keys{}(Map{}) : Set{}
+        [hook{}("MAP.keys")]
+~~~
+
+### MAP.values
+
+Takes a map and returns a list of its values.
+
+~~~
+    hooked-symbol values{}(Map{}) : List{}
+        [hook{}("MAP.values")]
+~~~
+
 ## LIST
 
 Depends on `INT`.
@@ -609,6 +627,15 @@ is `\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
 ~~~
     hooked-symbol update{}(List{}, Int{}, Elem{}) : List{}
         [hook{}("LIST.update")]
+~~~
+
+### LIST.in
+
+Is a value an element of the given list?
+
+~~~
+    hooked-symbol in{}(Elem{}, List{}) : Bool{}
+        [hook{}("LIST.in")]
 ~~~
 
 ## SET

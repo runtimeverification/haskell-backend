@@ -9,7 +9,6 @@ module Kore.Attribute.Symbol.Anywhere
     , anywhereId, anywhereSymbol, anywhereAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -56,15 +55,5 @@ anywhereAttribute :: AttributePattern
 anywhereAttribute = attributePattern_ anywhereSymbol
 
 instance ParseAttributes Anywhere where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Anywhere { isAnywhere } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isAnywhere failDuplicate'
-            return Anywhere { isAnywhere = True }
-        withApplication' = Parser.withApplication anywhereId
-        failDuplicate' = Parser.failDuplicate anywhereId
-
-    toAttributes Anywhere { isAnywhere } =
-        Attributes [anywhereAttribute | isAnywhere]
+    parseAttribute = parseBoolAttribute anywhereId
+    toAttributes = toBoolAttributes anywhereAttribute

@@ -11,7 +11,6 @@ module Kore.Attribute.Axiom.Constructor
     , constructorId, constructorSymbol, constructorAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -53,15 +52,5 @@ constructorAttribute :: AttributePattern
 constructorAttribute = attributePattern_ constructorSymbol
 
 instance ParseAttributes Constructor where
-    parseAttribute =
-        withApplication' $ \params args Constructor { isConstructor } -> do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isConstructor failDuplicate'
-            return Constructor { isConstructor = True }
-      where
-        withApplication' = Parser.withApplication constructorId
-        failDuplicate' = Parser.failDuplicate constructorId
-
-    toAttributes Constructor { isConstructor } =
-        Attributes [constructorAttribute | isConstructor]
+    parseAttribute = parseBoolAttribute constructorId
+    toAttributes = toBoolAttributes constructorAttribute
