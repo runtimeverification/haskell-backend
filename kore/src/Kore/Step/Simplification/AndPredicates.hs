@@ -61,8 +61,8 @@ simplifyEvaluatedMultiPredicate predicates = do
         :: [Condition variable]
         -> BranchT simplifier (Condition variable)
     andConditions predicates' =
-        fmap markSimplified
-        $ Substitution.normalize (Foldable.fold predicates')
+        markSimplified
+        <$> Substitution.normalize (Foldable.fold predicates')
       where
         markSimplified
           | all Condition.isSimplified predicates' = Condition.markSimplified

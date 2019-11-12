@@ -203,6 +203,9 @@ import Data.Functor.Identity
     )
 import qualified Data.Generics.Product as Lens.Product
 import Data.Hashable
+import qualified Data.List as List
+    ( intercalate
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -229,6 +232,10 @@ import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
+import qualified Kore.Attribute.Pattern.NonSimplifiable as Attribute
+    ( NonSimplifiable (NonSimplifiable)
+    )
+import qualified Kore.Attribute.Pattern.NonSimplifiable as Attribute.NonSimplifiable
 import qualified Kore.Attribute.Pattern.NonSimplifiable as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
@@ -522,9 +529,16 @@ instance SortedVariable variable => Unparse (TermLike variable) where
         case Recursive.project freshVarTerm of
             (attrs :< termLikeF)
               | hasKnownCreator created ->
-                Pretty.sep [Pretty.pretty created, unparse termLikeF]
+                Pretty.sep
+                    [ Pretty.pretty created
+                    , unparseAttrs attrs
+                    , unparse termLikeF
+                    ]
               | otherwise ->
-                unparse termLikeF
+                Pretty.sep
+                    [ unparseAttrs attrs
+                    , unparse termLikeF
+                    ]
               where
                 Attribute.Pattern { created } = attrs
       where
@@ -534,11 +548,36 @@ instance SortedVariable variable => Unparse (TermLike variable) where
 
     unparse2 term =
         case Recursive.project freshVarTerm of
-          (_ :< pat) -> unparse2 pat
+          (attrs :< pat) -> Pretty.sep [unparseAttrs attrs, unparse2 pat]
       where
         freshVarTerm =
             externalizeFreshVariables
             $ mapVariables toVariable term
+
+unparseAttrs :: Attribute.Pattern variable -> Pretty.Doc ann
+unparseAttrs patt@(Attribute.Pattern _ _ _ _ _ _ _ _) = case patt of
+    Attribute.Pattern
+        { functional = Attribute.Functional {isFunctional = ifnl}
+        , function = Attribute.Function {isFunction = ifn}
+        , defined = Attribute.Defined {isDefined = idf}
+        , simplified = Attribute.Simplified {isSimplified = isd}
+        , nonSimplifiable = Attribute.NonSimplifiable {isNonSimplifiable = ins}
+        } ->
+            Pretty.pretty
+                (  "/*"
+                ++ (List.intercalate "-" . catMaybes)
+                    [ toMaybe ifnl "Functional"
+                    , toMaybe (ifn && not ifnl) "Function"
+                    , toMaybe (idf && not ifnl) "Defined"
+                    , toMaybe isd "Simplified"
+                    , toMaybe (isJust ins) "NonSimplifiable"
+                    ]
+                ++ "*/"
+                )
+  where
+    toMaybe :: Bool -> a -> Maybe a
+    toMaybe True value = Just value
+    toMaybe False _ = Nothing
 
 type instance Base (TermLike variable) =
     CofreeF (TermLikeF variable) (Attribute.Pattern variable)

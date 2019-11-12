@@ -53,13 +53,11 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeCeilPredicate
     , makeEqualsPredicate
     , makeTruePredicate
-    )
-import Kore.Internal.Predicate
-    ( Predicate
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -694,7 +692,7 @@ applies =
         assertBool "Expected no remainders"
         . isBottom
         . Lens.view (field @"remainders")
-notApplies = withApplied (assertBool "Expected NotApplicable" . isNotApplicable)
+notApplies = withApplied (assertBool "Expected NotApplicable" .isNotApplicable)
 
 natSort :: Sort
 natSort =

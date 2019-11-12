@@ -148,7 +148,7 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import qualified Kore.IndexedModule.Resolvers as IndexedModule
 import Kore.Internal.ApplicationSorts
-import Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Condition as Condition
     ( topTODO
     )
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -162,16 +162,14 @@ import Kore.Internal.Pattern as Pattern
     , withCondition
     )
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate
+    ( makeCeilPredicate
+    , makeEqualsPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Proof.Value as Value
 import Kore.Sort
     ( predicateSort
-    )
-import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
     )
 import Kore.Step.Simplification.SimplificationType as SimplificationType
     ( SimplificationType (..)
@@ -183,6 +181,7 @@ import Kore.Step.Simplification.Simplify
     , MonadSimplify
     , SimplifierVariable
     , applicationAxiomSimplifier
+    , simplifyConditionalPredicateToOr
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
@@ -1065,9 +1064,11 @@ unifyEqualsUnsolved
     -> unifier (Pattern variable)
 unifyEqualsUnsolved SimplificationType.And a b = do
     let unified = TermLike.markSimplified $ mkAnd a b
-    orCondition <- Ceil.makeEvaluateTerm Condition.topTODO unified
-    predicate <- Monad.Unify.scatter orCondition
-    return (unified `Pattern.withCondition` predicate)
+    orCondition <- simplifyConditionalPredicateToOr
+        Condition.topTODO
+        (makeCeilPredicate unified)
+    condition <- Monad.Unify.scatter orCondition
+    return (unified `Pattern.withCondition` condition)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
         {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}

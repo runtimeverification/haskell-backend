@@ -6,7 +6,6 @@ License     : NCSA
 module Kore.Unification.UnifierImpl
     ( simplifyAnds
     , deduplicateSubstitution
-    , normalizeOnce
     , normalizeExcept
     ) where
 

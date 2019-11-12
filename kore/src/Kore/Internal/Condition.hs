@@ -174,7 +174,7 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
             else result
       where
         childrenAreSimplified =
-            all (TermLike.isSimplified) (map dropVariable childrenList)
+            all TermLike.isSimplified (map dropVariable childrenList)
 
         dropVariable
             :: (UnifiedVariable variable, TermLike variable)

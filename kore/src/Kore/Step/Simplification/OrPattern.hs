@@ -24,10 +24,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    )
-import Kore.Internal.Predicate
     ( Predicate
+    , makeAndPredicate
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify

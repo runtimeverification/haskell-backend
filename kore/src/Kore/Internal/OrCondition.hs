@@ -6,6 +6,7 @@ License     : NCSA
 module Kore.Internal.OrCondition
     ( OrCondition
     , isSimplified
+    , toCondition
     , toConditions
     , fromConditions
     , fromCondition
@@ -93,6 +94,17 @@ isTrue = isTop
 
 toConditions :: OrCondition variable -> [Condition variable]
 toConditions = Foldable.toList
+
+toCondition
+    :: InternalVariable variable => OrCondition variable -> Condition variable
+toCondition orCondition =
+    case toConditions orCondition of
+        [] -> Condition.bottom
+        [condition] -> condition
+        _ ->
+            Condition.fromPredicate
+            $ toPredicate
+            $ fmap Condition.toPredicate orCondition
 
 {-| Transforms an 'Predicate' into a 'Predicate.Predicate'. -}
 toPredicate

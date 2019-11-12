@@ -22,16 +22,17 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Pattern as Conditional
+import Kore.Internal.Predicate
+    ( makeCeilPredicate
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
-import qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
-    )
 import Kore.Step.Simplification.Simplify
     ( simplifyCondition
+    , simplifyConditionalPredicateToOr
     )
 import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Unify
@@ -73,7 +74,8 @@ unificationProcedure p1 p2
     pat <- termUnification p1 p2
     TopBottom.guardAgainstBottom pat
     let (term, conditions) = Conditional.splitTerm pat
-    orCeil <- Ceil.makeEvaluateTerm conditions term
+    orCeil <-
+        simplifyConditionalPredicateToOr conditions (makeCeilPredicate term)
     ceil' <- Monad.Unify.scatter orCeil
     BranchT.alternate . simplifyCondition
         $ Conditional.andCondition ceil' conditions

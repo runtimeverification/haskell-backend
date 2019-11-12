@@ -8,6 +8,7 @@ module Kore.Step.Simplification.Simplify
     ( SimplifierVariable
     , MonadSimplify (..)
     , simplifyTerm
+    , simplifyConditionalPredicateToOr
     , simplifyConditionalTerm
     , simplifyConditionalTermToOr
     , TermSimplifier
@@ -79,6 +80,12 @@ import Kore.Internal.Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.OrCondition
+    ( OrCondition
+    )
+import qualified Kore.Internal.OrCondition as OrCondition
+    ( fromConditions
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -86,6 +93,15 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Condition
     , Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( splitTerm
+    )
+import Kore.Internal.Predicate
+    ( Predicate
+    )
+import qualified Kore.Internal.Predicate as Predicate
+    ( unwrapPredicate
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -109,6 +125,10 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Syntax.Application
+import Kore.TopBottom
+    ( isBottom
+    , isTop
+    )
 import Kore.Unparser
 import ListT
     ( ListT (..)
@@ -266,6 +286,46 @@ simplifyTerm
     => TermLike variable
     -> simplifier (OrPattern variable)
 simplifyTerm = simplifyConditionalTermToOr Condition.top
+
+{- | Use a 'TermLikeSimplifier' to simplify a pattern.
+
+If the term does not simplify to an OrCondition, this will raise an error.
+
+-}
+simplifyConditionalPredicateToOr
+    :: forall variable simplifier
+    .   ( GHC.HasCallStack
+        , SimplifierVariable variable
+        , MonadSimplify simplifier
+        )
+    => Condition variable
+    -> Predicate variable
+    -> simplifier (OrCondition variable)
+simplifyConditionalPredicateToOr configurationCondition predicate = do
+    -- TODO(virgil): consider using simplifyCondition.
+    orResults <- simplifyConditionalTermToOr
+        configurationCondition
+        (Predicate.unwrapPredicate predicate)
+    return
+        (OrCondition.fromConditions
+            (toCondition <$> OrPattern.toPatterns orResults)
+        )
+  where
+    toCondition :: GHC.HasCallStack => Pattern variable -> Condition variable
+    toCondition patt
+      | isTop pattTerm = pattCondition
+      | isBottom pattTerm = Condition.bottom
+      | otherwise =
+        error
+            (  "This simplification is expected to result in a predicate, but"
+            ++ " got (" ++ show patt ++ ")."
+            ++ " The most likely cases are: evaluating predicate symbols, "
+            ++ " which are currently unrecognized as such, "
+            ++ "and programming errors."
+            )
+      where
+        (pattTerm, pattCondition) = Pattern.splitTerm patt
+
 
 {- | Use a 'TermLikeSimplifier' to simplify a pattern subject to conditions.
  -}

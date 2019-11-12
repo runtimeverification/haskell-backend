@@ -64,6 +64,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeNotPredicate
     , makeTruePredicate
@@ -93,10 +94,6 @@ import Kore.Unification.Unify as Unify
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
-    )
-
-import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
-    ( makeEvaluateTerm
     )
 
 data SimplificationTarget = AndT | EqualsT | BothT
@@ -370,7 +367,9 @@ bottomTermEquals
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
-    secondCeil <- Ceil.makeEvaluateTerm predicate second
+    secondCeil <- simplifyConditionalPredicateToOr
+        predicate
+        (makeCeilPredicate second)
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
@@ -448,7 +447,10 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Condition.top
             SimplificationType.Equals -> do
-                resultOr <- Ceil.makeEvaluateTerm configurationCondition second
+                resultOr <-
+                    simplifyConditionalPredicateToOr
+                        configurationCondition
+                        (makeCeilPredicate second)
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom

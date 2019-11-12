@@ -77,9 +77,9 @@ simplifyEvaluatedIn predicate first second
   | OrPattern.isFalse second = return Pattern.bottom
 
   | OrPattern.isTrue first =
-    OrPattern.toPattern <$> Ceil.simplifyEvaluated predicate second
+    Ceil.simplifyEvaluated predicate second
   | OrPattern.isTrue second =
-    OrPattern.toPattern <$> Ceil.simplifyEvaluated predicate first
+    Ceil.simplifyEvaluated predicate first
 
   | otherwise = do
     resultOr <- sequence (makeEvaluateIn predicate <$> first <*> second)
@@ -95,9 +95,9 @@ makeEvaluateIn
     -> simplifier (Pattern variable)
 makeEvaluateIn predicate first second
   | Pattern.isTop first =
-    OrPattern.toPattern <$> Ceil.makeEvaluate predicate second
+    Ceil.makeEvaluate predicate second
   | Pattern.isTop second =
-    OrPattern.toPattern <$> Ceil.makeEvaluate predicate first
+    Ceil.makeEvaluate predicate first
   | Pattern.isBottom first || Pattern.isBottom second = return Pattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 

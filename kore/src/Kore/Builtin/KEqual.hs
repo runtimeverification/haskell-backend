@@ -46,10 +46,13 @@ import qualified Kore.Error
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Predicate
+    ( makeAndPredicate
+    , makeCeilPredicate
+    , makeEqualsPredicate
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.And as And
-import qualified Kore.Step.Simplification.Ceil as Ceil
-import qualified Kore.Step.Simplification.Equals as Equals
 import qualified Kore.Step.Simplification.Not as Not
 import qualified Kore.Step.Simplification.Or as Or
 import Kore.Step.Simplification.Simplify
@@ -138,18 +141,17 @@ evalKEq true (valid :< app) =
     sort = Attribute.patternSort valid
     Application { applicationChildren } = app
     evalEq termLike1 termLike2 = do
-        let pattern1 = Pattern.fromTermLike termLike1
-            pattern2 = Pattern.fromTermLike termLike2
+        let defined1 = makeCeilPredicate termLike1
+            defined2 = makeCeilPredicate termLike2
+            defined = makeAndPredicate defined1 defined2
 
-        defined1 <- Ceil.makeEvaluate Condition.topTODO pattern1
-        defined2 <- Ceil.makeEvaluate Condition.topTODO pattern2
-        defined <- And.simplifyEvaluated defined1 defined2
+        simplifiedDefined <-
+            simplifyConditionalPredicateToOr Condition.topTODO defined
 
-        equalTerms <-
-            Equals.makeEvaluateTermsToPredicate
-                termLike1
-                termLike2
-                Condition.topTODO
+        equalTerms <- simplifyConditionalPredicateToOr
+            Condition.topTODO
+            (makeEqualsPredicate termLike1 termLike2)
+
         let trueTerm = Bool.asInternal sort true
             truePatterns = Pattern.withCondition trueTerm <$> equalTerms
 
@@ -158,7 +160,9 @@ evalKEq true (valid :< app) =
             falsePatterns = Pattern.withCondition falseTerm <$> notEqualTerms
 
         let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
-        results <- And.simplifyEvaluated defined undefinedResults
+        results <- And.simplifyEvaluated
+            (Pattern.fromCondition <$> simplifiedDefined)
+            undefinedResults
         pure $ Applied AttemptedAxiomResults
             { results
             , remainders = OrPattern.bottom

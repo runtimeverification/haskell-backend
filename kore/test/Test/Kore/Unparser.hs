@@ -170,10 +170,13 @@ test_unparse =
                 ]
             )
             "\\and{_PREDICATE{}}(\n\
-            \    \\ceil{testSort{}, _PREDICATE{}}(a{}()),\n\
+            \    /**/ \\ceil{testSort{}, _PREDICATE{}}(\
+                        \/*Functional-NonSimplifiable*/ a{}()),\n\
             \\\and{_PREDICATE{}}(\n\
-            \    \\ceil{testSort{}, _PREDICATE{}}(b{}()),\n\
-            \    \\ceil{testSort{}, _PREDICATE{}}(c{}())\n\
+            \    /**/ \\ceil{testSort{}, _PREDICATE{}}(\
+                        \/*Functional-NonSimplifiable*/ b{}()),\n\
+            \    /**/ \\ceil{testSort{}, _PREDICATE{}}(\
+                        \/*Functional-NonSimplifiable*/ c{}())\n\
             \))"
         , unparseTest
             (Pattern.andCondition
@@ -187,16 +190,28 @@ test_unparse =
             )
             "\\and{topSort{}}(\n\
             \    /* term: */\n\
-            \    \\top{topSort{}}(),\n\
+            \    /*Defined-Simplified*/ \\top{topSort{}}(),\n\
             \\\and{topSort{}}(\n\
             \    /* predicate: */\n\
-            \    \\top{topSort{}}(),\n\
+            \    /*Defined-Simplified*/ \\top{topSort{}}(),\n\
             \    /* substitution: */\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(x:testSort{}, a{}()),\n\
+            \        /**/\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /*Functional-Simplified*/ x:testSort{},\n\
+            \            /*Functional-NonSimplifiable*/ a{}()\n\
+            \        ),\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(y:testSort{}, b{}()),\n\
-            \        \\equals{testSort{}, topSort{}}(z:testSort{}, c{}())\n\
+            \        /**/\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /*Functional-Simplified*/ y:testSort{},\n\
+            \            /*Functional-NonSimplifiable*/ b{}()\n\
+            \        ),\n\
+            \        /**/\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /*Functional-Simplified*/ z:testSort{},\n\
+            \            /*Functional-NonSimplifiable*/ c{}()\n\
+            \        )\n\
             \    ))\n\
             \))"
         , unparseTest
@@ -219,21 +234,33 @@ test_unparse =
             )
             "\\and{topSort{}}(\n\
             \    /* term: */\n\
-            \    \\top{topSort{}}(),\n\
+            \    /*Defined-Simplified*/ \\top{topSort{}}(),\n\
             \\\and{topSort{}}(\n\
             \    /* predicate: */\n\
             \    \\and{topSort{}}(\n\
-            \        \\ceil{testSort{}, topSort{}}(a{}()),\n\
+            \        /**/ \\ceil{testSort{}, topSort{}}(/*Functional-NonSimplifiable*/ a{}()),\n\
             \    \\and{topSort{}}(\n\
-            \        \\ceil{testSort{}, topSort{}}(b{}()),\n\
-            \        \\ceil{testSort{}, topSort{}}(c{}())\n\
+            \        /**/ \\ceil{testSort{}, topSort{}}(/*Functional-NonSimplifiable*/ b{}()),\n\
+            \        /**/ \\ceil{testSort{}, topSort{}}(/*Functional-NonSimplifiable*/ c{}())\n\
             \    )),\n\
             \    /* substitution: */\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(x:testSort{}, a{}()),\n\
+            \        /**/\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /*Functional-Simplified*/ x:testSort{},\n\
+            \            /*Functional-NonSimplifiable*/ a{}()\n\
+            \        ),\n\
             \    \\and{topSort{}}(\n\
-            \        \\equals{testSort{}, topSort{}}(y:testSort{}, b{}()),\n\
-            \        \\equals{testSort{}, topSort{}}(z:testSort{}, c{}())\n\
+            \        /**/\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /*Functional-Simplified*/ y:testSort{},\n\
+            \            /*Functional-NonSimplifiable*/ b{}()\n\
+            \        ),\n\
+            \        /**/\n\
+            \        \\equals{testSort{}, topSort{}}(\n\
+            \            /*Functional-Simplified*/ z:testSort{},\n\
+            \            /*Functional-NonSimplifiable*/ c{}()\n\
+            \        )\n\
             \    ))\n\
             \))"
         ]
@@ -273,14 +300,15 @@ parse :: Parser a -> String -> Either String a
 parse parser =
     parseOnly (parser <* endOfInput) "<test-string>"
 
-roundtrip :: (Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
+roundtrip
+    :: (HasCallStack, Unparse a, Eq a, Show a) => Gen a -> Parser a -> Property
 roundtrip generator parser =
     Hedgehog.property $ do
         generated <- Hedgehog.forAll generator
         parse parser (unparseToString generated) === Right generated
 
 unparseParseTest
-    :: (Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
+    :: (HasCallStack, Unparse a, Debug a, Diff a) => Parser a -> a -> TestTree
 unparseParseTest parser astInput =
     testCase
         "Parsing + unparsing."
@@ -288,7 +316,7 @@ unparseParseTest parser astInput =
             (Right astInput)
             (parse parser (unparseToString astInput)))
 
-unparseTest :: (Unparse a, Debug a) => a -> String -> TestTree
+unparseTest :: (HasCallStack, Unparse a, Debug a) => a -> String -> TestTree
 unparseTest astInput expected =
     testCase
         "Unparsing"

@@ -32,14 +32,14 @@ import Kore.Internal.MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
     ( Predicate
+    , makeCeilPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
-import qualified Kore.Step.Simplification.Ceil as Ceil
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify (..)
     , SimplifierVariable
+    , simplifyConditionalPredicateToOr
     )
 import Kore.Unification.Substitution
     ( Substitution
@@ -155,17 +155,15 @@ ceilChildOfApplicationOrTop
 ceilChildOfApplicationOrTop predicate patt =
     case patt of
         App_ _ children -> do
-            ceil <-
-                traverse (Ceil.makeEvaluateTerm predicate) children
-                >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
-                    . MultiAnd.make
-                    )
-            pure $ Conditional
+            let childrenCeil = map makeCeilPredicate children
+                ceil = MultiAnd.toPredicate (MultiAnd.make childrenCeil)
+            simplifiedCeil <- simplifyConditionalPredicateToOr predicate ceil
+            return Conditional
                 { term = ()
                 , predicate =
                     OrCondition.toPredicate
                     . fmap Condition.toPredicate
-                    $ ceil
+                    $ simplifiedCeil
                 , substitution = mempty
                 }
-        _ -> pure Condition.top
+        _ -> return Condition.top

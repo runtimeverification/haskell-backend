@@ -364,10 +364,11 @@ simplifyInternal term predicate = do
                 (Application.simplify predicate
                     =<< simplifyChildren applySymbolF
                 )
-            CeilF ceilF ->
-                Ceil.simplify predicate =<< simplifyChildren ceilF
-            EqualsF equalsF -> OrPattern.fromPattern <$>
-                (Equals.simplify predicate =<< simplifyChildren equalsF)
+            CeilF ceilF -> OrPattern.fromPattern <$>
+                (Ceil.simplify predicate =<< simplifyChildren ceilF)
+            EqualsF equalsF -> do
+                result <- (Equals.simplify =<< simplifyChildren equalsF)
+                return result
             ExistsF exists ->
                 let fresh =
                         Lens.over
@@ -421,7 +422,8 @@ simplifyInternal term predicate = do
             -- TODO(virgil): Move next up through patterns.
             NextF nextF ->
                 OrPattern.fromPattern . Next.simplify <$> simplifyChildren nextF
-            OrF orF -> Or.simplify <$> simplifyChildren orF
+            OrF orF ->
+                Or.simplify <$> simplifyChildren orF
             RewritesF rewritesF ->
                 OrPattern.fromPattern . Rewrites.simplify
                     <$> simplifyChildren rewritesF
