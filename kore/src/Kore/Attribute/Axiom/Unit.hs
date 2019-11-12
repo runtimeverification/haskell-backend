@@ -11,7 +11,6 @@ module Kore.Attribute.Axiom.Unit
     , unitId, unitSymbol, unitAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -53,14 +52,5 @@ unitAttribute :: AttributePattern
 unitAttribute = attributePattern_ unitSymbol
 
 instance ParseAttributes Unit where
-    parseAttribute =
-        withApplication' $ \params args Unit { isUnit } -> do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isUnit failDuplicate'
-            return Unit { isUnit = True }
-      where
-        withApplication' = Parser.withApplication unitId
-        failDuplicate' = Parser.failDuplicate unitId
-
-    toAttributes Unit { isUnit } = Attributes [unitAttribute | isUnit]
+    parseAttribute = parseBoolAttribute unitId
+    toAttributes = toBoolAttributes unitAttribute

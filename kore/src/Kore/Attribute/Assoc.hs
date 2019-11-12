@@ -11,7 +11,6 @@ module Kore.Attribute.Assoc
     , assocId, assocSymbol, assocAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -53,14 +52,5 @@ assocAttribute :: AttributePattern
 assocAttribute = attributePattern_ assocSymbol
 
 instance ParseAttributes Assoc where
-    parseAttribute =
-        withApplication' $ \params args Assoc { isAssoc } -> do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isAssoc failDuplicate'
-            return Assoc { isAssoc = True }
-      where
-        withApplication' = Parser.withApplication assocId
-        failDuplicate' = Parser.failDuplicate assocId
-
-    toAttributes Assoc { isAssoc } = Attributes [assocAttribute | isAssoc]
+    parseAttribute = parseBoolAttribute assocId
+    toAttributes = toBoolAttributes assocAttribute
