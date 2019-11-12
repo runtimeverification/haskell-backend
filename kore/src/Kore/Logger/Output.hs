@@ -95,7 +95,7 @@ import Kore.Logger
 -- the logger will operate.
 data KoreLogType
     = LogStdErr
-    -- ^ log to StdErr when '--log stderr' is passed
+    -- ^ log to stderr (default)
     | LogFileText FilePath
     -- ^ log to specified file when '--log <filename>' is passed.
     deriving (Read)
