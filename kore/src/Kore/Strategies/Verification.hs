@@ -11,8 +11,6 @@ module Kore.Strategies.Verification
     , CommonProofState
     , verify
     , verifyClaimStep
-    , toRulePattern
-    , toRule
     ) where
 
 import Control.Monad.Catch
@@ -68,7 +66,7 @@ type CommonProofState  = ProofState.ProofState (Pattern Variable)
 {- | Class type for claim-like rules
 -}
 type Claim claim =
-    ( Coercible (Rule claim) (RulePattern Variable)
+    ( ToRulePattern (Rule claim)
     , ToRulePattern claim
     , Unparse claim
     , Unparse (Rule claim)
@@ -159,49 +157,49 @@ verifyClaim
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
-verifyClaimStep
-    :: forall claim m
-    .  (MonadCatch m, MonadSimplify m)
-    => Claim claim
-    => claim
-    -- ^ claim that is being proven
-    -> [claim]
-    -- ^ list of claims in the spec module
-    -> [Rule claim]
-    -- ^ list of axioms in the main module
-    -> ExecutionGraph CommonProofState (Rule claim)
-    -- ^ current execution graph
-    -> Graph.Node
-    -- ^ selected node in the graph
-    -> m (ExecutionGraph CommonProofState (Rule claim))
-verifyClaimStep
-    target
-    claims
-    axioms
-    eg@ExecutionGraph { root }
-    node
-  = do
-      let destination = getDestination target
-      executionHistoryStep
-        (transitionRule' destination)
-        strategy'
-        eg
-        node
-  where
-    strategy' :: Strategy (Prim claim)
-    strategy'
-        | isRoot =
-            onePathFirstStep rewrites
-        | otherwise =
-            onePathFollowupStep
-                (coerce . toRulePattern <$> claims)
-                rewrites
-
-    rewrites :: [Rule claim]
-    rewrites = axioms
-
-    isRoot :: Bool
-    isRoot = node == root
+-- verifyClaimStep
+--     :: forall claim m
+--     .  (MonadCatch m, MonadSimplify m)
+--     => Claim claim
+--     => claim
+--     -- ^ claim that is being proven
+--     -> [claim]
+--     -- ^ list of claims in the spec module
+--     -> [Rule claim]
+--     -- ^ list of axioms in the main module
+--     -> ExecutionGraph CommonProofState (Rule claim)
+--     -- ^ current execution graph
+--     -> Graph.Node
+--     -- ^ selected node in the graph
+--     -> m (ExecutionGraph CommonProofState (Rule claim))
+-- verifyClaimStep
+--     target
+--     claims
+--     axioms
+--     eg@ExecutionGraph { root }
+--     node
+--   = do
+--       let destination = getDestination target
+--       executionHistoryStep
+--         (transitionRule' destination)
+--         strategy'
+--         eg
+--         node
+--   where
+--     strategy' :: Strategy (Prim claim)
+--     strategy'
+--         | isRoot =
+--             onePathFirstStep rewrites
+--         | otherwise =
+--             onePathFollowupStep
+--                 undefined -- (coerce . toRulePattern <$> claims)
+--                 rewrites
+--
+--     rewrites :: [Rule claim]
+--     rewrites = axioms
+--
+--     isRoot :: Bool
+--     isRoot = node == root
 
 transitionRule'
     :: forall claim m
@@ -215,9 +213,3 @@ transitionRule' destination prim state = do
     let goal = flip makeRuleFromPatterns destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next
-
-toRule
-    :: forall claim
-    .  Claim claim
-    => RulePattern Variable -> Rule claim
-toRule = coerce

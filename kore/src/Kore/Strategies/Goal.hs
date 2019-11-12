@@ -229,7 +229,7 @@ Things to note when implementing your own:
 instance Goal (OnePathRule Variable) where
 
     newtype Rule (OnePathRule Variable) =
-        OnePathRewriteRule { unRule :: RewriteRule Variable }
+        OnePathRewriteRule { unRuleOP :: RewriteRule Variable }
         deriving (GHC.Generic, Show, Unparse)
 
     type Prim (OnePathRule Variable) =
@@ -285,7 +285,7 @@ instance ClaimExtractor (OnePathRule Variable) where
 instance Goal (AllPathRule Variable) where
 
     newtype Rule (AllPathRule Variable) =
-        AllPathRewriteRule { unRule :: RewriteRule Variable }
+        AllPathRewriteRule { unRuleAP :: RewriteRule Variable }
         deriving (GHC.Generic, Show, Unparse)
 
     type Prim (AllPathRule Variable) =
@@ -664,8 +664,8 @@ allPathFollowupStep claims axioms =
 removeDestination
     :: (MonadCatch m, MonadSimplify m)
     => Goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
+    => ToRulePattern goal
+    => Coercible (RulePattern Variable) goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 removeDestination goal = errorBracket $ do
@@ -685,8 +685,8 @@ removeDestination goal = errorBracket $ do
 simplify
     :: (MonadCatch m, MonadSimplify m)
     => Goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
+    => ToRulePattern goal
+    => Coercible (RulePattern Variable) goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = errorBracket $ do
@@ -711,40 +711,36 @@ simplify goal = errorBracket $ do
             )
 
 isTriviallyValid
-    :: SimplifierVariable variable
-    => Goal goal
-    => Coercible goal (RulePattern variable)
+    :: Goal goal
+    => ToRulePattern goal
     => goal -> Bool
-isTriviallyValid = isBottom . RulePattern.left . coerce
+isTriviallyValid = isBottom . RulePattern.left . toRulePattern
 
 isTrusted
-    :: forall goal variable
-     . SimplifierVariable variable
-    => Goal goal
-    => Coercible goal (RulePattern variable)
+    :: Goal goal
+    => ToRulePattern goal
     => goal -> Bool
 isTrusted =
     Attribute.Trusted.isTrusted
     . Attribute.Axiom.trusted
     . RulePattern.attributes
-    . coerce
+    . toRulePattern
 
 -- | Apply 'Rule's to the goal in parallel.
 derivePar
-    :: forall m goal variable
+    :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
-    => Coercible (RulePattern variable) goal
-    => Coercible (Rule goal) (RulePattern variable)
-    => Coercible (RulePattern variable) (Rule goal)
+    => ToRulePattern goal
+    => ToRulePattern (Rule goal)
+    => Coercible (RulePattern Variable) goal
+    => Coercible (RulePattern Variable) (Rule goal)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 derivePar rules goal = errorBracket $ do
-    let rewrites = coerce <$> rules
+    let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -783,7 +779,7 @@ derivePar rules goal = errorBracket $ do
             Result.transitionResults results'
   where
     destination = getDestination goal
-    configuration :: Pattern variable
+    configuration :: Pattern Variable
     configuration = getConfiguration goal
 
     errorBracket action =
@@ -794,20 +790,19 @@ derivePar rules goal = errorBracket $ do
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
-    :: forall m goal variable
+    :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
-    => Coercible (RulePattern variable) goal
-    => Coercible (Rule goal) (RulePattern variable)
-    => Coercible (RulePattern variable) (Rule goal)
+    => ToRulePattern goal
+    => ToRulePattern (Rule goal)
+    => Coercible (RulePattern Variable) goal
+    => Coercible (RulePattern Variable) (Rule goal)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 deriveSeq rules goal = errorBracket $ do
-    let rewrites = coerce <$> rules
+    let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -855,11 +850,10 @@ deriveSeq rules goal = errorBracket $ do
             )
 
 makeRuleFromPatterns
-    :: forall rule variable
-    .  SimplifierVariable variable
-    => Coercible (RulePattern variable) rule
-    => Pattern variable
-    -> Pattern variable
+    :: forall rule
+    .  Coercible (RulePattern Variable) rule
+    => Pattern Variable
+    -> Pattern Variable
     -> rule
 makeRuleFromPatterns configuration destination =
     let (left, Condition.toPredicate -> requires) =
@@ -914,20 +908,18 @@ removalPredicate destination config =
                 (Pattern.toTermLike config)
 
 getConfiguration
-    :: forall rule variable
-    .  Ord variable
-    => Coercible rule (RulePattern variable)
+    :: forall rule
+    .  ToRulePattern rule
     => rule
-    -> Pattern variable
-getConfiguration (coerce -> RulePattern { left, requires }) =
+    -> Pattern Variable
+getConfiguration (toRulePattern -> RulePattern { left, requires }) =
     Pattern.withCondition left (Conditional.fromPredicate requires)
 
 getDestination
-    :: forall rule variable
-    .  Ord variable
-    => ToRulePattern rule
+    :: forall rule
+    .  ToRulePattern rule
     => rule
-    -> Pattern variable
+    -> Pattern Variable
 getDestination (toRulePattern -> RulePattern { right, ensures }) =
     Pattern.withCondition right (Conditional.fromPredicate ensures)
 
@@ -935,21 +927,21 @@ class ToRulePattern rule where
     toRulePattern :: rule -> RulePattern Variable
 
 instance ToRulePattern (OnePathRule Variable) where
-    toRulePattern = coerce
+    toRulePattern = getOnePathRule
 
 instance ToRulePattern (Rule (OnePathRule Variable)) where
-    toRulePattern = coerce
+    toRulePattern = getRewriteRule . unRuleOP
 
 instance ToRulePattern (AllPathRule Variable) where
-    toRulePattern = coerce
+    toRulePattern = getAllPathRule
 
 instance ToRulePattern (Rule (AllPathRule Variable)) where
-    toRulePattern = coerce
+    toRulePattern = getRewriteRule . unRuleAP
 
 instance ToRulePattern (ReachabilityRule Variable) where
-    toRulePattern (OnePath rule) = coerce rule
-    toRulePattern (AllPath rule) = coerce rule
+    toRulePattern (OnePath rule) = toRulePattern rule
+    toRulePattern (AllPath rule) = toRulePattern rule
 
 instance ToRulePattern (Rule (ReachabilityRule Variable)) where
-    toRulePattern (OPRule rule) = coerce rule
-    toRulePattern (APRule rule) = coerce rule
+    toRulePattern (OPRule rule) = toRulePattern rule
+    toRulePattern (APRule rule) = toRulePattern rule
