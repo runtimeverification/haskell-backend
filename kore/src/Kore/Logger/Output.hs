@@ -97,8 +97,7 @@ data KoreLogType
     = LogStdErr
     -- ^ log to StdErr when '--log stderr' is passed
     | LogFileText FilePath
-    -- ^ log to specified file path when '--log <filepath>' is passed.
-    -- Default is "./kore-(date).log"
+    -- ^ log to specified file when '--log <filename>' is passed.
     deriving (Read)
 
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
@@ -126,21 +125,9 @@ withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
         LogStdErr   ->
             cont (stderrLogger logLevel logScopes)
-        LogFileText filePath -> do
-            defaultFileName <- getKoreLogFileName
-            let filePath'
-                  | null filePath = defaultFileName
-                  | otherwise = filePath
-            Colog.withLogTextFile filePath'
+        LogFileText filename -> do
+            Colog.withLogTextFile filename
                 $ cont . makeKoreLogger logLevel logScopes
-  where
-    getKoreLogFileName :: IO String
-    getKoreLogFileName = do
-        currentTimeDate <- getLocalTime
-        pure
-            $ "kore-"
-            <> formatLocalTime "%Y-%m-%d-%H-%M-%S" currentTimeDate
-            <> ".log"
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
@@ -158,13 +145,8 @@ parseKoreLogOptions =
         option
             (maybeReader parseTypeString)
             $ long "log"
-            <> help "Logging destination: stderr or <filepath>;\
-                    \ If <filepath> is the empty string, the logs will be\
-                    \ printed to \"./kore-(date).log\""
-    parseTypeString =
-        \case
-            "stderr" -> pure LogStdErr
-            filePath -> pure $ LogFileText filePath
+            <> help "Name of the log file"
+    parseTypeString filename = pure $ LogFileText filename
     parseLevel =
         option
             (maybeReader parseSeverity)
@@ -177,7 +159,6 @@ parseKoreLogOptions =
             "warning"  -> pure Warning
             "error"    -> pure Error
             "critical" -> pure Critical
-            ""         -> pure Warning
             _          -> Nothing
     parseScope =
         option
