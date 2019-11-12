@@ -72,6 +72,7 @@ module Kore.Internal.TermLike
     , mkSortVariable
     , mkInhabitant
     , mkEvaluated
+    , mkEndianness
     , elemVarS
     , setVarS
     -- * Predicate constructors
@@ -1992,6 +1993,16 @@ mkEvaluated
     => TermLike variable
     -> TermLike variable
 mkEvaluated = updateCallStack . synthesize . EvaluatedF . Evaluated
+
+{- | Construct an 'Endianness' pattern.
+ -}
+mkEndianness
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Endianness
+    -> TermLike variable
+mkEndianness = updateCallStack . synthesize . EndiannessF . Const
 
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
