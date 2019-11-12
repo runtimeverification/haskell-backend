@@ -12,7 +12,6 @@ module Kore.Strategies.Verification
     , verify
     , verifyClaimStep
     , toRulePattern
-    , toRule
     ) where
 
 import Control.Monad.Catch
@@ -27,6 +26,7 @@ import Data.Coerce
     ( Coercible
     , coerce
     )
+import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit
@@ -35,9 +35,12 @@ import Data.Limit
 import qualified Data.Limit as Limit
 
 import Kore.Debug
+import qualified Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
     )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Step.Rule as RulePattern
     ( AllPathRule (..)
     , OnePathRule (..)
@@ -81,19 +84,47 @@ instance ToRulePattern (Rule (AllPathRule Variable)) where
     toRulePattern = coerce
 
 instance ToRulePattern (ReachabilityRule Variable) where
-    toRulePattern (OnePath rule) = coerce rule
-    toRulePattern (AllPath rule) = coerce rule
+    toRulePattern (OnePath rule) = toRulePattern rule
+    toRulePattern (AllPath rule) = toRulePattern rule
 
 instance ToRulePattern (Rule (ReachabilityRule Variable)) where
-    toRulePattern (OPRule rule) = coerce rule
-    toRulePattern (APRule rule) = coerce rule
+    toRulePattern (OPRule rule) = toRulePattern rule
+    toRulePattern (APRule rule) = toRulePattern rule
+
+class FromRulePattern rule where
+    fromRulePattern :: rule -> RulePattern Variable -> rule
+
+instance FromRulePattern (OnePathRule Variable) where
+    fromRulePattern _ = coerce
+
+instance FromRulePattern (Rule (OnePathRule Variable)) where
+    fromRulePattern _ = coerce
+
+instance FromRulePattern (AllPathRule Variable) where
+    fromRulePattern _ = coerce
+
+instance FromRulePattern (Rule (AllPathRule Variable)) where
+    fromRulePattern _ = coerce
+
+instance FromRulePattern (ReachabilityRule Variable) where
+    fromRulePattern (OnePath _) rulePat =
+        OnePath $ coerce rulePat
+    fromRulePattern (AllPath _) rulePat =
+        AllPath $ coerce rulePat
+
+instance FromRulePattern (Rule (ReachabilityRule Variable)) where
+    fromRulePattern (OPRule _) rulePat =
+        OPRule $ coerce rulePat
+    fromRulePattern (APRule _) rulePat =
+        APRule $ coerce rulePat
 
 {- | Class type for claim-like rules
 -}
 type Claim claim =
-    ( Coercible (Rule claim) (RulePattern Variable)
-    , Coercible claim (RulePattern Variable)
-    , ToRulePattern claim
+    ( ToRulePattern claim
+    , ToRulePattern (Rule claim)
+    , FromRulePattern claim
+    , FromRulePattern (Rule claim)
     , Unparse claim
     , Unparse (Rule claim)
     , Goal claim
@@ -155,8 +186,8 @@ verifyClaim
     (goal, stepLimit)
   = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
-        startPattern = ProofState.Goal $ getConfiguration goal
-        destination = getDestination goal
+        startPattern = ProofState.Goal $ getClaimConfiguration goal
+        destination = getClaimDestination goal
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
@@ -175,7 +206,7 @@ verifyClaim
     modifiedTransitionRule destination prim proofState' = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
-            $ transitionRule' destination prim proofState'
+            $ transitionRule' goal destination prim proofState'
         Transition.scatter transitions
 
 -- TODO(Ana): allow running with all-path strategy steps
@@ -204,44 +235,77 @@ verifyClaimStep
     axioms
     eg@ExecutionGraph { root }
     node
-  = do
-      let destination = getDestination target
-      executionHistoryStep
-        (transitionRule' destination)
-        strategy'
-        eg
-        node
-  where
-    strategy' :: Strategy (Prim claim)
-    strategy'
-        | isRoot =
-            onePathFirstStep rewrites
-        | otherwise =
-            onePathFollowupStep
-                (coerce . toRulePattern <$> claims)
-                rewrites
-
-    rewrites :: [Rule claim]
-    rewrites = axioms
-
-    isRoot :: Bool
-    isRoot = node == root
+  = undefined
+--  = do
+--      let destination = getClaimDestination target
+--      executionHistoryStep
+--        (transitionRule' destination)
+--        strategy'
+--        eg
+--        node
+--  where
+--    strategy' :: Strategy (Prim claim)
+--    strategy'
+--        | isRoot =
+--            onePathFirstStep rewrites
+--        | otherwise =
+--            onePathFollowupStep
+--                (coerce . toRulePattern <$> claims)
+--                rewrites
+--
+--    rewrites :: [Rule claim]
+--    rewrites = axioms
+--
+--    isRoot :: Bool
+--    isRoot = node == root
 
 transitionRule'
     :: forall claim m
     .  (MonadCatch m, MonadSimplify m)
     => Claim claim
-    => Pattern Variable
+    => claim
+    -> Pattern Variable
     -> Prim claim
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
-transitionRule' destination prim state = do
-    let goal = flip makeRuleFromPatterns destination <$> state
+transitionRule' ruleType destination prim state = do
+    let goal = flip (makeClaimRuleFromPatterns ruleType) destination <$> state
     next <- transitionRule prim goal
-    pure $ fmap getConfiguration next
+    pure $ fmap getClaimConfiguration next
 
-toRule
+getClaimConfiguration
     :: forall claim
     .  Claim claim
-    => RulePattern Variable -> Rule claim
-toRule = coerce
+    => claim
+    -> Pattern Variable
+getClaimConfiguration (toRulePattern -> RulePattern { left, requires }) =
+    Pattern.withCondition left (Conditional.fromPredicate requires)
+
+getClaimDestination
+    :: forall claim
+    .  Claim claim
+    => claim
+    -> Pattern Variable
+getClaimDestination (toRulePattern -> RulePattern { right, ensures }) =
+    Pattern.withCondition right (Conditional.fromPredicate ensures)
+
+makeClaimRuleFromPatterns
+    :: forall rule
+    .  FromRulePattern rule
+    => rule
+    -> Pattern Variable
+    -> Pattern Variable
+    -> rule
+makeClaimRuleFromPatterns ruleType configuration destination =
+    let (left, Condition.toPredicate -> requires) =
+            Pattern.splitTerm configuration
+        (right, Condition.toPredicate -> ensures) =
+            Pattern.splitTerm destination
+    in fromRulePattern ruleType $ RulePattern
+        { left
+        , antiLeft = Nothing
+        , right
+        , requires
+        , ensures
+        , attributes = Default.def
+        }
