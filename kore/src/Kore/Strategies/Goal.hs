@@ -907,18 +907,18 @@ removalPredicate destination config =
 
 class ToRulePattern rule where
     toRulePattern :: rule -> RulePattern Variable
-
-instance ToRulePattern (OnePathRule Variable) where
+    default toRulePattern
+        :: Coercible rule (RulePattern Variable)
+        => rule -> RulePattern Variable
     toRulePattern = coerce
 
-instance ToRulePattern (Rule (OnePathRule Variable)) where
-    toRulePattern = coerce
+instance ToRulePattern (OnePathRule Variable)
 
-instance ToRulePattern (AllPathRule Variable) where
-    toRulePattern = coerce
+instance ToRulePattern (Rule (OnePathRule Variable))
 
-instance ToRulePattern (Rule (AllPathRule Variable)) where
-    toRulePattern = coerce
+instance ToRulePattern (AllPathRule Variable)
+
+instance ToRulePattern (Rule (AllPathRule Variable))
 
 instance ToRulePattern (ReachabilityRule Variable) where
     toRulePattern (OnePath rule) = toRulePattern rule
@@ -930,18 +930,18 @@ instance ToRulePattern (Rule (ReachabilityRule Variable)) where
 
 class FromRulePattern rule where
     fromRulePattern :: rule -> RulePattern Variable -> rule
-
-instance FromRulePattern (OnePathRule Variable) where
+    default fromRulePattern
+        :: Coercible (RulePattern Variable) rule
+        => rule -> RulePattern Variable -> rule
     fromRulePattern _ = coerce
 
-instance FromRulePattern (Rule (OnePathRule Variable)) where
-    fromRulePattern _ = coerce
+instance FromRulePattern (OnePathRule Variable)
 
-instance FromRulePattern (AllPathRule Variable) where
-    fromRulePattern _ = coerce
+instance FromRulePattern (Rule (OnePathRule Variable))
 
-instance FromRulePattern (Rule (AllPathRule Variable)) where
-    fromRulePattern _ = coerce
+instance FromRulePattern (AllPathRule Variable)
+
+instance FromRulePattern (Rule (AllPathRule Variable))
 
 instance FromRulePattern (ReachabilityRule Variable) where
     fromRulePattern (OnePath _) rulePat =

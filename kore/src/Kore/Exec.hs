@@ -526,16 +526,17 @@ assertSomeClaims claims =
         ++  "on the representation of claims."
 
 makeClaim
-    :: Coercible (RulePattern Variable) claim
+    :: Goal.FromRulePattern claim
+    => Goal.ToRulePattern claim
     => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
-    coerce RulePattern
+    Goal.fromRulePattern rule RulePattern
         { attributes = attributes
-        , left = left . coerce $ rule
-        , antiLeft = antiLeft . coerce $ rule
-        , right = right . coerce $ rule
-        , requires = requires . coerce $ rule
-        , ensures = ensures . coerce $ rule
+        , left = left . Goal.toRulePattern $ rule
+        , antiLeft = antiLeft . Goal.toRulePattern $ rule
+        , right = right . Goal.toRulePattern $ rule
+        , requires = requires . Goal.toRulePattern $ rule
+        , ensures = ensures . Goal.toRulePattern $ rule
         }
 
 simplifyRuleOnSecond
