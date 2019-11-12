@@ -11,7 +11,6 @@ module Kore.Attribute.SmtLemma
     , smtLemmaId, smtLemmaSymbol, smtLemmaAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -52,15 +51,5 @@ smtLemmaAttribute :: AttributePattern
 smtLemmaAttribute = attributePattern_ smtLemmaSymbol
 
 instance ParseAttributes SmtLemma where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args SmtLemma { isSmtLemma } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isSmtLemma failDuplicate'
-            return SmtLemma { isSmtLemma = True }
-        withApplication' = Parser.withApplication smtLemmaId
-        failDuplicate' = Parser.failDuplicate smtLemmaId
-
-    toAttributes SmtLemma { isSmtLemma } =
-        Attributes [smtLemmaAttribute | isSmtLemma]
+    parseAttribute = parseBoolAttribute smtLemmaId
+    toAttributes = toBoolAttributes smtLemmaAttribute
