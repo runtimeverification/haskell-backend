@@ -46,7 +46,8 @@ import qualified Kore.Attribute.Symbol as Attribute.Symbol
     ( Symbol (..)
     )
 import Kore.Builtin.AssociativeCommutative as AssociativeCommutative
-    ( asInternalBuiltin
+    ( TermWrapper
+    , asInternalBuiltin
     )
 import qualified Kore.Builtin.Bool.Bool as BuiltinBool
     ( asBuiltin
@@ -795,64 +796,22 @@ maybeMapBuiltinGenerator Setup { maybeMapSorts } =
                     -- if we wanted to.
                     , isConcrete = False
                     }
-                , generator = mapGenerator collectionSort keySort valueSort
+                , generator =
+                    acGenerator
+                        collectionSort
+                        keySort
+                        (valueGenerator valueSort)
                 }
   where
-    mapGenerator
+    valueGenerator
         :: Sort
-        -> Sort
-        -> Sort
         -> (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
-    mapGenerator mapSort keySort valueSort childGenerator = do
-        let concreteKeyGenerator :: Gen (Maybe (TermLike Concrete))
-            concreteKeyGenerator =
-                    requestNonSimplifiable
-                    $ concreteTermGenerator keySort childGenerator
-        maybeConcreteMap <-
-            Gen.map (Range.constant 0 5)
-                (   (,)
-                <$> concreteKeyGenerator
-                <*> childGenerator keySort
-                )
-        let concreteMapElem
-                :: (Maybe (TermLike Concrete), Maybe (TermLike Variable))
-                -> Maybe
-                    (TermLike Concrete, Domain.MapValue (TermLike Variable))
-            concreteMapElem (ma, mb) = (,) <$> ma <*> (Domain.MapValue <$> mb)
-            concreteMap =
-                Map.fromList
-                    (mapMaybe concreteMapElem (Map.toList maybeConcreteMap))
-        mixedKeyValues <-
-            requestNonSimplifiable
-            $ Gen.set (Range.constant 0 5)
-                (childGenerator keySort)
-        let variableKeys :: [TermLike Variable]
-            variableKeys =
-                filter
-                    (not . null . TermLike.freeVariables)
-                    (catMaybes (Set.toList mixedKeyValues))
-        maybeVariablePairs <- mapM variablePair variableKeys
-        let variablePairs :: [Domain.MapElement (TermLike Variable)]
-            variablePairs = catMaybes maybeVariablePairs
-        (Setup {metadataTools}, _) <- Reader.ask
-        return $ Just $
-            AssociativeCommutative.asInternalBuiltin
-                metadataTools
-                mapSort
-                (Domain.NormalizedMap Domain.NormalizedAc
-                    { elementsWithVariables = variablePairs
-                    , concreteElements = concreteMap
-                    , opaque = []
-                    -- TODO (virgil): also fill the opaque field.
-                    }
-                )
-      where
-        variablePair key = do
-            maybeValue <- childGenerator valueSort
-            return $ do  -- maybe monad
-                value <- maybeValue
-                return (Domain.MapElement (key, value))
+        -> Gen (Maybe (Domain.MapValue (TermLike Variable)))
+    valueGenerator valueSort childGenerator = do
+        maybeValue <- childGenerator valueSort
+        return $ do  -- Maybe monad
+            value <- maybeValue
+            return (Domain.MapValue value)
 
 -- TODO(virgil): Test that we are generating non-empty sets.
 maybeSetBuiltinGenerator :: Setup -> Maybe BuiltinGenerator
@@ -869,53 +828,78 @@ maybeSetBuiltinGenerator Setup { maybeSetSorts } =
                     -- if we wanted to.
                     , isConcrete = False
                     }
-                , generator = setGenerator collectionSort elementSort
+                , generator =
+                    acGenerator collectionSort elementSort valueGenerator
                 }
   where
-    setGenerator
-        :: Sort
-        -> Sort
-        -> (Sort -> Gen (Maybe (TermLike Variable)))
-        -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
-    setGenerator mapSort keySort childGenerator = do
-        let concreteKeyGenerator :: Gen (Maybe (TermLike Concrete))
-            concreteKeyGenerator =
-                    requestNonSimplifiable
-                    $ concreteTermGenerator keySort childGenerator
-        maybeConcreteMap <-
-            Gen.map (Range.constant 0 5)
-                (   (,)
-                <$> concreteKeyGenerator
-                <*> pure Domain.SetValue
+    valueGenerator :: a -> Gen (Maybe (Domain.SetValue (TermLike Variable)))
+    valueGenerator _ = return (Just Domain.SetValue)
+
+acGenerator
+    :: forall normalized
+    .  AssociativeCommutative.TermWrapper normalized
+    => Sort
+    -> Sort
+    ->  (  (Sort -> Gen (Maybe (TermLike Variable)))
+        -> Gen (Maybe (Domain.Value normalized (TermLike Variable)))
+        )
+    -> (Sort -> Gen (Maybe (TermLike Variable)))
+    -> Gen (Maybe (Domain.Builtin (TermLike Concrete) (TermLike Variable)))
+acGenerator mapSort keySort valueGenerator childGenerator = do
+    let concreteKeyGenerator :: Gen (Maybe (TermLike Concrete))
+        concreteKeyGenerator =
+                requestNonSimplifiable
+                $ concreteTermGenerator keySort childGenerator
+    maybeConcreteMap <-
+        Gen.map (Range.constant 0 5)
+            (   (,)
+            <$> concreteKeyGenerator
+            <*> valueGenerator childGenerator
+            )
+    let concreteMapElem
+            ::  ( Maybe (TermLike Concrete)
+                , Maybe (Domain.Value normalized (TermLike Variable))
                 )
-        let firstMaybe :: (Maybe a, b) -> Maybe (a, b)
-            firstMaybe (ma, b) = (,) <$> ma <*> pure b
-            concreteMap =
-                Map.fromList (mapMaybe firstMaybe (Map.toList maybeConcreteMap))
-        mixedKeyValues <-
-            requestNonSimplifiable
-            $ Gen.set (Range.constant 0 5)
-                (childGenerator keySort)
-        let variableKeys :: [TermLike Variable]
-            variableKeys =
-                filter
-                    (not . null . TermLike.freeVariables)
-                    (catMaybes (Set.toList mixedKeyValues))
-            variableElements :: [Domain.SetElement (TermLike Variable)]
-            variableElements =
-                map Domain.SetElement variableKeys
-        (Setup {metadataTools}, _) <- Reader.ask
-        return $ Just $
-            AssociativeCommutative.asInternalBuiltin
-                metadataTools
-                mapSort
-                (Domain.NormalizedSet Domain.NormalizedAc
-                    { elementsWithVariables = variableElements
-                    , concreteElements = concreteMap
-                    , opaque = []
-                    -- TODO (virgil): also fill the opaque field.
-                    }
-                )
+            -> Maybe
+                (TermLike Concrete, Domain.Value normalized (TermLike Variable))
+        concreteMapElem (ma, mb) = (,) <$> ma <*> mb
+        concreteMap =
+            Map.fromList
+                (mapMaybe concreteMapElem (Map.toList maybeConcreteMap))
+    mixedKeys <-
+        requestNonSimplifiable
+        $ Gen.set (Range.constant 0 5)
+            (childGenerator keySort)
+    let variableKeys :: [TermLike Variable]
+        variableKeys =
+            filter
+                (not . null . TermLike.freeVariables)
+                (catMaybes (Set.toList mixedKeys))
+    maybeVariablePairs <- mapM variablePair variableKeys
+    let variablePairs :: [Domain.Element normalized (TermLike Variable)]
+        variablePairs = catMaybes maybeVariablePairs
+    (Setup {metadataTools}, _) <- Reader.ask
+    return $ Just $
+        AssociativeCommutative.asInternalBuiltin
+            metadataTools
+            mapSort
+            (Domain.wrapAc Domain.NormalizedAc
+                { elementsWithVariables = variablePairs
+                , concreteElements = concreteMap
+                , opaque = []
+                -- TODO (virgil): also fill the opaque field.
+                }
+            )
+  where
+    variablePair
+        :: TermLike Variable
+        -> Gen (Maybe (Domain.Element normalized (TermLike Variable)))
+    variablePair key = do
+        maybeValue <- valueGenerator childGenerator
+        return $ do  -- maybe monad
+            value <- maybeValue
+            return (Domain.wrapElement (key, value))
+
 
 stringGen :: Gen Text
 stringGen = Gen.text (Range.linear 0 64) (Reader.lift Gen.unicode)
