@@ -95,9 +95,9 @@ import Kore.Logger
 -- the logger will operate.
 data KoreLogType
     = LogStdErr
-    -- ^ log to StdErr when '--log StdErr' is passed
-    | LogFileText
-    -- ^ log to "./kore-(date).log" when '--log FileText' is passed
+    -- ^ log to stderr (default)
+    | LogFileText FilePath
+    -- ^ log to specified file when '--log <filename>' is passed.
     deriving (Read)
 
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
@@ -125,18 +125,9 @@ withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
     case logType of
         LogStdErr   ->
             cont (stderrLogger logLevel logScopes)
-        LogFileText -> do
-            fileName <- getKoreLogFileName
-            Colog.withLogTextFile fileName
+        LogFileText filename -> do
+            Colog.withLogTextFile filename
                 $ cont . makeKoreLogger logLevel logScopes
-  where
-    getKoreLogFileName :: IO String
-    getKoreLogFileName = do
-        currentTimeDate <- getLocalTime
-        pure
-            $ "kore-"
-            <> formatLocalTime "%Y-%m-%d-%H-%M-%S" currentTimeDate
-            <> ".log"
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
@@ -154,12 +145,8 @@ parseKoreLogOptions =
         option
             (maybeReader parseTypeString)
             $ long "log"
-            <> help "Log type: stderr, filetext"
-    parseTypeString =
-        \case
-            "stderr"   -> pure LogStdErr
-            "filetext" -> pure LogFileText
-            _          -> Nothing
+            <> help "Name of the log file"
+    parseTypeString filename = pure $ LogFileText filename
     parseLevel =
         option
             (maybeReader parseSeverity)
@@ -172,7 +159,6 @@ parseKoreLogOptions =
             "warning"  -> pure Warning
             "error"    -> pure Error
             "critical" -> pure Critical
-            ""         -> pure Warning
             _          -> Nothing
     parseScope =
         option
