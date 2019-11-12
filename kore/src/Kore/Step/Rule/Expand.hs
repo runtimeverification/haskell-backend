@@ -57,6 +57,7 @@ import qualified Kore.Sort as Sort.DoNotUse
 import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
+    , ReachabilityRule (..)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -136,6 +137,20 @@ instance ExpandSingleConstructors (OnePathRule Variable) where
 instance ExpandSingleConstructors (AllPathRule Variable) where
     expandSingleConstructors tools =
         AllPathRule . expandSingleConstructors tools . getAllPathRule
+
+instance ExpandSingleConstructors (ReachabilityRule Variable) where
+    expandSingleConstructors tools (OnePath rule) =
+        OnePath
+        . OnePathRule
+        . expandSingleConstructors tools
+        . getOnePathRule
+        $ rule
+    expandSingleConstructors tools (AllPath rule) =
+        AllPath
+        . AllPathRule
+        . expandSingleConstructors tools
+        . getAllPathRule
+        $ rule
 
 expandVariables
     :: SmtMetadataTools attributes

@@ -118,6 +118,7 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
+    , unparse2
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
@@ -342,9 +343,9 @@ instance SOP.Generic (Rule (AllPathRule Variable))
 
 instance SOP.HasDatatypeInfo (Rule (AllPathRule Variable))
 
-instance  Debug (Rule (AllPathRule Variable))
+instance Debug (Rule (AllPathRule Variable))
 
-instance  Diff (Rule (AllPathRule Variable))
+instance Diff (Rule (AllPathRule Variable))
 
 instance ClaimExtractor (AllPathRule Variable) where
     extractClaim sentence =
@@ -434,6 +435,19 @@ instance Goal (ReachabilityRule Variable) where
                     rule
                     (mapMaybe maybeAllPath claims)
                     (mapMaybe maybeAllPathRule axioms)
+
+instance Unparse (Rule (ReachabilityRule Variable)) where
+    unparse (OPRule rule) = unparse rule
+    unparse (APRule rule) = unparse rule
+    unparse2 (OPRule rule) = unparse2 rule
+    unparse2 (APRule rule) = unparse2 rule
+
+instance ClaimExtractor (ReachabilityRule Variable) where
+    extractClaim sentence =
+        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
+            Right (OnePathClaimPattern claim) -> Just . OnePath $ claim
+            Right (AllPathClaimPattern claim) -> Just . AllPath $ claim
+            _ -> Nothing
 
 maybeOnePath :: ReachabilityRule Variable -> Maybe (OnePathRule Variable)
 maybeOnePath (OnePath rule) = Just rule

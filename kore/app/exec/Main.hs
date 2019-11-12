@@ -120,6 +120,7 @@ import Kore.Profiler.Data
 import Kore.Step
 import Kore.Step.Rule
     ( OnePathRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (..)
     )
 import Kore.Step.Search
@@ -449,7 +450,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove stepLimit mainModule specModule (Proxy @(OnePathRule Variable))
+                <$> prove stepLimit mainModule specModule (Proxy @(ReachabilityRule Variable))
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where

@@ -653,9 +653,10 @@ initializeProver definitionModule specModule within =
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let
-            axioms = Goal.fromRulePattern undefined . getRewriteRule <$> rewriteRules
-            claims = fmap makeClaim specAxioms
+        let claims = fmap makeClaim specAxioms
+            -- TODO: unsafe creation of axioms from first claim
+            firstClaim = head claims
+            axioms = Goal.fromRulePattern (Goal.goalToRule firstClaim) . getRewriteRule <$> rewriteRules
             initializedProver = InitializedProver { axioms, claims}
         within initializedProver
   where
