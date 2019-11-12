@@ -194,6 +194,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> [claim]
         -> [claim]
     addIndexesToClaims len cls =
+    -- TODO: ruleToGoal is unsafe
         fmap
             (ruleToGoal . addIndex)
             (zip (fmap goalToRule cls) [len..])

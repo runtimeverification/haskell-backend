@@ -76,6 +76,7 @@ import qualified Kore.Profiler.Profile as Profile
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( AllPathRule (..)
+    , ImplicationRule (..)
     , OnePathRule (..)
     , QualifiedAxiomPattern (..)
     , ReachabilityRule (..)
@@ -366,6 +367,7 @@ instance Goal (ReachabilityRule Variable) where
     goalToRule (OnePath rule) = OPRule . goalToRule $ rule
     goalToRule (AllPath rule) = APRule . goalToRule $ rule
 
+    -- TODO: this is unsafe
     ruleToGoal (OPRule rule) = OnePath . ruleToGoal $ rule
     ruleToGoal (APRule rule) = AllPath . ruleToGoal $ rule
 
@@ -985,3 +987,6 @@ makeRuleFromPatterns ruleType configuration destination =
         , ensures
         , attributes = Default.def
         }
+
+instance FromRulePattern (ImplicationRule Variable)
+instance ToRulePattern (ImplicationRule Variable)
