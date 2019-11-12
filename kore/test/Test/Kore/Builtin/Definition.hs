@@ -21,6 +21,7 @@ import Kore.Attribute.Sort.HasDomainValues
     )
 import qualified Kore.Attribute.Sort.Unit as Sort
 import Kore.Attribute.SortInjection
+import qualified Kore.Builtin.Endianness as Endianness
 import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
@@ -29,8 +30,10 @@ import Kore.Internal.Symbol
     , function
     , functional
     , hook
+    , klabel
     , smthook
     , sortInjection
+    , symbolKywd
     )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
@@ -628,6 +631,24 @@ string2TokenStringSymbol =
 
 -- * Bytes
 
+littleEndianBytesSymbol :: Internal.Symbol
+littleEndianBytesSymbol =
+    builtinSymbol "littleEndianBytes" endiannessSort []
+    & klabel "littleEndianBytes"
+    & symbolKywd
+
+littleEndianBytes :: TermLike Variable
+littleEndianBytes = mkEndianness (Endianness.LE littleEndianBytesSymbol)
+
+bigEndianBytesSymbol :: Internal.Symbol
+bigEndianBytesSymbol =
+    builtinSymbol "bigEndianBytes" endiannessSort []
+    & klabel "bigEndianBytes"
+    & symbolKywd
+
+bigEndianBytes :: TermLike Variable
+bigEndianBytes = mkEndianness (Endianness.BE bigEndianBytesSymbol)
+
 bytes2stringBytesSymbol :: Internal.Symbol
 bytes2stringBytesSymbol =
     builtinSymbol "bytes2stringBytes" stringSort [bytesSort]
@@ -1060,6 +1081,16 @@ bytesSortDecl =
         bytesSort
         [ hookAttribute "BYTES.Bytes" ]
 
+endiannessSort :: Sort
+endiannessSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Endianness"
+        , sortActualSorts = []
+        }
+
+endiannessSortDecl :: ParsedSentence
+endiannessSortDecl = sortDecl endiannessSort
+
 -- -------------------------------------------------------------
 -- * Modules
 
@@ -1436,6 +1467,9 @@ bytesModule =
             , hookedSymbolDecl reverseBytesSymbol
             , hookedSymbolDecl lengthBytesSymbol
             , hookedSymbolDecl concatBytesSymbol
+            , endiannessSortDecl
+            , symbolDecl littleEndianBytesSymbol
+            , symbolDecl bigEndianBytesSymbol
             ]
         }
 
