@@ -11,7 +11,6 @@ module Kore.Attribute.Idem
     , idemId, idemSymbol, idemAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -53,14 +52,5 @@ idemAttribute :: AttributePattern
 idemAttribute = attributePattern_ idemSymbol
 
 instance ParseAttributes Idem where
-    parseAttribute =
-        withApplication' $ \params args Idem { isIdem } -> do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isIdem failDuplicate'
-            return Idem { isIdem = True }
-      where
-        withApplication' = Parser.withApplication idemId
-        failDuplicate' = Parser.failDuplicate idemId
-
-    toAttributes Idem { isIdem } = Attributes [idemAttribute | isIdem]
+    parseAttribute = parseBoolAttribute idemId
+    toAttributes = toBoolAttributes idemAttribute
