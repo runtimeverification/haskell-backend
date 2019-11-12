@@ -23,6 +23,8 @@ module Kore.Internal.Symbol
     , sortInjection
     , smthook
     , hook
+    , klabel
+    , symbolKywd
     , coerceSortInjection
     -- * Re-exports
     , module Kore.Internal.ApplicationSorts
@@ -203,6 +205,18 @@ hook name =
     Lens.set
         (typed @Attribute.Symbol . typed @Attribute.Hook)
         Attribute.Hook { getHook = Just name }
+
+klabel :: Text -> Symbol -> Symbol
+klabel name =
+    Lens.set
+        (typed @Attribute.Symbol . typed @Attribute.Klabel)
+        Attribute.Klabel { getKlabel = Just name }
+
+symbolKywd :: Symbol -> Symbol
+symbolKywd =
+    Lens.set
+        (typed @Attribute.Symbol . typed @Attribute.SymbolKywd)
+        Attribute.SymbolKywd { isSymbolKywd = True }
 
 {- | Coerce a sort injection symbol's source and target sorts.
 
