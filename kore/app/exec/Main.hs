@@ -119,18 +119,13 @@ import Kore.Profiler.Data
     )
 import Kore.Step
 import Kore.Step.Rule
-    ( OnePathRule (..)
-    , ReachabilityRule (..)
-    , RewriteRule (..)
+    ( ReachabilityRule (..)
     )
 import Kore.Step.Search
     ( SearchType (..)
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
-import Kore.Strategies.Goal
-    ( Rule (OnePathRewriteRule)
-    )
 import Kore.Syntax.Definition
     ( ModuleName (..)
     )

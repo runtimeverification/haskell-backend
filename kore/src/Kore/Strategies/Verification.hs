@@ -22,9 +22,6 @@ import Control.Monad.Except
     )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
-import Data.Coerce
-    ( coerce
-    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit

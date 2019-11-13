@@ -43,9 +43,6 @@ import Control.Monad.State.Strict
     , StateT
     , evalStateT
     )
-import Data.Coerce
-    ( coerce
-    )
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List

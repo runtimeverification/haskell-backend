@@ -40,10 +40,6 @@ import qualified Data.Bifunctor as Bifunctor
     ( first
     , second
     )
-import Data.Coerce
-    ( Coercible
-    , coerce
-    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -113,7 +109,6 @@ import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
 import Kore.Step.Rule
     ( EqualityRule
-    , ImplicationRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , extractImplicationClaims
