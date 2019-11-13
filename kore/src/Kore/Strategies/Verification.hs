@@ -23,10 +23,8 @@ import Control.Monad.Except
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Coerce
-    ( Coercible
-    , coerce
+    ( coerce
     )
-import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit
@@ -36,18 +34,8 @@ import qualified Data.Limit as Limit
 import qualified Data.Stream.Infinite as Stream
 
 import Kore.Debug
-import qualified Kore.Internal.Condition as Condition
-import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-import Kore.Step.Rule as RulePattern
-    ( AllPathRule (..)
-    , OnePathRule (..)
-    , ReachabilityRule (..)
-    , RewriteRule (..)
-    , RulePattern (..)
     )
 import Kore.Step.Rule.Expand
 import Kore.Step.Rule.Simplify
@@ -68,12 +56,6 @@ import Numeric.Natural
     )
 
 type CommonProofState  = ProofState.ProofState (Pattern Variable)
-
-instance FromRulePattern (Rule (ReachabilityRule Variable)) where
-    fromRulePattern (OPRule _) rulePat =
-        OPRule $ coerce rulePat
-    fromRulePattern (APRule _) rulePat =
-        APRule $ coerce rulePat
 
 {- | Class type for claim-like rules
 -}

@@ -973,6 +973,12 @@ instance FromRulePattern (ReachabilityRule Variable) where
     fromRulePattern (AllPath _) rulePat =
         AllPath $ coerce rulePat
 
+instance FromRulePattern (Rule (ReachabilityRule Variable)) where
+    fromRulePattern (OPRule _) rulePat =
+        OPRule $ coerce rulePat
+    fromRulePattern (APRule _) rulePat =
+        APRule $ coerce rulePat
+
 getConfiguration
     :: forall goal
     .  ToRulePattern goal
