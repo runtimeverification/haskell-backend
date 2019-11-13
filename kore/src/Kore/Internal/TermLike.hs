@@ -230,7 +230,7 @@ import qualified Kore.Attribute.Pattern.Functional as Pattern
 import qualified Kore.Attribute.Pattern.NonSimplifiable as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
-import Kore.Builtin.Endianness
+import Kore.Builtin.Endianness.Endianness
     ( Endianness
     )
 import Kore.Debug

@@ -62,6 +62,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Endianness as Endianness
 import Kore.Builtin.External
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.InternalBytes as InternalBytes
@@ -122,7 +123,7 @@ koreVerifiers =
             , (String.sort, String.patternVerifier)
             ]
     , applicationVerifiers =
-        HashMap.empty
+        Endianness.applicationVerifiers
     }
 
 {- | Construct an evaluation context for Kore builtin functions.

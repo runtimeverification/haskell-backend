@@ -16,7 +16,7 @@ import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin.Bool.Bool as Bool
-import qualified Kore.Builtin.Endianness as Endianness
+import qualified Kore.Builtin.Endianness.Endianness as Endianness
 import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.List.List as List
 import qualified Kore.Builtin.Map.Map as Map

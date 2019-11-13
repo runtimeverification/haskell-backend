@@ -5,95 +5,73 @@ License     : NCSA
  -}
 
 module Kore.Builtin.Endianness
-    ( Endianness (..)
-    , toApplication
+    ( Kore.Builtin.Endianness.applicationVerifiers
+    , littleEndianKey
+    , bigEndianKey
+    , module Kore.Builtin.Endianness.Endianness
     ) where
 
-import Control.DeepSeq
-    ( NFData
-    )
+import qualified Control.Monad as Monad
 import Data.Functor.Const
-import Data.Hashable
-    ( Hashable
+import qualified Data.HashMap.Strict as HashMap
+import Data.String
+    ( IsString
     )
-import Data.Void
-    ( Void
-    )
-import qualified Generics.SOP as SOP
-import qualified GHC.Generics as GHC
 
-import Debug
-import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables
-import Kore.Attribute.Pattern.Function
-import Kore.Attribute.Pattern.Functional
-import Kore.Attribute.Pattern.NonSimplifiable
-import Kore.Attribute.Pattern.Simplified
-import Kore.Attribute.Synthetic
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
+import Kore.Builtin.Builtin
+import Kore.Builtin.Endianness.Endianness
+import Kore.Error
 import Kore.Internal.Symbol
-import Kore.Sort
+import Kore.Internal.TermLike
 import Kore.Syntax.Application
     ( Application (..)
     )
-import Kore.Unparser
+import qualified Kore.Verified as Verified
 
-data Endianness
-    = BE !Symbol
-    | LE !Symbol
-    deriving (Eq, Ord, Show)
-    deriving (GHC.Generic)
+applicationVerifiers :: ApplicationVerifiers (TermLike Variable)
+applicationVerifiers =
+    HashMap.fromList
+        [ (KlabelSymbolKey littleEndianKey, littleEndianVerifier)
+        , (KlabelSymbolKey bigEndianKey   , bigEndianVerifier   )
+        ]
 
-instance Hashable Endianness
+littleEndianKey :: IsString str => str
+littleEndianKey = "littleEndianBytes"
 
-instance NFData Endianness
+bigEndianKey :: IsString str => str
+bigEndianKey = "bigEndianBytes"
 
-instance SOP.Generic Endianness
-
-instance SOP.HasDatatypeInfo Endianness
-
-instance Debug Endianness
-
-instance Diff Endianness
-
-instance Unparse Endianness where
-    unparse = unparse . toApplication @Void
-    unparse2 = unparse2 . toApplication @Void
-
-toApplication :: forall child. Endianness -> Application Symbol child
-toApplication endianness =
-    (Application symbol [])
+littleEndianVerifier :: ApplicationVerifier Verified.Pattern
+littleEndianVerifier =
+    ApplicationVerifier worker
   where
-    symbol = case endianness of { BE sym -> sym; LE sym -> sym }
+    worker application = do
+        -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
+        Monad.unless (null arguments)
+            (koreFail "expected zero arguments")
+        let Attribute.Symbol.SymbolKywd { isSymbolKywd } =
+                Attribute.Symbol.symbolKywd $ symbolAttributes symbol
+        Monad.unless isSymbolKywd
+            (koreFail "expected symbol'Kywd'{}() attribute")
+        return (EndiannessF . Const $ LE symbol)
+      where
+        arguments = applicationChildren application
+        symbol = applicationSymbolOrAlias application
 
-instance
-    Ord variable
-    => Synthetic (FreeVariables variable) (Const Endianness)
+bigEndianVerifier :: ApplicationVerifier Verified.Pattern
+bigEndianVerifier =
+    ApplicationVerifier worker
   where
-    synthetic = const mempty
-    {-# INLINE synthetic #-}
-
-instance Synthetic Sort (Const Endianness) where
-    synthetic = synthetic . toApplication . getConst
-    {-# INLINE synthetic #-}
-
-instance Synthetic Functional (Const Endianness) where
-    synthetic = const (Functional True)
-    {-# INLINE synthetic #-}
-
-instance Synthetic Function (Const Endianness) where
-    synthetic = const (Function True)
-    {-# INLINE synthetic #-}
-
-instance Synthetic Defined (Const Endianness) where
-    synthetic = const (Defined True)
-    {-# INLINE synthetic #-}
-
-instance Synthetic Simplified (Const Endianness) where
-    synthetic = const (Simplified True)
-    {-# INLINE synthetic #-}
-
-instance Synthetic NonSimplifiable (Const Endianness) where
-    synthetic =
-        -- Endianness symbols are constructors
-        const (NonSimplifiable (Just ConstructorLikeHead))
-    {-# INLINE synthetic #-}
+    worker application = do
+        -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
+        Monad.unless (null arguments)
+            (koreFail "expected zero arguments")
+        let Attribute.Symbol.SymbolKywd { isSymbolKywd } =
+                Attribute.Symbol.symbolKywd $ symbolAttributes symbol
+        Monad.unless isSymbolKywd
+            (koreFail "expected symbol'Kywd'{}() attribute")
+        return (EndiannessF . Const $ BE symbol)
+      where
+        arguments = applicationChildren application
+        symbol = applicationSymbolOrAlias application
