@@ -6,10 +6,13 @@ License     : NCSA
 module Kore.Builtin.Encoding
     ( encode8Bit
     , decode8Bit
-    , fromBase16
+    , parseBase16
     , toBase16
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
 import Control.Category
     ( (>>>)
     )
@@ -29,12 +32,14 @@ import Data.Vector.Unboxed
     ( Vector
     )
 import qualified Data.Vector.Unboxed as Vector
-import Data.Witherable
-    ( mapMaybe
-    )
+import Data.Void
 import Data.Word
     ( Word8
     )
+import Text.Megaparsec
+    ( Parsec
+    )
+import qualified Text.Megaparsec as Parsec
 
 {- | Encode text using an 8-bit encoding.
 
@@ -68,19 +73,15 @@ decode8Bit =
     >>> map (Char.chr . fromIntegral)
     >>> Text.pack
 
-fromBase16 :: Text -> ByteString
-fromBase16 =
-    ByteString.pack . unfold . mapMaybe decode . Text.unpack
+parseBase16 :: Parsec Void Text ByteString
+parseBase16 =
+    parseByte <|> pure ByteString.empty
   where
-    unfold (half1 : half2 : chars) =
-        (Bits.shiftL half1 4 Bits..|. half2) : unfold chars
-    unfold [half] = error ("fromBase16: Unpaired half-byte: " ++ show half)
-    unfold [] = []
-    decode (ord -> half)
-      | 0x61 <= half, half < 0x67 = Just $ toEnum (half - 0x60)
-      | 0x41 <= half, half < 0x47 = Just $ toEnum (half - 0x40)
-      | 0x30 <= half, half < 0x34 = Just $ toEnum (half - 0x30)
-      | otherwise                 = Nothing
+    parseByte = do
+        half1 <- toEnum . Char.digitToInt <$> Parsec.satisfy Char.isDigit
+        half2 <- toEnum . Char.digitToInt <$> Parsec.satisfy Char.isDigit
+        let byte = Bits.shiftL half1 4 Bits..|. half2
+        ByteString.cons byte <$> parseBase16
 
 toBase16 :: ByteString -> Text
 toBase16 byteString =

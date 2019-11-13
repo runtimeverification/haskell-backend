@@ -33,6 +33,7 @@ import Data.ByteString
     ( ByteString
     )
 import qualified Data.ByteString as BS
+import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -44,10 +45,11 @@ import Data.Text
 import qualified Data.Text as Text
 
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Encoding as E
+import qualified Kore.Builtin.Encoding as Encoding
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.InternalBytes.InternalBytes
 import qualified Kore.Builtin.String as String
+import qualified Kore.Error
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
@@ -62,7 +64,7 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers
         , symbolVerifiers
-        , domainValueVerifiers = mempty
+        , domainValueVerifiers = HashMap.singleton sort patternVerifier
         , applicationVerifiers = mempty
         }
 
@@ -115,6 +117,23 @@ symbolVerifiers =
     int    = Int.assertSort
     string = String.assertSort
 
+{- | Verify that domain value patterns are well-formed.
+ -}
+patternVerifier :: Builtin.DomainValueVerifier (TermLike variable)
+patternVerifier =
+    Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
+  where
+    patternVerifierWorker external =
+        case externalChild of
+            StringLiteral_ literal -> do
+                bytesValue <- Builtin.parseString Encoding.parseBase16 literal
+                (return . InternalBytesF . Const)
+                    InternalBytes { bytesSort, bytesValue }
+            _ -> Kore.Error.koreFail "Expected literal string"
+      where
+        DomainValue { domainValueSort = bytesSort } = external
+        DomainValue { domainValueChild = externalChild } = external
+
 expectBuiltinBytes
     :: MonadSimplify m
     => Text
@@ -141,7 +160,7 @@ evalBytes2String =
             bytestring <- expectBuiltinBytes bytes2StringKey _bytes
             Builtin.appliedFunction
                 . String.asPattern resultSort
-                . E.decode8Bit
+                . Encoding.decode8Bit
                 $ bytestring
 
 evalString2Bytes :: Builtin.Function
@@ -153,7 +172,7 @@ evalString2Bytes =
         Builtin.getAttemptedAxiom $ do
             _string <- String.expectBuiltinString string2BytesKey _string
             Builtin.appliedFunction . asPattern resultSort
-                $ E.encode8Bit _string
+                $ Encoding.encode8Bit _string
     evalString2Bytes0 _ _ = Builtin.wrongArity string2BytesKey
 
 evalUpdate :: Builtin.Function
