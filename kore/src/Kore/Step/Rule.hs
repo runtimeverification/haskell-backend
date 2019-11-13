@@ -44,6 +44,9 @@ import Control.Exception
     ( assert
     )
 import qualified Data.Default as Default
+import Data.List
+    ( find
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -101,6 +104,7 @@ import Kore.Internal.TermLike
     , pattern Not_
     , pattern Rewrites_
     , TermLike
+    , forceSort
     , mkAnd
     , mkApplyAlias
     , mkAxiom
@@ -122,6 +126,7 @@ import Kore.Internal.Variable
 import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
+    , predicateSort
     )
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
@@ -146,8 +151,11 @@ import qualified Kore.Unification.Substitution as Substitution
     )
 import Kore.Unparser
     ( Unparse
+    , arguments'
+    , parameters
     , unparse
     , unparse2
+    , unparseAssoc'
     )
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
@@ -260,14 +268,8 @@ instance
     (Ord variable, SortedVariable variable, Unparse variable)
     => Unparse (RewriteRule variable)
   where
-    unparse (RewriteRule RulePattern { left, right, requires } ) =
-        unparse $ mkRewrites
-            (mkAnd left (Predicate.unwrapPredicate requires))
-            right
-    unparse2 (RewriteRule RulePattern { left, right, requires } ) =
-        unparse2 $ mkRewrites
-            (mkAnd left (Predicate.unwrapPredicate requires))
-            right
+    unparse (RewriteRule rr) = unparseRulePattern "\\rewrites" rr
+    unparse2 (RewriteRule rr) = unparse2RulePattern mkRewrites rr
 
 {-  | Implication-based pattern.
 -}
@@ -289,10 +291,8 @@ instance
     (Ord variable, SortedVariable variable, Unparse variable)
     => Unparse (ImplicationRule variable)
   where
-    unparse (ImplicationRule RulePattern { left, right } ) =
-        unparse $ mkImplies left right
-    unparse2 (ImplicationRule RulePattern { left, right } ) =
-        unparse2 $ mkImplies left right
+    unparse (ImplicationRule rr) = unparseRulePattern "\\implies" rr
+    unparse2 (ImplicationRule rr) = unparse2RulePattern mkImplies rr
 
 -- | modalities
 weakExistsFinally :: Text
@@ -916,3 +916,49 @@ applySubstitution substitution rule =
     subst = Substitution.toMap substitution
     finalRule = substitute subst rule
     substitutedVariables = Substitution.variables substitution
+
+unparseRulePattern
+    :: forall variable ann
+    .  (Ord variable, SortedVariable variable, Unparse variable)
+    => String
+    -> RulePattern variable
+    -> Pretty.Doc ann
+unparseRulePattern
+    connector
+    (RulePattern left antiLeft right requires ensures _)
+  =
+    Pretty.pretty connector <> parameters [sort] <> arguments' [arg1, arg2]
+      where
+        requires' = Predicate.unwrapPredicate requires
+        ensures' = Predicate.unwrapPredicate ensures
+        antiLeftList = maybeToList antiLeft
+        termsSorts = termLikeSort <$>
+            antiLeftList <> [requires', left,  ensures', right]
+        sort = fromMaybe predicateSort
+            $ find (predicateSort /=) termsSorts
+        andHead = "\\and" <> parameters [sort]
+        arg1 = unparseAssoc' andHead ""
+            $ unparse . forceSort sort
+                <$> fmap mkNot antiLeftList <> [requires', left]
+        arg2 = (unparse . forceSort sort) $ mkAnd ensures' right
+
+unparse2RulePattern
+    :: forall variable ann
+    .  (Ord variable, SortedVariable variable, Unparse variable)
+    => (TermLike variable -> TermLike variable -> TermLike variable)
+    -> RulePattern variable
+    -> Pretty.Doc ann
+unparse2RulePattern
+    connector
+    (RulePattern left antiLeft right requires ensures _)
+  =
+    let requires' = Predicate.unwrapPredicate requires
+        ensures' = Predicate.unwrapPredicate ensures
+    in
+    case antiLeft of
+        Nothing -> unparse2 $ connector
+            (mkAnd requires' left)
+            (mkAnd ensures' right)
+        Just antiLeftTerm -> unparse2 $ connector
+            (mkAnd (mkNot antiLeftTerm) (mkAnd requires' left))
+            (mkAnd ensures' right)
