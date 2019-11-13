@@ -361,8 +361,9 @@ instance ClaimExtractor (AllPathRule Variable) where
 
 instance Goal (ReachabilityRule Variable) where
 
-    data Rule (ReachabilityRule Variable) = APRule (Rule (AllPathRule Variable))
-                                          | OPRule (Rule (OnePathRule Variable))
+    newtype Rule (ReachabilityRule Variable) =
+        ReachabilityRewriteRule
+            { unReachabilityRewriteRule :: RewriteRule Variable }
         deriving (GHC.Generic, Show)
 
     type Prim (ReachabilityRule Variable) =
@@ -373,10 +374,6 @@ instance Goal (ReachabilityRule Variable) where
 
     goalToRule (OnePath rule) = OPRule . goalToRule $ rule
     goalToRule (AllPath rule) = APRule . goalToRule $ rule
-
-    -- TODO: this is unsafe
-    ruleToGoal (OPRule rule) = OnePath . ruleToGoal $ rule
-    ruleToGoal (APRule rule) = AllPath . ruleToGoal $ rule
 
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
