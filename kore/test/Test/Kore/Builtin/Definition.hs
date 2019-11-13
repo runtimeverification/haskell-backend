@@ -22,6 +22,7 @@ import Kore.Attribute.Sort.HasDomainValues
 import qualified Kore.Attribute.Sort.Unit as Sort
 import Kore.Attribute.SortInjection
 import qualified Kore.Builtin.Endianness as Endianness
+import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
@@ -651,6 +652,26 @@ bigEndianBytes :: TermLike Variable
 bigEndianBytes =
     mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
 
+signedBytesSymbol :: Internal.Symbol
+signedBytesSymbol =
+    builtinSymbol "signedBytes" signednessSort []
+    & klabel "signedBytes"
+    & symbolKywd
+
+signedBytes :: TermLike Variable
+signedBytes =
+    mkSignedness (Signedness.Signed signedBytesSymbol)
+
+unsignedBytesSymbol :: Internal.Symbol
+unsignedBytesSymbol =
+    builtinSymbol "unsignedBytes" signednessSort []
+    & klabel "unsignedBytes"
+    & symbolKywd
+
+unsignedBytes :: TermLike Variable
+unsignedBytes =
+    mkSignedness (Signedness.Unsigned unsignedBytesSymbol)
+
 bytes2stringBytesSymbol :: Internal.Symbol
 bytes2stringBytesSymbol =
     builtinSymbol "bytes2stringBytes" stringSort [bytesSort]
@@ -1093,6 +1114,16 @@ endiannessSort =
 endiannessSortDecl :: ParsedSentence
 endiannessSortDecl = sortDecl endiannessSort
 
+signednessSort :: Sort
+signednessSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Signedness"
+        , sortActualSorts = []
+        }
+
+signednessSortDecl :: ParsedSentence
+signednessSortDecl = sortDecl signednessSort
+
 -- -------------------------------------------------------------
 -- * Modules
 
@@ -1472,6 +1503,9 @@ bytesModule =
             , endiannessSortDecl
             , symbolDecl littleEndianBytesSymbol
             , symbolDecl bigEndianBytesSymbol
+            , signednessSortDecl
+            , symbolDecl signedBytesSymbol
+            , symbolDecl unsignedBytesSymbol
             ]
         }
 
