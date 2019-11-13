@@ -38,8 +38,8 @@ import Kore.Syntax.Application
 import Kore.Unparser
 
 data Endianness
-    = BE !Symbol
-    | LE !Symbol
+    = BigEndian !Symbol
+    | LittleEndian !Symbol
     deriving (Eq, Ord, Show)
     deriving (GHC.Generic)
 
@@ -92,8 +92,9 @@ instance Synthetic NonSimplifiable (Const Endianness) where
         const (NonSimplifiable (Just ConstructorLikeHead))
     {-# INLINE synthetic #-}
 
+toSymbol :: Endianness -> Symbol
+toSymbol (BigEndian symbol) = symbol
+toSymbol (LittleEndian symbol) = symbol
+
 toApplication :: forall child. Endianness -> Application Symbol child
-toApplication endianness =
-    (Application symbol [])
-  where
-    symbol = case endianness of { BE sym -> sym; LE sym -> sym }
+toApplication endianness = (Application (toSymbol endianness) [])

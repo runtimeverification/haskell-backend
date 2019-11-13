@@ -638,7 +638,8 @@ littleEndianBytesSymbol =
     & symbolKywd
 
 littleEndianBytes :: TermLike Variable
-littleEndianBytes = mkEndianness (Endianness.LE littleEndianBytesSymbol)
+littleEndianBytes =
+    mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
 
 bigEndianBytesSymbol :: Internal.Symbol
 bigEndianBytesSymbol =
@@ -647,7 +648,8 @@ bigEndianBytesSymbol =
     & symbolKywd
 
 bigEndianBytes :: TermLike Variable
-bigEndianBytes = mkEndianness (Endianness.BE bigEndianBytesSymbol)
+bigEndianBytes =
+    mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
 
 bytes2stringBytesSymbol :: Internal.Symbol
 bytes2stringBytesSymbol =

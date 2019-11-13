@@ -42,8 +42,10 @@ littleEndianKey = "littleEndianBytes"
 bigEndianKey :: IsString str => str
 bigEndianKey = "bigEndianBytes"
 
-littleEndianVerifier :: ApplicationVerifier Verified.Pattern
-littleEndianVerifier =
+endiannessVerifier
+    :: (Symbol -> Endianness)  -- ^ Constructor
+    -> ApplicationVerifier Verified.Pattern
+endiannessVerifier ctor =
     ApplicationVerifier worker
   where
     worker application = do
@@ -54,24 +56,13 @@ littleEndianVerifier =
                 Attribute.Symbol.symbolKywd $ symbolAttributes symbol
         Monad.unless isSymbolKywd
             (koreFail "expected symbol'Kywd'{}() attribute")
-        return (EndiannessF . Const $ LE symbol)
+        return (EndiannessF . Const $ ctor symbol)
       where
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
+littleEndianVerifier :: ApplicationVerifier Verified.Pattern
+littleEndianVerifier = endiannessVerifier LittleEndian
+
 bigEndianVerifier :: ApplicationVerifier Verified.Pattern
-bigEndianVerifier =
-    ApplicationVerifier worker
-  where
-    worker application = do
-        -- TODO (thomas.tuegel): Move the checks into the symbol verifiers.
-        Monad.unless (null arguments)
-            (koreFail "expected zero arguments")
-        let Attribute.Symbol.SymbolKywd { isSymbolKywd } =
-                Attribute.Symbol.symbolKywd $ symbolAttributes symbol
-        Monad.unless isSymbolKywd
-            (koreFail "expected symbol'Kywd'{}() attribute")
-        return (EndiannessF . Const $ BE symbol)
-      where
-        arguments = applicationChildren application
-        symbol = applicationSymbolOrAlias application
+bigEndianVerifier = endiannessVerifier BigEndian
