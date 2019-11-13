@@ -34,6 +34,7 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
+import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1
@@ -491,6 +492,18 @@ test_bytes2string_string2bytes =
                     ]
                 ]
         (===) expect actual
+
+test_InternalBytes :: [TestTree]
+test_InternalBytes =
+    [ testCase "\\dv{Bytes{}}(\"00\")" $ do
+        let unverified =
+                mkDomainValue
+                $ DomainValue bytesSort
+                $ mkStringLiteral "00"
+            expect = Right $ asInternal "\x00"
+            actual = verifyPattern (Just bytesSort) unverified
+        assertEqual "" expect actual
+    ]
 
 asInternal :: ByteString -> TermLike Variable
 asInternal = InternalBytes.asInternal bytesSort
