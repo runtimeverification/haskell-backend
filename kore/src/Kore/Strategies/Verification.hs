@@ -169,8 +169,6 @@ verifyClaim
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
--- The implementation assumes that either all strategy steps are equal
--- or that the first step is different from the rest.
 verifyClaimStep
     :: forall claim m
     .  (MonadCatch m, MonadSimplify m)

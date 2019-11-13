@@ -59,6 +59,7 @@ import Kore.Logger.Output
 import Kore.Repl.Data
 import Kore.Step.Rule
     ( OnePathRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (..)
     )
 import Kore.Step.SMT.Lemma
@@ -235,7 +236,7 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
-                            (Proxy @(OnePathRule Variable))
+                            (Proxy @(ReachabilityRule Variable))
                             mLogger
                             replScript
                             replMode
