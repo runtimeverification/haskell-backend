@@ -362,6 +362,13 @@ evalConcat =
                 . asPattern resultSort symbol
                 $ _lhs <> _rhs
 
+evalInt2bytes :: Builtin.Function
+evalInt2bytes =
+    Builtin.functionEvaluator evalInt2bytes0
+  where
+    evalInt2bytes0 :: Builtin.FunctionImplementation
+    evalInt2bytes0 _ _ = return NotApplicable
+
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
@@ -376,4 +383,5 @@ builtinFunctions =
         , (reverseKey, evalReverse)
         , (lengthKey, evalLength)
         , (concatKey, evalConcat)
+        , (int2bytesKey, evalInt2bytes)
         ]
