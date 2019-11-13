@@ -11,6 +11,7 @@ import Data.List
     ( nub
     , sort
     )
+import qualified Data.List.NonEmpty as NonEmpty
 import Data.Maybe
     ( fromMaybe
     )
@@ -850,6 +851,6 @@ runOnePathSteps
         goal
         (Limit.takeWithin
             stepLimit
-            (strategy goal coinductiveRewrites rewrites)
+            (NonEmpty.toList $ strategy goal coinductiveRewrites rewrites)
         )
     return (sort $ nub result)

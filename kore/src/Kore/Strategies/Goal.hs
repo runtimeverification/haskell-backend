@@ -37,6 +37,9 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Witherable
@@ -180,7 +183,7 @@ class Goal goal where
         :: goal
         -> [goal]
         -> [Rule goal]
-        -> [Strategy (Prim goal)]
+        -> NonEmpty (Strategy (Prim goal))
 
 class ClaimExtractor claim where
     extractClaim
@@ -270,7 +273,7 @@ instance Goal (OnePathRule Variable) where
 
     strategy _ goals rules =
         onePathFirstStep rewrites
-        : repeat
+        :| repeat
             ( onePathFollowupStep
                 coinductiveRewrites
                 rewrites
@@ -326,7 +329,7 @@ instance Goal (AllPathRule Variable) where
 
     strategy _ goals rules =
         allPathFirstStep rewrites
-        : repeat
+        :| repeat
             ( allPathFollowupStep
                 coinductiveRewrites
                 rewrites
@@ -420,7 +423,7 @@ instance Goal (ReachabilityRule Variable) where
         :: ReachabilityRule Variable
         -> [ReachabilityRule Variable]
         -> [Rule (ReachabilityRule Variable)]
-        -> [Strategy (Prim (ReachabilityRule Variable))]
+        -> NonEmpty (Strategy (Prim (ReachabilityRule Variable)))
     strategy goal claims axioms =
         case goal of
             OnePath rule ->
@@ -458,14 +461,16 @@ maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
 reachabilityOnePathStrategy
-    :: [Strategy (Prim (OnePathRule Variable))]
-    -> [Strategy (Prim (ReachabilityRule Variable))]
+    :: Functor t
+    => t (Strategy (Prim (OnePathRule Variable)))
+    -> t (Strategy (Prim (ReachabilityRule Variable)))
 reachabilityOnePathStrategy strategy' =
     (fmap . fmap . fmap) OPRule strategy'
 
 reachabilityAllPathStrategy
-    :: [Strategy (Prim (AllPathRule Variable))]
-    -> [Strategy (Prim (ReachabilityRule Variable))]
+    :: Functor t
+    => t (Strategy (Prim (AllPathRule Variable)))
+    -> t (Strategy (Prim (ReachabilityRule Variable)))
 reachabilityAllPathStrategy strategy' =
     (fmap . fmap . fmap) APRule strategy'
 

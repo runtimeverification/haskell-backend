@@ -33,6 +33,7 @@ import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
+import qualified Data.List.NonEmpty as NonEmpty
 
 import Kore.Debug
 import qualified Kore.Internal.Condition as Condition
@@ -147,7 +148,7 @@ verifyClaim
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
-                (strategy goal claims axioms)
+                (NonEmpty.toList $ strategy goal claims axioms)
     executionGraph <-
         runStrategy
             (modifiedTransitionRule destination) limitedStrategy startPattern

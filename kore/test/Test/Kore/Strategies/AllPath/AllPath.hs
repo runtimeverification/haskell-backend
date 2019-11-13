@@ -13,6 +13,10 @@ import Data.Function
     )
 import Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
+import Data.List.NonEmpty
+    ( NonEmpty (..)
+    )
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import Data.Sequence
     ( Seq
@@ -219,7 +223,7 @@ test_runStrategy =
         . unAllPathIdentity
         $ Strategy.runStrategy
             Goal.transitionRule
-            (Goal.strategy (unRule goal) [unRule goal] axioms)
+            (NonEmpty.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
             (ProofState.Goal . unRule $ goal)
     disproves
         :: HasCallStack
@@ -308,7 +312,7 @@ instance Goal.Goal Goal where
     type ProofState Goal a = ProofState.ProofState a
 
     strategy _ goals rules =
-        firstStep : repeat nextStep
+        firstStep :| repeat nextStep
       where
         firstStep =
             (Strategy.sequence . map Strategy.apply)
