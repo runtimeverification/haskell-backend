@@ -15,9 +15,8 @@ builtin modules.
 module Kore.Builtin.Set
     ( sort
     , assertSort
-    , sortDeclVerifiers
     , isSetSort
-    , symbolVerifiers
+    , verifiers
     , builtinFunctions
     , Domain.Builtin
     , returnConcreteSet
@@ -124,6 +123,15 @@ isSetSort = Builtin.isSort sort
  -}
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
+
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers
+        , symbolVerifiers
+        , domainValueVerifiers = mempty
+        , applicationVerifiers = mempty
+        }
 
 {- | Verify that hooked sort declarations are well-formed.
 

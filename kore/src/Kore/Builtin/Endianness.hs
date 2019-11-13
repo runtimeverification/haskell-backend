@@ -5,7 +5,7 @@ License     : NCSA
  -}
 
 module Kore.Builtin.Endianness
-    ( Kore.Builtin.Endianness.applicationVerifiers
+    ( verifiers
     , littleEndianKey
     , bigEndianKey
     , module Kore.Builtin.Endianness.Endianness
@@ -29,12 +29,15 @@ import Kore.Syntax.Application
     )
 import qualified Kore.Verified as Verified
 
-applicationVerifiers :: ApplicationVerifiers (TermLike Variable)
-applicationVerifiers =
-    HashMap.fromList
-        [ (KlabelSymbolKey littleEndianKey, littleEndianVerifier)
-        , (KlabelSymbolKey bigEndianKey   , bigEndianVerifier   )
-        ]
+verifiers :: Verifiers
+verifiers =
+    mempty
+        { applicationVerifiers =
+            HashMap.fromList
+                [ (KlabelSymbolKey littleEndianKey, littleEndianVerifier)
+                , (KlabelSymbolKey bigEndianKey   , bigEndianVerifier   )
+                ]
+        }
 
 littleEndianKey :: IsString str => str
 littleEndianKey = "littleEndianBytes"

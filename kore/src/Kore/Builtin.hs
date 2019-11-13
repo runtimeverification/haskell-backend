@@ -39,7 +39,6 @@ import qualified Control.Lens as Lens
 import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-import qualified Data.HashMap.Strict as HashMap
 import Data.Map
     ( Map
     )
@@ -98,38 +97,18 @@ import Kore.Variables.Fresh
  -}
 koreVerifiers :: Builtin.Verifiers
 koreVerifiers =
-    Builtin.Verifiers
-    { sortDeclVerifiers =
-        mempty
-        <> Bool.sortDeclVerifiers
-        <> Int.sortDeclVerifiers
-        <> List.sortDeclVerifiers
-        <> Map.sortDeclVerifiers
-        <> Set.sortDeclVerifiers
-        <> String.sortDeclVerifiers
-        <> InternalBytes.sortDeclVerifiers
-    , symbolVerifiers =
-        mempty
-        <> Bool.symbolVerifiers
-        <> Int.symbolVerifiers
-        <> List.symbolVerifiers
-        <> Map.symbolVerifiers
-        <> KEqual.symbolVerifiers
-        <> Set.symbolVerifiers
-        <> String.symbolVerifiers
-        <> Krypto.symbolVerifiers
-        <> InternalBytes.symbolVerifiers
-    , domainValueVerifiers =
-        HashMap.fromList
-            [ (Bool.sort, Bool.patternVerifier)
-            , (Int.sort, Int.patternVerifier)
-            , (String.sort, String.patternVerifier)
-            ]
-    , applicationVerifiers =
-        mempty
-        <> Endianness.applicationVerifiers
-        <> Signedness.applicationVerifiers
-    }
+    mempty
+    <> Bool.verifiers
+    <> Endianness.verifiers
+    <> Int.verifiers
+    <> InternalBytes.verifiers
+    <> KEqual.verifiers
+    <> Krypto.verifiers
+    <> List.verifiers
+    <> Map.verifiers
+    <> Set.verifiers
+    <> Signedness.verifiers
+    <> String.verifiers
 
 {- | Construct an evaluation context for Kore builtin functions.
 

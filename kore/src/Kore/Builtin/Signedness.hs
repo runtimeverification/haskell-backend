@@ -5,7 +5,7 @@ License     : NCSA
  -}
 
 module Kore.Builtin.Signedness
-    ( Kore.Builtin.Signedness.applicationVerifiers
+    ( verifiers
     , signedKey
     , unsignedKey
     , module Kore.Builtin.Signedness.Signedness
@@ -29,12 +29,15 @@ import Kore.Syntax.Application
     )
 import qualified Kore.Verified as Verified
 
-applicationVerifiers :: ApplicationVerifiers (TermLike Variable)
-applicationVerifiers =
-    HashMap.fromList
-        [ (KlabelSymbolKey signedKey  , signedVerifier  )
-        , (KlabelSymbolKey unsignedKey, unsignedVerifier)
-        ]
+verifiers :: Verifiers
+verifiers =
+    mempty
+        { applicationVerifiers =
+            HashMap.fromList
+                [ (KlabelSymbolKey signedKey  , signedVerifier  )
+                , (KlabelSymbolKey unsignedKey, unsignedVerifier)
+                ]
+        }
 
 signedKey :: IsString str => str
 signedKey = "signedBytes"
