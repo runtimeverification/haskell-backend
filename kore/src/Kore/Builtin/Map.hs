@@ -272,7 +272,8 @@ evalElement =
                         _ -> Builtin.wrongArity Map.elementKey
             case TermLike.asConcrete _key of
                 Just concrete ->
-                    returnConcreteMap
+                    TermLike.assertNonSimplifiableKeys [_key]
+                    $ returnConcreteMap
                         resultSort
                         (Map.singleton concrete (Domain.MapValue _value))
                 Nothing ->
@@ -329,6 +330,8 @@ evalUpdate =
                         _ -> Builtin.wrongArity Map.updateKey
             _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.updateKey _map
+            TermLike.assertNonSimplifiableKeys (_key : Map.keys _map)
+                $ return ()
             returnConcreteMap
                 resultSort
                 (Map.insert _key (Domain.MapValue value) _map)
