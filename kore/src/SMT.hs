@@ -10,7 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module SMT
     ( SMT, SmtT, runSmtT
     , Solver
-    , newSolver, stopSolver
+    , stopSolver
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -444,9 +444,15 @@ stopSolver mvar = do
 runSMT :: Config -> Logger -> SMT a -> IO a
 runSMT config logger SmtT { runSmtT } =
     Exception.bracket
-        (newSolver config logger)
+        (newSolver config logger `Exception.catch` formatError)
         stopSolver
         (runReaderT runSmtT)
+  where
+    formatError :: Exception.IOException -> IO a
+    formatError _ =
+        error
+            $ "SMT errror: could not find the 'z3' executable. "
+            <> "Please make sure it's available in your path."
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
