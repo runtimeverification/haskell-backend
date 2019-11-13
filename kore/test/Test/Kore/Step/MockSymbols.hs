@@ -1599,7 +1599,7 @@ env =
 generatorSetup :: ConsistentKore.Setup
 generatorSetup =
     ConsistentKore.Setup
-        { allSymbols = filter restrictedSymbol symbols
+        { allSymbols = filter doesNotHaveArguments symbols
         , allAliases = []
         , allSorts = map fst sortAttributesMapping
         , freeElementVariables = Set.empty
@@ -1621,15 +1621,7 @@ generatorSetup =
         , metadataTools = metadataTools
         }
   where
-    restrictedSymbol symbol' =
-        doesNotHaveArguments symbol' && preservesNonSimplifiable symbol'
     doesNotHaveArguments Symbol {symbolParams} = null symbolParams
-    preservesNonSimplifiable Symbol {symbolAttributes} =
-        Attribute.constructor symbolAttributes == Attribute.Constructor True
-        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "MAP.element")
-        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "MAP.concat")
-        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "SET.element")
-        || Attribute.Symbol.hook symbolAttributes == Attribute.Hook (Just "SET.concat")
 
 builtinSimplifiers :: BuiltinAndAxiomSimplifierMap
 builtinSimplifiers =
