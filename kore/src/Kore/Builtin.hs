@@ -71,6 +71,7 @@ import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
+import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (..)
@@ -99,7 +100,8 @@ koreVerifiers :: Builtin.Verifiers
 koreVerifiers =
     Builtin.Verifiers
     { sortDeclVerifiers =
-           Bool.sortDeclVerifiers
+        mempty
+        <> Bool.sortDeclVerifiers
         <> Int.sortDeclVerifiers
         <> List.sortDeclVerifiers
         <> Map.sortDeclVerifiers
@@ -107,7 +109,8 @@ koreVerifiers =
         <> String.sortDeclVerifiers
         <> InternalBytes.sortDeclVerifiers
     , symbolVerifiers =
-           Bool.symbolVerifiers
+        mempty
+        <> Bool.symbolVerifiers
         <> Int.symbolVerifiers
         <> List.symbolVerifiers
         <> Map.symbolVerifiers
@@ -123,7 +126,9 @@ koreVerifiers =
             , (String.sort, String.patternVerifier)
             ]
     , applicationVerifiers =
-        Endianness.applicationVerifiers
+        mempty
+        <> Endianness.applicationVerifiers
+        <> Signedness.applicationVerifiers
     }
 
 {- | Construct an evaluation context for Kore builtin functions.
