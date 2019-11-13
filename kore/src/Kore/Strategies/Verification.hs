@@ -33,7 +33,7 @@ import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
-import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Stream.Infinite as Stream
 
 import Kore.Debug
 import qualified Kore.Internal.Condition as Condition
@@ -148,7 +148,7 @@ verifyClaim
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
-                (NonEmpty.toList $ strategy goal claims axioms)
+                (Foldable.toList $ strategy goal claims axioms)
     executionGraph <-
         runStrategy
             (modifiedTransitionRule destination) limitedStrategy startPattern
@@ -203,17 +203,13 @@ verifyClaimStep
     strategy' :: Strategy (Prim claim)
     strategy'
         | isRoot = firstStep
-        | otherwise =
-            case followupSteps of
-                [] -> firstStep
-                secondStep : strategyTail ->
-                    secondStep
+        | otherwise = followupStep
 
     firstStep :: Strategy (Prim claim)
-    firstStep = NonEmpty.head $ strategy target claims axioms
+    firstStep = strategy target claims axioms Stream.!! 0
 
-    followupSteps :: [Strategy (Prim claim)]
-    followupSteps = NonEmpty.tail $ strategy target claims axioms
+    followupStep :: Strategy (Prim claim)
+    followupStep = strategy target claims axioms Stream.!! 1
 
     isRoot :: Bool
     isRoot = node == root

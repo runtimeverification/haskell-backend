@@ -37,10 +37,11 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.List.NonEmpty
-    ( NonEmpty (..)
-    )
 import qualified Data.Set as Set
+import Data.Stream.Infinite
+    ( Stream (..)
+    )
+import qualified Data.Stream.Infinite as Stream
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Witherable
     ( mapMaybe
@@ -183,7 +184,7 @@ class Goal goal where
         :: goal
         -> [goal]
         -> [Rule goal]
-        -> NonEmpty (Strategy (Prim goal))
+        -> Stream (Strategy (Prim goal))
 
 class ClaimExtractor claim where
     extractClaim
@@ -273,7 +274,8 @@ instance Goal (OnePathRule Variable) where
 
     strategy _ goals rules =
         onePathFirstStep rewrites
-        :| repeat
+        :> Stream.iterate
+            id
             ( onePathFollowupStep
                 coinductiveRewrites
                 rewrites
@@ -329,7 +331,8 @@ instance Goal (AllPathRule Variable) where
 
     strategy _ goals rules =
         allPathFirstStep rewrites
-        :| repeat
+        :> Stream.iterate
+            id
             ( allPathFollowupStep
                 coinductiveRewrites
                 rewrites
@@ -423,7 +426,7 @@ instance Goal (ReachabilityRule Variable) where
         :: ReachabilityRule Variable
         -> [ReachabilityRule Variable]
         -> [Rule (ReachabilityRule Variable)]
-        -> NonEmpty (Strategy (Prim (ReachabilityRule Variable)))
+        -> Stream (Strategy (Prim (ReachabilityRule Variable)))
     strategy goal claims axioms =
         case goal of
             OnePath rule ->

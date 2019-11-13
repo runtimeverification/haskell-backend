@@ -63,6 +63,7 @@ dependencies:
   - recursion-schemes
   - reflection
   - semialign
+  - streams
   - template-haskell
   - text
   - these

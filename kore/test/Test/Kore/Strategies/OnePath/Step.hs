@@ -7,11 +7,11 @@ import Test.Tasty
 import Data.Default
     ( def
     )
+import qualified Data.Foldable as Foldable
 import Data.List
     ( nub
     , sort
     )
-import qualified Data.List.NonEmpty as NonEmpty
 import Data.Maybe
     ( fromMaybe
     )
@@ -851,6 +851,6 @@ runOnePathSteps
         goal
         (Limit.takeWithin
             stepLimit
-            (NonEmpty.toList $ strategy goal coinductiveRewrites rewrites)
+            (Foldable.toList $ strategy goal coinductiveRewrites rewrites)
         )
     return (sort $ nub result)
