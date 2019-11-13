@@ -300,6 +300,24 @@ data Verifiers = Verifiers
     , applicationVerifiers :: ApplicationVerifiers Verified.Pattern
     }
 
+instance Semigroup Verifiers where
+    (<>) a b =
+        Verifiers
+            { sortDeclVerifiers = on (<>) sortDeclVerifiers a b
+            , symbolVerifiers = on (<>) symbolVerifiers a b
+            , domainValueVerifiers = on (<>) domainValueVerifiers a b
+            , applicationVerifiers = on (<>) applicationVerifiers a b
+            }
+
+instance Monoid Verifiers where
+    mempty =
+        Verifiers
+            { sortDeclVerifiers = mempty
+            , symbolVerifiers = mempty
+            , domainValueVerifiers = mempty
+            , applicationVerifiers = mempty
+            }
+
 {- | Look up and apply a builtin sort declaration verifier.
 
 The 'Hook' name should refer to a builtin sort; if it is unset or the name is
