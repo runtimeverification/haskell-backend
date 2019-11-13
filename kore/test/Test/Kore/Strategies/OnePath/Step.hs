@@ -38,7 +38,6 @@ import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
-import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
