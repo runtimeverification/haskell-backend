@@ -444,15 +444,16 @@ stopSolver mvar = do
 runSMT :: Config -> Logger -> SMT a -> IO a
 runSMT config logger SmtT { runSmtT } =
     Exception.bracket
-        (newSolver config logger `Exception.catch` formatError)
+        (newSolver config logger `Exception.catch` showZ3NotFound)
         stopSolver
         (runReaderT runSmtT)
   where
-    formatError :: Exception.IOException -> IO a
-    formatError _ =
+    showZ3NotFound :: Exception.IOException -> IO a
+    showZ3NotFound e =
         error
-            $ "SMT errror: could not find the 'z3' executable. "
-            <> "Please make sure it's available in your path."
+            $ Exception.displayException e <> "\n"
+            <> "We couldn't start Z3 due to the exception above. "
+            <> "Is Z3 installed?"
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars
