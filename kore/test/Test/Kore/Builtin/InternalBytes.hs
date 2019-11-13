@@ -34,6 +34,7 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
+import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1
@@ -491,6 +492,27 @@ test_bytes2string_string2bytes =
                     ]
                 ]
         (===) expect actual
+
+test_int2bytes :: [TestTree]
+test_int2bytes =
+    [ testCase "Int2Bytes(4, 0, BE)" $ do
+        let input =
+                int2bytes
+                    (Test.Int.asInternal 4)  -- length
+                    (Test.Int.asInternal 0)  -- data
+                    bigEndianBytes
+            expect = [asPattern "\x00\x00\x00\x00"]
+        actual <- simplify input
+        assertEqual "" expect actual
+    -- , testCase "Int2Bytes(1, 128, BE)" _
+    -- , testCase "Int2Bytes(1, -128, BE)" _
+    -- , testCase "Int2Bytes(2, 128, BE)" _
+    -- , testCase "Int2Bytes(2, -128, BE)" _
+    -- , testCase "Int2Bytes(2, -128, LE)" _
+    -- , testCase "Int2Bytes(0, 0, BE)" _
+    ]
+
+-- * Helpers
 
 asInternal :: ByteString -> TermLike Variable
 asInternal = InternalBytes.asInternal bytesSort string2bytesBytesSymbol

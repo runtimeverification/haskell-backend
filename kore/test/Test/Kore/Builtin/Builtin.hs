@@ -8,6 +8,7 @@ module Test.Kore.Builtin.Builtin
     , testTermLikeSimplifier
     , testEvaluators
     , testSymbolWithSolver
+    , simplify
     , evaluate
     , evaluateT
     , evaluateToList
@@ -39,6 +40,7 @@ import GHC.Stack
     ( HasCallStack
     )
 
+import qualified Branch
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
     ( VerifyError
@@ -115,6 +117,7 @@ import Kore.Unparser
     )
 import SMT
     ( SMT
+    , runNoSMT
     )
 
 import Test.Kore.Builtin.Definition
@@ -226,6 +229,14 @@ testEnv =
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
         }
+
+simplify :: TermLike Variable -> IO [Pattern Variable]
+simplify =
+    id
+    . runNoSMT mempty
+    . runSimplifier testEnv
+    . Branch.gather
+    . simplifyConditionalTerm Condition.top
 
 evaluate :: TermLike Variable -> SMT (Pattern Variable)
 evaluate = runSimplifier testEnv . (`TermLike.simplify` Condition.top)

@@ -727,6 +727,18 @@ concatBytesSymbol =
     builtinSymbol "concatBytes" bytesSort [bytesSort, bytesSort]
         & hook "BYTES.concat"
 
+int2bytesSymbol :: Internal.Symbol
+int2bytesSymbol =
+    builtinSymbol "int2bytes" bytesSort [intSort, intSort, endiannessSort]
+    & hook "BYTES.int2bytes"
+
+int2bytes
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+int2bytes len i end = mkApplySymbol int2bytesSymbol [len, i, end]
+
 -- * Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
@@ -1500,6 +1512,7 @@ bytesModule =
             , hookedSymbolDecl reverseBytesSymbol
             , hookedSymbolDecl lengthBytesSymbol
             , hookedSymbolDecl concatBytesSymbol
+            , hookedSymbolDecl int2bytesSymbol
             , endiannessSortDecl
             , symbolDecl littleEndianBytesSymbol
             , symbolDecl bigEndianBytesSymbol
