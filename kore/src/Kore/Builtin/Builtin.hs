@@ -263,9 +263,13 @@ newtype ApplicationVerifier patternType =
             -> Either (Error VerifyError) (TermLikeF Variable patternType)
         }
 
+{- | @SymbolKey@ names builtin functions and constructors.
+ -}
 data SymbolKey
     = HookedSymbolKey !Text
+    -- ^ A builtin function identified by its @hook@ attribute.
     | KlabelSymbolKey !Text
+    -- ^ A builtin constructor identified by its @klabel@ attribute.
     deriving (Eq, Ord)
     deriving (GHC.Generic)
 
