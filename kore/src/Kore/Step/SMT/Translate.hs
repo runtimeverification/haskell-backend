@@ -129,6 +129,7 @@ translatePredicate translateUninterpreted predicate =
             InternalBytesF _ -> empty
             InhabitantF _ -> empty
             EndiannessF _ -> empty
+            SignednessF _ -> empty
 
     translatePredicateAnd And { andFirst, andSecond } =
         SMT.and

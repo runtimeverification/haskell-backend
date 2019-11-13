@@ -21,6 +21,7 @@ import qualified Kore.Builtin.Int.Int as Int
 import qualified Kore.Builtin.List.List as List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
+import qualified Kore.Builtin.Signedness.Signedness as Signedness
 import qualified Kore.Builtin.String.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Alias as Alias
@@ -127,4 +128,9 @@ externalize =
                 $ mapHead Symbol.toSymbolOrAlias
                 $ Endianness.toApplication
                 $ getConst endiannessF
+            SignednessF signednessF ->
+                Syntax.ApplicationF
+                $ mapHead Symbol.toSymbolOrAlias
+                $ Signedness.toApplication
+                $ getConst signednessF
             BuiltinF _ -> error "Unexpected internal builtin"

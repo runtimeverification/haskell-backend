@@ -73,6 +73,7 @@ module Kore.Internal.TermLike
     , mkInhabitant
     , mkEvaluated
     , mkEndianness
+    , mkSignedness
     , elemVarS
     , setVarS
     -- * Predicate constructors
@@ -130,6 +131,7 @@ module Kore.Internal.TermLike
     , pattern StringLiteral_
     , pattern Evaluated_
     , pattern Endianness_
+    , pattern Signedness_
     -- * Re-exports
     , module Kore.Internal.Variable
     , Substitute.SubstitutionVariable
@@ -232,6 +234,9 @@ import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness
     ( Endianness
+    )
+import Kore.Builtin.Signedness.Signedness
+    ( Signedness
     )
 import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
@@ -353,6 +358,7 @@ data TermLikeF variable child
     | InternalBytesF !(Const InternalBytes child)
     | VariableF      !(Const (UnifiedVariable variable) child)
     | EndiannessF    !(Const Endianness child)
+    | SignednessF    !(Const Signedness child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic, GHC.Generic1)
@@ -443,6 +449,7 @@ traverseVariablesF traversing =
         InhabitantF s -> pure (InhabitantF s)
         EvaluatedF childP -> pure (EvaluatedF childP)
         EndiannessF endianness -> pure (EndiannessF endianness)
+        SignednessF signedness -> pure (SignednessF signedness)
   where
     traverseConstVariable (Const variable) =
         Const <$> traverse traversing variable
@@ -1171,6 +1178,7 @@ forceSortPredicate
         InternalBytesF _ -> illSorted forcedSort original
         InhabitantF _ -> illSorted forcedSort original
         EndiannessF _ -> illSorted forcedSort original
+        SignednessF _ -> illSorted forcedSort original
 
 {- | Call the argument function with two patterns whose sorts agree.
 
@@ -2004,6 +2012,16 @@ mkEndianness
     -> TermLike variable
 mkEndianness = updateCallStack . synthesize . EndiannessF . Const
 
+{- | Construct an 'Signedness' pattern.
+ -}
+mkSignedness
+    :: GHC.HasCallStack
+    => Ord variable
+    => SortedVariable variable
+    => Signedness
+    -> TermLike variable
+mkSignedness = updateCallStack . synthesize . SignednessF . Const
+
 mkSort :: Id -> Sort
 mkSort name = SortActualSort $ SortActual name []
 
@@ -2451,3 +2469,7 @@ pattern Evaluated_ child <-
 pattern Endianness_ :: Endianness -> TermLike child
 pattern Endianness_ endianness <-
     (Recursive.project -> _ :< EndiannessF (Const endianness))
+
+pattern Signedness_ :: Signedness -> TermLike child
+pattern Signedness_ signedness <-
+    (Recursive.project -> _ :< SignednessF (Const signedness))

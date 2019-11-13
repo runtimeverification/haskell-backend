@@ -344,6 +344,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
     checkTermF (EvaluatedF _) = term
     checkTermF (InhabitantF _) = term  -- Not implemented.
     checkTermF (EndiannessF _) = term  -- Not implemented.
+    checkTermF (SignednessF _) = term  -- Not implemented.
 
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do

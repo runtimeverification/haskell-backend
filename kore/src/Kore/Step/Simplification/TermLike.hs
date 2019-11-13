@@ -358,6 +358,7 @@ simplifyInternal term predicate = do
             -- Do not simplify non-simplifiable patterns.
             EvaluatedF  _ -> doNotSimplify
             EndiannessF _ -> doNotSimplify
+            SignednessF _ -> doNotSimplify
             --
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
