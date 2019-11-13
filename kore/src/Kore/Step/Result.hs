@@ -17,6 +17,7 @@ module Kore.Step.Result
     , mapRules
     , mapConfigs
     , traverseConfigs
+    , toAttemptedAxiom
     ) where
 
 import Control.Applicative
@@ -33,6 +34,13 @@ import Kore.Internal.MultiOr
     ( MultiOr
     )
 import qualified Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import Kore.Step.Simplification.Simplify
+    ( AttemptedAxiom (..)
+    , AttemptedAxiomResults (AttemptedAxiomResults)
+    )
 import Kore.Step.Transition
     ( TransitionT
     )
@@ -163,3 +171,12 @@ traverseConfigs traverseResults traverseRemainders rs =
     Results
         <$> (traverse . traverse) traverseResults (results rs)
         <*> traverse traverseRemainders (remainders rs)
+
+toAttemptedAxiom
+    :: Ord variable
+    => Results rule (Pattern variable)
+    -> AttemptedAxiom variable
+toAttemptedAxiom results
+  | hasResults results =
+    Applied $ AttemptedAxiomResults (gatherResults results) (remainders results)
+  | otherwise = NotApplicable

@@ -35,11 +35,11 @@ import Data.Coerce
     )
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
-import Data.Maybe
-    ( mapMaybe
-    )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Witherable
+    ( mapMaybe
+    )
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
@@ -76,6 +76,7 @@ import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
     , QualifiedAxiomPattern (..)
+    , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , fromSentenceAxiom
@@ -96,6 +97,7 @@ import Kore.Step.Strategy
     ( Strategy
     )
 import qualified Kore.Step.Strategy as Strategy
+import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( Prim
     , ProofState
@@ -159,7 +161,8 @@ class Goal goal where
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 
     strategy
-        :: [goal]
+        :: goal
+        -> [goal]
         -> [Rule goal]
         -> [Strategy (Prim goal)]
 
@@ -249,7 +252,7 @@ instance Goal (OnePathRule Variable) where
                     deriveSeq
                 }
 
-    strategy goals rules =
+    strategy _ goals rules =
         onePathFirstStep rewrites
         : repeat
             ( onePathFollowupStep
@@ -305,7 +308,7 @@ instance Goal (AllPathRule Variable) where
                     deriveSeq
                 }
 
-    strategy goals rules =
+    strategy _ goals rules =
         allPathFirstStep rewrites
         : repeat
             ( allPathFollowupStep
@@ -333,6 +336,134 @@ instance ClaimExtractor (AllPathRule Variable) where
         case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
             Right (AllPathClaimPattern claim) -> Just claim
             _ -> Nothing
+
+instance Goal (ReachabilityRule Variable) where
+
+    data Rule (ReachabilityRule Variable) = APRule (Rule (AllPathRule Variable))
+                                          | OPRule (Rule (OnePathRule Variable))
+        deriving (GHC.Generic, Show)
+
+    type Prim (ReachabilityRule Variable) =
+        ProofState.Prim (Rule (ReachabilityRule Variable))
+
+    type ProofState (ReachabilityRule Variable) a =
+        ProofState.ProofState a
+
+    transitionRule
+        :: (MonadCatch m, MonadSimplify m)
+        => Prim (ReachabilityRule Variable)
+        -> ProofState
+            (ReachabilityRule Variable)
+            (ReachabilityRule Variable)
+        -> Strategy.TransitionT
+            (Rule (ReachabilityRule Variable))
+            m
+            ( ProofState
+                (ReachabilityRule Variable)
+                (ReachabilityRule Variable)
+            )
+    transitionRule prim proofstate =
+        case proofstate of
+            Goal (OnePath rule) ->
+                Transition.mapRules OPRule
+                $ onePathProofState
+                <$> transitionRule (primRuleOnePath prim) (Goal rule)
+            Goal (AllPath rule) ->
+                Transition.mapRules APRule
+                $ allPathProofState
+                <$> transitionRule (primRuleAllPath prim) (Goal rule)
+            GoalRewritten (OnePath rule) ->
+                Transition.mapRules OPRule
+                $ onePathProofState
+                <$> transitionRule (primRuleOnePath prim) (GoalRewritten rule)
+            GoalRewritten (AllPath rule) ->
+                Transition.mapRules APRule
+                $ allPathProofState
+                <$> transitionRule (primRuleAllPath prim) (GoalRewritten rule)
+            GoalRemainder (OnePath rule) ->
+                Transition.mapRules OPRule
+                $ onePathProofState
+                <$> transitionRule (primRuleOnePath prim) (GoalRemainder rule)
+            GoalRemainder (AllPath rule) ->
+                Transition.mapRules APRule
+                $ allPathProofState
+                <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
+            Proven ->
+                case prim of
+                    CheckProven -> empty
+                    _ -> return proofstate
+
+    strategy
+        :: ReachabilityRule Variable
+        -> [ReachabilityRule Variable]
+        -> [Rule (ReachabilityRule Variable)]
+        -> [Strategy (Prim (ReachabilityRule Variable))]
+    strategy goal claims axioms =
+        case goal of
+            OnePath rule ->
+                reachabilityOnePathStrategy
+                $ strategy
+                    rule
+                    (mapMaybe maybeOnePath claims)
+                    (mapMaybe maybeOnePathRule axioms)
+            AllPath rule ->
+                reachabilityAllPathStrategy
+                $ strategy
+                    rule
+                    (mapMaybe maybeAllPath claims)
+                    (mapMaybe maybeAllPathRule axioms)
+
+maybeOnePath :: ReachabilityRule Variable -> Maybe (OnePathRule Variable)
+maybeOnePath (OnePath rule) = Just rule
+maybeOnePath _ = Nothing
+
+maybeAllPath :: ReachabilityRule Variable -> Maybe (AllPathRule Variable)
+maybeAllPath (AllPath rule) = Just rule
+maybeAllPath _ = Nothing
+
+reachabilityOnePathStrategy
+    :: [Strategy (Prim (OnePathRule Variable))]
+    -> [Strategy (Prim (ReachabilityRule Variable))]
+reachabilityOnePathStrategy strategy' =
+    (fmap . fmap . fmap) OPRule strategy'
+
+reachabilityAllPathStrategy
+    :: [Strategy (Prim (AllPathRule Variable))]
+    -> [Strategy (Prim (ReachabilityRule Variable))]
+reachabilityAllPathStrategy strategy' =
+    (fmap . fmap . fmap) APRule strategy'
+
+allPathProofState
+    :: ProofState (AllPathRule Variable) (AllPathRule Variable)
+    -> ProofState (ReachabilityRule Variable) (ReachabilityRule Variable)
+allPathProofState = fmap AllPath
+
+onePathProofState
+    :: ProofState (OnePathRule Variable) (OnePathRule Variable)
+    -> ProofState (ReachabilityRule Variable) (ReachabilityRule Variable)
+onePathProofState = fmap OnePath
+
+primRuleOnePath
+    :: ProofState.Prim (Rule (ReachabilityRule Variable))
+    -> ProofState.Prim (Rule (OnePathRule Variable))
+primRuleOnePath = mapMaybe maybeOnePathRule
+
+primRuleAllPath
+    :: ProofState.Prim (Rule (ReachabilityRule Variable))
+    -> ProofState.Prim (Rule (AllPathRule Variable))
+primRuleAllPath = mapMaybe maybeAllPathRule
+
+maybeAllPathRule
+    :: Rule (ReachabilityRule Variable)
+    -> Maybe (Rule (AllPathRule Variable))
+maybeAllPathRule (APRule rule) = Just rule
+maybeAllPathRule _             = Nothing
+
+maybeOnePathRule
+    :: Rule (ReachabilityRule Variable)
+    -> Maybe (Rule (OnePathRule Variable))
+maybeOnePathRule (OPRule rule) = Just rule
+maybeOnePathRule _             = Nothing
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
