@@ -166,11 +166,11 @@ verifyClaim
             $ transitionRule' goal destination prim proofState'
         Transition.scatter transitions
 
--- TODO(Ana): allow running with all-path strategy steps
--- when the REPL will be connected to all-path
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
+-- The implementation assumes that either all strategy steps are equal
+-- or that the first step is different from the rest.
 verifyClaimStep
     :: forall claim m
     .  (MonadCatch m, MonadSimplify m)
@@ -192,29 +192,31 @@ verifyClaimStep
     axioms
     eg@ExecutionGraph { root }
     node
-  = undefined
---  = do
---      let destination = getClaimDestination target
---      executionHistoryStep
---        (transitionRule' destination)
---        strategy'
---        eg
---        node
---  where
---    strategy' :: Strategy (Prim claim)
---    strategy'
---        | isRoot =
---            onePathFirstStep rewrites
---        | otherwise =
---            onePathFollowupStep
---                (coerce . toRulePattern <$> claims)
---                rewrites
---
---    rewrites :: [Rule claim]
---    rewrites = axioms
---
---    isRoot :: Bool
---    isRoot = node == root
+  = do
+      let destination = getDestination target
+      executionHistoryStep
+        (transitionRule' target destination)
+        strategy'
+        eg
+        node
+  where
+    strategy' :: Strategy (Prim claim)
+    strategy'
+        | isRoot = firstStep
+        | otherwise =
+            case followupSteps of
+                [] -> firstStep
+                secondStep : strategyTail ->
+                    secondStep
+
+    firstStep :: Strategy (Prim claim)
+    firstStep = NonEmpty.head $ strategy target claims axioms
+
+    followupSteps :: [Strategy (Prim claim)]
+    followupSteps = NonEmpty.tail $ strategy target claims axioms
+
+    isRoot :: Bool
+    isRoot = node == root
 
 transitionRule'
     :: forall claim m
