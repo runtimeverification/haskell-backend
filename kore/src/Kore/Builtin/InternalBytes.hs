@@ -26,13 +26,16 @@ module Kore.Builtin.InternalBytes
     , concatKey
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
 import Control.Error
     ( MaybeT
     )
 import Data.ByteString
     ( ByteString
     )
-import qualified Data.ByteString as BS
+import qualified Data.ByteString as ByteString
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -42,10 +45,14 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
+import Data.Word
+    ( Word8
+    )
 
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Encoding as E
+import Kore.Builtin.Endianness.Endianness
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.InternalBytes.InternalBytes
 import qualified Kore.Builtin.String as String
@@ -188,14 +195,14 @@ evalUpdate =
             (symbol, _bytes) <- expectBuiltinBytes updateKey _bytes
             _index <- fromInteger <$> Int.expectBuiltinInt updateKey _index
             _value <- fromInteger <$> Int.expectBuiltinInt updateKey _value
-            if _index < 0 || _index > (BS.length _bytes - 1)
+            if _index < 0 || _index > (ByteString.length _bytes - 1)
                 then Builtin.appliedFunction Pattern.bottom
                 else
                     Builtin.appliedFunction
                         . asPattern resultSort symbol
-                        $ BS.take _index _bytes
-                            <> BS.singleton _value
-                            <> BS.drop (_index + 1) _bytes
+                        $ ByteString.take _index _bytes
+                            <> ByteString.singleton _value
+                            <> ByteString.drop (_index + 1) _bytes
 
 evalGet :: Builtin.Function
 evalGet =
@@ -210,13 +217,13 @@ evalGet =
                         _ -> Builtin.wrongArity getKey
             (_, _bytes) <- expectBuiltinBytes getKey _bytes
             _index <- fromInteger <$> Int.expectBuiltinInt getKey _index
-            if _index >= BS.length _bytes || _index < 0
+            if _index >= ByteString.length _bytes || _index < 0
                 then Builtin.appliedFunction Pattern.bottom
                 else
                     Builtin.appliedFunction
                         . Int.asPattern resultSort
                         . toInteger
-                        $ BS.index _bytes _index
+                        $ ByteString.index _bytes _index
 
 evalSubstr :: Builtin.Function
 evalSubstr =
@@ -232,13 +239,17 @@ evalSubstr =
             (symbol, _bytes) <- expectBuiltinBytes substrKey _bytes
             _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
             _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
-            if (_start < 0) || (_end > BS.length _bytes) || (_end - _start < 0)
+            let outOfBounds =
+                       (_start < 0)
+                    || (_end > ByteString.length _bytes)
+                    || (_end - _start < 0)
+            if outOfBounds
                 then Builtin.appliedFunction Pattern.bottom
                 else
                     Builtin.appliedFunction
                         . asPattern resultSort symbol
-                        . BS.take (_end - _start)
-                        . BS.drop _start
+                        . ByteString.take (_end - _start)
+                        . ByteString.drop _start
                         $ _bytes
 
 evalReplaceAt :: Builtin.Function
@@ -260,13 +271,13 @@ evalReplaceAt =
                 $ go _bytes _index _new
 
     go _bytes _index _new
-      | BS.length _new == 0 = Just _bytes
-      | _index >= BS.length _bytes = Nothing
+      | ByteString.length _new == 0 = Just _bytes
+      | _index >= ByteString.length _bytes = Nothing
       | _index < 0 = Nothing
-      | BS.length _bytes == 0 = Nothing
-      | otherwise = Just $ BS.take _index _bytes
+      | ByteString.length _bytes == 0 = Nothing
+      | otherwise = Just $ ByteString.take _index _bytes
                             <> _new
-                            <> BS.drop (_index + BS.length _new) _bytes
+                            <> ByteString.drop (_index + ByteString.length _new) _bytes
 
 evalPadRight :: Builtin.Function
 evalPadRight =
@@ -285,10 +296,10 @@ evalPadRight =
             Builtin.appliedFunction $ go symbol resultSort _bytes _length _value
 
     go symbol resultSort bytes len val
-      | len <= BS.length bytes = asPattern resultSort symbol bytes
+      | len <= ByteString.length bytes = asPattern resultSort symbol bytes
       | otherwise =
         asPattern resultSort symbol
-            $ bytes <> BS.replicate (len - BS.length bytes) val
+            $ bytes <> ByteString.replicate (len - ByteString.length bytes) val
 
 evalPadLeft :: Builtin.Function
 evalPadLeft =
@@ -307,10 +318,10 @@ evalPadLeft =
             Builtin.appliedFunction $ go symbol resultSort _bytes _length _value
 
     go symbol resultSort bytes len val
-      | len <= BS.length bytes = asPattern resultSort symbol bytes
+      | len <= ByteString.length bytes = asPattern resultSort symbol bytes
       | otherwise =
         asPattern resultSort symbol
-            $ BS.replicate (len - BS.length bytes) val <> bytes
+            $ ByteString.replicate (len - ByteString.length bytes) val <> bytes
 
 evalReverse :: Builtin.Function
 evalReverse =
@@ -326,7 +337,7 @@ evalReverse =
             (symbol, _bytes)  <- expectBuiltinBytes reverseKey _bytes
             Builtin.appliedFunction
                 . asPattern resultSort symbol
-                $ BS.reverse _bytes
+                $ ByteString.reverse _bytes
 
 evalLength :: Builtin.Function
 evalLength =
@@ -343,7 +354,7 @@ evalLength =
             Builtin.appliedFunction
                 . Int.asPattern resultSort
                 . toInteger
-                $ BS.length _bytes
+                $ ByteString.length _bytes
 
 evalConcat :: Builtin.Function
 evalConcat =
@@ -367,7 +378,34 @@ evalInt2bytes =
     Builtin.functionEvaluator evalInt2bytes0
   where
     evalInt2bytes0 :: Builtin.FunctionImplementation
-    evalInt2bytes0 _ _ = return NotApplicable
+    evalInt2bytes0 resultSort [len, int, end] =
+        Builtin.getAttemptedAxiom $ do
+            end' <-
+                case end of
+                    Endianness_ endianness -> return endianness
+                    _                      -> empty
+            len' <- Int.expectBuiltinInt int2bytesKey len
+            int' <- Int.expectBuiltinInt int2bytesKey int
+            let result = int2bytes (fromInteger len') int' end'
+            Builtin.appliedFunction $ asPattern resultSort _ result
+    evalInt2bytes0 _ _ = Builtin.wrongArity int2bytesKey
+
+int2bytes :: Int -> Integer -> Endianness -> ByteString
+int2bytes len int end =
+    case end of
+        LittleEndian _ -> littleEndian
+        BigEndian    _ -> ByteString.reverse littleEndian
+  where
+    (littleEndian, _) = ByteString.unfoldrN len go int
+    go int'
+      | int' == 0 = Just (pad, 0)
+      | otherwise = let (d, m) = divMod int' 0x100 in Just (word8 m, d)
+    pad
+      | int < 0   = 0xFF
+      | otherwise = 0x00
+
+    word8 :: Integer -> Word8
+    word8 = toEnum . fromEnum
 
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
