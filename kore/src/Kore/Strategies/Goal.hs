@@ -833,7 +833,7 @@ derivePar rules goal = errorBracket $ do
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
-    :: forall m goal variable
+    :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
