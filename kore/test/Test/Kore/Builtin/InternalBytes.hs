@@ -493,10 +493,10 @@ test_bytes2string_string2bytes =
         (===) expect actual
 
 asInternal :: ByteString -> TermLike Variable
-asInternal = InternalBytes.asInternal bytesSort string2bytesBytesSymbol
+asInternal = InternalBytes.asInternal bytesSort
 
 asPattern :: ByteString -> Pattern Variable
-asPattern = InternalBytes.asPattern bytesSort string2bytesBytesSymbol
+asPattern = InternalBytes.asPattern bytesSort
 
 testBytes
     :: HasCallStack

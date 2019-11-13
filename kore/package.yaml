@@ -70,6 +70,7 @@ dependencies:
   - transformers >=0.4
   - unliftio-core >=0.1
   - unordered-containers >=0.2
+  - vector >= 0.12
   - witherable >=0.3
 
 build-tools:
