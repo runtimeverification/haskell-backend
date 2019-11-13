@@ -15,6 +15,8 @@ module Kore.ASTVerifier.PatternVerifier
     , PatternVerifier (..)
     , runPatternVerifier
     , Context (..)
+    , verifiedModuleContext
+    , withBuiltinVerifiers
     , DeclaredVariables (..), emptyDeclaredVariables
     , assertExpectedSort
     , assertSameSort
@@ -50,6 +52,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Text.Prettyprint.Doc.Render.Text
     ( renderStrict
     )
+import qualified GHC.Generics as GHC
 
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
@@ -102,6 +105,24 @@ data Context =
         , builtinApplicationVerifiers
             :: !(Builtin.ApplicationVerifiers Verified.Pattern)
         }
+    deriving (GHC.Generic)
+
+verifiedModuleContext :: VerifiedModule Attribute.Symbol axiomAttr -> Context
+verifiedModuleContext verifiedModule =
+    Context
+        { declaredVariables = mempty
+        , declaredSortVariables = mempty
+        , indexedModule = eraseAxiomAttributes verifiedModule
+        , builtinDomainValueVerifiers = mempty
+        , builtinApplicationVerifiers = mempty
+        }
+
+withBuiltinVerifiers :: Builtin.Verifiers -> Context -> Context
+withBuiltinVerifiers verifiers context =
+    context
+        { builtinDomainValueVerifiers = Builtin.domainValueVerifiers verifiers
+        , builtinApplicationVerifiers = Builtin.applicationVerifiers verifiers
+        }
 
 newtype PatternVerifier a =
     PatternVerifier
@@ -116,8 +137,8 @@ runPatternVerifier
     :: Context
     -> PatternVerifier a
     -> Either (Error VerifyError) a
-runPatternVerifier context PatternVerifier { getPatternVerifier } =
-    runReaderT getPatternVerifier context
+runPatternVerifier ctx PatternVerifier { getPatternVerifier } =
+    runReaderT getPatternVerifier ctx
 
 lookupSortDeclaration
     :: Id

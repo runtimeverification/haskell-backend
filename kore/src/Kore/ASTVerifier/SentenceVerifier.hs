@@ -70,7 +70,6 @@ import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValue
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import qualified Kore.Builtin as Builtin
 import Kore.Error
-import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.IndexedModule.Resolvers as Resolvers
 import Kore.Sort
 import Kore.Syntax.Definition
@@ -151,17 +150,11 @@ askPatternContext
 askPatternContext variables = do
     verifiedModule <- State.get
     VerifierContext { builtinVerifiers } <- askVerifierContext
-    return PatternVerifier.Context
-        { builtinDomainValueVerifiers =
-            Builtin.domainValueVerifiers builtinVerifiers
-        , builtinApplicationVerifiers =
-            Builtin.applicationVerifiers builtinVerifiers
-        , indexedModule =
-            verifiedModule
-            & IndexedModule.eraseAxiomAttributes
-        , declaredSortVariables = variables
-        , declaredVariables = emptyDeclaredVariables
-        }
+    let context =
+            PatternVerifier.verifiedModuleContext verifiedModule
+            & PatternVerifier.withBuiltinVerifiers builtinVerifiers
+            & Lens.set (field @"declaredSortVariables") variables
+    return context
 
 {- | Find the attributes for the named sort.
 
