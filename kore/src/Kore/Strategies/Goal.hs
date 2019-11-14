@@ -168,11 +168,11 @@ class Goal goal where
         => goal -> Rule goal
     goalToRule = coerce
 
-    ruleToGoal :: Rule goal -> goal
+    ruleToGoal :: goal -> Rule goal -> goal
     default ruleToGoal
         :: Coercible (Rule goal) goal
-        => Rule goal -> goal
-    ruleToGoal = coerce
+        => goal -> Rule goal -> goal
+    ruleToGoal _ = coerce
 
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
@@ -364,7 +364,7 @@ instance Goal (ReachabilityRule Variable) where
     newtype Rule (ReachabilityRule Variable) =
         ReachabilityRewriteRule
             { unReachabilityRewriteRule :: RewriteRule Variable }
-        deriving (GHC.Generic, Show)
+        deriving (GHC.Generic, Show, Unparse)
 
     type Prim (ReachabilityRule Variable) =
         ProofState.Prim (Rule (ReachabilityRule Variable))
@@ -372,8 +372,11 @@ instance Goal (ReachabilityRule Variable) where
     type ProofState (ReachabilityRule Variable) a =
         ProofState.ProofState a
 
-    goalToRule (OnePath rule) = OPRule . goalToRule $ rule
-    goalToRule (AllPath rule) = APRule . goalToRule $ rule
+    goalToRule (OnePath rule) = coerce rule
+    goalToRule (AllPath rule) = coerce rule
+
+    ruleToGoal (OnePath _) rule = OnePath (coerce rule)
+    ruleToGoal (AllPath _) rule = AllPath (coerce rule)
 
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
@@ -391,27 +394,27 @@ instance Goal (ReachabilityRule Variable) where
     transitionRule prim proofstate =
         case proofstate of
             Goal (OnePath rule) ->
-                Transition.mapRules OPRule
+                Transition.mapRules g
                 $ onePathProofState
                 <$> transitionRule (primRuleOnePath prim) (Goal rule)
             Goal (AllPath rule) ->
-                Transition.mapRules APRule
+                Transition.mapRules f
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (Goal rule)
             GoalRewritten (OnePath rule) ->
-                Transition.mapRules OPRule
+                Transition.mapRules g
                 $ onePathProofState
                 <$> transitionRule (primRuleOnePath prim) (GoalRewritten rule)
             GoalRewritten (AllPath rule) ->
-                Transition.mapRules APRule
+                Transition.mapRules f
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRewritten rule)
             GoalRemainder (OnePath rule) ->
-                Transition.mapRules OPRule
+                Transition.mapRules g
                 $ onePathProofState
                 <$> transitionRule (primRuleOnePath prim) (GoalRemainder rule)
             GoalRemainder (AllPath rule) ->
-                Transition.mapRules APRule
+                Transition.mapRules f
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
             Proven ->
@@ -431,19 +434,13 @@ instance Goal (ReachabilityRule Variable) where
                 $ strategy
                     rule
                     (mapMaybe maybeOnePath claims)
-                    (mapMaybe maybeOnePathRule axioms)
+                    (fmap maybeOnePathRule axioms)
             AllPath rule ->
                 reachabilityAllPathStrategy
                 $ strategy
                     rule
                     (mapMaybe maybeAllPath claims)
-                    (mapMaybe maybeAllPathRule axioms)
-
-instance Unparse (Rule (ReachabilityRule Variable)) where
-    unparse (OPRule rule) = unparse rule
-    unparse (APRule rule) = unparse rule
-    unparse2 (OPRule rule) = unparse2 rule
-    unparse2 (APRule rule) = unparse2 rule
+                    (fmap maybeAllPathRule axioms)
 
 instance ClaimExtractor (ReachabilityRule Variable) where
     extractClaim sentence =
@@ -465,14 +462,20 @@ reachabilityOnePathStrategy
     => t (Strategy (Prim (OnePathRule Variable)))
     -> t (Strategy (Prim (ReachabilityRule Variable)))
 reachabilityOnePathStrategy strategy' =
-    (fmap . fmap . fmap) OPRule strategy'
+    (fmap . fmap . fmap) g strategy'
 
 reachabilityAllPathStrategy
     :: Functor t
     => t (Strategy (Prim (AllPathRule Variable)))
     -> t (Strategy (Prim (ReachabilityRule Variable)))
 reachabilityAllPathStrategy strategy' =
-    (fmap . fmap . fmap) APRule strategy'
+    (fmap . fmap . fmap) f strategy'
+
+f :: Rule (AllPathRule Variable) -> Rule (ReachabilityRule Variable)
+f = coerce
+
+g :: Rule (OnePathRule Variable) -> Rule (ReachabilityRule Variable)
+g = coerce
 
 allPathProofState
     :: ProofState (AllPathRule Variable) (AllPathRule Variable)
@@ -487,24 +490,22 @@ onePathProofState = fmap OnePath
 primRuleOnePath
     :: ProofState.Prim (Rule (ReachabilityRule Variable))
     -> ProofState.Prim (Rule (OnePathRule Variable))
-primRuleOnePath = mapMaybe maybeOnePathRule
+primRuleOnePath = fmap maybeOnePathRule
 
 primRuleAllPath
     :: ProofState.Prim (Rule (ReachabilityRule Variable))
     -> ProofState.Prim (Rule (AllPathRule Variable))
-primRuleAllPath = mapMaybe maybeAllPathRule
+primRuleAllPath = fmap maybeAllPathRule
 
 maybeAllPathRule
     :: Rule (ReachabilityRule Variable)
-    -> Maybe (Rule (AllPathRule Variable))
-maybeAllPathRule (APRule rule) = Just rule
-maybeAllPathRule _             = Nothing
+    -> Rule (AllPathRule Variable)
+maybeAllPathRule = coerce
 
 maybeOnePathRule
     :: Rule (ReachabilityRule Variable)
-    -> Maybe (Rule (OnePathRule Variable))
-maybeOnePathRule (OPRule rule) = Just rule
-maybeOnePathRule _             = Nothing
+    -> Rule (OnePathRule Variable)
+maybeOnePathRule = coerce
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
@@ -941,13 +942,11 @@ instance ToRulePattern (AllPathRule Variable)
 
 instance ToRulePattern (Rule (AllPathRule Variable))
 
+instance ToRulePattern (Rule (ReachabilityRule Variable))
+
 instance ToRulePattern (ReachabilityRule Variable) where
     toRulePattern (OnePath rule) = toRulePattern rule
     toRulePattern (AllPath rule) = toRulePattern rule
-
-instance ToRulePattern (Rule (ReachabilityRule Variable)) where
-    toRulePattern (OPRule rule) = toRulePattern rule
-    toRulePattern (APRule rule) = toRulePattern rule
 
 class FromRulePattern rule where
     fromRulePattern :: rule -> RulePattern Variable -> rule
@@ -964,17 +963,13 @@ instance FromRulePattern (AllPathRule Variable)
 
 instance FromRulePattern (Rule (AllPathRule Variable))
 
+instance FromRulePattern (Rule (ReachabilityRule Variable))
+
 instance FromRulePattern (ReachabilityRule Variable) where
     fromRulePattern (OnePath _) rulePat =
         OnePath $ coerce rulePat
     fromRulePattern (AllPath _) rulePat =
         AllPath $ coerce rulePat
-
-instance FromRulePattern (Rule (ReachabilityRule Variable)) where
-    fromRulePattern (OPRule _) rulePat =
-        OPRule $ coerce rulePat
-    fromRulePattern (APRule _) rulePat =
-        APRule $ coerce rulePat
 
 getConfiguration
     :: forall goal

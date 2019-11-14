@@ -799,7 +799,7 @@ simpleReachabilityRewrite
     -> TermLike Variable
     -> Rule (ReachabilityRule Variable)
 simpleReachabilityRewrite left right =
-    OPRule (simpleRewrite left right)
+    coerce (simpleRewrite left right)
 
 rewriteWithPredicate
     :: TermLike Variable
@@ -823,7 +823,7 @@ rewriteReachabilityWithPredicate
     -> Predicate Variable
     -> Rule (ReachabilityRule Variable)
 rewriteReachabilityWithPredicate left right predicate =
-    OPRule (rewriteWithPredicate left right predicate)
+    coerce (rewriteWithPredicate left right predicate)
 
 runSteps
     :: Goal goal
