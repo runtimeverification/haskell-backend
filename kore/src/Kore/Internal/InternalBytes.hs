@@ -5,32 +5,29 @@ License     : NCSA
 
 module Kore.Internal.InternalBytes
     ( InternalBytes (..)
-    , toApplication
     ) where
 
 import Control.DeepSeq
     ( NFData (..)
     )
-import qualified Data.ByteString as BS
+import Data.ByteString
+    ( ByteString
+    )
 import Data.Hashable
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Synthetic
-import qualified Kore.Builtin.Encoding as E
+import qualified Kore.Builtin.Encoding as Encoding
 import Kore.Debug
-import qualified Kore.Domain.Builtin as Domain
-import Kore.Internal.Symbol
 import Kore.Syntax
 import Kore.Unparser
 
 data InternalBytes =
     InternalBytes
         { bytesSort          :: !Sort
-        , bytesValue         :: !BS.ByteString
-        , string2BytesSymbol :: !Symbol
+        , bytesValue         :: !ByteString
         }
     deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -47,18 +44,19 @@ instance Debug InternalBytes
 instance Diff InternalBytes
 
 instance Unparse InternalBytes where
-    unparse internalBytes =
+    unparse internalBytes@(InternalBytes _ _) =
         "\\dv"
-        <> parameters [bytesSort internalBytes]
-        <> Pretty.parens
-            (unparse $ toApplication internalBytes)
+        <> parameters [bytesSort]
+        <> arguments [StringLiteral (Encoding.toBase16 bytesValue)]
+      where
+        InternalBytes { bytesSort, bytesValue } = internalBytes
 
-    unparse2 internalBytes =
+    unparse2 internalBytes@(InternalBytes _ _) =
         "\\dv2"
-        <> parameters2 [bytesSort internalBytes]
-        <> arguments2
-            [ toApplication internalBytes
-            ]
+        <> parameters2 [bytesSort]
+        <> arguments2 [StringLiteral (Encoding.toBase16 bytesValue)]
+      where
+        InternalBytes { bytesSort, bytesValue } = internalBytes
 
 instance Synthetic Sort (Const InternalBytes) where
     synthetic = bytesSort . getConst
@@ -70,18 +68,3 @@ instance
   where
     synthetic = const mempty
     {-# INLINE synthetic #-}
-
-toApplication :: InternalBytes -> Application SymbolOrAlias Domain.InternalString
-toApplication InternalBytes { bytesValue, string2BytesSymbol } =
-    Application
-        { applicationSymbolOrAlias =
-            toSymbolOrAlias string2BytesSymbol
-        , applicationChildren =
-            [ Domain.InternalString
-                { Domain.internalStringSort =
-                    head $ symbolParams string2BytesSymbol
-                , Domain.internalStringValue =
-                    E.decode8Bit bytesValue
-                }
-            ]
-        }

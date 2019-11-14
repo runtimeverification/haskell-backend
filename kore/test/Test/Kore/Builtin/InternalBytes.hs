@@ -512,13 +512,25 @@ test_int2bytes =
     -- , testCase "Int2Bytes(0, 0, BE)" _
     ]
 
+test_InternalBytes :: [TestTree]
+test_InternalBytes =
+    [ testCase "\\dv{Bytes{}}(\"00\")" $ do
+        let unverified =
+                mkDomainValue
+                $ DomainValue bytesSort
+                $ mkStringLiteral "00"
+            expect = Right $ asInternal "\x00"
+            actual = verifyPattern (Just bytesSort) unverified
+        assertEqual "" expect actual
+    ]
+
 -- * Helpers
 
 asInternal :: ByteString -> TermLike Variable
-asInternal = InternalBytes.asInternal bytesSort string2bytesBytesSymbol
+asInternal = InternalBytes.asInternal bytesSort
 
 asPattern :: ByteString -> Pattern Variable
-asPattern = InternalBytes.asPattern bytesSort string2bytesBytesSymbol
+asPattern = InternalBytes.asPattern bytesSort
 
 testBytes
     :: HasCallStack

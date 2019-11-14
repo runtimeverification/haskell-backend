@@ -18,6 +18,7 @@ import qualified Kore.Attribute.Null as Attribute
 import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Endianness.Endianness as Endianness
 import qualified Kore.Builtin.Int.Int as Int
+import qualified Kore.Builtin.InternalBytes.InternalBytes as InternalBytes
 import qualified Kore.Builtin.List.List as List
 import qualified Kore.Builtin.Map.Map as Map
 import qualified Kore.Builtin.Set.Set as Set
@@ -25,7 +26,6 @@ import qualified Kore.Builtin.Signedness.Signedness as Signedness
 import qualified Kore.Builtin.String.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Alias as Alias
-import qualified Kore.Internal.InternalBytes as InternalBytes
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
@@ -72,6 +72,9 @@ externalize =
                     Domain.BuiltinString builtin ->
                         (toPatternF . Recursive.project)
                             (String.asTermLike builtin)
+            InternalBytesF (Const internalBytes) ->
+                (toPatternF . Recursive.project)
+                    (InternalBytes.asTermLike internalBytes)
             _ -> toPatternF termLikeBase
       where
         termLikeBase@(_ :< termLikeF) = Recursive.project termLike
@@ -110,12 +113,6 @@ externalize =
             RewritesF rewritesF -> Syntax.RewritesF rewritesF
             StringLiteralF stringLiteralF ->
                 Syntax.StringLiteralF stringLiteralF
-            InternalBytesF
-                (Const internalBytes) ->
-                    Syntax.ApplicationF
-                    . fmap String.asTermLike
-                    . InternalBytes.toApplication
-                    $ internalBytes
             TopF topF -> Syntax.TopF topF
             VariableF variableF -> Syntax.VariableF variableF
             InhabitantF inhabitantF -> Syntax.InhabitantF inhabitantF
@@ -134,3 +131,4 @@ externalize =
                 $ Signedness.toApplication
                 $ getConst signednessF
             BuiltinF _ -> error "Unexpected internal builtin"
+            InternalBytesF _ -> error "Unexpected internal builtin"

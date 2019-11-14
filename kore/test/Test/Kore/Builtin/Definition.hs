@@ -1112,9 +1112,10 @@ bytesSort =
 
 bytesSortDecl :: ParsedSentence
 bytesSortDecl =
-    hookedSortDecl
-        bytesSort
-        [ hookAttribute "BYTES.Bytes" ]
+    hookedSortDecl bytesSort
+        [ hookAttribute "BYTES.Bytes"
+        , hasDomainValuesAttribute
+        ]
 
 endiannessSort :: Sort
 endiannessSort =

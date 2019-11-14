@@ -248,8 +248,12 @@ type SymbolVerifiers = HashMap Text SymbolVerifier
   represention parameterized over @m@, the verification monad.
 
 -}
-type DomainValueVerifier child =
-       DomainValue Sort child -> Either (Error VerifyError) (Builtin child)
+newtype DomainValueVerifier patternType =
+    DomainValueVerifier
+        { runDomainValueVerifier
+            :: DomainValue Sort patternType
+            -> Either (Error VerifyError) (TermLikeF Variable patternType)
+        }
 
 -- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each
 -- builtin
@@ -632,15 +636,11 @@ verifySymbolArguments verifyArguments =
 {- | Run a DomainValueVerifier.
 -}
 verifyDomainValue
-    :: DomainValueVerifiers (TermLike variable)
+    :: DomainValueVerifiers (TermLike Variable)
     -> (Id -> Either (Error VerifyError) (SentenceSort patternType))
-    -> DomainValue Sort (TermLike variable)
-    -> Either (Error VerifyError) (TermLikeF variable (TermLike variable))
-verifyDomainValue
-    verifiers
-    findSort
-    domain
-  =
+    -> DomainValue Sort (TermLike Variable)
+    -> Either (Error VerifyError) (TermLikeF Variable (TermLike Variable))
+verifyDomainValue verifiers findSort domain =
     case domainValueSort of
         SortActualSort _ -> do
             hookSort <- lookupHookSort findSort domainValueSort
@@ -649,8 +649,10 @@ verifyDomainValue
                 verifier <- HashMap.lookup hook verifiers
                 let context =
                         "Verifying builtin sort '" ++ Text.unpack hook ++ "'"
-                    verify = Kore.Error.withContext context . verifier
-                pure (BuiltinF <$> verify domain)
+                    verify =
+                        Kore.Error.withContext context
+                        . runDomainValueVerifier verifier
+                pure (verify domain)
         SortVariableSort _ -> external domain
   where
     external = return . DomainValueF
@@ -660,12 +662,14 @@ verifyDomainValue
 makeEncodedDomainValueVerifier
     :: Text
     -- ^ Builtin sort identifier
-    -> (DomainValue Sort child -> Either (Error VerifyError) (Builtin child))
+    -> (DomainValue Sort child -> Either (Error VerifyError) (TermLikeF Variable child))
     -- ^ encoding function for the builtin sort
     -> DomainValueVerifier child
-makeEncodedDomainValueVerifier _builtinSort encodeSort domain =
-    Kore.Error.withContext "While parsing domain value"
-        (encodeSort domain)
+makeEncodedDomainValueVerifier _builtinSort encodeSort =
+    DomainValueVerifier { runDomainValueVerifier }
+  where
+    runDomainValueVerifier domain =
+        Kore.Error.withContext "While parsing domain value" (encodeSort domain)
 
 {- | Run a parser on a string.
 
