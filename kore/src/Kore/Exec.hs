@@ -40,6 +40,9 @@ import qualified Data.Bifunctor as Bifunctor
     ( first
     , second
     )
+import Data.Coerce
+    ( coerce
+    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -644,14 +647,16 @@ initializeProver definitionModule specModule within =
         -- This assertion should come before simplifiying the claims,
         -- since simplification should remove all trivial claims.
         assertSomeClaims specClaims
+        let firstClaim = snd . head $ specClaims
         simplifiedSpecClaims <-
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
         let claims = fmap makeClaim specAxioms
-            -- TODO: unsafe creation of axioms from first claim
-            firstClaim = head claims
-            axioms = Goal.fromRulePattern (Goal.goalToRule firstClaim) . getRewriteRule <$> rewriteRules
+            axioms =
+                Goal.fromRulePattern (Goal.goalToRule firstClaim)
+                . getRewriteRule
+                <$> rewriteRules
             initializedProver = InitializedProver { axioms, claims}
         within initializedProver
   where

@@ -190,11 +190,12 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         :: Int
         -> [claim]
         -> [claim]
-    addIndexesToClaims len cls =
-    -- TODO: ruleToGoal is unsafe
-        fmap
-            (\(c, i) -> ruleToGoal c (addIndex (goalToRule c, i)))
-            (zip cls [len..])
+    addIndexesToClaims len claims' =
+        let toAxiomAndBack (claim', index) =
+                ruleToGoal
+                    claim'
+                    $ addIndex (goalToRule claim', index)
+        in fmap toAxiomAndBack (zip claims' [len..])
 
     addIndex
         :: (axiom, Int)
