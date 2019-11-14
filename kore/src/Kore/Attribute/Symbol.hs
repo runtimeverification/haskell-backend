@@ -43,6 +43,12 @@ module Kore.Attribute.Symbol
     -- * Memoized functions
     , Memo (..)
     , memoAttribute
+    -- * K labels
+    , Klabel (..)
+    , klabelAttribute
+    -- * Symbols
+    , SymbolKywd (..)
+    , symbolKywdAttribute
     -- * Derived attributes
     , isNonSimplifiable
     , isFunctional
@@ -75,7 +81,9 @@ import Kore.Attribute.Smthook
 import Kore.Attribute.Smtlib
 import Kore.Attribute.SortInjection
 import Kore.Attribute.Symbol.Anywhere
+import Kore.Attribute.Symbol.Klabel
 import Kore.Attribute.Symbol.Memo
+import Kore.Attribute.Symbol.SymbolKywd
 import Kore.Debug
 
 {- | Symbol attributes used during Kore execution.
@@ -104,6 +112,8 @@ data Symbol =
     , smtlib        :: !Smtlib
     , smthook       :: !Smthook
     , memo          :: !Memo
+    , klabel        :: !Klabel
+    , symbolKywd    :: !SymbolKywd
     }
     deriving (Eq, Ord, GHC.Generic, Show)
 
@@ -129,6 +139,8 @@ instance ParseAttributes Symbol where
         >=> typed @Smtlib (parseAttribute attr)
         >=> typed @Smthook (parseAttribute attr)
         >=> typed @Memo (parseAttribute attr)
+        >=> typed @Klabel (parseAttribute attr)
+        >=> typed @SymbolKywd (parseAttribute attr)
 
     toAttributes =
         mconcat . sequence
@@ -142,6 +154,8 @@ instance ParseAttributes Symbol where
             , toAttributes . smtlib
             , toAttributes . smthook
             , toAttributes . memo
+            , toAttributes . klabel
+            , toAttributes . symbolKywd
             ]
 
 type StepperAttributes = Symbol
@@ -159,6 +173,8 @@ defaultSymbolAttributes =
         , smtlib        = def
         , smthook       = def
         , memo          = def
+        , klabel        = def
+        , symbolKywd    = def
         }
 
 -- | See also: 'defaultSymbolAttributes'

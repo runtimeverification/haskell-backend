@@ -34,6 +34,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Evaluate as Kore
+import qualified Kore.Step.Result as Results
 import Kore.Step.Rule
     ( EqualityRule (..)
     , RulePattern (..)
@@ -222,9 +223,5 @@ evaluateAxioms
     -> (TermLike Variable, Predicate Variable)
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms (termLike, predicate) =
-    runSimplifier Mock.env
-    $ fmap Kore.resultsToAttemptedAxiom
-        $ Kore.evaluateAxioms
-            axioms
-            termLike
-            predicate
+    runSimplifier Mock.env . fmap Results.toAttemptedAxiom
+    $ Kore.evaluateAxioms axioms termLike predicate

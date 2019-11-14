@@ -35,3 +35,5 @@ tags
 /haskell_documentation
 test-results.xml
 .directory
+/dist-newstyle/
+/dist/

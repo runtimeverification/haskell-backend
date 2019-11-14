@@ -14,7 +14,6 @@ module Kore.Attribute.Comm
 import Control.DeepSeq
     ( NFData
     )
-import qualified Control.Monad as Monad
 import Data.Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -57,14 +56,5 @@ commAttribute :: AttributePattern
 commAttribute = attributePattern_ commSymbol
 
 instance ParseAttributes Comm where
-    parseAttribute =
-        withApplication' $ \params args Comm { isComm } -> do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isComm failDuplicate'
-            return Comm { isComm = True }
-      where
-        withApplication' = Parser.withApplication commId
-        failDuplicate' = Parser.failDuplicate commId
-
-    toAttributes Comm { isComm } = Attributes [commAttribute | isComm]
+    parseAttribute = parseBoolAttribute commId
+    toAttributes = toBoolAttributes commAttribute

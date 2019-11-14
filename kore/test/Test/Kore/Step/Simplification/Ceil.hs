@@ -387,10 +387,11 @@ test_ceilSimplification =
                 }
         assertEqual "ceil(1)" expected actual
     , testGroup "Builtin.Map"
-        [ testCase "concrete partial keys" $ do
-            -- maps assume that their keys are relatively functional, so
+        [ testCase "concrete keys" $ do
+            -- maps assume that their keys are non-simplifiable, so
             -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
-            let original = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
+            let original =
+                    Mock.builtinMap [(constr10OfA, fOfB), (constr11OfA, gOfB)]
                 expected =
                     OrPattern.fromPattern . Pattern.fromCondition
                     . Condition.fromPredicate
@@ -520,6 +521,8 @@ test_ceilSimplification =
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
+    constr10OfA = Mock.constr10 Mock.a
+    constr11OfA = Mock.constr11 Mock.a
     fOfX :: TermLike Variable
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXset :: TermLike Variable

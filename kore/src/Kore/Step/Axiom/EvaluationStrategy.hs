@@ -38,6 +38,7 @@ import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
+import Kore.Step.Result as Results
 import Kore.Step.Rule
     ( EqualityRule (..)
     )
@@ -73,30 +74,24 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier $ \term predicate -> do
-        let ea = evaluateAxioms
-                    rules
-                    term
-                    (Condition.toPredicate predicate)
-        res <- Step.assertFunctionLikeResults
-                (Step.toConfigurationVariables (Pattern.fromTermLike term))
-                ea
-        return $ resultsToAttemptedAxiom res
+    BuiltinAndAxiomSimplifier $ \term condition -> do
+        let predicate = Condition.toPredicate condition
+        results <- evaluateAxioms rules term predicate
+        let attempted = Results.toAttemptedAxiom results
+        Step.assertFunctionLikeResults term results
+        return attempted
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
     :: EqualityRule Variable
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
-    BuiltinAndAxiomSimplifier $ \term predicate -> do
-        let ea = evaluateAxioms
-                    [rule]
-                    term
-                    (Condition.toPredicate predicate)
-        res <- Step.recoveryFunctionLikeResults
-                (Step.toConfigurationVariables (Pattern.fromTermLike term))
-                ea
-        return $ resultsToAttemptedAxiom res
+    BuiltinAndAxiomSimplifier $ \term condition -> do
+        let predicate = Condition.toPredicate condition
+        results <- evaluateAxioms [rule] term predicate
+        let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
+        Step.recoveryFunctionLikeResults initial results
+        return $ Results.toAttemptedAxiom results
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -119,15 +114,16 @@ totalDefinitionEvaluation rules =
         => TermLike variable
         -> Condition variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker term predicate = do
-        result0 <- evaluateAxioms
-                    rules
-                    term
-                    (Condition.toPredicate predicate)
-        let result = resultsToAttemptedAxiom result0
-        if hasRemainders result
-            then return AttemptedAxiom.NotApplicable
-            else return result
+    totalDefinitionEvaluationWorker term condition = do
+        let predicate = Condition.toPredicate condition
+        results <- evaluateAxioms rules term predicate
+        let attempted = rejectRemainders $ Results.toAttemptedAxiom results
+        Step.assertFunctionLikeResults term results
+        return attempted
+
+    rejectRemainders attempted
+      | hasRemainders attempted = AttemptedAxiom.NotApplicable
+      | otherwise               = attempted
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
