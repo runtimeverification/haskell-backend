@@ -40,9 +40,6 @@ import qualified Data.Bifunctor as Bifunctor
     ( first
     , second
     )
-import Data.Coerce
-    ( coerce
-    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )

@@ -81,7 +81,6 @@ import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( AllPathRule (..)
     , FromRulePattern (..)
-    , ImplicationRule (..)
     , OnePathRule (..)
     , QualifiedAxiomPattern (..)
     , ReachabilityRule (..)
@@ -124,7 +123,6 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
-    , unparse2
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
