@@ -1,35 +1,7 @@
-include $(CURDIR)/../../../../working/include.mk
+DEFINITION_NAME := path
+MODULE_NAME := PATH
 
-KOMPILED = path-kompiled
-DEFINITION = $(KOMPILED)/definition.kore
-
-$(DEFINITION): path.k
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module PATH
-
-%.krun: %.path $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $<
-
-%.kprove: %.k $(DEFINITION) $(KORE_EXEC)
-	$(KPROVE) $(KPROVE_OPTS) -d . -m PATH $<
-
-%.knotprove: %.k $(DEFINITION) $(KORE_EXEC)
-	$(KPROVE) $(KPROVE_OPTS) -d . -m PATH $<
-
-%.krepl: %.k $(DEFINITION) $(KORE_REPL)
-	!$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m PATH $<
-
-%.output: %.path $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-
-%.search.final.output: %.path $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
-		$(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
-
-%.test: %.output
-	diff -u $<.golden $<
-
-%.output.golden: %.output
-	mv $< $<.golden
+include $(CURDIR)/../../../include.mk
 
 all_tests := $(k_tests)
 k_tests :=

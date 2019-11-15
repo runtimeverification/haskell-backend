@@ -1,6 +1,12 @@
-module IDENTITY-SPEC
+module VERIFICATION
   imports PATH
 
-  rule <k> a => a </k>
-  [claim, all-path]
+endmodule
+
+module IDENTITY-SPEC
+  imports VERIFICATION
+  imports PATH
+
+  rule <k> a => a </k> [all-path]
+
 endmodule
