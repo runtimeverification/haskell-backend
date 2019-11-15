@@ -161,13 +161,19 @@ instance (SimplifierVariable variable, Typeable variable) => Log.Entry (AppliedR
                 Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep $
                 [ "The following rule was applied:"
                 , Pretty.indent 2 "Rule:"
-                , Pretty.indent 4 (pretty (term appliedRule))
+                , Pretty.indent 4 (pretty . term $ appliedRule)
                 , Pretty.indent 2 "With condition:"
-                , Pretty.indent 4 (unparse (Pattern.toTermLike . Pattern.fromCondition . Conditional.withoutTerm $ appliedRule))
+                , Pretty.indent 4 (unparse conditionTerm)
                 ]
             , severity = debugAppliedRuleSeverity
             , callstack = emptyCallStack
             }
+      where
+        conditionTerm =
+            Pattern.toTermLike
+            . Pattern.fromCondition
+            . Conditional.withoutTerm
+            $ appliedRule
 
 debugAppliedRule
     :: Log.MonadLog m
@@ -435,7 +441,7 @@ finalizeRule initial unifiedRule =
         -- TODO: log unifiedRule here since ^ guards against bottom
         debugAppliedRule
             $ Conditional.mapVariables
-                (\f -> Rule.mapVariables f)
+                Rule.mapVariables
                 (fmap toVariable)
                 unifiedRule
         checkSubstitutionCoverage initial unifiedRule
