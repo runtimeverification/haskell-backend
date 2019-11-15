@@ -28,6 +28,9 @@ import Control.Exception
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
+import Data.Functor
+    ( ($>)
+    )
 import qualified Data.Map as Map
 import Data.Text
     ( Text
@@ -62,6 +65,9 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Logger
     ( LogMessage
     , WithLog
+    )
+import Kore.Logger.WarnUnhookedSymbol
+    ( warnUnhookedSymbol
     )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
@@ -121,6 +127,8 @@ evaluateApplication
           -- have a separate evaluator for startup.
           , (not . null) axiomIdToEvaluator
           = criticalMissingHook symbol hook
+          | (not . null) axiomIdToEvaluator
+          = warnUnhookedSymbol symbol $> unevaluated
           | otherwise = return unevaluated
 
     results <-
