@@ -366,9 +366,8 @@ simplifyInternal term predicate = do
                 )
             CeilF ceilF -> OrPattern.fromPattern <$>
                 (Ceil.simplify predicate =<< simplifyChildren ceilF)
-            EqualsF equalsF -> do
-                result <- (Equals.simplify =<< simplifyChildren equalsF)
-                return result
+            EqualsF equalsF ->
+                Equals.simplify =<< simplifyChildren equalsF
             ExistsF exists ->
                 let fresh =
                         Lens.over
@@ -384,7 +383,7 @@ simplifyInternal term predicate = do
                 (OrPattern.fromPattern . Implies.simplify)
                     <$> simplifyChildren impliesF
             InF inF -> OrPattern.fromPattern <$>
-                (In.simplify predicate =<< simplifyChildren inF)
+                (In.simplify <$> simplifyChildren inF)
             NotF notF ->
                 Not.simplify =<< simplifyChildren notF
             --
