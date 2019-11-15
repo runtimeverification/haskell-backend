@@ -7,6 +7,9 @@ module Test.Kore.Builtin.List
     , test_concatAssociates
     , test_simplify
     , test_isBuiltin
+    , test_inUnit
+    , test_inElement
+    , test_inConcat
     , hprop_unparse
     --
     , asInternal
