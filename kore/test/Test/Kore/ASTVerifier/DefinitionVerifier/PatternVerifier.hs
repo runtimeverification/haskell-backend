@@ -10,7 +10,6 @@ import Test.Tasty.HUnit
 
 import Data.Function
 import qualified Data.List as List
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 
 import Kore.AST.AstWithLocation
@@ -25,7 +24,6 @@ import Kore.Error
 import Kore.IndexedModule.Error
     ( noSort
     )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import qualified Kore.Internal.TermLike as Internal
 import Kore.Syntax
 import Kore.Syntax.Definition
@@ -662,15 +660,7 @@ test_verifyBinder =
     , testVerifyForall
     ]
   where
-    context =
-        PatternVerifier.Context
-            { declaredVariables = PatternVerifier.emptyDeclaredVariables
-            , declaredSortVariables = Set.empty
-            , indexedModule =
-                Builtin.verifiedModule
-                & IndexedModule.eraseAxiomAttributes
-            , builtinDomainValueVerifiers = mempty
-            }
+    context = PatternVerifier.verifiedModuleContext Builtin.verifiedModule
     testVerifyBinder name expect =
         testCase name $ do
             let

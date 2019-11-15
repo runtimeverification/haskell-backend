@@ -6,8 +6,7 @@ License     : NCSA
 module Kore.Builtin.InternalBytes
     ( sort
     , assertSort
-    , sortDeclVerifiers
-    , symbolVerifiers
+    , verifiers
     , builtinFunctions
     , asInternal
     , internalize
@@ -58,6 +57,15 @@ import Kore.Step.Simplification.Simplify
 -- | See also: 'sort', 'Builtin.verifySort'.
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
+
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers
+        , symbolVerifiers
+        , domainValueVerifiers = mempty
+        , applicationVerifiers = mempty
+        }
 
 -- | Verify that hooked sort declarations are well-formed.
 -- | See also: 'Builtin.verifySortDecl'.

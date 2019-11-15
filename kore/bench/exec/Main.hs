@@ -10,7 +10,6 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
-import qualified Data.Set as Set
 import Numeric.Natural
     ( Natural
     )
@@ -29,7 +28,6 @@ import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Internal.TermLike
     ( TermLike
     , Variable
@@ -170,16 +168,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
                 $ PatternVerifier.verifyStandalonePattern Nothing parsedPattern
               where
                 context =
-                    PatternVerifier.Context
-                        { builtinDomainValueVerifiers =
-                            Builtin.domainValueVerifiers Builtin.koreVerifiers
-                        , indexedModule =
-                            verifiedModule
-                            & IndexedModule.eraseAxiomAttributes
-                        , declaredSortVariables = Set.empty
-                        , declaredVariables =
-                            PatternVerifier.emptyDeclaredVariables
-                        }
+                    PatternVerifier.verifiedModuleContext verifiedModule
+                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
         return (verifiedModule, verifiedPattern)
     execution
         ::  ( VerifiedModule StepperAttributes Attribute.Axiom
