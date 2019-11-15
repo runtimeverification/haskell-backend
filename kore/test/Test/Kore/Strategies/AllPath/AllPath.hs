@@ -18,6 +18,10 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import Data.Stream.Infinite
+    ( Stream (..)
+    )
+import qualified Data.Stream.Infinite as Stream
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import GHC.Stack
@@ -219,7 +223,7 @@ test_runStrategy =
         . unAllPathIdentity
         $ Strategy.runStrategy
             Goal.transitionRule
-            (Goal.strategy (unRule goal) [unRule goal] axioms)
+            (Foldable.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
             (ProofState.Goal . unRule $ goal)
     disproves
         :: HasCallStack
@@ -308,7 +312,7 @@ instance Goal.Goal Goal where
     type ProofState Goal a = ProofState.ProofState a
 
     strategy _ goals rules =
-        firstStep : repeat nextStep
+        firstStep :> Stream.iterate id nextStep
       where
         firstStep =
             (Strategy.sequence . map Strategy.apply)

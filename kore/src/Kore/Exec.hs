@@ -40,10 +40,6 @@ import qualified Data.Bifunctor as Bifunctor
     ( first
     , second
     )
-import Data.Coerce
-    ( Coercible
-    , coerce
-    )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
@@ -113,7 +109,6 @@ import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
 import Kore.Step.Rule
     ( EqualityRule
-    , ImplicationRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , extractImplicationClaims
@@ -526,16 +521,17 @@ assertSomeClaims claims =
         ++  "on the representation of claims."
 
 makeClaim
-    :: Coercible (RulePattern Variable) claim
+    :: Goal.FromRulePattern claim
+    => Goal.ToRulePattern claim
     => (Attribute.Axiom, claim) -> claim
 makeClaim (attributes, rule) =
-    coerce RulePattern
+    Goal.fromRulePattern rule RulePattern
         { attributes = attributes
-        , left = left . coerce $ rule
-        , antiLeft = antiLeft . coerce $ rule
-        , right = right . coerce $ rule
-        , requires = requires . coerce $ rule
-        , ensures = ensures . coerce $ rule
+        , left = left . Goal.toRulePattern $ rule
+        , antiLeft = antiLeft . Goal.toRulePattern $ rule
+        , right = right . Goal.toRulePattern $ rule
+        , requires = requires . Goal.toRulePattern $ rule
+        , ensures = ensures . Goal.toRulePattern $ rule
         }
 
 simplifyRuleOnSecond
@@ -543,8 +539,8 @@ simplifyRuleOnSecond
     => (Attribute.Axiom, claim)
     -> simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond (atts, rule) = do
-    rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
-    return (atts, coerce . getRewriteRule $ rule')
+    rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
+    return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Construct an execution graph for the given input pattern.
 execute
@@ -648,13 +644,16 @@ initializeProver definitionModule specModule within =
         -- This assertion should come before simplifiying the claims,
         -- since simplification should remove all trivial claims.
         assertSomeClaims specClaims
+        let firstClaim = snd . head $ specClaims
         simplifiedSpecClaims <-
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let
-            axioms = coerce <$> rewriteRules
-            claims = fmap makeClaim specAxioms
+        let claims = fmap makeClaim specAxioms
+            axioms =
+                Goal.fromRulePattern (Goal.goalToRule firstClaim)
+                . getRewriteRule
+                <$> rewriteRules
             initializedProver = InitializedProver { axioms, claims}
         within initializedProver
   where

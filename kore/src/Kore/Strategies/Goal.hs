@@ -4,6 +4,8 @@ License     : NCSA
 -}
 module Kore.Strategies.Goal
     ( Goal (..)
+    , ToRulePattern (..)
+    , FromRulePattern (..)
     , ClaimExtractor (..)
     , Rule (..)
     , TransitionRuleTemplate (..)
@@ -36,6 +38,10 @@ import Data.Coerce
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.Set as Set
+import Data.Stream.Infinite
+    ( Stream (..)
+    )
+import qualified Data.Stream.Infinite as Stream
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Witherable
     ( mapMaybe
@@ -74,11 +80,13 @@ import qualified Kore.Profiler.Profile as Profile
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( AllPathRule (..)
+    , FromRulePattern (..)
     , OnePathRule (..)
     , QualifiedAxiomPattern (..)
     , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
+    , ToRulePattern (..)
     , fromSentenceAxiom
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -154,6 +162,22 @@ class Goal goal where
     type Prim goal
     type ProofState goal a
 
+    goalToRule :: goal -> Rule goal
+    default goalToRule
+        :: Coercible goal (Rule goal)
+        => goal -> Rule goal
+    goalToRule = coerce
+
+    -- | Since Goals usually carry more information than Rules,
+    -- we need to know the context when transforming a Rule into a Goal,
+    -- hence the first 'goal' argument. In general it can be ignored
+    -- when the Goal and the Rule are representationally equal.
+    ruleToGoal :: goal -> Rule goal -> goal
+    default ruleToGoal
+        :: Coercible (Rule goal) goal
+        => goal -> Rule goal -> goal
+    ruleToGoal _ = coerce
+
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
         => Prim goal
@@ -164,7 +188,7 @@ class Goal goal where
         :: goal
         -> [goal]
         -> [Rule goal]
-        -> [Strategy (Prim goal)]
+        -> Stream (Strategy (Prim goal))
 
 class ClaimExtractor claim where
     extractClaim
@@ -254,7 +278,8 @@ instance Goal (OnePathRule Variable) where
 
     strategy _ goals rules =
         onePathFirstStep rewrites
-        : repeat
+        :> Stream.iterate
+            id
             ( onePathFollowupStep
                 coinductiveRewrites
                 rewrites
@@ -274,6 +299,10 @@ instance SOP.HasDatatypeInfo (Rule (OnePathRule Variable))
 instance Debug (Rule (OnePathRule Variable))
 
 instance Diff (Rule (OnePathRule Variable))
+
+instance ToRulePattern (Rule (OnePathRule Variable))
+
+instance FromRulePattern (Rule (OnePathRule Variable))
 
 instance ClaimExtractor (OnePathRule Variable) where
     extractClaim sentence =
@@ -310,7 +339,8 @@ instance Goal (AllPathRule Variable) where
 
     strategy _ goals rules =
         allPathFirstStep rewrites
-        : repeat
+        :> Stream.iterate
+            id
             ( allPathFollowupStep
                 coinductiveRewrites
                 rewrites
@@ -327,9 +357,13 @@ instance SOP.Generic (Rule (AllPathRule Variable))
 
 instance SOP.HasDatatypeInfo (Rule (AllPathRule Variable))
 
-instance  Debug (Rule (AllPathRule Variable))
+instance Debug (Rule (AllPathRule Variable))
 
-instance  Diff (Rule (AllPathRule Variable))
+instance Diff (Rule (AllPathRule Variable))
+
+instance ToRulePattern (Rule (AllPathRule Variable))
+
+instance FromRulePattern (Rule (AllPathRule Variable))
 
 instance ClaimExtractor (AllPathRule Variable) where
     extractClaim sentence =
@@ -339,15 +373,22 @@ instance ClaimExtractor (AllPathRule Variable) where
 
 instance Goal (ReachabilityRule Variable) where
 
-    data Rule (ReachabilityRule Variable) = APRule (Rule (AllPathRule Variable))
-                                          | OPRule (Rule (OnePathRule Variable))
-        deriving (GHC.Generic, Show)
+    newtype Rule (ReachabilityRule Variable) =
+        ReachabilityRewriteRule
+            { unReachabilityRewriteRule :: RewriteRule Variable }
+        deriving (GHC.Generic, Show, Unparse)
 
     type Prim (ReachabilityRule Variable) =
         ProofState.Prim (Rule (ReachabilityRule Variable))
 
     type ProofState (ReachabilityRule Variable) a =
         ProofState.ProofState a
+
+    goalToRule (OnePath rule) = coerce rule
+    goalToRule (AllPath rule) = coerce rule
+
+    ruleToGoal (OnePath _) rule = OnePath (coerce rule)
+    ruleToGoal (AllPath _) rule = AllPath (coerce rule)
 
     transitionRule
         :: (MonadCatch m, MonadSimplify m)
@@ -365,27 +406,27 @@ instance Goal (ReachabilityRule Variable) where
     transitionRule prim proofstate =
         case proofstate of
             Goal (OnePath rule) ->
-                Transition.mapRules OPRule
+                Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
                 <$> transitionRule (primRuleOnePath prim) (Goal rule)
             Goal (AllPath rule) ->
-                Transition.mapRules APRule
+                Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (Goal rule)
             GoalRewritten (OnePath rule) ->
-                Transition.mapRules OPRule
+                Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
                 <$> transitionRule (primRuleOnePath prim) (GoalRewritten rule)
             GoalRewritten (AllPath rule) ->
-                Transition.mapRules APRule
+                Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRewritten rule)
             GoalRemainder (OnePath rule) ->
-                Transition.mapRules OPRule
+                Transition.mapRules ruleOnePathToRuleReachability
                 $ onePathProofState
                 <$> transitionRule (primRuleOnePath prim) (GoalRemainder rule)
             GoalRemainder (AllPath rule) ->
-                Transition.mapRules APRule
+                Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
             Proven ->
@@ -397,7 +438,7 @@ instance Goal (ReachabilityRule Variable) where
         :: ReachabilityRule Variable
         -> [ReachabilityRule Variable]
         -> [Rule (ReachabilityRule Variable)]
-        -> [Strategy (Prim (ReachabilityRule Variable))]
+        -> Stream (Strategy (Prim (ReachabilityRule Variable)))
     strategy goal claims axioms =
         case goal of
             OnePath rule ->
@@ -405,13 +446,32 @@ instance Goal (ReachabilityRule Variable) where
                 $ strategy
                     rule
                     (mapMaybe maybeOnePath claims)
-                    (mapMaybe maybeOnePathRule axioms)
+                    (fmap ruleReachabilityToRuleOnePath axioms)
             AllPath rule ->
                 reachabilityAllPathStrategy
                 $ strategy
                     rule
                     (mapMaybe maybeAllPath claims)
-                    (mapMaybe maybeAllPathRule axioms)
+                    (fmap ruleReachabilityToRuleAllPath axioms)
+
+instance SOP.Generic (Rule (ReachabilityRule Variable))
+
+instance SOP.HasDatatypeInfo (Rule (ReachabilityRule Variable))
+
+instance Debug (Rule (ReachabilityRule Variable))
+
+instance Diff (Rule (ReachabilityRule Variable))
+
+instance ToRulePattern (Rule (ReachabilityRule Variable))
+
+instance FromRulePattern (Rule (ReachabilityRule Variable))
+
+instance ClaimExtractor (ReachabilityRule Variable) where
+    extractClaim sentence =
+        case fromSentenceAxiom (Syntax.getSentenceClaim sentence) of
+            Right (OnePathClaimPattern claim) -> Just . OnePath $ claim
+            Right (AllPathClaimPattern claim) -> Just . AllPath $ claim
+            _ -> Nothing
 
 maybeOnePath :: ReachabilityRule Variable -> Maybe (OnePathRule Variable)
 maybeOnePath (OnePath rule) = Just rule
@@ -422,16 +482,22 @@ maybeAllPath (AllPath rule) = Just rule
 maybeAllPath _ = Nothing
 
 reachabilityOnePathStrategy
-    :: [Strategy (Prim (OnePathRule Variable))]
-    -> [Strategy (Prim (ReachabilityRule Variable))]
+    :: Functor t
+    => t (Strategy (Prim (OnePathRule Variable)))
+    -> t (Strategy (Prim (ReachabilityRule Variable)))
 reachabilityOnePathStrategy strategy' =
-    (fmap . fmap . fmap) OPRule strategy'
+    (fmap . fmap . fmap)
+        ruleOnePathToRuleReachability
+        strategy'
 
 reachabilityAllPathStrategy
-    :: [Strategy (Prim (AllPathRule Variable))]
-    -> [Strategy (Prim (ReachabilityRule Variable))]
+    :: Functor t
+    => t (Strategy (Prim (AllPathRule Variable)))
+    -> t (Strategy (Prim (ReachabilityRule Variable)))
 reachabilityAllPathStrategy strategy' =
-    (fmap . fmap . fmap) APRule strategy'
+    (fmap . fmap . fmap)
+        ruleAllPathToRuleReachability
+        strategy'
 
 allPathProofState
     :: ProofState (AllPathRule Variable) (AllPathRule Variable)
@@ -446,24 +512,35 @@ onePathProofState = fmap OnePath
 primRuleOnePath
     :: ProofState.Prim (Rule (ReachabilityRule Variable))
     -> ProofState.Prim (Rule (OnePathRule Variable))
-primRuleOnePath = mapMaybe maybeOnePathRule
+primRuleOnePath = fmap ruleReachabilityToRuleOnePath
 
 primRuleAllPath
     :: ProofState.Prim (Rule (ReachabilityRule Variable))
     -> ProofState.Prim (Rule (AllPathRule Variable))
-primRuleAllPath = mapMaybe maybeAllPathRule
+primRuleAllPath = fmap ruleReachabilityToRuleAllPath
 
-maybeAllPathRule
+-- The functions below are easier to read coercions between
+-- the newtypes over 'RewriteRule Variable' defined in the
+-- instances of 'Goal' as 'Rule's.
+ruleReachabilityToRuleAllPath
     :: Rule (ReachabilityRule Variable)
-    -> Maybe (Rule (AllPathRule Variable))
-maybeAllPathRule (APRule rule) = Just rule
-maybeAllPathRule _             = Nothing
+    -> Rule (AllPathRule Variable)
+ruleReachabilityToRuleAllPath = coerce
 
-maybeOnePathRule
+ruleReachabilityToRuleOnePath
     :: Rule (ReachabilityRule Variable)
-    -> Maybe (Rule (OnePathRule Variable))
-maybeOnePathRule (OPRule rule) = Just rule
-maybeOnePathRule _             = Nothing
+    -> Rule (OnePathRule Variable)
+ruleReachabilityToRuleOnePath = coerce
+
+ruleAllPathToRuleReachability
+    :: Rule (AllPathRule Variable)
+    -> Rule (ReachabilityRule Variable)
+ruleAllPathToRuleReachability = coerce
+
+ruleOnePathToRuleReachability
+    :: Rule (OnePathRule Variable)
+    -> Rule (ReachabilityRule Variable)
+ruleOnePathToRuleReachability = coerce
 
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
@@ -563,7 +640,6 @@ transitionRuleTemplate
 
     transitionRuleWorker _ state = return state
 
--- TODO(Ana): could be less general when all-path will be connected to repl
 onePathFirstStep
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
@@ -587,7 +663,6 @@ onePathFirstStep axioms =
         , TriviallyValid
         ]
 
--- TODO(Ana): could be less general when all-path will be connected to repl
 onePathFollowupStep
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
@@ -663,14 +738,14 @@ allPathFollowupStep claims axioms =
 removeDestination
     :: (MonadCatch m, MonadSimplify m)
     => Goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
+    => ToRulePattern goal
+    => FromRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 removeDestination goal = errorBracket $ do
     let removal = removalPredicate destination configuration
         result = Conditional.andPredicate configuration removal
-    pure $ makeRuleFromPatterns result destination
+    pure $ makeRuleFromPatterns goal result destination
   where
     destination = getDestination goal
     configuration = getConfiguration goal
@@ -684,8 +759,8 @@ removeDestination goal = errorBracket $ do
 simplify
     :: (MonadCatch m, MonadSimplify m)
     => Goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
+    => ToRulePattern goal
+    => FromRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = errorBracket $ do
@@ -694,10 +769,10 @@ simplify goal = errorBracket $ do
         $ simplifyAndRemoveTopExists configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
-        then pure $ makeRuleFromPatterns Pattern.bottom destination
+        then pure $ makeRuleFromPatterns goal Pattern.bottom destination
         else do
             let simplifiedRules =
-                    fmap (`makeRuleFromPatterns` destination) filteredConfigs
+                    fmap (flip (makeRuleFromPatterns goal) destination) filteredConfigs
             Foldable.asum (pure <$> simplifiedRules)
   where
     destination = getDestination goal
@@ -710,40 +785,37 @@ simplify goal = errorBracket $ do
             )
 
 isTriviallyValid
-    :: SimplifierVariable variable
-    => Goal goal
-    => Coercible goal (RulePattern variable)
+    :: Goal goal
+    => ToRulePattern goal
     => goal -> Bool
-isTriviallyValid = isBottom . RulePattern.left . coerce
+isTriviallyValid = isBottom . RulePattern.left . toRulePattern
 
 isTrusted
-    :: forall goal variable
-     . SimplifierVariable variable
-    => Goal goal
-    => Coercible goal (RulePattern variable)
+    :: forall goal
+    .  Goal goal
+    => ToRulePattern goal
     => goal -> Bool
 isTrusted =
     Attribute.Trusted.isTrusted
     . Attribute.Axiom.trusted
     . RulePattern.attributes
-    . coerce
+    . toRulePattern
 
 -- | Apply 'Rule's to the goal in parallel.
 derivePar
-    :: forall m goal variable
+    :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
-    => Coercible (RulePattern variable) goal
-    => Coercible (Rule goal) (RulePattern variable)
-    => Coercible (RulePattern variable) (Rule goal)
+    => ToRulePattern goal
+    => FromRulePattern goal
+    => ToRulePattern (Rule goal)
+    => FromRulePattern (Rule goal)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 derivePar rules goal = errorBracket $ do
-    let rewrites = coerce <$> rules
+    let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -764,8 +836,7 @@ derivePar rules goal = errorBracket $ do
         Right results -> do
             let mapRules =
                     Result.mapRules
-                    $ coerce
-                    . RewriteRule
+                    $ (fromRulePattern . goalToRule $ goal)
                     . Step.unwrapRule
                     . Step.withoutUnification
                 traverseConfigs =
@@ -774,15 +845,15 @@ derivePar rules goal = errorBracket $ do
                         (pure . GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
-                        (`makeRuleFromPatterns` destination)
-                        (`makeRuleFromPatterns` destination)
+                        (flip (makeRuleFromPatterns goal) destination)
+                        (flip (makeRuleFromPatterns goal) destination)
                         (Result.mergeResults results)
             results' <-
                 traverseConfigs (mapRules onePathResults)
             Result.transitionResults results'
   where
     destination = getDestination goal
-    configuration :: Pattern variable
+    configuration :: Pattern Variable
     configuration = getConfiguration goal
 
     errorBracket action =
@@ -793,20 +864,19 @@ derivePar rules goal = errorBracket $ do
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
-    :: forall m goal variable
+    :: forall m goal
     .  (MonadCatch m, MonadSimplify m)
     => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
-    => SimplifierVariable variable
-    => Coercible goal (RulePattern variable)
-    => Coercible (RulePattern variable) goal
-    => Coercible (Rule goal) (RulePattern variable)
-    => Coercible (RulePattern variable) (Rule goal)
+    => ToRulePattern goal
+    => FromRulePattern goal
+    => ToRulePattern (Rule goal)
+    => FromRulePattern (Rule goal)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 deriveSeq rules goal = errorBracket $ do
-    let rewrites = coerce <$> rules
+    let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
         . Monad.Unify.runUnifierT
@@ -827,8 +897,7 @@ deriveSeq rules goal = errorBracket $ do
         Right results -> do
             let mapRules =
                     Result.mapRules
-                    $ coerce
-                    . RewriteRule
+                    $ (fromRulePattern . goalToRule $ goal)
                     . Step.unwrapRule
                     . Step.withoutUnification
                 traverseConfigs =
@@ -837,8 +906,8 @@ deriveSeq rules goal = errorBracket $ do
                         (pure . GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
-                        (`makeRuleFromPatterns` destination)
-                        (`makeRuleFromPatterns` destination)
+                        (flip (makeRuleFromPatterns goal) destination)
+                        (flip (makeRuleFromPatterns goal) destination)
                         (Result.mergeResults results)
             results' <-
                 traverseConfigs (mapRules onePathResults)
@@ -852,27 +921,6 @@ deriveSeq rules goal = errorBracket $ do
             (formatExceptionInfo
                 ("configuration=" <> unparseToText configuration)
             )
-
-makeRuleFromPatterns
-    :: forall rule variable
-    .  SimplifierVariable variable
-    => Coercible (RulePattern variable) rule
-    => Pattern variable
-    -> Pattern variable
-    -> rule
-makeRuleFromPatterns configuration destination =
-    let (left, Condition.toPredicate -> requires) =
-            Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures) =
-            Pattern.splitTerm destination
-    in coerce RulePattern
-        { left
-        , antiLeft = Nothing
-        , right
-        , requires
-        , ensures
-        , attributes = Default.def
-        }
 
 {- | The predicate to remove the destination from the present configuration.
  -}
@@ -913,19 +961,39 @@ removalPredicate destination config =
                 (Pattern.toTermLike config)
 
 getConfiguration
-    :: forall rule variable
-    .  Ord variable
-    => Coercible rule (RulePattern variable)
-    => rule
-    -> Pattern variable
-getConfiguration (coerce -> RulePattern { left, requires }) =
+    :: forall goal
+    .  ToRulePattern goal
+    => goal
+    -> Pattern Variable
+getConfiguration (toRulePattern -> RulePattern { left, requires }) =
     Pattern.withCondition left (Conditional.fromPredicate requires)
 
 getDestination
-    :: forall rule variable
-    .  Ord variable
-    => Coercible rule (RulePattern variable)
-    => rule
-    -> Pattern variable
-getDestination (coerce -> RulePattern { right, ensures }) =
+    :: forall goal
+    .  ToRulePattern goal
+    => goal
+    -> Pattern Variable
+getDestination (toRulePattern -> RulePattern { right, ensures }) =
     Pattern.withCondition right (Conditional.fromPredicate ensures)
+
+makeRuleFromPatterns
+    :: forall rule
+    .  FromRulePattern rule
+    => rule
+    -> Pattern Variable
+    -> Pattern Variable
+    -> rule
+makeRuleFromPatterns ruleType configuration destination =
+    let (left, Condition.toPredicate -> requires) =
+            Pattern.splitTerm configuration
+        (right, Condition.toPredicate -> ensures) =
+            Pattern.splitTerm destination
+    in fromRulePattern ruleType $ RulePattern
+        { left
+        , antiLeft = Nothing
+        , right
+        , requires
+        , ensures
+        , attributes = Default.def
+        }
+

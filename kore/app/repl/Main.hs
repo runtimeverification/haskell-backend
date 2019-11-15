@@ -58,13 +58,9 @@ import Kore.Logger.Output
     )
 import Kore.Repl.Data
 import Kore.Step.Rule
-    ( OnePathRule (..)
-    , RewriteRule (..)
+    ( ReachabilityRule (..)
     )
 import Kore.Step.SMT.Lemma
-import Kore.Strategies.Goal
-    ( Rule (OnePathRewriteRule)
-    )
 import Kore.Syntax.Module
     ( ModuleName (..)
     )
@@ -235,7 +231,7 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
-                            (Proxy @(OnePathRule Variable))
+                            (Proxy @(ReachabilityRule Variable))
                             mLogger
                             replScript
                             replMode
