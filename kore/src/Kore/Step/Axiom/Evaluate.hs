@@ -14,6 +14,9 @@ import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
 import Data.Function
 import Data.Generics.Product
+import Data.Typeable
+    ( Typeable
+    )
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
@@ -59,7 +62,10 @@ import Kore.Variables.Fresh
 
 evaluateAxioms
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , Typeable variable
+       , MonadSimplify simplifier
+       )
     => [EqualityRule Variable]
     -> TermLike variable
     -> Predicate variable
