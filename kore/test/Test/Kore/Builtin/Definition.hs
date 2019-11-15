@@ -353,6 +353,9 @@ updateListSymbol :: Internal.Symbol
 updateListSymbol = builtinSymbol "updateList" listSort
     [listSort, intSort, intSort] & hook "LIST.update"
 
+inListSymbol :: Internal.Symbol
+inListSymbol = builtinSymbol "inList" boolSort [intSort, listSort] & hook "LIST.in"
+
 unitList :: TermLike Variable
 unitList = mkApplySymbol unitListSymbol []
 
@@ -374,6 +377,12 @@ updateList
     -> TermLike Variable
     -> TermLike Variable
 updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
+
+inList
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+inList x list = mkApplySymbol inListSymbol [x, list]
 
 -- ** Map
 
@@ -1260,6 +1269,7 @@ listModule =
             , hookedSymbolDecl concatListSymbol
             , hookedSymbolDecl getListSymbol
             , hookedSymbolDecl updateListSymbol
+            , hookedSymbolDecl inListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol

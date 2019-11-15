@@ -34,6 +34,7 @@ import Kore.Internal.TermLike
 import Test.Kore
     ( testId
     )
+import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
@@ -131,6 +132,56 @@ test_GetUpdate =
             let predicate = mkEquals_ mkBottom_ patUpdated
             (===) Pattern.bottom =<< evaluateT patUpdated
             (===) Pattern.top =<< evaluateT predicate
+
+test_inUnit :: TestTree
+test_inUnit =
+    testPropertyWithSolver
+    "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
+    prop
+  where
+    prop = do
+        value <- forAll genInteger
+        let patValue = Test.Int.asInternal value
+            patIn = inList patValue unitList
+            patFalse = Test.Bool.asInternal False
+            predicate = mkEquals_ patFalse patIn
+        (===) (Test.Bool.asPattern False) =<< evaluateT patIn
+        (===) Pattern.top =<< evaluateT predicate
+
+test_inElement :: TestTree
+test_inElement =
+    testPropertyWithSolver
+    "in{}(x, element{}(x)) === \\dv{Bool{}}(\"true\")"
+    prop
+  where
+    prop = do
+        value <- forAll genInteger
+        let patValue = Test.Int.asInternal value
+            patElement = elementList patValue
+            patIn = inList patValue patElement
+            patTrue = Test.Bool.asInternal True
+            predicate = mkEquals_ patIn patTrue
+        (===) (Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) Pattern.top =<< evaluateT predicate
+
+test_inConcat :: TestTree
+test_inConcat =
+    testPropertyWithSolver
+    "in{}(x, concat{}(list, element{}(x))) === \\dv{Bool{}}(\"true\")"
+    prop
+  where
+    prop = do
+        value <- forAll genInteger
+        values <- forAll genSeqInteger
+        let patValue = Test.Int.asInternal value
+            patValues = asTermLike (Test.Int.asInternal <$> values)
+            patElement = elementList patValue
+            patConcat = concatList patValues patElement
+            patIn = inList patValue patConcat
+            patTrue = Test.Bool.asInternal True
+            predicate = mkEquals_ patIn patTrue
+        (===) (Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) Pattern.top =<< evaluateT predicate
 
 test_concatUnit :: TestTree
 test_concatUnit =

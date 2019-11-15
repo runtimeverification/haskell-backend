@@ -11,7 +11,6 @@ module Kore.Attribute.Axiom.Concrete
     , concreteId, concreteSymbol, concreteAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -53,15 +52,5 @@ concreteAttribute :: AttributePattern
 concreteAttribute = attributePattern_ concreteSymbol
 
 instance ParseAttributes Concrete where
-    parseAttribute =
-        withApplication' $ \params args Concrete { isConcrete } -> do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isConcrete failDuplicate'
-            return Concrete { isConcrete = True }
-      where
-        withApplication' = Parser.withApplication concreteId
-        failDuplicate' = Parser.failDuplicate concreteId
-
-    toAttributes Concrete { isConcrete } =
-        Attributes [concreteAttribute | isConcrete]
+    parseAttribute = parseBoolAttribute concreteId
+    toAttributes = toBoolAttributes concreteAttribute

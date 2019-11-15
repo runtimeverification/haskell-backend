@@ -230,7 +230,7 @@ instance TermWrapper Domain.NormalizedMap where
             _ -> Builtin.wrongArity "MAP.element"
       | Map.isSymbolConcat symbol =
         case args of
-            [set1, set2] -> toNormalized set1 <> toNormalized set2
+            [map1, map2] -> toNormalized map1 <> toNormalized map2
             _ -> Builtin.wrongArity "MAP.concat"
     toNormalized patt =
         (Normalized . Domain.wrapAc) Domain.NormalizedAc
@@ -419,11 +419,14 @@ Return 'Nothing' if there are any duplicate keys.
 
  -}
 updateConcreteElements
-    :: Ord key
-    => Map key value
-    -> [(key, value)]
-    -> Maybe (Map key value)
-updateConcreteElements = Foldable.foldrM (uncurry insertMissing)
+    :: Map (TermLike Concrete) value
+    -> [(TermLike Concrete, value)]
+    -> Maybe (Map (TermLike Concrete) value)
+updateConcreteElements elems newElems =
+    TermLike.assertNonSimplifiableKeys allKeys
+        $ Foldable.foldrM (uncurry insertMissing) elems newElems
+      where
+        allKeys = Map.keys elems <> fmap fst newElems
 
 {- | Sort the abstract elements.
 

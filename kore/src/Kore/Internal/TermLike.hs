@@ -14,6 +14,7 @@ module Kore.Internal.TermLike
     , extractAttributes
     , isSimplified
     , isNonSimplifiable
+    , assertNonSimplifiableKeys
     , markSimplified
     , isFunctionPattern
     , isFunctionalPattern
@@ -1001,6 +1002,25 @@ isNonSimplifiable =
     . Pattern.isNonSimplifiable
     . Attribute.nonSimplifiable
     . extractAttributes
+
+assertNonSimplifiableKeys
+    :: SortedVariable variable
+    => Foldable t
+    => t (TermLike variable)
+    -> a
+    -> a
+assertNonSimplifiableKeys keys a
+    | any (not . isNonSimplifiable) keys =
+        let simplifiableKeys =
+                filter (not . isNonSimplifiable) $ Foldable.toList keys
+        in
+            (error . show . Pretty.vsep) $
+                [ "Maps and sets can only contain concrete keys\
+                  \ (resp. elements) which are non-simplifiable."
+                , Pretty.indent 2 "Simplifiable keys:"
+                ]
+                <> fmap (Pretty.indent 4 . unparse) simplifiableKeys
+    | otherwise = a
 
 {- | Mark a 'TermLike' as fully simplified.
 

@@ -124,7 +124,7 @@ data Strategy prim where
     -- | @Continue@ produces one child identical to its parent.
     Continue :: Strategy prim
 
-    deriving (Eq, Show)
+    deriving (Eq, Show, Functor)
 
 {- | Apply two strategies in sequence.
 

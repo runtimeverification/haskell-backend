@@ -22,6 +22,7 @@ module Kore.Builtin.List.List
     , unitKey
     , getKey
     , updateKey
+    , inKey
     ) where
 
 import qualified Data.Function as Function
@@ -188,3 +189,6 @@ getKey = "LIST.get"
 
 updateKey :: IsString s => s
 updateKey = "LIST.update"
+
+inKey :: IsString s => s
+inKey = "LIST.in"

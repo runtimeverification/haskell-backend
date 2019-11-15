@@ -46,7 +46,8 @@ runVerification stepLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
-        (strategy claims axioms)
+        claims
+        axioms
         (map applyStepLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env

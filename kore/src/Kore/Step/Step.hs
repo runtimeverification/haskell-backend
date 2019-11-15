@@ -399,19 +399,16 @@ finalizeRulesParallel initial unifiedRules = do
         }
 
 assertFunctionLikeResults
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        )
-    => Pattern (Target variable)
-    -> unifier (Results variable)
-    -> unifier (Results variable)
-assertFunctionLikeResults initial unifier = do
-    results <- Results.results <$> unifier
-    let unifiedRules = Result.appliedRule <$> results
-    case checkFunctionLike unifiedRules (term initial) of
+    :: forall variable variable' m
+    .  (SimplifierVariable variable, SimplifierVariable variable', Monad m)
+    => TermLike variable
+    -> Results variable'
+    -> m ()
+assertFunctionLikeResults termLike results =
+    let appliedRules = fmap Result.appliedRule $ Results.results results
+    in case checkFunctionLike appliedRules termLike of
         Left err -> error err
-        _        -> unifier
+        _        -> return ()
 
 {-
 This is implementing the ideas from the [Applying axioms by matching]
@@ -425,13 +422,12 @@ recoveryFunctionLikeResults
     .  SimplifierVariable variable
     => Simplifier.MonadSimplify simplifier
     => Pattern (Target variable)
-    -> simplifier (Results variable)
-    -> simplifier (Results variable)
-recoveryFunctionLikeResults initial unifier = do
-    results <- Results.results <$> unifier
-    let appliedRules = Result.appliedRule <$> results
+    -> Results variable
+    -> simplifier ()
+recoveryFunctionLikeResults initial results = do
+    let appliedRules = fmap Result.appliedRule $ Results.results results
     case checkFunctionLike appliedRules (Conditional.term initial) of
-        Right _  -> unifier
+        Right _  -> return ()
         Left err -> moreChecksAfterError appliedRules err
   where
     moreChecksAfterError appliedRules err = do
@@ -483,7 +479,7 @@ recoveryFunctionLikeResults initial unifier = do
         -- what we would like to check above is that phi_p -> phi_t = alpha_t,
         -- but that's hard to do for non-functional patterns,
         -- so we check for (syntactic) equality instead.
-        unifier
+        return ()
     fullyOverrideSort' sort term
       | sort == termLikeSort term = term
       | otherwise = fullyOverrideSort sort term
@@ -668,13 +664,12 @@ applyRewriteRulesParallel
     -> unifier (Results variable)
 applyRewriteRulesParallel
     unificationProcedure
-    rewriteRules
+    (map getRewriteRule -> rules)
     (toConfigurationVariables -> initial)
-  = assertFunctionLikeResults initial
-    $ applyRulesParallel
-        unificationProcedure
-        (getRewriteRule <$> rewriteRules)
-        initial
+  = do
+    results <- applyRulesParallel unificationProcedure rules initial
+    assertFunctionLikeResults (term initial) results
+    return results
 
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
@@ -721,12 +716,11 @@ applyRewriteRulesSequence
 applyRewriteRulesSequence
     unificationProcedure
     (toConfigurationVariables -> initialConfig)
-    rewriteRules
-  = assertFunctionLikeResults initialConfig
-    $ applyRulesSequence
-        unificationProcedure
-        initialConfig
-        (getRewriteRule <$> rewriteRules)
+    (map getRewriteRule -> rules)
+  = do
+    results <- applyRulesSequence unificationProcedure initialConfig rules
+    assertFunctionLikeResults (term initialConfig) results
+    return results
 
 simplifyPredicate
     :: forall unifier variable term

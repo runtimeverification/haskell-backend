@@ -13,6 +13,7 @@ module Kore.Step.Transition
     , scatter
     , addRule
     , addRules
+    , mapRules
     -- * Re-exports
     , Seq
     ) where
@@ -130,7 +131,7 @@ runTransitionT (TransitionT edge) = ListT.gather (runAccumT edge mempty)
 tryTransitionT
     :: Monad m
     => TransitionT rule m a
-    -> TransitionT rule m [(a, Seq rule)]
+    -> TransitionT rule' m [(a, Seq rule)]
 tryTransitionT = Monad.Trans.lift . runTransitionT
 
 mapTransitionT
@@ -160,3 +161,13 @@ addRules = TransitionT . Accum.add . Seq.fromList . Foldable.toList
  -}
 addRule :: rule -> TransitionT rule m ()
 addRule = TransitionT . Accum.add . Seq.singleton
+
+mapRules
+    :: Monad m
+    => (rule -> rule')
+    -> TransitionT rule m a
+    -> TransitionT rule' m a
+mapRules f trans = do
+    results <- tryTransitionT trans
+    let results' = map (fmap (fmap f)) results
+    scatter results'

@@ -11,7 +11,6 @@ module Kore.Attribute.Function
     , functionId, functionSymbol, functionAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -58,15 +57,5 @@ functionAttribute :: AttributePattern
 functionAttribute = attributePattern_ functionSymbol
 
 instance ParseAttributes Function where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Function { isDeclaredFunction } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isDeclaredFunction failDuplicate'
-            return Function { isDeclaredFunction = True }
-        withApplication' = Parser.withApplication functionId
-        failDuplicate' = Parser.failDuplicate functionId
-
-    toAttributes Function { isDeclaredFunction } =
-        Attributes [functionAttribute | isDeclaredFunction]
+    parseAttribute = parseBoolAttribute functionId
+    toAttributes = toBoolAttributes functionAttribute

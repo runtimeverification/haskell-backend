@@ -11,7 +11,6 @@ module Kore.Attribute.Functional
     , functionalId, functionalSymbol, functionalAttribute
     ) where
 
-import qualified Control.Monad as Monad
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
@@ -62,15 +61,5 @@ functionalAttribute :: AttributePattern
 functionalAttribute = attributePattern_ functionalSymbol
 
 instance ParseAttributes Functional where
-    parseAttribute = withApplication' parseApplication
-      where
-        parseApplication params args Functional { isDeclaredFunctional } = do
-            Parser.getZeroParams params
-            Parser.getZeroArguments args
-            Monad.when isDeclaredFunctional failDuplicate'
-            return Functional { isDeclaredFunctional = True }
-        withApplication' = Parser.withApplication functionalId
-        failDuplicate' = Parser.failDuplicate functionalId
-
-    toAttributes Functional { isDeclaredFunctional } =
-        Attributes [functionalAttribute | isDeclaredFunctional]
+    parseAttribute = parseBoolAttribute functionalId
+    toAttributes = toBoolAttributes functionalAttribute

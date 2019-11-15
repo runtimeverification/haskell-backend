@@ -309,7 +309,8 @@ prove limit definitionModule specModule claimProxy =
         result <-
             runExceptT
             $ verify
-                (Goal.strategy claims axioms)
+                claims
+                axioms
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
