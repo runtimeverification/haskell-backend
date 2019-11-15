@@ -6,16 +6,12 @@ import Test.Tasty
     ( TestTree
     )
 
-import qualified Data.Foldable as Foldable
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
-    )
-import Kore.Internal.OrPattern
-    ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
@@ -27,7 +23,7 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.Not as Not
+import Kore.Step.Simplification.Not
 import Kore.Unification.Substitution
     ( Substitution
     )
@@ -38,87 +34,95 @@ import Kore.Variables.UnifiedVariable
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
-import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 test_simplifyEvaluated :: [TestTree]
 test_simplifyEvaluated =
-    [ [Pattern.top] `becomes_` []
-    , [] `becomes_` [Pattern.top]
-    , [termX] `becomes_` [termNotX]
-    , [termNotX] `becomes_` [termX]
-    , [equalsXA] `becomes_` [notEqualsXA]
-    , equalsXAWithSortedBottom `patternBecomes` [Pattern.top]
-    , [substXA] `becomes_` [notEqualsXA]
-    , [equalsXA, equalsXB] `becomes_` [neitherXAB]
-    , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
-    , [termXAndY] `becomes_` [termNotX, termNotY]
-    , [termNotXAndY] `becomes_` [termX, termNotY]
+    [ [Pattern.top] `becomes_` mkOr mkBottom_ mkBottom_
+    , [] `becomes_` mkTop_
+    , [termXP] `becomes_` mkOr termNotX mkBottom_
+    , [termNotXP] `becomes_` mkOr termX mkBottom_
+    , [equalsXA] `becomes_` bottomNotEqualsXA
+    , equalsXAWithSortedBottom `patternBecomes` topNotEqualsXA
+    , [substXA] `becomes_` bottomNotEqualsXA
+    , [equalsXA, equalsXB] `becomes_` neitherXAB
+    , [xAndEqualsXA] `becomes_` mkOr termNotX notEqualsXA
+    , [termXAndYP] `becomes_` eitherNotXAB
+    , [termNotXAndYP] `becomes_` eitherXNotY
     ]
   where
     becomes_
         :: GHC.HasCallStack
         => [Pattern Variable]
-        -> [Pattern Variable]
+        -> TermLike Variable
         -> TestTree
-    becomes_ originals expecteds =
-        testCase "becomes" $ do
-            actual <- simplifyEvaluated original
+    becomes_ originals expected =
+        testCase "zzzbecomes" $ do
+            let actual = simplifyEvaluated original
             assertBool (message actual) (expected == actual)
       where
         original = OrPattern.fromPatterns originals
-        expected = OrPattern.fromPatterns expecteds
         message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
                 , Pretty.indent 4 $ Pretty.vsep $ unparse <$> originals
                 , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                , Pretty.indent 4 $ unparse expected
                 , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                , Pretty.indent 4 $ unparse actual
                 ]
-          where
-            actuals = Foldable.toList actual
     patternBecomes
         :: GHC.HasCallStack
         => Pattern Variable
-        -> [Pattern Variable]
+        -> TermLike Variable
         -> TestTree
-    patternBecomes original expecteds =
-        testCase "patternBecomes" $ do
-            let actuals = Foldable.toList $ Not.makeEvaluate original
-            assertEqual (message actuals) expecteds actuals
+    patternBecomes original expected =
+        testCase "zzzpatternBecomes" $ do
+            let actual = makeEvaluate original
+            assertBool (message actual) (expected == actual)
       where
-        message actuals =
+        message actual =
             (show . Pretty.vsep)
                 [ "expected simplification of:"
                 , Pretty.indent 4 $ unparse original
                 , "would give:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> expecteds
+                , Pretty.indent 4 $ unparse expected
                 , "but got:"
-                , Pretty.indent 4 $ Pretty.vsep $ unparse <$> actuals
+                , Pretty.indent 4 $ unparse actual
                 ]
 
-termX :: Pattern Variable
-termX = Pattern.fromTermLike (mkElemVar Mock.x)
+termX :: TermLike Variable
+termX = mkElemVar Mock.x
 
-termY :: Pattern Variable
-termY = Pattern.fromTermLike (mkElemVar Mock.y)
+termXP :: Pattern Variable
+termXP = Pattern.fromTermLike termX
 
-termXAndY :: Pattern Variable
-termXAndY = mkAnd <$> termX <*> termY
+termY :: TermLike Variable
+termY = mkElemVar Mock.y
 
-termNotXAndY :: Pattern Variable
-termNotXAndY = mkAnd <$> termNotX <*> termY
+termXAndY :: TermLike Variable
+termXAndY = mkAnd termX termY
 
-termNotX :: Pattern Variable
-termNotX = mkNot <$> termX
+termXAndYP :: Pattern Variable
+termXAndYP = Pattern.fromTermLike termXAndY
 
-termNotY :: Pattern Variable
-termNotY = mkNot <$> termY
+termNotXAndY :: TermLike Variable
+termNotXAndY = mkAnd termNotX termY
+
+termNotXAndYP :: Pattern Variable
+termNotXAndYP = Pattern.fromTermLike termNotXAndY
+
+termNotX :: TermLike Variable
+termNotX = mkNot termX
+
+termNotXP :: Pattern Variable
+termNotXP = Pattern.fromTermLike termNotX
+
+termNotY :: TermLike Variable
+termNotY = mkNot termY
 
 xAndEqualsXA :: Pattern Variable
-xAndEqualsXA = const <$> termX <*> equalsXA
+xAndEqualsXA = const <$> termXP <*> equalsXA
 
 equalsXAWithSortedBottom :: Pattern Variable
 equalsXAWithSortedBottom = Conditional
@@ -139,15 +143,36 @@ equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
 equalsXB_ :: Predicate Variable
 equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
 
-notEqualsXA :: Pattern Variable
-notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
+notEqualsXA :: TermLike Variable
+notEqualsXA = Predicate.unwrapPredicate $ Predicate.makeNotPredicate equalsXA_
 
-neitherXAB :: Pattern Variable
+topNotEqualsXA :: TermLike Variable
+topNotEqualsXA = mkOr (mkTop Mock.testSort) notEqualsXA
+
+bottomNotEqualsXA :: TermLike Variable
+bottomNotEqualsXA = mkOr (mkBottom Mock.testSort) notEqualsXA
+
+eitherNotXAB :: TermLike Variable
+eitherNotXAB = mkOr (mkOr termNotX termNotY) mkBottom_
+
+eitherXNotY :: TermLike Variable
+eitherXNotY = mkOr (mkOr termX termNotY) mkBottom_
+
+neitherXAB :: TermLike Variable
 neitherXAB =
-    fromPredicate
-    $ Predicate.makeAndPredicate
-        (Predicate.makeNotPredicate equalsXA_)
-        (Predicate.makeNotPredicate equalsXB_)
+    mkAnd
+        (mkOr
+            (mkBottom Mock.testSort)
+            (Predicate.unwrapPredicate
+                (Predicate.makeNotPredicate equalsXA_)
+            )
+        )
+        (mkOr
+            mkBottom_
+            (Predicate.unwrapPredicate
+                (Predicate.makeNotPredicate equalsXB_)
+            )
+        )
 
 substXA :: Pattern Variable
 substXA = fromSubstitution $ Substitution.unsafeWrap [(ElemVar Mock.x, Mock.a)]
@@ -169,10 +194,3 @@ fromSubstitution =
     . Pattern.fromCondition
     . Condition.fromSubstitution
 
-simplifyEvaluated
-    :: OrPattern Variable
-    -> IO (OrPattern Variable)
-simplifyEvaluated =
-    runSimplifier mockEnv . Not.simplifyEvaluated
-  where
-    mockEnv = Mock.env

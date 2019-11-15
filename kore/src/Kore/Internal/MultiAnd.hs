@@ -16,6 +16,7 @@ module Kore.Internal.MultiAnd
     , extractPatterns
     , make
     , toPredicate
+    , toTermLike
     ) where
 
 import Control.Applicative
@@ -23,6 +24,9 @@ import Control.Applicative
     )
 import Control.DeepSeq
     ( NFData
+    )
+import Data.List
+    ( foldl'
     )
 import qualified Data.Set as Set
 import GHC.Exts
@@ -36,6 +40,11 @@ import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeTruePredicate
+    )
+import Kore.Internal.TermLike
+    ( TermLike
+    , mkAnd
+    , mkTop_
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -170,3 +179,13 @@ toPredicate (MultiAnd predicates) =
     case predicates of
         [] -> makeTruePredicate
         _  -> foldr1 makeAndPredicate predicates
+
+toTermLike
+    :: InternalVariable variable
+    => MultiAnd (TermLike variable)
+    -> TermLike variable
+toTermLike (MultiAnd terms) =
+    case terms of
+        [] -> mkTop_
+        [term] -> term
+        (t : ts) -> foldl' mkAnd t ts

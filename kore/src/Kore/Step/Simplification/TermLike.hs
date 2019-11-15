@@ -385,7 +385,8 @@ simplifyInternal term predicate = do
             InF inF -> OrPattern.fromPattern <$>
                 (In.simplify <$> simplifyChildren inF)
             NotF notF ->
-                Not.simplify =<< simplifyChildren notF
+                (OrPattern.fromPattern . Not.simplify)
+                    <$> simplifyChildren notF
             --
             BottomF bottomF ->
                 OrPattern.fromPattern . Bottom.simplify

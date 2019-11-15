@@ -26,7 +26,6 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
-import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
     ( OrCondition
     )
@@ -34,20 +33,16 @@ import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeNotPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike hiding
-    ( mkAnd
-    )
+import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
-import qualified Kore.Step.Simplification.And as And
 import Kore.Step.Simplification.Simplify
 import Kore.TopBottom
     ( TopBottom
@@ -63,10 +58,10 @@ Right now this uses the following:
 
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: SimplifierVariable variable
     => Not Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify Not { notChild } = simplifyEvaluated notChild
+    -> Pattern variable
+simplify Not { notChild } = Pattern.fromTermLike (simplifyEvaluated notChild)
 
 {-|'simplifyEvaluated' simplifies a 'Not' pattern given its
 'OrPattern' child.
@@ -87,14 +82,13 @@ to carry around.
 
 -}
 simplifyEvaluated
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: SimplifierVariable variable
     => OrPattern variable
-    -> simplifier (OrPattern variable)
+    -> TermLike variable
 simplifyEvaluated simplified =
-    fmap OrPattern.fromPatterns $ gather $ do
-        let not' = Not { notChild = simplified, notSort = () }
-        andPattern <- scatterAnd (makeEvaluateNot <$> distributeNot not')
-        mkMultiAndPattern andPattern
+    MultiAnd.toTermLike
+    $ makeEvaluateNot
+    <$> distributeNot Not { notChild = simplified, notSort = () }
 
 simplifyEvaluatedPredicate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
@@ -114,17 +108,17 @@ See 'simplify' for details.
 makeEvaluate
     :: InternalVariable variable
     => Pattern variable
-    -> OrPattern variable
+    -> TermLike variable
 makeEvaluate = makeEvaluateNot . Not ()
 
 makeEvaluateNot
     :: InternalVariable variable
     => Not sort (Pattern variable)
-    -> OrPattern variable
+    -> TermLike variable
 makeEvaluateNot Not { notChild } =
-    MultiOr.merge
-        (Pattern.fromTermLike . TermLike.markSimplified <$> makeTermNot term)
-        (MultiOr.singleton $ Pattern.fromConditionSorted
+    mkOr
+        (TermLike.markSimplified $ makeTermNot term)
+        (Pattern.toTermLike $ Pattern.fromConditionSorted
             (termLikeSort term)
             (makeEvaluatePredicate predicate)
         )
@@ -171,17 +165,17 @@ makeEvaluateNotPredicate Not { notChild = predicate } =
 makeTermNot
     :: InternalVariable variable
     => TermLike variable
-    -> MultiOr (TermLike variable)
+    -> TermLike variable
 -- TODO: maybe other simplifications like
 -- not ceil = floor not
 -- not forall = exists not
-makeTermNot (Not_ _ term) = MultiOr.singleton term
+makeTermNot (Not_ _ term) = term
 makeTermNot (And_ _ term1 term2) =
-    MultiOr.merge (makeTermNot term1) (makeTermNot term2)
+    mkOr (makeTermNot term1) (makeTermNot term2)
 makeTermNot term
-  | isBottom term = MultiOr.singleton mkTop_
-  | isTop term    = MultiOr.singleton mkBottom_
-  | otherwise     = MultiOr.singleton $ mkNot term
+  | isBottom term = mkTop_
+  | isTop term    = mkBottom_
+  | otherwise     = mkNot term
 
 {- | Distribute 'Not' over 'MultiOr' using de Morgan's identity.
  -}
@@ -207,15 +201,6 @@ scatterAnd
     :: MultiAnd (MultiOr child)
     -> BranchT m (MultiAnd child)
 scatterAnd = scatter . distributeAnd
-
-{- | Conjoin and simplify a 'MultiAnd' of 'Pattern'.
- -}
-mkMultiAndPattern
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => MultiAnd (Pattern variable)
-    -> BranchT simplifier (Pattern variable)
-mkMultiAndPattern patterns =
-    Foldable.foldrM And.makeEvaluate Pattern.top patterns
 
 {- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
  -}
