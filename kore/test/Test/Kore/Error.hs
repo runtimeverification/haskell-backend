@@ -2,7 +2,9 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Test.Kore.Error where
+module Test.Kore.Error
+    ( test_assertRight
+    ) where
 
 import Test.Tasty
 import Test.Terse

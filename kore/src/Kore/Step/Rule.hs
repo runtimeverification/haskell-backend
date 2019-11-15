@@ -187,10 +187,7 @@ instance Debug variable => Debug (RulePattern variable)
 
 instance (Debug variable, Diff variable) => Diff (RulePattern variable)
 
-instance
-    (Ord variable, SortedVariable variable, Unparse variable) =>
-    Pretty (RulePattern variable)
-  where
+instance InternalVariable variable => Pretty (RulePattern variable) where
     pretty rulePattern'@(RulePattern _ _ _ _ _ _) =
         Pretty.vsep
             [ "left:"
@@ -256,10 +253,7 @@ instance Debug variable => Debug (RewriteRule variable)
 
 instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
 
-instance
-    (Ord variable, SortedVariable variable, Unparse variable)
-    => Unparse (RewriteRule variable)
-  where
+instance InternalVariable variable => Unparse (RewriteRule variable) where
     unparse (RewriteRule RulePattern { left, right, requires } ) =
         unparse $ mkRewrites
             (mkAnd left (Predicate.unwrapPredicate requires))
@@ -285,10 +279,7 @@ instance Debug variable => Debug (ImplicationRule variable)
 
 instance (Debug variable, Diff variable) => Diff (ImplicationRule variable)
 
-instance
-    (Ord variable, SortedVariable variable, Unparse variable)
-    => Unparse (ImplicationRule variable)
-  where
+instance InternalVariable variable => Unparse (ImplicationRule variable) where
     unparse (ImplicationRule RulePattern { left, right } ) =
         unparse $ mkImplies left right
     unparse2 (ImplicationRule RulePattern { left, right } ) =
@@ -330,10 +321,7 @@ instance Debug variable => Debug (OnePathRule variable)
 
 instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
-instance
-    (Ord variable, SortedVariable variable, Unparse variable)
-    => Unparse (OnePathRule variable)
-  where
+instance InternalVariable variable => Unparse (OnePathRule variable) where
     unparse = unparse . onePathRuleToPattern
     unparse2 = unparse2 . onePathRuleToPattern
 
@@ -358,10 +346,7 @@ instance Debug variable => Debug (ReachabilityRule variable)
 
 instance (Debug variable, Diff variable) => Diff (ReachabilityRule variable)
 
-instance
-    (Ord variable, SortedVariable variable, Unparse variable)
-    => Unparse (ReachabilityRule variable)
-  where
+instance InternalVariable variable => Unparse (ReachabilityRule variable) where
     unparse = unparse . reachabilityRuleToPattern
     unparse2 = unparse2 . reachabilityRuleToPattern
 
@@ -385,10 +370,7 @@ instance Debug variable => Debug (AllPathRule variable)
 
 instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
-instance
-    (Ord variable, SortedVariable variable, Unparse variable)
-    => Unparse (AllPathRule variable)
-  where
+instance InternalVariable variable => Unparse (AllPathRule variable) where
     unparse = unparse . allPathRuleToPattern
     unparse2 = unparse2 . allPathRuleToPattern
 
@@ -512,9 +494,7 @@ fromSentenceAxiom sentenceAxiom = do
     patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
 onePathRuleToPattern
-    :: Ord variable
-    => SortedVariable variable
-    => Unparse variable
+    :: InternalVariable variable
     => OnePathRule variable
     -> TermLike variable
 onePathRuleToPattern
@@ -555,9 +535,7 @@ wEF sort = Alias
     }
 
 allPathRuleToPattern
-    :: Ord variable
-    => SortedVariable variable
-    => Unparse variable
+    :: InternalVariable variable
     => AllPathRule variable
     -> TermLike variable
 allPathRuleToPattern
@@ -598,9 +576,7 @@ wAF sort = Alias
     }
 
 reachabilityRuleToPattern
-    :: Ord variable
-    => SortedVariable variable
-    => Unparse variable
+    :: InternalVariable variable
     => ReachabilityRule variable
     -> TermLike variable
 reachabilityRuleToPattern = \case
@@ -613,11 +589,7 @@ reachabilityRuleToPattern = \case
 not encode a normal rewrite or function axiom.
 -}
 patternToAxiomPattern
-    :: Debug variable
-    => Show variable
-    => Unparse variable
-    => SortedVariable variable
-    => FreshVariable variable
+    :: SubstitutionVariable variable
     => Attribute.Axiom
     -> TermLike variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
@@ -898,10 +870,8 @@ substitute subst rulePattern'@(RulePattern _ _ _ _ _ _) =
 i.e. there is no substitution variable left in the rule.
 -}
 applySubstitution
-    ::  ( HasCallStack
-        , Ord variable
-        , SubstitutionVariable variable
-        )
+    :: HasCallStack
+    => SubstitutionVariable variable
     => Substitution variable
     -> RulePattern variable
     -> RulePattern variable

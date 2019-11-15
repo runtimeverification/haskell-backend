@@ -36,7 +36,6 @@ import Kore.Internal.TermLike
     , mapVariables
     , substitute
     )
-import qualified Kore.Logger as Logger
 import Kore.Syntax.Variable
     ( SortedVariable (..)
     )
@@ -48,7 +47,6 @@ expandAlias
     :: forall variable unifier
     .  SubstitutionVariable variable
     => MonadUnify unifier
-    => Logger.WithLog Logger.LogMessage unifier
     => (   TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)

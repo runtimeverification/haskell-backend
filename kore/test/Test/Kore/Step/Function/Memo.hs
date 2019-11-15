@@ -1,4 +1,6 @@
-module Test.Kore.Step.Function.Memo where
+module Test.Kore.Step.Function.Memo
+    ( test_Self
+    ) where
 
 import Test.Tasty
 

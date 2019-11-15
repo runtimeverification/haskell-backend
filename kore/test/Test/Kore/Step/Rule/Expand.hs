@@ -1,4 +1,6 @@
-module Test.Kore.Step.Rule.Expand where
+module Test.Kore.Step.Rule.Expand
+    ( test_expandRule
+    ) where
 
 import Test.Tasty
 

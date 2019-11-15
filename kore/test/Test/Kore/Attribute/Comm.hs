@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Comm where
+module Test.Kore.Attribute.Comm
+    ( test_comm
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

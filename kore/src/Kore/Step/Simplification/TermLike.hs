@@ -130,7 +130,6 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
-import qualified Kore.Substitute as Substitute
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -188,7 +187,6 @@ simplifyInternal
     ::  forall variable simplifier
     .   ( GHC.HasCallStack
         , SimplifierVariable variable
-        , Substitute.SubstitutionVariable variable
         , MonadSimplify simplifier
         )
     =>  TermLike variable

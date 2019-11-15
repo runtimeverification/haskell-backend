@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Trusted where
+module Test.Kore.Attribute.Trusted
+    ( test_trusted
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

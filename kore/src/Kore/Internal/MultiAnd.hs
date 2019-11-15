@@ -101,18 +101,12 @@ patternToAndBool patt
 
 {-| 'make' constructs a normalized 'MultiAnd'.
 -}
-make
-    :: (Ord term, TopBottom term)
-    => [term]
-    -> MultiAnd term
+make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
 make patts = filterAnd (MultiAnd patts)
 
 {-| Returns the patterns inside an @\and@.
 -}
-extractPatterns
-    :: TopBottom term
-    => MultiAnd term
-    -> [term]
+extractPatterns :: MultiAnd term -> [term]
 extractPatterns = getMultiAnd
 
 

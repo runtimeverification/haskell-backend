@@ -1,4 +1,11 @@
-module Test.Kore.Step.Simplification.Or where
+module Test.Kore.Step.Simplification.Or
+    ( test_topTermAnnihilates
+    , test_disjoinPredicates
+    , test_anyBottom
+    , test_deduplicateMiddle
+    , test_simplify
+    , test_valueProperties
+    ) where
 
 import Test.Kore
     ( testId

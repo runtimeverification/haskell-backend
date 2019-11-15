@@ -60,8 +60,7 @@ e.g.:
 
 -}
 verifyDefinition
-    :: ParseAttributes Attribute.Axiom
-    => Builtin.Verifiers
+    :: Builtin.Verifiers
     -> ParsedDefinition
     -> Either (Error VerifyError) VerifySuccess
 verifyDefinition builtinVerifiers definition = do
@@ -73,8 +72,7 @@ verifyDefinition builtinVerifiers definition = do
 collection of the definition's modules.
 -}
 verifyAndIndexDefinition
-    :: ParseAttributes Attribute.Axiom
-    => Builtin.Verifiers
+    :: Builtin.Verifiers
     -> ParsedDefinition
     -> Either
         (Error VerifyError)

@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Criterion.Main
 
@@ -10,6 +10,9 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 import Numeric.Natural
     ( Natural
     )
@@ -158,7 +161,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     $ verifyAndIndexDefinition
                         Builtin.koreVerifiers
                         parsedDefinition
-            Just verifiedModule = Map.lookup mainModuleName verifiedModules
+            verifiedModule =
+                fromMaybe (error $ "Missing module: " ++ show mainModuleName)
+                $ Map.lookup mainModuleName verifiedModules
         pat <- parseProgram
         let
             parsedPattern = either error id $ parseKorePattern "" pat

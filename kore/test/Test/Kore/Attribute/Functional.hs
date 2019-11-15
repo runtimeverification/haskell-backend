@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Functional where
+module Test.Kore.Attribute.Functional
+    ( test_functional
+    , test_Attributes
+    , test_duplicate
+    , test_parameters
+    , test_arguments
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

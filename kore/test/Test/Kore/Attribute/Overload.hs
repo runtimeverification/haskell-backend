@@ -1,14 +1,25 @@
-module Test.Kore.Attribute.Overload where
+module Test.Kore.Attribute.Overload
+    ( test_Overload
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    , test_ignore
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import qualified Data.Default as Default
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.Attribute.Overload
 import qualified Kore.Builtin as Builtin
+import Kore.Error
 import Kore.Internal.Symbol
     ( applicationSorts
     , toSymbolOrAlias
@@ -119,11 +130,12 @@ test_ignore =
   where
     evaluators =
         axiomPatternsToEvaluators $ extractEqualityAxioms indexedModule
-      where
-        Just indexedModule = Map.lookup testModuleName verifiedModules
-          where
-            Right verifiedModules =
-                verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
+    verifiedModules =
+        assertRight
+        $ verifyAndIndexDefinition Builtin.koreVerifiers testDefinition
+    indexedModule =
+        fromMaybe (error $ "Missing module: " ++ show testModuleName)
+        $ Map.lookup testModuleName verifiedModules
 
     testDefinition =
         Definition
