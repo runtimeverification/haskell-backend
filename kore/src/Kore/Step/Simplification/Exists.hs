@@ -30,14 +30,8 @@ import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import qualified Kore.Internal.MultiAnd as MultiAnd
-    ( make
-    )
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
-    )
-import qualified Kore.Internal.OrCondition as OrCondition
-    ( fromCondition
     )
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -48,7 +42,6 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
     ( bottom
-    , splitTerm
     , top
     )
 import qualified Kore.Internal.Predicate as Predicate
@@ -76,14 +69,10 @@ import Kore.Sort
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
-import qualified Kore.Step.Simplification.AndPredicates as And
-    ( simplifyEvaluatedMultiPredicate
-    )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
     )
 import Kore.Step.Simplification.Simplify
-import qualified Kore.TopBottom as TopBottom
 import Kore.Unification.Substitution
     ( Substitution
     )
@@ -189,7 +178,7 @@ makeEvaluate variable original
                     { Conditional.predicate = Predicate.makeTruePredicate
                     , Conditional.substitution = freeSubstitution
                     }
-                else makeEvaluateBoundRight
+                else return $ makeEvaluateBoundRight
                     variable
                     freeSubstitution
                     normalized { Conditional.substitution = boundSubstitution }
@@ -283,27 +272,16 @@ See also: 'quantifyPattern'
 
  -}
 makeEvaluateBoundRight
-    :: forall variable simplifier
-    . (SimplifierVariable variable, MonadSimplify simplifier)
+    :: forall variable
+    . SimplifierVariable variable
     => ElementVariable variable  -- ^ variable to be quantified
     -> Substitution variable  -- ^ free substitution
     -> Pattern variable  -- ^ pattern to quantify
-    -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundRight variable freeSubstitution normalized = do
-    orCondition <- Monad.Trans.lift $ And.simplifyEvaluatedMultiPredicate
-        (MultiAnd.make
-            [   OrCondition.fromCondition quantifyCondition
-            ,   OrCondition.fromCondition
-                    (Condition.fromSubstitution freeSubstitution)
-            ]
-        )
-    predicate <- Branch.scatter orCondition
-    let simplifiedPattern = quantifyTerm `Conditional.withCondition` predicate
-    TopBottom.guardAgainstBottom simplifiedPattern
-    return simplifiedPattern
-  where
-    (quantifyTerm, quantifyCondition) = Pattern.splitTerm
-        (quantifyPattern variable normalized)
+    -> Pattern variable
+makeEvaluateBoundRight variable freeSubstitution normalized =
+    quantifyPattern variable normalized
+        `Conditional.andCondition`
+            Condition.fromSubstitution freeSubstitution
 
 {- | Split the substitution on the given variable.
 
