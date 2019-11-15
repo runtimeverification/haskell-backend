@@ -1,10 +1,8 @@
-module Test.Kore.Step.SMT.Symbols where
+module Test.Kore.Step.SMT.Symbols
+    ( test_sortDeclaration
+    ) where
 
 import Test.Tasty
-
-import Data.Reflection
-    ( Given
-    )
 
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom
@@ -17,9 +15,6 @@ import qualified Kore.Attribute.Symbol as Attribute
     )
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
-    )
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
     )
 import qualified Kore.Step.SMT.Declaration.All as Declaration
     ( declare
@@ -124,9 +119,7 @@ test_sortDeclaration =
     testsForModule name = Helpers.testsForModule name declareSymbolsAndSorts
 
     declareSymbolsAndSorts
-        ::  ( Given (SmtMetadataTools Attribute.Symbol)
-            , SMT.MonadSMT m
-            )
+        :: SMT.MonadSMT m
         => VerifiedModule Attribute.Symbol Attribute.Axiom
         -> m ()
     declareSymbolsAndSorts m =

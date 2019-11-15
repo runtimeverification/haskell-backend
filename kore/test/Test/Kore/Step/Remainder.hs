@@ -1,4 +1,6 @@
-module Test.Kore.Step.Remainder where
+module Test.Kore.Step.Remainder
+    ( test_existentiallyQuantifyTarget
+    ) where
 
 import Test.Tasty
 

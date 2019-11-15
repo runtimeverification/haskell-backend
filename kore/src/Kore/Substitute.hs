@@ -70,7 +70,6 @@ substitute
     ::  forall patternType patternBase attribute variable.
         ( SubstitutionVariable variable
         , Corecursive patternType, Recursive patternType
-        , Functor patternBase
         , CofreeF patternBase attribute ~ Base patternType
         , Binding patternType
         , VariableType patternType ~ UnifiedVariable variable

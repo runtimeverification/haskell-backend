@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Label where
+module Test.Kore.Attribute.Label
+    ( test_Label
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

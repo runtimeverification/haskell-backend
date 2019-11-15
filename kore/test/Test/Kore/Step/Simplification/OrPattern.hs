@@ -1,4 +1,6 @@
-module Test.Kore.Step.Simplification.OrPattern where
+module Test.Kore.Step.Simplification.OrPattern
+    ( test_orPatternSimplification
+    ) where
 
 import Test.Tasty
 

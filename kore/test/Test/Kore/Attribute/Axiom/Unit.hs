@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Axiom.Unit where
+module Test.Kore.Attribute.Axiom.Unit
+    ( test_unit
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

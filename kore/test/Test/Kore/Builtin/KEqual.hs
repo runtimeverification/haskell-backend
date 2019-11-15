@@ -5,19 +5,18 @@ module Test.Kore.Builtin.KEqual
     , test_KIte
     ) where
 
-import qualified Data.Text as Text
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import Test.Tasty
 
-import qualified Kore.Attribute.Symbol as Attribute
+import qualified Data.Text as Text
+
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 
 import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
-
 import Test.SMT
 
 test_kneq :: TestTree
@@ -44,7 +43,7 @@ testBinary symb impl =
             $ inj kSort . Test.Bool.asInternal <$> [a, b]
         (===) expect actual
   where
-    Just name = Attribute.getHook $ Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 test_KEqual :: [TestTree]
 test_KEqual =

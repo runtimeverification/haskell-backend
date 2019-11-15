@@ -67,7 +67,6 @@ import Kore.Internal.TermLike
     , mkNot
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
     )
@@ -271,9 +270,7 @@ termAnd p1 p2 =
   where
     andTerm = return $ Pattern.fromTermLike (mkAnd p1 p2)
     termAndWorker
-        ::  ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
+        :: MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> unifier (Pattern variable)

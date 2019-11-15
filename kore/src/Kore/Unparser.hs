@@ -62,7 +62,6 @@ import Data.Text.Prettyprint.Doc.Render.Text
     )
 import Data.Void
 import Generics.SOP
-import qualified GHC.Stack as GHC
 import qualified Numeric
 
 {- | Class of types that can be rendered in concrete Kore syntax.
@@ -310,8 +309,7 @@ oneCharEscapes =
 
  -}
 unparseAssoc'
-    :: GHC.HasCallStack
-    => Doc ann    -- ^ pattern head
+    :: Doc ann    -- ^ pattern head
     -> Doc ann    -- ^ identity element
     -> [Doc ann]  -- ^ arguments
     -> Doc ann

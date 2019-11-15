@@ -142,7 +142,7 @@ mapTransitionT
 mapTransitionT mapping =
     TransitionT . mapAccumT (mapListT mapping) . getTransitionT
 
-scatter :: Monad m => [(a, Seq rule)] -> TransitionT rule m a
+scatter :: [(a, Seq rule)] -> TransitionT rule m a
 scatter edges = do
     (a, rules) <- TransitionT (Monad.Trans.lift (ListT.scatter edges))
     addRules rules
@@ -151,7 +151,7 @@ scatter edges = do
 {- | Record the application of a sequence of rules.
  -}
 addRules
-    :: (Monad m, Foldable f)
+    :: Foldable f
     => f rule
     -- ^ Sequence of applied rules
     -> TransitionT rule m ()
@@ -159,7 +159,7 @@ addRules = TransitionT . Accum.add . Seq.fromList . Foldable.toList
 
 {- | Record the application of a single rule.
  -}
-addRule :: Monad m => rule -> TransitionT rule m ()
+addRule :: rule -> TransitionT rule m ()
 addRule = TransitionT . Accum.add . Seq.singleton
 
 mapRules

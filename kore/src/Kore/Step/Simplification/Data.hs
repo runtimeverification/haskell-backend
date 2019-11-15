@@ -31,7 +31,6 @@ import Control.Monad.IO.Unlift
 import qualified Control.Monad.Morph as Morph
 import Control.Monad.Reader
 import qualified Data.Map.Strict as Map
-import qualified GHC.Stack as GHC
 
 import Branch
 import qualified Kore.Attribute.Axiom as Attribute
@@ -159,11 +158,7 @@ exactly one branch. Use 'evalSimplifierBranch' to evaluation simplifications
 that may branch.
 
  -}
-runSimplifier
-    :: GHC.HasCallStack
-    => Env (SimplifierT smt)
-    -> SimplifierT smt a
-    -> smt a
+runSimplifier :: Env (SimplifierT smt) -> SimplifierT smt a -> smt a
 runSimplifier env simplifier = runReaderT (runSimplifierT simplifier) env
 
 {- | Evaluate a simplifier computation, returning the result of only one branch.
@@ -175,8 +170,7 @@ that may branch.
   -}
 evalSimplifier
     :: forall smt a
-    .  GHC.HasCallStack
-    => WithLog LogMessage smt
+    .  WithLog LogMessage smt
     => (MonadProfiler smt, MonadSMT smt, MonadUnliftIO smt)
     => VerifiedModule Attribute.Symbol Attribute.Axiom
     -> SimplifierT smt a

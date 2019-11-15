@@ -1,4 +1,9 @@
-module Test.Kore.Attribute.Subsort where
+module Test.Kore.Attribute.Subsort
+    ( test_subsort
+    , test_Attributes
+    , test_zeroParams
+    , test_arguments
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

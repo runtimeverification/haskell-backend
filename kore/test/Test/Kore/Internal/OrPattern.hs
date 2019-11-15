@@ -1,4 +1,8 @@
-module Test.Kore.Internal.OrPattern where
+module Test.Kore.Internal.OrPattern
+    ( hprop_mergeIdemOr
+    , hprop_makeIdemOr
+    , hprop_flattenIdemOr
+    ) where
 
 import Hedgehog
     ( Property
