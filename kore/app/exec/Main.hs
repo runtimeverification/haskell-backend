@@ -381,25 +381,29 @@ main = do
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
-mainWithOptions execOptions@KoreExecOptions { koreLogOptions } = do
-    exitCode <- runLoggerT koreLogOptions
-        $ case () of
-            ()
-              | Just proveOptions <- koreProveOptions execOptions ->
-                koreProve execOptions proveOptions
-
-              | Just searchOptions <- koreSearchOptions execOptions ->
-                koreSearch execOptions searchOptions
-
-              | Just mergeOptions <- koreMergeOptions execOptions ->
-                koreMerge execOptions mergeOptions
-
-              | otherwise ->
-                koreRun execOptions
+mainWithOptions execOptions = do
+    let KoreExecOptions { koreLogOptions } = execOptions
+    exitCode <- runLoggerT koreLogOptions go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
     exitWith exitCode
+  where
+    KoreExecOptions { koreProveOptions } = execOptions
+    KoreExecOptions { koreSearchOptions } = execOptions
+    KoreExecOptions { koreMergeOptions } = execOptions
+    go
+      | Just proveOptions <- koreProveOptions =
+        koreProve execOptions proveOptions
+
+      | Just searchOptions <- koreSearchOptions =
+        koreSearch execOptions searchOptions
+
+      | Just mergeOptions <- koreMergeOptions =
+        koreMerge execOptions mergeOptions
+
+      | otherwise =
+        koreRun execOptions
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
 koreSearch execOptions searchOptions = do
