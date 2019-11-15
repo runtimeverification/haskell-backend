@@ -8,10 +8,18 @@ module Kore.Builtin.Signedness
     ( verifiers
     , signedKey
     , unsignedKey
+    , unifyEquals
     , module Kore.Builtin.Signedness.Signedness
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Control.Error
+    ( MaybeT
+    )
 import qualified Control.Monad as Monad
+import qualified Control.Monad.Trans as Trans
 import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.String
@@ -22,10 +30,21 @@ import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Builtin
 import Kore.Builtin.Signedness.Signedness
 import Kore.Error
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplify
+    ( SimplifierVariable
+    )
 import Kore.Syntax.Application
     ( Application (..)
+    )
+import Kore.Unification.Unify
+    ( MonadUnify
+    , explainAndReturnBottom
     )
 import qualified Kore.Verified as Verified
 
@@ -69,3 +88,18 @@ signedVerifier = signednessVerifier Signed
 
 unsignedVerifier :: ApplicationVerifier Verified.Pattern
 unsignedVerifier = signednessVerifier Unsigned
+
+unifyEquals
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+unifyEquals termLike1@(Signedness_ sign1) termLike2@(Signedness_ sign2)
+  | sign1 == sign2 = return (Pattern.fromTermLike termLike1)
+  | otherwise =
+    Trans.lift $ explainAndReturnBottom
+        "Cannot unify distinct constructors."
+        termLike1
+        termLike2
+unifyEquals _ _ = empty
