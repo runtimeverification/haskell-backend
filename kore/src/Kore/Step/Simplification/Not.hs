@@ -9,15 +9,12 @@ Portability : portable
 -}
 module Kore.Step.Simplification.Not
     ( makeEvaluate
-    , makeEvaluatePredicate
     , simplify
     , simplifyEvaluated
-    , simplifyEvaluatedPredicate
     ) where
 
 import qualified Data.Foldable as Foldable
 
-import Branch
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiAnd
     ( MultiAnd
@@ -26,10 +23,6 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
-import Kore.Internal.OrCondition
-    ( OrCondition
-    )
-import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -90,16 +83,6 @@ simplifyEvaluated simplified =
     $ makeEvaluateNot
     <$> distributeNot Not { notChild = simplified, notSort = () }
 
-simplifyEvaluatedPredicate
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrCondition variable
-    -> simplifier (OrCondition variable)
-simplifyEvaluatedPredicate notChild =
-    fmap OrCondition.fromConditions $ gather $ do
-        let not' = Not { notChild = notChild, notSort = () }
-        andPredicate <- scatterAnd (makeEvaluateNotPredicate <$> distributeNot not')
-        mkMultiAndPredicate andPredicate
-
 {-|'makeEvaluate' simplifies a 'Not' pattern given its 'Pattern'
 child.
 
@@ -155,13 +138,6 @@ makeEvaluatePredicate
         , substitution = mempty
         }
 
-makeEvaluateNotPredicate
-    :: InternalVariable variable
-    => Not sort (Condition variable)
-    -> OrCondition variable
-makeEvaluateNotPredicate Not { notChild = predicate } =
-    OrCondition.fromConditions [ makeEvaluatePredicate predicate ]
-
 makeTermNot
     :: InternalVariable variable
     => TermLike variable
@@ -187,28 +163,3 @@ distributeNot notOr@Not { notChild } =
     MultiAnd.make $ worker <$> Foldable.toList notChild
   where
     worker child = notOr { notChild = child }
-
-{- | Distribute 'MultiAnd' over 'MultiOr'.
- -}
-distributeAnd
-    :: MultiAnd (MultiOr child)
-    -> MultiOr (MultiAnd child)
-distributeAnd = sequenceA
-
-{- | Distribute 'MultiAnd' over 'MultiOr' and 'scatter' into 'BranchT'.
- -}
-scatterAnd
-    :: MultiAnd (MultiOr child)
-    -> BranchT m (MultiAnd child)
-scatterAnd = scatter . distributeAnd
-
-{- | Conjoin and simplify a 'MultiAnd' of 'Condition'.
- -}
-mkMultiAndPredicate
-    :: SimplifierVariable variable
-    => MultiAnd (Condition variable)
-    -> BranchT simplifier (Condition variable)
-mkMultiAndPredicate predicates =
-    -- Using Foldable.fold because the Monoid instance of Condition
-    -- implements And semantics.
-    return $ Foldable.fold predicates

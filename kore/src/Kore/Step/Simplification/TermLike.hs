@@ -358,8 +358,8 @@ simplifyInternal term predicate = do
             EndiannessF _ -> doNotSimplify
             SignednessF _ -> doNotSimplify
             --
-            AndF andF ->
-                And.simplify =<< simplifyChildren andF
+            AndF andF -> OrPattern.fromPattern <$>
+                (And.simplify =<< simplifyChildren andF)
             ApplySymbolF applySymbolF -> OrPattern.fromPattern <$>
                 (Application.simplify predicate
                     =<< simplifyChildren applySymbolF

@@ -118,9 +118,10 @@ Also, we have
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => And Sort (OrPattern variable)
-    -> simplifier (OrPattern variable)
-simplify And { andFirst = first, andSecond = second } =
-    simplifyEvaluated first second
+    -> simplifier (Pattern variable)
+simplify And { andFirst = first, andSecond = second } = do
+    result <- simplifyEvaluated first second
+    return (OrPattern.toPattern result)
 
 {-| simplifies an And given its two 'OrPattern' children.
 

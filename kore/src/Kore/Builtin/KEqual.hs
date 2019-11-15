@@ -47,14 +47,9 @@ import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
+    ( makeEqualsPredicate
     )
 import Kore.Internal.TermLike
-import qualified Kore.Step.Simplification.And as And
-import qualified Kore.Step.Simplification.Not as Not
-import qualified Kore.Step.Simplification.Or as Or
 import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
     ( SentenceSymbol (..)
@@ -141,28 +136,29 @@ evalKEq true (valid :< app) =
     sort = Attribute.patternSort valid
     Application { applicationChildren } = app
     evalEq termLike1 termLike2 = do
-        let defined1 = makeCeilPredicate termLike1
-            defined2 = makeCeilPredicate termLike2
-            defined = makeAndPredicate defined1 defined2
-
-        simplifiedDefined <-
-            simplifyConditionalPredicateToOr Condition.topTODO defined
-
         equalTerms <- simplifyConditionalPredicateToOr
             Condition.topTODO
             (makeEqualsPredicate termLike1 termLike2)
 
-        let trueTerm = Bool.asInternal sort true
-            truePatterns = Pattern.withCondition trueTerm <$> equalTerms
+        let equalTerm =
+                OrPattern.toTermLike (Pattern.fromCondition <$> equalTerms)
 
-        notEqualTerms <- Not.simplifyEvaluatedPredicate equalTerms
-        let falseTerm = Bool.asInternal sort false
-            falsePatterns = Pattern.withCondition falseTerm <$> notEqualTerms
-
-        let undefinedResults = Or.simplifyEvaluated truePatterns falsePatterns
-        results <- And.simplifyEvaluated
-            (Pattern.fromCondition <$> simplifiedDefined)
-            undefinedResults
+        let unsimplifiedResults =
+                mkAnd
+                    (mkAnd (mkCeil_ termLike1) (mkCeil_ termLike2))
+                    (mkOr
+                        (mkAnd
+                            (Bool.asInternal sort true)
+                            equalTerm
+                        )
+                        (mkAnd
+                            (Bool.asInternal sort false)
+                            (mkNot equalTerm)
+                        )
+                    )
+        results <- simplifyConditionalTermToOr
+            Condition.topTODO
+            unsimplifiedResults
         pure $ Applied AttemptedAxiomResults
             { results
             , remainders = OrPattern.bottom

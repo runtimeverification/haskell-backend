@@ -37,30 +37,30 @@ test_andSimplification :: [TestTree]
 test_andSimplification =
     [ testCase "And truth table" $ do
         assertEqual "false and false = false"
-            OrPattern.bottom
+            Pattern.bottom
             =<< evaluate (makeAnd [] [])
         assertEqual "false and true = false"
-            OrPattern.bottom
+            Pattern.bottom
             =<< evaluate (makeAnd [] [Pattern.top])
         assertEqual "true and false = false"
-            OrPattern.bottom
+            Pattern.bottom
             =<< evaluate (makeAnd [Pattern.top] [])
         assertEqual "true and true = true"
-            OrPattern.top
+            Pattern.top
             =<< evaluate (makeAnd [Pattern.top] [Pattern.top])
 
     , testCase "And with booleans" $ do
         assertEqual "false and something = false"
-            OrPattern.bottom
+            Pattern.bottom
             =<< evaluate (makeAnd [] [fOfXExpanded])
         assertEqual "something and false = false"
-            OrPattern.bottom
+            Pattern.bottom
             =<< evaluate (makeAnd [fOfXExpanded] [])
         assertEqual "true and something = something"
-            (OrPattern.fromPatterns [fOfXExpanded])
+            fOfXExpanded
             =<< evaluate (makeAnd [Pattern.top] [fOfXExpanded])
         assertEqual "something and true = something"
-            (OrPattern.fromPatterns [fOfXExpanded])
+            fOfXExpanded
             =<< evaluate (makeAnd [fOfXExpanded] [Pattern.top])
 
     , testCase "And with partial booleans" $ do
@@ -309,7 +309,7 @@ test_andSimplification =
     -- (a or b) and (c or d) = (b and d) or (b and c) or (a and d) or (a and c)
     , testCase "And-Or distribution" $ do
         let expect =
-                OrPattern.fromPatterns
+                OrPattern.toPattern $ OrPattern.fromPatterns
                     [ Conditional
                         { term = fOfX
                         , predicate = makeEqualsPredicate fOfX gOfX
@@ -447,7 +447,7 @@ findSort :: [Pattern Variable] -> Sort
 findSort [] = testSort
 findSort ( Conditional {term} : _ ) = termLikeSort term
 
-evaluate :: And Sort (OrPattern Variable) -> IO (OrPattern Variable)
+evaluate :: And Sort (OrPattern Variable) -> IO (Pattern Variable)
 evaluate = runSimplifier Mock.env . simplify
 
 evaluatePatterns
