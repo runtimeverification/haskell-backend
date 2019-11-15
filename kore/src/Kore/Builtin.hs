@@ -85,8 +85,6 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
-import Kore.Unparser
-import Kore.Variables.Fresh
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -202,11 +200,7 @@ internalize tools =
 {- | Renormalize builtin types after substitution.
  -}
 renormalize
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => TermLike variable -> TermLike variable
 renormalize termLike =
     case termLike of

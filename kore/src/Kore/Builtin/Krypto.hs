@@ -231,7 +231,11 @@ recoverPublicKey recId (r, s) e =
             (mulMod n (invMod n r) (n - e `mod` n))
             (ecc_g curveParams)
   where
-    p256k1@(CurveFP (CurvePrime p curveParams)) = getCurveByName SEC_p256k1
+    p256k1 = getCurveByName SEC_p256k1
+    CurvePrime p curveParams =
+        case p256k1 of
+            CurveFP curvePrime@(CurvePrime _ _) -> curvePrime
+            _ -> error "Expected CurveFP!"
 
     n = ecc_n curveParams
 

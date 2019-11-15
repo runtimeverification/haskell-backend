@@ -124,8 +124,7 @@ test_internalize =
     y = mkElemVar (elemVarS "y" intSort)
 
 withInternalized
-    :: GHC.HasCallStack
-    => (TermLike Variable -> Assertion)
+    :: (TermLike Variable -> Assertion)
     -> TestName
     -> TermLike Variable
     -> TestTree

@@ -111,7 +111,16 @@ default-extensions:
   - TypeSynonymInstances
   - ViewPatterns
 
-ghc-options: -fno-ignore-asserts
+ghc-options:
+  - -fno-ignore-asserts
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Wpartial-fields
+  - -Wredundant-constraints
+  - -Wmissing-export-lists
 
 library:
   source-dirs: src

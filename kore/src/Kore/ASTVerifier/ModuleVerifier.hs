@@ -52,13 +52,11 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Unparser
 
 {-|'verifyUniqueNames' verifies that names defined in a module are unique both
 within the module and outside, using the provided name set. -}
 verifyUniqueNames
-    :: Unparse pat
-    => Map.Map Text AstLocation
+    :: Map.Map Text AstLocation
     -- ^ Names that are already defined.
     -> Module (Sentence pat)
     -> Either (Error VerifyError) (Map.Map Text AstLocation)

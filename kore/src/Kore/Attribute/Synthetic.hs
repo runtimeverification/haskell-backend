@@ -104,8 +104,7 @@ See also:
 resynthesizeAux
     ::  ( Functor f
         , Recursive s
-        , Corecursive t
-        , Recursive t
+        , Recursive t, Corecursive t
         , Base s ~ CofreeF f a
         , Base t ~ CofreeF f b
         )
@@ -121,7 +120,7 @@ resynthesizeAux synth =
 {- | @/synthesize/@ an attribute @a@ from one level of a tree @s@.
  -}
 synthesize
-    ::  ( Functor f, Synthetic a f
+    ::  ( Synthetic a f
         , Corecursive s, Recursive s, Base s ~ CofreeF f a
         )
     => f s

@@ -1,4 +1,6 @@
-module Test.Kore.Attribute.Pattern.NonSimplifiable where
+module Test.Kore.Attribute.Pattern.NonSimplifiable
+    ( test_TermLike
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

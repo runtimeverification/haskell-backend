@@ -185,9 +185,7 @@ parseKoreSearchOptions =
             "Search type (selects potential solutions)"
             (map (\s -> (show s, s)) [ ONE, FINAL, STAR, PLUS ])
 
-parseSum
-    :: Eq value
-    => String -> String -> String -> [(String, value)] -> Parser value
+parseSum :: String -> String -> String -> [(String, value)] -> Parser value
 parseSum metaName longName helpMsg options =
     option (readSum longName options)
         (  metavar metaName

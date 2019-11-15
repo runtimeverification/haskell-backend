@@ -1,4 +1,7 @@
-module Test.Kore.Internal.MultiAnd where
+module Test.Kore.Internal.MultiAnd
+    ( test_multiAndTopBottom
+    , test_multiAndMake
+    ) where
 
 import Test.Tasty
 
