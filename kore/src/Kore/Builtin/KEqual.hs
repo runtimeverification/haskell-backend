@@ -15,7 +15,7 @@ builtin modules.
 @
  -}
 module Kore.Builtin.KEqual
-    ( symbolVerifiers
+    ( verifiers
     , builtinFunctions
       -- * keys
     , eqKey
@@ -56,6 +56,15 @@ import Kore.Step.Simplification.Simplify
 import Kore.Syntax.Definition
     ( SentenceSymbol (..)
     )
+
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers = mempty
+        , symbolVerifiers
+        , domainValueVerifiers = mempty
+        , applicationVerifiers = mempty
+        }
 
 {- | Verify that hooked symbol declarations are well-formed.
 

@@ -15,6 +15,8 @@ module Kore.ASTVerifier.PatternVerifier
     , PatternVerifier (..)
     , runPatternVerifier
     , Context (..)
+    , verifiedModuleContext
+    , withBuiltinVerifiers
     , DeclaredVariables (..), emptyDeclaredVariables
     , assertExpectedSort
     , assertSameSort
@@ -50,6 +52,7 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Text.Prettyprint.Doc.Render.Text
     ( renderStrict
     )
+import qualified GHC.Generics as GHC
 
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
@@ -99,6 +102,26 @@ data Context =
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinDomainValueVerifiers
             :: !(Builtin.DomainValueVerifiers Verified.Pattern)
+        , builtinApplicationVerifiers
+            :: !(Builtin.ApplicationVerifiers Verified.Pattern)
+        }
+    deriving (GHC.Generic)
+
+verifiedModuleContext :: VerifiedModule Attribute.Symbol axiomAttr -> Context
+verifiedModuleContext verifiedModule =
+    Context
+        { declaredVariables = mempty
+        , declaredSortVariables = mempty
+        , indexedModule = eraseAxiomAttributes verifiedModule
+        , builtinDomainValueVerifiers = mempty
+        , builtinApplicationVerifiers = mempty
+        }
+
+withBuiltinVerifiers :: Builtin.Verifiers -> Context -> Context
+withBuiltinVerifiers verifiers context =
+    context
+        { builtinDomainValueVerifiers = Builtin.domainValueVerifiers verifiers
+        , builtinApplicationVerifiers = Builtin.applicationVerifiers verifiers
         }
 
 newtype PatternVerifier a =
@@ -114,8 +137,8 @@ runPatternVerifier
     :: Context
     -> PatternVerifier a
     -> Either (Error VerifyError) a
-runPatternVerifier context PatternVerifier { getPatternVerifier } =
-    runReaderT getPatternVerifier context
+runPatternVerifier ctx PatternVerifier { getPatternVerifier } =
+    runReaderT getPatternVerifier ctx
 
 lookupSortDeclaration
     :: Id
@@ -589,9 +612,20 @@ verifyApplication application = do
   where
     symbolOrAlias = applicationSymbolOrAlias application
     verifyApplyAlias' = Internal.ApplyAliasF <$> verifyApplyAlias application
-    verifyApplySymbol' =
-        Internal.ApplySymbolF
-        <$> verifyApplySymbol Internal.termLikeSort application
+    verifyApplySymbol' = do
+        application' <- verifyApplySymbol Internal.termLikeSort application
+        Context { builtinApplicationVerifiers } <- Reader.ask
+        let symbol = applicationSymbolOrAlias application'
+            builtinVerifier =
+                Builtin.lookupApplicationVerifier
+                    symbol
+                    builtinApplicationVerifiers
+        Trans.lift . PatternVerifier . Trans.lift
+            $ maybe
+                (return . Internal.ApplySymbolF)
+                Builtin.runApplicationVerifier
+                builtinVerifier
+            $ application'
 
 verifyBinder
     :: Traversable binder
@@ -667,8 +701,7 @@ verifyDomainValue domain = do
     verifySortHasDomainValues patternSort
     domain' <- sequence domain
     verified <-
-        PatternVerifier
-        $ Reader.lift
+        PatternVerifier . Reader.lift
         $ Builtin.verifyDomainValue
             builtinDomainValueVerifiers
             lookupSortDeclaration'
