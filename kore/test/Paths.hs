@@ -1,6 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Paths where
+module Paths
+    ( dataFileName
+    ) where
 
 import qualified Language.Haskell.TH as TH
 import System.Directory

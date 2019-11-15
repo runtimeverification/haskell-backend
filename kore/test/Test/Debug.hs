@@ -1,4 +1,9 @@
-module Test.Debug where
+module Test.Debug
+    ( test_debug
+    , test_debugPrec
+    , test_Debug
+    , test_diff
+    ) where
 
 import Test.Tasty
 

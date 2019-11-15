@@ -1,4 +1,16 @@
-module Test.Kore.Attribute.HeatCool where
+module Test.Kore.Attribute.HeatCool
+    ( test_heat
+    , test_heat_Attributes
+    , test_heat_duplicate
+    , test_heat_arguments
+    , test_heat_parameters
+    , test_cool
+    , test_cool_Attributes
+    , test_cool_duplicate
+    , test_cool_arguments
+    , test_cool_parameters
+    , test_conflict
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

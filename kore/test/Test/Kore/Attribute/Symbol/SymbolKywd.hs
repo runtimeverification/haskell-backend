@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Symbol.SymbolKywd where
+module Test.Kore.Attribute.Symbol.SymbolKywd
+    ( test_symbolKywd
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

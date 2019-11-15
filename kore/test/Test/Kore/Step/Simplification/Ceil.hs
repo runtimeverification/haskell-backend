@@ -5,6 +5,9 @@ module Test.Kore.Step.Simplification.Ceil
 import Test.Tasty
 
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 
 import qualified Data.Sup as Sup
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -37,9 +40,6 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Variables.Fresh
-    ( FreshVariable
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -541,7 +541,8 @@ test_ceilSimplification =
         , predicate = makeTruePredicate
         , substitution = mempty
         }
-    asConcrete' p = let Just r = TermLike.asConcrete p in r
+    asConcrete' p =
+        fromMaybe (error "Expected concrete pattern") (TermLike.asConcrete p)
     asInternalSet =
         Ac.asInternal Mock.metadataTools Mock.setSort . Domain.wrapAc
 
@@ -565,10 +566,7 @@ mockEvaluator
 mockEvaluator evaluation _ _ = return evaluation
 
 mapVariables
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        )
+    :: InternalVariable variable
     => Pattern Variable
     -> Pattern variable
 mapVariables =

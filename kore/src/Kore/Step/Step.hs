@@ -73,10 +73,6 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
-import Kore.Logger
-    ( LogMessage
-    , WithLog
-    )
 import qualified Kore.Logger as Log
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
@@ -88,9 +84,6 @@ import Kore.Step.Rule
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as RulePattern
-import Kore.Step.Simplification.Simplify
-    ( MonadSimplify
-    )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
@@ -213,11 +206,9 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => UnificationProcedure
     -> Pattern variable
     -- ^ Initial configuration
@@ -247,11 +238,9 @@ unifyRule
     return (rule' `Conditional.withCondition` unification')
 
 unifyRules
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => UnificationProcedure
     -> Pattern (Target variable)
     -- ^ Initial configuration
@@ -269,11 +258,9 @@ The rule is considered to apply if the result is not @\\bottom@.
 
  -}
 applyInitialConditions
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Condition variable
     -- ^ Initial conditions
     -> Condition variable
@@ -308,11 +295,9 @@ See also: 'applyInitialConditions'
 
  -}
 finalizeAppliedRule
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => RulePattern variable
     -- ^ Applied rule
     -> OrCondition variable
@@ -344,11 +329,9 @@ finalizeAppliedRule renamedRule appliedConditions =
 
  -}
 applyRemainder
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Pattern variable
     -- ^ Initial configuration
     -> Condition variable
@@ -397,11 +380,9 @@ finalizeRule initial unifiedRule =
         return Step.Result { appliedRule = unifiedRule, result }
 
 finalizeRulesParallel
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , Log.WithLog Log.LogMessage unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
@@ -438,7 +419,8 @@ implied by the configuration predicate.
 -}
 recoveryFunctionLikeResults
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  SimplifierVariable variable
+    => Simplifier.MonadSimplify simplifier
     => Pattern (Target variable)
     -> Results variable
     -> simplifier ()
@@ -503,11 +485,9 @@ recoveryFunctionLikeResults initial results = do
       | otherwise = fullyOverrideSort sort term
 
 finalizeRulesSequence
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , Log.WithLog Log.LogMessage unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable)]
     -> unifier (Results variable)
@@ -673,11 +653,9 @@ See also: 'applyRewriteRule'
 
  -}
 applyRewriteRulesParallel
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => UnificationProcedure
     -> [RewriteRule variable]
     -- ^ Rewrite rules
@@ -726,11 +704,9 @@ See also: 'applyRewriteRulesParallel'
 
  -}
 applyRewriteRulesSequence
-    ::  forall unifier variable
-    .   ( SimplifierVariable variable
-        , Log.WithLog Log.LogMessage unifier
-        , MonadUnify unifier
-        )
+    :: forall unifier variable
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => UnificationProcedure
     -> Pattern variable
     -- ^ Configuration being rewritten
@@ -747,11 +723,9 @@ applyRewriteRulesSequence
     return results
 
 simplifyPredicate
-    ::  forall unifier variable term
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable term
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Conditional variable term
     -> unifier (Conditional variable term)
 simplifyPredicate conditional =

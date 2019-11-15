@@ -1,4 +1,8 @@
-module Test.Kore.Variables.Fresh (test_refreshVariable) where
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
+module Test.Kore.Variables.Fresh
+    ( test_refreshVariable
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

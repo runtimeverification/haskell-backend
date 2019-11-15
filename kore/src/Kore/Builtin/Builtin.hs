@@ -22,6 +22,8 @@ module Kore.Builtin.Builtin
     , SortDeclVerifier, SortDeclVerifiers
     , DomainValueVerifier, DomainValueVerifiers
     , SortVerifier (..)
+    , ApplicationVerifier (..), SymbolKey(..), ApplicationVerifiers
+    , lookupApplicationVerifier
     , Function
     , Parser
     , symbolVerifier
@@ -82,6 +84,9 @@ import Control.Monad
 import qualified Control.Monad as Monad
 import Data.Function
 import qualified Data.Functor.Foldable as Recursive
+import Data.Hashable
+    ( Hashable
+    )
 import Data.HashMap.Strict
     ( HashMap
     )
@@ -93,6 +98,7 @@ import qualified Data.Text as Text
 import Data.Void
     ( Void
     )
+import qualified GHC.Generics as GHC
 import GHC.Stack
     ( HasCallStack
     )
@@ -123,6 +129,9 @@ import qualified Kore.Attribute.Sort.Element as Attribute.Sort
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute.Sort
 import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol (..)
+    )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol
 import Kore.Builtin.Error
 import Kore.Error
     ( Error
@@ -244,8 +253,47 @@ type DomainValueVerifier child =
 
 -- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each
 -- builtin
-type DomainValueVerifiers child = (HashMap Text (DomainValueVerifier child))
+type DomainValueVerifiers child = HashMap Text (DomainValueVerifier child)
 
+-- | Verify (and internalize) an application pattern.
+newtype ApplicationVerifier patternType =
+    ApplicationVerifier
+        { runApplicationVerifier
+            :: Application Symbol patternType
+            -> Either (Error VerifyError) (TermLikeF Variable patternType)
+        }
+
+{- | @SymbolKey@ names builtin functions and constructors.
+ -}
+data SymbolKey
+    = HookedSymbolKey !Text
+    -- ^ A builtin function identified by its @hook@ attribute.
+    | KlabelSymbolKey !Text
+    -- ^ A builtin constructor identified by its @klabel@ attribute.
+    deriving (Eq, Ord)
+    deriving (GHC.Generic)
+
+instance Hashable SymbolKey
+
+type ApplicationVerifiers patternType =
+    HashMap SymbolKey (ApplicationVerifier patternType)
+
+lookupApplicationVerifier
+    :: Symbol
+    -> ApplicationVerifiers patternType
+    -> Maybe (ApplicationVerifier patternType)
+lookupApplicationVerifier symbol verifiers = do
+    key <- getHook symbol <|> getKlabel symbol
+    HashMap.lookup key verifiers
+  where
+    getHook =
+        fmap HookedSymbolKey
+        . Attribute.Symbol.getHook . Attribute.Symbol.hook
+        . symbolAttributes
+    getKlabel =
+        fmap KlabelSymbolKey
+        . Attribute.Symbol.getKlabel . Attribute.Symbol.klabel
+        . symbolAttributes
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -253,7 +301,26 @@ data Verifiers = Verifiers
     { sortDeclVerifiers    :: SortDeclVerifiers
     , symbolVerifiers      :: SymbolVerifiers
     , domainValueVerifiers :: DomainValueVerifiers Verified.Pattern
+    , applicationVerifiers :: ApplicationVerifiers Verified.Pattern
     }
+
+instance Semigroup Verifiers where
+    (<>) a b =
+        Verifiers
+            { sortDeclVerifiers = on (<>) sortDeclVerifiers a b
+            , symbolVerifiers = on (<>) symbolVerifiers a b
+            , domainValueVerifiers = on (<>) domainValueVerifiers a b
+            , applicationVerifiers = on (<>) applicationVerifiers a b
+            }
+
+instance Monoid Verifiers where
+    mempty =
+        Verifiers
+            { sortDeclVerifiers = mempty
+            , symbolVerifiers = mempty
+            , domainValueVerifiers = mempty
+            , applicationVerifiers = mempty
+            }
 
 {- | Look up and apply a builtin sort declaration verifier.
 

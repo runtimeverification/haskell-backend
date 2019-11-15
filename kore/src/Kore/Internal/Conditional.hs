@@ -166,7 +166,7 @@ environment (in this case, a conjunction of side conditions).
 @duplicate@ re-wraps the 'Conditional' with its own side conditions.
 
  -}
-instance InternalVariable variable => Comonad (Conditional variable) where
+instance Comonad (Conditional variable) where
     extract = term
     {-# INLINE extract #-}
 

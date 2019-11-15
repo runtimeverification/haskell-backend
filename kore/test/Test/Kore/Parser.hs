@@ -1,4 +1,13 @@
-module Test.Kore.Parser where
+module Test.Kore.Parser
+    ( FailureTest (..)
+    , ParserTest (..)
+    , parseTree
+    , parseSkipTree
+    , success
+    , SuccessfulTest (..)
+    , parsesTo_
+    , fails
+    ) where
 
 import Test.Tasty
     ( TestTree
@@ -44,13 +53,6 @@ success input expected = Success SuccessfulTest
 
 parsesTo_ :: String -> a -> ParserTest a
 parsesTo_ = success
-
-
-failure :: String -> String -> ParserTest a
-failure input expected = Failure FailureTest
-    { failureInput = input
-    , failureExpected = expected
-    }
 
 fails :: String -> () -> ParserTest a
 fails input _ = FailureWithoutMessage [input]

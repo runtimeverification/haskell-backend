@@ -1,4 +1,13 @@
-module Test.Kore.Attribute.Priority where
+module Test.Kore.Attribute.Priority
+    ( test_priority
+    , test_Attributes
+    , test_duplicate
+    , test_zeroArguments
+    , test_twoArguments
+    , test_negative
+    , test_string
+    , test_space
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
