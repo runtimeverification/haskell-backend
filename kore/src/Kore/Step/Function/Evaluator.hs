@@ -94,7 +94,9 @@ import Kore.Unparser
 -- to add memoization to a function evaluator.
 evaluateApplication
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
     => Condition variable
     -- ^ The predicate from the configuration
     -> Condition variable

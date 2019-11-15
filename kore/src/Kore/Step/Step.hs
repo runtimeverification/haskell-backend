@@ -417,7 +417,6 @@ toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
 finalizeRule
     ::  ( SimplifierVariable variable
-        , Typeable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -434,7 +433,11 @@ finalizeRule initial unifiedRule =
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
         -- TODO: log unifiedRule here since ^ guards against bottom
-        debugAppliedRule unifiedRule
+        debugAppliedRule
+            $ Conditional.mapVariables
+                (\f -> Rule.mapVariables f)
+                (fmap toVariable)
+                unifiedRule
         checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
@@ -444,7 +447,6 @@ finalizeRule initial unifiedRule =
 finalizeRulesParallel
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Typeable variable
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
@@ -551,7 +553,6 @@ recoveryFunctionLikeResults initial results = do
 finalizeRulesSequence
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Typeable variable
         , MonadUnify unifier
         , Log.WithLog Log.LogMessage unifier
         )
@@ -696,7 +697,6 @@ See also: 'applyRewriteRule'
 applyRulesParallel
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Typeable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -723,7 +723,6 @@ See also: 'applyRewriteRule'
 applyRewriteRulesParallel
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Typeable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -751,7 +750,6 @@ See also: 'applyRewriteRule'
 applyRulesSequence
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Typeable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
@@ -778,7 +776,6 @@ See also: 'applyRewriteRulesParallel'
 applyRewriteRulesSequence
     ::  forall unifier variable
     .   ( SimplifierVariable variable
-        , Typeable variable
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
