@@ -12,9 +12,6 @@ module Kore.Step.Function.Evaluator
     , evaluatePattern
     ) where
 
-import Control.Applicative
-    ( empty
-    )
 import Control.Error
     ( ExceptT
     , MaybeT (..)
@@ -28,18 +25,9 @@ import Control.Exception
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
-import qualified Data.Map as Map
-import Data.Text
-    ( Text
-    )
-import Data.Text.Prettyprint.Doc
-    ( (<+>)
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
-import Kore.Attribute.Hook
-import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
@@ -58,9 +46,6 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
-import Kore.Logger.WarnUnhookedSymbol
-    ( warnUnhookedSymbol
-    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -169,23 +154,6 @@ evaluateApplication
       | otherwise
       = return ()
 
-criticalMissingHook :: Symbol -> Text -> a
-criticalMissingHook symbol hookName =
-    (error . show . Pretty.vsep)
-        [ "Error: missing hook"
-        , "Symbol"
-        , Pretty.indent 4 (unparse symbol)
-        , "declared with attribute"
-        , Pretty.indent 4 (unparse attribute)
-        , "We don't recognize that hook and it was not given any rules."
-        , "Please open a feature request at"
-        , Pretty.indent 4 "https://github.com/kframework/kore/issues"
-        , "and include the text of this message."
-        , "Workaround: Give rules for" <+> unparse symbol
-        ]
-  where
-    attribute = hookAttribute hookName
-
 {-| Evaluates axioms on patterns.
 -}
 evaluatePattern
@@ -236,70 +204,47 @@ maybeEvaluatePattern
     defaultValue
     configurationCondition
   = do
-    simplifierMap <- Trans.lift askSimplifierAxioms
-    let maybeEvaluator :: Maybe BuiltinAndAxiomSimplifier
-        maybeEvaluator = do
-            identifier' <- identifier
-            Map.lookup identifier' simplifierMap
-    case maybeEvaluator of
-        Nothing
-          -- TODO (thomas.tuegel): Factor out a second function evaluator and
-          -- remove this check. At startup, the definition's rules are
-          -- simplified using Matching Logic only (no function
-          -- evaluation). During this stage, all the hooks are expected to be
-          -- missing, so that is not an error. If any function evaluators are
-          -- present, we assume that startup is finished, but we should really
-          -- have a separate evaluator for startup.
-          | null simplifierMap -> empty
-          | App_ symbol _ <- termLike
-          , let Symbol { symbolAttributes } = symbol ->
-            case (getHook . Attribute.hook) symbolAttributes of
-                Just hook -> criticalMissingHook symbol hook
-                Nothing -> do
-                    warnUnhookedSymbol symbol
-                    empty
-          | otherwise -> empty
-        Just (BuiltinAndAxiomSimplifier evaluator) ->
-            Trans.lift . tracing $ do
-                let conditions = configurationCondition <> childrenCondition
-                result <-
-                    Profile.axiomEvaluation identifier
-                    $ evaluator termLike conditions
-                flattened <- case result of
-                    AttemptedAxiom.NotApplicable ->
-                        return AttemptedAxiom.NotApplicable
-                    AttemptedAxiom.Applied AttemptedAxiomResults
-                        { results = orResults
-                        , remainders = orRemainders
-                        } -> do
-                            simplified <-
-                                Profile.resimplification
-                                    identifier (length orResults)
-                                $ mapM simplifyIfNeeded orResults
-                            let simplifiedResult = MultiOr.flatten simplified
-                            Profile.axiomBranching
-                                identifier
-                                (length orResults)
-                                (length simplifiedResult)
-                            return
-                                (AttemptedAxiom.Applied AttemptedAxiomResults
-                                    { results = simplifiedResult
-                                    , remainders = orRemainders
-                                    }
-                                )
-                merged <-
-                    Profile.mergeSubstitutions identifier
-                    $ mergeWithConditionAndSubstitution
-                        childrenCondition
-                        flattened
-                case merged of
-                    AttemptedAxiom.NotApplicable ->
-                        return defaultValue
-                    AttemptedAxiom.Applied attemptResults ->
-                        return $ MultiOr.merge results remainders
-                      where
-                        AttemptedAxiomResults { results, remainders } =
-                            attemptResults
+    BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
+    Trans.lift . tracing $ do
+        let conditions = configurationCondition <> childrenCondition
+        result <-
+            Profile.axiomEvaluation identifier
+            $ evaluator termLike conditions
+        flattened <- case result of
+            AttemptedAxiom.NotApplicable ->
+                return AttemptedAxiom.NotApplicable
+            AttemptedAxiom.Applied AttemptedAxiomResults
+                { results = orResults
+                , remainders = orRemainders
+                } -> do
+                    simplified <-
+                        Profile.resimplification
+                            identifier (length orResults)
+                        $ mapM simplifyIfNeeded orResults
+                    let simplifiedResult = MultiOr.flatten simplified
+                    Profile.axiomBranching
+                        identifier
+                        (length orResults)
+                        (length simplifiedResult)
+                    return
+                        (AttemptedAxiom.Applied AttemptedAxiomResults
+                            { results = simplifiedResult
+                            , remainders = orRemainders
+                            }
+                        )
+        merged <-
+            Profile.mergeSubstitutions identifier
+            $ mergeWithConditionAndSubstitution
+                childrenCondition
+                flattened
+        case merged of
+            AttemptedAxiom.NotApplicable ->
+                return defaultValue
+            AttemptedAxiom.Applied attemptResults ->
+                return $ MultiOr.merge results remainders
+                where
+                AttemptedAxiomResults { results, remainders } =
+                    attemptResults
   where
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.matchAxiomIdentifier termLike
