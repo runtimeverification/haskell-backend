@@ -158,6 +158,7 @@ instance (SimplifierVariable variable, Typeable variable) => Log.Entry (AppliedR
     toLogMessage AppliedRuleEntry { appliedRule } =
         Log.LogMessage
             { message =
+                -- TODO: after testing noticed it looked wrong
                 Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep $
                 [ "The following rule was applied:"
                 , Pretty.indent 2 "Rule:"
