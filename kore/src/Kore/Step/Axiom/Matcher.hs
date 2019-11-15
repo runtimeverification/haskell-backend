@@ -202,6 +202,8 @@ matchEqualHeads (Pair (Bottom_ _) (Bottom_ _)) =
     return ()
 matchEqualHeads (Pair (Top_ _) (Top_ _)) =
     return ()
+matchEqualHeads (Pair (Endianness_ symbol1) (Endianness_ symbol2)) =
+    Monad.guard (symbol1 == symbol2)
 -- Non-terminal patterns
 matchEqualHeads (Pair (Ceil_ _ _ term1) (Ceil_ _ _ term2)) =
     push (Pair term1 term2)
