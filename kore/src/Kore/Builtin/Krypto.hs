@@ -15,7 +15,7 @@ builtin modules.
 @
  -}
 module Kore.Builtin.Krypto
-    ( symbolVerifiers
+    ( verifiers
     , builtinFunctions
     , signatureToKey
     -- * Constants
@@ -80,6 +80,15 @@ ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
 sha256Key = "KRYPTO.sha256"
 sha3256Key = "KRYPTO.sha3256"
 ripemd160Key = "KRYPTO.ripemd160"
+
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers = mempty
+        , symbolVerifiers
+        , domainValueVerifiers = mempty
+        , applicationVerifiers = mempty
+        }
 
 {- | Verify that hooked symbol declarations are well-formed.
 
