@@ -28,9 +28,6 @@ import Control.Exception
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
-import Data.Functor
-    ( ($>)
-    )
 import qualified Data.Map as Map
 import Data.Text
     ( Text
@@ -45,7 +42,6 @@ import Kore.Attribute.Hook
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Attribute.Synthetic
 import Kore.Debug
-import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
     , merge
@@ -110,30 +106,13 @@ evaluateApplication
     (evaluateSortInjection -> application)
   = finishT $ do
     Foldable.for_ canMemoize recallOrPattern
-    axiomIdToEvaluator <- Simplifier.askSimplifierAxioms
-    let
-        unevaluatedSimplifier
-          | Just hook <- getHook (Attribute.hook symbolAttributes)
-          -- TODO (thomas.tuegel): Factor out a second function evaluator and
-          -- remove this check. At startup, the definition's rules are
-          -- simplified using Matching Logic only (no function
-          -- evaluation). During this stage, all the hooks are expected to be
-          -- missing, so that is not an error. If any function evaluators are
-          -- present, we assume that startup is finished, but we should really
-          -- have a separate evaluator for startup.
-          , (not . null) axiomIdToEvaluator
-          = criticalMissingHook symbol hook
-          | (not . null) axiomIdToEvaluator
-          = warnUnhookedSymbol symbol $> unevaluated
-          | otherwise = return unevaluated
-
     results <-
         maybeEvaluatePattern
             childrenCondition
             termLike
             unevaluated
             configurationCondition
-        & maybeT unevaluatedSimplifier return
+        & maybeT (return unevaluated) return
         & Trans.lift
     Foldable.for_ canMemoize (recordOrPattern results)
     return results
@@ -142,7 +121,6 @@ evaluateApplication
     finishT = exceptT return return
 
     Application { applicationSymbolOrAlias = symbol } = application
-    Symbol { symbolAttributes } = symbol
 
     termLike = synthesize (ApplySymbolF application)
     unevaluated =
@@ -254,7 +232,7 @@ maybeEvaluatePattern
     -> MaybeT simplifier (OrPattern variable)
 maybeEvaluatePattern
     childrenCondition
-    patt
+    termLike
     defaultValue
     configurationCondition
   = do
@@ -264,15 +242,29 @@ maybeEvaluatePattern
             identifier' <- identifier
             Map.lookup identifier' simplifierMap
     case maybeEvaluator of
-        Nothing -> empty
+        Nothing
+          -- TODO (thomas.tuegel): Factor out a second function evaluator and
+          -- remove this check. At startup, the definition's rules are
+          -- simplified using Matching Logic only (no function
+          -- evaluation). During this stage, all the hooks are expected to be
+          -- missing, so that is not an error. If any function evaluators are
+          -- present, we assume that startup is finished, but we should really
+          -- have a separate evaluator for startup.
+          | null simplifierMap -> empty
+          | App_ symbol _ <- termLike
+          , let Symbol { symbolAttributes } = symbol ->
+            case (getHook . Attribute.hook) symbolAttributes of
+                Just hook -> criticalMissingHook symbol hook
+                Nothing -> do
+                    warnUnhookedSymbol symbol
+                    empty
+          | otherwise -> empty
         Just (BuiltinAndAxiomSimplifier evaluator) ->
             Trans.lift . tracing $ do
-                result <- Profile.axiomEvaluation identifier $
-                    evaluator
-                        patt
-                        ( configurationCondition
-                        `Conditional.andCondition` childrenCondition
-                        )
+                let conditions = configurationCondition <> childrenCondition
+                result <-
+                    Profile.axiomEvaluation identifier
+                    $ evaluator termLike conditions
                 flattened <- case result of
                     AttemptedAxiom.NotApplicable ->
                         return AttemptedAxiom.NotApplicable
@@ -310,17 +302,17 @@ maybeEvaluatePattern
                             attemptResults
   where
     identifier :: Maybe AxiomIdentifier
-    identifier = AxiomIdentifier.matchAxiomIdentifier patt
+    identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
     tracing =
         traceNonErrorMonad
             D_Function_evaluatePattern
             [ debugArg "axiomIdentifier" identifier ]
-        . Profile.equalitySimplification identifier patt
+        . Profile.equalitySimplification identifier termLike
 
     unchangedPatt =
         Conditional
-            { term         = patt
+            { term         = termLike
             , predicate    = predicate
             , substitution = substitution
             }
