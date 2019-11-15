@@ -10,7 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module SMT
     ( SMT, SmtT, runSmtT
     , Solver
-    , newSolver, stopSolver
+    , stopSolver
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -444,9 +444,16 @@ stopSolver mvar = do
 runSMT :: Config -> Logger -> SMT a -> IO a
 runSMT config logger SmtT { runSmtT } =
     Exception.bracket
-        (newSolver config logger)
+        (newSolver config logger `Exception.catch` showZ3NotFound)
         stopSolver
         (runReaderT runSmtT)
+  where
+    showZ3NotFound :: Exception.IOException -> IO a
+    showZ3NotFound e =
+        error
+            $ Exception.displayException e <> "\n"
+            <> "We couldn't start Z3 due to the exception above. "
+            <> "Is Z3 installed?"
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars

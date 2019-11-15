@@ -900,7 +900,6 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             value <- maybeValue
             return (Domain.wrapElement (key, value))
 
-
 stringGen :: Gen Text
 stringGen = Gen.text (Range.linear 0 64) (Reader.lift Gen.unicode)
 
