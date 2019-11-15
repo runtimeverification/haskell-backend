@@ -1,0 +1,8 @@
+module VERIFICATION
+  imports DOMAIN-VALUES
+endmodule
+
+module DOMAIN-VALUES-SPEC
+  imports VERIFICATION
+  rule <k> 1 => end </k>
+endmodule
