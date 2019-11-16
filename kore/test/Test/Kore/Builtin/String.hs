@@ -1,4 +1,19 @@
-module Test.Kore.Builtin.String where
+module Test.Kore.Builtin.String
+    ( test_lt
+    , test_concat
+    , test_substr
+    , test_length
+    , test_chr
+    , test_ord
+    , test_find
+    , test_string2Base
+    , test_string2Int
+    , test_token2String
+    , test_string2Token
+    --
+    , asPattern
+    , asInternal
+    ) where
 
 import Hedgehog hiding
     ( Concrete
@@ -332,10 +347,6 @@ test_string2Token =
         (Builtin.makeDomainValuePattern userTokenSort "test")
     ]
 
--- | Another name for 'asInternal'.
-stringLiteral :: Text -> TermLike Variable
-stringLiteral = asInternal
-
 -- | Specialize 'String.asInternal' to the builtin sort 'stringSort'.
 asInternal :: Text -> TermLike Variable
 asInternal = String.asInternal stringSort
@@ -343,10 +354,6 @@ asInternal = String.asInternal stringSort
 -- | Specialize 'String.asPattern' to the builtin sort 'stringSort'.
 asPattern :: Text -> Pattern Variable
 asPattern = String.asPattern stringSort
-
--- | Specialize 'String.asPartialPattern' to the builtin sort 'stringSort'.
-asPartialPattern :: Maybe Text -> Pattern Variable
-asPartialPattern = String.asPartialPattern stringSort
 
 testString
     :: HasCallStack

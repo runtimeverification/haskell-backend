@@ -130,8 +130,7 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
  -}
 unprovenNodes
     :: forall goal a
-    .  Goal goal
-    => ProofState.ProofState a ~ ProofState goal a
+    .  ProofState.ProofState a ~ ProofState goal a
     => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
     -> MultiOr.MultiOr a
 unprovenNodes executionGraph =
@@ -143,8 +142,7 @@ unprovenNodes executionGraph =
  -}
 proven
     :: forall goal a
-    .  Goal goal
-    => ProofState.ProofState a ~ ProofState goal a
+    .  ProofState.ProofState a ~ ProofState goal a
     => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
@@ -485,7 +483,6 @@ data TransitionRuleTemplate monad goal =
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
-    => Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
@@ -565,9 +562,7 @@ transitionRuleTemplate
 
 -- TODO(Ana): could be less general when all-path will be connected to repl
 onePathFirstStep
-    :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
-    => Prim goal ~ ProofState.Prim (Rule goal)
+    :: Prim goal ~ ProofState.Prim (Rule goal)
     => [Rule goal]
     -> Strategy (Prim goal)
 onePathFirstStep axioms =
@@ -589,9 +584,7 @@ onePathFirstStep axioms =
 
 -- TODO(Ana): could be less general when all-path will be connected to repl
 onePathFollowupStep
-    :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
-    => Prim goal ~ ProofState.Prim (Rule goal)
+    :: Prim goal ~ ProofState.Prim (Rule goal)
     => [Rule goal]
     -> [Rule goal]
     -> Strategy (Prim goal)
@@ -661,8 +654,7 @@ allPathFollowupStep claims axioms =
 
 -- | Remove the destination of the goal.
 removeDestination
-    :: (MonadCatch m, MonadSimplify m)
-    => Goal goal
+    :: MonadCatch m
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => goal
@@ -683,7 +675,6 @@ removeDestination goal = errorBracket $ do
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
-    => Goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => goal
@@ -709,18 +700,12 @@ simplify goal = errorBracket $ do
                 ("configuration=" <> unparseToText configuration)
             )
 
-isTriviallyValid
-    :: SimplifierVariable variable
-    => Goal goal
-    => Coercible goal (RulePattern variable)
-    => goal -> Bool
+isTriviallyValid :: Coercible goal (RulePattern variable) => goal -> Bool
 isTriviallyValid = isBottom . RulePattern.left . coerce
 
 isTrusted
     :: forall goal variable
-     . SimplifierVariable variable
-    => Goal goal
-    => Coercible goal (RulePattern variable)
+    .  Coercible goal (RulePattern variable)
     => goal -> Bool
 isTrusted =
     Attribute.Trusted.isTrusted
@@ -732,13 +717,11 @@ isTrusted =
 derivePar
     :: forall m goal variable
     .  (MonadCatch m, MonadSimplify m)
-    => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => Coercible (RulePattern variable) goal
     => Coercible (Rule goal) (RulePattern variable)
-    => Coercible (RulePattern variable) (Rule goal)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -795,13 +778,11 @@ derivePar rules goal = errorBracket $ do
 deriveSeq
     :: forall m goal variable
     .  (MonadCatch m, MonadSimplify m)
-    => Goal goal
     => ProofState.ProofState goal ~ ProofState goal goal
     => SimplifierVariable variable
     => Coercible goal (RulePattern variable)
     => Coercible (RulePattern variable) goal
     => Coercible (Rule goal) (RulePattern variable)
-    => Coercible (RulePattern variable) (Rule goal)
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)

@@ -14,8 +14,7 @@ builtin modules.
  -}
 module Kore.Builtin.Map
     ( sort
-    , sortDeclVerifiers
-    , symbolVerifiers
+    , verifiers
     , builtinFunctions
     , Map.asTermLike
     , internalize
@@ -112,6 +111,15 @@ isMapSort = Builtin.isSort sort
  -}
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
+
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers
+        , symbolVerifiers
+        , domainValueVerifiers = mempty
+        , applicationVerifiers = mempty
+        }
 
 {- | Verify that hooked sort declarations are well-formed.
 

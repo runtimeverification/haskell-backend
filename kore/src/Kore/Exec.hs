@@ -57,9 +57,6 @@ import Data.Proxy
 import Data.Text
     ( Text
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 import System.Exit
     ( ExitCode (..)
     )
@@ -154,9 +151,6 @@ import Kore.Strategies.Verification
     ( Claim
     , CommonProofState
     , verify
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
     )
 import Kore.Unparser
     ( unparseToText
@@ -298,8 +292,6 @@ prove
         , Claim claim
         , Eq claim
         , Show claim
-        , Show (Goal.Rule claim)
-        , TopBottom claim
         , Goal.ProofState claim (Pattern Variable) ~ CommonProofState
         )
     => Limit Natural
@@ -332,7 +324,6 @@ proveWithRepl
     :: forall claim
      . Claim claim
     => Eq claim
-    => TopBottom claim
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
@@ -609,7 +600,6 @@ initializeProver
     .  MonadSimplify simplifier
     => Claim claim
     => Eq claim
-    => TopBottom claim
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -> (InitializedProver claim -> simplifier a)
@@ -669,10 +659,7 @@ initializeProver definitionModule specModule within =
       where
         expanded = expandSingleConstructors tools claim
 
-    logChangedClaim
-        :: HasCallStack
-        => MaybeChanged claim
-        -> simplifier ()
+    logChangedClaim :: MaybeChanged claim -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
     logChangedClaim (Unchanged _) = return ()
@@ -685,7 +672,6 @@ evalProver
         , MonadSMT smt
         , Claim claim
         , Eq claim
-        , TopBottom claim
         )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module

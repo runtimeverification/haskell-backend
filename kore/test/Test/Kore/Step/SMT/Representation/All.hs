@@ -1,4 +1,6 @@
-module Test.Kore.Step.SMT.Representation.All where
+module Test.Kore.Step.SMT.Representation.All
+    ( test_symbolParsing
+    ) where
 
 import Test.Tasty
 

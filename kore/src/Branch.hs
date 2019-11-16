@@ -141,7 +141,7 @@ scatter [] === empty
 See also: 'gather'
 
  -}
-scatter :: (Applicative m, Foldable f) => f a -> BranchT m a
+scatter :: Foldable f => f a -> BranchT m a
 scatter = BranchT . ListT.scatter . Foldable.toList
 
 {- | Fold down a 'BranchT' into its base 'Monad'.
@@ -149,7 +149,7 @@ scatter = BranchT . ListT.scatter . Foldable.toList
 See also: 'foldListT'
 
  -}
-foldBranchT :: Monad m => (a -> m r -> m r) -> m r -> BranchT m a -> m r
+foldBranchT :: (a -> m r -> m r) -> m r -> BranchT m a -> m r
 foldBranchT f mr (BranchT listT) = foldListT listT f mr
 
 {- | Fold down a 'BranchT' using an underlying 'Alternative'.
@@ -157,5 +157,5 @@ foldBranchT f mr (BranchT listT) = foldListT listT f mr
 See also: 'foldBranchT'
 
  -}
-alternate :: (Alternative m, Monad m) => BranchT m a -> m a
+alternate :: Alternative m => BranchT m a -> m a
 alternate = foldBranchT ((<|>) . pure) empty

@@ -1,4 +1,12 @@
-module Test.Kore.Strategies.AllPath.AllPath where
+module Test.Kore.Strategies.AllPath.AllPath
+    ( test_unprovenNodes
+    , test_transitionRule_CheckProven
+    , test_transitionRule_CheckGoalRem
+    , test_transitionRule_RemoveDestination
+    , test_transitionRule_TriviallyValid
+    , test_transitionRule_DerivePar
+    , test_runStrategy
+    ) where
 
 import Test.Tasty
 
@@ -366,12 +374,8 @@ instance Debug (Goal.Rule Goal)
 instance Diff (Goal.Rule Goal)
 
 -- | The destination-removal rule for our unit test goal.
-removeDestination
-    :: MonadSimplify m
-    => Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m Goal
-removeDestination (src, dst) =
-    return (difference src dst, dst)
+removeDestination :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
+removeDestination (src, dst) = return (difference src dst, dst)
 
 -- | The goal is trivially valid when the members are equal.
 isTriviallyValid :: Goal -> Bool
@@ -397,14 +401,8 @@ derivePar rules (src, dst) =
     applied = Maybe.mapMaybe applyRule rules
     goals = Foldable.asum (goal <$> applied)
 
-simplify
-    :: MonadSimplify m
-    => Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m Goal
+simplify :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
 simplify = return
-
-isTrusted :: Goal -> Bool
-isTrusted = undefined
 
 deriveSeq
     :: MonadSimplify m

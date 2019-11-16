@@ -1,4 +1,11 @@
-module Test.Kore.Step.SMT.Evaluator where
+module Test.Kore.Step.SMT.Evaluator
+    ( test_evaluableSyntaxPredicate
+    , test_evaluableConditional
+    , test_evaluableMultiOr
+    , test_andNegation
+    , test_Int_contradictions
+    , test_Bool_contradictions
+    ) where
 
 
 import Hedgehog hiding
@@ -197,9 +204,6 @@ evaluateSMT
     :: Predicate Variable
     -> PropertyT SMT (Maybe Bool)
 evaluateSMT = Trans.lift . Kore.runSimplifier testEnv . SMT.Evaluator.evaluate
-
-noSimplification :: [(TermLike Variable, [Pattern Variable])]
-noSimplification = []
 
 -- ----------------------------------------------------------------
 -- Refute Int predicates

@@ -2,10 +2,10 @@
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 -}
-module Test.Kore.IndexedModule.Error where
+module Test.Kore.IndexedModule.Error
+    ( test_undefineds
+    ) where
 
--- import Test.Kore.Builtin.Definition
---        ( builtinSymbol )
 import Test.Kore
     ( testId
     )

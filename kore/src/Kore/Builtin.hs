@@ -16,10 +16,14 @@ This module is intended to be imported qualified.
 module Kore.Builtin
     ( Builtin.Verifiers (..)
     , Builtin.DomainValueVerifiers
+    , Builtin.ApplicationVerifiers
     , Builtin.Function
     , Builtin
     , Builtin.SymbolVerifier (..)
     , Builtin.SortVerifier (..)
+    , Builtin.ApplicationVerifier (..)
+    , Builtin.SymbolKey (..)
+    , Builtin.lookupApplicationVerifier
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
     , Builtin.verifyDomainValue
@@ -35,7 +39,6 @@ import qualified Control.Lens as Lens
 import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-import qualified Data.HashMap.Strict as HashMap
 import Data.Map
     ( Map
     )
@@ -82,8 +85,6 @@ import Kore.Step.Axiom.Identifier
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
     )
-import Kore.Unparser
-import Kore.Variables.Fresh
 
 {- | Verifiers for Kore builtin sorts.
 
@@ -92,32 +93,16 @@ import Kore.Variables.Fresh
  -}
 koreVerifiers :: Builtin.Verifiers
 koreVerifiers =
-    Builtin.Verifiers
-    { sortDeclVerifiers =
-           Bool.sortDeclVerifiers
-        <> Int.sortDeclVerifiers
-        <> List.sortDeclVerifiers
-        <> Map.sortDeclVerifiers
-        <> Set.sortDeclVerifiers
-        <> String.sortDeclVerifiers
-        <> InternalBytes.sortDeclVerifiers
-    , symbolVerifiers =
-           Bool.symbolVerifiers
-        <> Int.symbolVerifiers
-        <> List.symbolVerifiers
-        <> Map.symbolVerifiers
-        <> KEqual.symbolVerifiers
-        <> Set.symbolVerifiers
-        <> String.symbolVerifiers
-        <> Krypto.symbolVerifiers
-        <> InternalBytes.symbolVerifiers
-    , domainValueVerifiers =
-        HashMap.fromList
-            [ (Bool.sort, Bool.patternVerifier)
-            , (Int.sort, Int.patternVerifier)
-            , (String.sort, String.patternVerifier)
-            ]
-    }
+    mempty
+    <> Bool.verifiers
+    <> Int.verifiers
+    <> InternalBytes.verifiers
+    <> KEqual.verifiers
+    <> Krypto.verifiers
+    <> List.verifiers
+    <> Map.verifiers
+    <> Set.verifiers
+    <> String.verifiers
 
 {- | Construct an evaluation context for Kore builtin functions.
 
@@ -215,11 +200,7 @@ internalize tools =
 {- | Renormalize builtin types after substitution.
  -}
 renormalize
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Show variable
-        , Unparse variable
-        )
+    :: InternalVariable variable
     => TermLike variable -> TermLike variable
 renormalize termLike =
     case termLike of

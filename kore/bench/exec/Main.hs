@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Criterion.Main
 
@@ -10,7 +10,9 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
-import qualified Data.Set as Set
+import Data.Maybe
+    ( fromMaybe
+    )
 import Numeric.Natural
     ( Natural
     )
@@ -29,7 +31,6 @@ import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Internal.TermLike
     ( TermLike
     , Variable
@@ -160,7 +161,9 @@ execBenchmark root kFile definitionFile mainModuleName test =
                     $ verifyAndIndexDefinition
                         Builtin.koreVerifiers
                         parsedDefinition
-            Just verifiedModule = Map.lookup mainModuleName verifiedModules
+            verifiedModule =
+                fromMaybe (error $ "Missing module: " ++ show mainModuleName)
+                $ Map.lookup mainModuleName verifiedModules
         pat <- parseProgram
         let
             parsedPattern = either error id $ parseKorePattern "" pat
@@ -170,16 +173,8 @@ execBenchmark root kFile definitionFile mainModuleName test =
                 $ PatternVerifier.verifyStandalonePattern Nothing parsedPattern
               where
                 context =
-                    PatternVerifier.Context
-                        { builtinDomainValueVerifiers =
-                            Builtin.domainValueVerifiers Builtin.koreVerifiers
-                        , indexedModule =
-                            verifiedModule
-                            & IndexedModule.eraseAxiomAttributes
-                        , declaredSortVariables = Set.empty
-                        , declaredVariables =
-                            PatternVerifier.emptyDeclaredVariables
-                        }
+                    PatternVerifier.verifiedModuleContext verifiedModule
+                    & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
         return (verifiedModule, verifiedPattern)
     execution
         ::  ( VerifiedModule StepperAttributes Attribute.Axiom
