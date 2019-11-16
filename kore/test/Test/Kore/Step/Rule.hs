@@ -2,13 +2,18 @@ module Test.Kore.Step.Rule
     ( test_axiomPatterns
     , test_freeVariables
     , test_refreshRulePattern
+    , test_AxiomPatternToPatternAndBack
     ) where
-
+import Debug.Trace
+import Kore.Unparser
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 import Control.DeepSeq
     ( force
+    )
+import Data.Either
+    ( fromRight
     )
 import Control.Exception
     ( evaluate
@@ -212,6 +217,25 @@ axiomPatternsIntegrationTests =
             , ensures = Predicate.wrapPredicate (mkTop sortTCell)
             , attributes = def
             }
+
+test_AxiomPatternToPatternAndBack :: TestTree
+test_AxiomPatternToPatternAndBack =
+    testGroup
+        "qqqAxiomPattern ~ Pattern"
+        [ 
+            testCase "qqq" $ do
+                traceM $ "\nEXPECTED:\n" <> show axiomPattern <> "\n"
+                traceM $ "\nACTUAL:\n" <> show axiomPattern' <> "\n"
+                --assertEqual ""
+                    --axiomPattern
+                    --axiomPattern'
+                
+        ]
+  where
+    axiomPattern = RewriteAxiomPattern $ RewriteRule $ testRulePattern
+    axiomPattern' =
+        fromRight undefined $ patternToAxiomPattern def
+        $ fromMaybe undefined $ axiomPatternToPattern axiomPattern
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")

@@ -14,6 +14,7 @@ module Kore.Step.Rule
     , ImplicationRule (..)
     , RulePattern (..)
     , allPathGlobally
+    , axiomPatternToPattern
     , rulePattern
     , isHeatingRule
     , isCoolingRule
@@ -29,6 +30,7 @@ module Kore.Step.Rule
     , mkRewriteAxiom
     , mkEqualityAxiom
     , mkCeilAxiom
+    , patternToAxiomPattern
     , refreshRulePattern
     , onePathRuleToPattern
     , isFreeOf
@@ -103,6 +105,7 @@ import Kore.Internal.TermLike
     , pattern Implies_
     , pattern Not_
     , pattern Rewrites_
+    , pattern Top_
     , TermLike
     , forceSort
     , mkAnd
@@ -111,6 +114,7 @@ import Kore.Internal.TermLike
     , mkAxiom_
     , mkCeil
     , mkEquals
+    , mkEquals_
     , mkImplies
     , mkNot
     , mkRewrites
@@ -740,6 +744,113 @@ patternToAxiomPattern attributes pat =
             | otherwise = False
           where
             headName = getId (aliasConstructor symbol)
+
+
+axiomPatternToPattern
+    :: Debug variable
+    => Show variable
+    => Unparse variable
+    => SortedVariable variable
+    => FreshVariable variable
+    => QualifiedAxiomPattern variable
+    -> Maybe (TermLike variable)
+axiomPatternToPattern
+    (RewriteAxiomPattern 
+        (RewriteRule 
+            (RulePattern
+                left (Just antiLeftTerm) right requires ensures _
+            )
+        )
+    )
+  = 
+    pure $ mkRewrites
+        (mkAnd
+            (mkNot antiLeftTerm)
+            (mkAnd (Predicate.unwrapPredicate requires) left))
+        (mkAnd (Predicate.unwrapPredicate ensures) right)
+
+axiomPatternToPattern
+    (RewriteAxiomPattern 
+        (RewriteRule 
+            (RulePattern left Nothing right requires ensures _)
+        )
+    )
+  =
+    pure $ mkRewrites
+        (mkAnd (Predicate.unwrapPredicate requires) left)
+        (mkAnd (Predicate.unwrapPredicate ensures) right)
+
+axiomPatternToPattern
+    (OnePathClaimPattern
+        (OnePathRule
+            (RulePattern left Nothing right requires ensures _)
+        )
+    )
+  =
+    pure $ mkImplies
+        (mkAnd (Predicate.unwrapPredicate requires) left)
+        (mkApplyAlias op [mkAnd (Predicate.unwrapPredicate ensures) right])
+  where
+    op = wEF $ termLikeSort left
+
+axiomPatternToPattern
+    (AllPathClaimPattern
+        (AllPathRule
+            (RulePattern left Nothing right requires ensures _)
+        )
+    )
+  =
+    pure $ mkImplies
+        (mkAnd (Predicate.unwrapPredicate requires) left)
+        (mkApplyAlias op [mkAnd (Predicate.unwrapPredicate ensures) right])
+  where
+    op = wAF $ termLikeSort left
+
+axiomPatternToPattern
+    (FunctionAxiomPattern
+        (EqualityRule
+            (RulePattern
+                left Nothing right requires Predicate.PredicateTrue _
+            )
+        )
+    )
+  =
+    pure $ mkImplies
+        (Predicate.unwrapPredicate requires)
+        (mkAnd (mkEquals_ left right) mkTop_)
+
+axiomPatternToPattern
+    (FunctionAxiomPattern
+        (EqualityRule
+            (RulePattern
+                left@(Ceil_ _ resultSort1 _)
+                Nothing
+                (Top_ resultSort2)
+                Predicate.PredicateTrue
+                Predicate.PredicateTrue
+                _
+            )
+        )
+    )
+  | resultSort1 == resultSort2 = pure $ left
+
+axiomPatternToPattern
+    (ImplicationAxiomPattern
+        (ImplicationRule
+            (RulePattern
+                left
+                Nothing
+                right@(ApplyAlias_ _ _)
+                Predicate.PredicateTrue
+                Predicate.PredicateTrue
+                _
+            )
+        )
+    )
+  = 
+    pure $ mkImplies left right
+
+axiomPatternToPattern _ = Nothing 
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 
