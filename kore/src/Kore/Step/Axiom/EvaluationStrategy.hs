@@ -225,14 +225,14 @@ applyFirstSimplifierThatWorks
           | acceptsMultipleResults multipleResults -> return applicationResult
           -- below this point multiple results are not accepted
           | length (MultiOr.extractPatterns orResults) > 1 ->
-              -- We should only allow multiple simplification results
-              -- when they are created by unification splitting the
-              -- configuration.
-              -- However, right now, we shouldn't be able to get more
-              -- than one result, so we throw an error.
-              error . show . Pretty.vsep $
+            -- We should only allow multiple simplification results
+            -- when they are created by unification splitting the
+            -- configuration.
+            -- However, right now, we shouldn't be able to get more
+            -- than one result, so we throw an error.
+            error . show . Pretty.vsep $
                 [ "Unexpected simplification result with more \
-                  \than one configuration:"
+                    \than one configuration:"
                 , Pretty.indent 2 "input:"
                 , Pretty.indent 4 (unparse patt)
                 , Pretty.indent 2 "results:"
