@@ -11,6 +11,7 @@ module Test.Kore.Builtin.InternalBytes
     , test_reverse_length
     , test_update_get
     , test_bytes2string_string2bytes
+    , test_InternalBytes
     ) where
 
 import qualified Data.ByteString.Char8 as BS
