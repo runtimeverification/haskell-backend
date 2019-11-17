@@ -33,6 +33,7 @@ import Data.ByteString
     ( ByteString
     )
 import qualified Data.ByteString as BS
+import Data.Functor.Const
 import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict
     ( Map
@@ -43,12 +44,12 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
-import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Builtin.Builtin as Builtin
-import qualified Kore.Builtin.Encoding as E
+import qualified Kore.Builtin.Encoding as Encoding
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.InternalBytes.InternalBytes
 import qualified Kore.Builtin.String as String
+import qualified Kore.Error
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
@@ -63,7 +64,7 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers
         , symbolVerifiers
-        , domainValueVerifiers = mempty
+        , domainValueVerifiers = HashMap.singleton sort patternVerifier
         , applicationVerifiers = mempty
         }
 
@@ -116,14 +117,31 @@ symbolVerifiers =
     int    = Int.assertSort
     string = String.assertSort
 
+{- | Verify that domain value patterns are well-formed.
+ -}
+patternVerifier :: Builtin.DomainValueVerifier (TermLike variable)
+patternVerifier =
+    Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
+  where
+    patternVerifierWorker external =
+        case externalChild of
+            StringLiteral_ literal -> do
+                bytesValue <- Builtin.parseString Encoding.parseBase16 literal
+                (return . InternalBytesF . Const)
+                    InternalBytes { bytesSort, bytesValue }
+            _ -> Kore.Error.koreFail "Expected literal string"
+      where
+        DomainValue { domainValueSort = bytesSort } = external
+        DomainValue { domainValueChild = externalChild } = external
+
 expectBuiltinBytes
     :: MonadSimplify m
     => Text
     -> TermLike variable
-    -> MaybeT m (Symbol, ByteString)
+    -> MaybeT m ByteString
 expectBuiltinBytes ctx =
     \case
-        InternalBytes_ _ symbol bytesValue -> return (symbol, bytesValue)
+        InternalBytes_ _ bytesValue -> return bytesValue
         _ ->
             Builtin.verifierBug
             $ Text.unpack ctx ++ ": Term not a bytes value"
@@ -139,40 +157,23 @@ evalBytes2String =
                     case arguments of
                         [_bytes] -> _bytes
                         _ -> Builtin.wrongArity bytes2StringKey
-            (_, bytestring) <- expectBuiltinBytes bytes2StringKey _bytes
+            bytestring <- expectBuiltinBytes bytes2StringKey _bytes
             Builtin.appliedFunction
                 . String.asPattern resultSort
-                . E.decode8Bit
+                . Encoding.decode8Bit
                 $ bytestring
 
 evalString2Bytes :: Builtin.Function
 evalString2Bytes =
-    applicationAxiomSimplifier evalString2Bytes0
+    Builtin.functionEvaluator evalString2Bytes0
   where
-    evalString2Bytes0
-        :: forall variable simplifier
-        .  (SimplifierVariable variable, MonadSimplify simplifier)
-        => CofreeF
-            (Application Symbol)
-            (Attribute.Pattern variable)
-            (TermLike variable)
-        -> simplifier (AttemptedAxiom variable)
-    evalString2Bytes0 (attrs :< app) = Builtin.getAttemptedAxiom $ do
-        let (symbol, _string) =
-                case app of
-                    Application
-                        { applicationChildren = [_string]
-                        , applicationSymbolOrAlias
-                        } -> (applicationSymbolOrAlias, _string)
-                    _ -> Builtin.wrongArity string2BytesKey
-            Attribute.Pattern { patternSort } = attrs
-
-        _string <- String.expectBuiltinString string2BytesKey _string
-
-        Builtin.appliedFunction
-            . asPattern patternSort symbol
-            . E.encode8Bit
-            $ _string
+    evalString2Bytes0 :: Builtin.FunctionImplementation
+    evalString2Bytes0 resultSort [_string] =
+        Builtin.getAttemptedAxiom $ do
+            _string <- String.expectBuiltinString string2BytesKey _string
+            Builtin.appliedFunction . asPattern resultSort
+                $ Encoding.encode8Bit _string
+    evalString2Bytes0 _ _ = Builtin.wrongArity string2BytesKey
 
 evalUpdate :: Builtin.Function
 evalUpdate =
@@ -185,14 +186,13 @@ evalUpdate =
                     case arguments of
                         [_bytes, _index, _value] -> (_bytes, _index, _value)
                         _ -> Builtin.wrongArity updateKey
-            (symbol, _bytes) <- expectBuiltinBytes updateKey _bytes
+            _bytes <- expectBuiltinBytes updateKey _bytes
             _index <- fromInteger <$> Int.expectBuiltinInt updateKey _index
             _value <- fromInteger <$> Int.expectBuiltinInt updateKey _value
             if _index < 0 || _index > (BS.length _bytes - 1)
                 then Builtin.appliedFunction Pattern.bottom
                 else
-                    Builtin.appliedFunction
-                        . asPattern resultSort symbol
+                    Builtin.appliedFunction . asPattern resultSort
                         $ BS.take _index _bytes
                             <> BS.singleton _value
                             <> BS.drop (_index + 1) _bytes
@@ -208,7 +208,7 @@ evalGet =
                     case arguments of
                         [_bytes, _index] -> (_bytes, _index)
                         _ -> Builtin.wrongArity getKey
-            (_, _bytes) <- expectBuiltinBytes getKey _bytes
+            _bytes <- expectBuiltinBytes getKey _bytes
             _index <- fromInteger <$> Int.expectBuiltinInt getKey _index
             if _index >= BS.length _bytes || _index < 0
                 then Builtin.appliedFunction Pattern.bottom
@@ -229,17 +229,15 @@ evalSubstr =
                     case arguments of
                         [_bytes, _start, _end] -> (_bytes, _start, _end)
                         _ -> Builtin.wrongArity substrKey
-            (symbol, _bytes) <- expectBuiltinBytes substrKey _bytes
+            _bytes <- expectBuiltinBytes substrKey _bytes
             _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
             _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
             if (_start < 0) || (_end > BS.length _bytes) || (_end - _start < 0)
                 then Builtin.appliedFunction Pattern.bottom
                 else
-                    Builtin.appliedFunction
-                        . asPattern resultSort symbol
-                        . BS.take (_end - _start)
-                        . BS.drop _start
-                        $ _bytes
+                    Builtin.appliedFunction . asPattern resultSort
+                    $ BS.take (_end - _start) . BS.drop _start
+                    $ _bytes
 
 evalReplaceAt :: Builtin.Function
 evalReplaceAt =
@@ -252,11 +250,11 @@ evalReplaceAt =
                     case arguments of
                         [_bytes, _index, _new] -> (_bytes, _index, _new)
                         _ -> Builtin.wrongArity replaceAtKey
-            (symbol, _bytes) <- expectBuiltinBytes replaceAtKey _bytes
+            _bytes <- expectBuiltinBytes replaceAtKey _bytes
             _index <- fromInteger <$> Int.expectBuiltinInt replaceAtKey _index
-            (_, _new)   <- expectBuiltinBytes replaceAtKey _new
+            _new   <- expectBuiltinBytes replaceAtKey _new
             Builtin.appliedFunction
-                . maybe Pattern.bottom (asPattern resultSort symbol)
+                . maybe Pattern.bottom (asPattern resultSort)
                 $ go _bytes _index _new
 
     go _bytes _index _new
@@ -279,16 +277,16 @@ evalPadRight =
                     case arguments of
                         [_bytes, _length, _value] -> (_bytes, _length, _value)
                         _ -> Builtin.wrongArity padRightKey
-            (symbol, _bytes)  <- expectBuiltinBytes padRightKey _bytes
+            _bytes  <- expectBuiltinBytes padRightKey _bytes
             _length <- fromInteger <$> Int.expectBuiltinInt padRightKey _length
             _value  <- fromInteger <$> Int.expectBuiltinInt padRightKey _value
-            Builtin.appliedFunction $ go symbol resultSort _bytes _length _value
+            Builtin.appliedFunction $ go resultSort _bytes _length _value
 
-    go symbol resultSort bytes len val
-      | len <= BS.length bytes = asPattern resultSort symbol bytes
+    go resultSort bytes len val
+      | len <= BS.length bytes = asPattern resultSort bytes
       | otherwise =
-        asPattern resultSort symbol
-            $ bytes <> BS.replicate (len - BS.length bytes) val
+        asPattern resultSort
+        $ bytes <> BS.replicate (len - BS.length bytes) val
 
 evalPadLeft :: Builtin.Function
 evalPadLeft =
@@ -301,16 +299,15 @@ evalPadLeft =
                     case arguments of
                         [_bytes, _length, _value] -> (_bytes, _length, _value)
                         _ -> Builtin.wrongArity padLeftKey
-            (symbol, _bytes)  <- expectBuiltinBytes padLeftKey _bytes
+            _bytes  <- expectBuiltinBytes padLeftKey _bytes
             _length <- fromInteger <$> Int.expectBuiltinInt padLeftKey _length
             _value  <- fromInteger <$> Int.expectBuiltinInt padLeftKey _value
-            Builtin.appliedFunction $ go symbol resultSort _bytes _length _value
+            Builtin.appliedFunction $ go resultSort _bytes _length _value
 
-    go symbol resultSort bytes len val
-      | len <= BS.length bytes = asPattern resultSort symbol bytes
+    go resultSort bytes len val
+      | len <= BS.length bytes = asPattern resultSort bytes
       | otherwise =
-        asPattern resultSort symbol
-            $ BS.replicate (len - BS.length bytes) val <> bytes
+        asPattern resultSort $ BS.replicate (len - BS.length bytes) val <> bytes
 
 evalReverse :: Builtin.Function
 evalReverse =
@@ -323,10 +320,8 @@ evalReverse =
                     case arguments of
                         [_bytes] -> _bytes
                         _ -> Builtin.wrongArity reverseKey
-            (symbol, _bytes)  <- expectBuiltinBytes reverseKey _bytes
-            Builtin.appliedFunction
-                . asPattern resultSort symbol
-                $ BS.reverse _bytes
+            _bytes  <- expectBuiltinBytes reverseKey _bytes
+            Builtin.appliedFunction . asPattern resultSort $ BS.reverse _bytes
 
 evalLength :: Builtin.Function
 evalLength =
@@ -339,7 +334,7 @@ evalLength =
                     case arguments of
                         [_bytes] -> _bytes
                         _ -> Builtin.wrongArity lengthKey
-            (_, _bytes)  <- expectBuiltinBytes lengthKey _bytes
+            _bytes  <- expectBuiltinBytes lengthKey _bytes
             Builtin.appliedFunction
                 . Int.asPattern resultSort
                 . toInteger
@@ -356,11 +351,9 @@ evalConcat =
                     case arguments of
                         [_lhs, _rhs] -> (_lhs, _rhs)
                         _ -> Builtin.wrongArity concatKey
-            (symbol, _lhs)  <- expectBuiltinBytes concatKey _lhs
-            (_, _rhs)  <- expectBuiltinBytes concatKey _rhs
-            Builtin.appliedFunction
-                . asPattern resultSort symbol
-                $ _lhs <> _rhs
+            _lhs  <- expectBuiltinBytes concatKey _lhs
+            _rhs  <- expectBuiltinBytes concatKey _rhs
+            Builtin.appliedFunction . asPattern resultSort $ _lhs <> _rhs
 
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =

@@ -1884,15 +1884,13 @@ mkInternalBytes
     :: GHC.HasCallStack
     => InternalVariable variable
     => Sort
-    -> Symbol
     -> ByteString
     -> TermLike variable
-mkInternalBytes sort symbol value =
+mkInternalBytes sort value =
     updateCallStack . synthesize . InternalBytesF . Const
         $ InternalBytes
             { bytesSort = sort
             , bytesValue = value
-            , string2BytesSymbol = symbol
             }
 
 mkInternalBytes'
@@ -2081,12 +2079,6 @@ pattern Bottom_
     :: Sort
     -> TermLike variable
 
-pattern InternalBytes_
-    :: Sort
-    -> Symbol
-    -> ByteString
-    -> TermLike variable
-
 pattern Ceil_
     :: Sort
     -> Sort
@@ -2236,9 +2228,11 @@ pattern App_ applicationSymbolOrAlias applicationChildren <-
 pattern Bottom_ bottomSort <-
     (Recursive.project -> _ :< BottomF Bottom { bottomSort })
 
-pattern InternalBytes_ bytesSort string2BytesSymbol bytesValue <-
+
+pattern InternalBytes_ :: Sort -> ByteString -> TermLike variable
+pattern InternalBytes_ bytesSort bytesValue <-
     (Recursive.project -> _ :< InternalBytesF (Const InternalBytes
-        { bytesSort, string2BytesSymbol, bytesValue }
+        { bytesSort, bytesValue }
     ))
 
 pattern Ceil_ ceilOperandSort ceilResultSort ceilChild <-
