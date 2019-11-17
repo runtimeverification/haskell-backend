@@ -70,6 +70,7 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
@@ -165,7 +166,12 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , omit       = mempty
             , labels     = Map.empty
             , aliases    = Map.empty
-            , logging    = (Logger.Debug, mempty, NoLogging)
+            , koreLogOptions =
+                Logger.KoreLogOptions
+                    { logType = Logger.LogStdErr
+                    , logScopes = mempty
+                    , logLevel = Logger.Debug
+                    }
             }
 
     config :: Config claim m

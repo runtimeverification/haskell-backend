@@ -255,6 +255,9 @@ class Typeable entry => Entry entry where
     entryScopes :: entry -> Set Scope
 
     shouldLog :: Severity -> Set Scope -> entry -> Bool
+    shouldLog severity scopes entry =
+        entrySeverity entry >= severity
+        && (null scopes || not (Set.disjoint (entryScopes entry) scopes))
 
     toLogMessage :: entry -> LogMessage
 

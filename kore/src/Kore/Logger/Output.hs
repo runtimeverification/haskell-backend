@@ -9,6 +9,9 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Logger.Output
     ( KoreLogType (..)
     , KoreLogOptions (..)
+    , koreLogFilters
+    , filterScopes
+    , filterSeverity
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
@@ -98,7 +101,7 @@ data KoreLogType
     -- ^ log to stderr (default)
     | LogFileText FilePath
     -- ^ log to specified file when '--log <filename>' is passed.
-    deriving (Read)
+    deriving (Eq, Show)
 
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
 -- desired output method and the minimum 'Severity'.
@@ -110,6 +113,7 @@ data KoreLogOptions = KoreLogOptions
     , logScopes :: Set Scope
     -- ^ scopes to show, empty means show all
     }
+    deriving (Eq, Show)
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
@@ -121,13 +125,44 @@ withLogger
     => KoreLogOptions
     -> (LogAction m SomeEntry -> IO a)
     -> IO a
-withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
+withLogger koreLogOptions@KoreLogOptions { logType } continue =
     case logType of
-        LogStdErr   ->
-            cont (stderrLogger logLevel logScopes)
+        LogStdErr -> continue $ koreLogFilters koreLogOptions stderrLogger
         LogFileText filename -> do
             Colog.withLogTextFile filename
-                $ cont . makeKoreLogger logLevel logScopes
+            $ continue . koreLogFilters koreLogOptions . makeKoreLogger
+
+koreLogFilters
+    :: Applicative m
+    => KoreLogOptions
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+koreLogFilters KoreLogOptions { logLevel, logScopes } baseLogger =
+    id
+    $ filterSeverity logLevel
+    $ filterScopes logScopes
+    $ baseLogger
+
+{- | Select log entries with 'Severity' greater than or equal to the level.
+ -}
+filterSeverity
+    :: Applicative m
+    => Severity  -- ^ level
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+filterSeverity level = Colog.cfilter (\ent -> entrySeverity ent >= level)
+
+{- | Select log entries with 'Scope's in the active set.
+ -}
+filterScopes
+    :: Applicative m
+    => Set Scope  -- ^ active scopes
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+filterScopes scopes
+  | null scopes = id
+  | otherwise =
+    Colog.cfilter (\ent -> not $ Set.disjoint (entryScopes ent) scopes)
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
@@ -183,14 +218,11 @@ parseKoreLogOptions =
 makeKoreLogger
     :: forall m
     .  MonadIO m
-    => Severity
-    -> Set Scope
-    -> LogAction m Text
+    => LogAction m Text
     -> LogAction m SomeEntry
-makeKoreLogger minSeverity currentScope logToText =
-    Colog.cfilter (shouldLog minSeverity currentScope)
-        . Colog.cmapM withTimestamp
-        $ contramap messageToText logToText
+makeKoreLogger logToText =
+    Colog.cmapM withTimestamp
+    $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
     messageToText (WithTimestamp entry localTime) =
@@ -216,9 +248,8 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stderrLogger :: MonadIO m => Severity -> Set Scope -> LogAction m SomeEntry
-stderrLogger logLevel logScopes =
-    makeKoreLogger logLevel logScopes Colog.logTextStderr
+stderrLogger :: MonadIO io => LogAction io SomeEntry
+stderrLogger = makeKoreLogger Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
@@ -267,4 +298,3 @@ unwrapScope se =
         Nothing -> ([], se)
         Just WithScope { entry, scope } ->
             (scope : fst (unwrapScope entry), entry)
-

@@ -70,11 +70,10 @@ newtype DebugAppliedRule =
     }
     deriving (Eq, Typeable)
 
-debugAppliedRuleSeverity :: Severity
-debugAppliedRuleSeverity = Debug
-
 instance Entry DebugAppliedRule where
-    shouldLog minSeverity _ _ = debugAppliedRuleSeverity >= minSeverity
+    entrySeverity _ = Debug
+
+    entryScopes _ = mempty
 
     toLogMessage DebugAppliedRule { appliedRule } =
         LogMessage
@@ -88,7 +87,7 @@ instance Entry DebugAppliedRule where
                     , (Pretty.indent 2 . unparse) condition
                     ]
                 ]
-            , severity = debugAppliedRuleSeverity
+            , severity = Debug
             , callstack = GHC.emptyCallStack
             }
       where

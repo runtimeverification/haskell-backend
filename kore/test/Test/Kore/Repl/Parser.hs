@@ -2,6 +2,7 @@ module Test.Kore.Repl.Parser
     ( test_replParser
     ) where
 
+import qualified Data.Set as Set
 import Numeric.Natural
 import Test.Tasty
     ( TestTree
@@ -9,6 +10,7 @@ import Test.Tasty
     )
 
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Parser
 
@@ -419,11 +421,27 @@ initScriptTests =
 logTests :: [ParserTest ReplCommand]
 logTests =
     [ "log debug [] stderr"
-        `parsesTo_` Log Logger.Debug mempty LogToStdErr
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Debug
+            , logScopes = mempty
+            , logType = Logger.LogStdErr
+            }
     , "log critical [scope1] stderr"
-        `parsesTo_` Log Logger.Critical (makeLogScope ["scope1"]) LogToStdErr
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Critical
+            , logScopes = Set.singleton "scope1"
+            , logType = Logger.LogStdErr
+            }
     , "log info [ scope1,  scope2 ] file \"f s\""
-        `parsesTo_` Log Logger.Info (makeLogScope ["scope1", "scope2"]) (LogToFile "f s")
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Info
+            , logScopes = Set.fromList ["scope1", "scope2"]
+            , logType = Logger.LogFileText "f s"
+            }
     , "log info [ scope1  scope2 ] file \"f s\""
-        `parsesTo_` Log Logger.Info (makeLogScope ["scope1", "scope2"]) (LogToFile "f s")
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Info
+            , logScopes = Set.fromList ["scope1", "scope2"]
+            , logType = Logger.LogFileText "f s"
+            }
     ]
