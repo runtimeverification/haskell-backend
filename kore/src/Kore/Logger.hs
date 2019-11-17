@@ -219,6 +219,11 @@ instance Entry WithScope where
       = scope `Set.member` currentScope
         || shouldLog minSeverity currentScope entry
 
+    entryScopes WithScope { entry, scope } =
+        Set.insert scope (entryScopes entry)
+
+    entrySeverity WithScope { entry } = entrySeverity entry
+
     toLogMessage WithScope { entry } = toLogMessage entry
 
 withLogScope
@@ -245,6 +250,10 @@ class Typeable entry => Entry entry where
     fromEntry :: SomeEntry -> Maybe entry
     fromEntry (SomeEntry entry) = Data.Typeable.cast entry
 
+    entrySeverity :: entry -> Severity
+
+    entryScopes :: entry -> Set Scope
+
     shouldLog :: Severity -> Set Scope -> entry -> Bool
 
     toLogMessage :: entry -> LogMessage
@@ -252,6 +261,10 @@ class Typeable entry => Entry entry where
 instance Entry LogMessage where
     shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
     shouldLog minSeverity _ LogMessage { severity } = severity >= minSeverity
+
+    entrySeverity LogMessage { severity } = severity
+
+    entryScopes _ = Set.empty
 
     toLogMessage :: LogMessage -> LogMessage
     toLogMessage = id
@@ -265,7 +278,12 @@ data SomeEntry where
 instance Entry SomeEntry where
     shouldLog severity setScope (SomeEntry entry) =
         shouldLog severity setScope entry
+
     toLogMessage (SomeEntry entry) = toLogMessage entry
+
+    entrySeverity (SomeEntry entry) = entrySeverity entry
+
+    entryScopes (SomeEntry entry) = entryScopes entry
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
