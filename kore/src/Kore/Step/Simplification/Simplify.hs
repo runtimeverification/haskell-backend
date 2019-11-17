@@ -22,6 +22,7 @@ module Kore.Step.Simplification.Simplify
     -- * Builtin and axiom simplifiers
     , BuiltinAndAxiomSimplifier (..)
     , BuiltinAndAxiomSimplifierMap
+    , lookupAxiomSimplifier
     , AttemptedAxiom (..)
     , isApplicable, isNotApplicable
     , AttemptedAxiomResults (..)
@@ -35,8 +36,12 @@ module Kore.Step.Simplification.Simplify
     , purePatternAxiomEvaluator
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
 import Control.Comonad.Trans.Cofree
 import Control.DeepSeq
+import qualified Control.Monad as Monad
 import Control.Monad.Morph
     ( MFunctor
     )
@@ -50,6 +55,13 @@ import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map as Map
+import Data.Text
+    ( Text
+    )
+import Data.Text.Prettyprint.Doc
+    ( (<+>)
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
@@ -57,8 +69,6 @@ import qualified GHC.Stack as GHC
 import Branch
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
-    ( Symbol
-    )
 import Kore.Debug
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -77,22 +87,29 @@ import Kore.Internal.Pattern
     ( Condition
     , Pattern
     )
+import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-    ( SubstitutionVariable
+    ( pattern App_
+    , SubstitutionVariable
     , Symbol
     , TermLike
     , TermLikeF (..)
     )
 import Kore.Internal.Variable
 import Kore.Logger
+import Kore.Logger.WarnUnhookedSymbol
+    ( warnUnhookedSymbol
+    )
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     )
 import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Memo as Memo
 import Kore.Syntax.Application
+import Kore.Unparser
 import ListT
     ( ListT (..)
     , mapListT
@@ -379,6 +396,52 @@ their corresponding evaluators.
 -}
 type BuiltinAndAxiomSimplifierMap =
     Map.Map AxiomIdentifier BuiltinAndAxiomSimplifier
+
+lookupAxiomSimplifier
+    :: MonadSimplify simplifier
+    => InternalVariable variable
+    => TermLike variable
+    -> MaybeT simplifier BuiltinAndAxiomSimplifier
+lookupAxiomSimplifier termLike = do
+    simplifierMap <- Monad.Trans.lift askSimplifierAxioms
+    let missing = do
+            -- TODO (thomas.tuegel): Factor out a second function evaluator and
+            -- remove this check. At startup, the definition's rules are
+            -- simplified using Matching Logic only (no function
+            -- evaluation). During this stage, all the hooks are expected to be
+            -- missing, so that is not an error. If any function evaluators are
+            -- present, we assume that startup is finished, but we should really
+            -- have a separate evaluator for startup.
+            Monad.guard (not $ null simplifierMap)
+            case termLike of
+                App_ symbol _ -> do
+                    let hooked = criticalMissingHook symbol
+                        unhooked = warnUnhookedSymbol symbol
+                    maybe unhooked hooked $ getHook symbol
+                _ -> return ()
+            empty
+    maybe missing return $ do
+        axiomIdentifier <- Axiom.Identifier.matchAxiomIdentifier termLike
+        Map.lookup axiomIdentifier simplifierMap
+  where
+    getHook = Attribute.getHook . Attribute.hook . symbolAttributes
+
+criticalMissingHook :: Symbol -> Text -> a
+criticalMissingHook symbol hookName =
+    (error . show . Pretty.vsep)
+        [ "Error: missing hook"
+        , "Symbol"
+        , Pretty.indent 4 (unparse symbol)
+        , "declared with attribute"
+        , Pretty.indent 4 (unparse attribute)
+        , "We don't recognize that hook and it was not given any rules."
+        , "Please open a feature request at"
+        , Pretty.indent 4 "https://github.com/kframework/kore/issues"
+        , "and include the text of this message."
+        , "Workaround: Give rules for" <+> unparse symbol
+        ]
+  where
+    attribute = Attribute.hookAttribute hookName
 
 {-| A type holding the result of applying an axiom to a pattern.
 -}
