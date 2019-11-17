@@ -50,17 +50,7 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import Data.Text.Prettyprint.Doc
-    ( pretty
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
-import Data.Typeable
-    ( Typeable
-    )
-import GHC.Stack
-    ( emptyCallStack
-    )
 
 import qualified Branch
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
@@ -88,6 +78,7 @@ import Kore.Logger
     , WithLog
     )
 import qualified Kore.Logger as Log
+import Kore.Logger.DebugAppliedRule
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
@@ -135,53 +126,6 @@ newtype UnificationProcedure =
         -> TermLike variable
         -> unifier (Condition variable)
         )
-
-{- | A @UnifiedRule@ has been renamed and unified with a configuration.
-
-The rule's 'RulePattern.requires' clause is combined with the unification
-solution and the renamed rule is wrapped with the combined condition.
-
- -}
-
-type UnifiedRule variable = Conditional variable (RulePattern variable)
-
-newtype AppliedRuleEntry variable = AppliedRuleEntry
-    { appliedRule :: UnifiedRule variable
-    } deriving (Eq, Typeable)
-
-debugAppliedRuleSeverity :: Log.Severity
-debugAppliedRuleSeverity = Log.Debug
-
-instance (SimplifierVariable variable, Typeable variable) => Log.Entry (AppliedRuleEntry variable) where
-    shouldLog minSeverity _ _ = debugAppliedRuleSeverity >= minSeverity
-
-    toLogMessage AppliedRuleEntry { appliedRule } =
-        Log.LogMessage
-            { message =
-                -- TODO: after testing noticed it looked wrong
-                Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep $
-                [ "The following rule was applied:"
-                , Pretty.indent 2 "Rule:"
-                , Pretty.indent 4 (pretty . term $ appliedRule)
-                , Pretty.indent 2 "With condition:"
-                , Pretty.indent 4 (unparse conditionTerm)
-                ]
-            , severity = debugAppliedRuleSeverity
-            , callstack = emptyCallStack
-            }
-      where
-        conditionTerm =
-            Pattern.toTermLike
-            . Pattern.fromCondition
-            . Conditional.withoutTerm
-            $ appliedRule
-
-debugAppliedRule
-    :: Log.MonadLog m
-    => SimplifierVariable variable
-    => Typeable variable
-    => UnifiedRule variable -> m ()
-debugAppliedRule rule = Log.logM . AppliedRuleEntry $ rule
 
 withoutUnification :: UnifiedRule variable -> RulePattern variable
 withoutUnification = Conditional.term
