@@ -1,12 +1,32 @@
+{- |
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+-}
+
 module Kore.Logger.DebugAppliedRule
     ( UnifiedRule
+    , DebugAppliedRule
     , debugAppliedRule
+    , DebugAppliedRuleOptions
+    , debugAppliedRuleLogAction
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Data.Set
+    ( Set
+    )
+import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Typeable
 import qualified GHC.Stack as GHC
+import qualified Options.Applicative
+    ( Parser
+    )
+import qualified Options.Applicative as Options
 
 import Kore.Internal.Conditional
     ( Conditional
@@ -15,10 +35,17 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
 import Kore.Logger
+import Kore.Step.Axiom.Identifier
+    ( matchAxiomIdentifier
+    )
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import Kore.Step.Rule
     ( RulePattern
     )
 import qualified Kore.Step.Rule as Rule
+import Kore.Syntax.Id
+    ( Id
+    )
 import Kore.Unparser
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
@@ -79,3 +106,53 @@ debugAppliedRule
 debugAppliedRule rule =
     logM . DebugAppliedRule
     $ Conditional.mapVariables Rule.mapVariables toVariable rule
+
+{- | Options (from the command-line) specifying when to log specific rules.
+
+See also: 'parseDebugAppliedRuleOptions'
+
+ -}
+data DebugAppliedRuleOptions =
+    DebugAppliedRuleOptions
+        { debugAppliedRules :: !(Set Id)
+        }
+
+parseDebugAppliedRuleOptions :: Parser DebugAppliedRuleOptions
+
+{- | Modify a 'LogAction' to display selected applied rules.
+
+The "base" 'LogAction' is used to log the applied rule whenever it matches the
+rules specified by 'DebugAppliedRuleOptions'. All other entries are forwarded to
+the "fallback" 'LogAction'.
+
+ -}
+debugAppliedRuleLogAction
+    :: DebugAppliedRuleOptions
+    -> LogAction log SomeEntry  -- ^ base 'LogAction'
+    -> LogAction log SomeEntry  -- ^ fallback 'LogAction'
+    -> LogAction log SomeEntry
+debugAppliedRuleLogAction debugAppliedRuleOptions baseLogAction logAction =
+    LogAction $ \entry ->
+        case matchDebugAppliedRule entry of
+            Just DebugAppliedRule { appliedRule }
+              | isSelectedRule -> unLogAction baseLogAction entry
+              where
+                isSelectedRule =
+                    maybe False (`Set.member` debugAppliedRules) appliedRuleId
+                appliedRuleId = do
+                    axiomId <- matchAppliedRuleId appliedRule
+                    case axiomId of
+                        Axiom.Identifier.Application ident -> pure ident
+                        _ -> empty
+            _ -> unLogAction logAction entry
+  where
+    DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
+    matchAppliedRuleId = matchAxiomIdentifier . Rule.left . Conditional.term
+
+matchDebugAppliedRule :: SomeEntry -> Maybe DebugAppliedRule
+matchDebugAppliedRule entry =
+    fromEntry entry <|> throughScope
+  where
+    throughScope = do
+        WithScope { entry = entry' } <- fromEntry entry
+        matchDebugAppliedRule entry'
