@@ -682,7 +682,7 @@ mkState axioms claims claim =
         , labels         = Map.singleton (ClaimIndex 0) Map.empty
         , aliases        = Map.empty
         , koreLogOptions = Logger.KoreLogOptions
-            { logLevel = Logger.Debug
+            { logLevel = Logger.Warning
             , logScopes = mempty
             , logType = Logger.LogStdErr
             }
