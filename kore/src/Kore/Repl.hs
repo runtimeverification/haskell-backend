@@ -26,6 +26,7 @@ import Control.Monad.Catch
     ( MonadCatch
     , catch
     , catchAll
+    , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -231,9 +232,8 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
 
-    firstClaim :: Claim claim => claim
-    firstClaim =
-        claims' !! unClaimIndex firstClaimIndex
+    firstClaim :: claim
+    firstClaim = claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph axiom
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
@@ -254,20 +254,22 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
                 $ verifyClaimStep claim claims axioms graph node
             else pure graph
 
-    catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
+    catchInterruptWithDefault :: a -> m a -> m a
     catchInterruptWithDefault def sa =
-        catch sa $ \UserInterrupt -> do
-            liftIO $ putStrLn "Step evaluation interrupted."
-            pure def
+        catch sa $ \case
+            UserInterrupt -> do
+                liftIO $ putStrLn "Step evaluation interrupted."
+                pure def
+            e -> throwM e
 
-    catchEverything :: MonadCatch m => MonadIO m => a -> m a -> m a
+    catchEverything :: a -> m a -> m a
     catchEverything def sa =
         catchAll sa $ \e -> do
             liftIO $ putStrLn "Stepper evaluation errored."
             liftIO $ putStrLn (show e)
             pure def
 
-    replGreeting :: MonadIO m => m ()
+    replGreeting :: m ()
     replGreeting =
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"

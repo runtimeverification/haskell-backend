@@ -1,10 +1,14 @@
 {-|
-Module      : Data.Attribute.Subsort
-Description : Representation and parser for subsort attribute
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 -}
-module Kore.Attribute.Subsort where
+module Kore.Attribute.Subsort
+    ( Subsort (..)
+    , Subsorts (..)
+    , subsortId
+    , subsortSymbol
+    , subsortAttribute
+    ) where
 
 import Control.DeepSeq
     ( NFData

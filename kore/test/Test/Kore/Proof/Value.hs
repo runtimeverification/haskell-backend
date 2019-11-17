@@ -1,21 +1,29 @@
-module Test.Kore.Proof.Value where
+module Test.Kore.Proof.Value
+    ( unit_constructorUnit
+    , unit_DomainValue
+    , unit_injConstructor
+    , unit_injInj
+    , unit_pairConstructor
+    , test_Pair_Builtin
+    , test_Pair_DomainValue
+    , test_Builtin_InternalInt
+    , test_Builtin_InternalBool
+    , test_Builtin_InternalMap
+    , test_Builtin_InternalList
+    , test_Builtin_InternalSet
+    , test_fun
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import qualified Data.Map as Map
 import qualified GHC.Stack as GHC
 
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Domain.Builtin as Domain
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
 import Kore.Internal.Symbol
     ( applicationSorts
-    , toSymbolOrAlias
     )
 import Kore.Internal.TermLike
 import qualified Kore.Proof.Value as Value
@@ -29,7 +37,6 @@ import Test.Kore.Builtin.Definition
     , intSort
     )
 import qualified Test.Kore.IndexedModule.MockMetadataTools as Mock
-import qualified Test.Kore.Step.MockSymbols as Mock
 
 unit_constructorUnit :: Assertion
 unit_constructorUnit = assertValue unitPattern
@@ -199,36 +206,8 @@ funSymbol =
         , symbolSorts = applicationSorts [intSort] intSort
         }
 
-subSort :: Sort
-subSort = (SortVariableSort . SortVariable) (testId "sub")
-
 supSort :: Sort
 supSort = (SortVariableSort . SortVariable) (testId "sup")
-
-symbolOrAliasAttrs :: [(SymbolOrAlias, Attribute.Symbol)]
-symbolOrAliasAttrs =
-    map ((,) <$> toSymbolOrAlias <*> symbolAttributes) symbols
-
-symbols :: [Symbol]
-symbols =
-    [ unitSymbol
-    , injSymbol subSort supSort
-    , injSymbol unitSort supSort
-    , injSymbol supSort supSort
-    , pairSymbol unitSort
-    , pairSymbol intSort
-    , funSymbol
-    ]
-
-tools :: SmtMetadataTools Attribute.Symbol
-tools =
-    Mock.makeMetadataTools
-        symbolOrAliasAttrs
-        []
-        []
-        []
-        Mock.emptySmtDeclarations
-        Map.empty
 
 assertValue :: GHC.HasCallStack => TermLike Variable -> Assertion
 assertValue termLike =

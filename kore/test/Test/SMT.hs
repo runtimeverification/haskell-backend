@@ -1,4 +1,9 @@
-module Test.SMT where
+module Test.SMT
+    ( testPropertyWithSolver
+    , testCaseWithSMT
+    , assertEqual'
+    , runSMT
+    ) where
 
 import Hedgehog
 import Test.Tasty
@@ -22,7 +27,7 @@ testPropertyWithSolver
 testPropertyWithSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runSMT
 
-testCaseWithSMT :: GHC.HasCallStack => String -> SMT () -> TestTree
+testCaseWithSMT :: String -> SMT () -> TestTree
 testCaseWithSMT str = testCase str . runSMT
 
 assertEqual'

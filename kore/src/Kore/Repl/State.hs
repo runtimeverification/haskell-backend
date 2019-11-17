@@ -140,16 +140,11 @@ import Kore.Syntax.Variable
     )
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph
-    :: Claim claim
-    => axiom ~ Rule claim
-    => claim -> ExecutionGraph axiom
+emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph axiom
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
   where
-    extractConfig
-        :: RewriteRule Variable
-        -> CommonProofState
+    extractConfig :: RewriteRule Variable -> CommonProofState
     extractConfig (RewriteRule RulePattern { left, requires }) =
         Goal $ Conditional left requires mempty
 
@@ -186,7 +181,6 @@ getAxiomByName
     :: MonadState (ReplState claim) m
     => axiom ~ Rule claim
     => Coercible axiom (RulePattern Variable)
-    => Coercible (RulePattern Variable) axiom
     => String
     -- ^ label attribute
     -> m (Maybe axiom)
@@ -275,12 +269,7 @@ getInternalIdentifier =
     . coerce
 
 -- | Update the currently selected claim to prove.
-switchToProof
-    :: MonadState (ReplState claim) m
-    => Claim claim
-    => claim
-    -> ClaimIndex
-    -> m ()
+switchToProof :: MonadState (ReplState claim) m => claim -> ClaimIndex -> m ()
 switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
@@ -635,7 +624,6 @@ conjOfOnePathClaims claims sort =
 
 generateInProgressOPClaims
     :: Claim claim
-    => axiom ~ Rule claim
     => MonadState (ReplState claim) m
     => m [Rule.OnePathRule Variable]
 generateInProgressOPClaims = do

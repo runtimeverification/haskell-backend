@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+
 module Test.Kore.Builtin.Definition where
 
 import qualified Data.Bifunctor as Bifunctor
@@ -1056,9 +1059,10 @@ bytesSort =
 
 bytesSortDecl :: ParsedSentence
 bytesSortDecl =
-    hookedSortDecl
-        bytesSort
-        [ hookAttribute "BYTES.Bytes" ]
+    hookedSortDecl bytesSort
+        [ hookAttribute "BYTES.Bytes"
+        , hasDomainValuesAttribute
+        ]
 
 -- -------------------------------------------------------------
 -- * Modules

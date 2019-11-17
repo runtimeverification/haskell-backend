@@ -593,8 +593,7 @@ allProofs = do
         . Strategy.graph
 
     notStartedProofs
-        :: Claim claim
-        => Map.Map ClaimIndex (ExecutionGraph axiom)
+        :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> Map.Map ClaimIndex claim
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
@@ -1082,7 +1081,6 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
-    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => Natural

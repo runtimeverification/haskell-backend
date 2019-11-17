@@ -96,8 +96,7 @@ asInternal tools builtinListSort builtinListChild =
 {- | Render a 'Seq' as a Builtin list pattern.
 -}
 asBuiltin
-    :: InternalVariable variable
-    => SmtMetadataTools Attribute.Symbol
+    :: SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Seq (TermLike variable)
     -> Domain.Builtin (TermLike Concrete) (TermLike variable)

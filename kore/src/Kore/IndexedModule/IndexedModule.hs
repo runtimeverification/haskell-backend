@@ -420,9 +420,7 @@ newtype ImplicitIndexedModule pat declAtts axiomAtts =
 type KoreImplicitIndexedModule = ImplicitIndexedModule ParsedPattern
 
 emptyIndexedModule
-    ::  ( Default parsedDeclAttributes
-        , Default parsedAxiomAttributes
-        )
+    :: Default parsedDeclAttributes
     => ModuleName
     -> IndexedModule pat parsedDeclAttributes parsedAxiomAttributes
 emptyIndexedModule name =
@@ -443,9 +441,7 @@ emptyIndexedModule name =
 name and containing the implicit definitions module.
 -}
 indexedModuleWithDefaultImports
-    ::  ( Default declAttrs
-        , Default axiomAttrs
-        )
+    :: Default declAttrs
     => ModuleName
     -> Maybe (ImplicitIndexedModule patternType declAttrs axiomAttrs)
     -> IndexedModule patternType declAttrs axiomAttrs
@@ -533,7 +529,7 @@ indexedModulesInScope =
     resolveImport (_, _, imod) = resolveModule imod
 
 implicitModules
-    :: (Default declAttrs, Default axiomAttrs)
+    :: Default declAttrs
     => Map ModuleName (IndexedModule patternType declAttrs axiomAttrs)
 implicitModules = Map.singleton implicitModuleName implicitIndexedModule
 
@@ -543,7 +539,7 @@ implicitModuleName = ModuleName "kore"
 
 -- | The 'IndexedModule' that indexes the implicit Kore declarations.
 implicitIndexedModule
-    :: (Default declAttrs, Default axiomAttrs)
+    :: Default declAttrs
     => IndexedModule patternType declAttrs axiomAttrs
 implicitIndexedModule =
     (emptyIndexedModule implicitModuleName)

@@ -28,13 +28,14 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-for each in \
-    tests/proofs/simple-arithmetic-spec.k.prove \
-    tests/proofs/loops-spec.k.prove \
-    tests/proofs/memory-symbolic-type-spec.k.prove \
-    tests/proofs/locals-spec.k.prove
-do
-    command time -o "$TOP/profile.json" -a \
-        -f "{ \"wasm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
-        make TEST_SYMBOLIC_BACKEND=haskell $each
-done
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kwasm-simple-arithmetic-spec-stats.json" \
+    make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/simple-arithmetic-spec.k.prove
+
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kwasm-loops-spec-stats.json" \
+    make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/loops-spec.k.prove
+
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kwasm-memory-symbolic-type-spec-stats.json" \
+    make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/memory-symbolic-type-spec.k.prove
+
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kwasm-locals-spec-stats.json" \
+    make TEST_SYMBOLIC_BACKEND=haskell tests/proofs/locals-spec.k.prove

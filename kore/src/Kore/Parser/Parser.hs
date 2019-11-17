@@ -14,7 +14,23 @@ Conventions used:
 3. All parsers consume the whitespace after the parsed element and expect no
    whitespace before.
 -}
-module Kore.Parser.Parser where
+module Kore.Parser.Parser
+    ( koreDefinitionParser
+    , korePatternParser
+    , asParsedPattern
+    , symbolParser
+    , aliasParser
+    , sortVariableParser
+    , sortParser
+    , attributesParser
+    , koreSentenceParser
+    , moduleParser
+    , definitionParser
+    , inParenthesesListParser
+    , inCurlyBracesListParser
+    , elementVariableParser
+    , setVariableParser
+    ) where
 
 import Control.Arrow
     ( (&&&)
@@ -31,9 +47,6 @@ import Kore.Parser.ParserUtils
 import qualified Kore.Parser.ParserUtils as ParserUtils
 import Kore.Syntax
 import Kore.Syntax.Definition
-import Kore.Unparser
-    ( unparseToString
-    )
 import Kore.Variables.UnifiedVariable
 
 asParsedPattern :: (PatternF Variable) ParsedPattern -> ParsedPattern
@@ -523,16 +536,6 @@ koreMLConstructorParser = do
                 domainValueParser
                 patternType
 
-{-| Reports an error for a missing parser for a 'MLPatternType'.
--}
-unsupportedPatternType
-    :: Show level => level -> MLPatternType -> Parser a
-unsupportedPatternType level patternType =
-    fail
-        (  "Cannot have a "
-        ++ unparseToString patternType
-        ++ " " ++ show level ++ " pattern.")
-
 {-| A continuation parser for 'koreMLConstructorParser', called after
 the constructor and the open curly brace were parsed.
 -}
@@ -694,13 +697,6 @@ moduleParser sentenceParser = do
            , moduleSentences = sentences
            , moduleAttributes = attributes
            }
-
-{-|Enum for the sentence types that have meta- and object- versions.
--}
-data SentenceType
-    = AliasSentenceType
-    | SymbolSentenceType
-
 
 {-|'koreSentenceParser' parses a @sentence@.
 
@@ -877,5 +873,3 @@ sortSentenceRemainderParser ctor =
             <*> inCurlyBracesListParser sortVariableParser
             <*> attributesParser
         )
-
-

@@ -54,9 +54,7 @@ instance Hashable variable => Hashable (FreeVariables variable) where
     hashWithSalt salt (FreeVariables freeVariables) =
         hashWithSalt salt (Set.toList freeVariables)
 
-instance
-    Ord variable =>
-    Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
+instance Synthetic (FreeVariables variable) (Const (UnifiedVariable variable))
   where
     synthetic (Const var) = freeVariable var
     {-# INLINE synthetic #-}
@@ -77,9 +75,7 @@ isFreeVariable variable (FreeVariables freeVariables) =
     Set.member variable freeVariables
 {-# INLINE isFreeVariable #-}
 
-freeVariable
-    :: Ord variable
-    => UnifiedVariable variable -> FreeVariables variable
+freeVariable :: UnifiedVariable variable -> FreeVariables variable
 freeVariable variable = FreeVariables (Set.singleton variable)
 {-# INLINE freeVariable #-}
 

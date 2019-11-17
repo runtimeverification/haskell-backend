@@ -165,8 +165,7 @@ withSentenceHookContext =
 {- | Locate the given import declaration in the error context.
  -}
 withSentenceImportContext
-    :: MonadError (Error e) error
-    => SentenceImport patternType
+    :: SentenceImport patternType
     -> error a
     -> error a
 withSentenceImportContext _ = id

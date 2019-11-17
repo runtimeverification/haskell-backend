@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Symbol.Anywhere where
+module Test.Kore.Attribute.Symbol.Anywhere
+    ( test_anywhere
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

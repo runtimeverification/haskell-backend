@@ -14,6 +14,9 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 import Data.Set
     ( Set
     )
@@ -115,7 +118,10 @@ test_search =
                 inputPattern
                 searchPattern
                 Search.Config { bound = Unlimited, searchType }
-        let Just results = extractSearchResults finalPattern
+        let results =
+                fromMaybe
+                    (error "Expected search results")
+                    (extractSearchResults finalPattern)
         return results
     verifiedModule = verifiedMyModule Module
         { moduleName = ModuleName "MY-MODULE"
@@ -174,8 +180,7 @@ searchPattern = Conditional
 
 -- | Turn a disjunction of "v = ???" into Just a set of the ???. If the input is
 -- not a disjunction of "v = ???", return Nothing.
-extractSearchResults
-    :: TermLike Variable -> Maybe (Set (TermLike Variable))
+extractSearchResults :: TermLike Variable -> Maybe (Set (TermLike Variable))
 extractSearchResults =
     \case
         Equals_ operandSort resultSort first second
@@ -197,7 +202,10 @@ verifiedMyModule
     -> VerifiedModule Attribute.Symbol Attribute.Axiom
 verifiedMyModule module_ = indexedModule
   where
-    Just indexedModule = Map.lookup (ModuleName "MY-MODULE") indexedModules
+    indexedModule =
+        fromMaybe
+            (error "Missing module: MY-MODULE")
+            (Map.lookup (ModuleName "MY-MODULE") indexedModules)
     indexedModules =
         Kore.Error.assertRight
         $ verifyAndIndexDefinition Builtin.koreVerifiers definition
