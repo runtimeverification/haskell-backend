@@ -27,9 +27,13 @@ The rule's 'RulePattern.requires' clause is combined with the unification
 solution and the renamed rule is wrapped with the combined condition.
 
  -}
-
 type UnifiedRule variable = Conditional variable (RulePattern variable)
 
+{- | A log 'Entry' when a rule is applied.
+
+We will log the applied rule and its unification or matching condition.
+
+ -}
 newtype DebugAppliedRule =
     DebugAppliedRule
     { appliedRule :: UnifiedRule Variable
@@ -65,6 +69,8 @@ instance Entry DebugAppliedRule where
             . Conditional.withoutTerm
             $ appliedRule
 
+{- | Log the 'DebugAppliedRule' entry.
+ -}
 debugAppliedRule
     :: MonadLog log
     => InternalVariable variable
