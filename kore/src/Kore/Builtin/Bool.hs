@@ -111,7 +111,7 @@ patternVerifier =
         case externalChild of
             StringLiteral_ lit -> do
                 builtinBoolValue <- Builtin.parseString parse lit
-                (return . Domain.BuiltinBool)
+                (return . BuiltinF . Domain.BuiltinBool)
                     Domain.InternalBool
                         { builtinBoolSort = domainValueSort
                         , builtinBoolValue

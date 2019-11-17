@@ -14,6 +14,7 @@ module Test.Kore.Builtin.Builtin
     , evaluateToList
     , indexedModule
     , verifiedModule
+    , verifyPattern
     , runStep
     , runSMT
     ) where
@@ -49,6 +50,13 @@ import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
     ( VerifyError
     )
+import Kore.ASTVerifier.PatternVerifier
+    ( runPatternVerifier
+    , verifyStandalonePattern
+    )
+import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
+    ( Context (..)
+    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
@@ -57,6 +65,9 @@ import Kore.Domain.Builtin
     ( NormalizedAc
     , NormalizedSet
     , emptyNormalizedAc
+    )
+import Kore.Error
+    ( Error
     )
 import qualified Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
@@ -175,7 +186,7 @@ verifiedModules
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
+verifiedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
 verifiedModule =
     fromMaybe
         (error $ "Missing module: " ++ show testModuleName)
@@ -186,6 +197,28 @@ indexedModule =
     verifiedModule
     & IndexedModule.eraseAxiomAttributes
     & IndexedModule.mapPatterns Builtin.externalize
+
+verifyPattern
+    :: Maybe Sort  -- ^ Expected sort
+    -> TermLike Variable
+    -> Either (Error VerifyError) (TermLike Variable)
+verifyPattern expectedSort termLike =
+    runPatternVerifier context
+    $ verifyStandalonePattern expectedSort parsedPattern
+  where
+    context =
+        PatternVerifier.Context
+            { indexedModule =
+                verifiedModule
+                & IndexedModule.eraseAxiomAttributes
+            , declaredVariables = mempty
+            , declaredSortVariables = mempty
+            , builtinDomainValueVerifiers =
+                Builtin.domainValueVerifiers Builtin.koreVerifiers
+            , builtinApplicationVerifiers =
+                Builtin.applicationVerifiers Builtin.koreVerifiers
+            }
+    parsedPattern = Builtin.externalize termLike
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule
