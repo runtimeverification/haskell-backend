@@ -9,6 +9,7 @@ module Kore.Logger.DebugAppliedRule
     , DebugAppliedRule
     , debugAppliedRule
     , DebugAppliedRuleOptions
+    , parseDebugAppliedRuleOptions
     , debugAppliedRuleLogAction
     ) where
 
@@ -23,10 +24,11 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Typeable
 import qualified GHC.Stack as GHC
-import qualified Options.Applicative
+import Options.Applicative
     ( Parser
     )
 import qualified Options.Applicative as Options
+import qualified Text.Megaparsec as Parsec
 
 import Kore.Internal.Conditional
     ( Conditional
@@ -35,6 +37,7 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
 import Kore.Logger
+import qualified Kore.Parser.Lexeme as Parser
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
     )
@@ -118,6 +121,19 @@ data DebugAppliedRuleOptions =
         }
 
 parseDebugAppliedRuleOptions :: Parser DebugAppliedRuleOptions
+parseDebugAppliedRuleOptions =
+    DebugAppliedRuleOptions
+    <$> (Set.fromList <$> many parseId)
+  where
+    parseId = Options.option readId info
+      where
+        info =
+            mempty
+            <> Options.long "debug-applied-rule"
+            <> Options.metavar "IDENTIFIER"
+            <> Options.help help
+        help = "Log every rule applied for the symbol named IDENTIFIER."
+    readId = Options.maybeReader (Parsec.parseMaybe Parser.idParser)
 
 {- | Modify a 'LogAction' to display selected applied rules.
 
