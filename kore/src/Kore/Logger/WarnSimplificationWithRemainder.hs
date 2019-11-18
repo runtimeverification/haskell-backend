@@ -9,12 +9,13 @@ module Kore.Logger.WarnSimplificationWithRemainder
     , warnSimplificationWithRemainder
     ) where
 
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Typeable
     ( Typeable
     )
-import qualified GHC.Stack as GHC
 
 import Kore.Internal.Condition
     ( Condition
@@ -73,30 +74,27 @@ warnSimplificationWithRemainder
         }
 
 instance Entry WarnSimplificationWithRemainder where
-    shouldLog severity _ _ = Warning >= severity
-    toLogMessage entry =
-        LogMessage
-            { message
-            , severity = Warning
-            , callstack = GHC.emptyCallStack
-            }
+    entrySeverity _ = Warning
+
+    entryScopes _ = mempty
+
+instance Pretty WarnSimplificationWithRemainder where
+    pretty entry =
+        Pretty.vsep
+            [ "Simplification result with remainder:"
+            , (Pretty.indent 2 . Pretty.vsep)
+                [ "input pattern:"
+                , Pretty.indent 2 (unparse inputPattern)
+                , "input condition:"
+                , Pretty.indent 2 (unparse inputCondition)
+                , "results:"
+                , Pretty.indent 2 (unparseOrPattern results)
+                , "remainders:"
+                , Pretty.indent 2 (unparseOrPattern remainders)
+                ]
+            , "Rule will be skipped."
+            ]
       where
         WarnSimplificationWithRemainder { inputPattern, inputCondition } = entry
         WarnSimplificationWithRemainder { results, remainders } = entry
         unparseOrPattern = Pretty.vsep . map unparse . OrPattern.toPatterns
-        message =
-            (Pretty.renderStrict . layout . Pretty.vsep)
-                [ "Simplification result with remainder:"
-                , (Pretty.indent 2 . Pretty.vsep)
-                    [ "input pattern:"
-                    , Pretty.indent 2 (unparse inputPattern)
-                    , "input condition:"
-                    , Pretty.indent 2 (unparse inputCondition)
-                    , "results:"
-                    , Pretty.indent 2 (unparseOrPattern results)
-                    , "remainders:"
-                    , Pretty.indent 2 (unparseOrPattern remainders)
-                    ]
-                , "Rule will be skipped."
-                ]
-        layout = Pretty.layoutPretty Pretty.defaultLayoutOptions

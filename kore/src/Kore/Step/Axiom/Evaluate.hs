@@ -59,7 +59,9 @@ import Kore.Variables.Fresh
 
 evaluateAxioms
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
     => [EqualityRule Variable]
     -> TermLike variable
     -> Predicate variable

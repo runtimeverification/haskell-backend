@@ -77,6 +77,9 @@ import Data.String
 import Data.Text
     ( Text
     )
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
@@ -84,11 +87,7 @@ import Data.Typeable
 import qualified Data.Typeable
     ( cast
     )
-import GHC.Stack
-    ( CallStack
-    , HasCallStack
-    , callStack
-    )
+import qualified GHC.Stack as GHC
 import Prelude hiding
     ( log
     )
@@ -130,7 +129,7 @@ data LogMessage = LogMessage
     -- ^ message being logged
     , severity  :: !Severity
     -- ^ log level / severity of message
-    , callstack :: !CallStack
+    , callstack :: !GHC.CallStack
     -- ^ call stack of the message, when available
     }
 
@@ -158,13 +157,13 @@ logMsg = logM
 -- | Logs a message using given 'Severity'.
 log
     :: forall m
-    . (HasCallStack, WithLog LogMessage m)
+    . (GHC.HasCallStack, WithLog LogMessage m)
     => Severity
     -- ^ If lower than the minimum severity, the message will not be logged
     -> Text
     -- ^ Message to be logged
     -> m ()
-log s t = logMsg $ LogMessage t s callStack
+log s t = logMsg $ LogMessage t s GHC.callStack
 
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug
@@ -212,14 +211,13 @@ data WithScope = WithScope
     } deriving Typeable
 
 instance Entry WithScope where
-    shouldLog
-        minSeverity
-        currentScope
-        WithScope { entry, scope }
-      = scope `Set.member` currentScope
-        || shouldLog minSeverity currentScope entry
+    entryScopes WithScope { entry, scope } =
+        Set.insert scope (entryScopes entry)
 
-    toLogMessage WithScope { entry } = toLogMessage entry
+    entrySeverity WithScope { entry } = entrySeverity entry
+
+instance Pretty WithScope where
+    pretty WithScope { entry } = Pretty.pretty entry
 
 withLogScope
     :: forall m a
@@ -238,23 +236,40 @@ withLogScope newScope =
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
-class Typeable entry => Entry entry where
+class (Pretty entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry
     toEntry = SomeEntry
 
     fromEntry :: SomeEntry -> Maybe entry
     fromEntry (SomeEntry entry) = Data.Typeable.cast entry
 
-    shouldLog :: Severity -> Set Scope -> entry -> Bool
+    entrySeverity :: entry -> Severity
 
-    toLogMessage :: entry -> LogMessage
+    entryScopes :: entry -> Set Scope
 
 instance Entry LogMessage where
-    shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
-    shouldLog minSeverity _ LogMessage { severity } = severity >= minSeverity
+    entrySeverity LogMessage { severity } = severity
 
-    toLogMessage :: LogMessage -> LogMessage
-    toLogMessage = id
+    entryScopes _ = Set.empty
+
+instance Pretty LogMessage where
+    pretty LogMessage { severity, message, callstack } =
+        Pretty.hsep
+            [ Pretty.brackets (Pretty.pretty severity)
+            , ":"
+            , Pretty.pretty message
+            , Pretty.brackets (formatCallstack callstack)
+            ]
+      where
+        formatCallstack :: GHC.CallStack -> Pretty.Doc ann
+        formatCallstack cs
+          | length (GHC.getCallStack cs) <= 1 = mempty
+          | otherwise                         = callStackToBuilder cs
+        callStackToBuilder :: GHC.CallStack -> Pretty.Doc ann
+        callStackToBuilder =
+            Pretty.pretty
+            . GHC.prettyCallStack
+            . GHC.popCallStack
 
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry
@@ -263,9 +278,12 @@ data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
 instance Entry SomeEntry where
-    shouldLog severity setScope (SomeEntry entry) =
-        shouldLog severity setScope entry
-    toLogMessage (SomeEntry entry) = toLogMessage entry
+    entrySeverity (SomeEntry entry) = entrySeverity entry
+
+    entryScopes (SomeEntry entry) = entryScopes entry
+
+instance Pretty SomeEntry where
+    pretty (SomeEntry entry) = Pretty.pretty entry
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()

@@ -44,6 +44,7 @@ import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 
 type Parser = Parsec String String
@@ -250,10 +251,13 @@ saveSession =
 log :: Parser ReplCommand
 log = do
     literal "log"
-    parsedSeverity <- severity
-    parsedScope <- logScope
-    parsedType <- logType
-    pure $ Log parsedSeverity parsedScope parsedType
+    logLevel <- severity
+    logScopes <- unLogScope <$> logScope
+    logType <- parseLogType
+    -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
+    let debugAppliedRuleOptions = mempty
+    pure $ Log Logger.KoreLogOptions
+        { logType, logLevel, logScopes, debugAppliedRuleOptions }
 
 severity :: Parser Logger.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
@@ -274,11 +278,12 @@ logScope =
             <$$> wordWithout ['[', ']', ',']
             <* optional (literal ",")
 
-logType :: Parser LogType
-logType = logStdOut <|> logFile
+parseLogType :: Parser Logger.KoreLogType
+parseLogType = logStdOut <|> logFile
   where
-    logStdOut = LogToStdErr <$  literal "stderr"
-    logFile   = LogToFile   <$$> literal "file" *> quotedOrWordWithout ""
+    logStdOut = Logger.LogStdErr <$  literal "stderr"
+    logFile   =
+        Logger.LogFileText  <$$> literal "file" *> quotedOrWordWithout ""
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
