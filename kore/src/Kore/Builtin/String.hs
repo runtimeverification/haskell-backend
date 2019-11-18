@@ -165,7 +165,7 @@ patternVerifier =
     patternVerifierWorker domainValue =
         case externalChild of
             StringLiteral_ internalStringValue ->
-                (return . Domain.BuiltinString)
+                (return . BuiltinF . Domain.BuiltinString)
                     Domain.InternalString
                         { internalStringSort
                         , internalStringValue
