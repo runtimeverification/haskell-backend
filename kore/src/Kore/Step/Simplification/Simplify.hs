@@ -97,8 +97,8 @@ import Kore.Internal.TermLike
     )
 import Kore.Internal.Variable
 import Kore.Logger
-import Kore.Logger.WarnUnhookedSymbol
-    ( warnUnhookedSymbol
+import Kore.Logger.WarnFunctionWithoutEvaluators
+    ( warnFunctionWithoutEvaluators
     )
 import Kore.Profiler.Data
     ( MonadProfiler (..)
@@ -414,9 +414,10 @@ lookupAxiomSimplifier termLike = do
             -- have a separate evaluator for startup.
             Monad.guard (not $ null simplifierMap)
             case termLike of
-                App_ symbol _ -> do
+                App_ symbol _
+                  | isDeclaredFunction symbol -> do
                     let hooked = criticalMissingHook symbol
-                        unhooked = warnUnhookedSymbol symbol
+                        unhooked = warnFunctionWithoutEvaluators symbol
                     maybe unhooked hooked $ getHook symbol
                 _ -> return ()
             empty

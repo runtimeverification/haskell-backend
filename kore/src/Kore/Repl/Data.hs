@@ -256,7 +256,7 @@ data ReplCommand
     -- ^ Load script from file
     | ProofStatus
     -- ^ Show proof status of each claim
-    | Log Logger.Severity LogScope LogType
+    | Log Logger.KoreLogOptions
     -- ^ Setup the Kore logger.
     | Exit
     -- ^ Exit the repl.
@@ -435,7 +435,7 @@ data ReplState claim = ReplState
     -- ^ Map from labels to nodes
     , aliases :: Map String AliasDefinition
     -- ^ Map of command aliases
-    , logging :: (Logger.Severity, LogScope, LogType)
+    , koreLogOptions :: !Logger.KoreLogOptions
     -- ^ The log level, log scopes and log type decide what gets logged and where.
     }
     deriving (GHC.Generic)
