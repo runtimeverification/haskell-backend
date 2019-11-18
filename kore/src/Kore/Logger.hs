@@ -77,7 +77,11 @@ import Data.String
 import Data.Text
     ( Text
     )
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Typeable
     ( Typeable
     )
@@ -88,6 +92,7 @@ import GHC.Stack
     ( CallStack
     , HasCallStack
     , callStack
+    , emptyCallStack
     )
 import Prelude hiding
     ( log
@@ -248,6 +253,15 @@ class Typeable entry => Entry entry where
     entryScopes :: entry -> Set Scope
 
     toLogMessage :: entry -> LogMessage
+    default toLogMessage :: Pretty entry => entry -> LogMessage
+    toLogMessage entry =
+        LogMessage
+            { severity = entrySeverity entry
+            , callstack = emptyCallStack
+            , message = Pretty.renderStrict . layout $ Pretty.pretty entry
+            }
+      where
+        layout = Pretty.layoutSmart Pretty.defaultLayoutOptions
 
 instance Entry LogMessage where
     entrySeverity LogMessage { severity } = severity
