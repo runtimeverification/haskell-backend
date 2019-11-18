@@ -12,6 +12,7 @@ module Kore.Internal.Symbol
     , isSortInjection
     , isFunctional
     , isFunction
+    , isDeclaredFunction
     , isTotal
     , isInjective
     , isMemo
@@ -152,6 +153,10 @@ isFunctional = Attribute.isFunctional . symbolAttributes
 
 isFunction :: Symbol -> Bool
 isFunction = Attribute.isFunction . symbolAttributes
+
+isDeclaredFunction :: Symbol -> Bool
+isDeclaredFunction =
+    Attribute.isDeclaredFunction . Attribute.function . symbolAttributes
 
 isTotal :: Symbol -> Bool
 isTotal = Attribute.isTotal . symbolAttributes

@@ -4,8 +4,8 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.WarnUnhookedSymbol
-    ( warnUnhookedSymbol
+module Kore.Logger.WarnFunctionWithoutEvaluators
+    ( warnFunctionWithoutEvaluators
     ) where
 
 import Data.Text.Prettyprint.Doc
@@ -29,20 +29,21 @@ import Kore.Unparser
     ( unparse
     )
 
-newtype WarnUnhookedSymbol = WarnUnhookedSymbol
+newtype WarnFunctionWithoutEvaluators = WarnFunctionWithoutEvaluators
     { symbol :: Symbol
     } deriving (Eq, Typeable)
 
-instance Pretty WarnUnhookedSymbol where
-    pretty WarnUnhookedSymbol { symbol } =
+instance Pretty WarnFunctionWithoutEvaluators where
+    pretty WarnFunctionWithoutEvaluators { symbol } =
         Pretty.vsep
-            [ "No evaluators for symbol:"
-            , unparse symbol
+            [ "No evaluators for function symbol:"
+            , Pretty.indent 4 (unparse symbol)
             ]
 
-instance Entry WarnUnhookedSymbol where
+instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
     entryScopes _ = mempty
 
-warnUnhookedSymbol :: MonadLog m => Symbol -> m ()
-warnUnhookedSymbol symbol = logM WarnUnhookedSymbol { symbol }
+warnFunctionWithoutEvaluators :: MonadLog m => Symbol -> m ()
+warnFunctionWithoutEvaluators symbol =
+    logM WarnFunctionWithoutEvaluators { symbol }
