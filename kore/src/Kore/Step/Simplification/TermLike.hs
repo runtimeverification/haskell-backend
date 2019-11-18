@@ -353,8 +353,10 @@ simplifyInternal term predicate = do
         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
-            -- Do not simplify evaluated patterns.
+            -- Do not simplify non-simplifiable patterns.
             EvaluatedF  _ -> doNotSimplify
+            EndiannessF _ -> doNotSimplify
+            SignednessF _ -> doNotSimplify
             --
             AndF andF ->
                 And.simplify =<< simplifyChildren andF
