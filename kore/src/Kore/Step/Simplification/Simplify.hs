@@ -414,7 +414,8 @@ lookupAxiomSimplifier termLike = do
             -- have a separate evaluator for startup.
             Monad.guard (not $ null simplifierMap)
             case termLike of
-                App_ symbol _ -> do
+                App_ symbol _
+                  | isFunction symbol -> do
                     let hooked = criticalMissingHook symbol
                         unhooked = warnUnhookedSymbol symbol
                     maybe unhooked hooked $ getHook symbol
