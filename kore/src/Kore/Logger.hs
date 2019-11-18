@@ -212,13 +212,6 @@ data WithScope = WithScope
     } deriving Typeable
 
 instance Entry WithScope where
-    shouldLog
-        minSeverity
-        currentScope
-        WithScope { entry, scope }
-      = scope `Set.member` currentScope
-        || shouldLog minSeverity currentScope entry
-
     entryScopes WithScope { entry, scope } =
         Set.insert scope (entryScopes entry)
 
@@ -254,17 +247,9 @@ class Typeable entry => Entry entry where
 
     entryScopes :: entry -> Set Scope
 
-    shouldLog :: Severity -> Set Scope -> entry -> Bool
-    shouldLog severity scopes entry =
-        entrySeverity entry >= severity
-        && (null scopes || not (Set.disjoint (entryScopes entry) scopes))
-
     toLogMessage :: entry -> LogMessage
 
 instance Entry LogMessage where
-    shouldLog :: Severity -> Set Scope -> LogMessage -> Bool
-    shouldLog minSeverity _ LogMessage { severity } = severity >= minSeverity
-
     entrySeverity LogMessage { severity } = severity
 
     entryScopes _ = Set.empty
@@ -279,9 +264,6 @@ data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
 instance Entry SomeEntry where
-    shouldLog severity setScope (SomeEntry entry) =
-        shouldLog severity setScope entry
-
     toLogMessage (SomeEntry entry) = toLogMessage entry
 
     entrySeverity (SomeEntry entry) = entrySeverity entry
