@@ -124,7 +124,7 @@ withLogger
 withLogger koreLogOptions@KoreLogOptions { logType } continue =
     case logType of
         LogStdErr -> continue $ koreLogFilters koreLogOptions stderrLogger
-        LogFileText filename -> do
+        LogFileText filename ->
             Colog.withLogTextFile filename
             $ continue . koreLogFilters koreLogOptions . makeKoreLogger
 

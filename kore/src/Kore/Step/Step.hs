@@ -366,12 +366,8 @@ finalizeRule initial unifiedRule =
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
-        -- TODO: log unifiedRule here since ^ guards against bottom
-        debugAppliedRule
-            $ Conditional.mapVariables
-                Rule.mapVariables
-                (fmap toVariable)
-                unifiedRule
+        -- Log unifiedRule here since ^ guards against bottom
+        debugAppliedRule unifiedRule
         checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
