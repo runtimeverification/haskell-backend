@@ -87,6 +87,7 @@ import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 
 import Kore.Logger
+import Kore.Logger.DebugAppliedRule
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
@@ -106,6 +107,7 @@ data KoreLogOptions = KoreLogOptions
     -- ^ minimal log level, passed via "--log-level"
     , logScopes :: Set Scope
     -- ^ scopes to show, empty means show all
+    , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     }
     deriving (Eq, Show)
 
@@ -131,11 +133,15 @@ koreLogFilters
     => KoreLogOptions
     -> LogAction m SomeEntry
     -> LogAction m SomeEntry
-koreLogFilters KoreLogOptions { logLevel, logScopes } baseLogger =
+koreLogFilters koreLogOptions baseLogger =
     id
+    $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
     $ filterSeverity logLevel
     $ filterScopes logScopes
     $ baseLogger
+  where
+    KoreLogOptions { logLevel, logScopes } = koreLogOptions
+    KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
 
 {- | Select log entries with 'Severity' greater than or equal to the level.
  -}
@@ -169,6 +175,7 @@ parseKoreLogOptions =
     <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
     <*> (parseScope <|> pure mempty)
+    <*> parseDebugAppliedRuleOptions
   where
     parseType =
         option

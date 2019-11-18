@@ -254,7 +254,10 @@ log = do
     logLevel <- severity
     logScopes <- unLogScope <$> logScope
     logType <- parseLogType
-    pure $ Log Logger.KoreLogOptions { logType, logLevel, logScopes }
+    -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
+    let debugAppliedRuleOptions = mempty
+    pure $ Log Logger.KoreLogOptions
+        { logType, logLevel, logScopes, debugAppliedRuleOptions }
 
 severity :: Parser Logger.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical

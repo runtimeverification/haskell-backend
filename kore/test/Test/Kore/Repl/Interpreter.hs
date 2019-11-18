@@ -493,26 +493,23 @@ showAxiomByName =
         continue `equals` Continue
 
 logUpdatesState :: IO ()
-logUpdatesState =
+logUpdatesState = do
     let
         axioms  = []
         claim   = emptyClaim
-        command =
-            Log Logger.KoreLogOptions
+        options =
+            Logger.KoreLogOptions
                 { logLevel = Logger.Info
                 , logScopes = Set.fromList ["scope1", "scope2"]
                 , logType = Logger.LogStdErr
+                , debugAppliedRuleOptions = mempty
                 }
-    in do
-        Result { output, continue, state } <-
-            run command axioms [claim] claim
-        output   `equalsOutput` mempty
-        continue `equals`     Continue
-        state `hasLogging` Logger.KoreLogOptions
-            { logLevel = Logger.Info
-            , logScopes = Set.fromList ["scope1", "scope2"]
-            , logType = Logger.LogStdErr
-            }
+        command = Log options
+    Result { output, continue, state } <-
+        run command axioms [claim] claim
+    output   `equalsOutput` mempty
+    continue `equals`     Continue
+    state `hasLogging` options
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
@@ -685,6 +682,7 @@ mkState axioms claims claim =
             { logLevel = Logger.Warning
             , logScopes = mempty
             , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
             }
         }
   where

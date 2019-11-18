@@ -425,23 +425,27 @@ logTests =
             { logLevel = Logger.Debug
             , logScopes = mempty
             , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
             }
     , "log critical [scope1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Critical
             , logScopes = Set.singleton "scope1"
             , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
             }
     , "log info [ scope1,  scope2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
             , logScopes = Set.fromList ["scope1", "scope2"]
             , logType = Logger.LogFileText "f s"
+            , debugAppliedRuleOptions = mempty
             }
     , "log info [ scope1  scope2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
             , logScopes = Set.fromList ["scope1", "scope2"]
             , logType = Logger.LogFileText "f s"
+            , debugAppliedRuleOptions = mempty
             }
     ]

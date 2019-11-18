@@ -172,6 +172,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
                     { logType = Logger.LogStdErr
                     , logScopes = mempty
                     , logLevel = Logger.Debug
+                    , debugAppliedRuleOptions = mempty
                     }
             }
 

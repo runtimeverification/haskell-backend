@@ -10,11 +10,14 @@ module Kore.Logger.DebugAppliedRule
     , debugAppliedRule
     , DebugAppliedRuleOptions
     , parseDebugAppliedRuleOptions
-    , debugAppliedRuleLogAction
+    , filterDebugAppliedRule
     ) where
 
 import Control.Applicative
     ( Alternative (..)
+    )
+import Data.Function
+    ( on
     )
 import Data.Set
     ( Set
@@ -114,6 +117,15 @@ data DebugAppliedRuleOptions =
     DebugAppliedRuleOptions
         { debugAppliedRules :: !(Set Id)
         }
+    deriving (Eq, Show)
+
+instance Semigroup DebugAppliedRuleOptions where
+    (<>) a b =
+        DebugAppliedRuleOptions
+            { debugAppliedRules = on (<>) debugAppliedRules a b }
+
+instance Monoid DebugAppliedRuleOptions where
+    mempty = DebugAppliedRuleOptions mempty
 
 parseDebugAppliedRuleOptions :: Parser DebugAppliedRuleOptions
 parseDebugAppliedRuleOptions =
@@ -137,12 +149,12 @@ rules specified by 'DebugAppliedRuleOptions'. All other entries are forwarded to
 the "fallback" 'LogAction'.
 
  -}
-debugAppliedRuleLogAction
+filterDebugAppliedRule
     :: DebugAppliedRuleOptions
     -> LogAction log SomeEntry  -- ^ base 'LogAction'
     -> LogAction log SomeEntry  -- ^ fallback 'LogAction'
     -> LogAction log SomeEntry
-debugAppliedRuleLogAction debugAppliedRuleOptions baseLogAction logAction =
+filterDebugAppliedRule debugAppliedRuleOptions baseLogAction logAction =
     LogAction $ \entry ->
         case matchDebugAppliedRule entry of
             Just DebugAppliedRule { appliedRule }
