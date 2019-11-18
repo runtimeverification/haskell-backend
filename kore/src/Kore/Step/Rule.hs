@@ -34,6 +34,9 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , isFreeOf
+    , wEF
+    , wAF
+    , aPG
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
@@ -46,9 +49,6 @@ import Control.Exception
     ( assert
     )
 import qualified Data.Default as Default
-import Data.List
-    ( find
-    )
 import Data.Map.Strict
     ( Map
     )
@@ -105,9 +105,8 @@ import Kore.Internal.TermLike
     , pattern Implies_
     , pattern Not_
     , pattern Rewrites_
-    , pattern Top_
     , TermLike
-    , forceSort
+    , pattern Top_
     , mkAnd
     , mkApplyAlias
     , mkAxiom
@@ -130,7 +129,6 @@ import Kore.Internal.Variable
 import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
-    , predicateSort
     )
 import Kore.Step.Simplification.ExpandAlias
     ( substituteInAlias
@@ -155,11 +153,8 @@ import qualified Kore.Unification.Substitution as Substitution
     )
 import Kore.Unparser
     ( Unparse
-    , arguments'
-    , parameters
     , unparse
     , unparse2
-    , unparseAssoc'
     )
 import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
@@ -249,6 +244,21 @@ instance Debug variable => Debug (EqualityRule variable)
 
 instance (Debug variable, Diff variable) => Diff (EqualityRule variable)
 
+instance
+    ( Ord variable
+    , SortedVariable variable
+    , Unparse variable
+    , Debug variable
+    , Show variable)
+    => Unparse (EqualityRule variable)
+  where
+    unparse rule = case axiomPatternToPattern (FunctionAxiomPattern rule) of
+        Just pat -> unparse pat
+        _        -> "Could't unparse EqualityRule"
+    unparse2 rule = case axiomPatternToPattern (FunctionAxiomPattern rule) of
+        Just pat -> unparse2 pat
+        _        -> "Could't unparse EqualityRule"
+
 {-  | Rewrite-based rule pattern.
 -}
 newtype RewriteRule variable =
@@ -265,25 +275,20 @@ instance Debug variable => Debug (RewriteRule variable)
 
 instance (Debug variable, Diff variable) => Diff (RewriteRule variable)
 
-<<<<<<< HEAD
 instance
-    (Ord variable, SortedVariable variable, Unparse variable)
+    ( Ord variable
+    , SortedVariable variable
+    , Unparse variable
+    , Debug variable
+    , Show variable)
     => Unparse (RewriteRule variable)
   where
-    unparse (RewriteRule rr) = unparseRulePattern "\\rewrites" rr
-    unparse2 (RewriteRule rr) = unparse2RulePattern mkRewrites rr
-=======
-instance InternalVariable variable => Unparse (RewriteRule variable) where
-    unparse (RewriteRule RulePattern { left, right, requires } ) =
-        unparse $ mkRewrites
-            (mkAnd left (Predicate.unwrapPredicate requires))
-            right
-    unparse2 (RewriteRule RulePattern { left, right, requires } ) =
-        unparse2 $ mkRewrites
-            (mkAnd left (Predicate.unwrapPredicate requires))
-            right
->>>>>>> upstream/master
-
+    unparse rule = case axiomPatternToPattern (RewriteAxiomPattern rule) of
+        Just pat -> unparse pat
+        _        -> "Could't unparse RewriteRule"
+    unparse2 rule = case axiomPatternToPattern (RewriteAxiomPattern rule) of
+        Just pat -> unparse2 pat
+        _        -> "Could't unparse RewriteRule"
 {-  | Implication-based pattern.
 -}
 newtype ImplicationRule variable =
@@ -300,20 +305,20 @@ instance Debug variable => Debug (ImplicationRule variable)
 
 instance (Debug variable, Diff variable) => Diff (ImplicationRule variable)
 
-<<<<<<< HEAD
 instance
-    (Ord variable, SortedVariable variable, Unparse variable)
+    ( Ord variable
+    , SortedVariable variable
+    , Unparse variable
+    , Debug variable
+    , Show variable)
     => Unparse (ImplicationRule variable)
   where
-    unparse (ImplicationRule rr) = unparseRulePattern "\\implies" rr
-    unparse2 (ImplicationRule rr) = unparse2RulePattern mkImplies rr
-=======
-instance InternalVariable variable => Unparse (ImplicationRule variable) where
-    unparse (ImplicationRule RulePattern { left, right } ) =
-        unparse $ mkImplies left right
-    unparse2 (ImplicationRule RulePattern { left, right } ) =
-        unparse2 $ mkImplies left right
->>>>>>> upstream/master
+    unparse rule = case axiomPatternToPattern (ImplicationAxiomPattern rule) of
+        Just pat -> unparse pat
+        _        -> "Could't unparse ImplicationRule"
+    unparse2 rule = case axiomPatternToPattern (ImplicationAxiomPattern rule) of
+        Just pat -> unparse2 pat
+        _        -> "Could't unparse ImplicationRule"
 
 -- | modalities
 weakExistsFinally :: Text
@@ -352,8 +357,12 @@ instance Debug variable => Debug (OnePathRule variable)
 instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance InternalVariable variable => Unparse (OnePathRule variable) where
-    unparse = unparse . onePathRuleToPattern
-    unparse2 = unparse2 . onePathRuleToPattern
+    unparse rule = case axiomPatternToPattern (OnePathClaimPattern rule) of
+        Just pat -> unparse pat
+        _        -> "Could't unparse OnePathRule"
+    unparse2 rule = case axiomPatternToPattern (OnePathClaimPattern rule) of
+        Just pat -> unparse2 pat
+        _        -> "Could't unparse OnePathRule"
 
 instance TopBottom (OnePathRule variable) where
     isTop _ = False
@@ -377,8 +386,10 @@ instance Debug variable => Debug (ReachabilityRule variable)
 instance (Debug variable, Diff variable) => Diff (ReachabilityRule variable)
 
 instance InternalVariable variable => Unparse (ReachabilityRule variable) where
-    unparse = unparse . reachabilityRuleToPattern
-    unparse2 = unparse2 . reachabilityRuleToPattern
+    unparse (OnePath rule) = unparse rule
+    unparse (AllPath rule) = unparse rule
+    unparse2 (AllPath rule) = unparse2 rule
+    unparse2 (OnePath rule) = unparse2 rule
 
 instance TopBottom (ReachabilityRule variable) where
     isTop _ = False
@@ -401,8 +412,12 @@ instance Debug variable => Debug (AllPathRule variable)
 instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance InternalVariable variable => Unparse (AllPathRule variable) where
-    unparse = unparse . allPathRuleToPattern
-    unparse2 = unparse2 . allPathRuleToPattern
+    unparse rule = case axiomPatternToPattern (AllPathClaimPattern rule) of
+        Just pat -> unparse pat
+        _        -> "Could't unparse AllPathRule"
+    unparse2 rule = case axiomPatternToPattern (AllPathClaimPattern rule) of
+        Just pat -> unparse2 pat
+        _        -> "Could't unparse AllPathRule"
 
 instance TopBottom (AllPathRule variable) where
     isTop _ = False
@@ -564,32 +579,6 @@ wEF sort = Alias
     , aliasRight = mkTop sort
     }
 
-allPathRuleToPattern
-    :: InternalVariable variable
-    => AllPathRule variable
-    -> TermLike variable
-allPathRuleToPattern
-    ( AllPathRule
-        (RulePattern left antiLeft right requires ensures _)
-    )
-  =
-    assert (antiLeft == Nothing)
-    $ mkImplies
-        ( mkAnd
-            (Predicate.unwrapPredicate requires)
-            left
-        )
-        ( mkApplyAlias
-            (wAF sort)
-            [mkAnd
-                (Predicate.unwrapPredicate ensures)
-                right
-            ]
-        )
-  where
-    sort :: Sort
-    sort = termLikeSort right
-
 wAF :: Sort -> Alias (TermLike Variable)
 wAF sort = Alias
     { aliasConstructor = Id
@@ -605,13 +594,20 @@ wAF sort = Alias
     , aliasRight = mkTop sort
     }
 
-reachabilityRuleToPattern
-    :: InternalVariable variable
-    => ReachabilityRule variable
-    -> TermLike variable
-reachabilityRuleToPattern = \case
-    OnePath r -> onePathRuleToPattern r
-    AllPath r -> allPathRuleToPattern r
+aPG :: Sort -> Alias (TermLike Variable)
+aPG sort = Alias
+    { aliasConstructor = Id
+        { getId = allPathGlobally
+        , idLocation = AstLocationNone
+        }
+    , aliasParams = []
+    , aliasSorts = ApplicationSorts
+        { applicationSortsOperands = [sort]
+        , applicationSortsResult = sort
+        }
+    , aliasLeft = []
+    , aliasRight = mkTop sort
+    }
 
 {- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
 
@@ -746,21 +742,21 @@ patternToAxiomPattern attributes pat =
 
 axiomPatternToPattern
     :: Debug variable
+    => Ord variable
     => Show variable
     => Unparse variable
     => SortedVariable variable
-    => FreshVariable variable
     => QualifiedAxiomPattern variable
     -> Maybe (TermLike variable)
 axiomPatternToPattern
-    (RewriteAxiomPattern 
-        (RewriteRule 
+    (RewriteAxiomPattern
+        (RewriteRule
             (RulePattern
                 left (Just antiLeftTerm) right requires ensures _
             )
         )
     )
-  = 
+  =
     pure $ mkRewrites
         (mkAnd
             (mkNot antiLeftTerm)
@@ -768,8 +764,8 @@ axiomPatternToPattern
         (mkAnd (Predicate.unwrapPredicate ensures) right)
 
 axiomPatternToPattern
-    (RewriteAxiomPattern 
-        (RewriteRule 
+    (RewriteAxiomPattern
+        (RewriteRule
             (RulePattern left Nothing right requires ensures _)
         )
     )
@@ -808,19 +804,6 @@ axiomPatternToPattern
     (FunctionAxiomPattern
         (EqualityRule
             (RulePattern
-                left Nothing right requires Predicate.PredicateTrue _
-            )
-        )
-    )
-  =
-    pure $ mkImplies
-        (Predicate.unwrapPredicate requires)
-        (mkAnd (mkEquals_ left right) mkTop_)
-
-axiomPatternToPattern
-    (FunctionAxiomPattern
-        (EqualityRule
-            (RulePattern
                 left@(Ceil_ _ resultSort1 _)
                 Nothing
                 (Top_ resultSort2)
@@ -831,6 +814,35 @@ axiomPatternToPattern
         )
     )
   | resultSort1 == resultSort2 = pure $ left
+
+axiomPatternToPattern
+    (FunctionAxiomPattern
+        (EqualityRule
+            (RulePattern
+                left
+                Nothing
+                right
+                Predicate.PredicateTrue
+                Predicate.PredicateTrue
+                _
+            )
+        )
+    )
+  =
+    pure $ mkEquals_ left right
+
+axiomPatternToPattern
+    (FunctionAxiomPattern
+        (EqualityRule
+            (RulePattern
+                left Nothing right requires Predicate.PredicateTrue _
+            )
+        )
+    )
+  =
+    pure $ mkImplies
+        (Predicate.unwrapPredicate requires)
+        (mkAnd (mkEquals_ left right) mkTop_)
 
 axiomPatternToPattern
     (ImplicationAxiomPattern
@@ -845,10 +857,10 @@ axiomPatternToPattern
             )
         )
     )
-  = 
+  =
     pure $ mkImplies left right
 
-axiomPatternToPattern _ = Nothing 
+axiomPatternToPattern _ = Nothing
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 
@@ -1023,49 +1035,3 @@ applySubstitution substitution rule =
     subst = Substitution.toMap substitution
     finalRule = substitute subst rule
     substitutedVariables = Substitution.variables substitution
-
-unparseRulePattern
-    :: forall variable ann
-    .  (Ord variable, SortedVariable variable, Unparse variable)
-    => String
-    -> RulePattern variable
-    -> Pretty.Doc ann
-unparseRulePattern
-    connector
-    (RulePattern left antiLeft right requires ensures _)
-  =
-    Pretty.pretty connector <> parameters [sort] <> arguments' [arg1, arg2]
-      where
-        requires' = Predicate.unwrapPredicate requires
-        ensures' = Predicate.unwrapPredicate ensures
-        antiLeftList = maybeToList antiLeft
-        termsSorts = termLikeSort <$>
-            antiLeftList <> [requires', left,  ensures', right]
-        sort = fromMaybe predicateSort
-            $ find (predicateSort /=) termsSorts
-        andHead = "\\and" <> parameters [sort]
-        arg1 = unparseAssoc' andHead ""
-            $ unparse . forceSort sort
-                <$> fmap mkNot antiLeftList <> [requires', left]
-        arg2 = (unparse . forceSort sort) $ mkAnd ensures' right
-
-unparse2RulePattern
-    :: forall variable ann
-    .  (Ord variable, SortedVariable variable, Unparse variable)
-    => (TermLike variable -> TermLike variable -> TermLike variable)
-    -> RulePattern variable
-    -> Pretty.Doc ann
-unparse2RulePattern
-    connector
-    (RulePattern left antiLeft right requires ensures _)
-  =
-    let requires' = Predicate.unwrapPredicate requires
-        ensures' = Predicate.unwrapPredicate ensures
-    in
-    case antiLeft of
-        Nothing -> unparse2 $ connector
-            (mkAnd requires' left)
-            (mkAnd ensures' right)
-        Just antiLeftTerm -> unparse2 $ connector
-            (mkAnd (mkNot antiLeftTerm) (mkAnd requires' left))
-            (mkAnd ensures' right)

@@ -2,18 +2,20 @@ module Test.Kore.Step.Rule
     ( test_axiomPatterns
     , test_freeVariables
     , test_refreshRulePattern
-    , test_AxiomPatternToPatternAndBack
+    , test_patternToAxiomPatternAndBack
     ) where
-import Debug.Trace
-import Kore.Unparser
+import Control.Lens
+    ( (.~)
+    )
+import Data.Function
+    ( (&)
+    )
+import Data.Generics.Product
 import Test.Tasty
 import Test.Tasty.HUnit.Ext
 
 import Control.DeepSeq
     ( force
-    )
-import Data.Either
-    ( fromRight
     )
 import Control.Exception
     ( evaluate
@@ -218,24 +220,104 @@ axiomPatternsIntegrationTests =
             , attributes = def
             }
 
-test_AxiomPatternToPatternAndBack :: TestTree
-test_AxiomPatternToPatternAndBack =
+test_patternToAxiomPatternAndBack :: TestTree
+test_patternToAxiomPatternAndBack =
     testGroup
-        "qqqAxiomPattern ~ Pattern"
-        [ 
-            testCase "qqq" $ do
-                traceM $ "\nEXPECTED:\n" <> show axiomPattern <> "\n"
-                traceM $ "\nACTUAL:\n" <> show axiomPattern' <> "\n"
-                --assertEqual ""
-                    --axiomPattern
-                    --axiomPattern'
-                
+        "pattern to axiomPattern to pattern"
+        [
+            let initialPattern = mkRewrites
+                    (mkAnd
+                        (mkNot antiLeftP)
+                        (mkAnd (Predicate.unwrapPredicate requiresP) leftP))
+                    (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
+            in
+                testCase "RewriteRule with antileft" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern
+                            attributesWithPriority
+                            initialPattern
+                        )
+        ,
+            let initialPattern = mkRewrites
+                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
+                    (mkAnd (Predicate.unwrapPredicate ensuresP) rightP)
+            in
+                testCase "RewriteRule without antileft" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern def initialPattern)
+        ,
+            let op = Rule.wEF $ termLikeSort leftP
+                initialPattern = mkImplies
+                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
+                    (mkApplyAlias
+                        op
+                        [mkAnd (Predicate.unwrapPredicate ensuresP) rightP]
+                    )
+            in
+                testCase "Reachability claim wEF" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern def initialPattern)
+        ,
+            let op = Rule.wAF $ termLikeSort leftP
+                initialPattern = mkImplies
+                    (mkAnd (Predicate.unwrapPredicate requiresP) leftP)
+                    (mkApplyAlias
+                        op
+                        [mkAnd (Predicate.unwrapPredicate ensuresP) rightP]
+                    )
+            in
+                testCase "Reachability claim wAF" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern def initialPattern)
+        ,
+            let initialPattern = mkImplies
+                    (Predicate.unwrapPredicate requiresP)
+                    (mkAnd (mkEquals_ leftP rightP) mkTop_)
+            in
+                testCase "Function axioms: general" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern def initialPattern)
+        ,
+            let initialPattern = mkEquals_ leftP rightP
+            in
+                testCase "Function axioms: trivial pre- and post-conditions" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern def initialPattern)
+        ,
+            let initialPattern = mkCeil (termLikeSort (mkElemVar Mock.x))
+                                    $ mkElemVar Mock.x
+            in
+                testCase "Definedness axioms" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern def initialPattern)
+        ,
+            let op = Rule.aPG $ termLikeSort leftP
+                initialPattern = mkImplies
+                    leftP
+                    (mkApplyAlias op [mkElemVar Mock.x])
+            in
+                testCase "implication axioms:" $
+                    assertEqual ""
+                        (Right (Just initialPattern))
+                        (perhapsFinalPattern def initialPattern)
         ]
   where
-    axiomPattern = RewriteAxiomPattern $ RewriteRule $ testRulePattern
-    axiomPattern' =
-        fromRight undefined $ patternToAxiomPattern def
-        $ fromMaybe undefined $ axiomPatternToPattern axiomPattern
+    leftP = mkElemVar Mock.x
+    antiLeftP = mkElemVar Mock.u
+    rightP = mkExists Mock.y (mkElemVar Mock.y)
+    requiresP = Predicate.makeCeilPredicate (mkElemVar Mock.z)
+    ensuresP = Predicate.makeCeilPredicate (mkElemVar Mock.t)
+    attributesWithPriority =
+        def & field @"priority" .~ (Attribute.Priority (Just 0))
+    perhapsFinalPattern attribute initialPattern = axiomPatternToPattern
+        <$> patternToAxiomPattern attribute initialPattern
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
