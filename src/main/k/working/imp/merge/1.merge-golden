@@ -1,40 +1,70 @@
+/**/
 \rewrites{SortGeneratedTopCell{}}(
+    /**/
     \and{SortGeneratedTopCell{}}(
+        /*Function-Simplified*/
         Lbl'-LT-'generatedTop'-GT-'{}(
+            /*Function-Simplified*/
             Lbl'-LT-'T'-GT-'{}(
+                /*Functional-Simplified*/
                 Lbl'-LT-'k'-GT-'{}(
+                    /*Functional-Simplified*/
                     kseq{}(
-                        inj{SortId{}, SortKItem{}}(VarX:SortId{}),
-                        VarDotVar2:SortK{}
+                        /*Functional-Simplified*/
+                        inj{SortId{}, SortKItem{}}(
+                            /*Functional-Simplified*/ VarX:SortId{}
+                        ),
+                        /*Functional-Simplified*/ VarDotVar2:SortK{}
                     )
                 ),
+                /*Function-Simplified*/
                 Lbl'-LT-'state'-GT-'{}(
+                    /*Function-Simplified*/
                     Lbl'Unds'Map'Unds'{}(
+                        /*Functional-Simplified*/
                         Lbl'UndsPipe'-'-GT-Unds'{}(
-                            inj{SortId{}, SortKItem{}}(VarX:SortId{}),
-                            VarI:SortKItem{}
+                            /*Functional-Simplified*/
+                            inj{SortId{}, SortKItem{}}(
+                                /*Functional-Simplified*/ VarX:SortId{}
+                            ),
+                            /*Functional-Simplified*/ VarI:SortKItem{}
                         ),
-                        VarDotVar3:SortMap{}
+                        /*Functional-Simplified*/ VarDotVar3:SortMap{}
                     )
                 )
             ),
-            VarDotVar0:SortGeneratedCounterCell{}
+            /*Functional-Simplified*/ VarDotVar0:SortGeneratedCounterCell{}
         ),
-        \top{SortGeneratedTopCell{}}()
+        /*Defined-Simplified*/ \top{SortGeneratedTopCell{}}()
     ),
+    /*Function*/
     Lbl'-LT-'generatedTop'-GT-'{}(
+        /*Function*/
         Lbl'-LT-'T'-GT-'{}(
-            Lbl'-LT-'k'-GT-'{}(kseq{}(VarI:SortKItem{}, VarDotVar2:SortK{})),
+            /*Functional*/
+            Lbl'-LT-'k'-GT-'{}(
+                /*Functional*/
+                kseq{}(
+                    /*Functional-Simplified*/ VarI:SortKItem{},
+                    /*Functional-Simplified*/ VarDotVar2:SortK{}
+                )
+            ),
+            /*Function-Simplified*/
             Lbl'-LT-'state'-GT-'{}(
+                /*Function-Simplified*/
                 Lbl'Unds'Map'Unds'{}(
+                    /*Functional-Simplified*/
                     Lbl'UndsPipe'-'-GT-Unds'{}(
-                        inj{SortId{}, SortKItem{}}(VarX:SortId{}),
-                        VarI:SortKItem{}
+                        /*Functional-Simplified*/
+                        inj{SortId{}, SortKItem{}}(
+                            /*Functional-Simplified*/ VarX:SortId{}
+                        ),
+                        /*Functional-Simplified*/ VarI:SortKItem{}
                     ),
-                    VarDotVar3:SortMap{}
+                    /*Functional-Simplified*/ VarDotVar3:SortMap{}
                 )
             )
         ),
-        VarDotVar0:SortGeneratedCounterCell{}
+        /*Functional-Simplified*/ VarDotVar0:SortGeneratedCounterCell{}
     )
 )
