@@ -76,12 +76,6 @@ import Data.Time.LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
     )
-import GHC.Stack
-    ( CallStack
-    , getCallStack
-    , popCallStack
-    , prettyCallStack
-    )
 import Options.Applicative
     ( Parser
     , help
@@ -269,32 +263,11 @@ swappableLogger mvar =
     worker a logAction = Colog.unLogAction logAction a
 
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
-defaultLogPretty scopedEntry =
-    case toLogMessage <$> unwrapScope scopedEntry of
-        (scope, LogMessage { severity, message, callstack }) ->
-            Pretty.hsep
-                [ Pretty.brackets (Pretty.pretty severity)
-                , Pretty.brackets (prettyScope $ reverse scope)
-                , ":"
-                , Pretty.pretty message
-                , Pretty.brackets (formatCallstack callstack)
-                ]
+defaultLogPretty entry =
+    Pretty.hsep
+        [ Pretty.brackets (Pretty.pretty severity)
+        , ":"
+        , Pretty.pretty entry
+        ]
   where
-    prettyScope :: [Scope] -> Pretty.Doc ann
-    prettyScope =
-        mconcat
-            . zipWith (<>) ("" : repeat ".")
-            . fmap Pretty.pretty
-    formatCallstack :: GHC.Stack.CallStack -> Pretty.Doc ann
-    formatCallstack cs
-      | length (getCallStack cs) <= 1 = mempty
-      | otherwise                     = callStackToBuilder cs
-    callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
-    callStackToBuilder = Pretty.pretty . prettyCallStack . popCallStack
-
-unwrapScope :: SomeEntry -> ([Scope], SomeEntry)
-unwrapScope se =
-    case fromEntry se of
-        Nothing -> ([], se)
-        Just WithScope { entry, scope } ->
-            (scope : fst (unwrapScope entry), entry)
+    severity = entrySeverity entry

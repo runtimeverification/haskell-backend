@@ -88,12 +88,7 @@ import Data.Typeable
 import qualified Data.Typeable
     ( cast
     )
-import GHC.Stack
-    ( CallStack
-    , HasCallStack
-    , callStack
-    , emptyCallStack
-    )
+import qualified GHC.Stack as GHC
 import Prelude hiding
     ( log
     )
@@ -135,7 +130,7 @@ data LogMessage = LogMessage
     -- ^ message being logged
     , severity  :: !Severity
     -- ^ log level / severity of message
-    , callstack :: !CallStack
+    , callstack :: !GHC.CallStack
     -- ^ call stack of the message, when available
     }
 
@@ -163,13 +158,13 @@ logMsg = logM
 -- | Logs a message using given 'Severity'.
 log
     :: forall m
-    . (HasCallStack, WithLog LogMessage m)
+    . (GHC.HasCallStack, WithLog LogMessage m)
     => Severity
     -- ^ If lower than the minimum severity, the message will not be logged
     -> Text
     -- ^ Message to be logged
     -> m ()
-log s t = logMsg $ LogMessage t s callStack
+log s t = logMsg $ LogMessage t s GHC.callStack
 
 -- | Logs using 'Debug' log level. See 'log'.
 logDebug
@@ -224,6 +219,9 @@ instance Entry WithScope where
 
     toLogMessage WithScope { entry } = toLogMessage entry
 
+instance Pretty WithScope where
+    pretty WithScope { entry } = Pretty.pretty entry
+
 withLogScope
     :: forall m a
     .  WithLog LogMessage m
@@ -241,7 +239,7 @@ withLogScope newScope =
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
-class Typeable entry => Entry entry where
+class (Pretty entry, Typeable entry) => Entry entry where
     toEntry :: entry -> SomeEntry
     toEntry = SomeEntry
 
@@ -253,11 +251,10 @@ class Typeable entry => Entry entry where
     entryScopes :: entry -> Set Scope
 
     toLogMessage :: entry -> LogMessage
-    default toLogMessage :: Pretty entry => entry -> LogMessage
     toLogMessage entry =
         LogMessage
             { severity = entrySeverity entry
-            , callstack = emptyCallStack
+            , callstack = GHC.emptyCallStack
             , message = Pretty.renderStrict . layout $ Pretty.pretty entry
             }
       where
@@ -271,6 +268,25 @@ instance Entry LogMessage where
     toLogMessage :: LogMessage -> LogMessage
     toLogMessage = id
 
+instance Pretty LogMessage where
+    pretty LogMessage { severity, message, callstack } =
+        Pretty.hsep
+            [ Pretty.brackets (Pretty.pretty severity)
+            , ":"
+            , Pretty.pretty message
+            , Pretty.brackets (formatCallstack callstack)
+            ]
+      where
+        formatCallstack :: GHC.CallStack -> Pretty.Doc ann
+        formatCallstack cs
+          | length (GHC.getCallStack cs) <= 1 = mempty
+          | otherwise                         = callStackToBuilder cs
+        callStackToBuilder :: GHC.CallStack -> Pretty.Doc ann
+        callStackToBuilder =
+            Pretty.pretty
+            . GHC.prettyCallStack
+            . GHC.popCallStack
+
 someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
 someEntry = Lens.prism' toEntry fromEntry
 
@@ -283,6 +299,9 @@ instance Entry SomeEntry where
     entrySeverity (SomeEntry entry) = entrySeverity entry
 
     entryScopes (SomeEntry entry) = entryScopes entry
+
+instance Pretty SomeEntry where
+    pretty (SomeEntry entry) = Pretty.pretty entry
 
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
