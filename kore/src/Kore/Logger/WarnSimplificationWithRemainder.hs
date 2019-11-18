@@ -73,7 +73,10 @@ warnSimplificationWithRemainder
         }
 
 instance Entry WarnSimplificationWithRemainder where
-    shouldLog severity _ _ = Warning >= severity
+    entrySeverity _ = Warning
+
+    entryScopes _ = mempty
+
     toLogMessage entry =
         LogMessage
             { message

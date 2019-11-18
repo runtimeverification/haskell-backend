@@ -33,19 +33,18 @@ newtype WarnUnhookedSymbol = WarnUnhookedSymbol
     { symbol :: Symbol
     } deriving (Eq, Typeable)
 
-warnUnhookedSymbolSeverity :: Severity
-warnUnhookedSymbolSeverity = Warning
-
 instance Entry WarnUnhookedSymbol where
-    shouldLog minSeverity _ _ = warnUnhookedSymbolSeverity >= minSeverity
-
     toLogMessage WarnUnhookedSymbol { symbol } =
         LogMessage
             { message =
                 "Could not evaluate unhooked symbol:\n" <> unparseToText symbol
-            , severity = warnUnhookedSymbolSeverity
+            , severity = Warning
             , callstack = emptyCallStack
             }
+
+    entrySeverity _ = Warning
+
+    entryScopes _ = mempty
 
 warnUnhookedSymbol :: MonadLog m => Symbol -> m ()
 warnUnhookedSymbol symbol = logM WarnUnhookedSymbol { symbol }
