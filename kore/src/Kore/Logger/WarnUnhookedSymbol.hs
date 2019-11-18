@@ -8,11 +8,12 @@ module Kore.Logger.WarnUnhookedSymbol
     ( warnUnhookedSymbol
     ) where
 
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Typeable
     ( Typeable
-    )
-import GHC.Stack
-    ( emptyCallStack
     )
 
 import Kore.Internal.Symbol
@@ -20,30 +21,27 @@ import Kore.Internal.Symbol
     )
 import Kore.Logger
     ( Entry (..)
-    , LogMessage (..)
     , MonadLog
     , Severity (Warning)
     , logM
     )
 import Kore.Unparser
-    ( unparseToText
+    ( unparse
     )
 
 newtype WarnUnhookedSymbol = WarnUnhookedSymbol
     { symbol :: Symbol
     } deriving (Eq, Typeable)
 
+instance Pretty WarnUnhookedSymbol where
+    pretty WarnUnhookedSymbol { symbol } =
+        Pretty.vsep
+            [ "No evaluators for symbol:"
+            , unparse symbol
+            ]
+
 instance Entry WarnUnhookedSymbol where
-    toLogMessage WarnUnhookedSymbol { symbol } =
-        LogMessage
-            { message =
-                "Could not evaluate unhooked symbol:\n" <> unparseToText symbol
-            , severity = Warning
-            , callstack = emptyCallStack
-            }
-
     entrySeverity _ = Warning
-
     entryScopes _ = mempty
 
 warnUnhookedSymbol :: MonadLog m => Symbol -> m ()
