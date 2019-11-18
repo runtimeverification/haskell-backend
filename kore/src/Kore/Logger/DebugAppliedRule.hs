@@ -20,10 +20,11 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Data.Text.Prettyprint.Doc
+    ( Pretty
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Typeable
-import qualified GHC.Stack as GHC
 import Options.Applicative
     ( Parser
     )
@@ -75,23 +76,18 @@ instance Entry DebugAppliedRule where
 
     entryScopes _ = mempty
 
-    toLogMessage DebugAppliedRule { appliedRule } =
-        LogMessage
-            { message =
-                Pretty.renderStrict . layout . Pretty.vsep $
-                [ "applied rule:"
-                , (Pretty.indent 2 . Pretty.vsep)
-                    [ (Pretty.indent 2 . Pretty.pretty)
-                        (Conditional.term appliedRule)
-                    , "with condition:"
-                    , (Pretty.indent 2 . unparse) condition
-                    ]
+instance Pretty DebugAppliedRule where
+    pretty DebugAppliedRule { appliedRule } =
+        Pretty.vsep
+            [ "applied rule:"
+            , (Pretty.indent 2 . Pretty.vsep)
+                [ (Pretty.indent 2 . Pretty.pretty)
+                    (Conditional.term appliedRule)
+                , "with condition:"
+                , (Pretty.indent 2 . unparse) condition
                 ]
-            , severity = Debug
-            , callstack = GHC.emptyCallStack
-            }
+            ]
       where
-        layout = Pretty.layoutPretty Pretty.defaultLayoutOptions
         condition =
             Pattern.toTermLike
             . Pattern.fromCondition
