@@ -11,19 +11,20 @@ module Kore.Step.Simplification.Bottom
     ( simplify
     ) where
 
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( bottom
-    )
 import Kore.Internal.Variable
     ( InternalVariable
     )
 import Kore.Sort
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( bottom
+    )
 import Kore.Syntax.Bottom
 
 {-| simplifies a Bottom pattern, which means returning an always-false or.
 -}
-simplify :: InternalVariable variable => Bottom Sort child -> Pattern variable
-simplify Bottom {} = Pattern.bottom
+simplify
+    :: InternalVariable variable => Bottom Sort child -> Simplifiable variable
+simplify Bottom {} = Simplifiable.bottom

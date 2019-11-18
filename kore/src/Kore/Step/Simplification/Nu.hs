@@ -9,13 +9,11 @@ module Kore.Step.Simplification.Nu
 import Kore.Internal.OrPattern
     ( OrPattern
     )
-import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-    ( fromTermLike
-    , isSimplified
+    ( isSimplified
     , toTermLike
     )
 import Kore.Internal.TermLike
@@ -28,6 +26,13 @@ import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( fromMultiOr
+    , fromTermLike
+    )
 
 {-|'simplify' simplifies a 'Nu' pattern with an 'OrPattern'
 child.
@@ -35,9 +40,9 @@ child.
 simplify
     :: InternalVariable variable
     => Nu variable (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify Nu { nuVariable, nuChild } =
-    OrPattern.toPattern (makeEvaluate nuVariable <$> nuChild)
+    Simplifiable.fromMultiOr (makeEvaluate nuVariable <$> nuChild)
 
 {-| evaluates a 'Nu' given its two 'Pattern' children.
 
@@ -47,9 +52,9 @@ makeEvaluate
     :: InternalVariable variable
     => SetVariable variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluate variable patt =
-    Pattern.fromTermLike
+    Simplifiable.fromTermLike
     $ (if Pattern.isSimplified patt then TermLike.markSimplified else id)
     $ mkNu variable
     $ Pattern.toTermLike patt

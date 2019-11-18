@@ -11,13 +11,13 @@ module Kore.Step.Simplification.Variable
     ( simplify
     ) where
 
-import Kore.Internal.Pattern
-    ( Pattern
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
     )
-import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromTermLike
     )
-import Kore.Internal.TermLike
 import Kore.Variables.UnifiedVariable
 
 {-| 'simplify' simplifies a 'Variable' pattern, which means returning
@@ -26,5 +26,5 @@ an or containing a term made of that variable.
 simplify
     :: InternalVariable variable
     => UnifiedVariable variable
-    -> Pattern variable
-simplify var = Pattern.fromTermLike $ mkVar var
+    -> Simplifiable variable
+simplify var = Simplifiable.fromTermLike $ mkVar var

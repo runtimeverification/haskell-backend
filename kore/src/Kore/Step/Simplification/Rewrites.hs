@@ -20,6 +20,12 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( fromTermLike
+    )
 
 {- | Simplify a 'Rewrites' pattern with a 'OrPattern' child.
 
@@ -30,7 +36,7 @@ TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 simplify
     :: InternalVariable variable
     => Rewrites Sort (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify
     Rewrites
         { rewritesFirst = first
@@ -56,7 +62,7 @@ simplifyEvaluatedRewrites
     :: InternalVariable variable
     => OrPattern variable
     -> OrPattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 simplifyEvaluatedRewrites first second =
     makeEvaluateRewrites
         (OrPattern.toPattern first)
@@ -66,9 +72,9 @@ makeEvaluateRewrites
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateRewrites first second =
-    Pattern.fromTermLike
+    Simplifiable.fromTermLike
     $ TermLike.markSimplified
     $ mkRewrites
         (Pattern.toTermLike first)

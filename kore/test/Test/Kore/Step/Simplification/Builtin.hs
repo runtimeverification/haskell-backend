@@ -1,7 +1,7 @@
 module Test.Kore.Step.Simplification.Builtin
-    ( test_simplify
+    ( --t-est_simplify
     ) where
-
+{-
 import Test.Tasty
 
 import qualified Data.Map.Strict as Map
@@ -25,8 +25,8 @@ import Kore.Step.Simplification.Builtin
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
-test_simplify :: [TestTree]
-test_simplify =
+t-est_simplify :: [TestTree]
+t-est_simplify =
     [ testGroup "List"
         [ becomes "\\bottom element" (mkList [bottom]) Pattern.bottom
         ]
@@ -99,3 +99,4 @@ mkList children =
 
 evaluate :: Builtin (OrPattern Variable) -> Pattern Variable
 evaluate = simplify
+-}

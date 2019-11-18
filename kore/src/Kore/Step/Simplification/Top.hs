@@ -11,14 +11,14 @@ module Kore.Step.Simplification.Top
     ( simplify
     ) where
 
-import Kore.Internal.Pattern
-    ( Pattern
-    )
-import qualified Kore.Internal.Pattern as Pattern
-    ( top
-    )
 import Kore.Internal.Variable
 import Kore.Sort
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( top
+    )
 import Kore.Syntax.Top
 
 {-| simplifies a Top pattern, which means returning an always-true or.
@@ -27,5 +27,5 @@ import Kore.Syntax.Top
 simplify
     :: InternalVariable variable
     => Top Sort child
-    -> Pattern variable
-simplify _ = Pattern.top
+    -> Simplifiable variable
+simplify _ = Simplifiable.top

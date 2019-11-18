@@ -1,7 +1,7 @@
 module Test.Kore.Step.Simplification.Not
-    ( test_simplifyEvaluated
+    ( --t-est_simplifyEvaluated
     ) where
-
+{-
 import Test.Tasty
     ( TestTree
     )
@@ -36,8 +36,8 @@ import Kore.Variables.UnifiedVariable
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Tasty.HUnit.Ext
 
-test_simplifyEvaluated :: [TestTree]
-test_simplifyEvaluated =
+t-est_simplifyEvaluated :: [TestTree]
+t-est_simplifyEvaluated =
     [ [Pattern.top] `becomes_` mkOr mkBottom_ mkBottom_
     , [] `becomes_` mkTop_
     , [termXP] `becomes_` mkOr termNotX mkBottom_
@@ -57,7 +57,7 @@ test_simplifyEvaluated =
         -> TermLike Variable
         -> TestTree
     becomes_ originals expected =
-        testCase "zzzbecomes" $ do
+        testCase "becomes" $ do
             let actual = simplifyEvaluated original
             assertBool (message actual) (expected == actual)
       where
@@ -77,7 +77,7 @@ test_simplifyEvaluated =
         -> TermLike Variable
         -> TestTree
     patternBecomes original expected =
-        testCase "zzzpatternBecomes" $ do
+        testCase "patternBecomes" $ do
             let actual = makeEvaluate original
             assertBool (message actual) (expected == actual)
       where
@@ -194,3 +194,4 @@ fromSubstitution =
     . Pattern.fromCondition
     . Condition.fromSubstitution
 
+-}

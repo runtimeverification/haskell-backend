@@ -23,19 +23,19 @@ import Kore.Internal.Conditional
     )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern as OrPattern
-    ( toPattern
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
-    )
-import Kore.Internal.Pattern
-    ( Pattern
     )
 import Kore.Internal.Predicate
     ( makeFalsePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( fromOrPattern
+    )
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
 an or containing a term made of that value.
@@ -43,9 +43,9 @@ an or containing a term made of that value.
 simplify
     :: InternalVariable variable
     => Builtin (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify builtin =
-    OrPattern.toPattern . MultiOr.filterOr $ do
+    Simplifiable.fromOrPattern . MultiOr.filterOr $ do
         child <- simplifyBuiltin builtin
         return (markSimplified . mkBuiltin <$> child)
 

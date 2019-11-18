@@ -37,6 +37,12 @@ import qualified Kore.Profiler.Profile as Profile
 import Kore.Step.Function.Evaluator
     ( evaluateApplication
     )
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( fromOrPattern
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
@@ -59,7 +65,7 @@ simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
     -> Application Symbol (OrPattern variable)
-    -> simplifier (Pattern variable)
+    -> simplifier (Simplifiable variable)
 simplify predicate application = do
     evaluated <-
         traverse
@@ -71,7 +77,7 @@ simplify predicate application = do
         (symbolConstructor symbol)
         (length childrenCrossProduct)
         (length result)
-    return (OrPattern.toPattern result)
+    return (Simplifiable.fromOrPattern result)
   where
     Application
         { applicationSymbolOrAlias = symbol

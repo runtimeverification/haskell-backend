@@ -24,6 +24,10 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    , onlyForOrSimplified
+    )
 
 -- * Driver
 
@@ -36,7 +40,7 @@ merging its children.
 simplify
     :: InternalVariable variable
     => Or Sort (OrPattern variable)
-    -> OrPattern variable
+    -> Simplifiable variable
 simplify Or { orFirst = first, orSecond = second } =
     simplifyEvaluated first second
 
@@ -49,7 +53,7 @@ simplifyEvaluated
     :: InternalVariable variable
     => OrPattern variable
     -> OrPattern variable
-    -> OrPattern variable
+    -> Simplifiable variable
 
 {-
 
@@ -78,10 +82,10 @@ simplifyEvaluated first second
   | (head1 : tail1) <- MultiOr.extractPatterns first
   , (head2 : tail2) <- MultiOr.extractPatterns second
   , Just result <- simplifySinglePatterns head1 head2
-  = OrPattern.fromPatterns $ result : (tail1 ++ tail2)
+  = onlyForOrSimplified $ OrPattern.fromPatterns $ result : (tail1 ++ tail2)
 
   | otherwise =
-    MultiOr.merge first second
+    onlyForOrSimplified $ MultiOr.merge first second
 
   where
     simplifySinglePatterns first' second' =

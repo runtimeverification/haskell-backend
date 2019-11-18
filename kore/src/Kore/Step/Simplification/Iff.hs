@@ -20,10 +20,34 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
+    ( mkIff
+    )
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
+import Kore.Internal.Variable
+    ( InternalVariable
+    )
+import Kore.Sort
+    ( Sort
+    )
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( fromOrPattern
+    , fromPattern
+    , fromPredicate
+    , fromTermLike
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Unsimplified
+    ( mkNot
+    )
 import Kore.Step.Simplification.Simplify
+import Kore.Syntax.Iff
+    ( Iff (Iff)
+    )
+import qualified Kore.Syntax.Iff as Iff.DoNotUse
 
 {-|'simplify' simplifies an 'Iff' pattern with 'OrPattern'
 children.
@@ -34,7 +58,7 @@ and for children with top terms.
 simplify
     :: (SimplifierVariable variable)
     => Iff Sort (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify Iff { iffFirst = first, iffSecond = second } =
     simplifyEvaluated first second
 
@@ -59,16 +83,16 @@ simplifyEvaluated
     :: (SimplifierVariable variable)
     => OrPattern variable
     -> OrPattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 simplifyEvaluated
     first
     second
-  | OrPattern.isTrue first   = OrPattern.toPattern second
+  | OrPattern.isTrue first   = Simplifiable.fromOrPattern second
   | OrPattern.isFalse first  =
-    Pattern.fromTermLike (mkNot (OrPattern.toTermLike second))
-  | OrPattern.isTrue second  = OrPattern.toPattern first
+    Unsimplified.mkNot (Simplifiable.fromOrPattern second)
+  | OrPattern.isTrue second  = Simplifiable.fromOrPattern first
   | OrPattern.isFalse second =
-    Pattern.fromTermLike (mkNot (OrPattern.toTermLike first))
+    Unsimplified.mkNot (Simplifiable.fromOrPattern first)
   | otherwise =
     case ( firstPatterns, secondPatterns ) of
         ([firstP], [secondP]) -> makeEvaluate firstP secondP
@@ -88,21 +112,21 @@ makeEvaluate
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluate first second
-  | Pattern.isTop first = second
+  | Pattern.isTop first = Simplifiable.fromPattern second
   | Pattern.isBottom first =
-    Pattern.fromTermLike (mkNot (Pattern.toTermLike second))
-  | Pattern.isTop second = first
+    Unsimplified.mkNot (Simplifiable.fromPattern second)
+  | Pattern.isTop second = Simplifiable.fromPattern first
   | Pattern.isBottom second =
-    Pattern.fromTermLike (mkNot (Pattern.toTermLike first))
+    Unsimplified.mkNot (Simplifiable.fromPattern first)
   | otherwise = makeEvaluateNonBoolIff first second
 
 makeEvaluateNonBoolIff
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateNonBoolIff
     patt1@Conditional
         { term = firstTerm
@@ -116,22 +140,20 @@ makeEvaluateNonBoolIff
         }
   | isTop firstTerm, isTop secondTerm
   =
-    Conditional
-        { term = firstTerm
-        , predicate =
-            Predicate.markSimplified
-            $ Predicate.makeIffPredicate
-                (Predicate.makeAndPredicate
-                    firstPredicate
-                    (Predicate.fromSubstitution firstSubstitution)
-                )
-                (Predicate.makeAndPredicate
-                    secondPredicate
-                    (Predicate.fromSubstitution secondSubstitution)
-                )
-        , substitution = mempty
-        }
+    Simplifiable.fromPredicate
+    $ Predicate.markSimplified
+    $ Predicate.makeIffPredicate
+        (Predicate.makeAndPredicate
+            firstPredicate
+            (Predicate.fromSubstitution firstSubstitution)
+        )
+        (Predicate.makeAndPredicate
+            secondPredicate
+            (Predicate.fromSubstitution secondSubstitution)
+        )
   | otherwise =
-    Pattern.fromTermLike $ TermLike.markSimplified $ mkIff
+    Simplifiable.fromTermLike
+    $ TermLike.markSimplified
+    $ mkIff
         (Pattern.toTermLike patt1)
         (Pattern.toTermLike patt2)

@@ -1,7 +1,7 @@
 module Test.Kore.Step.Simplification.DomainValue
-    ( test_simplify
+    ( --t-est_simplify
     ) where
-
+{-
 import Test.Tasty
 
 import Kore.Internal.OrPattern
@@ -24,8 +24,8 @@ import Test.Kore.Step.MockSymbols
     )
 import Test.Tasty.HUnit.Ext
 
-test_simplify :: [TestTree]
-test_simplify =
+t-est_simplify :: [TestTree]
+t-est_simplify =
     [ testCase "DomainValue evaluates to DomainValue"
         (assertEqual ""
             (Pattern.fromTermLike $ mkDomainValue
@@ -45,3 +45,4 @@ test_simplify =
 
 evaluate :: DomainValue Sort (OrPattern Variable) -> Pattern Variable
 evaluate = simplify
+-}

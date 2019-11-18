@@ -11,22 +11,36 @@ module Kore.Step.Simplification.In
     ( simplify
     ) where
 
-import Kore.Internal.Condition as Condition
-    ( fromPredicate
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( isBottom
+    , isTop
+    , toTermLike
+    )
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    , makeInPredicate
+    ( makeInPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
     )
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( bottom
+    , fromMultiOr
+    , fromOrPattern
+    , fromPattern
+    , fromPredicate
+    , mkCeil
+    )
 import Kore.Step.Simplification.Simplify
 
 {-|'simplify' simplifies an 'In' pattern with 'OrPattern'
@@ -44,7 +58,7 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 simplify
     :: SimplifierVariable variable
     => In Sort (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify In { inContainedChild = first, inContainingChild = second } =
     simplifyEvaluatedIn first second
 
@@ -66,48 +80,39 @@ simplifyEvaluatedIn
     .  SimplifierVariable variable
     => OrPattern variable
     -> OrPattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 simplifyEvaluatedIn first second
-  | OrPattern.isFalse first  = Pattern.bottom
-  | OrPattern.isFalse second = Pattern.bottom
+  | OrPattern.isFalse first  = Simplifiable.bottom
+  | OrPattern.isFalse second = Simplifiable.bottom
 
   | OrPattern.isTrue first =
-    Pattern.fromCondition
-    $ Condition.fromPredicate
-    $ makeCeilPredicate (OrPattern.toTermLike second)
+    Simplifiable.mkCeil (Simplifiable.fromOrPattern second)
   | OrPattern.isTrue second =
-    Pattern.fromCondition
-    $ Condition.fromPredicate
-    $ makeCeilPredicate (OrPattern.toTermLike first)
+    Simplifiable.mkCeil (Simplifiable.fromOrPattern first)
 
-  | otherwise =
-    OrPattern.toPattern (makeEvaluateIn <$> first <*> second)
+  | otherwise = Simplifiable.fromMultiOr (makeEvaluateIn <$> first <*> second)
 
 makeEvaluateIn
     :: SimplifierVariable variable
     => Pattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateIn first second
   | Pattern.isTop first =
-    Pattern.fromCondition
-    $ Condition.fromPredicate
-    $ makeCeilPredicate (Pattern.toTermLike second)
+    Simplifiable.mkCeil (Simplifiable.fromPattern second)
   | Pattern.isTop second =
-    Pattern.fromCondition
-    $ Condition.fromPredicate
-    $ makeCeilPredicate (Pattern.toTermLike first)
-  | Pattern.isBottom first || Pattern.isBottom second = Pattern.bottom
+    Simplifiable.mkCeil (Simplifiable.fromPattern first)
+  | Pattern.isBottom first || Pattern.isBottom second =
+    Simplifiable.bottom
   | otherwise = makeEvaluateNonBoolIn first second
 
 makeEvaluateNonBoolIn
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateNonBoolIn patt1 patt2 =
-    Pattern.fromCondition
-    $ Condition.fromPredicate
+    Simplifiable.fromPredicate
     $ Predicate.markSimplified
     $ makeInPredicate
         -- TODO: Wrap in 'contained' and 'container'.

@@ -52,6 +52,14 @@ import qualified Kore.Internal.TermLike as TermLike
     , markSimplified
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( bottom
+    , fromOrPattern
+    , top
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -77,7 +85,7 @@ simplify it this way.
 simplify
     :: InternalVariable variable
     => Forall Sort variable (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify Forall { forallVariable, forallChild } =
     simplifyEvaluated forallVariable forallChild
 
@@ -98,12 +106,12 @@ simplifyEvaluated
     :: InternalVariable variable
     => ElementVariable variable
     -> OrPattern variable
-    -> Pattern variable
-simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified  = Pattern.top
-  | OrPattern.isFalse simplified = Pattern.bottom
+    -> Simplifiable variable
+simplifyEvaluated variable child
+  | OrPattern.isTrue child  = Simplifiable.top
+  | OrPattern.isFalse child = Simplifiable.bottom
   | otherwise                    =
-    OrPattern.toPattern $ makeEvaluate variable <$> simplified
+    Simplifiable.fromOrPattern $ makeEvaluate variable <$> child
 
 {-| evaluates an 'Forall' given its two 'Pattern' children.
 

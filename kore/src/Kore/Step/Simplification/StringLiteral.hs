@@ -11,16 +11,17 @@ module Kore.Step.Simplification.StringLiteral
     ( simplify
     ) where
 
-import Kore.Internal.Pattern
-    ( Pattern
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
     )
-import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromTermLike
     )
-import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'StringLiteral' pattern, which means returning
 an or containing a term made of that literal.
 -}
-simplify :: InternalVariable variable => StringLiteral -> Pattern variable
-simplify (StringLiteral str) = Pattern.fromTermLike $ mkStringLiteral str
+simplify :: InternalVariable variable => StringLiteral -> Simplifiable variable
+simplify (StringLiteral str) =
+    Simplifiable.fromTermLike $ mkStringLiteral str

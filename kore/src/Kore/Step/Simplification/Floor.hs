@@ -28,6 +28,14 @@ import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
     )
 import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( bottom
+    , fromOrPattern
+    , top
+    )
 
 {-| 'simplify' simplifies a 'Floor' of 'OrPattern'.
 
@@ -43,7 +51,7 @@ floor(a and b) = floor(a) and floor(b).
 simplify
     :: InternalVariable variable
     => Floor Sort (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
 
@@ -63,7 +71,7 @@ to carry around.
 simplifyEvaluatedFloor
     :: InternalVariable variable
     => OrPattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 simplifyEvaluatedFloor child =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
@@ -76,25 +84,27 @@ See 'simplify' for details.
 makeEvaluateFloor
     :: InternalVariable variable
     => Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateFloor child
-  | Pattern.isTop child    = Pattern.top
-  | Pattern.isBottom child = Pattern.bottom
+  | Pattern.isTop child    = Simplifiable.top
+  | Pattern.isBottom child = Simplifiable.bottom
   | otherwise              = makeEvaluateNonBoolFloor child
 
 makeEvaluateNonBoolFloor
     :: InternalVariable variable
     => Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateNonBoolFloor patt@Conditional { term = Top_ _ } =
-    patt {term = mkTop_}  -- remove the term's sort
+    Simplifiable.fromOrPattern
+    $ OrPattern.fromPattern patt {term = mkTop_}  -- remove the term's sort
 
 -- TODO(virgil): Also evaluate functional patterns to bottom for non-singleton
 -- sorts, and maybe other cases also
 makeEvaluateNonBoolFloor
     Conditional {term, predicate, substitution}
   =
-    Conditional
+    Simplifiable.fromOrPattern
+    $ OrPattern.fromPattern Conditional
         { term = mkTop_
         , predicate = Predicate.markSimplified
             $ makeAndPredicate (makeFloorPredicate term) predicate

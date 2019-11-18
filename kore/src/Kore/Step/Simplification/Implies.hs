@@ -12,16 +12,63 @@ module Kore.Step.Simplification.Implies
     , simplifyEvaluated
     ) where
 
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
+import qualified Kore.Internal.Conditional as Conditional.DoNotUse
+import qualified Kore.Internal.MultiAnd as MultiAnd
+    ( make
+    )
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
+    ( isBottom
+    , isTop
+    , toTermLike
+    )
 import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.TermLike as TermLike
+import Kore.Internal.TermLike
+    ( mkImplies
+    )
+import qualified Kore.Internal.TermLike as TermLike
+    ( markSimplified
+    )
+import Kore.Internal.Variable
+    ( InternalVariable
+    )
+import Kore.Sort
+    ( Sort
+    )
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Unsimplified
+    ( mkNot
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( fromMultiAnd
+    , fromMultiOr
+    , fromOrPattern
+    , fromPattern
+    , fromPredicate
+    , fromTermLike
+    , top
+    )
 import Kore.Step.Simplification.Simplify
     ( SimplifierVariable
+    )
+import Kore.Syntax.Implies
+    ( Implies (Implies)
+    )
+import qualified Kore.Syntax.Implies as Implies.DoNotUse
+import Kore.TopBottom
+    ( TopBottom (..)
     )
 
 {-|'simplify' simplifies an 'Implies' pattern with 'OrPattern'
@@ -40,7 +87,7 @@ and it has a special case for children with top terms.
 simplify
     :: SimplifierVariable variable
     => Implies Sort (OrPattern variable)
-    -> Pattern variable
+    -> Simplifiable variable
 simplify Implies { impliesFirst = first, impliesSecond = second } =
     simplifyEvaluated first second
 
@@ -66,33 +113,30 @@ simplifyEvaluated
     :: SimplifierVariable variable
     => OrPattern variable
     -> OrPattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 simplifyEvaluated first second
-  | OrPattern.isTrue first   = OrPattern.toPattern second
-  | OrPattern.isFalse first  = Pattern.top
-  | OrPattern.isTrue second  = Pattern.top
+  | OrPattern.isTrue first   = Simplifiable.fromOrPattern second
+  | OrPattern.isFalse first  = Simplifiable.top
+  | OrPattern.isTrue second  = Simplifiable.top
   | OrPattern.isFalse second =
-    Pattern.fromTermLike (mkNot (OrPattern.toTermLike first))
+    Unsimplified.mkNot (Simplifiable.fromOrPattern first)
   | otherwise =
-    (OrPattern.toPattern . OrPattern.fromPatterns)
-        (map
-            (simplifyEvaluateHalfImplies first)
-            (OrPattern.toPatterns second)
-        )
+    Simplifiable.fromMultiOr
+        (fmap (simplifyEvaluateHalfImplies first) second)
 
 simplifyEvaluateHalfImplies
     :: SimplifierVariable variable
     => OrPattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 simplifyEvaluateHalfImplies
     first
     second
-  | OrPattern.isTrue first  = second
-  | OrPattern.isFalse first = Pattern.top
-  | Pattern.isTop second    = Pattern.top
+  | OrPattern.isTrue first  = Simplifiable.fromPattern second
+  | OrPattern.isFalse first = Simplifiable.top
+  | Pattern.isTop second    = Simplifiable.top
   | Pattern.isBottom second =
-    Pattern.fromTermLike (mkNot (OrPattern.toTermLike first))
+    Unsimplified.mkNot (Simplifiable.fromOrPattern first)
   | otherwise =
     case MultiOr.extractPatterns first of
         [firstP] -> makeEvaluateImplies firstP second
@@ -102,33 +146,27 @@ distributeEvaluateImplies
     :: SimplifierVariable variable
     => [Pattern variable]
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 distributeEvaluateImplies firsts second =
-    Pattern.fromTermLike
-        (foldr
-            (\first merged -> mkAnd
-                (Pattern.toTermLike $ makeEvaluateImplies first second)
-                merged
-            )
-            mkTop_
-            firsts
-        )
+    Simplifiable.fromMultiAnd
+    $ MultiAnd.make
+    $ map (`makeEvaluateImplies` second) firsts
 
 makeEvaluateImplies
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateImplies
     first second
   | Pattern.isTop first =
-    second
+    Simplifiable.fromPattern second
   | Pattern.isBottom first =
-    Pattern.top
+    Simplifiable.top
   | Pattern.isTop second =
-    Pattern.top
+    Simplifiable.top
   | Pattern.isBottom second =
-    Pattern.fromTermLike (mkNot (Pattern.toTermLike first))
+    Unsimplified.mkNot (Simplifiable.fromPattern first)
   | otherwise =
     makeEvaluateImpliesNonBool first second
 
@@ -136,7 +174,7 @@ makeEvaluateImpliesNonBool
     :: InternalVariable variable
     => Pattern variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluateImpliesNonBool
     pattern1@Conditional
         { term = firstTerm
@@ -149,29 +187,21 @@ makeEvaluateImpliesNonBool
         , substitution = secondSubstitution
         }
   | isTop firstTerm, isTop secondTerm =
-    Conditional
-        { term = firstTerm
-        , predicate =
-            Predicate.markSimplified
-            $ Predicate.makeImpliesPredicate
-                (Predicate.makeAndPredicate
-                    firstPredicate
-                    (Predicate.fromSubstitution firstSubstitution)
-                )
-                (Predicate.makeAndPredicate
-                    secondPredicate
-                    (Predicate.fromSubstitution secondSubstitution)
-                )
-        , substitution = mempty
-        }
+    Simplifiable.fromPredicate
+    $ Predicate.markSimplified
+    $ Predicate.makeImpliesPredicate
+        (Predicate.makeAndPredicate
+            firstPredicate
+            (Predicate.fromSubstitution firstSubstitution)
+        )
+        (Predicate.makeAndPredicate
+            secondPredicate
+            (Predicate.fromSubstitution secondSubstitution)
+        )
   | otherwise =
     -- TODO (thomas.tuegel): Maybe this should be an error?
-    Conditional
-        { term =
-            TermLike.markSimplified
-            $ mkImplies
-                (Pattern.toTermLike pattern1)
-                (Pattern.toTermLike pattern2)
-        , predicate = Predicate.makeTruePredicate
-        , substitution = mempty
-        }
+    Simplifiable.fromTermLike
+    $ TermLike.markSimplified
+    $ mkImplies
+        (Pattern.toTermLike pattern1)
+        (Pattern.toTermLike pattern2)

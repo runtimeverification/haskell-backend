@@ -40,10 +40,6 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
-import qualified Kore.Internal.Pattern as Pattern
-    ( bottom
-    , top
-    )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( ElementVariable
@@ -71,6 +67,15 @@ import Kore.Step.Axiom.Matcher
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
+    )
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( bottom
+    , fromMultiOr
+    , fromOrPattern
+    , top
     )
 import Kore.Step.Simplification.Simplify
 import Kore.Unification.Substitution
@@ -121,7 +126,7 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Exists Sort variable (OrPattern variable)
-    -> simplifier (Pattern variable)
+    -> simplifier (Simplifiable variable)
 simplify Exists { existsVariable, existsChild } =
     simplifyEvaluated existsVariable existsChild
 
@@ -142,13 +147,14 @@ simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> OrPattern variable
-    -> simplifier (Pattern variable)
-simplifyEvaluated variable simplified
-  | OrPattern.isTrue simplified  = return Pattern.top
-  | OrPattern.isFalse simplified = return Pattern.bottom
+    -> simplifier (Simplifiable variable)
+simplifyEvaluated variable child
+  | OrPattern.isTrue child  = return Simplifiable.top
+  | OrPattern.isFalse child =
+    return Simplifiable.bottom
   | otherwise = do
-    evaluated <- traverse (makeEvaluate variable) simplified
-    return (OrPattern.toPattern evaluated)
+    evaluated <- traverse (makeEvaluate variable) child
+    return (Simplifiable.fromMultiOr evaluated)
 
 {-| evaluates an 'Exists' given its two 'Pattern' children.
 
@@ -158,9 +164,9 @@ makeEvaluate
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
     -> Pattern variable
-    -> simplifier (Pattern variable)
+    -> simplifier (Simplifiable variable)
 makeEvaluate variable original
-  = fmap (OrPattern.toPattern . OrPattern.fromPatterns) $ Branch.gather $ do
+  = fmap fromPatternList $ Branch.gather $ do
     normalized <- simplifyCondition original
     let Conditional { substitution = normalizedSubstitution } = normalized
     case splitSubstitution variable normalizedSubstitution of
@@ -182,6 +188,8 @@ makeEvaluate variable original
                     variable
                     freeSubstitution
                     normalized { Conditional.substitution = boundSubstitution }
+  where
+    fromPatternList = Simplifiable.fromOrPattern . OrPattern.fromPatterns
 
 matchesToVariableSubstitution
     :: (SimplifierVariable variable, MonadSimplify simplifier)

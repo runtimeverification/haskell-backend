@@ -11,7 +11,6 @@ module Kore.Step.Simplification.And
     ( makeEvaluate
     , simplify
     , simplifyEvaluated
-    , simplifyEvaluatedMultiple
     , And (..)
     , termAnd
     ) where
@@ -22,9 +21,6 @@ import Control.Applicative
 import Control.Error
     ( fromMaybe
     , runMaybeT
-    )
-import Control.Monad
-    ( foldM
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Bifunctor
@@ -69,6 +65,13 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Simplification.AndTerms
     ( maybeTermAnd
+    )
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
+    )
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
+    ( bottom
+    , fromOrPattern
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Substitution as Substitution
@@ -118,10 +121,9 @@ Also, we have
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => And Sort (OrPattern variable)
-    -> simplifier (Pattern variable)
-simplify And { andFirst = first, andSecond = second } = do
-    result <- simplifyEvaluated first second
-    return (OrPattern.toPattern result)
+    -> simplifier (Simplifiable variable)
+simplify And { andFirst = first, andSecond = second } =
+    simplifyEvaluated first second
 
 {-| simplifies an And given its two 'OrPattern' children.
 
@@ -144,27 +146,20 @@ simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => OrPattern variable
     -> OrPattern variable
-    -> simplifier (OrPattern variable)
+    -> simplifier (Simplifiable variable)
 simplifyEvaluated first second
-  | OrPattern.isFalse first  = return OrPattern.bottom
-  | OrPattern.isFalse second = return OrPattern.bottom
-  | OrPattern.isTrue first   = return second
-  | OrPattern.isTrue second  = return first
+  | OrPattern.isFalse first  = return Simplifiable.bottom
+  | OrPattern.isFalse second = return Simplifiable.bottom
+  | OrPattern.isTrue first   = return (Simplifiable.fromOrPattern second)
+  | OrPattern.isTrue second  = return (Simplifiable.fromOrPattern first)
   | otherwise                = do
     result <-
         gather $ do
             first1 <- scatter first
             second1 <- scatter second
             makeEvaluate first1 second1
-    return (OrPattern.fromPatterns result)
-
-simplifyEvaluatedMultiple
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => [OrPattern variable]
-    -> simplifier (OrPattern variable)
-simplifyEvaluatedMultiple [] = return OrPattern.top
-simplifyEvaluatedMultiple (pat : patterns) =
-    foldM simplifyEvaluated pat patterns
+    --traceM ("And.simplifyEvaluated - " ++ unlines (unparseToString <$> result))
+    return (Simplifiable.fromOrPattern (OrPattern.fromPatterns result))
 
 {-|'makeEvaluate' simplifies an 'And' of 'Pattern's.
 

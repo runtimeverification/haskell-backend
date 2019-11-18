@@ -55,7 +55,7 @@ import Test.SMT
 
 test_simplifiesToSimplified :: TestTree
 test_simplifiesToSimplified =
-    testPropertyWithSolver "simplify returns simplified pattern" $ do
+    testPropertyWithSolver "zzzsimplify returns simplified pattern" $ do
         term <- forAll (runTermGen Mock.generatorSetup termLikeGen)
         (annotate . unlines)
             [" ***** unparsed input =", unparseToString term, " ***** "]

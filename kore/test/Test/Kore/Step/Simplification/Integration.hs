@@ -32,7 +32,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
+    ( makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate
     , makeFloorPredicate
     , makeIffPredicate
@@ -902,6 +903,44 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertEqual "" expected actual
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "equals-bottom simplification" $ do
+        let expected = OrPattern.fromPatterns
+                [Conditional
+                    { term = mkTop_
+                    , predicate = makeNotPredicate
+                        (makeCeilPredicate Mock.plain00)
+                    , substitution = mempty
+                    }
+                ]
+        actual <- evaluate
+            Conditional
+                { term = mkEquals_ Mock.plain00 mkBottom_
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "" expected actual
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "something" $ do
+        let expected = OrPattern.fromPatterns
+                [Conditional
+                    { term = mkTop_
+                    , predicate = makeAndPredicate
+                        (makeEqualsPredicate Mock.constr00 Mock.plain00)
+                        (makeEqualsPredicate (mkOr Mock.a Mock.b) mkTop_)
+                    , substitution = mempty
+                    }
+                ]
+        actual <- evaluate
+            Conditional
+                { term = mkEquals_
+                    (mkOr Mock.a Mock.b)
+                    (mkEquals_ Mock.constr00 Mock.plain00)
+                , predicate = makeTruePredicate
+                , substitution = mempty
+                }
+        assertEqual "" expected actual
+        assertBool "" (OrPattern.isSimplified actual)
     ]
 
 

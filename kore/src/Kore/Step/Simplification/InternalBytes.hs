@@ -7,16 +7,18 @@ module Kore.Step.Simplification.InternalBytes
     ) where
 
 import Kore.Internal.InternalBytes
-import Kore.Internal.Pattern
-    ( Pattern
+import Kore.Internal.TermLike
+import Kore.Step.Simplification.Simplifiable
+    ( Simplifiable
     )
-import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromTermLike
     )
-import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
     ( SimplifierVariable
     )
 
-simplify :: SimplifierVariable variable => InternalBytes -> Pattern variable
-simplify = Pattern.fromTermLike . mkInternalBytes'
+simplify
+    :: SimplifierVariable variable => InternalBytes -> Simplifiable variable
+simplify =
+    Simplifiable.fromTermLike . mkInternalBytes'
