@@ -33,7 +33,7 @@ import Data.Text
     ( Text
     )
 
-import qualified Kore.Builtin.Encoding as E
+import qualified Kore.Builtin.Encoding as Encoding
 import qualified Kore.Builtin.Symbols as Builtin
 import Kore.Internal.InternalBytes
 import Kore.Internal.Pattern
@@ -44,10 +44,11 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-    ( InternalVariable
+    ( DomainValue (..)
+    , InternalVariable
     , Sort
     , TermLike
-    , mkApplySymbol
+    , mkDomainValue
     , mkInternalBytes
     , mkStringLiteral
     )
@@ -70,12 +71,10 @@ sort = "BYTES.Bytes"
 asInternal
     :: InternalVariable variable
     => Sort        -- ^ resulting sort
-    -> Symbol
     -> ByteString  -- ^ builtin value to render
     -> TermLike variable
-asInternal bytesSort string2BytesSymbol bytesValue =
-    TermLike.markSimplified
-        $ mkInternalBytes bytesSort string2BytesSymbol bytesValue
+asInternal bytesSort bytesValue =
+    TermLike.markSimplified $ mkInternalBytes bytesSort bytesValue
 
 -- | Render a 'Bytes' as a domain value pattern of the given sort.
 -- |
@@ -87,13 +86,11 @@ asTermLike
     :: InternalVariable variable
     => InternalBytes  -- ^ builtin value to render
     -> TermLike variable
-asTermLike InternalBytes { bytesValue, string2BytesSymbol }  =
-    mkApplySymbol
-        string2BytesSymbol
-        [ mkStringLiteral literal
-        ]
-  where
-      literal = E.decode8Bit bytesValue
+asTermLike InternalBytes { bytesSort, bytesValue }  =
+    mkDomainValue DomainValue
+        { domainValueSort = bytesSort
+        , domainValueChild = mkStringLiteral $ Encoding.toBase16 bytesValue
+        }
 
 internalize
     :: InternalVariable variable
@@ -107,8 +104,8 @@ internalize =
             let
                 Symbol { symbolSorts } = symbol
                 ApplicationSorts { applicationSortsResult } = symbolSorts
-                literal = E.encode8Bit str
-             in asInternal applicationSortsResult symbol literal
+                literal = Encoding.encode8Bit str
+             in asInternal applicationSortsResult literal
         termLike -> termLike
 
 isSymbolString2Bytes :: Symbol -> Bool
@@ -117,11 +114,9 @@ isSymbolString2Bytes = Builtin.isSymbol string2BytesKey
 asPattern
     :: InternalVariable variable
     => Sort        -- ^ resulting sort
-    -> Symbol      -- ^ String2Bytes symbol
     -> ByteString  -- ^ builtin value to render
     -> Pattern variable
-asPattern resultSort symbol =
-    Pattern.fromTermLike . asInternal resultSort symbol
+asPattern resultSort = Pattern.fromTermLike . asInternal resultSort
 
 -- | Bytes
 

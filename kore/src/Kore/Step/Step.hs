@@ -74,6 +74,7 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
+import Kore.Logger.DebugAppliedRule
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
@@ -118,14 +119,6 @@ newtype UnificationProcedure =
         -> TermLike variable
         -> unifier (Condition variable)
         )
-
-{- | A @UnifiedRule@ has been renamed and unified with a configuration.
-
-The rule's 'RulePattern.requires' clause is combined with the unification
-solution and the renamed rule is wrapped with the combined condition.
-
- -}
-type UnifiedRule variable = Conditional variable (RulePattern variable)
 
 withoutUnification :: UnifiedRule variable -> RulePattern variable
 withoutUnification = Conditional.term
@@ -373,6 +366,8 @@ finalizeRule initial unifiedRule =
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition
+        -- Log unifiedRule here since ^ guards against bottom
+        debugAppliedRule unifiedRule
         checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
