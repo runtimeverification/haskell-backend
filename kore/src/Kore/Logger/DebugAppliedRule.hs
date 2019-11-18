@@ -82,7 +82,7 @@ instance Entry DebugAppliedRule where
 instance Pretty DebugAppliedRule where
     pretty DebugAppliedRule { appliedRule } =
         Pretty.vsep
-            [ "applied rule:"
+            [ "Applied rule:"
             , (Pretty.indent 2 . Pretty.vsep)
                 [ (Pretty.indent 2 . Pretty.pretty)
                     (Conditional.term appliedRule)
