@@ -287,9 +287,9 @@ simplifyTerm
     -> simplifier (OrPattern variable)
 simplifyTerm = simplifyConditionalTermToOr Condition.top
 
-{- | Use a 'TermLikeSimplifier' to simplify a pattern.
+{- | Use a 'TermLikeSimplifier' to simplify a predicate.
 
-If the term does not simplify to an OrCondition, this will raise an error.
+If the predicate does not simplify to an OrCondition, this will raise an error.
 
 -}
 simplifyConditionalPredicateToOr
@@ -302,7 +302,8 @@ simplifyConditionalPredicateToOr
     -> Predicate variable
     -> simplifier (OrCondition variable)
 simplifyConditionalPredicateToOr configurationCondition predicate = do
-    -- TODO(virgil): consider using simplifyCondition.
+    -- TODO(virgil): consider using simplifyCondition, though that does not
+    -- take a `configurationCondition`.
     orResults <- simplifyConditionalTermToOr
         configurationCondition
         (Predicate.unwrapPredicate predicate)

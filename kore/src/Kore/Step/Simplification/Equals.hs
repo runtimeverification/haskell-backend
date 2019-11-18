@@ -304,8 +304,8 @@ makeEvaluate
   =
     return $ OrPattern.fromPattern $ Pattern.fromTermLike
         (mkIff
-            (Pattern.toTermLike first {term = mkTop_})
-            (Pattern.toTermLike second {term = mkTop_})
+            (Pattern.toTermLike first {term = mkTop_})  -- remove the sort.
+            (Pattern.toTermLike second {term = mkTop_})  -- remove the sort.
         )
 makeEvaluate
     Conditional

@@ -95,7 +95,6 @@ test_equalsSimplification_Or_Pattern =
                     (mkAnd
                         (mkNot (mkCeil_ Mock.a))
                         mkTop_
-                        --(mkNot (mkCeil_ mkBottom_))
                     )
                     (mkAnd
                         mkBottom_
