@@ -81,7 +81,6 @@ import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 import Data.Typeable
     ( Typeable
     )
@@ -217,8 +216,6 @@ instance Entry WithScope where
 
     entrySeverity WithScope { entry } = entrySeverity entry
 
-    toLogMessage WithScope { entry } = toLogMessage entry
-
 instance Pretty WithScope where
     pretty WithScope { entry } = Pretty.pretty entry
 
@@ -250,23 +247,10 @@ class (Pretty entry, Typeable entry) => Entry entry where
 
     entryScopes :: entry -> Set Scope
 
-    toLogMessage :: entry -> LogMessage
-    toLogMessage entry =
-        LogMessage
-            { severity = entrySeverity entry
-            , callstack = GHC.emptyCallStack
-            , message = Pretty.renderStrict . layout $ Pretty.pretty entry
-            }
-      where
-        layout = Pretty.layoutSmart Pretty.defaultLayoutOptions
-
 instance Entry LogMessage where
     entrySeverity LogMessage { severity } = severity
 
     entryScopes _ = Set.empty
-
-    toLogMessage :: LogMessage -> LogMessage
-    toLogMessage = id
 
 instance Pretty LogMessage where
     pretty LogMessage { severity, message, callstack } =
@@ -294,8 +278,6 @@ data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
 instance Entry SomeEntry where
-    toLogMessage (SomeEntry entry) = toLogMessage entry
-
     entrySeverity (SomeEntry entry) = entrySeverity entry
 
     entryScopes (SomeEntry entry) = entryScopes entry
