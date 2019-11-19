@@ -1,9 +1,6 @@
 {-|
-Module      : Kore.Attribute.Label
-Description : Sentence label attribute
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
-Maintainer  : thomas.tuegel@runtimeverification.com
 
 -}
 module Kore.Attribute.Label

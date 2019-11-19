@@ -130,7 +130,6 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
-import qualified Kore.Substitute as Substitute
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -188,7 +187,6 @@ simplifyInternal
     ::  forall variable simplifier
     .   ( GHC.HasCallStack
         , SimplifierVariable variable
-        , Substitute.SubstitutionVariable variable
         , MonadSimplify simplifier
         )
     =>  TermLike variable
@@ -355,8 +353,10 @@ simplifyInternal term predicate = do
         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
-            -- Do not simplify evaluated patterns.
+            -- Do not simplify non-simplifiable patterns.
             EvaluatedF  _ -> doNotSimplify
+            EndiannessF _ -> doNotSimplify
+            SignednessF _ -> doNotSimplify
             --
             AndF andF ->
                 And.simplify =<< simplifyChildren andF

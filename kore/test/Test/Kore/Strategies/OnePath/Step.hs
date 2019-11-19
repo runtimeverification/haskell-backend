@@ -828,8 +828,6 @@ rewriteReachabilityWithPredicate left right predicate =
 runSteps
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
-    => Show goal
-    => Show (Rule goal)
     => ( ExecutionGraph
             (ProofState goal goal)
             (Rule goal)
@@ -856,8 +854,6 @@ runSteps graphFilter picker configuration strategy' =
 runOnePathSteps
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
-    => Show goal
-    => Show (Rule goal)
     => Ord goal
     => Limit Natural
     -> goal

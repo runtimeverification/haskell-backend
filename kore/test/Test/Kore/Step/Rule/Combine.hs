@@ -1,4 +1,8 @@
-module Test.Kore.Step.Rule.Combine where
+module Test.Kore.Step.Rule.Combine
+    ( test_combineRulesPredicate
+    , test_combineRules
+    , test_combineRulesGrouped
+    ) where
 
 import Test.Tasty
 

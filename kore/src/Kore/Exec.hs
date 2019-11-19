@@ -53,9 +53,6 @@ import Data.Maybe
 import Data.Text
     ( Text
     )
-import GHC.Stack
-    ( HasCallStack
-    )
 import System.Exit
     ( ExitCode (..)
     )
@@ -646,8 +643,7 @@ initializeProver definitionModule specModule within =
         expanded = expandSingleConstructors tools claim
 
     logChangedClaim
-        :: HasCallStack
-        => MaybeChanged (ReachabilityRule Variable)
+        :: MaybeChanged (ReachabilityRule Variable)
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)

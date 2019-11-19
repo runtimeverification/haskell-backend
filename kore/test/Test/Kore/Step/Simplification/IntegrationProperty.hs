@@ -66,7 +66,7 @@ test_simplifiesToSimplified =
   where
     -- Discard exceptions that are normal for randomly generated patterns.
     exceptionHandler
-        :: (Monad m, MonadThrow m)
+        :: MonadThrow m
         => TermLike Variable
         -> ErrorCall
         -> PropertyT m a

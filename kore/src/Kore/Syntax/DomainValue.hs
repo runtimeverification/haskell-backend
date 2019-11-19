@@ -64,10 +64,7 @@ instance Unparse child => Unparse (DomainValue Sort child) where
         <> parameters2 [domainValueSort]
         Pretty.<+> unparse domainValueChild
 
-instance
-    Ord variable =>
-    Synthetic (FreeVariables variable) (DomainValue sort)
-  where
+instance Synthetic (FreeVariables variable) (DomainValue sort) where
     synthetic = domainValueChild
     {-# INLINE synthetic #-}
 

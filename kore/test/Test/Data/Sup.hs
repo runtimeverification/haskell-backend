@@ -1,4 +1,21 @@
-module Test.Data.Sup where
+module Test.Data.Sup
+    ( hprop_transitiveOrd
+    , hprop_reflexiveOrd
+    , hprop_antisymmetricOrd
+    , hprop_reflexiveEq
+    , hprop_symmetricEq
+    , hprop_transitiveEq
+    , hprop_negativeEq
+    , hprop_associativeSemigroup
+    , hprop_commutativeSemigroup
+    , hprop_idempotentSemigroup
+    , hprop_identityFunctor
+    , hprop_compositionFunctor
+    , hprop_identityApplicative
+    , hprop_compositionApplicative
+    , hprop_homomorphismApplicative
+    , hprop_interchangeApplicative
+    ) where
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen

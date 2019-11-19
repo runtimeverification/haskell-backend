@@ -139,16 +139,11 @@ import Kore.Syntax.Variable
     )
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph
-    :: Claim claim
-    => axiom ~ Rule claim
-    => claim -> ExecutionGraph axiom
+emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph axiom
 emptyExecutionGraph =
     Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
   where
-    extractConfig
-        :: RewriteRule Variable
-        -> CommonProofState
+    extractConfig :: RewriteRule Variable -> CommonProofState
     extractConfig (RewriteRule RulePattern { left, requires }) =
         Goal $ Conditional left requires mempty
 
@@ -273,12 +268,7 @@ getInternalIdentifier =
     . toRulePattern
 
 -- | Update the currently selected claim to prove.
-switchToProof
-    :: MonadState (ReplState claim) m
-    => Claim claim
-    => claim
-    -> ClaimIndex
-    -> m ()
+switchToProof :: MonadState (ReplState claim) m => claim -> ClaimIndex -> m ()
 switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
@@ -418,23 +408,24 @@ liftSimplifierWithLogger
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
-    (severity, logScope, logType) <- logging <$> get
+    ReplState { koreLogOptions } <- get
+    let Logger.KoreLogOptions { logType } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
-    let scopes = unLogScope logScope
-        logger = Logger.makeKoreLogger severity scopes textLogger
+    let logger =
+            Logger.koreLogFilters koreLogOptions
+            $ Logger.makeKoreLogger textLogger
     _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result
   where
     logTypeToLogger
-        :: LogType
+        :: Logger.KoreLogType
         -> t m (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
-            NoLogging   -> pure (mempty, Nothing)
-            LogToStdErr -> pure (Logger.logTextStderr, Nothing)
-            LogToFile file -> do
+            Logger.LogStdErr -> pure (Logger.logTextStderr, Nothing)
+            Logger.LogFileText file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
                 pure (Logger.logTextHandle handle, Just handle)
 
@@ -632,7 +623,6 @@ conjOfOnePathClaims claims sort =
 
 generateInProgressOPClaims
     :: Claim claim
-    => axiom ~ Rule claim
     => MonadState (ReplState claim) m
     => m [Rule.OnePathRule Variable]
 generateInProgressOPClaims = do

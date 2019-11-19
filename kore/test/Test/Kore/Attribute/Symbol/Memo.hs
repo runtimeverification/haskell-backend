@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Symbol.Memo where
+module Test.Kore.Attribute.Symbol.Memo
+    ( test_memo
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

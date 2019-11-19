@@ -1,4 +1,6 @@
-module Test.Kore.Builtin.Encoding where
+module Test.Kore.Builtin.Encoding
+    ( test_decodeEncode
+    ) where
 
 import Hedgehog hiding
     ( Concrete

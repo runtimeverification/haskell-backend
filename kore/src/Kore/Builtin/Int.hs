@@ -20,9 +20,7 @@ builtin modules.
 module Kore.Builtin.Int
     ( sort
     , assertSort
-    , sortDeclVerifiers
-    , symbolVerifiers
-    , patternVerifier
+    , verifiers
     , builtinFunctions
     , expectBuiltinInt
     , extractIntDomainValue
@@ -110,6 +108,15 @@ import Kore.Internal.TermLike as TermLike
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
 
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers
+        , symbolVerifiers
+        , domainValueVerifiers = HashMap.singleton sort patternVerifier
+        , applicationVerifiers = mempty
+        }
+
 {- | Verify that hooked sort declarations are well-formed.
 
   See also: 'Builtin.verifySortDecl'
@@ -177,7 +184,7 @@ patternVerifier =
         case externalChild of
             StringLiteral_ lit -> do
                 builtinIntValue <- Builtin.parseString parse lit
-                (return . Domain.BuiltinInt)
+                (return . BuiltinF . Domain.BuiltinInt)
                     Domain.InternalInt
                         { builtinIntSort = domainValueSort
                         , builtinIntValue

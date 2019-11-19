@@ -94,7 +94,6 @@ verify
     .  Claim claim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
-    => Show (Rule claim)
     => (MonadCatch m, MonadSimplify m)
     => [claim]
     -> [Rule claim]
@@ -102,8 +101,7 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify claims axioms =
-    mapM_ (verifyClaim claims axioms)
+verify claims axioms = mapM_ (verifyClaim claims axioms)
 
 verifyClaim
     :: forall claim m
@@ -111,16 +109,12 @@ verifyClaim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
-    => Show (Rule claim)
     => [claim]
     -> [Rule claim]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
-verifyClaim
-    claims
-    axioms
-    (goal, stepLimit)
-  = traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
+verifyClaim claims axioms (goal, stepLimit) =
+    traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
         destination = getDestination goal

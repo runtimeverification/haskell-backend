@@ -1,6 +1,7 @@
 module Test.Kore.Builtin.Builtin
     ( mkPair
     , emptyNormalizedSet
+    , expectHook
     , hpropUnparse
     , testMetadataTools
     , testEnv
@@ -13,6 +14,7 @@ module Test.Kore.Builtin.Builtin
     , evaluateToList
     , indexedModule
     , verifiedModule
+    , verifyPattern
     , runStep
     , runSMT
     ) where
@@ -34,6 +36,12 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Text
+    ( Text
+    )
 import GHC.Stack
     ( HasCallStack
     )
@@ -41,6 +49,13 @@ import GHC.Stack
 import Kore.ASTVerifier.DefinitionVerifier
 import Kore.ASTVerifier.Error
     ( VerifyError
+    )
+import Kore.ASTVerifier.PatternVerifier
+    ( runPatternVerifier
+    , verifyStandalonePattern
+    )
+import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
+    ( Context (..)
     )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
@@ -50,6 +65,9 @@ import Kore.Domain.Builtin
     ( NormalizedAc
     , NormalizedSet
     , emptyNormalizedAc
+    )
+import Kore.Error
+    ( Error
     )
 import qualified Kore.Error
 import Kore.IndexedModule.IndexedModule as IndexedModule
@@ -72,6 +90,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Symbol as Internal
+    ( Symbol
+    )
 import Kore.Internal.TermLike
 import Kore.Parser
     ( parseKorePattern
@@ -144,6 +164,11 @@ testSymbolWithSolver eval title symbol args expected =
   where
     eval' = eval $ mkApplySymbol symbol args
 
+expectHook :: Internal.Symbol -> Text
+expectHook =
+    fromMaybe (error "Expected hook attribute")
+    . Attribute.getHook . Attribute.hook . symbolAttributes
+
 -- -------------------------------------------------------------
 -- * Evaluation
 
@@ -161,14 +186,39 @@ verifiedModules
 verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
-verifiedModule :: VerifiedModule StepperAttributes Attribute.Axiom
-Just verifiedModule = Map.lookup testModuleName verifiedModules
+verifiedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
+verifiedModule =
+    fromMaybe
+        (error $ "Missing module: " ++ show testModuleName)
+        (Map.lookup testModuleName verifiedModules)
 
 indexedModule :: KoreIndexedModule Attribute.Symbol Attribute.Null
 indexedModule =
     verifiedModule
     & IndexedModule.eraseAxiomAttributes
     & IndexedModule.mapPatterns Builtin.externalize
+
+verifyPattern
+    :: Maybe Sort  -- ^ Expected sort
+    -> TermLike Variable
+    -> Either (Error VerifyError) (TermLike Variable)
+verifyPattern expectedSort termLike =
+    runPatternVerifier context
+    $ verifyStandalonePattern expectedSort parsedPattern
+  where
+    context =
+        PatternVerifier.Context
+            { indexedModule =
+                verifiedModule
+                & IndexedModule.eraseAxiomAttributes
+            , declaredVariables = mempty
+            , declaredSortVariables = mempty
+            , builtinDomainValueVerifiers =
+                Builtin.domainValueVerifiers Builtin.koreVerifiers
+            , builtinApplicationVerifiers =
+                Builtin.applicationVerifiers Builtin.koreVerifiers
+            }
+    parsedPattern = Builtin.externalize termLike
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
 testMetadataTools = MetadataTools.build verifiedModule

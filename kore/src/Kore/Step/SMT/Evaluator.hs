@@ -51,7 +51,8 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( TermLike
+    ( InternalVariable
+    , TermLike
     )
 import Kore.Logger
 import qualified Kore.Profiler.Profile as Profile
@@ -62,9 +63,6 @@ import Kore.Step.SMT.Translate
     ( Translator
     , evalTranslator
     , translatePredicate
-    )
-import Kore.Syntax.Variable
-    ( SortedVariable
     )
 import Kore.TopBottom
     ( TopBottom
@@ -84,27 +82,14 @@ class Evaluable thing where
     -}
     evaluate :: MonadSimplify m => thing -> m (Maybe Bool)
 
-instance
-    ( SortedVariable variable
-    , Ord variable
-    , Show variable
-    , Unparse variable
-    )
-    => Evaluable (Predicate variable)
-  where
+instance InternalVariable variable => Evaluable (Predicate variable) where
     evaluate predicate =
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
             _ -> decidePredicate predicate
 
-instance
-    ( SortedVariable variable
-    , Ord variable
-    , Show variable
-    , Unparse variable
-    )
-    => Evaluable (Conditional variable term)
+instance InternalVariable variable => Evaluable (Conditional variable term)
   where
     evaluate conditional =
         Exception.assert (Conditional.isNormalized conditional)
@@ -115,11 +100,8 @@ filterMultiOr
     :: forall simplifier term variable
     .   ( MonadSimplify simplifier
         , Ord term
-        , Ord variable
-        , Show variable
-        , SortedVariable variable
         , TopBottom term
-        , Unparse variable
+        , InternalVariable variable
         )
     => MultiOr (Conditional variable term)
     -> simplifier (MultiOr (Conditional variable term))
@@ -143,10 +125,7 @@ The predicate is always sent to the external solver, even if it is trivial.
 -}
 decidePredicate
     :: forall variable simplifier.
-        ( Ord variable
-        , Show variable
-        , Unparse variable
-        , SortedVariable variable
+        ( InternalVariable variable
         , MonadSimplify simplifier
         )
     => Predicate variable
@@ -170,9 +149,7 @@ decidePredicate korePredicate =
 
 goTranslatePredicate
     :: forall variable m.
-        ( Ord variable
-        , Unparse variable
-        , SortedVariable variable
+        ( InternalVariable variable
         , MonadSimplify m
         )
     => SmtMetadataTools Attribute.Symbol
@@ -184,10 +161,8 @@ goTranslatePredicate tools predicate = evalTranslator translator
         give tools $ translatePredicate translateUninterpreted predicate
 
 translateUninterpreted
-    :: ( Ord p
+    :: ( InternalVariable variable
        , p ~ TermLike variable
-       , Unparse variable
-       , SortedVariable variable
        )
     => MonadSimplify m
     => SExpr  -- ^ type name

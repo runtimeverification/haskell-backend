@@ -304,7 +304,9 @@ test_normalize =
                 let actual = normalize input
                 assertEqual "" Nothing actual
             , testCase "normalizeSubstitution" $ do
-                let Right actual = normalizeSubstitution input
+                let actual =
+                        either (error . show) id
+                        $ normalizeSubstitution input
                     message =
                         (show . Pretty.vsep)
                             [ "Expected \\bottom, but found:"
