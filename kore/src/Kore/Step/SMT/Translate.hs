@@ -125,6 +125,8 @@ translatePredicate translateUninterpreted predicate =
             StringLiteralF _ -> empty
             InternalBytesF _ -> empty
             InhabitantF _ -> empty
+            EndiannessF _ -> empty
+            SignednessF _ -> empty
 
     translatePredicateAnd And { andFirst, andSecond } =
         SMT.and

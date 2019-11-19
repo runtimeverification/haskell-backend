@@ -44,9 +44,11 @@ import Prelude hiding
     )
 
 import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
+import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
@@ -218,6 +220,8 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
+    , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
+    , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
     , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
     , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
     , (BothT,   \_ t s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")

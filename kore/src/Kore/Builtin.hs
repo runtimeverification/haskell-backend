@@ -61,6 +61,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
+import qualified Kore.Builtin.Endianness as Endianness
 import Kore.Builtin.External
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.InternalBytes as InternalBytes
@@ -69,6 +70,7 @@ import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
+import qualified Kore.Builtin.Signedness as Signedness
 import qualified Kore.Builtin.String as String
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (..)
@@ -95,6 +97,7 @@ koreVerifiers :: Builtin.Verifiers
 koreVerifiers =
     mempty
     <> Bool.verifiers
+    <> Endianness.verifiers
     <> Int.verifiers
     <> InternalBytes.verifiers
     <> KEqual.verifiers
@@ -102,6 +105,7 @@ koreVerifiers =
     <> List.verifiers
     <> Map.verifiers
     <> Set.verifiers
+    <> Signedness.verifiers
     <> String.verifiers
 
 {- | Construct an evaluation context for Kore builtin functions.

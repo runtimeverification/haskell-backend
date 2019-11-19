@@ -6,6 +6,7 @@ License     : NCSA
 
 module Kore.Attribute.Pattern.NonSimplifiable
     ( NonSimplifiable (..)
+    , NonSimplifiableHead (..)
     ) where
 
 import Control.DeepSeq

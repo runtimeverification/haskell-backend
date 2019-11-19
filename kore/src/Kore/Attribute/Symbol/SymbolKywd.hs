@@ -38,7 +38,7 @@ instance Diff SymbolKywd
 
 -- | Kore identifier representing the @symbolKywd@ attribute symbol.
 symbolKywdId :: Id
-symbolKywdId = "symbolKywd"
+symbolKywdId = "symbol'Kywd'"
 
 -- | Kore symbol representing the @symbolKywd@ attribute.
 symbolKywdSymbol :: SymbolOrAlias
