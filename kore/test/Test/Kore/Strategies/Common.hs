@@ -1,4 +1,7 @@
-module Test.Kore.Strategies.Common where
+module Test.Kore.Strategies.Common
+    ( simpleRewrite
+    , runVerification
+    ) where
 
 import Control.Monad.Trans.Except
     ( runExceptT
@@ -35,7 +38,6 @@ runVerification
     :: Verification.Claim claim
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
-    => Show (Rule claim)
     => Limit Natural
     -> [Rule claim]
     -> [claim]

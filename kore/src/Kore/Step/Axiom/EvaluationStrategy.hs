@@ -22,7 +22,6 @@ import Data.Maybe
     )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.Condition
@@ -35,7 +34,10 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
+import Kore.Logger.WarnSimplificationWithRemainder
+    ( warnSimplificationWithRemainder
+    )
 import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Result as Results
@@ -53,8 +55,6 @@ import qualified Kore.Step.Step as Step
 import Kore.Unparser
     ( unparse
     )
-
-import qualified Kore.Logger as Logger
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -110,7 +110,9 @@ totalDefinitionEvaluation rules =
   where
     totalDefinitionEvaluationWorker
         :: forall variable simplifier
-        .  (SimplifierVariable variable, MonadSimplify simplifier)
+        .  ( SimplifierVariable variable
+           , MonadSimplify simplifier
+           )
         => TermLike variable
         -> Condition variable
         -> simplifier (AttemptedAxiom variable)
@@ -161,7 +163,9 @@ builtinEvaluation evaluator =
 
 evaluateBuiltin
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
     => BuiltinAndAxiomSimplifier
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
@@ -190,7 +194,9 @@ evaluateBuiltin
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> TermLike variable
@@ -214,14 +220,14 @@ applyFirstSimplifierThatWorks
           | acceptsMultipleResults multipleResults -> return applicationResult
           -- below this point multiple results are not accepted
           | length (MultiOr.extractPatterns orResults) > 1 ->
-              -- We should only allow multiple simplification results
-              -- when they are created by unification splitting the
-              -- configuration.
-              -- However, right now, we shouldn't be able to get more
-              -- than one result, so we throw an error.
-              error . show . Pretty.vsep $
+            -- We should only allow multiple simplification results
+            -- when they are created by unification splitting the
+            -- configuration.
+            -- However, right now, we shouldn't be able to get more
+            -- than one result, so we throw an error.
+            error . show . Pretty.vsep $
                 [ "Unexpected simplification result with more \
-                  \than one configuration:"
+                    \than one configuration:"
                 , Pretty.indent 2 "input:"
                 , Pretty.indent 4 (unparse patt)
                 , Pretty.indent 2 "results:"
@@ -232,24 +238,14 @@ applyFirstSimplifierThatWorks
                     (unparse <$> Foldable.toList orRemainders)
                 ]
           | not (OrPattern.isFalse orRemainders) ->  do
-              Logger.logWarning
-                  . Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep
-                  $ [ "Simplification result with remainder:"
-                    , Pretty.indent 2 "input pattern:"
-                    , Pretty.indent 4 (unparse patt)
-                    , Pretty.indent 2 "input predicate:"
-                    , Pretty.indent 4 (unparse predicate)
-                    , Pretty.indent 2 "results:"
-                    , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> Foldable.toList orResults)
-                    , Pretty.indent 2 "remainders:"
-                    , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> Foldable.toList orRemainders)
-                    , "Rule will be skipped."
-                    ]
-              -- TODO (traiansf): this might generate too much output
-              --    replace log with a logOnce when that becomes available
-              tryNextSimplifier
+            warnSimplificationWithRemainder
+                patt
+                predicate
+                orResults
+                orRemainders
+            -- TODO (traiansf): this might generate too much output
+            --    replace log with a logOnce when that becomes available
+            tryNextSimplifier
           | otherwise -> return applicationResult
         AttemptedAxiom.NotApplicable -> tryNextSimplifier
   where

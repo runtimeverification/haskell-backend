@@ -35,20 +35,14 @@ make build-haskell -B
 
 make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-search
 
-for each in \
-    tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json \
-    tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json \
-    tests/interactive/sumTo10.evm
-do
-    command time -o "$TOP/profile.json" -a \
-        -f "{ \"evm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
-        make TEST_CONCRETE_BACKEND=haskell "$each".run-interactive
-done
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-add0-stats.json" \
+    make TEST_CONCRETE_BACKEND=haskell tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.run-interactive
 
-for each in \
-    tests/specs/examples/sum-to-n-spec.k
-do
-    command time -o "$TOP/profile.json" -a \
-        -f "{ \"evm-semantics/$each\": { \"user_sec\": %U, \"resident_kbytes\": %M } }" \
-        make TEST_SYMBOLIC_BACKEND=haskell "$each".prove
-done
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-pop1-stats.json" \
+    make TEST_CONCRETE_BACKEND=haskell tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.run-interactive
+
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-sum-to-10-stats.json" \
+    make TEST_CONCRETE_BACKEND=haskell tests/interactive/sumTo10.evm.run-interactive
+
+env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-sum-to-n-spec-stats.json" \
+    make TEST_SYMBOLIC_BACKEND=haskell tests/specs/examples/sum-to-n-spec.k.prove

@@ -1,4 +1,6 @@
-module Test.Kore.Attribute.Pattern.Function where
+module Test.Kore.Attribute.Pattern.Function
+    ( test_instance_Synthetic
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

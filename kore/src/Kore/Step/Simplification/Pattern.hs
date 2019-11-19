@@ -21,10 +21,6 @@ import Kore.Internal.Pattern
 import Kore.Internal.TermLike
     ( pattern Exists_
     )
-import Kore.Logger
-    ( LogMessage
-    , WithLog
-    )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
@@ -33,10 +29,8 @@ import Kore.Step.Simplification.Simplify
     )
 
 simplifyAndRemoveTopExists
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Pattern variable
     -> simplifier (OrPattern variable)
 simplifyAndRemoveTopExists patt = do
@@ -51,10 +45,8 @@ simplifyAndRemoveTopExists patt = do
 {-| Simplifies an 'Pattern', returning an 'OrPattern'.
 -}
 simplify
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Pattern variable
     -> simplifier (OrPattern variable)
 simplify pattern' = do

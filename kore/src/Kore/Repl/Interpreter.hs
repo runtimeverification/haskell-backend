@@ -134,7 +134,7 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger as Logger
+import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -259,7 +259,7 @@ replInterpreter0 printAux printKore replCmd = do
                 TryAlias name      -> tryAlias name printAux printKore
                 LoadScript file    -> loadScript file    $> Continue
                 ProofStatus        -> proofStatus        $> Continue
-                Log s sc t         -> handleLog (s,sc,t) $> Continue
+                Log opts           -> handleLog opts     $> Continue
                 Exit               -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
@@ -476,9 +476,9 @@ loadScript file = parseEvalScript file
 
 handleLog
     :: MonadState (ReplState claim) m
-    => (Logger.Severity, LogScope, LogType)
+    => Logger.KoreLogOptions
     -> m ()
-handleLog t = field @"logging" .= t
+handleLog t = field @"koreLogOptions" .= t
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -588,8 +588,7 @@ allProofs = do
         . Strategy.graph
 
     notStartedProofs
-        :: Claim claim
-        => Map.Map ClaimIndex (ExecutionGraph axiom)
+        :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> Map.Map ClaimIndex claim
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
@@ -1077,7 +1076,6 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
-    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => Natural

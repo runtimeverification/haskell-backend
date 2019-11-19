@@ -954,8 +954,7 @@ match first second =
         $ matchIncremental first second
 
 withMatch
-    :: GHC.HasCallStack
-    => (MatchResult -> Assertion)
+    :: (MatchResult -> Assertion)
     -> TestName
     -> TermLike Variable
     -> TermLike Variable

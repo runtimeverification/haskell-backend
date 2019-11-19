@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.Assoc where
+module Test.Kore.Attribute.Assoc
+    ( test_assoc
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

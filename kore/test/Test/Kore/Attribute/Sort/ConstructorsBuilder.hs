@@ -1,4 +1,6 @@
-module Test.Kore.Attribute.Sort.ConstructorsBuilder where
+module Test.Kore.Attribute.Sort.ConstructorsBuilder
+    ( test_sortParsing
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

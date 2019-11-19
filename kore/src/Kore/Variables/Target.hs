@@ -41,7 +41,7 @@ instead of 'NonTarget' variables.
 data Target variable
     = Target !variable
     | NonTarget !variable
-    deriving (Eq, GHC.Generic, Show)
+    deriving (Eq, GHC.Generic, Show, Functor)
 
 instance Ord variable => Ord (Target variable) where
     compare (Target var1) (Target var2) = compare var1 var2

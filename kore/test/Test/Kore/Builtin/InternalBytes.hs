@@ -1,4 +1,18 @@
-module Test.Kore.Builtin.InternalBytes where
+module Test.Kore.Builtin.InternalBytes
+    ( test_update
+    , test_get
+    , test_substr
+    , test_replaceAt
+    , test_padRight
+    , test_padLeft
+    , test_reverse
+    , test_length
+    , test_concat
+    , test_reverse_length
+    , test_update_get
+    , test_bytes2string_string2bytes
+    , test_InternalBytes
+    ) where
 
 import qualified Data.ByteString.Char8 as BS
 import Hedgehog hiding
@@ -34,6 +48,7 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
+import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1
@@ -492,11 +507,23 @@ test_bytes2string_string2bytes =
                 ]
         (===) expect actual
 
+test_InternalBytes :: [TestTree]
+test_InternalBytes =
+    [ testCase "\\dv{Bytes{}}(\"00\")" $ do
+        let unverified =
+                mkDomainValue
+                $ DomainValue bytesSort
+                $ mkStringLiteral "00"
+            expect = Right $ asInternal "\x00"
+            actual = verifyPattern (Just bytesSort) unverified
+        assertEqual "" expect actual
+    ]
+
 asInternal :: ByteString -> TermLike Variable
-asInternal = InternalBytes.asInternal bytesSort string2bytesBytesSymbol
+asInternal = InternalBytes.asInternal bytesSort
 
 asPattern :: ByteString -> Pattern Variable
-asPattern = InternalBytes.asPattern bytesSort string2bytesBytesSymbol
+asPattern = InternalBytes.asPattern bytesSort
 
 testBytes
     :: HasCallStack

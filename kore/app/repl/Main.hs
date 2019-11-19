@@ -44,7 +44,6 @@ import System.Exit
 import Data.Limit
     ( Limit (..)
     )
-import Data.Proxy
 import Kore.Exec
     ( proveWithRepl
     )
@@ -57,15 +56,9 @@ import Kore.Logger.Output
     , swappableLogger
     )
 import Kore.Repl.Data
-import Kore.Step.Rule
-    ( ReachabilityRule (..)
-    )
 import Kore.Step.SMT.Lemma
 import Kore.Syntax.Module
     ( ModuleName (..)
-    )
-import Kore.Syntax.Variable
-    ( Variable
     )
 import qualified SMT
 
@@ -231,7 +224,6 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
-                            (Proxy @(ReachabilityRule Variable))
                             mLogger
                             replScript
                             replMode

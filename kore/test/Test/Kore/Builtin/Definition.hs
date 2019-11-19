@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+
 module Test.Kore.Builtin.Definition where
 
 import qualified Data.Bifunctor as Bifunctor
@@ -21,6 +24,8 @@ import Kore.Attribute.Sort.HasDomainValues
     )
 import qualified Kore.Attribute.Sort.Unit as Sort
 import Kore.Attribute.SortInjection
+import qualified Kore.Builtin.Endianness as Endianness
+import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
@@ -29,8 +34,10 @@ import Kore.Internal.Symbol
     , function
     , functional
     , hook
+    , klabel
     , smthook
     , sortInjection
+    , symbolKywd
     )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
@@ -628,6 +635,46 @@ string2TokenStringSymbol =
 
 -- * Bytes
 
+littleEndianBytesSymbol :: Internal.Symbol
+littleEndianBytesSymbol =
+    builtinSymbol "littleEndianBytes" endiannessSort []
+    & klabel "littleEndianBytes"
+    & symbolKywd
+
+littleEndianBytes :: TermLike Variable
+littleEndianBytes =
+    mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
+
+bigEndianBytesSymbol :: Internal.Symbol
+bigEndianBytesSymbol =
+    builtinSymbol "bigEndianBytes" endiannessSort []
+    & klabel "bigEndianBytes"
+    & symbolKywd
+
+bigEndianBytes :: TermLike Variable
+bigEndianBytes =
+    mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
+
+signedBytesSymbol :: Internal.Symbol
+signedBytesSymbol =
+    builtinSymbol "signedBytes" signednessSort []
+    & klabel "signedBytes"
+    & symbolKywd
+
+signedBytes :: TermLike Variable
+signedBytes =
+    mkSignedness (Signedness.Signed signedBytesSymbol)
+
+unsignedBytesSymbol :: Internal.Symbol
+unsignedBytesSymbol =
+    builtinSymbol "unsignedBytes" signednessSort []
+    & klabel "unsignedBytes"
+    & symbolKywd
+
+unsignedBytes :: TermLike Variable
+unsignedBytes =
+    mkSignedness (Signedness.Unsigned unsignedBytesSymbol)
+
 bytes2stringBytesSymbol :: Internal.Symbol
 bytes2stringBytesSymbol =
     builtinSymbol "bytes2stringBytes" stringSort [bytesSort]
@@ -1056,9 +1103,30 @@ bytesSort =
 
 bytesSortDecl :: ParsedSentence
 bytesSortDecl =
-    hookedSortDecl
-        bytesSort
-        [ hookAttribute "BYTES.Bytes" ]
+    hookedSortDecl bytesSort
+        [ hookAttribute "BYTES.Bytes"
+        , hasDomainValuesAttribute
+        ]
+
+endiannessSort :: Sort
+endiannessSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Endianness"
+        , sortActualSorts = []
+        }
+
+endiannessSortDecl :: ParsedSentence
+endiannessSortDecl = sortDecl endiannessSort
+
+signednessSort :: Sort
+signednessSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Signedness"
+        , sortActualSorts = []
+        }
+
+signednessSortDecl :: ParsedSentence
+signednessSortDecl = sortDecl signednessSort
 
 -- -------------------------------------------------------------
 -- * Modules
@@ -1436,6 +1504,12 @@ bytesModule =
             , hookedSymbolDecl reverseBytesSymbol
             , hookedSymbolDecl lengthBytesSymbol
             , hookedSymbolDecl concatBytesSymbol
+            , endiannessSortDecl
+            , symbolDecl littleEndianBytesSymbol
+            , symbolDecl bigEndianBytesSymbol
+            , signednessSortDecl
+            , symbolDecl signedBytesSymbol
+            , symbolDecl unsignedBytesSymbol
             ]
         }
 

@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-|
 Module      : Kore.Parser.ParserUtils
 Description : Helper tools for parsing Kore. Meant for internal use only.
@@ -10,7 +11,17 @@ Portability : POSIX
 
 Helper tools for parsing Kore. Meant for internal use only.
 -}
-module Kore.Parser.ParserUtils where
+
+module Kore.Parser.ParserUtils
+    ( Parser
+    , takeWhile
+    , parseOnly
+    , endOfInput
+    , peekChar
+    , peekChar'
+    , sepByCharWithDelimitingChars
+    , manyUntilChar
+    ) where
 
 import Control.Applicative
     ( (<|>)
@@ -20,6 +31,9 @@ import Control.Monad
     )
 import Data.Functor
     ( ($>)
+    )
+import Prelude hiding
+    ( takeWhile
     )
 import Text.Megaparsec
     ( Parsec
@@ -50,36 +64,7 @@ available character in the input, without consuming it. Fails if the input
 does not have any available characters.
 -}
 peekChar' :: Parser Char
-peekChar' =
-    lookAhead anySingle
-
-{-|'scan' is similar to Attoparsec's 'scan'. It does the same thing as
-'runScanner', but without returning the last state.
--}
-scan :: a -> (a -> Char -> Maybe a) -> Parser String
-scan state delta = fst <$> runScanner state delta
-
-{-|'runScanner' is similar to Attoparsec's 'runScanner'. It parses a string
-with the given state machine, stopping when the state function returns
-'Nothing' or at the end of the input (without producing an error).
-
-Returns a pair of the parsed string and the last state.
--}
-runScanner :: a -> (a -> Char -> Maybe a) -> Parser (String, a)
-runScanner state delta = do
-    maybeC <- peekChar
-    case maybeC >>= delta state of
-        Nothing -> return ("", state)
-        Just s -> do
-            c <- anySingle
-            (reminder, finalState) <- runScanner s delta
-            return (c :reminder, finalState)
-
-{-|'skipSpace' is similar to Attoparsec's 'skipSpace'. It consumes all
-characters until the first non-space one.  It does not skip comments.
--}
-skipSpace :: Parser ()
-skipSpace = Parser.space
+peekChar' = lookAhead anySingle
 
 {-|'takeWhile' is similar to Attoparsec's 'takeWhile'. It consumes all
 the input characters that satisfy the given predicate and returns them

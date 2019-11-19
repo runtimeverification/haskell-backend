@@ -138,8 +138,7 @@ See also: 'Strategy.pickFinal', 'extractUnproven'
  -}
 unprovenNodes
     :: forall goal a
-    .  Goal goal
-    => ProofState.ProofState a ~ ProofState goal a
+    .  ProofState.ProofState a ~ ProofState goal a
     => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
     -> MultiOr.MultiOr a
 unprovenNodes executionGraph =
@@ -151,8 +150,7 @@ unprovenNodes executionGraph =
  -}
 proven
     :: forall goal a
-    .  Goal goal
-    => ProofState.ProofState a ~ ProofState goal a
+    .  ProofState.ProofState a ~ ProofState goal a
     => Strategy.ExecutionGraph (ProofState goal a) (Rule goal)
     -> Bool
 proven = Foldable.null . unprovenNodes
@@ -562,7 +560,6 @@ data TransitionRuleTemplate monad goal =
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
-    => Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
@@ -641,9 +638,7 @@ transitionRuleTemplate
     transitionRuleWorker _ state = return state
 
 onePathFirstStep
-    :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
-    => Prim goal ~ ProofState.Prim (Rule goal)
+    :: Prim goal ~ ProofState.Prim (Rule goal)
     => [Rule goal]
     -> Strategy (Prim goal)
 onePathFirstStep axioms =
@@ -664,9 +659,7 @@ onePathFirstStep axioms =
         ]
 
 onePathFollowupStep
-    :: Goal goal
-    => ProofState goal goal ~ ProofState.ProofState goal
-    => Prim goal ~ ProofState.Prim (Rule goal)
+    :: Prim goal ~ ProofState.Prim (Rule goal)
     => [Rule goal]
     -> [Rule goal]
     -> Strategy (Prim goal)
@@ -736,10 +729,9 @@ allPathFollowupStep claims axioms =
 
 -- | Remove the destination of the goal.
 removeDestination
-    :: (MonadCatch m, MonadSimplify m)
-    => Goal goal
-    => ToRulePattern goal
+    :: MonadCatch m
     => FromRulePattern goal
+    => ToRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 removeDestination goal = errorBracket $ do
@@ -758,7 +750,6 @@ removeDestination goal = errorBracket $ do
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
-    => Goal goal
     => ToRulePattern goal
     => FromRulePattern goal
     => goal
@@ -785,15 +776,13 @@ simplify goal = errorBracket $ do
             )
 
 isTriviallyValid
-    :: Goal goal
-    => ToRulePattern goal
+    :: ToRulePattern goal
     => goal -> Bool
 isTriviallyValid = isBottom . RulePattern.left . toRulePattern
 
 isTrusted
     :: forall goal
-    .  Goal goal
-    => ToRulePattern goal
+    .  ToRulePattern goal
     => goal -> Bool
 isTrusted =
     Attribute.Trusted.isTrusted
