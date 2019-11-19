@@ -507,14 +507,14 @@ makeClaim
     :: Goal.FromRulePattern claim
     => Goal.ToRulePattern claim
     => (Attribute.Axiom, claim) -> claim
-makeClaim (attributes, rule) =
-    Goal.fromRulePattern rule RulePattern
+makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
+    Goal.fromRulePattern ruleType RulePattern
         { attributes = attributes
-        , left = left . Goal.toRulePattern $ rule
-        , antiLeft = antiLeft . Goal.toRulePattern $ rule
-        , right = right . Goal.toRulePattern $ rule
-        , requires = requires . Goal.toRulePattern $ rule
-        , ensures = ensures . Goal.toRulePattern $ rule
+        , left = left rule
+        , antiLeft = antiLeft rule
+        , right = right rule
+        , requires = requires rule
+        , ensures = ensures rule
         }
 
 simplifyRuleOnSecond

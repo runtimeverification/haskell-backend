@@ -191,11 +191,11 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> [claim]
         -> [claim]
     addIndexesToClaims len claims'' =
-        let toAxiomAndBack (claim', index) =
+        let toAxiomAndBack claim' index =
                 ruleToGoal
                     claim'
                     $ addIndex (goalToRule claim', index)
-        in fmap toAxiomAndBack (zip claims'' [len..])
+        in zipWith toAxiomAndBack claims'' [len..]
 
     addIndex
         :: (axiom, Int)
