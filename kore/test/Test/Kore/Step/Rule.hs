@@ -233,7 +233,7 @@ test_patternToAxiomPatternAndBack =
             in
                 testCase "RewriteRule with antileft" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern
                             attributesWithPriority
                             initialPattern
@@ -245,7 +245,7 @@ test_patternToAxiomPatternAndBack =
             in
                 testCase "RewriteRule without antileft" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
             let op = Rule.wEF $ termLikeSort leftP
@@ -258,7 +258,7 @@ test_patternToAxiomPatternAndBack =
             in
                 testCase "Reachability claim wEF" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
             let op = Rule.wAF $ termLikeSort leftP
@@ -271,7 +271,7 @@ test_patternToAxiomPatternAndBack =
             in
                 testCase "Reachability claim wAF" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
             let initialPattern = mkImplies
@@ -280,14 +280,14 @@ test_patternToAxiomPatternAndBack =
             in
                 testCase "Function axioms: general" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
             let initialPattern = mkEquals_ leftP rightP
             in
                 testCase "Function axioms: trivial pre- and post-conditions" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
             let initialPattern = mkCeil (termLikeSort (mkElemVar Mock.x))
@@ -295,7 +295,7 @@ test_patternToAxiomPatternAndBack =
             in
                 testCase "Definedness axioms" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ,
             let op = Rule.aPG $ termLikeSort leftP
@@ -305,7 +305,7 @@ test_patternToAxiomPatternAndBack =
             in
                 testCase "implication axioms:" $
                     assertEqual ""
-                        (Right (Just initialPattern))
+                        (Right initialPattern)
                         (perhapsFinalPattern def initialPattern)
         ]
   where
