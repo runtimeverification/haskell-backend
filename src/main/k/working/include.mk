@@ -63,6 +63,9 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.repl.output: % $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE) --output-file $@
 
+%.knotprove.output: %.k $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $< --output-file $@ | exit 0
+
 %.test: %.output
 	diff -u $<.golden $<
 
