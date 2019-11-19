@@ -231,7 +231,6 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
-                            (Proxy @(ReachabilityRule Variable))
                             mLogger
                             replScript
                             replMode
