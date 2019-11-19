@@ -1,7 +1,13 @@
-// This should not be provable as the only axiom is a => b.
+module VERIFICATION
+  imports PATH
+
+endmodule
+
 module ALL-PATH-C-SPEC
-  import PATH
-  rule 
-    <k> a => c </k>
-  [claim, all-path]
+  imports VERIFICATION
+  imports PATH
+
+  // This should not be provable as the only axiom is a => b.
+  rule <k> a => c </k> [all-path]
+
 endmodule

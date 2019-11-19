@@ -1,55 +1,23 @@
-include $(CURDIR)/../../../../working/include.mk
+DEFINITION_NAME := path
+MODULE_NAME := PATH
 
-KOMPILED = path-kompiled
-DEFINITION = $(KOMPILED)/definition.kore
+include $(CURDIR)/../../../include.mk
 
-$(DEFINITION): path.k
-	$(KOMPILE) $(KOMPILE_OPTS) $< --syntax-module PATH
-
-%.krun: %.path $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $<
-
-%.kprove: %.k $(DEFINITION) $(KORE_EXEC)
-	$(KPROVE) $(KPROVE_OPTS) -d . -m PATH $<
-
-%.knotprove: %.k $(DEFINITION) $(KORE_EXEC)
-	$(KPROVE) $(KPROVE_OPTS) -d . -m PATH $<
-
-%.krepl: %.k $(DEFINITION) $(KORE_REPL)
-	!$(KPROVE) $(KPROVE_REPL_OPTS) -d . -m PATH $<
-
-%.output: %.path $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-
-%.search.final.output: %.path $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final \
-		$(foreach pat, $(wildcard $*.search.pattern), --pattern "$$(cat $(pat))")
-
-%.test: %.output
-	diff -u $<.golden $<
-
-%.output.golden: %.output
-	mv $< $<.golden
-
-all_tests := $(k_tests)
-k_tests :=
 not_prove_tests := \
-	all-path-c-spec \
+	all-path-c-spec
 prove_tests := \
 	all-path-b-spec \
-	all-path-b-or-c-spec \
+	all-path-b-or-c-spec
 
-test: $(foreach test, $(all_tests), tests/$(test).test)
+test: test-k
 
-test-k: $(foreach test, $(k_tests), tests/$(test).test) \
-	test-prove \
-	test-unprove
+test-k: test-unprove test-prove
 
 test-prove: $(foreach test, $(prove_tests), provable/$(test).kprove)
 
-#test-unprove: $(foreach test, $(not_prove_tests), notprovable/$(test).knotprove)
+test-unprove: $(foreach test, $(not_prove_tests), notprovable/$(test).knotprove.test)
 
-golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
+golden: $(foreach test, $(not_prove_tests), notprovable/$(test).knotprove.output.golden)
 
 clean:
 	rm -rf $(KOMPILED) tests/*.output

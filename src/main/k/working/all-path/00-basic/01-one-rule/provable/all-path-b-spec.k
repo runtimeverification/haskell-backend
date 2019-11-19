@@ -1,7 +1,12 @@
-// This should be provable as there is only one axiom.
+module VERIFICATION
+  imports PATH
+
+endmodule
+
 module ALL-PATH-B-SPEC
   imports PATH
-  rule 
-    <k> a => b </k>
-  [claim, all-path]
+  
+  // This should be provable as there is only one axiom.
+  rule <k> a => b </k> [all-path]
+
 endmodule
