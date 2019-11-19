@@ -22,9 +22,6 @@ import qualified Data.Foldable as Foldable
 import Data.List
     ( intercalate
     )
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Reflection
 import Data.Semigroup
     ( (<>)
@@ -118,9 +115,6 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step
-import Kore.Step.Rule
-    ( ReachabilityRule (..)
-    )
 import Kore.Step.Search
     ( SearchType (..)
     )

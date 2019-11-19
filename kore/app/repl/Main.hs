@@ -44,7 +44,6 @@ import System.Exit
 import Data.Limit
     ( Limit (..)
     )
-import Data.Proxy
 import Kore.Exec
     ( proveWithRepl
     )

@@ -50,9 +50,6 @@ import qualified Data.Map as Map
 import Data.Maybe
     ( mapMaybe
     )
-import Data.Proxy
-    ( Proxy
-    )
 import Data.Text
     ( Text
     )
@@ -151,11 +148,7 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Claim
-    , CommonProofState
     , verify
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
     )
 import Kore.Unparser
     ( unparseToText
