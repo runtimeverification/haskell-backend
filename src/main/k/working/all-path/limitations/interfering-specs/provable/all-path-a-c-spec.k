@@ -1,7 +1,13 @@
-// This should be provable
+module VERIFICATION
+  imports PATH
+
+endmodule
+
 module ALL-PATH-A-C-SPEC
-  import PATH
-  rule 
-    <k> a => c </k>
-  [claim, all-path]
+  imports VERIFICATION
+  imports PATH
+
+  // This should be provable
+  rule <k> a => c </k> [all-path]
+
 endmodule

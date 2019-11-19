@@ -3,12 +3,17 @@
 //
 // This seems like a reasonable limitation; However, it should be well
 // documented and shown as an examples in tutorials for beginners.
-module ALL-PATH-A-C-B-D-SPEC
+
+module VERIFICATION
   imports PATH
-  rule 
-    <k> a => c </k>
-  [claim, all-path]
-  rule 
-    <k> b => d </k>
-  [claim, all-path]
+
+endmodule
+
+module ALL-PATH-A-C-B-D-SPEC
+  imports VERIFICATION
+  imports PATH
+
+  rule <k> a => c </k> [all-path]
+  rule <k> b => d </k> [all-path]
+
 endmodule
