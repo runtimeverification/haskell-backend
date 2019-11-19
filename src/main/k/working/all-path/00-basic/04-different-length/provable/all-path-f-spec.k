@@ -1,7 +1,12 @@
-// This should be provable as both one-path and all-path.
+module VERIFICATION
+  imports PATH
+
+endmodule
+
 module ALL-PATH-F-SPEC
-  import PATH
-  rule 
-    <k> a => f </k>
-  [claim, all-path]
+  imports VERIFICATION
+  imports PATH
+
+  // This should be provable as both one-path and all-path.
+  rule <k> a => f </k> [all-path]
 endmodule
