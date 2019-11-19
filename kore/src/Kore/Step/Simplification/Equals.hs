@@ -50,7 +50,6 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
     )
@@ -415,9 +414,7 @@ termEqualsAnd p1 p2 =
 
     maybeTermEqualsWorker
         :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
+        .  MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
@@ -425,9 +422,7 @@ termEqualsAnd p1 p2 =
 
     termEqualsAndWorker
         :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
+        .  MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> unifier (Pattern variable)

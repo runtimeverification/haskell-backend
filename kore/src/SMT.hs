@@ -10,7 +10,7 @@ Maintainer  : thomas.tuegel@runtimeverification.com
 module SMT
     ( SMT, SmtT, runSmtT
     , Solver
-    , newSolver, stopSolver
+    , stopSolver
     , runSMT
     , MonadSMT (..)
     , Config (..)
@@ -137,7 +137,7 @@ class Monad m => MonadSMT m where
     -- | Declares a general SExpr to SMT.
     declare :: Text -> SExpr -> m SExpr
     default declare
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => Text
         -> SExpr
         -> m SExpr
@@ -147,7 +147,7 @@ class Monad m => MonadSMT m where
     -- | Declares a function symbol to SMT.
     declareFun :: SmtFunctionDeclaration -> m SExpr
     default declareFun
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => SmtFunctionDeclaration
         -> m SExpr
     declareFun = Trans.lift . declareFun
@@ -156,7 +156,7 @@ class Monad m => MonadSMT m where
     -- | Declares a sort to SMT.
     declareSort :: SmtSortDeclaration -> m SExpr
     default declareSort
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => SmtSortDeclaration
         -> m SExpr
     declareSort = Trans.lift . declareSort
@@ -165,7 +165,7 @@ class Monad m => MonadSMT m where
     -- | Declares a constructor-based sort to SMT.
     declareDatatype :: SmtDataTypeDeclaration -> m ()
     default declareDatatype
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => SmtDataTypeDeclaration
         -> m ()
     declareDatatype = Trans.lift . declareDatatype
@@ -174,7 +174,7 @@ class Monad m => MonadSMT m where
     -- | Declares a constructor-based sort to SMT.
     declareDatatypes ::  [SmtDataTypeDeclaration] -> m ()
     default declareDatatypes
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => [SmtDataTypeDeclaration]
         -> m ()
     declareDatatypes = Trans.lift . declareDatatypes
@@ -183,7 +183,7 @@ class Monad m => MonadSMT m where
     -- | Assume a fact.
     assert :: SExpr -> m ()
     default assert
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => SExpr
         -> m ()
     assert = Trans.lift . assert
@@ -196,7 +196,7 @@ class Monad m => MonadSMT m where
     -}
     check :: m Result
     default check
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => m Result
     check = Trans.lift check
     {-# INLINE check #-}
@@ -204,7 +204,7 @@ class Monad m => MonadSMT m where
     -- | A command with an uninteresting result.
     ackCommand :: SExpr -> m ()
     default ackCommand
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => SExpr
         -> m ()
     ackCommand = Trans.lift . ackCommand
@@ -213,7 +213,7 @@ class Monad m => MonadSMT m where
     -- | Load a .smt2 file
     loadFile :: FilePath -> m ()
     default loadFile
-        :: (Trans.MonadTrans t, MonadSMT n, Monad n, m ~ t n)
+        :: (Trans.MonadTrans t, MonadSMT n, m ~ t n)
         => FilePath
         -> m ()
     loadFile = Trans.lift . loadFile
@@ -444,9 +444,16 @@ stopSolver mvar = do
 runSMT :: Config -> Logger -> SMT a -> IO a
 runSMT config logger SmtT { runSmtT } =
     Exception.bracket
-        (newSolver config logger)
+        (newSolver config logger `Exception.catch` showZ3NotFound)
         stopSolver
         (runReaderT runSmtT)
+  where
+    showZ3NotFound :: Exception.IOException -> IO a
+    showZ3NotFound e =
+        error
+            $ Exception.displayException e <> "\n"
+            <> "We couldn't start Z3 due to the exception above. "
+            <> "Is Z3 installed?"
 
 -- Need to quote every identifier in SMT between pipes
 -- to escape special chars

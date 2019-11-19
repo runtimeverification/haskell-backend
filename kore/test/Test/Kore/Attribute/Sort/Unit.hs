@@ -1,4 +1,11 @@
-module Test.Kore.Attribute.Sort.Unit where
+module Test.Kore.Attribute.Sort.Unit
+    ( test_Unit
+    , test_Attributes
+    , test_duplicate
+    , test_arity
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

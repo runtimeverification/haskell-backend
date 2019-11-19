@@ -1,4 +1,10 @@
-module Test.Kore.Step.Simplification.AndTerms where
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
+module Test.Kore.Step.Simplification.AndTerms
+    ( test_andTermsSimplification
+    , test_equalsTermsSimplification
+    , test_functionAnd
+    ) where
 
 import Test.Tasty
 
@@ -61,9 +67,6 @@ import Kore.Syntax.Sentence
     )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.UnifierT as Monad.Unify
-import Kore.Unparser
-    ( Unparse
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -1023,9 +1026,7 @@ mkAlias' ident var inner =
     mkAlias_ (testId ident) Mock.testSort [SetVar $ SetVariable var] inner
 
 applyAlias'
-    :: Ord variable
-    => SortedVariable variable
-    => Unparse variable
+    :: InternalVariable variable
     => SentenceAlias (TermLike Variable)
     -> TermLike variable
     -> TermLike variable

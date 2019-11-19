@@ -185,7 +185,7 @@ war :: String -> TermLike W
 war = mkElemVar . ElementVariable . W
 
 makeEq
-    :: (SortedVariable var, Ord var, Show var, Unparse var)
+    :: InternalVariable var
     => TermLike var
     -> TermLike var
     -> TermLike var

@@ -1,6 +1,7 @@
 module Test.Kore.Builtin.Builtin
     ( mkPair
     , emptyNormalizedSet
+    , expectHook
     , hpropUnparse
     , testMetadataTools
     , testEnv
@@ -36,6 +37,12 @@ import Data.Map
     ( Map
     )
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Text
+    ( Text
+    )
 import GHC.Stack
     ( HasCallStack
     )
@@ -85,6 +92,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Symbol as Internal
+    ( Symbol
+    )
 import Kore.Internal.TermLike
 import Kore.Parser
     ( parseKorePattern
@@ -158,6 +167,11 @@ testSymbolWithSolver eval title symbol args expected =
   where
     eval' = eval $ mkApplySymbol symbol args
 
+expectHook :: Internal.Symbol -> Text
+expectHook =
+    fromMaybe (error "Expected hook attribute")
+    . Attribute.getHook . Attribute.hook . symbolAttributes
+
 -- -------------------------------------------------------------
 -- * Evaluation
 
@@ -176,7 +190,10 @@ verifiedModules =
     either (error . Kore.Error.printError) id (verify testDefinition)
 
 verifiedModule :: VerifiedModule Attribute.Symbol Attribute.Axiom
-Just verifiedModule = Map.lookup testModuleName verifiedModules
+verifiedModule =
+    fromMaybe
+        (error $ "Missing module: " ++ show testModuleName)
+        (Map.lookup testModuleName verifiedModules)
 
 indexedModule :: KoreIndexedModule Attribute.Symbol Attribute.Null
 indexedModule =

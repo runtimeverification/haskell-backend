@@ -25,6 +25,7 @@ description: Please see the [README](README.md) file.
 
 dependencies:
   - base >=4.7
+  - aeson >=1.4
   - array >=0.5
   - bytestring >=0.10
   - comonad >=5.0
@@ -111,7 +112,16 @@ default-extensions:
   - TypeSynonymInstances
   - ViewPatterns
 
-ghc-options: -fno-ignore-asserts
+ghc-options:
+  - -fno-ignore-asserts
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-uni-patterns
+  - -Wincomplete-record-updates
+  - -Wpartial-fields
+  - -Wredundant-constraints
+  - -Wmissing-export-lists
 
 library:
   source-dirs: src
@@ -131,7 +141,7 @@ executables:
     source-dirs:
       - app/exec
       - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8 -T"
     dependencies:
       - kore
 
@@ -167,7 +177,7 @@ tests:
     main: Test.hs
     source-dirs:
       - test
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8 -T"
     dependencies:
       - kore
       - QuickCheck >=2.13
@@ -181,6 +191,7 @@ tests:
       - tasty-hunit >=0.10
       - tasty-quickcheck >=0.10
       - template-haskell >=2.14
+      - temporary >=1.3
 
 benchmarks:
   kore-parser-benchmark:

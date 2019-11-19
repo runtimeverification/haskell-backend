@@ -1,4 +1,6 @@
-module Test.Kore.Step.Rule.Simplify where
+module Test.Kore.Step.Rule.Simplify
+    ( test_simplifyRule
+    ) where
 
 import Test.Tasty
 

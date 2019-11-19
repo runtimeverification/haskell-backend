@@ -1,4 +1,6 @@
-module Test.Kore.Attribute.Pattern.Sort where
+module Test.Kore.Attribute.Pattern.Sort
+    ( test_instance_Synthetic
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

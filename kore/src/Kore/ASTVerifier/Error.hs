@@ -7,7 +7,15 @@ Maintainer  : virgil.serbanuta@runtimeverification.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Kore.ASTVerifier.Error where
+module Kore.ASTVerifier.Error
+    ( VerifyError (..)
+    , VerifySuccess (..)
+    , verifySuccess
+    , sortNeedsDomainValueAttributeMessage
+    , noConstructorWithVariableSort
+    , noConstructorInHookedSort
+    , noConstructorWithDomainValues
+    ) where
 
 import Data.Text
     ( Text

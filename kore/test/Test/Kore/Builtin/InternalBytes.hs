@@ -1,4 +1,19 @@
-module Test.Kore.Builtin.InternalBytes where
+module Test.Kore.Builtin.InternalBytes
+    ( test_update
+    , test_get
+    , test_substr
+    , test_replaceAt
+    , test_padRight
+    , test_padLeft
+    , test_reverse
+    , test_length
+    , test_concat
+    , test_reverse_length
+    , test_update_get
+    , test_bytes2string_string2bytes
+    , test_int2bytes
+    , test_InternalBytes
+    ) where
 
 import qualified Data.ByteString.Char8 as BS
 import Hedgehog hiding

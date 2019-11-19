@@ -54,7 +54,6 @@ import Kore.Unification.Substitution
     ( Normalization (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
@@ -107,21 +106,13 @@ bottomCondition = bottom
 -}
 
 freeVariables
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => Condition variable
     -> FreeVariables variable
 freeVariables = Conditional.freeVariables (const mempty)
 
 hasFreeVariable
-    :: ( Ord variable
-       , Show variable
-       , Unparse variable
-       , SortedVariable variable
-       )
+    :: InternalVariable variable
     => UnifiedVariable variable
     -> Condition variable
     -> Bool

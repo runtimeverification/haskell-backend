@@ -62,7 +62,7 @@ instance Unparse child => Unparse (Ceil Sort child) where
     unparse2 Ceil { ceilChild } =
         Pretty.parens (Pretty.fillSep ["\\ceil", unparse2 ceilChild])
 
-instance Ord variable => Synthetic (FreeVariables variable) (Ceil sort) where
+instance Synthetic (FreeVariables variable) (Ceil sort) where
     synthetic = ceilChild
     {-# INLINE synthetic #-}
 

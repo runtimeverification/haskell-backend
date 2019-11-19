@@ -1,4 +1,11 @@
-module Test.Kore.Attribute.ProductionID where
+module Test.Kore.Attribute.ProductionID
+    ( test_productionID
+    , test_Attributes
+    , test_duplicate
+    , test_zeroArguments
+    , test_twoArguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

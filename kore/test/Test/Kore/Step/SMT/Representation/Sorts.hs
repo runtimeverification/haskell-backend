@@ -1,4 +1,6 @@
-module Test.Kore.Step.SMT.Representation.Sorts where
+module Test.Kore.Step.SMT.Representation.Sorts
+    ( test_sortParsing
+    ) where
 
 import Test.Tasty
 

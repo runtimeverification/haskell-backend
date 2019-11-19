@@ -1,4 +1,45 @@
-module Test.Kore.Builtin.Map where
+module Test.Kore.Builtin.Map
+    ( test_lookupUnit
+    , test_lookupUpdate
+    , test_removeUnit
+    , test_sizeUnit
+    , test_removeKeyNotIn
+    , test_removeKeyIn
+    , test_removeAllMapUnit
+    , test_removeAllSetUnit
+    , test_removeAll
+    , test_concatUnit
+    , test_lookupConcatUniqueKeys
+    , test_concatDuplicateKeys
+    , test_concatCommutes
+    , test_concatAssociates
+    , test_inKeysUnit
+    , test_keysUnit
+    , test_keysElement
+    , test_keys
+    , test_inKeysElement
+    , test_values
+    , test_simplify
+    , test_symbolic
+    , test_isBuiltin
+    , test_unifyConcrete
+    , test_unifyEmptyWithEmpty
+    , test_unifySelectFromEmpty
+    , test_unifySelectFromSingleton
+    , test_unifySelectSingletonFromSingleton
+    , test_unifySelectFromSingletonWithoutLeftovers
+    , test_unifySelectFromTwoElementMap
+    , test_unifySelectTwoFromTwoElementMap
+    , test_unifySameSymbolicKey
+    , test_unifySameSymbolicKeySymbolicOpaque
+    , test_concretizeKeys
+    , test_renormalize
+    , test_concretizeKeysAxiom
+    , hprop_unparse
+    --
+    , normalizedMap
+    , asInternal
+    ) where
 
 import Hedgehog
     ( Gen
@@ -33,10 +74,6 @@ import Prelude hiding
     ( concatMap
     )
 
-import Kore.Attribute.Hook
-    ( Hook
-    )
-import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.AssociativeCommutative as Ac
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Map
@@ -45,9 +82,6 @@ import Kore.Domain.Builtin
     ( NormalizedMap (..)
     )
 import qualified Kore.Domain.Builtin as Domain
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
 import Kore.Internal.MultiOr
     ( MultiOr (..)
     )
@@ -62,7 +96,6 @@ import Kore.Internal.TermLike hiding
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Rule
-import Kore.Step.Simplification.Simplify
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -485,9 +518,6 @@ test_isBuiltin =
         assertBool "" (not (Map.isSymbolUnit Mock.aSymbol))
         assertBool "" (not (Map.isSymbolUnit Mock.concatMapSymbol))
     ]
-
-mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Construct a pattern for a map which may have symbolic keys.
 asSymbolicPattern
@@ -1213,8 +1243,7 @@ It is an error if the collection cannot be normalized.
 
  -}
 normalizedMap
-    :: GHC.HasCallStack
-    => [(TermLike Variable, TermLike Variable)]
+    :: [(TermLike Variable, TermLike Variable)]
     -- ^ (abstract or concrete) elements
     -> [TermLike Variable]
     -- ^ opaque terms
@@ -1233,10 +1262,6 @@ mkIntVar variableName =
     mkElemVar $ ElementVariable
         Variable
             { variableName, variableCounter = mempty, variableSort = intSort }
-
-mockConditionSimplifier
-    :: MonadSimplify simplifier => ConditionSimplifier simplifier
-mockConditionSimplifier = ConditionSimplifier return
 
 asVariableName :: ElementVariable Variable -> Id
 asVariableName = variableName . getElementVariable
