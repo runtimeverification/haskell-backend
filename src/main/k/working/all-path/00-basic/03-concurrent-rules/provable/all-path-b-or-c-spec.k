@@ -1,7 +1,13 @@
-// This should be provable as both one-path and all-path.
+module VERIFICATION
+  imports PATH
+
+endmodule
+
 module ALL-PATH-B-OR-C-SPEC
-  import PATH
-  rule 
-    <k> a => b #Or c </k>
-  [claim, all-path]
+  imports VERIFICATION
+  imports PATH
+
+// This should be provable as both one-path and all-path.
+  rule <k> a => b #Or c </k> [all-path]
+
 endmodule
