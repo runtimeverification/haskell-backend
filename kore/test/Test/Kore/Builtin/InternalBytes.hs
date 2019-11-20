@@ -576,8 +576,10 @@ test_bytes2int =
                 let sign
                       | signed    = signedBytes
                       | otherwise = unsignedBytes
+                    underflow = (-2) * integer >= modulus
                     int
                       | not signed, integer < 0 = integer + modulus
+                      |     signed, underflow   = integer + modulus
                       | otherwise               = integer
                     modulus = 0x100 ^ ByteString.length bytes
                     input = bytes2int (asInternal bytes) end sign

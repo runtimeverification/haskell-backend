@@ -22,6 +22,7 @@ module Kore.Builtin.InternalBytes.InternalBytes
     , lengthKey
     , concatKey
     , int2bytesKey
+    , bytes2intKey
     ) where
 
 import Data.ByteString
@@ -167,3 +168,6 @@ concatKey = "BYTES.concat"
 
 int2bytesKey :: IsString s => s
 int2bytesKey = "BYTES.int2bytes"
+
+bytes2intKey :: IsString s => s
+bytes2intKey = "BYTES.bytes2int"

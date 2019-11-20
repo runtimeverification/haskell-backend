@@ -55,6 +55,7 @@ import qualified Kore.Builtin.Encoding as Encoding
 import Kore.Builtin.Endianness.Endianness
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.InternalBytes.InternalBytes
+import Kore.Builtin.Signedness.Signedness
 import qualified Kore.Builtin.String as String
 import qualified Kore.Error
 import qualified Kore.Internal.Pattern as Pattern
@@ -118,11 +119,18 @@ symbolVerifiers =
     ,   ( concatKey
         , Builtin.verifySymbol bytes [bytes, bytes]
         )
+    ,   ( int2bytesKey
+        , Builtin.verifySymbol bytes [int, int, anySort]
+        )
+    ,   ( bytes2intKey
+        , Builtin.verifySymbol int [bytes, anySort, anySort]
+        )
     ]
   where
-    bytes  = assertSort
-    int    = Int.assertSort
-    string = String.assertSort
+    bytes   = assertSort
+    int     = Int.assertSort
+    string  = String.assertSort
+    anySort = Builtin.acceptAnySort
 
 {- | Verify that domain value patterns are well-formed.
  -}
@@ -403,6 +411,44 @@ int2bytes len int end =
     word8 :: Integer -> Word8
     word8 = toEnum . fromEnum
 
+evalBytes2int :: Builtin.Function
+evalBytes2int =
+    Builtin.functionEvaluator evalBytes2int0
+  where
+    evalBytes2int0 :: Builtin.FunctionImplementation
+    evalBytes2int0 resultSort [bytes, end, sign] =
+        Builtin.getAttemptedAxiom $ do
+            end' <-
+                case end of
+                    Endianness_ endianness -> return endianness
+                    _                      -> empty
+            sign' <-
+                case sign of
+                    Signedness_ signedness -> return signedness
+                    _                      -> empty
+            bytes' <- expectBuiltinBytes bytes2intKey bytes
+            let result = bytes2int bytes' end' sign'
+            Builtin.appliedFunction $ Int.asPattern resultSort result
+    evalBytes2int0 _ _ = Builtin.wrongArity bytes2intKey
+
+bytes2int :: ByteString -> Endianness -> Signedness -> Integer
+bytes2int bytes end sign =
+    case sign of
+        Unsigned _ -> unsigned
+        Signed   _
+          | 2 * unsigned > modulus -> unsigned - modulus
+          | otherwise              -> unsigned
+  where
+    (modulus, unsigned) = ByteString.foldl' go (1, 0) littleEndian
+    go (!place, !acc) byte =
+        let !place' = place * 0x100
+            !acc' = acc + place * fromIntegral byte
+        in (place', acc')
+    littleEndian =
+        case end of
+            LittleEndian _ -> bytes
+            BigEndian    _ -> ByteString.reverse bytes
+
 builtinFunctions :: Map Text Builtin.Function
 builtinFunctions =
     Map.fromList
@@ -418,4 +464,5 @@ builtinFunctions =
         , (lengthKey, evalLength)
         , (concatKey, evalConcat)
         , (int2bytesKey, evalInt2bytes)
+        , (bytes2intKey, evalBytes2int)
         ]
