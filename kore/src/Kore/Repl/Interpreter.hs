@@ -74,6 +74,9 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Foldable as Foldable
+import Data.Function
+    ( on
+    )
 import Data.Functor
     ( ($>)
     )
@@ -104,6 +107,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Typeable as Typeable
 import GHC.Exts
     ( toList
     )
@@ -139,7 +143,8 @@ import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.Rule
-    ( RulePattern (..)
+    ( ReachabilityRule (..)
+    , RulePattern (..)
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
@@ -807,16 +812,43 @@ tryAxiomClaimWorker mode ref = do
             getAxiomOrClaimByName
             ref
     case maybeAxiomOrClaim of
-       Nothing ->
-           putStrLn' "Could not find axiom or claim."
-       Just axiomOrClaim -> do
-           node <- Lens.use (field @"node")
-           case mode of
-               Never ->
-                   showUnificationFailure axiomOrClaim node
-               IfPossible ->
-                   tryForceAxiomOrClaim axiomOrClaim node
+        Nothing ->
+            putStrLn' "Could not find axiom or claim."
+        Just axiomOrClaim -> do
+            claim <- Lens.use (field @"claim")
+            if isReachabilityRule claim && notEqualClaimTypes axiomOrClaim claim
+                then putStrLn' "Only claims of the same type as the current\
+                               \ claim can be applied as rewrite rules."
+                else do
+                    node <- Lens.use (field @"node")
+                    case mode of
+                        Never ->
+                            showUnificationFailure axiomOrClaim node
+                        IfPossible ->
+                            tryForceAxiomOrClaim axiomOrClaim node
   where
+    notEqualClaimTypes :: Either axiom claim -> claim -> Bool
+    notEqualClaimTypes axiomOrClaim' claim' =
+        not (either (const True) (equalClaimTypes claim') axiomOrClaim')
+
+    equalClaimTypes :: claim -> claim -> Bool
+    equalClaimTypes =
+        isSameType `on` castToReachability
+
+    castToReachability :: claim -> Maybe (ReachabilityRule Variable)
+    castToReachability = Typeable.cast
+
+    isReachabilityRule :: claim -> Bool
+    isReachabilityRule = isJust . castToReachability
+
+    isSameType
+        :: Maybe (ReachabilityRule Variable)
+        -> Maybe (ReachabilityRule Variable)
+        -> Bool
+    isSameType (Just (OnePath _)) (Just (OnePath _)) = True
+    isSameType (Just (AllPath _)) (Just (AllPath _)) = True
+    isSameType _ _ = False
+
     showUnificationFailure
         :: Either axiom claim
         -> ReplNode
