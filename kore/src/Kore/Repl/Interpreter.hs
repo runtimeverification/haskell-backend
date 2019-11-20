@@ -104,6 +104,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Typeable as Typeable
 import GHC.Exts
     ( toList
     )
@@ -139,7 +140,8 @@ import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.Rule
-    ( RulePattern (..)
+    ( ReachabilityRule (..)
+    , RulePattern (..)
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
@@ -807,16 +809,41 @@ tryAxiomClaimWorker mode ref = do
             getAxiomOrClaimByName
             ref
     case maybeAxiomOrClaim of
-       Nothing ->
-           putStrLn' "Could not find axiom or claim."
-       Just axiomOrClaim -> do
-           node <- Lens.use (field @"node")
-           case mode of
-               Never ->
-                   showUnificationFailure axiomOrClaim node
-               IfPossible ->
-                   tryForceAxiomOrClaim axiomOrClaim node
+        Nothing ->
+            putStrLn' "Could not find axiom or claim."
+        Just axiomOrClaim -> do
+            claim <- Lens.use (field @"claim")
+            if not (equalClaimTypes axiomOrClaim claim)
+                then putStrLn' "Cannot apply claim because it is of a different type."
+                else do
+                    node <- Lens.use (field @"node")
+                    case mode of
+                        Never ->
+                            showUnificationFailure axiomOrClaim node
+                        IfPossible ->
+                            tryForceAxiomOrClaim axiomOrClaim node
   where
+    equalClaimTypes :: Either axiom claim -> claim -> Bool
+    equalClaimTypes eitherAxiomClaim currentClaim =
+        case eitherAxiomClaim of
+            Left _ -> True
+            Right claimToBeApplied ->
+                case castToReachabilityRule claimToBeApplied of
+                    Just reachClaimToBeApplied ->
+                        case castToReachabilityRule currentClaim of
+                            Just reachCurrentClaim ->
+                                isSameType reachCurrentClaim reachClaimToBeApplied
+                            Nothing -> False
+                    Nothing -> False
+
+    castToReachabilityRule :: claim -> Maybe (ReachabilityRule Variable)
+    castToReachabilityRule = Typeable.cast
+
+    isSameType :: ReachabilityRule Variable -> ReachabilityRule Variable -> Bool
+    isSameType (OnePath _) (OnePath _) = True
+    isSameType (AllPath _) (AllPath _) = True
+    isSameType _ _                     = False
+
     showUnificationFailure
         :: Either axiom claim
         -> ReplNode
