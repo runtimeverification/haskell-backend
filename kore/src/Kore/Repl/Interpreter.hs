@@ -845,7 +845,7 @@ tryAxiomClaimWorker mode ref = do
         -> Bool
     isSameType (Just (OnePath _)) (Just (OnePath _)) = True
     isSameType (Just (AllPath _)) (Just (AllPath _)) = True
-    isSameType _ _                     = False
+    isSameType _ _ = False
 
     showUnificationFailure
         :: Either axiom claim
