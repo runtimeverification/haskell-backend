@@ -742,6 +742,19 @@ int2bytes
     -> TermLike Variable
 int2bytes len i end = mkApplySymbol int2bytesSymbol [len, i, end]
 
+bytes2intSymbol :: Internal.Symbol
+bytes2intSymbol =
+    builtinSymbol "bytes1int" intSort
+        [bytesSort, endiannessSort, signednessSort]
+    & hook "BYTES.bytes2int"
+
+bytes2int
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+bytes2int bytes end sign = mkApplySymbol bytes2intSymbol [bytes, end, sign]
+
 -- * Krypto
 
 ecdsaRecoverSymbol :: Internal.Symbol
@@ -1517,6 +1530,7 @@ bytesModule =
             , hookedSymbolDecl lengthBytesSymbol
             , hookedSymbolDecl concatBytesSymbol
             , hookedSymbolDecl int2bytesSymbol
+            , hookedSymbolDecl bytes2intSymbol
             , endiannessSortDecl
             , symbolDecl littleEndianBytesSymbol
             , symbolDecl bigEndianBytesSymbol
