@@ -813,8 +813,9 @@ tryAxiomClaimWorker mode ref = do
             putStrLn' "Could not find axiom or claim."
         Just axiomOrClaim -> do
             claim <- Lens.use (field @"claim")
-            if not (equalClaimTypes axiomOrClaim claim)
-                then putStrLn' "Cannot apply claim because it is of a different type."
+            if isReachabilityRule claim && not (equalClaimTypes axiomOrClaim claim)
+                then putStrLn' "Only claims of the same type as the current\
+                               \ claim can be applied as rewrite rules."
                 else do
                     node <- Lens.use (field @"node")
                     case mode of
@@ -838,6 +839,9 @@ tryAxiomClaimWorker mode ref = do
 
     castToReachabilityRule :: claim -> Maybe (ReachabilityRule Variable)
     castToReachabilityRule = Typeable.cast
+
+    isReachabilityRule :: claim -> Bool
+    isReachabilityRule = isJust . castToReachabilityRule
 
     isSameType :: ReachabilityRule Variable -> ReachabilityRule Variable -> Bool
     isSameType (OnePath _) (OnePath _) = True
