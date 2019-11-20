@@ -74,6 +74,9 @@ import Control.Monad.Trans.Except
     ( runExceptT
     )
 import qualified Data.Foldable as Foldable
+import Data.Function
+    ( on
+    )
 import Data.Functor
     ( ($>)
     )
@@ -813,7 +816,7 @@ tryAxiomClaimWorker mode ref = do
             putStrLn' "Could not find axiom or claim."
         Just axiomOrClaim -> do
             claim <- Lens.use (field @"claim")
-            if isReachabilityRule claim && not (equalClaimTypes axiomOrClaim claim)
+            if isReachabilityRule claim && notEqualClaimTypes axiomOrClaim claim
                 then putStrLn' "Only claims of the same type as the current\
                                \ claim can be applied as rewrite rules."
                 else do
@@ -824,14 +827,13 @@ tryAxiomClaimWorker mode ref = do
                         IfPossible ->
                             tryForceAxiomOrClaim axiomOrClaim node
   where
-    equalClaimTypes :: Either axiom claim -> claim -> Bool
-    equalClaimTypes eitherAxiomClaim currentClaim =
-        case eitherAxiomClaim of
-            Left _ -> True
-            Right claimToBeApplied ->
-                let reachCurrentClaim = castToReachability currentClaim
-                    reachClaimToBeApplied = castToReachability claimToBeApplied
-                in isSameType reachCurrentClaim reachClaimToBeApplied
+    notEqualClaimTypes :: Either axiom claim -> claim -> Bool
+    notEqualClaimTypes axiomOrClaim' claim' =
+        not (either (const True) (equalClaimTypes claim') axiomOrClaim')
+
+    equalClaimTypes :: claim -> claim -> Bool
+    equalClaimTypes =
+        isSameType `on` castToReachability
 
     castToReachability :: claim -> Maybe (ReachabilityRule Variable)
     castToReachability = Typeable.cast
