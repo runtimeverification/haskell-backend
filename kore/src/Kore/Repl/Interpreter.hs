@@ -829,23 +829,22 @@ tryAxiomClaimWorker mode ref = do
         case eitherAxiomClaim of
             Left _ -> True
             Right claimToBeApplied ->
-                case castToReachabilityRule claimToBeApplied of
-                    Just reachClaimToBeApplied ->
-                        case castToReachabilityRule currentClaim of
-                            Just reachCurrentClaim ->
-                                isSameType reachCurrentClaim reachClaimToBeApplied
-                            Nothing -> False
-                    Nothing -> False
+                let reachCurrentClaim = castToReachability currentClaim
+                    reachClaimToBeApplied = castToReachability claimToBeApplied
+                in isSameType reachCurrentClaim reachClaimToBeApplied
 
-    castToReachabilityRule :: claim -> Maybe (ReachabilityRule Variable)
-    castToReachabilityRule = Typeable.cast
+    castToReachability :: claim -> Maybe (ReachabilityRule Variable)
+    castToReachability = Typeable.cast
 
     isReachabilityRule :: claim -> Bool
-    isReachabilityRule = isJust . castToReachabilityRule
+    isReachabilityRule = isJust . castToReachability
 
-    isSameType :: ReachabilityRule Variable -> ReachabilityRule Variable -> Bool
-    isSameType (OnePath _) (OnePath _) = True
-    isSameType (AllPath _) (AllPath _) = True
+    isSameType
+        :: Maybe (ReachabilityRule Variable)
+        -> Maybe (ReachabilityRule Variable)
+        -> Bool
+    isSameType (Just (OnePath _)) (Just (OnePath _)) = True
+    isSameType (Just (AllPath _)) (Just (AllPath _)) = True
     isSameType _ _                     = False
 
     showUnificationFailure
