@@ -11,12 +11,14 @@ module Test.Kore.Builtin.InternalBytes
     , test_reverse_length
     , test_update_get
     , test_bytes2string_string2bytes
+    , test_int2bytes
     , test_InternalBytes
     ) where
 
 import qualified Data.ByteString.Char8 as BS
 import Hedgehog hiding
     ( Concrete
+    , test
     )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -507,6 +509,39 @@ test_bytes2string_string2bytes =
                 ]
         (===) expect actual
 
+test_int2bytes :: [TestTree]
+test_int2bytes =
+    [ test "(4,    0, BE)" (4,    0,    bigEndianBytes) "\x00\x00\x00\x00"
+    , test "(1,  128, BE)" (1,  128,    bigEndianBytes) "\x80"
+    , test "(1, -128, BE)" (1, -128,    bigEndianBytes) "\x80"
+    , test "(1,    2, BE)" (1,    2,    bigEndianBytes) "\x02"
+    , test "(1, -  2, BE)" (1, -  2,    bigEndianBytes) "\xfe"
+    , test "(1,   16, BE)" (1,   16,    bigEndianBytes) "\x10"
+    , test "(1, - 16, BE)" (1, - 16,    bigEndianBytes) "\xf0"
+    , test "(2,  128, BE)" (2,  128,    bigEndianBytes) "\x00\x80"
+    , test "(2, -128, BE)" (2, -128,    bigEndianBytes) "\xff\x80"
+    , test "(2,  128, LE)" (2,  128, littleEndianBytes) "\x80\x00"
+    , test "(2, -128, LE)" (2, -128, littleEndianBytes) "\x80\xff"
+    , test "(0,    0, BE)" (0,    0,    bigEndianBytes) ""
+    ]
+  where
+    test
+        :: HasCallStack
+        => TestName
+        -> (Integer, Integer, TermLike Variable)
+        -> ByteString
+        -> TestTree
+    test name (len, dat, end) out =
+        testCase ("Int2Bytes" <> name) $ do
+            let input =
+                    int2bytes
+                        (Test.Int.asInternal len)
+                        (Test.Int.asInternal dat)
+                        end
+                expect = [asPattern out]
+            actual <- simplify input
+            assertEqual "" expect actual
+
 test_InternalBytes :: [TestTree]
 test_InternalBytes =
     [ testCase "\\dv{Bytes{}}(\"00\")" $ do
@@ -518,6 +553,8 @@ test_InternalBytes =
             actual = verifyPattern (Just bytesSort) unverified
         assertEqual "" expect actual
     ]
+
+-- * Helpers
 
 asInternal :: ByteString -> TermLike Variable
 asInternal = InternalBytes.asInternal bytesSort
