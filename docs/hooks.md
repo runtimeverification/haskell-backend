@@ -881,3 +881,13 @@ using the provided value.
     hooked-symbol int2bytes{}(/* length */ Int{}, /* value */ Int{}, Endianness{}) : Bytes{}
         [hook{}("BYTES.int2bytes")]
 ~~~
+
+### BYTES.bytes2int
+
+`BYTES.bytes2int` decodes a `Signed` or `Unsigned` `Int` encoded as a
+`BigEndian` or `LittleEndian` `Bytes`.
+
+~~~
+    hooked-symbol bytes2int{}(Bytes{}, Endianness{}, Signedness{}) : Int{}
+        [hook{}("BYTES.bytes2int")]
+~~~
