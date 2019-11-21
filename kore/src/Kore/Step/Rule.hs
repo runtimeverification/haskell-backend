@@ -641,14 +641,14 @@ patternToAxiomPattern attributes pat =
             requires
             (TermLike.And_ _ (TermLike.Equals_ _ _ lhs rhs) _ensures) ->
             -- TODO (traiansf): ensure that _ensures is \top
-                pure $ FunctionAxiomPattern $ EqualityRule RulePattern
-                    { left = lhs
-                    , antiLeft = Nothing
-                    , right = rhs
-                    , requires = Predicate.wrapPredicate requires
-                    , ensures = Predicate.makeTruePredicate
-                    , attributes
-                    }
+            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                { left = lhs
+                , antiLeft = Nothing
+                , right = rhs
+                , requires = Predicate.wrapPredicate requires
+                , ensures = Predicate.makeTruePredicate
+                , attributes
+                }
         -- function axioms: trivial pre- and post-conditions
         TermLike.Equals_ _ _ lhs rhs ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
@@ -725,7 +725,7 @@ axiomPatternToPattern
 axiomPatternToPattern
     (RewriteAxiomPattern
         (RewriteRule
-            (RulePattern left Nothing right requires ensures _)
+            (RulePattern left _ right requires ensures _)
         )
     )
   =
@@ -736,7 +736,7 @@ axiomPatternToPattern
 axiomPatternToPattern
     (OnePathClaimPattern
         (OnePathRule
-            (RulePattern left Nothing right requires ensures _)
+            (RulePattern left _ right requires ensures _)
         )
     )
   =
@@ -752,7 +752,7 @@ axiomPatternToPattern
 axiomPatternToPattern
     (AllPathClaimPattern
         (AllPathRule
-            (RulePattern left Nothing right requires ensures _)
+            (RulePattern left _ right requires ensures _)
         )
     )
   =
@@ -770,7 +770,7 @@ axiomPatternToPattern
         (EqualityRule
             (RulePattern
                 left@(TermLike.Ceil_ _ resultSort1 _)
-                Nothing
+                _
                 (TermLike.Top_ resultSort2)
                 Predicate.PredicateTrue
                 Predicate.PredicateTrue
@@ -785,7 +785,7 @@ axiomPatternToPattern
         (EqualityRule
             (RulePattern
                 left
-                Nothing
+                _
                 right
                 Predicate.PredicateTrue
                 Predicate.PredicateTrue
@@ -798,11 +798,7 @@ axiomPatternToPattern
 
 axiomPatternToPattern
     (FunctionAxiomPattern
-        (EqualityRule
-            (RulePattern
-                left Nothing right requires Predicate.PredicateTrue _
-            )
-        )
+        (EqualityRule (RulePattern left _ right requires _ _))
     )
   =
     TermLike.mkImplies
@@ -811,24 +807,10 @@ axiomPatternToPattern
 
 axiomPatternToPattern
     (ImplicationAxiomPattern
-        (ImplicationRule
-            (RulePattern
-                left
-                Nothing
-                right@(TermLike.ApplyAlias_ _ _)
-                Predicate.PredicateTrue
-                Predicate.PredicateTrue
-                _
-            )
-        )
+        (ImplicationRule (RulePattern left _ right _ _ _))
     )
   =
     TermLike.mkImplies left right
-
-axiomPatternToPattern ap = error $ unlines
-    ["Found invalid QualifiedAxiomPattern:\n"
-    , show ap
-    ]
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 
