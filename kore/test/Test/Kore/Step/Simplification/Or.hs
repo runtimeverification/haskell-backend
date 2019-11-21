@@ -1,6 +1,5 @@
 module Test.Kore.Step.Simplification.Or
     ( test_topTermAnnihilates
-    , test_disjoinPredicates
     , test_anyBottom
     , test_deduplicateMiddle
     , test_simplify
@@ -28,7 +27,6 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeFalsePredicate
-    , makeOrPredicate
     , makeTruePredicate
     )
 import Kore.Internal.Predicate
@@ -79,26 +77,6 @@ test_topTermAnnihilates =
         , any not [isTop t2, isTop p2, isTop s2]
         ]
   where
-    predicates = [ pT, pM, pm ]
-    substitutions = [ sT, sM, sm ]
-
-test_disjoinPredicates :: TestTree
-test_disjoinPredicates =
-    testGroup "Disjoin predicates when other components are equal"
-        [ expectation ((t1, p1, s1), (t2, p2, s2)) (t1, p', s')
-        | t1 <- terms, t2 <- terms
-        , p1 <- predicates, p2 <- predicates
-        , s1 <- substitutions, s2 <- substitutions
-        , let
-            -- If the terms are equal, expect the given simplification.
-            -- Otherwise, the predicates should not be merged.
-            expectation
-              | t1 == t2 && s1 == s2  = simplifiesTo
-              | otherwise = \initial _ -> doesNotSimplify initial
-            (p', s') = (makeOrPredicate p1 p2, s1)
-        ]
-  where
-    terms = [ tM, tm ]
     predicates = [ pT, pM, pm ]
     substitutions = [ sT, sM, sm ]
 
