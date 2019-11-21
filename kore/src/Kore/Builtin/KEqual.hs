@@ -62,7 +62,6 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers = mempty
         , symbolVerifiers
-        , domainValueVerifiers = mempty
         , applicationVerifiers = mempty
         , patternVerifier = mempty
         }

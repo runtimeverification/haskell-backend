@@ -351,7 +351,6 @@ lookupApplicationVerifier symbol verifiers = do
 data Verifiers = Verifiers
     { sortDeclVerifiers    :: SortDeclVerifiers
     , symbolVerifiers      :: SymbolVerifiers
-    , domainValueVerifiers :: DomainValueVerifiers Verified.Pattern
     , applicationVerifiers :: ApplicationVerifiers Verified.Pattern
     , patternVerifier      :: PatternVerifier Verified.Pattern
     }
@@ -361,7 +360,6 @@ instance Semigroup Verifiers where
         Verifiers
             { sortDeclVerifiers = on (<>) sortDeclVerifiers a b
             , symbolVerifiers = on (<>) symbolVerifiers a b
-            , domainValueVerifiers = on (<>) domainValueVerifiers a b
             , applicationVerifiers = on (<>) applicationVerifiers a b
             , patternVerifier = on (<>) patternVerifier a b
             }
@@ -371,7 +369,6 @@ instance Monoid Verifiers where
         Verifiers
             { sortDeclVerifiers = mempty
             , symbolVerifiers = mempty
-            , domainValueVerifiers = mempty
             , applicationVerifiers = mempty
             , patternVerifier = mempty
             }

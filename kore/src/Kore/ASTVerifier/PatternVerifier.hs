@@ -102,8 +102,6 @@ data Context =
         -- ^ The indexed Kore module containing all definitions in scope.
         , builtinPatternVerifier
             :: !(Builtin.PatternVerifier Verified.Pattern)
-        , builtinDomainValueVerifiers
-            :: !(Builtin.DomainValueVerifiers Verified.Pattern)
         , builtinApplicationVerifiers
             :: !(Builtin.ApplicationVerifiers Verified.Pattern)
         }
@@ -115,7 +113,6 @@ verifiedModuleContext verifiedModule =
         { declaredVariables = mempty
         , declaredSortVariables = mempty
         , indexedModule = eraseAxiomAttributes verifiedModule
-        , builtinDomainValueVerifiers = mempty
         , builtinApplicationVerifiers = mempty
         , builtinPatternVerifier = mempty
         }
@@ -123,8 +120,7 @@ verifiedModuleContext verifiedModule =
 withBuiltinVerifiers :: Builtin.Verifiers -> Context -> Context
 withBuiltinVerifiers verifiers context =
     context
-        { builtinDomainValueVerifiers = Builtin.domainValueVerifiers verifiers
-        , builtinApplicationVerifiers = Builtin.applicationVerifiers verifiers
+        { builtinApplicationVerifiers = Builtin.applicationVerifiers verifiers
         , builtinPatternVerifier = Builtin.patternVerifier verifiers
         }
 
@@ -704,20 +700,9 @@ verifyDomainValue
     -> PatternVerifier (TermLikeF Variable Verified.Pattern)
 verifyDomainValue domain = do
     let DomainValue { domainValueSort = patternSort } = domain
-    Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
-    let
-        lookupSortDeclaration' sortId = do
-            (_, sortDecl) <- resolveSort indexedModule sortId
-            return sortDecl
     verifySortHasDomainValues patternSort
-    domain' <- sequence domain
-    verified <-
-        PatternVerifier . Reader.lift
-        $ Builtin.verifyDomainValue
-            builtinDomainValueVerifiers
-            lookupSortDeclaration'
-            domain'
+    verified <- Internal.DomainValueF <$> sequence domain
     let freeVariables' =
             foldMap Attribute.freeVariables
                 (Internal.extractAttributes <$> verified)
