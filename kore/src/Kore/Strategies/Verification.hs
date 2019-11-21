@@ -12,7 +12,6 @@ module Kore.Strategies.Verification
     , verify
     , verifyClaimStep
     , toRulePattern
-    , toRule
     ) where
 
 import Control.Monad.Catch
@@ -23,23 +22,20 @@ import Control.Monad.Except
     )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
-import Data.Coerce
-    ( Coercible
-    , coerce
-    )
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
+import qualified Data.Stream.Infinite as Stream
+import Data.Typeable
+    ( Typeable
+    )
 
 import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
-    )
-import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
     )
 import Kore.Step.Rule.Expand
 import Kore.Step.Rule.Simplify
@@ -64,16 +60,17 @@ type CommonProofState  = ProofState.ProofState (Pattern Variable)
 {- | Class type for claim-like rules
 -}
 type Claim claim =
-    ( Coercible (RulePattern Variable) claim
-    , Coercible (Rule claim) (RulePattern Variable)
-    , Coercible (RulePattern Variable) (Rule claim)
-    , Coercible claim (RulePattern Variable)
+    ( ToRulePattern claim
+    , ToRulePattern (Rule claim)
+    , FromRulePattern claim
+    , FromRulePattern (Rule claim)
     , Unparse claim
     , Unparse (Rule claim)
     , Goal claim
     , ClaimExtractor claim
     , ExpandSingleConstructors claim
     , SimplifyRuleLHS claim
+    , Typeable claim
     , Prim claim ~ ProofState.Prim (Rule claim)
     , ProofState claim claim ~ ProofState.ProofState claim
     )
@@ -128,7 +125,7 @@ verifyClaim claims axioms (goal, stepLimit) =
         limitedStrategy =
             Limit.takeWithin
                 stepLimit
-                (strategy goal claims axioms)
+                (Foldable.toList $ strategy goal claims axioms)
     executionGraph <-
         runStrategy
             (modifiedTransitionRule destination) limitedStrategy startPattern
@@ -143,11 +140,9 @@ verifyClaim claims axioms (goal, stepLimit) =
     modifiedTransitionRule destination prim proofState' = do
         transitions <-
             Monad.Trans.lift . Monad.Trans.lift . runTransitionT
-            $ transitionRule' destination prim proofState'
+            $ transitionRule' goal destination prim proofState'
         Transition.scatter transitions
 
--- TODO(Ana): allow running with all-path strategy steps
--- when the REPL will be connected to all-path
 -- | Attempts to perform a single proof step, starting at the configuration
 -- in the execution graph designated by the provided node. Re-constructs the
 -- execution graph by inserting this step.
@@ -175,22 +170,21 @@ verifyClaimStep
   = do
       let destination = getDestination target
       executionHistoryStep
-        (transitionRule' destination)
+        (transitionRule' target destination)
         strategy'
         eg
         node
   where
     strategy' :: Strategy (Prim claim)
     strategy'
-        | isRoot =
-            onePathFirstStep rewrites
-        | otherwise =
-            onePathFollowupStep
-                (coerce . toRulePattern <$> claims)
-                rewrites
+        | isRoot = firstStep
+        | otherwise = followupStep
 
-    rewrites :: [Rule claim]
-    rewrites = axioms
+    firstStep :: Strategy (Prim claim)
+    firstStep = strategy target claims axioms Stream.!! 0
+
+    followupStep :: Strategy (Prim claim)
+    followupStep = strategy target claims axioms Stream.!! 1
 
     isRoot :: Bool
     isRoot = node == root
@@ -199,23 +193,12 @@ transitionRule'
     :: forall claim m
     .  (MonadCatch m, MonadSimplify m)
     => Claim claim
-    => Pattern Variable
+    => claim
+    -> Pattern Variable
     -> Prim claim
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
-transitionRule' destination prim state = do
-    let goal = flip makeRuleFromPatterns destination <$> state
+transitionRule' ruleType destination prim state = do
+    let goal = flip (makeRuleFromPatterns ruleType) destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next
-
-toRulePattern
-    :: forall claim
-    .  Claim claim
-    => claim -> RulePattern Variable
-toRulePattern = coerce
-
-toRule
-    :: forall claim
-    .  Claim claim
-    => RulePattern Variable -> Rule claim
-toRule = coerce

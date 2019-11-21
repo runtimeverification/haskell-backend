@@ -13,6 +13,8 @@ module Kore.Step.Rule
     , ReachabilityRule (..)
     , ImplicationRule (..)
     , RulePattern (..)
+    , ToRulePattern (..)
+    , FromRulePattern (..)
     , allPathGlobally
     , axiomPatternToPattern
     , rulePattern
@@ -47,6 +49,10 @@ import Control.DeepSeq
     )
 import Control.Exception
     ( assert
+    )
+import Data.Coerce
+    ( Coercible
+    , coerce
     )
 import qualified Data.Default as Default
 import Data.Map.Strict
@@ -637,6 +643,7 @@ patternToAxiomPattern attributes pat =
                 , attributes
                 }
         -- function axioms: general
+<<<<<<< HEAD
         TermLike.Implies_ _
             requires
             (TermLike.And_ _ (TermLike.Equals_ _ _ lhs rhs) _ensures) ->
@@ -649,6 +656,25 @@ patternToAxiomPattern attributes pat =
                 , ensures = Predicate.makeTruePredicate
                 , attributes
                 }
+=======
+        Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) ensures) ->
+            case ensures of
+                TermLike.Top_ _ ->
+                    pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                        { left = lhs
+                        , antiLeft = Nothing
+                        , right = rhs
+                        , requires = Predicate.wrapPredicate requires
+                        , ensures = Predicate.makeTruePredicate
+                        , attributes
+                        }
+                _ -> koreFail $ unlines
+                        ["Found ensures clause:"
+                        , show ensures
+                        , "in function axiom."
+                        ]
+
+>>>>>>> upstream/master
         -- function axioms: trivial pre- and post-conditions
         TermLike.Equals_ _ _ lhs rhs ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
@@ -987,3 +1013,45 @@ applySubstitution substitution rule =
     subst = Substitution.toMap substitution
     finalRule = substitute subst rule
     substitutedVariables = Substitution.variables substitution
+
+-- | The typeclasses 'ToRulePattern' and 'FromRulePattern' are intended to
+-- be implemented by types which contain more (or the same amount of)
+-- information as 'RulePattern Variable'.
+class ToRulePattern rule where
+    toRulePattern :: rule -> RulePattern Variable
+    default toRulePattern
+        :: Coercible rule (RulePattern Variable)
+        => rule -> RulePattern Variable
+    toRulePattern = coerce
+
+instance ToRulePattern (OnePathRule Variable)
+
+instance ToRulePattern (AllPathRule Variable)
+
+instance ToRulePattern (ImplicationRule Variable)
+
+instance ToRulePattern (ReachabilityRule Variable) where
+    toRulePattern (OnePath rule) = toRulePattern rule
+    toRulePattern (AllPath rule) = toRulePattern rule
+
+-- | We need to know the context when transforming a 'RulePattern Variable'
+-- into a 'rule', hence the first 'rule' argument. In general it can be ignored
+-- when the 'rule' and the 'RulePattern Variable' are representationally equal.
+class FromRulePattern rule where
+    fromRulePattern :: rule -> RulePattern Variable -> rule
+    default fromRulePattern
+        :: Coercible (RulePattern Variable) rule
+        => rule -> RulePattern Variable -> rule
+    fromRulePattern _ = coerce
+
+instance FromRulePattern (OnePathRule Variable)
+
+instance FromRulePattern (AllPathRule Variable)
+
+instance FromRulePattern (ImplicationRule Variable)
+
+instance FromRulePattern (ReachabilityRule Variable) where
+    fromRulePattern (OnePath _) rulePat =
+        OnePath $ coerce rulePat
+    fromRulePattern (AllPath _) rulePat =
+        AllPath $ coerce rulePat
