@@ -131,6 +131,7 @@ verifiers =
         , symbolVerifiers
         , domainValueVerifiers = mempty
         , applicationVerifiers = mempty
+        , patternVerifier = mempty
         }
 
 {- | Verify that hooked sort declarations are well-formed.

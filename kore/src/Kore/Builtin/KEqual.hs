@@ -64,6 +64,7 @@ verifiers =
         , symbolVerifiers
         , domainValueVerifiers = mempty
         , applicationVerifiers = mempty
+        , patternVerifier = mempty
         }
 
 {- | Verify that hooked symbol declarations are well-formed.

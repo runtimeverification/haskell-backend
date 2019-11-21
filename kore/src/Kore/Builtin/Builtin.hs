@@ -24,6 +24,8 @@ module Kore.Builtin.Builtin
     , SortVerifier (..)
     , ApplicationVerifier (..), SymbolKey(..), ApplicationVerifiers
     , lookupApplicationVerifier
+    , PatternVerifier (..)
+    , domainValuePatternVerifier
     , Function
     , Parser
     , symbolVerifier
@@ -80,6 +82,7 @@ import Control.Error
     )
 import Control.Monad
     ( zipWithM_
+    , (>=>)
     )
 import qualified Control.Monad as Monad
 import Data.Function
@@ -267,6 +270,50 @@ newtype ApplicationVerifier patternType =
             -> Either (Error VerifyError) (TermLikeF Variable patternType)
         }
 
+newtype PatternVerifier patternType =
+    PatternVerifier
+        { runPatternVerifier
+            :: (Id -> Either (Error VerifyError) (SentenceSort patternType))
+            -> TermLikeF Variable patternType
+            -> Either (Error VerifyError) (TermLikeF Variable patternType)
+        }
+
+domainValuePatternVerifier
+    :: Text
+    -> DomainValueVerifier patternType
+    -> PatternVerifier patternType
+domainValuePatternVerifier hook verifier =
+    PatternVerifier $ \findSort termLikeF ->
+        case termLikeF of
+            DomainValueF domainValue
+              | SortActualSort _ <- domainValueSort -> do
+                hook' <- lookupHookSort findSort domainValueSort
+                fromMaybe (return termLikeF) $ do
+                    Monad.guard (hook' == Just hook)
+                    let context =
+                            unwords
+                                [ "Verifying builtin sort"
+                                , "'" ++ Text.unpack hook ++ "'"
+                                ]
+                        verify =
+                            Kore.Error.withContext context
+                            . runDomainValueVerifier verifier
+                    pure (verify domainValue)
+              where
+                DomainValue { domainValueSort } = domainValue
+            _ -> return termLikeF
+
+instance Semigroup (PatternVerifier patternType) where
+    (<>) verifier1 verifier2 =
+        PatternVerifier $ \findSort ->
+            (runPatternVerifier verifier1 findSort)
+            >=> (runPatternVerifier verifier2 findSort)
+    {-# INLINE (<>) #-}
+
+instance Monoid (PatternVerifier patternType) where
+    mempty = PatternVerifier $ \_ -> return
+    {-# INLINE mempty #-}
+
 {- | @SymbolKey@ names builtin functions and constructors.
  -}
 data SymbolKey
@@ -306,6 +353,7 @@ data Verifiers = Verifiers
     , symbolVerifiers      :: SymbolVerifiers
     , domainValueVerifiers :: DomainValueVerifiers Verified.Pattern
     , applicationVerifiers :: ApplicationVerifiers Verified.Pattern
+    , patternVerifier      :: PatternVerifier Verified.Pattern
     }
 
 instance Semigroup Verifiers where
@@ -315,6 +363,7 @@ instance Semigroup Verifiers where
             , symbolVerifiers = on (<>) symbolVerifiers a b
             , domainValueVerifiers = on (<>) domainValueVerifiers a b
             , applicationVerifiers = on (<>) applicationVerifiers a b
+            , patternVerifier = on (<>) patternVerifier a b
             }
 
 instance Monoid Verifiers where
@@ -324,6 +373,7 @@ instance Monoid Verifiers where
             , symbolVerifiers = mempty
             , domainValueVerifiers = mempty
             , applicationVerifiers = mempty
+            , patternVerifier = mempty
             }
 
 {- | Look up and apply a builtin sort declaration verifier.

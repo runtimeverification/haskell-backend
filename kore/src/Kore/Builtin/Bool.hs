@@ -70,8 +70,9 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers
         , symbolVerifiers
-        , domainValueVerifiers = HashMap.singleton sort patternVerifier
+        , domainValueVerifiers = mempty
         , applicationVerifiers = mempty
+        , patternVerifier
         }
 
 {- | Verify that hooked sort declarations are well-formed.
@@ -103,9 +104,10 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.DomainValueVerifier (TermLike variable)
+patternVerifier :: Builtin.PatternVerifier (TermLike variable)
 patternVerifier =
-    Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
+    Builtin.domainValuePatternVerifier sort
+    $ Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
   where
     patternVerifierWorker domainValue =
         case externalChild of
