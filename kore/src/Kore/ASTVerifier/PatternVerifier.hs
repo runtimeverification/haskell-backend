@@ -100,10 +100,7 @@ data Context =
         -- ^ The sort variables in scope.
         , indexedModule :: !(VerifiedModule Attribute.Symbol Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
-        , builtinPatternVerifier
-            :: !(Builtin.PatternVerifier Verified.Pattern)
-        , builtinApplicationVerifiers
-            :: !(Builtin.ApplicationVerifiers Verified.Pattern)
+        , builtinPatternVerifier :: !(Builtin.PatternVerifier Verified.Pattern)
         }
     deriving (GHC.Generic)
 
@@ -113,16 +110,12 @@ verifiedModuleContext verifiedModule =
         { declaredVariables = mempty
         , declaredSortVariables = mempty
         , indexedModule = eraseAxiomAttributes verifiedModule
-        , builtinApplicationVerifiers = mempty
         , builtinPatternVerifier = mempty
         }
 
 withBuiltinVerifiers :: Builtin.Verifiers -> Context -> Context
 withBuiltinVerifiers verifiers context =
-    context
-        { builtinApplicationVerifiers = Builtin.applicationVerifiers verifiers
-        , builtinPatternVerifier = Builtin.patternVerifier verifiers
-        }
+    context { builtinPatternVerifier = Builtin.patternVerifier verifiers }
 
 newtype PatternVerifier a =
     PatternVerifier
@@ -619,21 +612,12 @@ verifyApplication application = do
     maybe (koreFail . noHead $ symbolOrAlias) return result
   where
     symbolOrAlias = applicationSymbolOrAlias application
-    verifyApplyAlias' = Internal.ApplyAliasF <$> verifyApplyAlias application
-    verifyApplySymbol' = do
-        application' <- verifyApplySymbol Internal.termLikeSort application
-        Context { builtinApplicationVerifiers } <- Reader.ask
-        let symbol = applicationSymbolOrAlias application'
-            builtinVerifier =
-                Builtin.lookupApplicationVerifier
-                    symbol
-                    builtinApplicationVerifiers
-        Trans.lift . PatternVerifier . Trans.lift
-            $ maybe
-                (return . Internal.ApplySymbolF)
-                Builtin.runApplicationVerifier
-                builtinVerifier
-            $ application'
+    verifyApplyAlias' =
+        Internal.ApplyAliasF
+        <$> verifyApplyAlias application
+    verifyApplySymbol' =
+        Internal.ApplySymbolF
+        <$> verifyApplySymbol Internal.termLikeSort application
 
 verifyBinder
     :: Traversable binder

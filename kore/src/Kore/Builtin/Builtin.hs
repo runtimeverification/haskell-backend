@@ -26,6 +26,7 @@ module Kore.Builtin.Builtin
     , lookupApplicationVerifier
     , PatternVerifier (..)
     , domainValuePatternVerifier
+    , applicationPatternVerifiers
     , Function
     , Parser
     , symbolVerifier
@@ -346,12 +347,27 @@ lookupApplicationVerifier symbol verifiers = do
         . Attribute.Symbol.getKlabel . Attribute.Symbol.klabel
         . symbolAttributes
 
+applicationPatternVerifiers
+    :: ApplicationVerifiers patternType
+    -> PatternVerifier patternType
+applicationPatternVerifiers applicationVerifiers =
+    PatternVerifier $ \_ termLikeF ->
+        case termLikeF of
+            ApplySymbolF application
+              | Just verifier <- lookupVerifier symbol ->
+                runApplicationVerifier verifier application
+              where
+                Application { applicationSymbolOrAlias = symbol } = application
+            _ -> return termLikeF
+  where
+    lookupVerifier symbol =
+        lookupApplicationVerifier symbol applicationVerifiers
+
 {- | Verify builtin sorts, symbols, and patterns.
  -}
 data Verifiers = Verifiers
     { sortDeclVerifiers    :: SortDeclVerifiers
     , symbolVerifiers      :: SymbolVerifiers
-    , applicationVerifiers :: ApplicationVerifiers Verified.Pattern
     , patternVerifier      :: PatternVerifier Verified.Pattern
     }
 
@@ -360,7 +376,6 @@ instance Semigroup Verifiers where
         Verifiers
             { sortDeclVerifiers = on (<>) sortDeclVerifiers a b
             , symbolVerifiers = on (<>) symbolVerifiers a b
-            , applicationVerifiers = on (<>) applicationVerifiers a b
             , patternVerifier = on (<>) patternVerifier a b
             }
 
@@ -369,7 +384,6 @@ instance Monoid Verifiers where
         Verifiers
             { sortDeclVerifiers = mempty
             , symbolVerifiers = mempty
-            , applicationVerifiers = mempty
             , patternVerifier = mempty
             }
 
