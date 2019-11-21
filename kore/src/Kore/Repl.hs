@@ -44,9 +44,6 @@ import Control.Monad.State.Strict
     , StateT
     , evalStateT
     )
-import Data.Coerce
-    ( coerce
-    )
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List
@@ -201,10 +198,12 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         :: Int
         -> [claim]
         -> [claim]
-    addIndexesToClaims len cls =
-        fmap
-            (coerce . addIndex)
-            (zip (fmap coerce cls) [len..])
+    addIndexesToClaims len claims'' =
+        let toAxiomAndBack claim' index =
+                ruleToGoal
+                    claim'
+                    $ addIndex (goalToRule claim', index)
+        in zipWith toAxiomAndBack claims'' [len..]
 
     addIndex
         :: (axiom, Int)
@@ -218,10 +217,11 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> axiom
     modifyAttribute att rule =
         let rp = axiomToRulePatt rule in
-            coerce $ rp { Rule.attributes = att }
+            fromRulePattern rule
+                $ rp { Rule.attributes = att }
 
     axiomToRulePatt :: axiom -> Rule.RulePattern Variable
-    axiomToRulePatt = coerce
+    axiomToRulePatt = toRulePattern
 
     getAttribute :: axiom -> Attribute.Axiom
     getAttribute = Rule.attributes . axiomToRulePatt
