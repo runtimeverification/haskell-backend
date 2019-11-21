@@ -110,12 +110,13 @@ import qualified Kore.Step.Simplification.Rewrites as Rewrites
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
-    , SimplifiableF (Simplified, Unsimplified)
+    , SimplifiableF (PartlySimplified, Simplified, Unsimplified)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( freeVariables
     , fromTermLike
     , substitute
+    , termFSimplifiableFromOrPattern
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.StringLiteral as StringLiteral
@@ -257,15 +258,10 @@ simplifyInternal term predicate = do
     applySubstitutionAndResimplifyPattern
         :: Pattern variable -> simplifier (OrPattern variable)
     applySubstitutionAndResimplifyPattern patt = do
-        --traceM ("applySubstitutionAndResimplifyPattern.1 " ++ show (length (show patt)))
-        --traceM (unparseToString patt)
         normalized <- normalizeCondition patt
-        --traceM ("applySubstitutionAndResimplifyPattern.2 " ++ show (length (show patt)))
         case OrPattern.toPatterns normalized of
             [p] | p == patt -> return (OrPattern.fromPattern patt)
-            _ -> do
-                --traceM ("applySubstitutionAndResimplifyPattern.3 " ++ show (length (show patt)))
-                simplifyInternal (OrPattern.toTermLike normalized) predicate
+            _ -> simplifyInternal (OrPattern.toTermLike normalized) predicate
       where
         normalizeCondition
             ::  Pattern variable ->  simplifier (OrPattern variable)
@@ -284,17 +280,18 @@ simplifyInternal term predicate = do
 
     simplifyUntilStable
         :: Simplifiable variable -> simplifier (OrPattern variable)
-    simplifyUntilStable simplifiable = do
-        --traceM ("simplifyUntilStable start " ++ show (length (show simplifiable)))
-        result <- case Recursive.project simplifiable of
-            Simplified result -> do
-                --traceM ("simplifyUntilStable result " ++ unlines (unparseToString <$> OrPattern.toPatterns result))
+    simplifyUntilStable simplifiable =
+        case Recursive.project simplifiable of
+            Simplified result ->
                 assertTermNotPredicate $ applySubstitutionAndResimplifyOr result
-            Unsimplified unsimplified -> do
-                simplifiedOnce <- descendAndSimplify unsimplified
-                simplifyUntilStable simplifiedOnce
-        --traceM ("simplifyUntilStable end " ++ show (length (show simplifiable)))
-        return result
+            PartlySimplified result ->
+                simplifyUnsimplified
+                    (Simplifiable.termFSimplifiableFromOrPattern result)
+            Unsimplified unsimplified -> simplifyUnsimplified unsimplified
+      where
+        simplifyUnsimplified unsimplified = do
+            simplifiedOnce <- descendAndSimplify unsimplified
+            simplifyUntilStable simplifiedOnce
 
     assertTermNotPredicate getResults = do
         results <- getResults

@@ -26,6 +26,8 @@ module Kore.Step.Simplification.Simplifiable
     -- Do not use outside Or simplification. Use fromOrPattern.
     , onlyForOrSimplified
     --
+    , termFSimplifiableFromOrPattern
+    --
     -- Use with qualified import:
     -- import qualified Kore.Step.Simplification.Simplifiable as Unsimplified
     , mkAnd
@@ -283,6 +285,7 @@ import Kore.Variables.UnifiedVariable
 
 data SimplifiableF variable child
     = Simplified (OrPattern variable)
+    | PartlySimplified (OrPattern variable)
     | Unsimplified (TermLikeF variable child)
     deriving (Eq, Functor, Foldable, GHC.Generic, Ord, Show, Traversable)
 
@@ -341,6 +344,14 @@ onlyForOrSimplified = simplified
 
 simplified :: OrPattern variable -> Simplifiable variable
 simplified = Recursive.embed . Simplified . assertSimplified
+  where
+    assertSimplified orPatt =
+        if OrPattern.isSimplified orPatt
+            then orPatt
+            else error "Expected simplified or."
+
+partlySimplified :: OrPattern variable -> Simplifiable variable
+partlySimplified = Recursive.embed . Simplified . assertSimplified
   where
     assertSimplified orPatt =
         if OrPattern.isSimplified orPatt
@@ -407,7 +418,10 @@ fromOrPattern orPattern =
         [] -> simplified orPattern
         [patt]
           | Pattern.isSimplified patt -> simplified orPattern
-        _ ->
+        _
+          | OrPattern.isSimplified orPattern ->
+            partlySimplified orPattern
+          | otherwise ->
             fromMultiOr (fromPattern <$> orPattern)
 
 fromOrCondition
@@ -434,6 +448,15 @@ fromPredicate
     => Predicate variable
     -> Simplifiable variable
 fromPredicate = fromCondition . Condition.fromPredicate
+
+termFSimplifiableFromOrPattern
+    :: InternalVariable variable
+    => OrPattern variable
+    -> TermLikeF variable (Simplifiable variable)
+termFSimplifiableFromOrPattern =
+    foldl' mkOrFF mkBottomF . OrPattern.toPatterns
+  where
+    mkOrFF termF patt = mkOrF (unsimplified termF) (fromPattern patt)
 
 top :: InternalVariable variable => Simplifiable variable
 top = simplified OrPattern.top
@@ -480,7 +503,10 @@ mkApplyAlias alias children =
         {applicationSymbolOrAlias = alias, applicationChildren = children}
 
 mkBottom :: Simplifiable variable
-mkBottom =  unsimplified $ BottomF Bottom {bottomSort = predicateSort}
+mkBottom =  unsimplified $ mkBottomF
+
+mkBottomF :: TermLikeF variable (Simplifiable variable)
+mkBottomF =  BottomF Bottom {bottomSort = predicateSort}
 
 mkCeil :: Simplifiable variable -> Simplifiable variable
 mkCeil ceilChild =
@@ -575,8 +601,14 @@ mkNu nuVariable nuChild =
 
 mkOr :: Simplifiable variable -> Simplifiable variable -> Simplifiable variable
 mkOr orFirst orSecond =
-    unsimplified
-    $ OrF Or {orSort = predicateSort, orFirst, orSecond}
+    unsimplified (mkOrF orFirst orSecond)
+
+mkOrF
+    :: Simplifiable variable
+    -> Simplifiable variable
+    -> TermLikeF variable (Simplifiable variable)
+mkOrF orFirst orSecond =
+     OrF Or {orSort = predicateSort, orFirst, orSecond}
 
 mkRewrites
     :: Simplifiable variable -> Simplifiable variable -> Simplifiable variable
@@ -644,6 +676,7 @@ substitute
 substitute substitution@(substitutedVariable, newTerm) simplifiable =
     case Recursive.project simplifiable of
         (Simplified orPatt) -> substituteOr substitution orPatt
+        (PartlySimplified orPatt) -> substituteOr substitution orPatt
         (Unsimplified patt) -> case patt of
             (AndF _) -> defaultSubstitution
             (ApplySymbolF _) -> defaultSubstitution
@@ -707,6 +740,8 @@ freeVariables
 freeVariables simplifiable =
     case Recursive.project simplifiable of
         Simplified orPattern ->
+            TermLike.freeVariables (OrPattern.toTermLike orPattern)
+        PartlySimplified orPattern ->
             TermLike.freeVariables (OrPattern.toTermLike orPattern)
         Unsimplified patt -> case patt of
             (AndF _) -> childVariables

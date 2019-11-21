@@ -552,6 +552,12 @@ checkOrChange
                     checkPatternChange
                         first second patt whenUnchanged whenChanged
                 _ -> defaultValue
+        (PartlySimplified orMaybeChanged) ->
+            case OrPattern.toPatterns orMaybeChanged of
+                [patt] ->
+                    checkPatternChange
+                        first second patt whenUnchanged whenChanged
+                _ -> defaultValue
         (Unsimplified _) -> defaultValue
 
 checkOrConditionChange
