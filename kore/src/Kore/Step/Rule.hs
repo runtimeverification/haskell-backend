@@ -643,21 +643,9 @@ patternToAxiomPattern attributes pat =
                 , attributes
                 }
         -- function axioms: general
-<<<<<<< HEAD
         TermLike.Implies_ _
             requires
-            (TermLike.And_ _ (TermLike.Equals_ _ _ lhs rhs) _ensures) ->
-            -- TODO (traiansf): ensure that _ensures is \top
-            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
-                { left = lhs
-                , antiLeft = Nothing
-                , right = rhs
-                , requires = Predicate.wrapPredicate requires
-                , ensures = Predicate.makeTruePredicate
-                , attributes
-                }
-=======
-        Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) ensures) ->
+            (TermLike.And_ _ (TermLike.Equals_ _ _ lhs rhs) ensures) ->
             case ensures of
                 TermLike.Top_ _ ->
                     pure $ FunctionAxiomPattern $ EqualityRule RulePattern
@@ -674,7 +662,6 @@ patternToAxiomPattern attributes pat =
                         , "in function axiom."
                         ]
 
->>>>>>> upstream/master
         -- function axioms: trivial pre- and post-conditions
         TermLike.Equals_ _ _ lhs rhs ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
