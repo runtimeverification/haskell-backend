@@ -21,6 +21,7 @@ import Kore.Internal.OrPattern
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromOrPattern
@@ -31,12 +32,14 @@ an or containing a term made of that value.
 -}
 simplify
     :: InternalVariable variable
-    => DomainValue Sort (OrPattern variable)
+    => DomainValue Sort (SimplifiedChildren variable)
     -> Simplifiable variable
 simplify builtin =
     Simplifiable.fromOrPattern . MultiOr.filterOr $ do
-        child <- simplifyDomainValue builtin
+        child <- simplifyDomainValue (fromSimplifiedChildren <$> builtin)
         return (markSimplified . mkDomainValue <$> child)
+  where
+    fromSimplifiedChildren (SimplifiedChildren a) = a
 
 simplifyDomainValue
     :: InternalVariable variable

@@ -13,9 +13,6 @@ module Kore.Step.Simplification.Iff
     ) where
 
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Predicate as Predicate
@@ -32,7 +29,8 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Step.Simplification.Simplifiable
-    ( Simplifiable
+    ( FullySimplified (FullySimplified)
+    , Simplifiable
     )
 import Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromOrPattern
@@ -57,7 +55,7 @@ and for children with top terms.
 -}
 simplify
     :: (SimplifierVariable variable)
-    => Iff Sort (OrPattern variable)
+    => Iff Sort (FullySimplified variable)
     -> Simplifiable variable
 simplify Iff { iffFirst = first, iffSecond = second } =
     simplifyEvaluated first second
@@ -81,12 +79,12 @@ carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable)
-    => OrPattern variable
-    -> OrPattern variable
+    => FullySimplified variable
+    -> FullySimplified variable
     -> Simplifiable variable
 simplifyEvaluated
-    first
-    second
+    (FullySimplified first)
+    (FullySimplified second)
   | OrPattern.isTrue first   = Simplifiable.fromOrPattern second
   | OrPattern.isFalse first  =
     Unsimplified.mkNot (Simplifiable.fromOrPattern second)

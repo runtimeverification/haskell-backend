@@ -7,15 +7,13 @@ module Kore.Step.Simplification.Inhabitant
     ( simplify
     ) where
 
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromTermLike
@@ -26,7 +24,7 @@ an or containing a term made of that literal.
 -}
 simplify
     :: InternalVariable variable
-    => Inhabitant (OrPattern variable)
+    => Inhabitant (SimplifiedChildren variable)
     -> Simplifiable variable
 simplify Inhabitant { inhSort } =
     Simplifiable.fromTermLike

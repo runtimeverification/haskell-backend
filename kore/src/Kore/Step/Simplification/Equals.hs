@@ -45,9 +45,6 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -72,7 +69,8 @@ import Kore.Step.Simplification.AndTerms
     ( maybeTermEquals
     )
 import Kore.Step.Simplification.Simplifiable
-    ( Simplifiable
+    ( FullySimplified (FullySimplified)
+    , Simplifiable
     , SimplifiableF (..)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Unsimplified
@@ -194,7 +192,7 @@ Equals(a and b, b and a) will not be evaluated to Top.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Equals Sort (OrPattern variable)
+    => Equals Sort (FullySimplified variable)
     -> simplifier (Simplifiable variable)
 simplify
     Equals { equalsFirst = first, equalsSecond = second }
@@ -220,10 +218,10 @@ carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPattern variable
-    -> OrPattern variable
+    => FullySimplified variable
+    -> FullySimplified variable
     -> simplifier (Simplifiable variable)
-simplifyEvaluated first second
+simplifyEvaluated (FullySimplified first) (FullySimplified second)
   | first == second = do
     --traceM ("simplifyEvaluated.1 " ++ show (length (show first)))
     return Simplifiable.top

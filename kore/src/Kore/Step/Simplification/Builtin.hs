@@ -31,7 +31,8 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplifiable
-    ( Simplifiable
+    ( FullySimplified (FullySimplified)
+    , Simplifiable
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromOrPattern
@@ -42,12 +43,15 @@ an or containing a term made of that value.
 -}
 simplify
     :: InternalVariable variable
-    => Builtin (OrPattern variable)
+    -- TODO(virgil): This can likely be a `SimplifiedChildren`
+    => Builtin (FullySimplified variable)
     -> Simplifiable variable
 simplify builtin =
     Simplifiable.fromOrPattern . MultiOr.filterOr $ do
-        child <- simplifyBuiltin builtin
+        child <- simplifyBuiltin (fromFullySimplified <$> builtin)
         return (markSimplified . mkBuiltin <$> child)
+  where
+    fromFullySimplified (FullySimplified a) = a
 
 simplifyBuiltin
     :: InternalVariable variable

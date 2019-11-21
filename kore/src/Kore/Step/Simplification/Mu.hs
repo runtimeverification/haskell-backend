@@ -6,9 +6,6 @@ module Kore.Step.Simplification.Mu
     ( simplify
     ) where
 
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -29,6 +26,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromOrPattern
@@ -39,10 +37,10 @@ child.
 -}
 simplify
     :: InternalVariable variable
-    => Mu variable (OrPattern variable)
+    => Mu variable (SimplifiedChildren variable)
     -> Simplifiable variable
-simplify Mu { muVariable, muChild } =
-    Simplifiable.fromOrPattern (makeEvaluate muVariable <$> muChild)
+simplify Mu { muVariable, muChild = SimplifiedChildren child } =
+    Simplifiable.fromOrPattern (makeEvaluate muVariable <$> child)
 
 {-| evaluates a 'Mu' given its two 'Pattern' children.
 

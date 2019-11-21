@@ -8,6 +8,8 @@ License     : NCSA
 module Kore.Step.Simplification.Simplifiable
     ( Simplifiable
     , SimplifiableF (..)
+    , FullySimplified (..)
+    , SimplifiedChildren (..)
 
     , freeVariables
     , substitute
@@ -283,6 +285,12 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
+newtype FullySimplified variable =
+    FullySimplified { getFullySimplified :: OrPattern variable }
+
+newtype SimplifiedChildren variable =
+    SimplifiedChildren { getSimplifiedChildren :: OrPattern variable }
+
 data SimplifiableF variable child
     = Simplified (OrPattern variable)
     | PartlySimplified (OrPattern variable)
@@ -503,7 +511,7 @@ mkApplyAlias alias children =
         {applicationSymbolOrAlias = alias, applicationChildren = children}
 
 mkBottom :: Simplifiable variable
-mkBottom =  unsimplified $ mkBottomF
+mkBottom =  unsimplified mkBottomF
 
 mkBottomF :: TermLikeF variable (Simplifiable variable)
 mkBottomF =  BottomF Bottom {bottomSort = predicateSort}

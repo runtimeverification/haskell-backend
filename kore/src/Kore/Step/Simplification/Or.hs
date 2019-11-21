@@ -14,9 +14,6 @@ import Control.Applicative
 
 import Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -26,6 +23,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     , onlyForOrSimplified
     )
 
@@ -39,7 +37,7 @@ merging its children.
 -}
 simplify
     :: InternalVariable variable
-    => Or Sort (OrPattern variable)
+    => Or Sort (SimplifiedChildren variable)
     -> Simplifiable variable
 simplify Or { orFirst = first, orSecond = second } =
     simplifyEvaluated first second
@@ -51,8 +49,8 @@ See also: 'simplify'
 -}
 simplifyEvaluated
     :: InternalVariable variable
-    => OrPattern variable
-    -> OrPattern variable
+    => SimplifiedChildren variable
+    -> SimplifiedChildren variable
     -> Simplifiable variable
 
 {-
@@ -77,7 +75,7 @@ __TODO__ (virgil): This should do all possible mergings, not just the first term
 with the second.
 -}
 
-simplifyEvaluated first second
+simplifyEvaluated (SimplifiedChildren first) (SimplifiedChildren second)
 
   | (head1 : tail1) <- MultiOr.extractPatterns first
   , (head2 : tail2) <- MultiOr.extractPatterns second

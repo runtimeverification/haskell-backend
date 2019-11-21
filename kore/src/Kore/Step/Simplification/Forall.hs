@@ -21,21 +21,15 @@ import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
     ( withCondition
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-    ( bottom
-    , fromTermLike
-    , isBottom
+    ( isBottom
     , isTop
     , splitTerm
     , toTermLike
-    , top
     )
 import Kore.Internal.Predicate
     ( makeForallPredicate
@@ -53,11 +47,14 @@ import qualified Kore.Internal.TermLike as TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike.DoNotUse
 import Kore.Step.Simplification.Simplifiable
-    ( Simplifiable
+    ( FullySimplified (FullySimplified)
+    , Simplifiable
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( bottom
-    , fromOrPattern
+    , fromPattern
+    , fromTermLike
+    , onlyForOrSimplified
     , top
     )
 import Kore.TopBottom
@@ -84,7 +81,7 @@ simplify it this way.
 -}
 simplify
     :: InternalVariable variable
-    => Forall Sort variable (OrPattern variable)
+    => Forall Sort variable (FullySimplified variable)
     -> Simplifiable variable
 simplify Forall { forallVariable, forallChild } =
     simplifyEvaluated forallVariable forallChild
@@ -103,15 +100,28 @@ even more useful to carry around.
 
 -}
 simplifyEvaluated
-    :: InternalVariable variable
+    :: forall variable
+    .  InternalVariable variable
     => ElementVariable variable
-    -> OrPattern variable
+    -> FullySimplified variable
     -> Simplifiable variable
-simplifyEvaluated variable child
+simplifyEvaluated variable (FullySimplified child)
   | OrPattern.isTrue child  = Simplifiable.top
   | OrPattern.isFalse child = Simplifiable.bottom
-  | otherwise                    =
-    Simplifiable.fromOrPattern $ makeEvaluate variable <$> child
+  | otherwise               = case OrPattern.toPatterns child of
+    [] -> Simplifiable.bottom
+    [patt] -> makeEvaluate variable patt
+    patts
+      | all pattHasFreeVariable patts -> Simplifiable.onlyForOrSimplified child
+      | otherwise ->
+        Simplifiable.fromTermLike
+        $ TermLike.markSimplified
+        $ mkForall variable
+        $ OrPattern.toTermLike child
+      where
+        pattHasFreeVariable :: Pattern variable -> Bool
+        pattHasFreeVariable =
+            TermLike.hasFreeVariable (ElemVar variable) . Pattern.toTermLike
 
 {-| evaluates an 'Forall' given its two 'Pattern' children.
 
@@ -121,22 +131,27 @@ makeEvaluate
     :: InternalVariable variable
     => ElementVariable variable
     -> Pattern variable
-    -> Pattern variable
+    -> Simplifiable variable
 makeEvaluate variable patt
-  | Pattern.isTop patt    = Pattern.top
-  | Pattern.isBottom patt = Pattern.bottom
-  | not variableInTerm && not variableInCondition = patt
+  | Pattern.isTop patt    = Simplifiable.top
+  | Pattern.isBottom patt = Simplifiable.bottom
+  | not variableInTerm && not variableInCondition =
+    Simplifiable.fromPattern patt
   | predicateIsBoolean =
-    TermLike.markSimplified (mkForall variable term)
-    `Conditional.withCondition` predicate
+    Simplifiable.fromPattern
+        ( TermLike.markSimplified (mkForall variable term)
+        `Conditional.withCondition` predicate
+        )
   | termIsBoolean =
-    term
-    `Conditional.withCondition` Condition.markSimplified
-        (Condition.fromPredicate
-            (makeForallPredicate variable (Condition.toPredicate predicate))
+    Simplifiable.fromPattern
+        ( term
+        `Conditional.withCondition` Condition.markSimplified
+            (Condition.fromPredicate
+                (makeForallPredicate variable (Condition.toPredicate predicate))
+            )
         )
   | otherwise =
-    Pattern.fromTermLike
+    Simplifiable.fromTermLike
     $ TermLike.markSimplified
     $ mkForall variable
     $ Pattern.toTermLike patt

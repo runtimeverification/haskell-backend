@@ -15,9 +15,6 @@ module Kore.Step.Simplification.Floor
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -29,7 +26,8 @@ import qualified Kore.Internal.Predicate as Predicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplifiable
-    ( Simplifiable
+    ( FullySimplified (FullySimplified)
+    , Simplifiable
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( bottom
@@ -50,7 +48,7 @@ floor(a and b) = floor(a) and floor(b).
 -}
 simplify
     :: InternalVariable variable
-    => Floor Sort (OrPattern variable)
+    => Floor Sort (FullySimplified variable)
     -> Simplifiable variable
 simplify Floor { floorChild = child } =
     simplifyEvaluatedFloor child
@@ -70,9 +68,9 @@ to carry around.
 -}
 simplifyEvaluatedFloor
     :: InternalVariable variable
-    => OrPattern variable
+    => FullySimplified variable
     -> Simplifiable variable
-simplifyEvaluatedFloor child =
+simplifyEvaluatedFloor (FullySimplified child) =
     case MultiOr.extractPatterns child of
         [childP] -> makeEvaluateFloor childP
         _ -> makeEvaluateFloor (OrPattern.toPattern child)

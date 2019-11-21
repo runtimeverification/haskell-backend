@@ -11,9 +11,6 @@ module Kore.Step.Simplification.Rewrites
     ( simplify
     ) where
 
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
@@ -21,7 +18,8 @@ import qualified Kore.Internal.TermLike as TermLike
     ( markSimplified
     )
 import Kore.Step.Simplification.Simplifiable
-    ( Simplifiable
+    ( FullySimplified (FullySimplified)
+    , Simplifiable
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromTermLike
@@ -35,7 +33,7 @@ TODO(virgil): Should I even bother to simplify Rewrites? Maybe to implies+next?
 -}
 simplify
     :: InternalVariable variable
-    => Rewrites Sort (OrPattern variable)
+    => Rewrites Sort (FullySimplified variable)
     -> Simplifiable variable
 simplify
     Rewrites
@@ -60,10 +58,10 @@ will make it even more useful to carry around.
 -}
 simplifyEvaluatedRewrites
     :: InternalVariable variable
-    => OrPattern variable
-    -> OrPattern variable
+    => FullySimplified variable
+    -> FullySimplified variable
     -> Simplifiable variable
-simplifyEvaluatedRewrites first second =
+simplifyEvaluatedRewrites (FullySimplified first) (FullySimplified second) =
     makeEvaluateRewrites
         (OrPattern.toPattern first)
         (OrPattern.toPattern second)

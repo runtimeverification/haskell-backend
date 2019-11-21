@@ -36,6 +36,7 @@ import qualified Kore.Internal.TermLike as TermLike
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromMultiAnd
@@ -60,7 +61,7 @@ Right now this uses the following:
 -}
 simplify
     :: SimplifierVariable variable
-    => Not Sort (OrPattern variable)
+    => Not Sort (SimplifiedChildren variable)
     -> Simplifiable variable
 simplify Not { notChild } = simplifyEvaluated notChild
 
@@ -84,9 +85,9 @@ to carry around.
 -}
 simplifyEvaluated
     :: SimplifierVariable variable
-    => OrPattern variable
+    => SimplifiedChildren variable
     -> Simplifiable variable
-simplifyEvaluated simplified =
+simplifyEvaluated (SimplifiedChildren simplified) =
     case OrPattern.toPatterns simplified of
         [] -> Simplifiable.top
         [patt] -> makeEvaluate patt

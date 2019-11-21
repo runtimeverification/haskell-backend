@@ -47,6 +47,7 @@ import Kore.Sort
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Unsimplified
     ( mkNot
@@ -86,7 +87,7 @@ and it has a special case for children with top terms.
 -}
 simplify
     :: SimplifierVariable variable
-    => Implies Sort (OrPattern variable)
+    => Implies Sort (SimplifiedChildren variable)
     -> Simplifiable variable
 simplify Implies { impliesFirst = first, impliesSecond = second } =
     simplifyEvaluated first second
@@ -111,10 +112,10 @@ carry around.
 -}
 simplifyEvaluated
     :: SimplifierVariable variable
-    => OrPattern variable
-    -> OrPattern variable
+    => SimplifiedChildren variable
+    -> SimplifiedChildren variable
     -> Simplifiable variable
-simplifyEvaluated first second
+simplifyEvaluated (SimplifiedChildren first) (SimplifiedChildren second)
   | OrPattern.isTrue first   = Simplifiable.fromOrPattern second
   | OrPattern.isFalse first  = Simplifiable.top
   | OrPattern.isTrue second  = Simplifiable.top

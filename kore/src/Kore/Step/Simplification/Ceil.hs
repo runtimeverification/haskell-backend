@@ -35,9 +35,6 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.MultiAnd as MultiAnd
     ( make
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
@@ -74,6 +71,7 @@ import qualified Kore.Step.Function.Evaluator as Axiom
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Unsimplified
     ( mkAnd
@@ -104,7 +102,7 @@ A ceil(or) is equal to or(ceil). We also take into account that
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
-    -> Ceil Sort (OrPattern variable)
+    -> Ceil Sort (SimplifiedChildren variable)
     -> simplifier (Simplifiable variable)
 simplify
     condition
@@ -132,9 +130,9 @@ simplifyEvaluated
     :: SimplifierVariable variable
     => MonadSimplify simplifier
     => Condition variable
-    -> OrPattern variable
+    -> SimplifiedChildren variable
     -> simplifier (Simplifiable variable)
-simplifyEvaluated predicate child =
+simplifyEvaluated predicate (SimplifiedChildren child) =
     Simplifiable.fromMultiOr <$> traverse (makeEvaluate predicate) child
 
 {-| Evaluates a ceil given its child as an Pattern, see 'simplify'

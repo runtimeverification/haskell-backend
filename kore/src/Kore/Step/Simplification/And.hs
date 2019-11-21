@@ -46,9 +46,6 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Conditional as Conditional
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
@@ -68,6 +65,7 @@ import Kore.Step.Simplification.AndTerms
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( bottom
@@ -120,7 +118,7 @@ Also, we have
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => And Sort (OrPattern variable)
+    => And Sort (SimplifiedChildren variable)
     -> simplifier (Simplifiable variable)
 simplify And { andFirst = first, andSecond = second } =
     simplifyEvaluated first second
@@ -144,10 +142,10 @@ to carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => OrPattern variable
-    -> OrPattern variable
+    => SimplifiedChildren variable
+    -> SimplifiedChildren variable
     -> simplifier (Simplifiable variable)
-simplifyEvaluated first second
+simplifyEvaluated (SimplifiedChildren first) (SimplifiedChildren second)
   | OrPattern.isFalse first  = return Simplifiable.bottom
   | OrPattern.isFalse second = return Simplifiable.bottom
   | OrPattern.isTrue first   = return (Simplifiable.fromOrPattern second)

@@ -109,8 +109,10 @@ import qualified Kore.Step.Simplification.Rewrites as Rewrites
     ( simplify
     )
 import Kore.Step.Simplification.Simplifiable
-    ( Simplifiable
+    ( FullySimplified (FullySimplified)
+    , Simplifiable
     , SimplifiableF (PartlySimplified, Simplified, Unsimplified)
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( freeVariables
@@ -216,7 +218,9 @@ simplifyInternal term predicate = do
       | otherwise
       = assertTermNotPredicate $ do
         let simplifiableTerm = Simplifiable.fromTermLike term
-        simplifyUntilStable simplifiableTerm
+        wrappedResult <- fullySimplifyUntilStable simplifiableTerm
+        case wrappedResult of
+            (FullySimplified result) -> return result
 
     assertConditionSimplified
         :: TermLike variable -> Condition variable -> Condition variable
@@ -240,11 +244,17 @@ simplifyInternal term predicate = do
     predicateFreeVars =
         FreeVariables.getFreeVariables $ Condition.freeVariables predicate
 
-    simplifyChildren
+    fullySimplifyChildren
         :: Traversable t
         => t (Simplifiable variable)
-        -> simplifier (t (OrPattern variable))
-    simplifyChildren = traverse simplifyUntilStable
+        -> simplifier (t (FullySimplified variable))
+    fullySimplifyChildren = traverse fullySimplifyUntilStable
+
+    partlySimplifyChildren
+        :: Traversable t
+        => t (Simplifiable variable)
+        -> simplifier (t (SimplifiedChildren variable))
+    partlySimplifyChildren = traverse partlySimplifyUntilStable
 
     applySubstitutionAndResimplifyOr
         :: OrPattern variable
@@ -278,20 +288,43 @@ simplifyInternal term predicate = do
                     substitutedTerm
                     simplifiedCondition
 
-    simplifyUntilStable
-        :: Simplifiable variable -> simplifier (OrPattern variable)
-    simplifyUntilStable simplifiable =
+    partlySimplifyUntilStable
+        :: Simplifiable variable -> simplifier (SimplifiedChildren variable)
+    partlySimplifyUntilStable simplifiable =
         case Recursive.project simplifiable of
             Simplified result ->
-                assertTermNotPredicate $ applySubstitutionAndResimplifyOr result
+                SimplifiedChildren <$>
+                assertTermNotPredicate (applySubstitutionAndResimplifyOr result)
+            PartlySimplified result ->
+                SimplifiedChildren <$>
+                assertTermNotPredicate (applySubstitutionAndResimplifyOr result)
+            Unsimplified unsimplified -> simplifyUnsimplified unsimplified
+      where
+        simplifyUnsimplified
+            :: TermLikeF variable (Simplifiable variable)
+            -> simplifier (SimplifiedChildren variable)
+        simplifyUnsimplified unsimplified = do
+            simplifiedOnce <- descendAndSimplify unsimplified
+            partlySimplifyUntilStable simplifiedOnce
+
+    fullySimplifyUntilStable
+        :: Simplifiable variable -> simplifier (FullySimplified variable)
+    fullySimplifyUntilStable simplifiable =
+        case Recursive.project simplifiable of
+            Simplified result ->
+                FullySimplified <$>
+                assertTermNotPredicate (applySubstitutionAndResimplifyOr result)
             PartlySimplified result ->
                 simplifyUnsimplified
                     (Simplifiable.termFSimplifiableFromOrPattern result)
             Unsimplified unsimplified -> simplifyUnsimplified unsimplified
       where
+        simplifyUnsimplified
+            :: TermLikeF variable (Simplifiable variable)
+            -> simplifier (FullySimplified variable)
         simplifyUnsimplified unsimplified = do
             simplifiedOnce <- descendAndSimplify unsimplified
-            simplifyUntilStable simplifiedOnce
+            fullySimplifyUntilStable simplifiedOnce
 
     assertTermNotPredicate getResults = do
         results <- getResults
@@ -329,61 +362,62 @@ simplifyInternal term predicate = do
             SignednessF _ -> doNotSimplify
             --
             AndF andF -> -- trace ("descendAndSimplify.And " ++ show (length (show termLikeF))) $
-                And.simplify =<< simplifyChildren andF
+                And.simplify =<< partlySimplifyChildren andF
             ApplySymbolF applySymbolF -> --trace ("descendAndSimplify.ApplySymbol " ++ show (length (show termLikeF))) $
-                Application.simplify predicate =<< simplifyChildren applySymbolF
+                Application.simplify predicate
+                =<< partlySimplifyChildren applySymbolF
             CeilF ceilF -> --trace ("descendAndSimplify.Ceil " ++ show (length (show termLikeF))) $
-                Ceil.simplify predicate =<< simplifyChildren ceilF
+                Ceil.simplify predicate =<< partlySimplifyChildren ceilF
             EqualsF equalsF -> --trace ("descendAndSimplify.Equals " ++ show (length (show termLikeF))) $
-                Equals.simplify =<< simplifyChildren equalsF
+                Equals.simplify =<< fullySimplifyChildren equalsF
             ExistsF exists -> --trace ("descendAndSimplify.Exists " ++ show (length (show termLikeF))) $
                 let fresh =
                         Lens.over
                             Binding.existsBinder
                             refreshBinder
                             exists
-                in Exists.simplify =<< simplifyChildren fresh
+                in Exists.simplify =<< partlySimplifyChildren fresh
             IffF iffF -> --trace ("descendAndSimplify.Iff " ++ show (length (show termLikeF))) $
-                Iff.simplify <$> simplifyChildren iffF
+                Iff.simplify <$> fullySimplifyChildren iffF
             ImpliesF impliesF -> --trace ("descendAndSimplify.Implies " ++ show (length (show termLikeF))) $
-                Implies.simplify <$> simplifyChildren impliesF
+                Implies.simplify <$> partlySimplifyChildren impliesF
             InF inF -> --trace ("descendAndSimplify.In " ++ show (length (show termLikeF))) $
-                In.simplify <$> simplifyChildren inF
+                In.simplify <$> partlySimplifyChildren inF
             NotF notF -> --trace ("descendAndSimplify.Not " ++ show (length (show termLikeF))) $
-                Not.simplify <$> simplifyChildren notF
+                Not.simplify <$> partlySimplifyChildren notF
             --
             BottomF bottomF -> --trace ("descendAndSimplify.Bottom " ++ show (length (show termLikeF))) $
-                Bottom.simplify <$> simplifyChildren bottomF
+                Bottom.simplify <$> partlySimplifyChildren bottomF
             BuiltinF builtinF -> --trace ("descendAndSimplify.Builtin " ++ show (length (show termLikeF))) $
-                Builtin.simplify <$> simplifyChildren builtinF
+                Builtin.simplify <$> fullySimplifyChildren builtinF
             DomainValueF domainValueF -> --trace ("descendAndSimplify.DomainValue " ++ show (length (show termLikeF))) $
-                DomainValue.simplify <$> simplifyChildren domainValueF
+                DomainValue.simplify <$> partlySimplifyChildren domainValueF
             FloorF floorF -> --trace ("descendAndSimplify.Floor " ++ show (length (show termLikeF))) $
-                Floor.simplify <$> simplifyChildren floorF
+                Floor.simplify <$> fullySimplifyChildren floorF
             ForallF forall -> --trace ("descendAndSimplify.Forall " ++ show (length (show termLikeF))) $
                 let fresh =
                         Lens.over
                             Binding.forallBinder
                             refreshBinder
                             forall
-                in Forall.simplify <$> simplifyChildren fresh
+                in Forall.simplify <$> fullySimplifyChildren fresh
             InhabitantF inhF -> --trace ("descendAndSimplify.Inhabitant " ++ show (length (show termLikeF))) $
-                Inhabitant.simplify <$> simplifyChildren inhF
+                Inhabitant.simplify <$> partlySimplifyChildren inhF
             MuF mu -> --trace ("descendAndSimplify.Mu " ++ show (length (show termLikeF))) $
                 let fresh = Lens.over Binding.muBinder refreshBinder mu
-                in Mu.simplify <$> simplifyChildren fresh
+                in Mu.simplify <$> partlySimplifyChildren fresh
             NuF nu -> --trace ("descendAndSimplify.Nu " ++ show (length (show termLikeF))) $
                 let fresh = Lens.over Binding.nuBinder refreshBinder nu
-                in Nu.simplify <$> simplifyChildren fresh
+                in Nu.simplify <$> partlySimplifyChildren fresh
             -- TODO(virgil): Move next up through patterns.
             NextF nextF -> --trace ("descendAndSimplify.Next " ++ show (length (show termLikeF))) $
-                Next.simplify <$> simplifyChildren nextF
+                Next.simplify <$> fullySimplifyChildren nextF
             OrF orF -> --trace ("descendAndSimplify.Or " ++ show (length (show termLikeF))) $
-                Or.simplify <$> simplifyChildren orF
+                Or.simplify <$> partlySimplifyChildren orF
             RewritesF rewritesF -> --trace ("descendAndSimplify.Rewrites " ++ show (length (show termLikeF))) $
-                Rewrites.simplify <$> simplifyChildren rewritesF
+                Rewrites.simplify <$> fullySimplifyChildren rewritesF
             TopF topF -> --trace ("descendAndSimplify.Top " ++ show (length (show termLikeF))) $
-                Top.simplify <$> simplifyChildren topF
+                Top.simplify <$> partlySimplifyChildren topF
             --
             StringLiteralF stringLiteralF -> --trace ("descendAndSimplify.StringLiteral " ++ show (length (show termLikeF))) $
                 return $ StringLiteral.simplify (getConst stringLiteralF)

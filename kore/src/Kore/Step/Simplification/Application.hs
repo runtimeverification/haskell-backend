@@ -39,6 +39,7 @@ import Kore.Step.Function.Evaluator
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( fromOrPattern
@@ -64,7 +65,7 @@ then merging everything into an Pattern.
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
-    -> Application Symbol (OrPattern variable)
+    -> Application Symbol (SimplifiedChildren variable)
     -> simplifier (Simplifiable variable)
 simplify predicate application = do
     evaluated <-
@@ -83,7 +84,8 @@ simplify predicate application = do
         { applicationSymbolOrAlias = symbol
         , applicationChildren = children
         }
-      = application
+      = fromSimplifiedChildren <$> application
+    fromSimplifiedChildren (SimplifiedChildren a) = a
 
     -- The "Propagation Or" inference rule together with
     -- "Propagation Bottom" for the case when a child or is empty.

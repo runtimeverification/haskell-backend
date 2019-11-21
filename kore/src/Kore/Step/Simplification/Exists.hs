@@ -33,9 +33,6 @@ import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
-import Kore.Internal.OrPattern
-    ( OrPattern
-    )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
@@ -70,6 +67,7 @@ import qualified Kore.Step.Simplification.Pattern as Pattern
     )
 import Kore.Step.Simplification.Simplifiable
     ( Simplifiable
+    , SimplifiedChildren (SimplifiedChildren)
     )
 import qualified Kore.Step.Simplification.Simplifiable as Simplifiable
     ( bottom
@@ -125,7 +123,7 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Exists Sort variable (OrPattern variable)
+    => Exists Sort variable (SimplifiedChildren variable)
     -> simplifier (Simplifiable variable)
 simplify Exists { existsVariable, existsChild } =
     simplifyEvaluated existsVariable existsChild
@@ -146,9 +144,9 @@ even more useful to carry around.
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
     => ElementVariable variable
-    -> OrPattern variable
+    -> SimplifiedChildren variable
     -> simplifier (Simplifiable variable)
-simplifyEvaluated variable child
+simplifyEvaluated variable (SimplifiedChildren child)
   | OrPattern.isTrue child  = return Simplifiable.top
   | OrPattern.isFalse child =
     return Simplifiable.bottom
