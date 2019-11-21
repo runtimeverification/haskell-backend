@@ -660,16 +660,23 @@ patternToAxiomPattern attributes pat =
                 , attributes
                 }
         -- function axioms: general
-        Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) _ensures) ->
-            -- TODO (traiansf): ensure that _ensures is \top
-            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
-                { left = lhs
-                , antiLeft = Nothing
-                , right = rhs
-                , requires = Predicate.wrapPredicate requires
-                , ensures = Predicate.makeTruePredicate
-                , attributes
-                }
+        Implies_ _ requires (And_ _ (Equals_ _ _ lhs rhs) ensures) ->
+            case ensures of
+                TermLike.Top_ _ ->
+                    pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                        { left = lhs
+                        , antiLeft = Nothing
+                        , right = rhs
+                        , requires = Predicate.wrapPredicate requires
+                        , ensures = Predicate.makeTruePredicate
+                        , attributes
+                        }
+                _ -> koreFail $ unlines
+                        ["Found ensures clause:"
+                        , show ensures
+                        , "in function axiom."
+                        ]
+
         -- function axioms: trivial pre- and post-conditions
         Equals_ _ _ lhs rhs ->
             pure $ FunctionAxiomPattern $ EqualityRule RulePattern
