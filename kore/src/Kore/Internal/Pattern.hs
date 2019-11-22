@@ -6,6 +6,8 @@ Representation of program configurations as conditional patterns.
 -}
 module Kore.Internal.Pattern
     ( Pattern
+    , coerceSort
+    , patternSort
     , fromCondition
     , fromConditionSorted
     , bottom
@@ -18,6 +20,7 @@ module Kore.Internal.Pattern
     , top
     , topOf
     , fromTermLike
+    , fromTermLikeUnsorted
     , Kore.Internal.Pattern.freeVariables
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
@@ -25,7 +28,8 @@ module Kore.Internal.Pattern
     , Conditional (..)
     , Conditional.andCondition
     , Conditional.isPredicate
-    , Conditional.withCondition
+    , withCondition
+    , withConditionUnsorted
     , Conditional.withoutTerm
     , Condition
     ) where
@@ -63,6 +67,9 @@ import Kore.Internal.TermLike
     , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
+import qualified Kore.Sort as Sort
+    ( predicateSort
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -163,20 +170,20 @@ bottom :: InternalVariable variable => Pattern variable
 bottom =
     Conditional
         { term      = mkBottom_
-        , predicate = Predicate.makeFalsePredicate
+        , predicate = Predicate.makeFalsePredicate_
         , substitution = mempty
         }
 
 {- | An 'Pattern' where the 'term' is 'Bottom' of the given 'Sort'.
 
-The 'predicate' is set to 'makeFalsePredicate'.
+The 'predicate' is set to 'makeFalsePredicate_'.
 
  -}
 bottomOf :: InternalVariable variable => Sort -> Pattern variable
 bottomOf resultSort =
     Conditional
         { term      = mkBottom resultSort
-        , predicate = Predicate.makeFalsePredicate
+        , predicate = Predicate.makeFalsePredicate_
         , substitution = mempty
         }
 
@@ -187,7 +194,7 @@ top :: InternalVariable variable => Pattern variable
 top =
     Conditional
         { term      = mkTop_
-        , predicate = Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate_
         , substitution = mempty
         }
 
@@ -197,7 +204,7 @@ topOf :: InternalVariable variable => Sort -> Pattern variable
 topOf resultSort =
     Conditional
         { term      = mkTop resultSort
-        , predicate = Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate resultSort
         , substitution = mempty
         }
 
@@ -206,7 +213,7 @@ topOf resultSort =
 The resulting @Pattern@ has a true predicate and an empty
 substitution, unless it is trivially 'Bottom'.
 
-See also: 'makeTruePredicate', 'pure'
+See also: 'makeTruePredicate_', 'pure'
 
  -}
 fromTermLike
@@ -218,9 +225,76 @@ fromTermLike term
   | otherwise =
     Conditional
         { term
-        , predicate = Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate (termLikeSort term)
         , substitution = mempty
         }
 
+fromTermLikeUnsorted
+    :: InternalVariable variable
+    => TermLike variable
+    -> Pattern variable
+fromTermLikeUnsorted term
+  | isBottom term = bottom
+  | otherwise =
+    Conditional
+        { term
+        , predicate = Predicate.makeTruePredicate_
+        , substitution = mempty
+        }
+
+withCondition
+    :: InternalVariable variable
+    => TermLike variable
+    -> Conditional variable ()
+    -- ^ Condition
+    -> Pattern variable
+withCondition
+    term
+    Conditional
+        { term = ()
+        , predicate
+        , substitution
+        }
+  = Conditional
+    { term
+    , predicate = Predicate.coerceSort (termLikeSort term) predicate
+    , substitution
+    }
+
+withConditionUnsorted
+    :: TermLike variable
+    -> Conditional variable ()
+    -- ^ Condition
+    -> Pattern variable
+withConditionUnsorted
+    term
+    Conditional { term = (), predicate, substitution }
+  =
+    Conditional { term, predicate, substitution }
+
 splitTerm :: Pattern variable -> (TermLike variable, Condition variable)
 splitTerm = Conditional.splitTerm
+
+coerceSort
+    :: (HasCallStack, InternalVariable variable)
+    => Sort -> Pattern variable -> Pattern variable
+coerceSort
+    sort
+    Conditional { term, predicate, substitution }
+  =
+    Conditional
+        { term = if isTop term
+            then mkTop sort
+            else TermLike.forceSort sort term
+        -- Need to override this since a 'ceil' (say) over a predicate is that
+        -- predicate with a different sort.
+        , predicate = Predicate.coerceSort sort predicate
+        , substitution
+        }
+
+patternSort :: Pattern variable -> Sort
+patternSort Conditional {term, predicate} =
+    if termSort == Sort.predicateSort then predicateSort else termSort
+  where
+    termSort = termLikeSort term
+    predicateSort = Predicate.predicateSort predicate

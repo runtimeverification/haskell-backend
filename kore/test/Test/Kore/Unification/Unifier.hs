@@ -308,7 +308,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = []
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "Variable" $
@@ -318,7 +318,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = [("x", a)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "one level" $
@@ -328,7 +328,7 @@ test_unification =
             [ UnificationResult
                 { term = f a
                 , substitution = [("x", a)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "equal non-constructor patterns" $
@@ -338,7 +338,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = []
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "variable + non-constructor pattern" $
@@ -348,7 +348,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = [("x", a2)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
@@ -362,7 +362,7 @@ test_unification =
                     , ("ex2", ex3)
                     , ("ex4", eh (eg ex3))
                     ]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
@@ -376,7 +376,7 @@ test_unification =
                     [ ("x", nonLinA)
                     , ("y", nonLinG nonLinA)
                     ]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
@@ -389,7 +389,7 @@ test_unification =
                     [ ("a", expY)
                     , ("x", expBin expY expY)
                     ]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , unificationProcedureSuccess
@@ -404,20 +404,20 @@ test_unification =
         [   (   [ ("a", expY)
                 , ("x", expBin expY expY)
                 ]
-            , Predicate.makeTruePredicate
+            , Predicate.makeTruePredicate_
             )
         ]
     , unificationProcedureSuccess
         "Unifying two non-ctors results in equals predicate"
         (UnificationTerm a2)
         (UnificationTerm a4)
-        [ ([], makeEqualsPredicate a2 a4) ]
+        [ ([], makeEqualsPredicate_ a2 a4) ]
     , unificationProcedureSuccess
         "Unifying function and variable results in ceil predicate"
         (UnificationTerm (mkElemVar Mock.x))
         (UnificationTerm a5)
         [   ( [("x", a5)]
-            , Predicate.makeCeilPredicate a5
+            , Predicate.makeCeilPredicate_ a5
             )
         ]
     , testGroup "inj unification tests" injUnificationTests
@@ -448,7 +448,7 @@ test_unification =
             [ UnificationResult
                 { term = dv1
                 , substitution = []
-                , predicate = makeEqualsPredicate dv1 a2
+                , predicate = makeEqualsPredicate_ dv1 a2
                 }
             ]
     , testCase "Unmatching nonconstructor constant + domain value" $
@@ -458,7 +458,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = []
-                , predicate = makeEqualsPredicate a2 dv1
+                , predicate = makeEqualsPredicate_ a2 dv1
                 }
             ]
     , testCase "non-functional pattern" $
@@ -495,7 +495,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = []
-                , predicate = makeEqualsPredicate a a2
+                , predicate = makeEqualsPredicate_ a a2
                 }
             ]
     , testCase "non-constructor symbolHead left" $
@@ -505,7 +505,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = []
-                , predicate = makeEqualsPredicate a2 a
+                , predicate = makeEqualsPredicate_ a2 a
                 }
             ]
     , testCase "nested a=a1 is bottom" $
@@ -543,7 +543,7 @@ test_unification =
                 [ UnificationResult
                     { term =
                         Mock.builtinMap [(a, constr a) , (b, constr b)]
-                    , predicate = Predicate.makeTruePredicate
+                    , predicate = Predicate.makeTruePredicate_
                     , substitution =
                         [ ("x", constr a)
                         , ("m", Mock.builtinMap [(Mock.b, constr b)])
@@ -577,7 +577,7 @@ test_unification =
                         constr20
                             Mock.a
                             (Mock.builtinMap [(a, constr a), (b, constr b)])
-                    , predicate = Predicate.makeTruePredicate
+                    , predicate = Predicate.makeTruePredicate_
                     , substitution =
                         [ ("x", constr a)
                         , ("y", a)
@@ -618,7 +618,7 @@ test_unification =
                                 (Mock.builtinMap [(y, x)])
                                 (mkElemVar Mock.m)
                             )
-                    , predicate = Predicate.makeTruePredicate
+                    , predicate = Predicate.makeTruePredicate_
                     , substitution =
                         [ ("x", constr a)
                         , ("y", a)
@@ -638,7 +638,7 @@ test_evaluated =
             [ UnificationResult
                 { term = evaluated
                 , substitution = [("x", evaluated)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , unificationProcedureSuccess
@@ -646,7 +646,7 @@ test_evaluated =
         (UnificationTerm (mkElemVar Mock.x))
         (UnificationTerm (mkEvaluated a5))
         [   ( [("x", mkEvaluated a5)]
-            , Predicate.makeCeilPredicate (mkEvaluated a5)
+            , Predicate.makeCeilPredicate_ (mkEvaluated a5)
             )
         ]
     ]
@@ -726,7 +726,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
                 , substitution = [("xSubSort", Mock.aSubsort)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "Variable" $
@@ -737,7 +737,7 @@ injUnificationTests =
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
                 , substitution =
                     [("xTopSort", Mock.sortInjectionSubToTop Mock.aSubsort)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "Injected Variable vs doubly injected term" $ do
@@ -755,7 +755,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "doubly injected variable vs injected term" $ do
@@ -769,7 +769,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "doubly injected variable vs doubly injected term" $ do
@@ -787,7 +787,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "constant vs injection is bottom" $
@@ -829,7 +829,7 @@ injUnificationTests =
                         , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                         )
                     ]
-                , predicate = Predicate.makeTruePredicate
+                , predicate = Predicate.makeTruePredicate_
                 }
             ]
     , testCase "unmatching injections" $
@@ -853,11 +853,11 @@ simplifyPattern (UnificationTerm term) = do
             (config : _) -> return config
     expandedPattern = Pattern.fromTermLike term
 
-makeEqualsPredicate
+makeEqualsPredicate_
     :: TermLike Variable
     -> TermLike Variable
     -> Predicate Variable
-makeEqualsPredicate = Predicate.makeEqualsPredicate
+makeEqualsPredicate_ = Predicate.makeEqualsPredicate_
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig emptyLogger

@@ -19,7 +19,9 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeEqualsPredicate
+    , makeEqualsPredicate_
     , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -51,22 +53,22 @@ test_applicationSimplification =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = Mock.sigma Mock.a Mock.c
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.a Mock.d
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.sigma Mock.b Mock.c
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = mempty
                         }
                     ,  Conditional
                         { term = Mock.sigma Mock.b Mock.d
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = mempty
                         }
                     ]
@@ -144,8 +146,11 @@ test_applicationSimplification =
                             { term = Mock.sigma Mock.a Mock.b
                             , predicate =
                                 makeAndPredicate
-                                    (makeEqualsPredicate fOfA fOfB)
-                                    (makeEqualsPredicate gOfA gOfB)
+                                    (makeEqualsPredicate Mock.testSort
+                                        fOfA
+                                        fOfB
+                                    )
+                                    (makeEqualsPredicate_ gOfA gOfB)
                             , substitution = Substitution.unsafeWrap
                                 [ (ElemVar Mock.x, fOfA)
                                 , (ElemVar Mock.y, gOfA)
@@ -159,14 +164,14 @@ test_applicationSimplification =
                         Mock.sigmaSymbol
                         [   [ Conditional
                                 { term = Mock.a
-                                , predicate = makeEqualsPredicate fOfA fOfB
+                                , predicate = makeEqualsPredicate_ fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
-                                , predicate = makeEqualsPredicate gOfA gOfB
+                                , predicate = makeEqualsPredicate_ gOfA gOfB
                                 , substitution =
                                     Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
                                 }
@@ -191,10 +196,13 @@ test_applicationSimplification =
                             , predicate =
                                 makeAndPredicate
                                     (makeAndPredicate
-                                        (makeEqualsPredicate fOfA fOfB)
-                                        (makeEqualsPredicate fOfA gOfA)
+                                        (makeEqualsPredicate Mock.testSort
+                                            fOfA
+                                            fOfB
+                                        )
+                                        (makeEqualsPredicate_ fOfA gOfA)
                                     )
-                                    (makeEqualsPredicate gOfA gOfB)
+                                    (makeEqualsPredicate_ gOfA gOfB)
                             , substitution =
                                 Substitution.unsafeWrap $ List.sortOn fst
                                     [ (ElemVar z', gOfB)
@@ -218,7 +226,7 @@ test_applicationSimplification =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = fOfA
-                                , predicate = makeEqualsPredicate fOfA gOfA
+                                , predicate = makeEqualsPredicate_ fOfA gOfA
                                 , substitution =
                                     Substitution.wrap [ (ElemVar zvar, gOfB) ]
                                 }
@@ -239,14 +247,14 @@ test_applicationSimplification =
                         Mock.sigmaSymbol
                         [   [ Conditional
                                 { term = Mock.a
-                                , predicate = makeEqualsPredicate fOfA fOfB
+                                , predicate = makeEqualsPredicate_ fOfA fOfB
                                 , substitution =
                                     Substitution.wrap [ (ElemVar Mock.x, fOfA) ]
                                 }
                             ]
                         ,   [ Conditional
                                 { term = Mock.b
-                                , predicate = makeEqualsPredicate gOfA gOfB
+                                , predicate = makeEqualsPredicate_ gOfA gOfB
                                 , substitution =
                                     Substitution.wrap [ (ElemVar Mock.y, gOfA) ]
                                 }
@@ -265,29 +273,29 @@ test_applicationSimplification =
 
     aExpanded = Conditional
         { term = Mock.a
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
     bExpanded = Conditional
         { term = Mock.b
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
     cExpanded = Conditional
         { term = Mock.c
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
     dExpanded = Conditional
         { term = Mock.d
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 
     gOfAExpanded :: InternalVariable variable => Pattern variable
     gOfAExpanded = Conditional
         { term = gOfA
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 

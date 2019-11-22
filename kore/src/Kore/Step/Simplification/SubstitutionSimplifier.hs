@@ -215,7 +215,7 @@ deduplicateSubstitution
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution makeAnd' =
-    worker Predicate.makeTruePredicate . checkSetVars . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
   where
     checkSetVars m
       | isProblematic m = error

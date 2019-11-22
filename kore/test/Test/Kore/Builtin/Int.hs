@@ -57,6 +57,7 @@ import GHC.Integer.Logarithms
 
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Pattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 
@@ -394,7 +395,7 @@ test_unifyAnd_Equal =
     testCaseWithSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
         actual <- evaluate $ mkAnd dv1 dv1
-        assertEqual' "" (pure dv1) actual
+        assertEqual' "" (Pattern.fromTermLike dv1) actual
 
 -- | "\and"ed then "\equal"ed internal Integers that are equal
 test_unifyAndEqual_Equal :: TestTree
@@ -414,7 +415,7 @@ test_unifyAnd_Fn =
             expect =
                 Conditional
                     { term = dv
-                    , predicate = makeEqualsPredicate dv fnPat
+                    , predicate = makeEqualsPredicate intSort dv fnPat
                     , substitution = mempty
                     }
         actual <- evaluateT $ mkAnd dv fnPat

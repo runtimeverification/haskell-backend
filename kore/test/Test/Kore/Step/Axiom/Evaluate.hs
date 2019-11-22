@@ -15,6 +15,7 @@ import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Axiom.Concrete
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -24,14 +25,14 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeEqualsPredicate
-    , makeFalsePredicate
+    ( Predicate
+    , makeAndPredicate
+    , makeEqualsPredicate_
+    , makeFalsePredicate_
     , makeNotPredicate
     , makeOrPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
-import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Evaluate as Kore
 import qualified Kore.Step.Result as Results
@@ -50,34 +51,34 @@ test_evaluateAxioms :: [TestTree]
 test_evaluateAxioms =
     [ applies "F(x) => G(x) applies to F(x)"
         [axiom_ (f x) (g x)]
-        (f x, makeTruePredicate)
-        [Pattern.fromTermLike $ g x]
+        (f x, makeTruePredicate_)
+        [Pattern.fromTermLikeUnsorted $ g x]
     , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to F(x)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
-        (f x, makeTruePredicate)
+        (f x, makeTruePredicate_)
     , doesn'tApply "F(x) => G(x) doesn't apply to F(top)"
         [axiom_ (f x) (g x)]
-        (f mkTop_, makeTruePredicate)
+        (f mkTop_, makeTruePredicate_)
     , applies "F(x) => G(x) [concrete] apply to F(a)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
-        (f a, makeTruePredicate)
-        [Pattern.fromTermLike $ g a]
+        (f a, makeTruePredicate_)
+        [Pattern.fromTermLikeUnsorted $ g a]
     , doesn'tApply "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
-        [axiom (f x) (g x) makeFalsePredicate]
-        (f x, makeTruePredicate)
+        [axiom (f x) (g x) makeFalsePredicate_]
+        (f x, makeTruePredicate_)
     , doesn'tApply "Σ(X, X) => G(X) doesn't apply to Σ(Y, Z) -- no narrowing"
         [axiom_ (sigma x x) (g x)]
-        (sigma y z, makeTruePredicate)
+        (sigma y z, makeTruePredicate_)
     , doesn'tApply
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 and not Y > 0) doesn't apply to Σ(Z, Z)"
         [axiom (sigma x y) a (positive x `andNot` positive y)]
-        (sigma z z, makeTruePredicate)
+        (sigma z z, makeTruePredicate_)
     , applies
         -- using SMT
         "Σ(X, Y) => A requires (X > 0 or not Y > 0) applies to Σ(Z, Z)"
         [axiom (sigma x y) a (positive x `orNot` positive y)]
-        (sigma a a, makeTruePredicate)
+        (sigma a a, makeTruePredicate_)
         -- SMT not used to simplify trivial constraints
         [ a `andRequires` positive a
         , a `andRequires` makeNotPredicate (positive a)
@@ -114,7 +115,7 @@ a = Mock.a
 
 positive :: TermLike Variable -> Predicate Variable
 positive u =
-    makeEqualsPredicate
+    makeEqualsPredicate_
         (Mock.lessInt
             (Mock.fTestInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)
@@ -132,8 +133,8 @@ andRequires
     :: TermLike Variable
     -> Predicate Variable
     -> Pattern Variable
-andRequires termLike requires =
-    Pattern.withCondition termLike (Condition.fromPredicate requires)
+andRequires term requires =
+    Conditional {term, predicate = requires, substitution = mempty}
 
 -- * Helpers
 
@@ -149,7 +150,7 @@ axiom_
     :: TermLike Variable
     -> TermLike Variable
     -> EqualityRule Variable
-axiom_ left right = axiom left right makeTruePredicate
+axiom_ left right = axiom left right makeTruePredicate_
 
 concreteEqualityRule :: EqualityRule Variable -> EqualityRule Variable
 concreteEqualityRule =

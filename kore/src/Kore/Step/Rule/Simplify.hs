@@ -33,7 +33,7 @@ import Kore.Internal.Pattern
     )
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeCeilPredicate
+    , makeCeilPredicate_
     )
 import Kore.Step.Rule
     ( AllPathRule (..)
@@ -73,7 +73,7 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
         let lhsPredicate =
                 makeAndPredicate
                     requires
-                    (makeCeilPredicate left)
+                    (makeCeilPredicate_ left)
             definedLhs =
                 Conditional.withCondition left
                 $ Condition.fromPredicate lhsPredicate

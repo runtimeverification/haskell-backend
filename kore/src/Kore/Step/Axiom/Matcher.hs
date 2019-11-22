@@ -69,7 +69,7 @@ import Kore.Internal.MultiAnd
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
     ( Predicate
-    , makeCeilPredicate
+    , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
@@ -538,7 +538,7 @@ definedTerm termLike
   | isDefinedPattern termLike = return ()
   | otherwise = field @"predicate" <>= definedTermLike
   where
-    definedTermLike = MultiAnd.make [makeCeilPredicate termLike]
+    definedTermLike = MultiAnd.make [makeCeilPredicate_ termLike]
 
 {- | Ensure that the given variable is a target variable.
 

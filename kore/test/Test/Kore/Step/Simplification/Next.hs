@@ -10,8 +10,9 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate
+    ( makeEqualsPredicate_
     , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Next
@@ -28,7 +29,7 @@ test_nextSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkNext Mock.a
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
                     }
                 ]
@@ -37,7 +38,7 @@ test_nextSimplification =
                 (makeNext
                     [ Conditional
                         { term = Mock.a
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate_
                         , substitution = mempty
                         }
                     ]
@@ -54,7 +55,7 @@ test_nextSimplification =
                                 Mock.a
                                 (mkAnd Mock.b (mkEquals_ Mock.a Mock.b))
                             )
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
                     }
                 ]
@@ -63,12 +64,12 @@ test_nextSimplification =
                 (makeNext
                     [ Conditional
                         { term = Mock.a
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate_
                         , substitution = mempty
                         }
                     , Conditional
                         { term = Mock.b
-                        , predicate = makeEqualsPredicate Mock.a Mock.b
+                        , predicate = makeEqualsPredicate_ Mock.a Mock.b
                         , substitution = mempty
                         }
                     ]

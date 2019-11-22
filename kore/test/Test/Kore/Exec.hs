@@ -45,7 +45,7 @@ import Kore.IndexedModule.IndexedModule
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeTruePredicate
+    ( makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step
@@ -174,7 +174,7 @@ searchVar =
 searchPattern :: Pattern Variable
 searchPattern = Conditional
     { term = searchVar
-    , predicate = makeTruePredicate
+    , predicate = makeTruePredicate_
     , substitution = mempty
     }
 

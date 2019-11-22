@@ -1059,7 +1059,10 @@ forceSort
     => Sort
     -> TermLike variable
     -> TermLike variable
-forceSort forcedSort = Recursive.apo forceSortWorker
+forceSort forcedSort =
+    if forcedSort == predicateSort
+        then id
+        else Recursive.apo forceSortWorker
   where
     forceSortWorker original@(Recursive.project -> attrs :< pattern') =
         (:<)

@@ -5,11 +5,13 @@ License     : NCSA
 -}
 module Kore.Internal.OrPattern
     ( OrPattern
+    , coerceSort
     , isSimplified
     , fromPatterns
     , toPatterns
     , fromPattern
     , fromTermLike
+    , fromTermLikeUnsorted
     , bottom
     , isFalse
     , isPredicate
@@ -22,6 +24,7 @@ module Kore.Internal.OrPattern
     ) where
 
 import qualified Data.Foldable as Foldable
+import qualified GHC.Stack as GHC
 
 import Kore.Internal.Condition
     ( Condition
@@ -85,6 +88,12 @@ fromTermLike
     => TermLike variable
     -> OrPattern variable
 fromTermLike = fromPattern . Pattern.fromTermLike
+
+fromTermLikeUnsorted
+    :: InternalVariable variable
+    => TermLike variable
+    -> OrPattern variable
+fromTermLikeUnsorted = fromPattern . Pattern.fromTermLikeUnsorted
 
 {- | @\\bottom@
 
@@ -164,3 +173,12 @@ toTermLike multiOr =
         [] -> mkBottom_
         [patt] -> Pattern.toTermLike patt
         patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
+
+coerceSort
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => Sort -> OrPattern variable -> OrPattern variable
+coerceSort sort =
+    fromPatterns
+    . map (Pattern.coerceSort sort)
+    . toPatterns
+

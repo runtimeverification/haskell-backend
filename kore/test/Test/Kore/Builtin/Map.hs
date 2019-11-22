@@ -649,7 +649,7 @@ test_unifyEmptyWithEmpty =
     expect =
         Conditional
             { term = emptyMapDV
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate mapSort
             , substitution = Substitution.unsafeWrap []
             }
 
@@ -701,7 +701,7 @@ test_unifySelectFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -735,7 +735,7 @@ test_unifySelectSingletonFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar keyVar, key)
@@ -763,7 +763,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar keyVar, key)
@@ -798,7 +798,7 @@ test_unifySelectFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [(key2, value2)])
@@ -809,7 +809,7 @@ test_unifySelectFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [(key1, value1)])
@@ -852,7 +852,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -865,7 +865,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -903,7 +903,7 @@ test_unifySameSymbolicKey =
                 expect1 =
                     Conditional
                         { term = mapValue
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -957,7 +957,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
                 expect1 =
                     Conditional
                         { term = unifiedMap
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar minMapVar, mkElemVar maxMapVar)
@@ -1057,7 +1057,7 @@ test_concretizeKeys =
     expected =
         Conditional
             { term = mkPair intSort mapSort key (asInternal [(key, val)])
-            , predicate = Predicate.makeTruePredicate
+            , predicate = Predicate.makeTruePredicate (termLikeSort original)
             , substitution =
                 Substitution.unsafeWrap [(ElemVar v, val), (ElemVar x, key)]
             }
@@ -1100,8 +1100,8 @@ test_concretizeKeysAxiom =
             { left = mkPair intSort mapSort x symbolicMap
             , antiLeft = Nothing
             , right = v
-            , requires = Predicate.makeTruePredicate
-            , ensures = Predicate.makeTruePredicate
+            , requires = Predicate.makeTruePredicate_
+            , ensures = Predicate.makeTruePredicate_
             , attributes = Default.def
             }
     expected = Right (MultiOr [ pure val ])
@@ -1168,7 +1168,7 @@ test_renormalize =
         -- ^ opaque terms
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
     mkMap abstract concrete opaque =
-        Domain.wrapAc $ Domain.NormalizedAc
+        Domain.wrapAc Domain.NormalizedAc
             { elementsWithVariables = Domain.MapElement <$> abstract
             , concreteElements =
                 Map.fromList (Bifunctor.second Domain.MapValue <$> concrete)

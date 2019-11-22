@@ -51,9 +51,10 @@ test_evaluateApplication =
         -> TermLike Variable
         -> TestTree
     evaluates name origin expect =
-        testCase name $ do
-            actual <- evaluateApplication Condition.top origin
-            assertEqual "" (OrPattern.fromTermLike expect) actual
+        makeTest
+            name
+            origin
+            (OrPattern.fromTermLikeUnsorted expect)
     notEvaluates
         :: GHC.HasCallStack
         => TestName
@@ -61,7 +62,21 @@ test_evaluateApplication =
         -> (TermLike Variable -> TermLike Variable)
         -> TestTree
     notEvaluates name origin mkExpect =
-        evaluates name origin (mkExpect $ mkApplySymbol origin)
+        makeTest
+            name
+            origin
+            (OrPattern.fromTermLike $ mkExpect $ mkApplySymbol origin)
+
+    makeTest
+        :: GHC.HasCallStack
+        => TestName
+        -> Application Symbol (TermLike Variable)
+        -> OrPattern Variable
+        -> TestTree
+    makeTest name origin expect =
+        testCase name $ do
+            actual <- evaluateApplication Condition.top origin
+            assertEqual "" expect actual
 
 fSymbol, gSymbol :: Symbol
 fSymbol = Mock.fSymbol
