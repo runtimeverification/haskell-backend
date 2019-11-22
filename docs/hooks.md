@@ -872,3 +872,12 @@ using the provided value.
         [hook{}("BYTES.concat")]
 ~~~
 
+### BYTES.int2bytes
+
+`BYTES.int2bytes` represents the _value_ as _length_ bytes in `BigEndian` or
+`LittleEndian` order.
+
+~~~
+    hooked-symbol int2bytes{}(/* length */ Int{}, /* value */ Int{}, Endianness{}) : Bytes{}
+        [hook{}("BYTES.int2bytes")]
+~~~

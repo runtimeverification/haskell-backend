@@ -29,6 +29,9 @@ import Data.Limit
     )
 import qualified Data.Limit as Limit
 import qualified Data.Stream.Infinite as Stream
+import Data.Typeable
+    ( Typeable
+    )
 
 import Kore.Debug
 import Kore.Internal.Pattern
@@ -67,6 +70,7 @@ type Claim claim =
     , ClaimExtractor claim
     , ExpandSingleConstructors claim
     , SimplifyRuleLHS claim
+    , Typeable claim
     , Prim claim ~ ProofState.Prim (Rule claim)
     , ProofState claim claim ~ ProofState.ProofState claim
     )
