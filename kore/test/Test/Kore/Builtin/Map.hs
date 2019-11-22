@@ -140,32 +140,46 @@ genMapSortedVariable sort genElement =
         (Range.linear 0 32)
         ((,) <$> standaloneGen (elementVariableGen sort) <*> genElement)
 
-test_lookupUnit :: TestTree
+test_lookupUnit :: [TestTree]
 test_lookupUnit =
-    testPropertyWithSolver
-        "lookup{}(unit{}(), key) === \\bottom{}()"
-        (do
-            key <- forAll genIntegerPattern
-            let patLookup = lookupMap unitMap key
-                predicate = mkEquals_ mkBottom_ patLookup
-            (===) Pattern.bottom =<< evaluateT patLookup
-            (===) Pattern.top    =<< evaluateT predicate
-        )
+    [ testPropertyWithoutSolver "lookup{}(unit{}(), key) === \\bottom{}()" $ do
+        key <- forAll genIntegerPattern
+        let patLookup = lookupMap unitMap key
+            predicate = mkEquals_ mkBottom_ patLookup
+        (===) Pattern.bottom =<< evaluateT patLookup
+        (===) Pattern.top    =<< evaluateT predicate
+    , testPropertyWithoutSolver "lookupOrDefault{}(unit{}(), key, default) === default" $ do
+        key <- forAll genIntegerPattern
+        def <- forAll genIntegerPattern
+        let patLookup = lookupOrDefaultMap unitMap key def
+            predicate = mkEquals_ def patLookup
+        (===) (Pattern.fromTermLike def) =<< evaluateT patLookup
+        (===) Pattern.top                =<< evaluateT predicate
+    ]
 
-test_lookupUpdate :: TestTree
+test_lookupUpdate :: [TestTree]
 test_lookupUpdate =
-    testPropertyWithSolver
-        "lookup{}(update{}(map, key, val), key) === val"
-        (do
-            patKey <- forAll genIntegerPattern
-            patVal <- forAll genIntegerPattern
-            patMap <- forAll genMapPattern
-            let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
-                predicate = mkEquals_ patLookup patVal
-                expect = Pattern.fromTermLike patVal
-            (===) expect      =<< evaluateT patLookup
-            (===) Pattern.top =<< evaluateT predicate
-        )
+    [ testPropertyWithoutSolver "lookup{}(update{}(map, key, val), key) === val" $ do
+        patKey <- forAll genIntegerPattern
+        patVal <- forAll genIntegerPattern
+        patMap <- forAll genMapPattern
+        let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
+            predicate = mkEquals_ patLookup patVal
+            expect = Pattern.fromTermLike patVal
+        (===) expect      =<< evaluateT patLookup
+        (===) Pattern.top =<< evaluateT predicate
+    , testPropertyWithoutSolver "lookupOrDefault{}(update{}(map, key, val), key, def) === val" $ do
+        patKey <- forAll genIntegerPattern
+        patDef <- forAll genIntegerPattern
+        patVal <- forAll genIntegerPattern
+        patMap <- forAll genMapPattern
+        let patUpdate = updateMap patMap patKey patVal
+            patLookup = lookupOrDefaultMap patUpdate patKey patDef
+            predicate = mkEquals_ patLookup patVal
+            expect = Pattern.fromTermLike patVal
+        (===) expect      =<< evaluateT patLookup
+        (===) Pattern.top =<< evaluateT predicate
+    ]
 
 test_removeUnit :: TestTree
 test_removeUnit =

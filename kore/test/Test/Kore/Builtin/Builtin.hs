@@ -29,6 +29,9 @@ import Test.Tasty.HUnit
     , testCase
     )
 
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO
+    )
 import qualified Control.Monad.Trans as Trans
 import Data.Function
     ( (&)
@@ -95,8 +98,14 @@ import qualified Kore.Internal.Symbol as Internal
     ( Symbol
     )
 import Kore.Internal.TermLike
+import Kore.Logger
+    ( MonadLog
+    )
 import Kore.Parser
     ( parseKorePattern
+    )
+import Kore.Profiler.Data
+    ( MonadProfiler
     )
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Result as Result
@@ -125,8 +134,8 @@ import Kore.Unparser
     ( unparseToString
     )
 import SMT
-    ( SMT
-    , runNoSMT
+    ( MonadSMT
+    , SMT
     )
 
 import Test.Kore.Builtin.Definition
@@ -250,15 +259,22 @@ testEnv =
 simplify :: TermLike Variable -> IO [Pattern Variable]
 simplify =
     id
-    . runNoSMT mempty
+    . runNoSMT
     . runSimplifier testEnv
     . Branch.gather
     . simplifyConditionalTerm Condition.top
 
-evaluate :: TermLike Variable -> SMT (Pattern Variable)
+evaluate
+    :: (MonadSMT smt, MonadUnliftIO smt, MonadProfiler smt, MonadLog smt)
+    => TermLike Variable
+    -> smt (Pattern Variable)
 evaluate = runSimplifier testEnv . (`TermLike.simplify` Condition.top)
 
-evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
+evaluateT
+    :: Trans.MonadTrans t
+    => (MonadSMT smt, MonadUnliftIO smt, MonadProfiler smt, MonadLog smt)
+    => TermLike Variable
+    -> t smt (Pattern Variable)
 evaluateT = Trans.lift . evaluate
 
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]
