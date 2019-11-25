@@ -17,9 +17,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     ) where
 
 import qualified Data.Foldable as Foldable
-import Data.Maybe
-    ( isJust
-    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -38,7 +35,6 @@ import Kore.Internal.TermLike as TermLike
 import Kore.Logger.WarnSimplificationWithRemainder
     ( warnSimplificationWithRemainder
     )
-import qualified Kore.Proof.Value as Value
 import Kore.Step.Axiom.Evaluate
 import Kore.Step.Result as Results
 import Kore.Step.Rule
@@ -190,7 +186,8 @@ evaluateBuiltin
                 ]
         _ -> return result
   where
-    isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
+    isValue pat =
+        maybe False TermLike.isNonSimplifiable $ asConcrete pat
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
