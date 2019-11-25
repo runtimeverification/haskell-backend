@@ -109,10 +109,6 @@ instance Synthetic NonSimplifiable (Ceil sort) where
 -- A domain value is not technically a constructor, but it is
 -- constructor-like for builtin domains, at least from the
 -- perspective of normalization (normalized means non-simplifiable here).
--- TODO (thomas.tuegel): Builtin domain parsers may violate the
--- assumption that domain values are concrete. We should remove
--- BuiltinPattern and always run the stepper with internal
--- representations only.
 instance Synthetic NonSimplifiable (DomainValue sort) where
     synthetic domainValue
         | isJust . isNonSimplifiable $ child =
@@ -176,10 +172,6 @@ instance Synthetic NonSimplifiable (Rewrites sort) where
 -- A domain value is not technically a constructor, but it is
 -- constructor-like for builtin domains, at least from the
 -- perspective of normalization (normalized means non-simplifiable here).
--- TODO (thomas.tuegel): Builtin domain parsers may violate the
--- assumption that domain values are concrete. We should remove
--- BuiltinPattern and always run the stepper with internal
--- representations only.
 instance Synthetic NonSimplifiable (Builtin key) where
     synthetic =
         \case
