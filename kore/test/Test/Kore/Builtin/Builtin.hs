@@ -57,8 +57,6 @@ import Kore.ASTVerifier.PatternVerifier
     , verifyStandalonePattern
     )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
-    ( Context (..)
-    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
@@ -210,17 +208,8 @@ verifyPattern expectedSort termLike =
     $ verifyStandalonePattern expectedSort parsedPattern
   where
     context =
-        PatternVerifier.Context
-            { indexedModule =
-                verifiedModule
-                & IndexedModule.eraseAxiomAttributes
-            , declaredVariables = mempty
-            , declaredSortVariables = mempty
-            , builtinDomainValueVerifiers =
-                Builtin.domainValueVerifiers Builtin.koreVerifiers
-            , builtinApplicationVerifiers =
-                Builtin.applicationVerifiers Builtin.koreVerifiers
-            }
+        PatternVerifier.verifiedModuleContext verifiedModule
+        & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
     parsedPattern = Builtin.externalize termLike
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
