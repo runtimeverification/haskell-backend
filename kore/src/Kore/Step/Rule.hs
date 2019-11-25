@@ -643,24 +643,20 @@ patternToAxiomPattern attributes pat =
                 , attributes
                 }
         -- function axioms: general
-        TermLike.Implies_ _
-            requires
-            (TermLike.And_ _ (TermLike.Equals_ _ _ lhs rhs) ensures) ->
-            case ensures of
-                TermLike.Top_ _ ->
-                    pure $ FunctionAxiomPattern $ EqualityRule RulePattern
-                        { left = lhs
-                        , antiLeft = Nothing
-                        , right = rhs
-                        , requires = Predicate.wrapPredicate requires
-                        , ensures = Predicate.makeTruePredicate
-                        , attributes
-                        }
-                _ -> koreFail $ unlines
-                        ["Found ensures clause:"
-                        , show ensures
-                        , "in function axiom."
-                        ]
+        TermLike.Implies_ _ requires
+            (TermLike.And_ _
+                (TermLike.Equals_ _ _ lhs rhs)
+                ensures
+            )
+          ->
+            pure $ FunctionAxiomPattern $ EqualityRule RulePattern
+                { left = lhs
+                , antiLeft = Nothing
+                , right = rhs
+                , requires = Predicate.wrapPredicate requires
+                , ensures = Predicate.wrapPredicate ensures
+                , attributes
+                }
 
         -- function axioms: trivial pre- and post-conditions
         TermLike.Equals_ _ _ lhs rhs ->

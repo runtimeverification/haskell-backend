@@ -79,7 +79,9 @@ test_evaluateAxioms =
         [axiom (sigma x y) a (positive x `orNot` positive y)]
         (sigma a a, makeTruePredicate)
         -- SMT not used to simplify trivial constraints
-        [a `andRequires` (positive a `orNot` positive a)]
+        [ a `andRequires` positive a
+        , a `andRequires` makeNotPredicate (positive a)
+        ]
     , doesn'tApply
         -- using SMT
         "f(X) => A requires (X > 0) doesn't apply to f(Z) and (not (Z > 0))"
