@@ -100,10 +100,7 @@ data Context =
         -- ^ The sort variables in scope.
         , indexedModule :: !(VerifiedModule Attribute.Symbol Attribute.Null)
         -- ^ The indexed Kore module containing all definitions in scope.
-        , builtinDomainValueVerifiers
-            :: !(Builtin.DomainValueVerifiers Verified.Pattern)
-        , builtinApplicationVerifiers
-            :: !(Builtin.ApplicationVerifiers Verified.Pattern)
+        , builtinPatternVerifier :: !(Builtin.PatternVerifier Verified.Pattern)
         }
     deriving (GHC.Generic)
 
@@ -113,16 +110,12 @@ verifiedModuleContext verifiedModule =
         { declaredVariables = mempty
         , declaredSortVariables = mempty
         , indexedModule = eraseAxiomAttributes verifiedModule
-        , builtinDomainValueVerifiers = mempty
-        , builtinApplicationVerifiers = mempty
+        , builtinPatternVerifier = mempty
         }
 
 withBuiltinVerifiers :: Builtin.Verifiers -> Context -> Context
 withBuiltinVerifiers verifiers context =
-    context
-        { builtinDomainValueVerifiers = Builtin.domainValueVerifiers verifiers
-        , builtinApplicationVerifiers = Builtin.applicationVerifiers verifiers
-        }
+    context { builtinPatternVerifier = Builtin.patternVerifier verifiers }
 
 newtype PatternVerifier a =
     PatternVerifier
@@ -367,52 +360,60 @@ verifyBasePattern
     :: Base ParsedPattern (PatternVerifier Verified.Pattern)
     -> PatternVerifier Verified.Pattern
 verifyBasePattern (_ :< patternF) =
-    let patternName = patternNameForContext patternF in
-    withLocationAndContext patternF patternName
-    $ fmap synthesize
-    $ case patternF of
-        Syntax.AndF and' ->
-            Internal.AndF <$> verifyAnd and'
-        Syntax.ApplicationF app -> verifyApplication app
-        Syntax.BottomF bottom ->
-            Internal.BottomF <$> verifyBottom bottom
-        Syntax.CeilF ceil' ->
-            Internal.CeilF <$> verifyCeil ceil'
-        Syntax.DomainValueF dv -> verifyDomainValue dv
-        Syntax.EqualsF equals' ->
-            Internal.EqualsF <$> verifyEquals equals'
-        Syntax.ExistsF exists ->
-            Internal.ExistsF <$> verifyExists exists
-        Syntax.FloorF floor' ->
-            Internal.FloorF <$> verifyFloor floor'
-        Syntax.ForallF forall' ->
-            Internal.ForallF <$> verifyForall forall'
-        Syntax.IffF iff ->
-            Internal.IffF <$> verifyIff iff
-        Syntax.ImpliesF implies ->
-            Internal.ImpliesF <$> verifyImplies implies
-        Syntax.InF in' ->
-            Internal.InF <$> verifyIn in'
-        Syntax.MuF mu ->
-            Internal.MuF <$> verifyMu mu
-        Syntax.NextF next ->
-            Internal.NextF <$> verifyNext next
-        Syntax.NotF not' ->
-            Internal.NotF <$> verifyNot not'
-        Syntax.NuF nu ->
-            Internal.NuF <$> verifyNu nu
-        Syntax.OrF or' ->
-            Internal.OrF <$> verifyOr or'
-        Syntax.RewritesF rewrites ->
-            Internal.RewritesF <$> verifyRewrites rewrites
-        Syntax.StringLiteralF str ->
-            Internal.StringLiteralF <$> verifyStringLiteral str
-        Syntax.TopF top ->
-            Internal.TopF <$> verifyTop top
-        Syntax.VariableF (Const variable) ->
-            Internal.VariableF <$> verifyVariable variable
-        Syntax.InhabitantF _ ->
-            koreFail "Unexpected pattern."
+    withLocationAndContext patternF (patternNameForContext patternF) $ do
+    Context { builtinPatternVerifier, indexedModule } <- Reader.ask
+    let runBuiltinPatternVerifier =
+            PatternVerifier . Reader.lift
+            . Builtin.runPatternVerifier builtinPatternVerifier
+                (\sortId -> do
+                    (_, sortDecl) <- resolveSort indexedModule sortId
+                    return sortDecl
+                )
+    termLikeF <-
+        case patternF of
+            Syntax.AndF and' ->
+                Internal.AndF <$> verifyAnd and'
+            Syntax.ApplicationF app -> verifyApplication app
+            Syntax.BottomF bottom ->
+                Internal.BottomF <$> verifyBottom bottom
+            Syntax.CeilF ceil' ->
+                Internal.CeilF <$> verifyCeil ceil'
+            Syntax.DomainValueF dv -> verifyDomainValue dv
+            Syntax.EqualsF equals' ->
+                Internal.EqualsF <$> verifyEquals equals'
+            Syntax.ExistsF exists ->
+                Internal.ExistsF <$> verifyExists exists
+            Syntax.FloorF floor' ->
+                Internal.FloorF <$> verifyFloor floor'
+            Syntax.ForallF forall' ->
+                Internal.ForallF <$> verifyForall forall'
+            Syntax.IffF iff ->
+                Internal.IffF <$> verifyIff iff
+            Syntax.ImpliesF implies ->
+                Internal.ImpliesF <$> verifyImplies implies
+            Syntax.InF in' ->
+                Internal.InF <$> verifyIn in'
+            Syntax.MuF mu ->
+                Internal.MuF <$> verifyMu mu
+            Syntax.NextF next ->
+                Internal.NextF <$> verifyNext next
+            Syntax.NotF not' ->
+                Internal.NotF <$> verifyNot not'
+            Syntax.NuF nu ->
+                Internal.NuF <$> verifyNu nu
+            Syntax.OrF or' ->
+                Internal.OrF <$> verifyOr or'
+            Syntax.RewritesF rewrites ->
+                Internal.RewritesF <$> verifyRewrites rewrites
+            Syntax.StringLiteralF str ->
+                Internal.StringLiteralF <$> verifyStringLiteral str
+            Syntax.TopF top ->
+                Internal.TopF <$> verifyTop top
+            Syntax.VariableF (Const variable) ->
+                Internal.VariableF <$> verifyVariable variable
+            Syntax.InhabitantF _ ->
+                koreFail "Unexpected pattern."
+    synthesize <$> runBuiltinPatternVerifier termLikeF
 
 verifyPatternSort :: Sort -> PatternVerifier ()
 verifyPatternSort patternSort = do
@@ -611,21 +612,12 @@ verifyApplication application = do
     maybe (koreFail . noHead $ symbolOrAlias) return result
   where
     symbolOrAlias = applicationSymbolOrAlias application
-    verifyApplyAlias' = Internal.ApplyAliasF <$> verifyApplyAlias application
-    verifyApplySymbol' = do
-        application' <- verifyApplySymbol Internal.termLikeSort application
-        Context { builtinApplicationVerifiers } <- Reader.ask
-        let symbol = applicationSymbolOrAlias application'
-            builtinVerifier =
-                Builtin.lookupApplicationVerifier
-                    symbol
-                    builtinApplicationVerifiers
-        Trans.lift . PatternVerifier . Trans.lift
-            $ maybe
-                (return . Internal.ApplySymbolF)
-                Builtin.runApplicationVerifier
-                builtinVerifier
-            $ application'
+    verifyApplyAlias' =
+        Internal.ApplyAliasF
+        <$> verifyApplyAlias application
+    verifyApplySymbol' =
+        Internal.ApplySymbolF
+        <$> verifyApplySymbol Internal.termLikeSort application
 
 verifyBinder
     :: Traversable binder
@@ -692,20 +684,9 @@ verifyDomainValue
     -> PatternVerifier (TermLikeF Variable Verified.Pattern)
 verifyDomainValue domain = do
     let DomainValue { domainValueSort = patternSort } = domain
-    Context { builtinDomainValueVerifiers, indexedModule } <- Reader.ask
     verifyPatternSort patternSort
-    let
-        lookupSortDeclaration' sortId = do
-            (_, sortDecl) <- resolveSort indexedModule sortId
-            return sortDecl
     verifySortHasDomainValues patternSort
-    domain' <- sequence domain
-    verified <-
-        PatternVerifier . Reader.lift
-        $ Builtin.verifyDomainValue
-            builtinDomainValueVerifiers
-            lookupSortDeclaration'
-            domain'
+    verified <- Internal.DomainValueF <$> sequence domain
     let freeVariables' =
             foldMap Attribute.freeVariables
                 (Internal.extractAttributes <$> verified)
@@ -719,9 +700,8 @@ verifySortHasDomainValues patternSort = do
     (sortAttrs, _) <- resolveSort indexedModule dvSortId
     koreFailWithLocationsWhen
         (not
-            (Attribute.HasDomainValues.getHasDomainValues
-                (Attribute.Sort.hasDomainValues sortAttrs)
-            )
+            . Attribute.HasDomainValues.getHasDomainValues
+            $ Attribute.Sort.hasDomainValues sortAttrs
         )
         [patternSort]
         sortNeedsDomainValueAttributeMessage

@@ -34,7 +34,6 @@ import Kore.Internal.Predicate
     , makeImpliesPredicate
     , makeMultipleAndPredicate
     , makeNotPredicate
-    , makeOrPredicate
     , makeTruePredicate
     )
 import Kore.Internal.TermLike
@@ -148,15 +147,28 @@ test_equalsSimplification_Or_Pattern =
                         , predicate =
                             makeMultipleAndPredicate
                                 [ makeCeilPredicate Mock.cf
+                                , makeCeilPredicate Mock.cg
                                 , makeImpliesPredicate
                                     (makeCeilPredicate Mock.cg)
                                     (makeEqualsPredicate Mock.cf Mock.cg)
                                 , makeImpliesPredicate
                                     (makeCeilPredicate Mock.ch)
                                     (makeEqualsPredicate Mock.cf Mock.ch)
-                                , makeOrPredicate
+                                ]
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeCeilPredicate Mock.cf
+                                , makeCeilPredicate Mock.ch
+                                , makeImpliesPredicate
                                     (makeCeilPredicate Mock.cg)
+                                    (makeEqualsPredicate Mock.cf Mock.cg)
+                                , makeImpliesPredicate
                                     (makeCeilPredicate Mock.ch)
+                                    (makeEqualsPredicate Mock.cf Mock.ch)
                                 ]
                         , substitution = mempty
                         }
@@ -375,32 +387,34 @@ test_equalsSimplification_Pattern =
                     [ Conditional
                         { term = mkTop_
                         , predicate =
-                            makeOrPredicate
+                            makeAndPredicate
                                 (makeAndPredicate
                                     (makeAndPredicate
                                         (makeAndPredicate
-                                            (makeAndPredicate
-                                                (makeCeilPredicate hOfA)
-                                                (makeCeilPredicate hOfB)
-                                            )
-                                            (makeEqualsPredicate fOfA fOfB)
-                                        )
-                                        (makeEqualsPredicate gOfA gOfB)
-                                    )
-                                    (makeEqualsPredicate hOfA hOfB)
-                                )
-                                (makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeAndPredicate
                                             (makeCeilPredicate hOfA)
-                                            (makeEqualsPredicate fOfA fOfB)
-                                        )
-                                    )
-                                    (makeNotPredicate
-                                        (makeAndPredicate
                                             (makeCeilPredicate hOfB)
-                                            (makeEqualsPredicate gOfA gOfB)
                                         )
+                                        (makeEqualsPredicate fOfA fOfB)
+                                    )
+                                    (makeEqualsPredicate gOfA gOfB)
+                                )
+                                (makeEqualsPredicate hOfA hOfB)
+                        , substitution = mempty
+                        }
+                    , Conditional
+                        { term = mkTop_
+                        , predicate =
+                            makeAndPredicate
+                                (makeNotPredicate
+                                    (makeAndPredicate
+                                        (makeCeilPredicate hOfA)
+                                        (makeEqualsPredicate fOfA fOfB)
+                                    )
+                                )
+                                (makeNotPredicate
+                                    (makeAndPredicate
+                                        (makeCeilPredicate hOfB)
+                                        (makeEqualsPredicate gOfA gOfB)
                                     )
                                 )
                         , substitution = mempty
