@@ -49,7 +49,7 @@ test_arguments =
         (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = labelSymbol
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
 
 test_parameters :: TestTree

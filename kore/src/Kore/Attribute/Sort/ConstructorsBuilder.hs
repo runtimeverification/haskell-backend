@@ -43,6 +43,7 @@ import Kore.Internal.Symbol
 import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Internal.TermLike
     ( pattern App_
+    , Arguments (..)
     , pattern Bottom_
     , pattern ElemVar_
     , pattern Exists_
@@ -136,7 +137,7 @@ parseNoJunkPatternHelper _ = Nothing
 parseSMTConstructor :: TermLike Variable -> Maybe ConstructorLike
 parseSMTConstructor patt =
     case parsedPatt of
-        App_ symbol children -> do
+        App_ symbol (Arguments children) -> do
             childVariables <-
                 checkOnlyQuantifiedVariablesOnce quantifiedVariables children
             buildConstructor symbol childVariables

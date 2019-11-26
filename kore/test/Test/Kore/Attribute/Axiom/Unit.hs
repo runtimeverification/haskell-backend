@@ -59,5 +59,5 @@ test_parameters =
                         , symbolOrAliasParams =
                             [ SortVariableSort (SortVariable "illegal") ]
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }

@@ -49,7 +49,7 @@ testAttribute =
                     { symbolOrAliasConstructor = "test" :: Id
                     , symbolOrAliasParams = []
                     }
-            , applicationChildren = []
+            , applicationChildren = Arguments []
             }
 
 badHookAttribute :: AttributePattern
@@ -57,7 +57,7 @@ badHookAttribute =
     (asAttributePattern . ApplicationF)
         Application
             { applicationSymbolOrAlias = hookSymbol :: SymbolOrAlias
-            , applicationChildren = []
+            , applicationChildren = Arguments []
             }
 
 expectError

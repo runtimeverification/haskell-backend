@@ -65,7 +65,7 @@ test_heat_parameters =
                         , symbolOrAliasParams =
                             [ SortVariableSort (SortVariable "illegal") ]
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
 
 test_cool :: TestTree
@@ -110,7 +110,7 @@ test_cool_parameters =
                         , symbolOrAliasParams =
                             [ SortVariableSort (SortVariable "illegal") ]
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
 
 test_conflict :: TestTree

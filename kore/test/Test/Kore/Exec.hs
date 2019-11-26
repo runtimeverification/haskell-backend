@@ -288,7 +288,7 @@ applyToNoArgs sort name =
             { symbolConstructor = testId name
             , symbolParams = []
             , symbolAttributes = Mock.constructorFunctionalAttributes
-            , symbolSorts = applicationSorts [] sort
+            , symbolSorts = applicationSorts (Arguments []) sort
             }
         []
 
@@ -386,5 +386,8 @@ test_execGetExitCode =
                     { Attribute.functional = Functional True
                     , Attribute.function = Function True
                     }
-                , symbolSorts = applicationSorts [myIntSort] myIntSort
+                , symbolSorts =
+                    applicationSorts
+                        (Arguments [myIntSort])
+                        myIntSort
                 }

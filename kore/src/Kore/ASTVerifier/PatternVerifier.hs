@@ -32,6 +32,9 @@ import Control.Monad.Reader
 import qualified Control.Monad.Reader as Reader
 import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
+import Data.Align
+    ( Semialign (zip, zipWith)
+    )
 import qualified Data.Foldable as Foldable
 import Data.Function
     ( (&)
@@ -53,6 +56,10 @@ import Data.Text.Prettyprint.Doc.Render.Text
     ( renderStrict
     )
 import qualified GHC.Generics as GHC
+import Prelude hiding
+    ( zip
+    , zipWith
+    )
 
 import Kore.AST.Error
 import Kore.ASTVerifier.Error
@@ -284,7 +291,11 @@ verifyAliasLeftPattern
 verifyAliasLeftPattern alias aliasSorts leftPattern = do
     koreFailWhen (declaredHead /= symbolOrAlias) aliasDeclarationMismatch
     let expect = expectVariable <$> applicationChildren leftPattern
-    verified <- verifyPatternsWithSorts unifiedVariableSort aliasSorts expect
+    verified <-
+        verifyPatternsWithSorts
+            unifiedVariableSort
+            (Arguments aliasSorts)
+            expect
     declaredVariables <- uniqueDeclaredVariables verified
     let verifiedLeftPattern = leftPattern { applicationChildren = verified }
     return (declaredVariables, verifiedLeftPattern)
@@ -515,10 +526,11 @@ verifyNext
 verifyNext = verifyOperands nextSort
 
 verifyPatternsWithSorts
-    :: (child -> Sort)
-    -> [Sort]
-    -> [PatternVerifier child]
-    -> PatternVerifier [child]
+    :: (Semialign align, Traversable align)
+    => (child -> Sort)
+    -> align Sort
+    -> align (PatternVerifier child)
+    -> PatternVerifier (align child)
 verifyPatternsWithSorts getChildSort sorts operands = do
     koreFailWhen (declaredOperandCount /= actualOperandCount)
         (  "Expected "
@@ -527,7 +539,7 @@ verifyPatternsWithSorts getChildSort sorts operands = do
         ++ show actualOperandCount
         ++ "."
         )
-    Monad.zipWithM
+    sequence $ zipWith
         (\sort verify -> do
             verified <- verify
             assertExpectedSort (Just sort) (getChildSort verified)
@@ -556,7 +568,8 @@ verifyApplyAlias application =
         , applicationChildren      = children
         } = application
 
-    getLeftVariables :: Id -> PatternVerifier [UnifiedVariable Variable]
+    getLeftVariables
+        :: Id -> PatternVerifier (Arguments (UnifiedVariable Variable))
     getLeftVariables aliasId = do
         indexedModule <- Reader.asks indexedModule
         alias <- resolveAlias indexedModule aliasId

@@ -50,17 +50,16 @@ test_arity =
             Application
                 { applicationSymbolOrAlias = hasDomainValuesSymbol
                 , applicationChildren =
-                    [ (asAttributePattern . ApplicationF)
-                        Application
+                    Arguments
+                        [ (asAttributePattern . ApplicationF) Application
                             { applicationSymbolOrAlias = hasDomainValuesSymbol
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
-                    , (asAttributePattern . ApplicationF)
-                        Application
+                        , (asAttributePattern . ApplicationF) Application
                             { applicationSymbolOrAlias = hasDomainValuesSymbol
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
-                    ]
+                        ]
                 }
 
 test_arguments :: TestTree
@@ -74,9 +73,10 @@ test_arguments =
             Application
                 { applicationSymbolOrAlias = hasDomainValuesSymbol
                 , applicationChildren =
-                    [ (asAttributePattern . StringLiteralF . Const)
-                        (StringLiteral "illegal")
-                    ]
+                    Arguments
+                        [ (asAttributePattern . StringLiteralF . Const)
+                            (StringLiteral "illegal")
+                        ]
                 }
 
 test_parameters :: TestTree
@@ -94,5 +94,5 @@ test_parameters =
                         , symbolOrAliasParams =
                             [ SortVariableSort (SortVariable "illegal") ]
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }

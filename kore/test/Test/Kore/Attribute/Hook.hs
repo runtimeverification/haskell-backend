@@ -49,7 +49,7 @@ test_zeroArguments =
         (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = hookSymbol
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
 
 test_twoArguments :: TestTree

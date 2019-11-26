@@ -10,6 +10,7 @@ import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
 import Kore.Sort
+import Kore.Syntax.Arguments
 
 import Test.Kore
     ( Gen
@@ -29,7 +30,7 @@ symbolGen resultSort =
 applicationSortsGen :: Sort -> Gen ApplicationSorts
 applicationSortsGen resultSort =
     ApplicationSorts
-        <$> couple (Gen.small sortGen)
+        <$> (Arguments <$> (couple . Gen.small) sortGen)
         <*> pure resultSort
 
 symbolAttributeGen :: Gen Attribute.Symbol

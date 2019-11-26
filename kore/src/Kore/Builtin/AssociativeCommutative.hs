@@ -98,6 +98,7 @@ import Kore.Internal.Symbol
     )
 import Kore.Internal.TermLike
     ( pattern App_
+    , Arguments (..)
     , pattern BuiltinMap_
     , pattern BuiltinSet_
     , Concrete
@@ -206,7 +207,7 @@ instance TermWrapper Domain.NormalizedMap where
     -}
     toNormalized (BuiltinMap_ Domain.InternalAc { builtinAcChild }) =
         maybe Bottom Normalized (renormalize builtinAcChild)
-    toNormalized (App_ symbol args)
+    toNormalized (App_ symbol (Arguments args))
       | Map.isSymbolUnit symbol =
         case args of
             [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc
@@ -272,7 +273,7 @@ instance TermWrapper Domain.NormalizedSet where
     -}
     toNormalized (BuiltinSet_ Domain.InternalAc { builtinAcChild }) =
         maybe Bottom Normalized (renormalize builtinAcChild)
-    toNormalized (App_ symbol args)
+    toNormalized (App_ symbol (Arguments args))
       | Set.isSymbolUnit symbol =
         case args of
             [] -> (Normalized . Domain.wrapAc) Domain.emptyNormalizedAc

@@ -18,6 +18,7 @@ module Kore.Syntax.Application
     ( SymbolOrAlias (..)
     , Application (..)
     , mapHead
+    , module Kore.Syntax.Arguments
     ) where
 
 import Control.DeepSeq
@@ -30,6 +31,7 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 import Kore.Sort
+import Kore.Syntax.Arguments
 import Kore.Unparser
 
 {- |'SymbolOrAlias' corresponds to the @head{sort-list}@ branch of the
@@ -72,7 +74,7 @@ This represents the @σ(φ1, ..., φn)@ symbol patterns in Matching Logic.
 -}
 data Application head child = Application
     { applicationSymbolOrAlias :: !head
-    , applicationChildren      :: [child]
+    , applicationChildren      :: !(Arguments child)
     }
     deriving (Eq, Functor, Foldable, Ord, Traversable, GHC.Generic, Show)
 
@@ -92,17 +94,13 @@ instance
 
 instance (Unparse head, Unparse child) => Unparse (Application head child) where
     unparse Application { applicationSymbolOrAlias, applicationChildren } =
-        unparse applicationSymbolOrAlias <> arguments applicationChildren
+        unparse applicationSymbolOrAlias <> unparse applicationChildren
 
     unparse2 Application { applicationSymbolOrAlias, applicationChildren } =
-        case applicationChildren of
-            [] ->
-                Pretty.parens (unparse2 applicationSymbolOrAlias)
-            children ->
-                Pretty.parens (Pretty.fillSep
-                    [ unparse2 applicationSymbolOrAlias
-                    , arguments2 children
-                    ])
+        (Pretty.parens . Pretty.hsep)
+            [ unparse2 applicationSymbolOrAlias
+            , unparse2 applicationChildren
+            ]
 
 mapHead
     :: (head1 -> head2)

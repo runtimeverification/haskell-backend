@@ -468,10 +468,10 @@ applyAliasLHS =
             , aliasParams = []
             , aliasSorts =
                 ApplicationSorts
-                    { applicationSortsOperands = []
+                    { applicationSortsOperands = Arguments []
                     , applicationSortsResult = sortAInt
                     }
-            , aliasLeft = []
+            , aliasLeft = Arguments []
             , aliasRight =
                 mkAnd (mkTop sortAInt) varI1
             }

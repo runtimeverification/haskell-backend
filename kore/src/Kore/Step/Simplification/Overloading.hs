@@ -16,9 +16,14 @@ import Control.Exception
     ( assert
     )
 import qualified Control.Monad.Trans as Monad.Trans
+import Data.Align
+    ( zipWith
+    )
+import qualified Data.Foldable as Foldable
 import qualified GHC.Stack as GHC
 import Prelude hiding
     ( concat
+    , zipWith
     )
 
 import qualified Kore.Attribute.Symbol as Attribute
@@ -83,7 +88,7 @@ overloadedAndEqualsOverloading
     termMerger
     tools
     first@(App_ firstHead _)
-    second@(App_ sortInjection [App_ secondHead secondChildren])
+    second@(App_ sortInjection (Arguments [App_ secondHead secondChildren]))
   | MetadataTools.isOverloading tools firstHead secondHead
   = equalInjectiveHeadsAndEquals
         termMerger
@@ -104,7 +109,7 @@ resolveOverloading
     => Symbol
     -> Symbol
     -> Symbol
-    -> [TermLike variable]
+    -> Arguments (TermLike variable)
     -> TermLike variable
 resolveOverloading
     sortInjection
@@ -112,14 +117,16 @@ resolveOverloading
     overloadingHead
     overloadingChildren
   = mkApplySymbol overloadedHead
+    . Foldable.toList
     $ assert (length overloadedChildrenSorts == length overloadingChildrenSorts)
     $ assert (length overloadingChildren == length overloadingChildrenSorts)
     $ zipWith mkApplySymbol
-        (zipWith (Symbol.coerceSortInjection sortInjection)
+        (zipWith
+            (Symbol.coerceSortInjection sortInjection)
             overloadingChildrenSorts
             overloadedChildrenSorts
         )
-        (map pure overloadingChildren)
+        (pure <$> overloadingChildren)
   where
     overloadedChildrenSorts =
         Symbol.applicationSortsOperands (symbolSorts overloadedHead)

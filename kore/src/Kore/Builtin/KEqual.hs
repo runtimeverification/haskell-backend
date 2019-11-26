@@ -130,7 +130,7 @@ evalKEq
     -> simplifier (AttemptedAxiom variable)
 evalKEq true (valid :< app) =
     case applicationChildren of
-        [t1, t2] -> evalEq t1 t2
+        Arguments [t1, t2] -> evalEq t1 t2
         _ -> Builtin.wrongArity (if true then eqKey else neqKey)
   where
     false = not true
@@ -173,7 +173,7 @@ evalKIte
     -> simplifier (AttemptedAxiom variable)
 evalKIte (_ :< app) =
     case app of
-        Application { applicationChildren = [expr, t1, t2] } ->
+        Application { applicationChildren = Arguments [expr, t1, t2] } ->
             evalIte expr t1 t2
         _ -> Builtin.wrongArity iteKey
   where

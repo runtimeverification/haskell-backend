@@ -29,7 +29,7 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 test_Synthetic :: [TestTree]
 test_Synthetic =
     [ And sort x y             `gives` xy     $ "And"
-    , Application sigma [x, y] `gives` xy     $ "ApplySymbol"
+    , Application sigma args   `gives` xy     $ "ApplySymbol"
     , Bottom sort              `gives` mempty $ "Bottom"
     , Ceil sort sort x         `gives` x      $ "Ceil"
     , DomainValue sort x       `gives` x      $ "DomainValue"
@@ -57,7 +57,7 @@ test_Synthetic =
 test_instance_Synthetic_TermLike :: [TestTree]
 test_instance_Synthetic_TermLike =
     [ AndF         (And sort x y)             `gives'` xy     $ "AndF"
-    , ApplySymbolF (Application sigma [x, y]) `gives'` xy     $ "ApplySymbolF"
+    , ApplySymbolF (Application sigma args)   `gives'` xy     $ "ApplySymbolF"
     , BottomF      (Bottom sort)              `gives'` mempty $ "BottomF"
     , CeilF        (Ceil sort sort x)         `gives'` x      $ "CeilF"
     , DomainValueF (DomainValue sort x)       `gives'` x      $ "DomainValueF"
@@ -99,6 +99,9 @@ xy = x <> y
 sx = FreeVariables.freeVariable (SetVar Mock.setX)
 sy = FreeVariables.freeVariable (SetVar Mock.setY)
 sxy = sx <> sy
+
+args :: Arguments (FreeVariables Variable)
+args = Arguments [x, y]
 
 gives
     :: (Synthetic (FreeVariables Variable) base, GHC.HasCallStack)

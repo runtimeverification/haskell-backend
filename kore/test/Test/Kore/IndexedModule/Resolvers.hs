@@ -238,7 +238,7 @@ test_resolvers =
                                                 $ sentenceAliasAlias objectB
                                             )
                                     }
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
                     , sentenceAliasRightPattern = TermLike.mkTop objectS1
                     , sentenceAliasResultSort = objectS1
@@ -267,7 +267,7 @@ test_resolvers =
                                             $ sentenceAliasAlias metaB
                                         )
                                 }
-                        , applicationChildren = []
+                        , applicationChildren = Arguments []
                         }
                 , sentenceAliasRightPattern = TermLike.mkTop stringMetaSort
                 , sentenceAliasResultSort = stringMetaSort
@@ -278,7 +278,7 @@ test_resolvers =
     , testCase "symbol getHeadApplicationSorts"
         (assertEqual ""
             ApplicationSorts
-                { applicationSortsOperands = []
+                { applicationSortsOperands = Arguments []
                 , applicationSortsResult = objectS1
                 }
             (getHeadApplicationSorts
@@ -289,7 +289,7 @@ test_resolvers =
     , testCase "alias getHeadApplicationSorts"
         (assertEqual ""
             ApplicationSorts
-                { applicationSortsOperands = []
+                { applicationSortsOperands = Arguments []
                 , applicationSortsResult = objectS1
                 }
             (getHeadApplicationSorts

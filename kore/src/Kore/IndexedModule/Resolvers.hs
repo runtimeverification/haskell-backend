@@ -28,6 +28,7 @@ module Kore.IndexedModule.Resolvers
 import Control.Error
     ( hush
     )
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Set
@@ -273,9 +274,12 @@ involvesSort
     -> SymbolOrAlias
     -> Bool
 involvesSort indexedModule builtinSort sym =
-    elem builtinSort $
-    (\s -> applicationSortsResult s : applicationSortsOperands s) $
-    getHeadApplicationSorts indexedModule sym
+    elem builtinSort . allSorts
+    $ getHeadApplicationSorts indexedModule sym
+  where
+    allSorts s =
+        applicationSortsResult s
+        : Foldable.toList (applicationSortsOperands s)
 
 resolveHookHandler
     :: Text

@@ -28,9 +28,9 @@ test_instance_Synthetic =
         , failure $ AndF (And sort sort sort0)
         ]
     , testGroup "ApplySymbolF"
-        [ success $ ApplySymbolF (Application sigma [sort, sort])
-        , failure $ ApplySymbolF (Application sigma [sort0, sort])
-        , failure $ ApplySymbolF (Application sigma [sort, sort0])
+        [ success $ ApplySymbolF (Application sigma $ Arguments [sort, sort])
+        , failure $ ApplySymbolF (Application sigma $ Arguments [sort0, sort])
+        , failure $ ApplySymbolF (Application sigma $ Arguments [sort, sort0])
         ]
     , testGroup "BottomF"
         [ success $ BottomF (Bottom sort)

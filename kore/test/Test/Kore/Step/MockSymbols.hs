@@ -263,7 +263,7 @@ symbol name operands result =
         { symbolConstructor = name
         , symbolParams = []
         , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts operands result
+        , symbolSorts = applicationSorts (Arguments operands) result
         }
 
 aSymbol :: Symbol
@@ -463,7 +463,7 @@ sortInjectionSymbol fromSort toSort = Symbol
     { symbolConstructor = sortInjectionId
     , symbolParams      = [fromSort, toSort]
     , symbolAttributes  = Mock.sortInjectionAttributes
-    , symbolSorts = applicationSorts [fromSort] toSort
+    , symbolSorts = applicationSorts (Arguments [fromSort]) toSort
     }
 
 sortInjection10Symbol :: Symbol

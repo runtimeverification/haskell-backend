@@ -154,7 +154,7 @@ ceilChildOfApplicationOrTop
     -> m (Condition variable)
 ceilChildOfApplicationOrTop predicate patt =
     case patt of
-        App_ _ children -> do
+        App_ _ (Arguments children) -> do
             ceil <-
                 traverse (Ceil.makeEvaluateTerm predicate) children
                 >>= ( AndPredicates.simplifyEvaluatedMultiPredicate

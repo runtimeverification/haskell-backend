@@ -20,35 +20,35 @@ import Test.Kore
 test_symbolOrAliasSorts :: [TestTree]
 test_symbolOrAliasSorts =
     [ success "simple result sort"
-        (applicationSorts [] simpleSortActual)
+        (applicationSorts (Arguments []) simpleSortActual)
         (symbolOrAliasSorts [] (symbolSentence [] [] simpleSortActual))
     , success "parameterized result sort"
-        (applicationSorts [] simpleSortActual)
+        (applicationSorts (Arguments []) simpleSortActual)
         (symbolOrAliasSorts
             [simpleSortActual]
             (symbolSentence [sortVariable'] [] sortVariableSort')
         )
     , success "complex parameterized result sort"
-        (applicationSorts [] complexSortActualSort)
+        (applicationSorts (Arguments []) complexSortActualSort)
         (symbolOrAliasSorts
             [simpleSortActual]
             (symbolSentence [sortVariable'] [] complexSortActualParam)
         )
     , success "simple argument sort"
-        (applicationSorts [simpleSortActual] simpleSortActual)
+        (applicationSorts (Arguments [simpleSortActual]) simpleSortActual)
         (symbolOrAliasSorts
             []
             (symbolSentence [] [simpleSortActual] simpleSortActual)
         )
     , success "parameterized argument sort"
-        (applicationSorts [simpleSortActual] simpleSortActual)
+        (applicationSorts (Arguments [simpleSortActual]) simpleSortActual)
         (symbolOrAliasSorts
             [simpleSortActual]
             (symbolSentence
                 [sortVariable'] [sortVariableSort'] simpleSortActual)
         )
     , success "complex argument sort"
-        (applicationSorts [complexSortActualSort] simpleSortActual)
+        (applicationSorts (Arguments [complexSortActualSort]) simpleSortActual)
         (symbolOrAliasSorts
             [simpleSortActual]
             (symbolSentence

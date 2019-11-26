@@ -88,6 +88,7 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
     ( pattern App_
+    , Arguments (..)
     , Builtin
     , pattern Builtin_
     , Concrete
@@ -411,7 +412,7 @@ unifyEquals
                     ]
             app@(App_ symbol2 args2)
               | isSymbolConcat symbol2 ->
-                Monad.Trans.lift $ case args2 of
+                Monad.Trans.lift $ case getArguments args2 of
                     [ Builtin_ (Domain.BuiltinList builtin2), x@(Var_ _) ] ->
                         unifyEqualsFramedRight builtin1 builtin2 x
                     [ x@(Var_ _), Builtin_ (Domain.BuiltinList builtin2) ] ->

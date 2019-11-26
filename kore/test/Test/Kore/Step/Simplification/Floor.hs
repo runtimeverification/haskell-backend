@@ -152,10 +152,10 @@ test_floorSimplification =
             , symbolAttributes = Default.def
             , symbolSorts = applicationSorts operands result
             }
-    aSymbol = symbol "a" [] testSort
-    bSymbol = symbol "b" [] testSort
-    fSymbol = symbol "f" [testSort] testSort
-    gSymbol = symbol "g" [testSort] testSort
+    aSymbol = symbol "a" (Arguments []) testSort
+    bSymbol = symbol "b" (Arguments []) testSort
+    fSymbol = symbol "f" (Arguments [testSort]) testSort
+    gSymbol = symbol "g" (Arguments [testSort]) testSort
     x = ElementVariable $ Variable (testId "x") mempty testSort
     a :: TermLike Variable
     a = mkApplySymbol aSymbol []

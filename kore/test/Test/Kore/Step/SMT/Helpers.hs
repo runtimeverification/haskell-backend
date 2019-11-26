@@ -226,7 +226,7 @@ constructorAxiom sortName constructors =
                 , symbolParams      = []
                 , symbolAttributes  = Mock.constructorFunctionalAttributes
                 , symbolSorts       =
-                    applicationSorts (map makeSort argumentSorts) sort
+                    applicationSorts (makeSort <$> Arguments argumentSorts) sort
                 }
 
 makeVariable :: Natural -> Text -> ElementVariable Variable

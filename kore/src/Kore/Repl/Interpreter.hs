@@ -1172,7 +1172,7 @@ unparseStrategy omitList =
                     ann :< TermLike.ApplySymbolF (withoutChildren app)
                 projected -> projected
 
-    withoutChildren app = app { applicationChildren = [] }
+    withoutChildren app = app { applicationChildren = Arguments [] }
 
     shouldBeExcluded =
        (`elem` omitList)

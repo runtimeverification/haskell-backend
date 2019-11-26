@@ -187,13 +187,14 @@ groundHead ctor location = SymbolOrAlias
 
 -- | Given a head and a list of children, produces an 'ApplicationF'
 --  applying the given head to the children
-apply :: SymbolOrAlias -> [child] -> PatternF variable child
-apply patternHead patterns = ApplicationF Application
-    { applicationSymbolOrAlias = patternHead
-    , applicationChildren = patterns
-    }
+apply :: SymbolOrAlias -> Arguments child -> PatternF variable child
+apply applicationSymbolOrAlias applicationChildren =
+    ApplicationF Application
+        { applicationSymbolOrAlias
+        , applicationChildren
+        }
 
 -- |Applies the given head to the empty list of children to obtain a
 -- constant 'ApplicationF'
 constant :: SymbolOrAlias -> PatternF variable child
-constant patternHead = apply patternHead []
+constant patternHead = apply patternHead (Arguments [])

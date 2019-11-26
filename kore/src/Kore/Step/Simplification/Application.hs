@@ -75,7 +75,7 @@ simplify predicate application = do
   where
     Application
         { applicationSymbolOrAlias = symbol
-        , applicationChildren = children
+        , applicationChildren = Arguments children
         }
       = application
 

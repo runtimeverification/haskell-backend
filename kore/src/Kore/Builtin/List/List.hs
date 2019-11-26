@@ -136,7 +136,7 @@ internalize
     => SmtMetadataTools Attribute.Symbol
     -> TermLike variable
     -> TermLike variable
-internalize tools termLike@(App_ symbol args)
+internalize tools termLike@(App_ symbol (Arguments args))
   | isSymbolUnit    symbol , [ ] <- args = asInternal' (Seq.fromList args)
   | isSymbolElement symbol , [_] <- args = asInternal' (Seq.fromList args)
   | isSymbolConcat  symbol =

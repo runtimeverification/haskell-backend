@@ -320,7 +320,7 @@ symbolOrAliasPatternRemainderParser childParser identifier =
         <$> (   SymbolOrAlias identifier
             <$> inCurlyBracesListParser sortParser
             )
-        <*> inParenthesesListParser childParser
+        <*> (Arguments <$> inParenthesesListParser childParser)
         )
 
 {- | Parses an 'Application' pattern.
@@ -338,7 +338,7 @@ applicationParser
 applicationParser childParser =
     Application
         <$> headParser
-        <*> inParenthesesListParser childParser
+        <*> (Arguments <$> inParenthesesListParser childParser)
 
 {-| Parses the part after a variable's name and constructs it.
 

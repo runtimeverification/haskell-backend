@@ -33,6 +33,9 @@ import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Maybe
     ( MaybeT (..)
     )
+import Data.Align
+    ( zipWith
+    )
 import qualified Data.Foldable as Foldable
 import Data.Function
 import Data.Generics.Product
@@ -52,6 +55,9 @@ import Data.Set
     )
 import qualified Data.Set as Set
 import qualified GHC.Generics as GHC
+import Prelude hiding
+    ( zipWith
+    )
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (..)
@@ -310,16 +316,16 @@ matchBuiltinList _ = empty
 
 matchBuiltinListConcat
     :: (MatchingVariable variable, MonadUnify unifier)
-    => [TermLike variable]
+    => Arguments (TermLike variable)
     -> Builtin.InternalList (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 
-matchBuiltinListConcat [BuiltinList_ list1, frame1] list2 = do
+matchBuiltinListConcat (Arguments [BuiltinList_ list1, frame1]) list2 = do
     (aligned, tail2) <- leftAlignLists list1 list2 & Error.hoistMaybe
     Foldable.traverse_ push aligned
     push (Pair frame1 (mkBuiltinList tail2))
 
-matchBuiltinListConcat [frame1, BuiltinList_ list1] list2 = do
+matchBuiltinListConcat (Arguments [frame1, BuiltinList_ list1]) list2 = do
     (head2, aligned) <- rightAlignLists list1 list2 & Error.hoistMaybe
     push (Pair frame1 (mkBuiltinList head2))
     Foldable.traverse_ push aligned

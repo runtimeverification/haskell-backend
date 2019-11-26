@@ -114,7 +114,10 @@ checkClaim
     (ImplicationRule RulePattern { left, right }, stepLimit)
   = do
         let
-            ApplyAlias_ Alias { aliasConstructor = alias } [prop] = right
+            ApplyAlias_
+                Alias { aliasConstructor = alias }
+                (Arguments [prop])
+              = right
             goalPattern = ModalPattern { modalOp = getId alias, term = prop }
             strategy =
                 Limit.takeWithin

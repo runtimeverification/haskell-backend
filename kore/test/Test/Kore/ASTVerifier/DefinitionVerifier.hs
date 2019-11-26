@@ -253,7 +253,7 @@ simpleAliasSentenceAux (AliasName name) (SortName sort) r =
                         { symbolOrAliasConstructor = testId name
                         , symbolOrAliasParams = []
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
@@ -327,7 +327,7 @@ metaAliasSentenceWithSortParameters
                         , symbolOrAliasParams =
                             SortVariableSort <$> parameters
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
         , sentenceAliasRightPattern =
             Builtin.externalize $ Internal.mkTop sort
@@ -359,7 +359,7 @@ aliasSentenceWithSortParameters (AliasName name) (SortName sort) parameters r =
                         { symbolOrAliasConstructor = testId name
                         , symbolOrAliasParams = SortVariableSort <$> parameters
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
@@ -395,12 +395,13 @@ sentenceAliasWithSortArgument
                             SortVariableSort <$> parameters
                         }
                 , applicationChildren =
-                    [ ElemVar $ ElementVariable Variable
-                        { variableName = testId "x"
-                        , variableCounter = mempty
-                        , variableSort = sortArgument
-                        }
-                    ]
+                    Arguments
+                        [ ElemVar $ ElementVariable Variable
+                            { variableName = testId "x"
+                            , variableCounter = mempty
+                            , variableSort = sortArgument
+                            }
+                        ]
                 }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
@@ -475,7 +476,7 @@ sentenceAliasWithResultSort (AliasName name) sort parameters r =
                         , symbolOrAliasParams =
                             SortVariableSort <$> parameters
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
         , sentenceAliasRightPattern = r
         , sentenceAliasAttributes = Attributes []
@@ -558,7 +559,7 @@ aliasSentenceWithArguments (AliasName name) sort operands r =
                             { symbolOrAliasConstructor = testId name
                             , symbolOrAliasParams = []
                             }
-                    , applicationChildren = operands
+                    , applicationChildren = Arguments operands
                     }
             , sentenceAliasRightPattern = r
             , sentenceAliasAttributes = Attributes []
@@ -691,7 +692,7 @@ applicationPatternWithChildren (SymbolName name) unifiedPatterns =
             { symbolOrAliasConstructor = testId name
             , symbolOrAliasParams = []
             }
-        , applicationChildren = unifiedPatterns
+        , applicationChildren = Arguments unifiedPatterns
         }
 
 applicationParsedPatternWithParams
@@ -714,6 +715,6 @@ applicationUnifiedPatternWithParams resultSort (SymbolName name) params =
             { symbolConstructor = testId name
             , symbolParams = params
             , symbolAttributes = Attribute.defaultSymbolAttributes
-            , symbolSorts = applicationSorts [] resultSort
+            , symbolSorts = applicationSorts (Arguments []) resultSort
             }
         []

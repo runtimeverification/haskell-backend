@@ -46,7 +46,8 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
-    ( DomainValue (..)
+    ( Arguments (..)
+    , DomainValue (..)
     , InternalVariable
     , Sort
     , TermLike
@@ -100,7 +101,7 @@ internalize
     -> TermLike variable
 internalize =
     \case
-        TermLike.App_ symbol args
+        TermLike.App_ symbol (Arguments args)
           | isSymbolString2Bytes symbol
           , [TermLike.StringLiteral_ str] <- args ->
             let

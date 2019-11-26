@@ -459,7 +459,7 @@ sortVisibilityTests =
                             { symbolOrAliasConstructor = testId "alias1"
                             , symbolOrAliasParams = []
                             }
-                    , applicationChildren = []
+                    , applicationChildren = Arguments []
                     }
             , sentenceAliasRightPattern =
                 Builtin.externalize $ mkTop sort
@@ -481,12 +481,13 @@ sortVisibilityTests =
                             , symbolOrAliasParams = []
                             }
                     , applicationChildren =
-                        [ ElemVar $ ElementVariable Variable
-                            { variableSort = sort
-                            , variableCounter = mempty
-                            , variableName = testId "x"
-                            }
-                        ]
+                        Arguments
+                            [ ElemVar $ ElementVariable Variable
+                                { variableSort = sort
+                                , variableCounter = mempty
+                                , variableName = testId "x"
+                                }
+                            ]
                     }
             , sentenceAliasRightPattern =
                 Builtin.externalize $ mkTop anotherSort
@@ -503,7 +504,7 @@ sortVisibilityTests =
                         { symbolConstructor = testId "symbol2"
                         , symbolParams = [ sort ]
                         , symbolAttributes = Attribute.defaultSymbolAttributes
-                        , symbolSorts = applicationSorts [] sort
+                        , symbolSorts = applicationSorts (Arguments []) sort
                         }
                     []
             , sentenceAxiomAttributes = Attributes []
@@ -601,7 +602,7 @@ symbolVisibilityTests =
                 { symbolConstructor = testId "symbol1"
                 , symbolParams = [ defaultSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts = applicationSorts [] defaultSort
+                , symbolSorts = applicationSorts (Arguments []) defaultSort
                 }
             []
     symbolDeclaration =
@@ -622,7 +623,7 @@ symbolVisibilityTests =
                 { symbolConstructor = testId "#symbol1"
                 , symbolParams = [ stringMetaSort ]
                 , symbolAttributes = Attribute.defaultSymbolAttributes
-                , symbolSorts = applicationSorts [] stringMetaSort
+                , symbolSorts = applicationSorts (Arguments []) stringMetaSort
                 }
             []
     metaSymbolDeclaration =
@@ -690,7 +691,7 @@ symbolVisibilityTests =
                         , symbolAttributes = Attribute.defaultSymbolAttributes
                         , symbolSorts =
                             applicationSorts
-                                [termLikeSort symbolPattern]
+                                (Arguments [termLikeSort symbolPattern])
                                 defaultSort
                         }
                     [symbolPattern]
@@ -789,8 +790,8 @@ aliasVisibilityTests =
             Internal.Alias
                 { aliasConstructor = testId "alias1"
                 , aliasParams = [ defaultSort ]
-                , aliasSorts = applicationSorts [] defaultSort
-                , aliasLeft = []
+                , aliasSorts = applicationSorts (Arguments []) defaultSort
+                , aliasLeft = Arguments []
                 , aliasRight = mkTop defaultSort
                 }
             []
@@ -812,7 +813,7 @@ aliasVisibilityTests =
                             , symbolOrAliasParams =
                                 SortVariableSort <$> aliasParams
                             }
-                    , applicationChildren = []
+                    , applicationChildren = Arguments []
                     }
             , sentenceAliasRightPattern =
                 Builtin.externalize $ mkTop sentenceAliasResultSort
@@ -824,8 +825,8 @@ aliasVisibilityTests =
             Internal.Alias
                 { aliasConstructor = testId "#alias1"
                 , aliasParams = [ stringMetaSort ]
-                , aliasSorts = applicationSorts [] stringMetaSort
-                , aliasLeft = []
+                , aliasSorts = applicationSorts (Arguments []) stringMetaSort
+                , aliasLeft = Arguments []
                 , aliasRight = mkTop stringMetaSort
                 }
             []
@@ -847,7 +848,7 @@ aliasVisibilityTests =
                             { symbolOrAliasConstructor = aliasConstructor
                             , symbolOrAliasParams
                             }
-                    , applicationChildren = []
+                    , applicationChildren = Arguments []
                     }
             , sentenceAliasRightPattern =
                 Builtin.externalize $ mkTop sentenceAliasResultSort
@@ -905,9 +906,9 @@ aliasVisibilityTests =
                         , aliasParams = [ defaultSort ]
                         , aliasSorts =
                             applicationSorts
-                                [termLikeSort aliasPattern]
+                                (Arguments [termLikeSort aliasPattern])
                                 defaultSort
-                        , aliasLeft = []
+                        , aliasLeft = Arguments []
                         , aliasRight =
                             mkTop $ termLikeSort aliasPattern
                         }
@@ -938,14 +939,15 @@ aliasVisibilityTests =
                                 ]
                             }
                     , applicationChildren =
-                        [ SetVar $ SetVariable Variable
-                            { variableName = testId "x"
-                            , variableCounter = mempty
-                            , variableSort =
-                                SortVariableSort
-                                    (SortVariable (testId "sv1"))
-                            }
-                        ]
+                        Arguments
+                            [ SetVar $ SetVariable Variable
+                                { variableName = testId "x"
+                                , variableCounter = mempty
+                                , variableSort =
+                                    SortVariableSort
+                                        (SortVariable (testId "sv1"))
+                                }
+                            ]
                     }
             , sentenceAliasRightPattern =
                 Builtin.externalize $ mkTop sentenceAliasResultSort
@@ -1299,7 +1301,7 @@ nameDuplicationTests =
                                     , symbolOrAliasParams =
                                         [SortVariableSort sv1]
                                     }
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalize

@@ -58,7 +58,7 @@ builtinSymbol name resultSort operandSorts =
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts operandSorts resultSort
+        , symbolSorts = applicationSorts (Arguments operandSorts) resultSort
         }
     & function
 
@@ -290,7 +290,7 @@ injSymbol lSort rSort =
         { symbolConstructor = testId "inj"
         , symbolParams = [lSort, rSort]
         , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts [lSort] rSort
+        , symbolSorts = applicationSorts (Arguments [lSort]) rSort
         }
     & sortInjection
 
@@ -520,7 +520,10 @@ pairSymbol lSort rSort =
         { symbolConstructor = testId "pair"
         , symbolParams = [lSort, rSort]
         , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts [lSort, rSort] (pairSort lSort rSort)
+        , symbolSorts =
+            applicationSorts
+                (Arguments [lSort, rSort])
+                (pairSort lSort rSort)
         }
     & constructor
     & functional
@@ -1195,7 +1198,7 @@ hookedSymbolDecl symbol =
             { symbolConstructor = symbolConstructor
             , symbolParams = []
             }
-    sentenceSymbolSorts = applicationSortsOperands symbolSorts
+    Arguments sentenceSymbolSorts = applicationSortsOperands symbolSorts
     sentenceSymbolResultSort = applicationSortsResult symbolSorts
 
 symbolDecl :: Internal.Symbol -> ParsedSentence
@@ -1217,7 +1220,7 @@ symbolDecl symbol =
             { symbolConstructor = symbolConstructor
             , symbolParams = []
             }
-    sentenceSymbolSorts = applicationSortsOperands symbolSorts
+    Arguments sentenceSymbolSorts = applicationSortsOperands symbolSorts
     sentenceSymbolResultSort = applicationSortsResult symbolSorts
 
 importParsedModule :: ModuleName -> ParsedSentence

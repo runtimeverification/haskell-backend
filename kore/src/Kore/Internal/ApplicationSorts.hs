@@ -29,10 +29,11 @@ import Kore.Error
 import Kore.Sort hiding
     ( substituteSortVariables
     )
+import Kore.Syntax.Arguments
 import Kore.Syntax.Sentence
 
 data ApplicationSorts = ApplicationSorts
-    { applicationSortsOperands :: ![Sort]
+    { applicationSortsOperands :: !(Arguments Sort)
     , applicationSortsResult   :: !Sort
     }
     deriving (Eq, GHC.Generic, Ord, Show)
@@ -49,7 +50,7 @@ instance Debug ApplicationSorts
 
 instance Diff ApplicationSorts
 
-applicationSorts :: [Sort] -> Sort -> ApplicationSorts
+applicationSorts :: Arguments Sort -> Sort -> ApplicationSorts
 applicationSorts = ApplicationSorts
 
 {-|'symbolOrAliasSorts' builds the return and operand sorts for an application
@@ -72,7 +73,7 @@ symbolOrAliasSorts params sentence = do
     operandSorts <-
         mapM
             (substituteSortVariables (Map.fromList variableToSort))
-            parametrizedArgumentSorts
+            (Arguments parametrizedArgumentSorts)
     return ApplicationSorts
         { applicationSortsOperands = operandSorts
         , applicationSortsResult = fullReturnSort

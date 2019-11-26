@@ -1253,9 +1253,10 @@ See also: 'forceSort'
 forceSorts
     :: GHC.HasCallStack
     => InternalVariable variable
-    => [Sort]
-    -> [TermLike variable]
-    -> [TermLike variable]
+    => (Foldable align, Semialign align)
+    => align Sort
+    -> align (TermLike variable)
+    -> align (TermLike variable)
 forceSorts operandSorts children =
     alignWith forceTheseSorts operandSorts children
   where
@@ -1266,9 +1267,9 @@ forceSorts operandSorts children =
     forceTheseSorts (These sort termLike) = forceSort sort termLike
     expected =
         [ "Expected:"
-        , Pretty.indent 4 (Unparser.arguments operandSorts)
+        , Pretty.indent 4 (Unparser.arguments $ Foldable.toList operandSorts)
         , "but found:"
-        , Pretty.indent 4 (Unparser.arguments children)
+        , Pretty.indent 4 (Unparser.arguments $ Foldable.toList children)
         ]
 
 {- | Construct an 'Application' pattern.
@@ -1294,7 +1295,7 @@ mkApplyAlias alias children =
     application =
         Application
             { applicationSymbolOrAlias = alias
-            , applicationChildren = forceSorts operandSorts children
+            , applicationChildren = forceSorts operandSorts (Arguments children)
             }
     operandSorts = applicationSortsOperands (aliasSorts alias)
 
@@ -1330,7 +1331,7 @@ symbolApplication
 symbolApplication symbol children =
     Application
         { applicationSymbolOrAlias = symbol
-        , applicationChildren = forceSorts operandSorts children
+        , applicationChildren = forceSorts operandSorts (Arguments children)
         }
   where
     operandSorts = applicationSortsOperands (symbolSorts symbol)
@@ -2074,7 +2075,7 @@ mkAlias aliasConstructor aliasParams resultSort' arguments right =
                         , symbolOrAliasParams =
                             SortVariableSort <$> aliasParams
                         }
-                , applicationChildren = arguments
+                , applicationChildren = Arguments arguments
                 }
         , sentenceAliasRightPattern = right
         , sentenceAliasAttributes = Attributes []
@@ -2103,12 +2104,12 @@ pattern And_
 
 pattern App_
     :: Symbol
-    -> [TermLike variable]
+    -> Arguments (TermLike variable)
     -> TermLike variable
 
 pattern ApplyAlias_
     :: Alias (TermLike Variable)
-    -> [TermLike variable]
+    -> Arguments (TermLike variable)
     -> TermLike variable
 
 pattern Bottom_

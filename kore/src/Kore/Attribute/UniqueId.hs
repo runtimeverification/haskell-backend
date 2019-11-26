@@ -62,11 +62,6 @@ uniqueIdAttribute uniqueId =
 instance ParseAttributes UniqueId where
     parseAttribute = withApplication' parseApplication
       where
-        parseApplication
-            :: [Sort]
-            -> [AttributePattern]
-            -> UniqueId
-            -> AttributeParser.Parser UniqueId
         parseApplication params args (UniqueId Nothing) = do
             AttributeParser.getZeroParams params
             arg <- AttributeParser.getOneArgument args

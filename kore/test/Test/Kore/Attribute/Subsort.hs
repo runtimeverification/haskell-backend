@@ -58,7 +58,7 @@ test_zeroParams =
                         { symbolOrAliasConstructor = subsortId
                         , symbolOrAliasParams = []
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
 
 test_arguments :: TestTree

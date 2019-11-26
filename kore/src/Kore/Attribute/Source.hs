@@ -56,15 +56,9 @@ sourceId = "org'Stop'kframework'Stop'attributes'Stop'Source"
 instance ParseAttributes Source where
     parseAttribute = AttributeParser.withApplication sourceId parseApplication
       where
-
-        parseApplication
-            :: [Sort]
-            -> [AttributePattern]
-            -> Source
-            -> AttributeParser.Parser Source
         parseApplication params args s@(Source Nothing) = do
             AttributeParser.getZeroParams params
-            case args of
+            case getArguments args of
                 [] -> pure s
                 [_] -> do
                     arg <- AttributeParser.getOneArgument args

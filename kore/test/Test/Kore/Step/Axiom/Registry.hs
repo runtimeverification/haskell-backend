@@ -92,7 +92,7 @@ testSymbol name =
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts [] sortS
+        , symbolSorts = applicationSorts (Arguments []) sortS
         }
     & Symbol.function
 
@@ -106,7 +106,7 @@ injHead :: Sort -> Sort -> Symbol
 injHead s1 s2 =
     (testSymbol "inj")
         { symbolParams = [s1, s2]
-        , symbolSorts = applicationSorts [s1] s2
+        , symbolSorts = applicationSorts (Arguments [s1]) s2
         }
 
 testDef :: Definition ParsedSentence

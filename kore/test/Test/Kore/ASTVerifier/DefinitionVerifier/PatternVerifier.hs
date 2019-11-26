@@ -345,8 +345,11 @@ test_patternVerifier =
                 , symbolOrAliasParams = []
                 }
             , applicationChildren =
-                [ simpleExistsParsedPattern
-                    objectVariableName anotherObjectSort2]
+                Arguments
+                    [ simpleExistsParsedPattern
+                        objectVariableName
+                        anotherObjectSort2
+                    ]
             }
         )
         (NamePrefix "dummy")
@@ -369,9 +372,11 @@ test_patternVerifier =
                 , symbolOrAliasParams = [objectSort, objectSort]
                 }
             , applicationChildren =
-                [ simpleExistsParsedPattern
-                    objectVariableName anotherObjectSort2
-                ]
+                Arguments
+                    [ simpleExistsParsedPattern
+                        objectVariableName
+                        anotherObjectSort2
+                    ]
             }
         )
         (NamePrefix "dummy")
@@ -965,12 +970,13 @@ patternsInAllContexts
                                 SortVariableSort <$> aliasParams
                             }
                     , applicationChildren =
-                        [ SetVar $ SetVariable Variable
-                            { variableName = testId "x"
-                            , variableCounter = mempty
-                            , variableSort = symbolAliasSort
-                            }
-                        ]
+                        Arguments
+                            [ SetVar $ SetVariable Variable
+                                { variableName = testId "x"
+                                , variableCounter = mempty
+                                , variableSort = symbolAliasSort
+                                }
+                            ]
                     }
             , sentenceAliasRightPattern =
                 Builtin.externalize $ Internal.mkTop anotherSort
@@ -1013,7 +1019,8 @@ genericPatternInPatterns
         [ TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = symbol
-                , applicationChildren = [asParsedPattern testedPattern]
+                , applicationChildren =
+                    Arguments [asParsedPattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =
@@ -1026,7 +1033,8 @@ genericPatternInPatterns
         , TestPattern
             { testPatternPattern = ApplicationF Application
                 { applicationSymbolOrAlias = alias
-                , applicationChildren = [asParsedPattern testedPattern]
+                , applicationChildren =
+                    Arguments [asParsedPattern testedPattern]
                 }
             , testPatternSort = testedSort
             , testPatternErrorStack =

@@ -59,7 +59,11 @@ equalInjectiveHeadsAndEquals
     (App_ secondHead secondChildren)
   | isFirstInjective && isSecondInjective && firstHead == secondHead =
     Monad.Trans.lift $ do
-        children <- Monad.zipWithM termMerger firstChildren secondChildren
+        children <-
+            Monad.zipWithM
+                termMerger
+                (getArguments firstChildren)
+                (getArguments secondChildren)
         let merged = Foldable.foldMap Pattern.withoutTerm children
             -- TODO (thomas.tuegel): This is tricky!
             -- Unifying the symbol's children may have produced new patterns

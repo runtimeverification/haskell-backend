@@ -17,9 +17,15 @@ import Control.Error.Util
 import Control.Exception
     ( assert
     )
+import Data.Align
+    ( zip
+    )
 import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
+    )
+import Prelude hiding
+    ( zip
     )
 
 import Kore.Internal.Alias
@@ -30,6 +36,7 @@ import Kore.Internal.Pattern
     )
 import Kore.Internal.TermLike
     ( pattern ApplyAlias_
+    , Arguments (..)
     , SubstitutionVariable
     , TermLike
     , Variable
@@ -74,7 +81,7 @@ expandSingleAlias =
 substituteInAlias
     :: SubstitutionVariable variable
     => Alias (TermLike Variable)
-    -> [TermLike variable]
+    -> Arguments (TermLike variable)
     -> TermLike variable
 substituteInAlias Alias { aliasLeft, aliasRight } children =
     assert (length aliasLeft == length children)
@@ -83,4 +90,5 @@ substituteInAlias Alias { aliasLeft, aliasRight } children =
             (mapVariables fromVariable aliasRight)
   where
     substitutionMap =
-        Map.fromList $ zip (fmap fromVariable <$> aliasLeft) children
+        Map.fromList . getArguments
+        $ zip (fmap fromVariable <$> aliasLeft) children

@@ -193,7 +193,7 @@ parseBoolAttribute ident =
 
 withApplication
     :: Id
-    -> ([Sort] -> [AttributePattern] -> attrs -> Parser attrs)
+    -> ([Sort] -> Arguments AttributePattern -> attrs -> Parser attrs)
     -> AttributePattern
     -> attrs
     -> Parser attrs
@@ -234,11 +234,11 @@ getTwoParams =
 {- | Accept exactly zero arguments.
  -}
 getZeroArguments
-    :: [AttributePattern]
+    :: Arguments AttributePattern
     -> Parser ()
 getZeroArguments =
     \case
-        [] -> return ()
+        Arguments [] -> return ()
         args ->
             Kore.Error.koreFail
                 ("expected zero arguments, found " ++ show arity)
@@ -248,11 +248,11 @@ getZeroArguments =
 {- | Accept exactly one argument.
  -}
 getOneArgument
-    :: [AttributePattern]
+    :: Arguments AttributePattern
     -> Parser AttributePattern
 getOneArgument =
     \case
-        [arg] -> return arg
+        Arguments [arg] -> return arg
         args ->
             Kore.Error.koreFail
                 ("expected one argument, found " ++ show arity)
@@ -262,11 +262,11 @@ getOneArgument =
 {- | Accept exactly two arguments.
  -}
 getTwoArguments
-    :: [AttributePattern]
+    :: Arguments AttributePattern
     -> Parser (AttributePattern, AttributePattern)
 getTwoArguments =
     \case
-        [arg1, arg2] -> return (arg1, arg2)
+        Arguments [arg1, arg2] -> return (arg1, arg2)
         args ->
             Kore.Error.koreFail
                 ("expected two arguments, found " ++ show arity)
@@ -279,7 +279,7 @@ getSymbolOrAlias :: AttributePattern -> Parser SymbolOrAlias
 getSymbolOrAlias kore =
     case Recursive.project kore of
         _ :< ApplicationF app
-          | [] <- applicationChildren -> return symbol
+          | Arguments [] <- applicationChildren -> return symbol
           | otherwise ->
             Kore.Error.withLocationAndContext
                 symbol

@@ -240,5 +240,5 @@ coerceSortInjection
 coerceSortInjection injectionSymbol sourceSort targetSort =
     injectionSymbol
         { symbolParams = [sourceSort, targetSort]
-        , symbolSorts = applicationSorts [sourceSort] targetSort
+        , symbolSorts = applicationSorts (Arguments [sourceSort]) targetSort
         }

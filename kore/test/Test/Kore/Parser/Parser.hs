@@ -300,19 +300,20 @@ applicationPatternParserTests =
                             , sortVariableSort "s2" ]
                         }
                 , applicationChildren =
-                    [ asParsedPattern $ VariableF $ Const $ ElemVar $
-                        ElementVariable Variable
-                            { variableName = testId "v1" :: Id
-                            , variableSort = sortVariableSort "s1"
-                            , variableCounter = mempty
-                            }
-                    , asParsedPattern $ VariableF $ Const $ ElemVar $
-                        ElementVariable Variable
-                            { variableName = testId "v2" :: Id
-                            , variableSort = sortVariableSort "s2"
-                            , variableCounter = mempty
-                            }
-                    ]
+                    Arguments
+                        [ asParsedPattern $ VariableF $ Const $ ElemVar $
+                            ElementVariable Variable
+                                { variableName = testId "v1" :: Id
+                                , variableSort = sortVariableSort "s1"
+                                , variableCounter = mempty
+                                }
+                        , asParsedPattern $ VariableF $ Const $ ElemVar $
+                            ElementVariable Variable
+                                { variableName = testId "v2" :: Id
+                                , variableSort = sortVariableSort "s2"
+                                , variableCounter = mempty
+                                }
+                        ]
                 }
             )
         , success "c{}()"
@@ -322,7 +323,7 @@ applicationPatternParserTests =
                         { symbolOrAliasConstructor = testId "c" :: Id
                         , symbolOrAliasParams = []
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
             )
         , FailureWithoutMessage ["", "var", "v:", ":s", "c(s)", "c{s}"]
@@ -774,12 +775,13 @@ sentenceAliasParserTests =
                                     [ sortVariableSort "s1" ]
                                 }
                         , applicationChildren =
-                            [ ElemVar $ ElementVariable Variable
-                                { variableName = testId "X" :: Id
-                                , variableSort = sortVariableSort "s2"
-                                , variableCounter = mempty
-                                }
-                            ]
+                            Arguments
+                                [ ElemVar $ ElementVariable Variable
+                                    { variableName = testId "X" :: Id
+                                    , variableSort = sortVariableSort "s2"
+                                    , variableCounter = mempty
+                                    }
+                                ]
                         }
                     , sentenceAliasRightPattern =
                         asParsedPattern $ ApplicationF Application
@@ -788,7 +790,7 @@ sentenceAliasParserTests =
                                     { symbolOrAliasConstructor = testId "g"
                                     , symbolOrAliasParams = [ ]
                                     }
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
                     , sentenceAliasAttributes =
                         Attributes
@@ -824,17 +826,18 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ ElemVar $ ElementVariable Variable
-                                    { variableName = testId "X" :: Id
-                                    , variableSort = sortVariableSort "s3"
-                                    , variableCounter = mempty
-                                    }
-                                , ElemVar $ ElementVariable Variable
-                                    { variableName = testId "Y" :: Id
-                                    , variableSort = sortVariableSort "s4"
-                                    , variableCounter = mempty
-                                    }
-                                ]
+                                Arguments
+                                    [ ElemVar $ ElementVariable Variable
+                                        { variableName = testId "X" :: Id
+                                        , variableSort = sortVariableSort "s3"
+                                        , variableCounter = mempty
+                                        }
+                                    , ElemVar $ ElementVariable Variable
+                                        { variableName = testId "Y" :: Id
+                                        , variableSort = sortVariableSort "s4"
+                                        , variableCounter = mempty
+                                        }
+                                    ]
                             }
                     , sentenceAliasRightPattern =
                         asParsedPattern $ ApplicationF Application
@@ -847,19 +850,20 @@ sentenceAliasParserTests =
                                         ]
                                     }
                             , applicationChildren =
-                                [ asParsedPattern $ VariableF $ Const
-                                    $ ElemVar $ ElementVariable Variable
-                                    { variableName = testId "X" :: Id
-                                    , variableSort = sortVariableSort "s3"
-                                    , variableCounter = mempty
-                                    }
-                                , asParsedPattern $ VariableF $ Const
-                                    $ ElemVar $ ElementVariable Variable
-                                    { variableName = testId "Y" :: Id
-                                    , variableSort = sortVariableSort "s4"
-                                    , variableCounter = mempty
-                                    }
-                                ]
+                                Arguments
+                                    [ asParsedPattern $ VariableF $ Const
+                                        $ ElemVar $ ElementVariable Variable
+                                        { variableName = testId "X" :: Id
+                                        , variableSort = sortVariableSort "s3"
+                                        , variableCounter = mempty
+                                        }
+                                    , asParsedPattern $ VariableF $ Const
+                                        $ ElemVar $ ElementVariable Variable
+                                        { variableName = testId "Y" :: Id
+                                        , variableSort = sortVariableSort "s4"
+                                        , variableCounter = mempty
+                                        }
+                                    ]
                             }
                     , sentenceAliasAttributes =
                         Attributes
@@ -888,7 +892,7 @@ sentenceAliasParserTests =
                                         testId "a" :: Id
                                     , symbolOrAliasParams = [ ]
                                     }
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
                     , sentenceAliasRightPattern =
                         (asParsedPattern . ApplicationF)
@@ -899,7 +903,7 @@ sentenceAliasParserTests =
                                             testId "b" :: Id
                                         , symbolOrAliasParams = [ ]
                                         }
-                                , applicationChildren = []
+                                , applicationChildren = Arguments []
                                 }
                     , sentenceAliasAttributes = Attributes []
                     }
@@ -926,7 +930,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias = aliasHead
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalize
@@ -971,7 +975,8 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias = aliasHead
-                            , applicationChildren = ElemVar <$> [varA, varB]
+                            , applicationChildren =
+                                ElemVar <$> Arguments [varA, varB]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalize
@@ -1009,7 +1014,7 @@ sentenceAliasParserTests =
                     , sentenceAliasLeftPattern =
                         Application
                             { applicationSymbolOrAlias  = aliasHead
-                            , applicationChildren = [ElemVar var]
+                            , applicationChildren = Arguments [ElemVar var]
                             }
                     , sentenceAliasRightPattern =
                         Builtin.externalize $ Internal.mkNext arg

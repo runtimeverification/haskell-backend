@@ -33,10 +33,12 @@ test_instance_Synthetic =
         [ testGroup "functional" $ do
             x <- range
             y <- range
-            [ expect (x <> y) $ ApplySymbolF $ Application sigma [x, y] ]
+            let args = Arguments [x, y]
+            [ expect (x <> y) $ ApplySymbolF $ Application sigma args ]
         , testGroup "non-functional" $ do
             x <- range
-            [ expect nonFunctional $ ApplySymbolF $ Application plain [x] ]
+            let args = Arguments [x]
+            [ expect nonFunctional $ ApplySymbolF $ Application plain args ]
         ]
     , testGroup "BottomF" [ isn't $ BottomF (Bottom sort) ]
     , testGroup "CeilF" $ map (isn't . CeilF) (Ceil sort sort <$> range)

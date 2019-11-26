@@ -68,14 +68,9 @@ locationId = "org'Stop'kframework'Stop'attributes'Stop'Location"
 instance ParseAttributes Location where
     parseAttribute = AttributeParser.withApplication locationId parseApplication
       where
-        parseApplication
-            :: [Sort]
-            -> [AttributePattern]
-            -> Location
-            -> AttributeParser.Parser Location
         parseApplication params args l@(Location Nothing Nothing) = do
             AttributeParser.getZeroParams params
-            case args of
+            case getArguments args of
                 [] -> pure l
                 [_] -> do
                     arg <- AttributeParser.getOneArgument args

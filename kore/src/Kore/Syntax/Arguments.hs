@@ -12,6 +12,9 @@ module Kore.Syntax.Arguments
 import Control.DeepSeq
     ( NFData
     )
+import Data.Align
+    ( Semialign (..)
+    )
 import Data.Functor.Classes
     ( Eq1
     , Ord1
@@ -29,6 +32,9 @@ import GHC.Exts
     ( IsList (..)
     )
 import qualified GHC.Generics as GHC
+import Prelude hiding
+    ( zipWith
+    )
 
 import Debug
 import Kore.Unparser
@@ -51,6 +57,13 @@ instance IsList (Arguments a) where
     fromListN _ = Arguments
     {-# INLINE fromListN #-}
 
+instance Semialign Arguments where
+    alignWith f (Arguments as) (Arguments bs) = Arguments (alignWith f as bs)
+    {-# INLINE alignWith #-}
+
+    zipWith f (Arguments as) (Arguments bs) = Arguments (zipWith f as bs)
+    {-# INLINE zipWith #-}
+
 instance NFData a => NFData (Arguments a)
 
 instance Hashable a => Hashable (Arguments a)
@@ -65,7 +78,10 @@ instance (Debug a, Diff a) => Diff (Arguments a)
 
 instance Unparse a => Unparse (Arguments a) where
     unparse = arguments . getArguments
-    unparse2 = arguments2 . getArguments
+    unparse2 (Arguments args)
+      | null args = mempty
+      | otherwise = arguments2 args
 
+{-# COMPLETE Arguments #-}
 pattern Arguments :: [a] -> Arguments a
 pattern Arguments { getArguments } = Arguments_ getArguments

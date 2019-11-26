@@ -86,7 +86,7 @@ termLikeChildGen patternSort =
     termLikeAppGen = do
         symbol <- symbolGen patternSort
         let childSorts = applicationSortsOperands . symbolSorts $ symbol
-        children <- traverse termLikeChildGen childSorts
+        Arguments children <- traverse termLikeChildGen childSorts
         pure $ mkApplySymbol symbol children
     termLikeBottomGen = pure (mkBottom patternSort)
     termLikeCeilGen = do

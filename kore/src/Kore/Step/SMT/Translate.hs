@@ -214,9 +214,11 @@ translatePredicate translateUninterpreted predicate =
         sexpr <- case translateSymbol applicationSymbolOrAlias of
             Nothing -> empty  -- The symbol was not declared, give up.
             Just sexpr -> return sexpr
-        children <- zipWithM translatePattern
-            applicationChildrenSorts
-            applicationChildren
+        children <-
+            zipWithM
+                translatePattern
+                (getArguments applicationChildrenSorts)
+                (getArguments applicationChildren)
         return $ shortenSExpr (applySExpr sexpr children)
       where
         applicationChildrenSorts = termLikeSort <$> applicationChildren

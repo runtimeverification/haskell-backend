@@ -340,7 +340,7 @@ matchSort :: Sort -> Sort -> Sort
 matchSort sort1 sort2 =
     maybe sort1 (sameSort sort1) (rigidSort sort2)
 
-matchSorts :: [Sort] -> [Sort] -> [Sort]
+matchSorts :: Semialign f => f Sort -> f Sort -> f Sort
 matchSorts = alignWith matchTheseSorts
   where
     matchTheseSorts (This sort1) = missingArgument sort1

@@ -30,7 +30,7 @@ test_Klabel =
                 (asAttributePattern . ApplicationF)
                     Application
                         { applicationSymbolOrAlias = klabelSymbol
-                        , applicationChildren = []
+                        , applicationChildren = Arguments []
                         }
         expectFailure . parseKlabel $ Attributes [ illegalAttribute ]
 

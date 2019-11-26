@@ -34,6 +34,7 @@ import Kore.Internal.Symbol
 import Kore.Sort
 import Kore.Syntax.Application
     ( Application (..)
+    , Arguments (..)
     )
 import Kore.Unparser
 
@@ -97,4 +98,8 @@ toSymbol (BigEndian symbol) = symbol
 toSymbol (LittleEndian symbol) = symbol
 
 toApplication :: forall child. Endianness -> Application Symbol child
-toApplication endianness = (Application (toSymbol endianness) [])
+toApplication endianness =
+    Application
+        { applicationSymbolOrAlias = toSymbol endianness
+        , applicationChildren = Arguments []
+        }

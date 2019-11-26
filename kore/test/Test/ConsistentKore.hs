@@ -83,7 +83,8 @@ import qualified Kore.Internal.Symbol as Internal
     )
 import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Arguments (..)
+    , TermLike
     , TermLikeF (..)
     , mkAnd
     , mkApplyAlias
@@ -942,7 +943,7 @@ symbolGenerator
                     -- with variables.
                     else id
         maybeTerms <- request $ mapM termGenerator applicationSortsOperands
-        return (mkApplySymbol symbol <$> sequenceA maybeTerms)
+        return (mkApplySymbol symbol . getArguments <$> sequenceA maybeTerms)
 symbolGenerator
     Internal.Symbol
         { symbolParams = _ : _
@@ -983,7 +984,7 @@ aliasGenerator
         maybeTerms <- mapM termGenerator applicationSortsOperands
         return $ do
             terms <- sequenceA maybeTerms
-            return $ mkApplyAlias alias terms
+            return $ mkApplyAlias alias $ getArguments terms
 aliasGenerator
     Internal.Alias
         { aliasParams = _ : _

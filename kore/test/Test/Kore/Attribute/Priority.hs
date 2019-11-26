@@ -52,7 +52,7 @@ test_zeroArguments =
         (asAttributePattern . ApplicationF)
             Application
                 { applicationSymbolOrAlias = prioritySymbol
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }
 
 test_twoArguments :: TestTree

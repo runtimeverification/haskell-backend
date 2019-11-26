@@ -571,13 +571,14 @@ simplifySortInjections
             { symbolConstructor = firstConstructor
             , symbolParams = [firstOrigin, firstDestination]
             }
-        [firstChild])
+        (Arguments [firstChild])
+    )
     (App_
         secondHead@Symbol
             { symbolConstructor = secondConstructor
             , symbolParams = [secondOrigin, secondDestination]
             }
-        [secondChild]
+        (Arguments [secondChild])
     )
   | isFirstSortInjection && isSecondSortInjection =
     assert (firstHead /= secondHead)

@@ -40,6 +40,7 @@ import qualified Kore.Internal.Symbol as Symbol.DoNotUse
 import Kore.Sort
     ( Sort (..)
     )
+import Kore.Syntax.Arguments
 import Kore.Syntax.Id
     ( Id (getId)
     )
@@ -159,7 +160,7 @@ constructor constructorId resultSort =
             { symbolConstructor = constructorId
             , symbolParams      = []
             , symbolSorts       = ApplicationSorts
-                { applicationSortsOperands = []
+                { applicationSortsOperands = Arguments []
                 , applicationSortsResult   = resultSort
                 }
             , symbolAttributes  = def

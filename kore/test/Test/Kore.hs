@@ -323,7 +323,7 @@ applicationGen childGen sort = do
     randomApplication =
         Application
             <$> Gen.small symbolOrAliasGen
-            <*> couple (Gen.small (childGen =<< sortGen))
+            <*> (Arguments <$> (couple . Gen.small) (childGen =<< sortGen))
 
     applicationFromList [] = randomApplication
     applicationFromList symbols = do
@@ -593,7 +593,7 @@ sentenceAliasGen patGen =
                                 , symbolOrAliasParams =
                                     SortVariableSort <$> aliasParams
                                 }
-                        , applicationChildren = variables
+                        , applicationChildren = Arguments variables
                         }
             sentenceAliasRightPattern <-
                 Reader.local (addVariables variables)

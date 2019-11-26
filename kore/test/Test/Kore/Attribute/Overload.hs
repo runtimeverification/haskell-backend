@@ -52,7 +52,7 @@ superSymbol =
         { symbolConstructor = superId
         , symbolParams = []
         , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts [] Mock.testSort
+        , symbolSorts = applicationSorts (Arguments []) Mock.testSort
         }
 
 superSymbolOrAlias :: SymbolOrAlias
@@ -67,7 +67,7 @@ subSymbol =
         { symbolConstructor = subId
         , symbolParams = []
         , symbolAttributes = Default.def
-        , symbolSorts = applicationSorts [] Mock.testSort
+        , symbolSorts = applicationSorts (Arguments []) Mock.testSort
         }
 
 subSymbolOrAlias :: SymbolOrAlias

@@ -53,17 +53,16 @@ test_arity =
             Application
                 { applicationSymbolOrAlias = unitSymbol
                 , applicationChildren =
-                    [ (asAttributePattern . ApplicationF)
-                        Application
+                    Arguments
+                        [ (asAttributePattern . ApplicationF) Application
                             { applicationSymbolOrAlias = unitSymbol
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
-                    , (asAttributePattern . ApplicationF)
-                        Application
+                        , (asAttributePattern . ApplicationF) Application
                             { applicationSymbolOrAlias = unitSymbol
-                            , applicationChildren = []
+                            , applicationChildren = Arguments []
                             }
-                    ]
+                        ]
                 }
 
 test_arguments :: TestTree
@@ -89,5 +88,5 @@ test_parameters =
                         , symbolOrAliasParams =
                             [ SortVariableSort (SortVariable "illegal") ]
                         }
-                , applicationChildren = []
+                , applicationChildren = Arguments []
                 }

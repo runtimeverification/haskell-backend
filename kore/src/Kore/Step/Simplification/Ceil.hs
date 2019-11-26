@@ -176,7 +176,7 @@ makeEvaluateTerm
             simplifiedChildren <- mapM
                                     (makeEvaluateTerm configurationCondition)
                                     children
-            let ceils = simplifiedChildren
+            let ceils = getArguments simplifiedChildren
             And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 
       | BuiltinF child <- projected = makeEvaluateBuiltin

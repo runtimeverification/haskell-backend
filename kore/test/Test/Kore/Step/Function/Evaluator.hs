@@ -20,6 +20,7 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
     ( Application
+    , Arguments (..)
     , Symbol
     , TermLike
     , Variable
@@ -68,8 +69,8 @@ fSymbol = Mock.fSymbol
 gSymbol = Mock.gSymbol
 
 f, g :: child -> Application Symbol child
-f x = Application fSymbol [x]
-g x = Application gSymbol [x]
+f x = Application fSymbol $ Arguments [x]
+g x = Application gSymbol $ Arguments [x]
 
 mkApplySymbol :: Application Symbol (TermLike Variable) -> TermLike Variable
 mkApplySymbol = synthesize . TermLike.ApplySymbolF

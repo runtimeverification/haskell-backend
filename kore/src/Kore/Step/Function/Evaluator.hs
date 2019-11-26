@@ -306,7 +306,7 @@ evaluateSortInjection ap
 sortInjectionChild :: Unparse a => Application Symbol a -> a
 sortInjectionChild application =
     case applicationChildren application of
-        [child] -> child
+        Arguments [child] -> child
         _ ->
             (error . show . Pretty.vsep)
                 [ "Sort injection pattern"

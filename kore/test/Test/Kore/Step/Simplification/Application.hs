@@ -304,7 +304,7 @@ makeApplication
 makeApplication symbol patterns =
     Application
         { applicationSymbolOrAlias = symbol
-        , applicationChildren = map OrPattern.fromPatterns patterns
+        , applicationChildren = OrPattern.fromPatterns <$> Arguments patterns
         }
 
 evaluate

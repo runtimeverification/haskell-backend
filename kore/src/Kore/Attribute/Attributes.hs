@@ -50,7 +50,7 @@ attributePattern
     :: SymbolOrAlias  -- ^ symbol
     -> [AttributePattern]  -- ^ arguments
     -> AttributePattern
-attributePattern applicationSymbolOrAlias applicationChildren =
+attributePattern applicationSymbolOrAlias (Arguments -> applicationChildren) =
     (asAttributePattern . ApplicationF)
         Application { applicationSymbolOrAlias, applicationChildren }
 

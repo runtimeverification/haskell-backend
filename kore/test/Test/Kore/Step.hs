@@ -50,7 +50,8 @@ import Kore.Internal.Symbol
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
-    ( TermLike
+    ( Arguments (..)
+    , TermLike
     , mkApplySymbol
     , mkElemVar
     , mkImplies
@@ -480,7 +481,10 @@ sigmaSymbol =
     & functional & constructor
     & Lens.set (field @"symbolSorts") sorts
   where
-    sorts = Symbol.applicationSorts [Mock.testSort, Mock.testSort] Mock.testSort
+    sorts =
+        Symbol.applicationSorts
+            (Arguments [Mock.testSort, Mock.testSort])
+            Mock.testSort
 
 metaSigma
     :: TermLike Variable
@@ -503,7 +507,10 @@ symbol name =
         { symbolConstructor = testId name
         , symbolParams = []
         , symbolAttributes = Attribute.defaultSymbolAttributes
-        , symbolSorts = Symbol.applicationSorts [Mock.testSort] Mock.testSort
+        , symbolSorts =
+            Symbol.applicationSorts
+                (Arguments [Mock.testSort])
+                Mock.testSort
         }
 
 fSymbol :: Symbol

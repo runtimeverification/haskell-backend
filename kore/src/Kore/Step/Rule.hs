@@ -116,6 +116,7 @@ import Kore.Step.Simplification.ExpandAlias
 import Kore.Substitute
     ( SubstitutionVariable
     )
+import Kore.Syntax.Arguments
 import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( AstLocation (..)
@@ -521,10 +522,10 @@ wEF sort = Alias
         }
     , aliasParams = []
     , aliasSorts = ApplicationSorts
-        { applicationSortsOperands = [sort]
+        { applicationSortsOperands = Arguments [sort]
         , applicationSortsResult = sort
         }
-    , aliasLeft = []
+    , aliasLeft = Arguments []
     , aliasRight = TermLike.mkTop sort
     }
 
@@ -536,10 +537,10 @@ wAF sort = Alias
         }
     , aliasParams = []
     , aliasSorts = ApplicationSorts
-        { applicationSortsOperands = [sort]
+        { applicationSortsOperands = Arguments [sort]
         , applicationSortsResult = sort
         }
-    , aliasLeft = []
+    , aliasLeft = Arguments []
     , aliasRight = TermLike.mkTop sort
     }
 
@@ -551,10 +552,10 @@ aPG sort = Alias
         }
     , aliasParams = []
     , aliasSorts = ApplicationSorts
-        { applicationSortsOperands = [sort]
+        { applicationSortsOperands = Arguments [sort]
         , applicationSortsResult = sort
         }
-    , aliasLeft = []
+    , aliasLeft = Arguments []
     , aliasRight = TermLike.mkTop sort
     }
 
@@ -632,7 +633,7 @@ patternToAxiomPattern attributes pat =
         -- Reachability claims
         TermLike.Implies_ _
             (TermLike.And_ _ requires lhs)
-            (TermLike.ApplyAlias_ op [TermLike.And_ _ ensures rhs])
+            (TermLike.ApplyAlias_ op (Arguments [TermLike.And_ _ ensures rhs]))
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
             pure $ constructor RulePattern
                 { left = lhs

@@ -33,6 +33,6 @@ test_Self =
     key =
         Application
             { applicationSymbolOrAlias = Mock.fSymbol
-            , applicationChildren = [Mock.a]
+            , applicationChildren = Arguments [Mock.a]
             }
     result = Mock.b
