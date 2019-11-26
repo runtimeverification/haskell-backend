@@ -1,8 +1,10 @@
 module Test.SMT
     ( testPropertyWithSolver
+    , testPropertyWithoutSolver
     , testCaseWithSMT
     , assertEqual'
     , runSMT
+    , runNoSMT
     ) where
 
 import Hedgehog
@@ -15,7 +17,8 @@ import qualified Control.Monad.Morph as Morph
 import qualified GHC.Stack as GHC
 
 import SMT
-    ( SMT
+    ( NoSMT
+    , SMT
     )
 import qualified SMT
 
@@ -26,6 +29,14 @@ testPropertyWithSolver
     -> TestTree
 testPropertyWithSolver str =
     testProperty str . Hedgehog.property . Morph.hoist runSMT
+
+testPropertyWithoutSolver
+    :: GHC.HasCallStack
+    => String
+    -> PropertyT NoSMT ()
+    -> TestTree
+testPropertyWithoutSolver str =
+    testProperty str . Hedgehog.property . Morph.hoist runNoSMT
 
 testCaseWithSMT :: String -> SMT () -> TestTree
 testCaseWithSMT str = testCase str . runSMT
@@ -42,3 +53,6 @@ assertEqual' str expect = liftIO . assertEqual str expect
 
 runSMT :: SMT a -> IO a
 runSMT = SMT.runSMT SMT.defaultConfig mempty
+
+runNoSMT :: NoSMT a -> IO a
+runNoSMT = SMT.runNoSMT mempty

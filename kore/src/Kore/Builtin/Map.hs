@@ -162,6 +162,10 @@ symbolVerifiers =
     , ( Map.lookupKey
       , Builtin.verifySymbol acceptAnySort [assertSort, acceptAnySort]
       )
+    , ( Map.lookupOrDefaultKey
+      , Builtin.verifySymbol acceptAnySort
+            [assertSort, acceptAnySort, acceptAnySort]
+      )
     , ( Map.unitKey
       , Builtin.verifySymbol assertSort []
       )
@@ -265,6 +269,22 @@ evalLookup =
             emptyMap <|> bothConcrete
       where
         maybeBottom = maybe Pattern.bottom Pattern.fromTermLike
+
+evalLookupOrDefault :: Builtin.Function
+evalLookupOrDefault =
+    Builtin.functionEvaluator evalLookupOrDefault0
+  where
+    evalLookupOrDefault0 :: Builtin.FunctionImplementation
+    evalLookupOrDefault0 _ [_map, _key, _def] =
+        Builtin.getAttemptedAxiom $ do
+            _key <- hoistMaybe $ Builtin.toKey _key
+            _map <- expectConcreteBuiltinMap Map.lookupKey _map
+            Builtin.appliedFunction
+                . Pattern.fromTermLike
+                . fromMaybe _def
+                . fmap Domain.getMapValue
+                $ Map.lookup _key _map
+    evalLookupOrDefault0 _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
 
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
@@ -464,6 +484,7 @@ builtinFunctions =
     Map.fromList
         [ (Map.concatKey, evalConcat)
         , (Map.lookupKey, evalLookup)
+        , (Map.lookupOrDefaultKey, evalLookupOrDefault)
         , (Map.elementKey, evalElement)
         , (Map.unitKey, evalUnit)
         , (Map.updateKey, evalUpdate)
