@@ -961,7 +961,7 @@ removalPredicate destination config =
                     unifiedConfigs <- simplifyTerm configAndDestTerms
                     if OrPattern.isFalse unifiedConfigs
                         then return Predicate.makeTruePredicate
-                        else do
+                        else
                             return
                                 . Predicate.makeNotPredicate
                                 . quantifyPredicate
