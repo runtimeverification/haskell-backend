@@ -74,10 +74,15 @@ instance Synthetic NonSimplifiable (Bottom sort) where
 
 instance Synthetic NonSimplifiable (Application Symbol) where
     synthetic application
+        -- The constructor application is non-simplifiable if all
+        -- its children are non-simplifiable.
         | Symbol.isConstructor symbol
         , childrenAreNonSimplifiable =
             NonSimplifiable . Just $ ConstructorLikeHead
 
+        -- Checks that the children of a sort injection are
+        -- not sort injections, i.e. that the triangle axiom
+        -- for sort injections has been fully applied.
         | Symbol.isSortInjection symbol
         , childrenAreNonSimplifiable
         , childrenAreNotSortInjections =
@@ -101,6 +106,9 @@ instance Synthetic NonSimplifiable (Ceil sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
+-- A domain value is not technically a constructor, but it is
+-- constructor-like for builtin domains, at least from the
+-- perspective of normalization (normalized means non-simplifiable here).
 instance Synthetic NonSimplifiable (DomainValue sort) where
     synthetic domainValue
         | isJust . isNonSimplifiable $ child =
@@ -161,6 +169,9 @@ instance Synthetic NonSimplifiable (Rewrites sort) where
     synthetic = const (NonSimplifiable Nothing)
     {-# INLINE synthetic #-}
 
+-- A domain value is not technically a constructor, but it is
+-- constructor-like for builtin domains, at least from the
+-- perspective of normalization (normalized means non-simplifiable here).
 instance Synthetic NonSimplifiable (Builtin key) where
     synthetic =
         \case

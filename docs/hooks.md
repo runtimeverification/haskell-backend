@@ -533,6 +533,16 @@ the result is `\bottom{}()`.
         [hook{}("MAP.lookup")]
 ~~~
 
+### MAP.lookupOrDefault
+
+If the given key is in the map, the result is the associated value; otherwise,
+the result is the given default.
+
+~~~
+    hooked-symbol lookupOrDefault{}(Map{}, Key{}, /* default: */ Value{}) : Value{}
+        [hook{}("MAP.lookupOrDefault")]
+~~~
+
 ### MAP.in_keys
 
 If the given key is in the map, the result is `\dv{Bool{}}("true")`; otherwise

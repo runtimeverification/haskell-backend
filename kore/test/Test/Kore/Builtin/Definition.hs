@@ -403,6 +403,11 @@ lookupMapSymbol =
     builtinSymbol "lookupMap" intSort [mapSort, intSort]
     & hook "MAP.lookup"
 
+lookupOrDefaultMapSymbol :: Internal.Symbol
+lookupOrDefaultMapSymbol =
+    builtinSymbol "lookupOrDefaultMap" intSort [mapSort, intSort, intSort]
+    & hook "MAP.lookupOrDefault"
+
 elementMapSymbol :: Internal.Symbol
 elementMapSymbol =
     builtinSymbol "elementMap" mapSort [intSort, intSort]
@@ -453,6 +458,14 @@ lookupMap
     -> TermLike Variable
     -> TermLike Variable
 lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
+
+lookupOrDefaultMap
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+lookupOrDefaultMap map' key def' =
+    mkApplySymbol lookupOrDefaultMapSymbol [map', key, def']
 
 elementMap
     :: TermLike Variable
@@ -1388,6 +1401,7 @@ mapModule =
             , hookedSymbolDecl elementMapSymbol
             , hookedSymbolDecl concatMapSymbol
             , hookedSymbolDecl lookupMapSymbol
+            , hookedSymbolDecl lookupOrDefaultMapSymbol
             , hookedSymbolDecl updateMapSymbol
             , hookedSymbolDecl inKeysMapSymbol
             , hookedSymbolDecl keysMapSymbol
