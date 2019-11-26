@@ -18,5 +18,6 @@ module DOMAIN-VALUES
   configuration <k> $PGM:Pgm </k>
 
   rule <k> ctor _:AB => end </k>
+  rule <k> _:Int => end </k>
 
 endmodule
