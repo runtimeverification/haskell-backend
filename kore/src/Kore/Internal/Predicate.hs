@@ -84,6 +84,10 @@ import GHC.Stack
 import qualified Kore.Attribute.Pattern as Attribute.Pattern
     ( simplified
     )
+import qualified Kore.Attribute.Pattern as Attribute
+    ( Pattern (Pattern)
+    )
+import qualified Kore.Attribute.Pattern as Attribute.Pattern.DoNotUse
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.Simplified as Attribute.Simplified
     ( isSimplified
@@ -556,7 +560,10 @@ makePredicate t = fst <$> makePredicateWorker t
                 :: (Predicate variable, HasChanged) -> Predicate variable
             dropChanged = fst
 
-            term@(_ :< patE) = dropChanged <$> termWithChanged
+            term@(attrs :< patE) = dropChanged <$> termWithChanged
+
+            termSort = case attrs of
+                Attribute.Pattern {patternSort} -> patternSort
 
             dropPredicate :: (Predicate variable, HasChanged) -> HasChanged
             dropPredicate = snd
@@ -564,8 +571,8 @@ makePredicate t = fst <$> makePredicateWorker t
             childChanged :: HasChanged
             childChanged = Foldable.fold (dropPredicate <$> termWithChanged)
         predicate <- case patE of
-            TopF _ -> return makeTruePredicate_
-            BottomF _ -> return makeFalsePredicate_
+            TopF _ -> return (makeTruePredicate termSort)
+            BottomF _ -> return (makeFalsePredicate termSort)
             AndF p -> return $ makeAndPredicate (andFirst p) (andSecond p)
             OrF p -> return $ makeOrPredicate (orFirst p) (orSecond p)
             IffF p -> return $ makeIffPredicate (iffFirst p) (iffSecond p)
@@ -590,32 +597,36 @@ makePredicate t = fst <$> makePredicateWorker t
         -> Either
             (Either (Error e) (Predicate variable, HasChanged))
             (Base (TermLike variable) (TermLike variable))
-    makePredicateTopDown (Recursive.project -> projected@(_ :< pat)) =
+    makePredicateTopDown (Recursive.project -> projected@(attrs :< pat)) =
         case pat of
             CeilF Ceil { ceilChild } ->
                 (Left . pure)
                     ( keepSimplifiedAndUpdateChanged'
-                    $ makeCeilPredicate_ ceilChild
+                    $ makeCeilPredicate termSort ceilChild
                     )
             FloorF Floor { floorChild } ->
                 (Left . pure)
                     ( keepSimplifiedAndUpdateChanged'
-                    $ makeFloorPredicate_ floorChild
+                    $ makeFloorPredicate termSort floorChild
                     )
             EqualsF Equals { equalsFirst, equalsSecond } ->
                 (Left . pure)
                     ( keepSimplifiedAndUpdateChanged'
-                    $ makeEqualsPredicate_ equalsFirst equalsSecond
+                    $ makeEqualsPredicate termSort equalsFirst equalsSecond
                     )
             InF In { inContainedChild, inContainingChild } ->
                 (Left . pure)
                     ( keepSimplifiedAndUpdateChanged'
-                    $ makeInPredicate_ inContainedChild inContainingChild
+                    $ makeInPredicate termSort
+                        inContainedChild
+                        inContainingChild
                     )
             _ -> Right projected
       where
         keepSimplifiedAndUpdateChanged' =
             keepSimplifiedAndUpdateChanged NotChanged projected
+        termSort = case attrs of
+            Attribute.Pattern {patternSort} -> patternSort
 
     keepSimplifiedAndUpdateChanged
         :: HasChanged

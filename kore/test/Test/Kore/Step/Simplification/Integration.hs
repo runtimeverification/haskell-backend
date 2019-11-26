@@ -39,6 +39,7 @@ import Kore.Internal.Predicate
     , makeFloorPredicate_
     , makeIffPredicate
     , makeImpliesPredicate
+    , makeInPredicate
     , makeInPredicate_
     , makeNotPredicate
     , makeOrPredicate
@@ -937,6 +938,14 @@ test_simplificationIntegration =
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "Preserves predicate sort" $ do
+        let patt = Conditional
+                { term = mkTop Mock.listSort
+                , predicate = makeInPredicate Mock.listSort Mock.cf Mock.cg
+                , substitution = mempty
+                }
+        actual <- evaluate patt
+        assertEqual "" (OrPattern.fromPattern patt) actual
     ]
 
 

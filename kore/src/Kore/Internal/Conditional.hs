@@ -149,14 +149,14 @@ instance InternalVariable variable => Applicative (Conditional variable) where
     (<*>) predicated1 predicated2 =
         Conditional
             { term = f a
-            , predicate = Predicate.makeAndPredicate predicate1 p2
+            , predicate = Predicate.makeAndPredicate predicate1 sortedPredicate2
             , substitution = substitution1 <> substitution2
             }
       where
         Conditional f predicate1 substitution1 = predicated1
         Conditional a predicate2 substitution2 = predicated2
         sort = Predicate.predicateSort predicate1
-        p2 = Predicate.coerceSort sort predicate2
+        sortedPredicate2 = Predicate.coerceSort sort predicate2
 
 {- | 'Conditional' is equivalent to the 'Control.Comonad.Env.Env' comonad.
 

@@ -255,11 +255,8 @@ withCondition
         , predicate
         , substitution
         }
-  = Conditional
-    { term
-    , predicate = Predicate.coerceSort (termLikeSort term) predicate
-    , substitution
-    }
+  = syncSort
+    Conditional { term, predicate, substitution }
 
 withConditionUnsorted
     :: TermLike variable
@@ -298,3 +295,8 @@ patternSort Conditional {term, predicate} =
   where
     termSort = termLikeSort term
     predicateSort = Predicate.predicateSort predicate
+
+syncSort
+    :: (HasCallStack, InternalVariable variable)
+    => Pattern variable -> Pattern variable
+syncSort patt = coerceSort (patternSort patt) patt
