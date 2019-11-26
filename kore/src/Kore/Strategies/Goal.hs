@@ -23,8 +23,6 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
-import Debug.Trace
-
 import Control.Applicative
     ( Alternative (..)
     )
@@ -99,9 +97,6 @@ import qualified Kore.Step.Rule as RulePattern
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     , SimplifierVariable
-    )
-import Kore.Step.Simplification.OrPattern
-    ( simplifyConditionsWithSmt
     )
 import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
@@ -967,27 +962,12 @@ removalPredicate destination config =
                     if OrPattern.isFalse unifiedConfigs
                         then return Predicate.makeTruePredicate
                         else do
-                            remainder <-
-                                simplifyConditionsWithSmt
-                                    ( Condition.toPredicate
-                                    . Conditional.withoutTerm
-                                    $ destination
-                                    )
-                                    unifiedConfigs
                             return
-                                . Condition.toPredicate
-                                . Conditional.withoutTerm
-                                . OrPattern.toPattern
-                                $ remainder
-                            -- case Foldable.toList unifiedConfigs of
-                            --     [substPredicate] ->
-                            --         return
-                            --         $ Predicate.makeNotPredicate
-                            --         $ Condition.toPredicate
-                            --         $ Conditional.andCondition
-                            --             (Conditional.withoutTerm substPredicate)
-                            --             (Conditional.withoutTerm destination)
-                            --     _ -> error "TODO: write error message"
+                                . Predicate.makeNotPredicate
+                                . quantifyPredicate
+                                $ Predicate.makeAndPredicate
+                                    (Condition.toPredicate . Conditional.withoutTerm $ config)
+                                    (Condition.toPredicate . Conditional.withoutTerm $ destination)
                 else
                     return
                         $ Predicate.makeNotPredicate
