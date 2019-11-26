@@ -117,8 +117,7 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers
         , symbolVerifiers
-        , domainValueVerifiers = mempty
-        , applicationVerifiers = mempty
+        , patternVerifier = mempty
         }
 
 {- | Verify that hooked sort declarations are well-formed.
@@ -298,7 +297,7 @@ evalElement =
                     case arguments of
                         [_key, _value] -> (_key, _value)
                         _ -> Builtin.wrongArity Map.elementKey
-            case TermLike.asConcrete _key of
+            case Builtin.toKey _key of
                 Just concrete ->
                     TermLike.assertNonSimplifiableKeys [_key]
                     $ returnConcreteMap

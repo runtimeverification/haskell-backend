@@ -23,6 +23,7 @@ module Kore.Builtin
     , Builtin.SortVerifier (..)
     , Builtin.ApplicationVerifier (..)
     , Builtin.SymbolKey (..)
+    , Builtin.PatternVerifier (..)
     , Builtin.lookupApplicationVerifier
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
