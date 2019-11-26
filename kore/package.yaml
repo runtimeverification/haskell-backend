@@ -59,6 +59,7 @@ dependencies:
   - optparse-applicative >=0.14
   - parser-combinators >=1.1
   - prettyprinter >=1.2
+  - primitive >=0.7
   - process >=1.6
   - profunctors >=5.3
   - recursion-schemes >=5.1

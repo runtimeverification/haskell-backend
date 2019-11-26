@@ -11,6 +11,7 @@ module Debug
     -- * Debug
       Debug (..)
     , debugPrecGeneric
+    , parens
     -- * Diff
     , Diff (..)
     , diffPrecEq
