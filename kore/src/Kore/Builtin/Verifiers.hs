@@ -7,7 +7,6 @@ module Kore.Builtin.Verifiers
     ( Verifiers (..)
     , SymbolVerifier (..), SymbolVerifiers
     , SortDeclVerifier, SortDeclVerifiers
-    , DomainValueVerifier, DomainValueVerifiers
     , SortVerifier (..)
     , ApplicationVerifier (..), SymbolKey(..), ApplicationVerifiers
     , lookupApplicationVerifier
@@ -18,8 +17,6 @@ module Kore.Builtin.Verifiers
     , Parser
     , symbolVerifier
     , sortDeclVerifier
-      -- * Smart constructors for DomainValueVerifier
-    , makeEncodedDomainValueVerifier
       -- * Declaring builtin verifiers
     , verifySortDecl
     , getUnitId
@@ -159,21 +156,6 @@ newtype SymbolVerifier =
  -}
 type SymbolVerifiers = HashMap Text SymbolVerifier
 
-{- | @DomainValueVerifier@ verifies a domain value and returns the modified
-  represention parameterized over @m@, the verification monad.
-
--}
-newtype DomainValueVerifier patternType =
-    DomainValueVerifier
-        { runDomainValueVerifier
-            :: DomainValue Sort Verified.Pattern
-            -> PatternVerifier (TermLikeF Variable Verified.Pattern)
-        }
-
--- | @DomainValueVerifiers@  associates a @DomainValueVerifier@ with each
--- builtin
-type DomainValueVerifiers child = HashMap Text (DomainValueVerifier child)
-
 -- | Verify (and internalize) an application pattern.
 newtype ApplicationVerifier patternType =
     ApplicationVerifier
@@ -181,33 +163,6 @@ newtype ApplicationVerifier patternType =
             :: Application Symbol Verified.Pattern
             -> PatternVerifier (TermLikeF Variable Verified.Pattern)
         }
-
-domainValuePatternVerifierHook
-    :: Text
-    -> DomainValueVerifier patternType
-    -> PatternVerifierHook
-domainValuePatternVerifierHook hook verifier =
-    PatternVerifierHook $ \termLike ->
-        let _ :< termLikeF = Recursive.project termLike in
-        case termLikeF of
-            DomainValueF domainValue
-              | SortActualSort _ <- domainValueSort -> do
-                hook' <- lookupHookSort domainValueSort
-                fromMaybe (return termLike) $ do
-                    Monad.guard (hook' == Just hook)
-                    let context =
-                            unwords
-                                [ "Verifying builtin sort"
-                                , "'" ++ Text.unpack hook ++ "'"
-                                ]
-                        verify =
-                            Kore.Error.withContext context
-                            . fmap synthesize
-                            . runDomainValueVerifier verifier
-                    pure (verify domainValue)
-              where
-                DomainValue { domainValueSort } = domainValue
-            _ -> return termLike
 
 {- | @SymbolKey@ names builtin functions and constructors.
  -}
@@ -257,6 +212,37 @@ applicationPatternVerifierHooks applicationVerifiers =
   where
     lookupVerifier symbol =
         lookupApplicationVerifier symbol applicationVerifiers
+
+domainValuePatternVerifierHook
+    ::  Text
+    ->  (   DomainValue Sort Verified.Pattern
+        ->  PatternVerifier (TermLikeF Variable Verified.Pattern)
+        )
+    ->  PatternVerifierHook
+domainValuePatternVerifierHook hook verifier =
+    PatternVerifierHook $ \termLike ->
+        let _ :< termLikeF = Recursive.project termLike in
+        case termLikeF of
+            DomainValueF domainValue
+              | SortActualSort _ <- domainValueSort -> do
+                hook' <- lookupHookSort domainValueSort
+                fromMaybe (return termLike) $ do
+                    Monad.guard (hook' == Just hook)
+                    let context =
+                            unwords
+                                [ "Verifying builtin sort"
+                                , "'" ++ Text.unpack hook ++ "'"
+                                ]
+                        verify =
+                            Kore.Error.withContext context
+                            . Kore.Error.withContext
+                                "While parsing domain value"
+                            . fmap synthesize
+                            . verifier
+                    pure (verify domainValue)
+              where
+                DomainValue { domainValueSort } = domainValue
+            _ -> return termLike
 
 {- | Verify builtin sorts, symbols, and patterns.
  -}
@@ -579,20 +565,6 @@ verifySymbolArguments verifyArguments =
             zipWithM_ (\verify sort -> verify findSort sort)
                 (runSortVerifier <$> verifyArguments)
                 sorts
-
--- | Construct a 'DomainValueVerifier' for an encodable sort.
-makeEncodedDomainValueVerifier
-    :: Text
-    -- ^ Builtin sort identifier
-    -> (DomainValue Sort Verified.Pattern -> PatternVerifier (TermLikeF Variable Verified.Pattern))
-    -- ^ encoding function for the builtin sort
-    -> DomainValueVerifier child
-makeEncodedDomainValueVerifier _builtinSort encodeSort =
-    DomainValueVerifier { runDomainValueVerifier }
-  where
-    runDomainValueVerifier domain =
-        Kore.Error.withContext "While parsing domain value"
-        $ encodeSort domain
 
 {- | Run a parser on a string.
 

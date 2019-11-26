@@ -177,8 +177,7 @@ symbolVerifiers =
  -}
 patternVerifierHook :: Builtin.PatternVerifierHook
 patternVerifierHook =
-    Builtin.domainValuePatternVerifierHook sort
-    $ Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
+    Builtin.domainValuePatternVerifierHook sort patternVerifierWorker
   where
     patternVerifierWorker external =
         case externalChild of
