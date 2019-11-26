@@ -23,6 +23,8 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
+import Debug.Trace
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -63,6 +65,7 @@ import Kore.IndexedModule.IndexedModule
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -72,7 +75,8 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( mkAnd
+    ( isFunctionPattern
+    , mkAnd
     )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
@@ -96,8 +100,14 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     , SimplifierVariable
     )
+import Kore.Step.Simplification.OrPattern
+    ( simplifyConditionsWithSmt
+    )
 import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
+    )
+import Kore.Step.Simplification.Simplify
+    ( simplifyTerm
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
@@ -730,13 +740,14 @@ allPathFollowupStep claims axioms =
 -- | Remove the destination of the goal.
 removeDestination
     :: MonadCatch m
+    => MonadSimplify m
     => FromRulePattern goal
     => ToRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 removeDestination goal = errorBracket $ do
-    let removal = removalPredicate destination configuration
-        result = Conditional.andPredicate configuration removal
+    removal <- removalPredicate destination configuration
+    let result = Conditional.andPredicate configuration removal
     pure $ makeRuleFromPatterns goal result destination
   where
     destination = getDestination goal
@@ -915,11 +926,12 @@ deriveSeq rules goal = errorBracket $ do
  -}
 removalPredicate
     :: SimplifierVariable variable
+    => MonadSimplify m
     => Pattern variable
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> Predicate variable
+    -> m (Predicate variable)
 removalPredicate destination config =
     let
         -- The variables of the destination that are missing from the
@@ -942,12 +954,48 @@ removalPredicate destination config =
         then error
             ("Cannot quantify non-element variables: "
                 ++ show (unparse <$> extraNonElemVariables))
-        else Predicate.makeNotPredicate
-            $ quantifyPredicate
-            $ Predicate.makeCeilPredicate
-            $ mkAnd
-                (Pattern.toTermLike destination)
-                (Pattern.toTermLike config)
+        else do
+            let termConfig = Conditional.term config
+                termDest   = Conditional.term destination
+            if ( isFunctionPattern termConfig
+               && isFunctionPattern termDest
+               )
+                then do
+                    let configAndDestTerms =
+                            mkAnd termConfig termDest
+                    unifiedConfigs <- simplifyTerm configAndDestTerms
+                    if OrPattern.isFalse unifiedConfigs
+                        then return Predicate.makeTruePredicate
+                        else do
+                            remainder <-
+                                simplifyConditionsWithSmt
+                                    ( Condition.toPredicate
+                                    . Conditional.withoutTerm
+                                    $ destination
+                                    )
+                                    unifiedConfigs
+                            return
+                                . Condition.toPredicate
+                                . Conditional.withoutTerm
+                                . OrPattern.toPattern
+                                $ remainder
+                            -- case Foldable.toList unifiedConfigs of
+                            --     [substPredicate] ->
+                            --         return
+                            --         $ Predicate.makeNotPredicate
+                            --         $ Condition.toPredicate
+                            --         $ Conditional.andCondition
+                            --             (Conditional.withoutTerm substPredicate)
+                            --             (Conditional.withoutTerm destination)
+                            --     _ -> error "TODO: write error message"
+                else
+                    return
+                        $ Predicate.makeNotPredicate
+                        $ quantifyPredicate
+                        $ Predicate.makeCeilPredicate
+                        $ mkAnd
+                        (Pattern.toTermLike destination)
+                        (Pattern.toTermLike config)
 
 getConfiguration
     :: forall goal
