@@ -23,11 +23,10 @@ module Kore.Builtin
     , Builtin.SortVerifier (..)
     , Builtin.ApplicationVerifier (..)
     , Builtin.SymbolKey (..)
-    , Builtin.PatternVerifier (..)
+    , Builtin.PatternVerifierHook (..)
     , Builtin.lookupApplicationVerifier
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
-    , Builtin.verifyDomainValue
     , koreVerifiers
     , koreEvaluators
     , evaluators
