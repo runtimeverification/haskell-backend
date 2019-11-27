@@ -744,6 +744,32 @@ test_andTermsSimplification =
             actual <- unify lhs rhs
             assertEqual "" (Just [expect]) actual
 
+        , testCase "[a] `concat` unit /\\ x " $ do
+            let x = elemVarS "x" Mock.listSort
+                term9 = Mock.builtinList [Mock.a]
+                term10 = Mock.concatList Mock.unitList (mkElemVar x)
+                term11 = Mock.concatList (mkElemVar x) Mock.unitList
+                expect = Just
+                    [ Conditional
+                        { term = Mock.builtinList [Mock.a]
+                        , predicate = makeTruePredicate
+                        , substitution = Substitution.unsafeWrap
+                            [(ElemVar x, Mock.builtinList [Mock.a])]
+                        }
+                    ]
+
+            actual1 <- unify term9 term10
+            assertEqual "" expect actual1
+
+            actual2 <- unify term10 term9
+            assertEqual "" expect actual2
+
+            actual3 <- unify term9 term11
+            assertEqual "" expect actual3
+
+            actual4 <- unify term11 term9
+            assertEqual "" expect actual4
+
         -- TODO: Add tests with non-trivial unifications and predicates.
         ]
 

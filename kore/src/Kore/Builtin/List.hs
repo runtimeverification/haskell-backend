@@ -48,6 +48,7 @@ import Control.Applicative
     )
 import Control.Error
     ( MaybeT
+    , fromMaybe
     , hoistMaybe
     )
 import qualified Control.Monad as Monad
@@ -81,6 +82,9 @@ import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Int as Int
 import Kore.Builtin.List.List
 import qualified Kore.Domain.Builtin as Domain
+import Kore.IndexedModule.MetadataTools
+    ( SmtMetadataTools
+    )
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -91,15 +95,19 @@ import Kore.Internal.TermLike
     , Builtin
     , pattern Builtin_
     , Concrete
+    , pattern ElemVar_
     , InternalVariable
     , Sort
     , TermLike
     , pattern Var_
+    , mkApplySymbol
     , mkBuiltin
     , mkSort
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
-    ( markSimplified
+    ( isFunctionPattern
+    , markSimplified
     )
 import Kore.Step.Simplification.SimplificationType
     ( SimplificationType
@@ -120,6 +128,15 @@ import qualified Kore.Unification.Unify as Monad.Unify
  -}
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
+
+{- | Is the given sort hooked to the builtin List sort?
+
+Returns Nothing if the sort is unknown (i.e. the _PREDICATE sort).
+Returns Just False if the sort is a variable.
+-}
+isListSort :: SmtMetadataTools attrs -> Sort -> Maybe Bool
+isListSort = Builtin.isSort sort
+
 
 verifiers :: Builtin.Verifiers
 verifiers =
@@ -382,9 +399,13 @@ unifyEquals
     simplifyChild
     first
     second
-  =
-    unifyEquals0 first second
+  = do
+    tools <- Simplifier.askMetadataTools
+    (Monad.guard . fromMaybe False) (isListSort tools sort1)
+    unifyEquals0 (normalize first) (normalize second)
   where
+    sort1 = termLikeSort first
+
     propagateConditions
         :: Traversable t
         => t (Conditional variable a)
@@ -396,8 +417,18 @@ unifyEquals
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
 
-    unifyEquals0 dv1@(Builtin_ (Domain.BuiltinList builtin1)) =
-        \case
+    unifyEquals0 pat1@(Var_ _) pat2
+      | TermLike.isFunctionPattern pat2 =
+        Monad.Trans.lift $ simplifyChild pat1 pat2
+      | otherwise = empty
+
+    unifyEquals0 pat1 pat2@(ElemVar_ _)
+      | TermLike.isFunctionPattern pat1 =
+        Monad.Trans.lift $ simplifyChild pat1 pat2
+      | otherwise = empty
+
+    unifyEquals0 dv1@(Builtin_ (Domain.BuiltinList builtin1)) pat2 =
+        case pat2 of
             dv2@(Builtin_ child2)
               | Domain.BuiltinList builtin2 <- child2 ->
                 Monad.Trans.lift $ unifyEqualsConcrete builtin1 builtin2
@@ -425,8 +456,8 @@ unifyEquals
               | otherwise -> empty
             _ -> empty
 
-    unifyEquals0 pat1 =
-        \case
+    unifyEquals0 pat1 pat2 =
+        case pat2 of
             dv@(Builtin_ (Domain.BuiltinList _)) -> unifyEquals0 dv pat1
             _ -> empty
 
@@ -517,3 +548,16 @@ unifyEquals
             first
             second
         return Pattern.bottom
+
+normalize :: InternalVariable variable => TermLike variable -> TermLike variable
+normalize term@(App_ appHead children)
+  | isSymbolConcat appHead =
+    case map normalize children of
+        [App_ childHead1 _, child2]
+            | isSymbolUnit childHead1 -> child2
+        [child1, App_ childHead2 _]
+            | isSymbolUnit childHead2 -> child1
+        normalizedChildren
+            | normalizedChildren == children -> term
+            | otherwise -> mkApplySymbol appHead normalizedChildren
+normalize term = term
