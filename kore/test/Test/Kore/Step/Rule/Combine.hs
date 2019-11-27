@@ -16,10 +16,10 @@ import Data.List.NonEmpty
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
+    , makeCeilPredicate_
+    , makeEqualsPredicate_
     , makeMultipleAndPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
     ( TermLike
@@ -64,17 +64,17 @@ instance RewriteRuleBase Pair where
 
 instance RewriteRuleBase TermLike where
     t1 `rewritesTo` t2 =
-        Pair (t1, makeTruePredicate) `rewritesTo` Pair (t2, makeTruePredicate)
+        Pair (t1, makeTruePredicate_) `rewritesTo` Pair (t2, makeTruePredicate_)
 
 test_combineRulesPredicate :: [TestTree]
 test_combineRulesPredicate =
     [ testCase "One rule" $
-        let expected = makeTruePredicate
+        let expected = makeTruePredicate_
             actual = mergeRulesPredicate
                 [ Mock.a `rewritesTo` Mock.cf ]
         in assertEqual "" expected actual
     , testCase "Two rules" $
-        let expected = makeCeilPredicate (mkAnd Mock.cf Mock.b)
+        let expected = makeCeilPredicate_ (mkAnd Mock.cf Mock.b)
             actual = mergeRulesPredicate
                 [ Mock.a `rewritesTo` Mock.cf
                 , Mock.b `rewritesTo` Mock.cg
@@ -83,8 +83,8 @@ test_combineRulesPredicate =
     , testCase "Three rules case" $
         let expected =
                 makeAndPredicate
-                    (makeCeilPredicate (mkAnd Mock.cf Mock.b))
-                    (makeCeilPredicate (mkAnd Mock.cg Mock.c))
+                    (makeCeilPredicate_ (mkAnd Mock.cf Mock.b))
+                    (makeCeilPredicate_ (mkAnd Mock.cg Mock.c))
 
             actual = mergeRulesPredicate
                 [ Mock.a `rewritesTo` Mock.cf
@@ -96,52 +96,52 @@ test_combineRulesPredicate =
         let expected =
                 makeMultipleAndPredicate
                     [ makeMultipleAndPredicate
-                        [ makeCeilPredicate (mkAnd Mock.cf Mock.b)
-                        , makeCeilPredicate (Mock.g Mock.a)
-                        , makeCeilPredicate (Mock.f Mock.b)
+                        [ makeCeilPredicate_ (mkAnd Mock.cf Mock.b)
+                        , makeCeilPredicate_ (Mock.g Mock.a)
+                        , makeCeilPredicate_ (Mock.f Mock.b)
                         ]
                     , makeMultipleAndPredicate
-                        [ makeCeilPredicate (mkAnd Mock.cg Mock.c)
-                        , makeCeilPredicate (Mock.g Mock.b)
-                        , makeCeilPredicate (Mock.f Mock.c)
+                        [ makeCeilPredicate_ (mkAnd Mock.cg Mock.c)
+                        , makeCeilPredicate_ (Mock.g Mock.b)
+                        , makeCeilPredicate_ (Mock.f Mock.c)
                         ]
                     ]
             actual = mergeRulesPredicate
-                [   Pair (Mock.a, makeCeilPredicate (Mock.f Mock.a))
+                [   Pair (Mock.a, makeCeilPredicate_ (Mock.f Mock.a))
                     `rewritesTo`
-                    Pair (Mock.cf, makeCeilPredicate (Mock.g Mock.a))
+                    Pair (Mock.cf, makeCeilPredicate_ (Mock.g Mock.a))
 
-                ,   Pair (Mock.b, makeCeilPredicate (Mock.f Mock.b))
+                ,   Pair (Mock.b, makeCeilPredicate_ (Mock.f Mock.b))
                     `rewritesTo`
-                    Pair (Mock.cg, makeCeilPredicate (Mock.g Mock.b))
+                    Pair (Mock.cg, makeCeilPredicate_ (Mock.g Mock.b))
 
-                ,   Pair (Mock.c, makeCeilPredicate (Mock.f Mock.c))
+                ,   Pair (Mock.c, makeCeilPredicate_ (Mock.f Mock.c))
                     `rewritesTo`
-                    Pair (Mock.ch, makeCeilPredicate (Mock.g Mock.c))
+                    Pair (Mock.ch, makeCeilPredicate_ (Mock.g Mock.c))
                 ]
         in assertEqual "" expected actual
     , testCase "Rules with variables" $
         let expected =
                 makeMultipleAndPredicate
-                    [ makeCeilPredicate (mkAnd (Mock.g x) (Mock.constr11 x_0))
-                    , makeCeilPredicate (Mock.g x)
-                    , makeCeilPredicate (Mock.h x_0)
+                    [ makeCeilPredicate_ (mkAnd (Mock.g x) (Mock.constr11 x_0))
+                    , makeCeilPredicate_ (Mock.g x)
+                    , makeCeilPredicate_ (Mock.h x_0)
                     ]
             actual = mergeRulesPredicate
-                [   Pair (Mock.constr10 x, makeCeilPredicate (Mock.f x))
+                [   Pair (Mock.constr10 x, makeCeilPredicate_ (Mock.f x))
                     `rewritesTo`
-                    Pair (Mock.g x, makeCeilPredicate (Mock.g x))
+                    Pair (Mock.g x, makeCeilPredicate_ (Mock.g x))
 
-                ,   Pair (Mock.constr11 x, makeCeilPredicate (Mock.h x))
+                ,   Pair (Mock.constr11 x, makeCeilPredicate_ (Mock.h x))
                     `rewritesTo`
-                    Pair (Mock.h x, makeCeilPredicate (Mock.h Mock.a))
+                    Pair (Mock.h x, makeCeilPredicate_ (Mock.h Mock.a))
                 ]
         in assertEqual "" expected actual
     , testCase "Three rules case" $
         let expected =
                 makeMultipleAndPredicate
-                    [ makeCeilPredicate (mkAnd Mock.a (mkElemVar Mock.var_x_0))
-                    , makeCeilPredicate (mkAnd Mock.b (mkElemVar Mock.var_x_1))
+                    [ makeCeilPredicate_ (mkAnd Mock.a (mkElemVar Mock.var_x_0))
+                    , makeCeilPredicate_ (mkAnd Mock.b (mkElemVar Mock.var_x_1))
                     ]
 
             actual = mergeRulesPredicate
@@ -180,10 +180,10 @@ test_combineRules =
                 [   Pair
                         ( Mock.a
                         , makeAndPredicate
-                            (makeCeilPredicate Mock.cf)
-                            (makeEqualsPredicate Mock.cf Mock.b)
+                            (makeCeilPredicate_ Mock.cf)
+                            (makeEqualsPredicate_ Mock.cf Mock.b)
                         )
-                    `rewritesTo` Pair (Mock.cg, makeTruePredicate)
+                    `rewritesTo` Pair (Mock.cg, makeTruePredicate_)
                 ]
 
         actual <- runMergeRules
@@ -209,25 +209,25 @@ test_combineRules =
                 [   Pair
                         ( Mock.functionalConstr10 (Mock.functionalConstr11 y)
                         , makeAndPredicate
-                            (makeEqualsPredicate
+                            (makeEqualsPredicate_
                                 (Mock.f (Mock.functionalConstr11 y))
                                 (Mock.g (Mock.functionalConstr11 y))
                             )
-                            (makeEqualsPredicate
+                            (makeEqualsPredicate_
                                 (Mock.g (Mock.functionalConstr11 y))
                                 (Mock.h (Mock.functionalConstr11 y))
                             )
                         )
-                    `rewritesTo` Pair (y, makeTruePredicate)
+                    `rewritesTo` Pair (y, makeTruePredicate_)
                 ]
 
         actual <- runMergeRules
             [   Pair
                     ( Mock.functionalConstr10 x
-                    , makeEqualsPredicate (Mock.f x) (Mock.g x)
+                    , makeEqualsPredicate_ (Mock.f x) (Mock.g x)
                     )
                 `rewritesTo`
-                Pair (x, makeEqualsPredicate (Mock.g x) (Mock.h x))
+                Pair (x, makeEqualsPredicate_ (Mock.g x) (Mock.h x))
             , Mock.functionalConstr11 y `rewritesTo` y
             ]
 

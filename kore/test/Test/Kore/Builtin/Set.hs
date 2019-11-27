@@ -526,7 +526,7 @@ test_unifyFramingVariable =
             let
                 expect = Conditional
                     { term = asInternal concreteSet
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate setSort
                     , substitution =
                         Substitution.unsafeWrap
                             [(ElemVar frameVar, asInternal remainder)]
@@ -632,7 +632,7 @@ test_unifySelectFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar setVar, asInternal Set.empty)
@@ -660,7 +660,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar, elemStepPattern) ]
@@ -695,7 +695,7 @@ test_unifySelectFromTwoElementSet =
                 expect1 =
                     Conditional
                         { term = set
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [   ( ElemVar setVar
@@ -707,7 +707,7 @@ test_unifySelectFromTwoElementSet =
                 expect2 =
                     Conditional
                         { term = set
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [   ( ElemVar setVar
@@ -758,7 +758,7 @@ test_unifySelectTwoFromTwoElementSet =
                         ]
                     return Conditional
                         { term = set
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar setVar, asInternal Set.empty)
@@ -805,7 +805,7 @@ test_unifyConcatElemVarVsElemSet =
                         ]
                     return Conditional
                         { term = expectedPatSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar setVar, setUnifier)
@@ -852,7 +852,7 @@ test_unifyConcatElemVarVsElemElem =
                         ]
                     return Conditional
                         { term = expectedPatSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar setVar, setUnifier)
@@ -895,7 +895,7 @@ test_unifyConcatElemElemVsElemConcrete =
                         ]
                     return Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, elemUnifier1)
@@ -937,7 +937,7 @@ test_unifyConcatElemElemVsElemElem =
                         ]
                     return Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, elemUnifier1)
@@ -992,7 +992,7 @@ test_unifyConcatElemConcatVsElemConcrete =
                         ]
                     return Conditional
                         { term = expectedPat
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, elemUnifier1)
@@ -1029,7 +1029,7 @@ test_unifyConcatElemConcreteVsElemConcrete1 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, mkElemVar elementVar2) ]
@@ -1067,7 +1067,7 @@ test_unifyConcatElemConcreteVsElemConcrete2 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, elemStepPattern2)
@@ -1113,7 +1113,7 @@ test_unifyConcatElemConcreteVsElemConcrete3 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, elemStepPattern3)
@@ -1188,7 +1188,7 @@ test_unifyConcatElemConcreteVsElemConcrete5 =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, mkElemVar elementVar2) ]
@@ -1218,7 +1218,7 @@ test_unifyConcatElemVsElem =
                 expect =
                     [ Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, mkElemVar elementVar2) ]
@@ -1249,7 +1249,7 @@ test_unifyConcatElemVsElemConcrete1 =
                 expect =
                     [ Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, mkElemVar elementVar2) ]
@@ -1356,7 +1356,7 @@ test_unifyConcatElemVsElemVar =
                 expect =
                     [ Conditional
                         { term = expectedSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar setVar, asInternal Set.empty)
@@ -1436,7 +1436,7 @@ test_unifyConcatElemElemVsElemConcatSet =
                         ]
                     return Conditional
                         { term = patSet
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, firstUnifier)
@@ -1471,7 +1471,9 @@ test_unifyFnSelectFromSingleton =
                     [ Conditional
                         { term = singleton
                         , predicate =
-                            makeEqualsPredicate elemStepPatt elementVarPatt
+                            makeEqualsPredicate setSort
+                                elemStepPatt
+                                elementVarPatt
                         , substitution =
                             Substitution.unsafeWrap
                                 [   ( ElemVar setVar
@@ -1554,7 +1556,7 @@ test_unifyMultipleIdenticalOpaqueSets =
                 expect =
                     [ Conditional
                         { term = expectedPat
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate setSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar elementVar1, mkElemVar elementVar2)
@@ -1606,7 +1608,7 @@ test_concretizeKeys =
                 mkPair intSort setSort
                     symbolicKey
                     (asInternal $ Set.fromList [concreteKey])
-            , predicate = Predicate.makeTruePredicate
+            , predicate = Predicate.makeTruePredicate (termLikeSort original)
             , substitution = Substitution.unsafeWrap
                 [ (ElemVar x, symbolicKey) ]
             }
@@ -1630,7 +1632,7 @@ return a partial result for unifying the second element of the pair.
  -}
 test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
-    testCaseWithSMT "unify Set with symbolic keys in axiom" $ do
+    testCaseWithSMT "zzzunify Set with symbolic keys in axiom" $ do
         config <- evaluate $ pair symbolicKey concreteSet
         actual <- runStep config axiom
         assertEqual "" expected actual
@@ -1646,11 +1648,20 @@ test_concretizeKeysAxiom =
             { left = mkPair intSort setSort x symbolicSet
             , antiLeft = Nothing
             , right = x
-            , requires = Predicate.makeTruePredicate
-            , ensures = Predicate.makeTruePredicate
+            , requires = Predicate.makeTruePredicate_
+            , ensures = Predicate.makeTruePredicate_
             , attributes = Default.def
             }
-    expected = Right (MultiOr [ pure symbolicKey ])
+    expected = Right $ MultiOr
+        [ Conditional
+            { term = symbolicKey
+            , predicate =
+                -- The sort is broken because the axiom is broken: the
+                -- rhs should have the same sort as the lhs.
+                makeTruePredicate (termLikeSort (pair symbolicKey concreteSet))
+            , substitution = mempty
+            }
+        ]
 
 test_isBuiltin :: [TestTree]
 test_isBuiltin =

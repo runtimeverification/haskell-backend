@@ -27,7 +27,7 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import Kore.Internal.Predicate
-    ( makeFalsePredicate
+    ( makeFalsePredicate_
     )
 import Kore.Internal.TermLike
 
@@ -64,7 +64,7 @@ simplifyInternal
     -> MultiOr (Conditional variable (t (TermLike variable)))
 simplifyInternal normalizer tOrPattern = do
     conditional <- getCompose $ traverse Compose tOrPattern
-    let bottom = conditional `Conditional.andPredicate` makeFalsePredicate
+    let bottom = conditional `Conditional.andPredicate` makeFalsePredicate_
         normalized = fromMaybe bottom $ traverse normalizer conditional
     return normalized
 

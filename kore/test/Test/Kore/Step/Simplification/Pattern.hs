@@ -23,11 +23,17 @@ import Test.Tasty.HUnit.Ext
 
 test_Pattern_simplify :: [TestTree]
 test_Pattern_simplify =
-    [ notTop     `becomes` OrPattern.bottom              $ "\\not(\\top)"
-    , orAs       `becomes` OrPattern.fromTermLike Mock.a $ "\\or(a, a)"
-    , bottomLike `becomes` OrPattern.bottom              $ "\\and(a, \\bottom)"
+    [ notTop     `becomes` OrPattern.bottom
+        $ "\\not(\\top)"
+    , orAs       `becomes` OrPattern.fromTermLike Mock.a
+        $ "\\or(a, a)"
+    , bottomLike `becomes` OrPattern.bottom
+        $ "\\and(a, \\bottom)"
     ]
   where
+    becomes
+        :: HasCallStack
+        => Pattern Variable -> OrPattern Variable -> String -> TestTree
     becomes original expect name =
         testCase name $ do
             actual <- simplify original
@@ -35,15 +41,25 @@ test_Pattern_simplify =
 
 test_Pattern_simplifyAndRemoveTopExists :: [TestTree]
 test_Pattern_simplifyAndRemoveTopExists =
-    [ notTop      `becomes` OrPattern.bottom              $ "\\not(\\top)"
-    , orAs        `becomes` OrPattern.fromTermLike Mock.a $ "\\or(a, a)"
-    , bottomLike  `becomes` OrPattern.bottom              $ "\\and(a, \\bottom)"
-    , existential `becomes` OrPattern.fromTermLike unquantified $ "..."
-    , multiexistential `becomes` OrPattern.fromTermLike unquantified $ "..."
-    , universal `becomes` OrPattern.fromPattern universal $ "..."
-    , existentialuniversal `becomes` OrPattern.fromPattern universal $ "..."
+    [ notTop      `becomes` OrPattern.bottom
+        $ "\\not(\\top)"
+    , orAs        `becomes` OrPattern.fromTermLike Mock.a
+        $ "\\or(a, a)"
+    , bottomLike  `becomes` OrPattern.bottom
+        $ "\\and(a, \\bottom)"
+    , existential `becomes` OrPattern.fromTermLike unquantified
+        $ "..."
+    , multiexistential `becomes` OrPattern.fromTermLike unquantified
+        $ "..."
+    , universal `becomes` OrPattern.fromPattern universal
+        $ "..."
+    , existentialuniversal `becomes` OrPattern.fromPattern universal
+        $ "..."
     ]
   where
+    becomes
+        :: HasCallStack
+        => Pattern Variable -> OrPattern Variable -> String -> TestTree
     becomes original expect name =
         testCase name $ do
             actual <- simplifyAndRemoveTopExists original
@@ -65,7 +81,7 @@ notTop = termLike (mkNot mkTop_)
 orAs = termLike (mkOr Mock.a Mock.a)
 -- | Term is defined, but predicate is \bottom.
 bottomLike =
-    (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate }
+    (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate_ }
 
 simplify :: Pattern Variable -> IO (OrPattern Variable)
 simplify = runSimplifier Mock.env . Pattern.simplify

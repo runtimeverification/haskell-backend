@@ -944,7 +944,7 @@ removalPredicate destination config =
                 ++ show (unparse <$> extraNonElemVariables))
         else Predicate.makeNotPredicate
             $ quantifyPredicate
-            $ Predicate.makeCeilPredicate
+            $ Predicate.makeCeilPredicate_
             $ mkAnd
                 (Pattern.toTermLike destination)
                 (Pattern.toTermLike config)

@@ -27,17 +27,17 @@ test_predicate =
     [ testCase "And truth table"
         (do
             assertEqual "false and false = false"
-                makeFalsePredicate
-                (makeAnd makeFalsePredicate makeFalsePredicate)
+                makeFalsePredicate_
+                (makeAnd makeFalsePredicate_ makeFalsePredicate_)
             assertEqual "false and true = false"
-                makeFalsePredicate
-                (makeAnd makeFalsePredicate makeTruePredicate)
+                makeFalsePredicate_
+                (makeAnd makeFalsePredicate_ makeTruePredicate_)
             assertEqual "true and false = false"
-                makeFalsePredicate
-                (makeAnd makeTruePredicate makeFalsePredicate)
+                makeFalsePredicate_
+                (makeAnd makeTruePredicate_ makeFalsePredicate_)
             assertEqual "true and true = true"
-                makeTruePredicate
-                (makeAnd makeTruePredicate makeTruePredicate)
+                makeTruePredicate_
+                (makeAnd makeTruePredicate_ makeTruePredicate_)
         )
     , let
         makeOr
@@ -49,17 +49,17 @@ test_predicate =
         testCase "Or truth table"
             (do
                 assertEqual "false or false = false"
-                    makeFalsePredicate
-                    (makeOr makeFalsePredicate makeFalsePredicate)
+                    makeFalsePredicate_
+                    (makeOr makeFalsePredicate_ makeFalsePredicate_)
                 assertEqual "false or true = true"
-                    makeTruePredicate
-                    (makeOr makeFalsePredicate makeTruePredicate)
+                    makeTruePredicate_
+                    (makeOr makeFalsePredicate_ makeTruePredicate_)
                 assertEqual "true or false = true"
-                    makeTruePredicate
-                    (makeOr makeTruePredicate makeFalsePredicate)
+                    makeTruePredicate_
+                    (makeOr makeTruePredicate_ makeFalsePredicate_)
                 assertEqual "true or true = true"
-                    makeTruePredicate
-                    (makeOr makeTruePredicate makeTruePredicate)
+                    makeTruePredicate_
+                    (makeOr makeTruePredicate_ makeTruePredicate_)
             )
     , let
         makeImplies
@@ -71,17 +71,17 @@ test_predicate =
         testCase "Implies truth table"
             (do
                 assertEqual "false implies false = true"
-                    makeTruePredicate
-                    (makeImplies makeFalsePredicate makeFalsePredicate)
+                    makeTruePredicate_
+                    (makeImplies makeFalsePredicate_ makeFalsePredicate_)
                 assertEqual "false implies true = true"
-                    makeTruePredicate
-                    (makeImplies makeFalsePredicate makeTruePredicate)
+                    makeTruePredicate_
+                    (makeImplies makeFalsePredicate_ makeTruePredicate_)
                 assertEqual "true implies false = false"
-                    makeFalsePredicate
-                    (makeImplies makeTruePredicate makeFalsePredicate)
+                    makeFalsePredicate_
+                    (makeImplies makeTruePredicate_ makeFalsePredicate_)
                 assertEqual "true implies true = true"
-                    makeTruePredicate
-                    (makeImplies makeTruePredicate makeTruePredicate)
+                    makeTruePredicate_
+                    (makeImplies makeTruePredicate_ makeTruePredicate_)
             )
     , let
         makeIff
@@ -93,17 +93,17 @@ test_predicate =
         testCase "Iff truth table"
             (do
                 assertEqual "false iff false = true"
-                    makeTruePredicate
-                    (makeIff makeFalsePredicate makeFalsePredicate)
+                    makeTruePredicate_
+                    (makeIff makeFalsePredicate_ makeFalsePredicate_)
                 assertEqual "false iff true = false"
-                    makeFalsePredicate
-                    (makeIff makeFalsePredicate makeTruePredicate)
+                    makeFalsePredicate_
+                    (makeIff makeFalsePredicate_ makeTruePredicate_)
                 assertEqual "true iff false = false"
-                    makeFalsePredicate
-                    (makeIff makeTruePredicate makeFalsePredicate)
+                    makeFalsePredicate_
+                    (makeIff makeTruePredicate_ makeFalsePredicate_)
                 assertEqual "true iff true = true"
-                    makeTruePredicate
-                    (makeIff makeTruePredicate makeTruePredicate)
+                    makeTruePredicate_
+                    (makeIff makeTruePredicate_ makeTruePredicate_)
             )
     , let
         makeNot :: Predicate Variable -> Predicate Variable
@@ -112,11 +112,11 @@ test_predicate =
         testCase "Not truth table"
             (do
                 assertEqual "not false = true"
-                    makeTruePredicate
-                    (makeNot makeFalsePredicate)
+                    makeTruePredicate_
+                    (makeNot makeFalsePredicate_)
                 assertEqual "not true = false"
-                    makeFalsePredicate
-                    (makeNot makeTruePredicate)
+                    makeFalsePredicate_
+                    (makeNot makeTruePredicate_)
             )
     , testCase "String unwrapping which occurs in test comparisons"
         (assertEqual ""
@@ -126,9 +126,9 @@ test_predicate =
                     (\_ ->
                         fmap
                             (const "a")
-                            (makeTruePredicate :: Predicate Variable)
+                            (makeTruePredicate_ :: Predicate Variable)
                     )
-                    (makeFalsePredicate :: Predicate Variable)
+                    (makeFalsePredicate_ :: Predicate Variable)
             )
         )
     ,  testCase "Wrapping and predicates without full simplification"
@@ -140,16 +140,16 @@ test_predicate =
                 (makeAndPredicate pr1 pr2)
             assertEqual ""
                 (wrapPredicate pa1)
-                (makeAndPredicate pr1 makeTruePredicate)
+                (makeAndPredicate pr1 makeTruePredicate_)
             assertEqual ""
                 (wrapPredicate pa2)
-                (makeAndPredicate makeTruePredicate pr2)
+                (makeAndPredicate makeTruePredicate_ pr2)
             assertEqual ""
-                makeFalsePredicate
-                (makeAndPredicate pr1 makeFalsePredicate)
+                makeFalsePredicate_
+                (makeAndPredicate pr1 makeFalsePredicate_)
             assertEqual ""
-                makeFalsePredicate
-                (makeAndPredicate makeFalsePredicate pr2)
+                makeFalsePredicate_
+                (makeAndPredicate makeFalsePredicate_ pr2)
             assertEqual ""
                 pr1
                 (makeAndPredicate pr1 pr1)
@@ -162,17 +162,17 @@ test_predicate =
                 )
                 (makeOrPredicate pr1 pr2)
             assertEqual ""
-                makeTruePredicate
-                (makeOrPredicate pr1 makeTruePredicate)
+                makeTruePredicate_
+                (makeOrPredicate pr1 makeTruePredicate_)
             assertEqual ""
-                makeTruePredicate
-                (makeOrPredicate makeTruePredicate pr2)
+                makeTruePredicate_
+                (makeOrPredicate makeTruePredicate_ pr2)
             assertEqual ""
                 (wrapPredicate pa1)
-                (makeOrPredicate pr1 makeFalsePredicate)
+                (makeOrPredicate pr1 makeFalsePredicate_)
             assertEqual ""
                 (wrapPredicate pa2)
-                (makeOrPredicate makeFalsePredicate pr2)
+                (makeOrPredicate makeFalsePredicate_ pr2)
             assertEqual ""
                 pr1
                 (makeOrPredicate pr1 pr1)
@@ -185,19 +185,19 @@ test_predicate =
                 )
                 (makeImpliesPredicate pr1 pr2)
             assertEqual ""
-                makeTruePredicate
-                (makeImpliesPredicate pr1 makeTruePredicate)
+                makeTruePredicate_
+                (makeImpliesPredicate pr1 makeTruePredicate_)
             assertEqual ""
                 (wrapPredicate pa2)
-                (makeImpliesPredicate makeTruePredicate pr2)
+                (makeImpliesPredicate makeTruePredicate_ pr2)
             assertEqual ""
                 (wrapPredicate $
                     mkNot pa1
                 )
-                (makeImpliesPredicate pr1 makeFalsePredicate)
+                (makeImpliesPredicate pr1 makeFalsePredicate_)
             assertEqual ""
-                makeTruePredicate
-                (makeImpliesPredicate makeFalsePredicate pr2)
+                makeTruePredicate_
+                (makeImpliesPredicate makeFalsePredicate_ pr2)
         )
     , testCase "Wrapping iff predicates without full simplification"
         (do
@@ -208,20 +208,20 @@ test_predicate =
                 (makeIffPredicate pr1 pr2)
             assertEqual ""
                 (wrapPredicate pa1)
-                (makeIffPredicate pr1 makeTruePredicate)
+                (makeIffPredicate pr1 makeTruePredicate_)
             assertEqual ""
                 (wrapPredicate pa2)
-                (makeIffPredicate makeTruePredicate pr2)
+                (makeIffPredicate makeTruePredicate_ pr2)
             assertEqual ""
                 (wrapPredicate $
                     mkNot pa1
                 )
-                (makeIffPredicate pr1 makeFalsePredicate)
+                (makeIffPredicate pr1 makeFalsePredicate_)
             assertEqual ""
                 (wrapPredicate $
                     mkNot pa2
                 )
-                (makeIffPredicate makeFalsePredicate pr2)
+                (makeIffPredicate makeFalsePredicate_ pr2)
         )
     , testCase "Wrapping not predicates without full simplification"
         (assertEqual ""
@@ -233,12 +233,12 @@ test_predicate =
     , testCase "isFalsePredicate True"
         (assertEqual ""
             True
-            (Predicate.isFalse (makeFalsePredicate::Predicate Variable))
+            (Predicate.isFalse (makeFalsePredicate_::Predicate Variable))
         )
     , testCase "isFalsePredicate False"
         (assertEqual ""
             False
-            (Predicate.isFalse (makeTruePredicate::Predicate Variable))
+            (Predicate.isFalse (makeTruePredicate_::Predicate Variable))
         )
     , testCase "isFalsePredicate False for generic predicate"
         (assertEqual ""
@@ -251,12 +251,12 @@ test_predicate =
                 (wrapPredicate $
                     mkAnd pa1 pa2
                 )
-                (makeMultipleAndPredicate [pr1, makeTruePredicate, pr2])
+                (makeMultipleAndPredicate [pr1, makeTruePredicate_, pr2])
             assertEqual "Removes duplicates"
                 (wrapPredicate $
                     mkAnd pa1 pa2
                 )
-                (makeMultipleAndPredicate [pr1, makeTruePredicate, pr2, pr1])
+                (makeMultipleAndPredicate [pr1, makeTruePredicate_, pr2, pr1])
         )
     , testCase "Multiple Or"
         ( do
@@ -264,19 +264,19 @@ test_predicate =
                 (wrapPredicate $
                     mkOr pa1 pa2
                 )
-                (makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2])
+                (makeMultipleOrPredicate [pr1, makeFalsePredicate_, pr2])
             assertEqual "Removes duplicates"
                 (wrapPredicate $
                     mkOr pa1 pa2
                 )
-                (makeMultipleOrPredicate [pr1, makeFalsePredicate, pr2, pr1])
+                (makeMultipleOrPredicate [pr1, makeFalsePredicate_, pr2, pr1])
         )
     , testCase "freeVariables"
         ( do
             assertBool "top has no free variables"
                 $ null
                 $ Predicate.freeVariables
-                    (makeTruePredicate :: Predicate Variable)
+                    (makeTruePredicate_ :: Predicate Variable)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
                     [ ElemVar $ a Mock.testSort
@@ -288,17 +288,17 @@ test_predicate =
                 $ not . FreeVariables.isFreeVariable (ElemVar $ a Mock.testSort)
                 $ Predicate.freeVariables
                 $ makeExistsPredicate (a Mock.testSort)
-                $ makeEqualsPredicate
+                $ makeEqualsPredicate_
                     (mkElemVar $ a Mock.testSort)
                     (mkElemVar $ b Mock.testSort)
         )
     , testCase "fromSubstitution"
         ( do
             assertEqual "null substitutions is top"
-                makeTruePredicate
+                makeTruePredicate_
                 (fromSubstitution mempty :: Predicate Variable)
             assertEqual "a = b"
-                (makeAndPredicate pr1 makeTruePredicate)
+                (makeAndPredicate pr1 makeTruePredicate_)
                 (fromSubstitution $ Substitution.wrap
                     [(ElemVar $ a Mock.testSort, mkElemVar $ b Mock.testSort)]
                 )
@@ -310,11 +310,11 @@ test_predicate =
         testCase "Exists truth table"
             (do
                 assertEqual "(exists a . true) = true"
-                    makeTruePredicate
-                    (makeExists makeTruePredicate)
+                    makeTruePredicate_
+                    (makeExists makeTruePredicate_)
                 assertEqual "(exists a . false) = false"
-                    makeFalsePredicate
-                    (makeExists makeFalsePredicate)
+                    makeFalsePredicate_
+                    (makeExists makeFalsePredicate_)
             )
     , let
         makeForall :: Predicate Variable -> Predicate Variable
@@ -323,11 +323,11 @@ test_predicate =
         testCase "Forall truth table"
             (do
                 assertEqual "(forall a . true) = true"
-                    makeTruePredicate
-                    (makeForall makeTruePredicate)
+                    makeTruePredicate_
+                    (makeForall makeTruePredicate_)
                 assertEqual "(forall a . false) = false"
-                    makeFalsePredicate
-                    (makeForall makeFalsePredicate)
+                    makeFalsePredicate_
+                    (makeForall makeFalsePredicate_)
             )
     , testGroup "makePredicate"
         [ testCase "makePredicate yields wrapPredicate"
@@ -351,20 +351,20 @@ test_predicate =
             [ testCase "unsimplified stays unsimplified" $
                 (mkEquals_ Mock.cf Mock.cg, NotSimplified)
                 `makesPredicate`
-                (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
+                (makeEqualsPredicate_ Mock.cf Mock.cg, NotSimplified)
             , testCase "simplified stays simplified" $
                 ( TermLike.markSimplified $ mkEquals_ Mock.cf Mock.cg
                 , IsSimplified
                 )
                 `makesPredicate`
-                (makeEqualsPredicate Mock.cf Mock.cg, IsSimplified)
+                (makeEqualsPredicate_ Mock.cf Mock.cg, IsSimplified)
             , testCase "changed simplified becomes unsimplified" $
                 ( TermLike.markSimplified
                     $ mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
                 , IsSimplified
                 )
                 `makesPredicate`
-                (makeEqualsPredicate Mock.cf Mock.cg, NotSimplified)
+                (makeEqualsPredicate_ Mock.cf Mock.cg, NotSimplified)
             , testCase "changed simplified becomes unsimplified" $
                 ( TermLike.markSimplified
                     $ mkAnd
@@ -374,8 +374,8 @@ test_predicate =
                 )
                 `makesPredicate`
                 ( makeAndPredicate
-                    (makeEqualsPredicate Mock.cf Mock.cg)
-                    (makeEqualsPredicate Mock.cg Mock.ch)
+                    (makeEqualsPredicate_ Mock.cf Mock.cg)
+                    (makeEqualsPredicate_ Mock.cg Mock.ch)
                 , NotSimplified)
             ]
         ]
@@ -413,13 +413,13 @@ makePredicateYieldsWrapPredicate msg p =
 
 pr1 :: Predicate Variable
 pr1 =
-    makeEqualsPredicate
+    makeEqualsPredicate_
         (mkElemVar $ a Mock.testSort)
         (mkElemVar $ b Mock.testSort)
 
 pr2 :: Predicate Variable
 pr2 =
-    makeEqualsPredicate
+    makeEqualsPredicate_
         (mkElemVar $ c Mock.testSort)
         (mkElemVar $ d Mock.testSort)
 

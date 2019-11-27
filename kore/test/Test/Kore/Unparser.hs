@@ -19,7 +19,7 @@ import qualified GHC.Generics as GHC
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
+    ( makeCeilPredicate_
     , makeMultipleAndPredicate
     )
 import Kore.Parser.Lexeme
@@ -164,9 +164,9 @@ test_unparse =
             "[\\top{#CharList{}}()]"
         , unparseTest
             (makeMultipleAndPredicate @Variable
-                [ makeCeilPredicate Mock.a
-                , makeCeilPredicate Mock.b
-                , makeCeilPredicate Mock.c
+                [ makeCeilPredicate_ Mock.a
+                , makeCeilPredicate_ Mock.b
+                , makeCeilPredicate_ Mock.c
                 ]
             )
             "\\and{_PREDICATE{}}(\n\
@@ -204,9 +204,9 @@ test_unparse =
                 (Pattern.topOf Mock.topSort)
                 (Condition.andCondition
                     (Condition.fromPredicate $ makeMultipleAndPredicate
-                        [ makeCeilPredicate Mock.a
-                        , makeCeilPredicate Mock.b
-                        , makeCeilPredicate Mock.c
+                        [ makeCeilPredicate_ Mock.a
+                        , makeCeilPredicate_ Mock.b
+                        , makeCeilPredicate_ Mock.c
                         ]
                     )
                     (Condition.fromSubstitution $ Substitution.wrap

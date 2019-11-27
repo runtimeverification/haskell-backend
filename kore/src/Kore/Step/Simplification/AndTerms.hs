@@ -64,9 +64,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate
+    , makeEqualsPredicate_
     , makeNotPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
@@ -307,7 +307,7 @@ maybeTransformTerm
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTransformTerm topTransformers childTransformers first second = do
+maybeTransformTerm topTransformers childTransformers first second =
     Foldable.asum
         (map
             (\f -> f
@@ -428,7 +428,7 @@ variableFunctionAndEquals
   =
     return Conditional
         { term = if v2 > v1 then second else first
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution =
             Substitution.wrap
                 [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first)
@@ -839,7 +839,7 @@ functionAnd first second
         -- one must be careful to not just drop the term.
         , predicate =
             Predicate.markSimplified
-            $ makeEqualsPredicate first second
+            $ makeEqualsPredicate_ first second
         , substitution = mempty
         }
   | otherwise = empty

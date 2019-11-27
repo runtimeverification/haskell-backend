@@ -90,7 +90,7 @@ test_simplifyCondition =
   where
     existsPredicate =
         Predicate.makeMultipleExists [Mock.y, Mock.z]
-        $ Predicate.makeEqualsPredicate
+        $ Predicate.makeEqualsPredicate_
             (mkElemVar Mock.x)
             (Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))
 
@@ -181,7 +181,7 @@ test_mergeAndNormalizeSubstitutions =
                         [ Conditional
                             { term = ()
                             , predicate =
-                                Predicate.makeEqualsPredicate
+                                Predicate.makeEqualsPredicate_
                                     Mock.a
                                     (Mock.f Mock.a)
                             , substitution = Substitution.unsafeWrap
@@ -308,7 +308,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeEqualsPredicate Mock.cf Mock.cg
+                            Predicate.makeEqualsPredicate_ Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.cf) ]
                         }
@@ -317,7 +317,7 @@ test_mergeAndNormalizeSubstitutions =
                 normalize
                     Conditional
                         { term = ()
-                        , predicate = Predicate.makeTruePredicate
+                        , predicate = Predicate.makeTruePredicate_
                         , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.cf)
                             , (ElemVar Mock.x, Mock.constr10 Mock.cg)
@@ -332,7 +332,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate
+                            Predicate.makeCeilPredicate_
                             $ Mock.f Mock.a
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)
@@ -345,7 +345,7 @@ test_mergeAndNormalizeSubstitutions =
                     Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate
+                            Predicate.makeCeilPredicate_
                             $ Mock.f (mkElemVar Mock.y)
                         , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)

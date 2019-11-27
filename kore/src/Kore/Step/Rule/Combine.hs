@@ -39,9 +39,9 @@ import qualified Kore.Internal.Conditional as Conditional.DoNotUse
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeCeilPredicate
+    , makeCeilPredicate_
     , makeMultipleAndPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
     ( mkAnd
@@ -122,7 +122,7 @@ mergeRulePairPredicate
     )
   =
     makeMultipleAndPredicate
-        [ makeCeilPredicate (mkAnd right1 left2)
+        [ makeCeilPredicate_ (mkAnd right1 left2)
         , ensures1
         , requires2
         ]
@@ -175,7 +175,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of
             Nothing -> return predicate
-            Just True -> return makeTruePredicate
+            Just True -> return makeTruePredicate_
             Just False -> empty
 
         let finalRule =
