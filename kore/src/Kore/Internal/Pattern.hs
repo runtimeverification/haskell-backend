@@ -20,7 +20,6 @@ module Kore.Internal.Pattern
     , top
     , topOf
     , fromTermLike
-    , fromTermLikeUnsorted
     , Kore.Internal.Pattern.freeVariables
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
@@ -226,19 +225,6 @@ fromTermLike term
     Conditional
         { term
         , predicate = Predicate.makeTruePredicate (termLikeSort term)
-        , substitution = mempty
-        }
-
-fromTermLikeUnsorted
-    :: InternalVariable variable
-    => TermLike variable
-    -> Pattern variable
-fromTermLikeUnsorted term
-  | isBottom term = bottom
-  | otherwise =
-    Conditional
-        { term
-        , predicate = Predicate.makeTruePredicate_
         , substitution = mempty
         }
 

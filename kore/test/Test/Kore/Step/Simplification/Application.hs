@@ -295,7 +295,7 @@ test_applicationSimplification =
     gOfAExpanded :: InternalVariable variable => Pattern variable
     gOfAExpanded = Conditional
         { term = gOfA
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate Mock.testSort
         , substitution = mempty
         }
 

@@ -54,7 +54,7 @@ test_evaluateApplication =
         makeTest
             name
             origin
-            (OrPattern.fromTermLikeUnsorted expect)
+            (OrPattern.fromTermLike expect)
     notEvaluates
         :: GHC.HasCallStack
         => TestName

@@ -38,7 +38,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
+    , makeEqualsPredicate
     , makeEqualsPredicate_
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.Symbol
@@ -147,7 +149,8 @@ takeSteps (Start start, wrappedAxioms) =
 compareTo
     :: HasCallStack
     => Expect -> Actual -> IO ()
-compareTo (Expect expected) actual = assertEqual "" (pure expected) actual
+compareTo (Expect expected) actual =
+    assertEqual "" (Pattern.fromTermLike expected) actual
 
 
     {- Types used in this file -}
@@ -209,8 +212,8 @@ rewriteImplies =
 
 expectTwoAxioms :: [Pattern Variable]
 expectTwoAxioms =
-    [ pure (mkElemVar $ v1 Mock.testSort)
-    , Pattern.fromTermLikeUnsorted
+    [ Pattern.fromTermLike (mkElemVar $ v1 Mock.testSort)
+    , Pattern.fromTermLike
         $ mkImplies
             (mkElemVar $ v1 Mock.testSort)
             (mkElemVar $ v1 Mock.testSort)
@@ -284,7 +287,7 @@ initialIdentity :: Pattern Variable
 initialIdentity =
     Conditional
         { term = mkElemVar (v1 Mock.testSort)
-        , predicate = makeTruePredicate_
+        , predicate = makeTruePredicate Mock.testSort
         , substitution = mempty
         }
 
@@ -384,8 +387,7 @@ test_SMT =
             ]
         assertEqual ""
             [ Mock.a
-                `Pattern.withConditionUnsorted`
-                    smtCondition Mock.b PredicatePositive
+                `Pattern.withCondition` smtCondition Mock.b PredicatePositive
             ]
             [ _actual1 ]
     , testCase "Remainder with SMT pruning" $ do
@@ -424,7 +426,7 @@ test_SMT =
             [ Conditional
                 { term = Mock.a
                 , predicate =
-                    makeEqualsPredicate_
+                    makeEqualsPredicate Mock.testSort
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)

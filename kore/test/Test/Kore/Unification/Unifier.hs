@@ -308,7 +308,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = []
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , testCase "Variable" $
@@ -318,7 +318,7 @@ test_unification =
             [ UnificationResult
                 { term = a
                 , substitution = [("x", a)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , testCase "one level" $
@@ -328,7 +328,7 @@ test_unification =
             [ UnificationResult
                 { term = f a
                 , substitution = [("x", a)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , testCase "equal non-constructor patterns" $
@@ -338,7 +338,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = []
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , testCase "variable + non-constructor pattern" $
@@ -348,7 +348,7 @@ test_unification =
             [ UnificationResult
                 { term = a2
                 , substitution = [("x", a2)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , testCase "https://basics.sjtu.edu.cn/seminars/c_chu/Algorithm.pdf slide 3"
@@ -362,7 +362,7 @@ test_unification =
                     , ("ex2", ex3)
                     , ("ex4", eh (eg ex3))
                     ]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , testCase "f(g(X),X) = f(Y,a) https://en.wikipedia.org/wiki/Unification_(computer_science)#Examples_of_syntactic_unification_of_first-order_terms" $
@@ -376,7 +376,7 @@ test_unification =
                     [ ("x", nonLinA)
                     , ("y", nonLinG nonLinA)
                     ]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , testCase "times(times(a, y), (mkElemVar Mock.x)) = times(x, times(y, a))"
@@ -389,7 +389,7 @@ test_unification =
                     [ ("a", expY)
                     , ("x", expBin expY expY)
                     ]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , unificationProcedureSuccess
@@ -577,7 +577,7 @@ test_unification =
                         constr20
                             Mock.a
                             (Mock.builtinMap [(a, constr a), (b, constr b)])
-                    , predicate = Predicate.makeTruePredicate_
+                    , predicate = Predicate.makeTruePredicate Mock.testSort
                     , substitution =
                         [ ("x", constr a)
                         , ("y", a)
@@ -618,7 +618,7 @@ test_unification =
                                 (Mock.builtinMap [(y, x)])
                                 (mkElemVar Mock.m)
                             )
-                    , predicate = Predicate.makeTruePredicate_
+                    , predicate = Predicate.makeTruePredicate Mock.testSort
                     , substitution =
                         [ ("x", constr a)
                         , ("y", a)
@@ -638,7 +638,7 @@ test_evaluated =
             [ UnificationResult
                 { term = evaluated
                 , substitution = [("x", evaluated)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.testSort
                 }
             ]
     , unificationProcedureSuccess
@@ -726,7 +726,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
                 , substitution = [("xSubSort", Mock.aSubsort)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.topSort
                 }
             ]
     , testCase "Variable" $
@@ -737,7 +737,7 @@ injUnificationTests =
                 { term = Mock.sortInjectionSubToTop Mock.aSubsort
                 , substitution =
                     [("xTopSort", Mock.sortInjectionSubToTop Mock.aSubsort)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.topSort
                 }
             ]
     , testCase "Injected Variable vs doubly injected term" $ do
@@ -755,7 +755,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.topSort
                 }
             ]
     , testCase "doubly injected variable vs injected term" $ do
@@ -769,7 +769,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.topSort
                 }
             ]
     , testCase "doubly injected variable vs doubly injected term" $ do
@@ -787,7 +787,7 @@ injUnificationTests =
             [ UnificationResult
                 { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution = [("xSubSubSort", Mock.aSubSubsort)]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.topSort
                 }
             ]
     , testCase "constant vs injection is bottom" $
@@ -829,7 +829,7 @@ injUnificationTests =
                         , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                         )
                     ]
-                , predicate = Predicate.makeTruePredicate_
+                , predicate = Predicate.makeTruePredicate Mock.subSort
                 }
             ]
     , testCase "unmatching injections" $

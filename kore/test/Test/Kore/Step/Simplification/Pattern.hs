@@ -25,7 +25,7 @@ test_Pattern_simplify :: [TestTree]
 test_Pattern_simplify =
     [ notTop     `becomes` OrPattern.bottom
         $ "\\not(\\top)"
-    , orAs       `becomes` OrPattern.fromTermLikeUnsorted Mock.a
+    , orAs       `becomes` OrPattern.fromTermLike Mock.a
         $ "\\or(a, a)"
     , bottomLike `becomes` OrPattern.bottom
         $ "\\and(a, \\bottom)"
@@ -43,17 +43,17 @@ test_Pattern_simplifyAndRemoveTopExists :: [TestTree]
 test_Pattern_simplifyAndRemoveTopExists =
     [ notTop      `becomes` OrPattern.bottom
         $ "\\not(\\top)"
-    , orAs        `becomes` OrPattern.fromTermLikeUnsorted Mock.a
+    , orAs        `becomes` OrPattern.fromTermLike Mock.a
         $ "\\or(a, a)"
     , bottomLike  `becomes` OrPattern.bottom
         $ "\\and(a, \\bottom)"
-    , existential `becomes` OrPattern.fromTermLikeUnsorted unquantified
+    , existential `becomes` OrPattern.fromTermLike unquantified
         $ "..."
-    , multiexistential `becomes` OrPattern.fromTermLikeUnsorted unquantified
+    , multiexistential `becomes` OrPattern.fromTermLike unquantified
         $ "..."
-    , universal `becomes` OrPattern.fromPattern universalUnsorted
+    , universal `becomes` OrPattern.fromPattern universal
         $ "..."
-    , existentialuniversal `becomes` OrPattern.fromPattern universalUnsorted
+    , existentialuniversal `becomes` OrPattern.fromPattern universal
         $ "..."
     ]
   where
@@ -68,15 +68,11 @@ test_Pattern_simplifyAndRemoveTopExists =
     existential = termLike (mkExists Mock.x unquantified)
     multiexistential = termLike (mkExists Mock.y (mkExists Mock.x unquantified))
     universal = termLike (mkForall Mock.x unquantified)
-    universalUnsorted = termLikeUnsorted (mkForall Mock.x unquantified)
     existentialuniversal =
         termLike (mkExists Mock.y (mkForall Mock.x unquantified))
 
 termLike :: TermLike Variable -> Pattern Variable
 termLike = Pattern.fromTermLike
-
-termLikeUnsorted :: TermLike Variable -> Pattern Variable
-termLikeUnsorted = Pattern.fromTermLikeUnsorted
 
 -- | Term is \bottom, but not in a trivial way.
 notTop, orAs, bottomLike :: Pattern Variable

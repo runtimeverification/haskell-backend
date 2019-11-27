@@ -32,6 +32,7 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
     , makeCeilPredicate_
+    , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate_
     , makeNotPredicate
@@ -590,7 +591,7 @@ test_applyRewriteRule_ =
                 [ OrPattern.fromPatterns
                     [ Conditional
                         { term = mkElemVar Mock.y
-                        , predicate = makeEqualsPredicate_
+                        , predicate = makeEqualsPredicate Mock.testSort
                             (Mock.functional11 (mkElemVar Mock.y))
                             (Mock.functional10 (mkElemVar Mock.y))
                         , substitution = mempty

@@ -27,7 +27,7 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeEqualsPredicate_
+    , makeEqualsPredicate
     , makeFalsePredicate_
     , makeNotPredicate
     , makeOrPredicate
@@ -52,7 +52,7 @@ test_evaluateAxioms =
     [ applies "F(x) => G(x) applies to F(x)"
         [axiom_ (f x) (g x)]
         (f x, makeTruePredicate_)
-        [Pattern.fromTermLikeUnsorted $ g x]
+        [Pattern.fromTermLike $ g x]
     , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to F(x)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f x, makeTruePredicate_)
@@ -62,7 +62,7 @@ test_evaluateAxioms =
     , applies "F(x) => G(x) [concrete] apply to F(a)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f a, makeTruePredicate_)
-        [Pattern.fromTermLikeUnsorted $ g a]
+        [Pattern.fromTermLike $ g a]
     , doesn'tApply "F(x) => G(x) requires \\bottom doesn't apply to F(x)"
         [axiom (f x) (g x) makeFalsePredicate_]
         (f x, makeTruePredicate_)
@@ -115,7 +115,7 @@ a = Mock.a
 
 positive :: TermLike Variable -> Predicate Variable
 positive u =
-    makeEqualsPredicate_
+    makeEqualsPredicate Mock.testSort
         (Mock.lessInt
             (Mock.fTestInt u)  -- wrap the given term for sort agreement
             (Mock.builtinInt 0)

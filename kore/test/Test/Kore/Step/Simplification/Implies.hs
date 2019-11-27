@@ -14,6 +14,9 @@ import Kore.Internal.Condition
     , andCondition
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -89,7 +92,11 @@ termB :: Pattern Variable
 termB = Pattern.fromTermLike Mock.b
 
 aImpliesB :: Pattern Variable
-aImpliesB = Pattern.fromTermLikeUnsorted (mkImplies Mock.a Mock.b)
+aImpliesB = Conditional
+    { term = mkImplies Mock.a Mock.b
+    , predicate = Predicate.makeTruePredicate_
+    , substitution = mempty
+    }
 
 equalsXA :: Pattern Variable
 equalsXA = fromPredicate equalsXA_

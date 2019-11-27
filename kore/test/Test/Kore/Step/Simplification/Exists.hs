@@ -8,13 +8,23 @@ import Test.Tasty
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional
+    ( Conditional (Conditional)
+    )
+import qualified Kore.Internal.Conditional as Conditional
+    ( Conditional (..)
+    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Internal.Pattern as Pattern
+import Kore.Internal.Pattern
+    ( Pattern
+    )
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
+    , makeCeilPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate_
     , makeExistsPredicate
@@ -37,19 +47,19 @@ test_simplify :: [TestTree]
 test_simplify =
     [ [plain10, plain11] `simplifiesTo` [plain10', plain11']
         $ "\\or distribution"
-    , [top]              `simplifiesTo` [top]
+    , [Pattern.top]      `simplifiesTo` [Pattern.top]
         $ "\\top"
     , []                 `simplifiesTo` []
         $ "\\bottom"
     , [equals]           `simplifiesTo` [quantifyPredicate equals]
         $ "\\equals"
-    , [substForX]        `simplifiesTo` [top]
+    , [substForX]        `simplifiesTo` [Pattern.topOf Mock.testSort]
         $ "discharge substitution"
     , [substForXWithCycleY]
         `simplifiesTo`
-        [Pattern.fromCondition predicateCycleY]
+        [Pattern.fromConditionSorted Mock.testSort predicateCycleY]
         $ "discharge substitution with cycle"
-    , [substToX]         `simplifiesTo` [top]
+    , [substToX]         `simplifiesTo` [Pattern.topOf Mock.testSort]
         $ "discharge reverse substitution"
     , [substOfX]         `simplifiesTo` [quantifySubstitution substOfX]
         $ "substitution"
@@ -61,25 +71,27 @@ test_simplify =
     plain11' = mkExists Mock.x <$> plain11
     equals =
         (Pattern.topOf Mock.testSort)
-            { predicate =
+            { Conditional.predicate =
                 Predicate.makeEqualsPredicate_
                     (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z))
                     (Mock.functional20 (mkElemVar Mock.y) (mkElemVar Mock.z))
             }
     quantifyPredicate predicated@Conditional { predicate } =
         predicated
-            { predicate = Predicate.makeExistsPredicate Mock.x predicate }
+            { Conditional.predicate =
+                Predicate.makeExistsPredicate Mock.x predicate
+            }
     quantifySubstitution predicated@Conditional { predicate, substitution } =
         predicated
-            { predicate =
+            { Conditional.predicate =
                 Predicate.makeAndPredicate predicate
                 $ Predicate.makeExistsPredicate Mock.x
                 $ Predicate.fromSubstitution substitution
-            , substitution = mempty
+            , Conditional.substitution = mempty
             }
     substForX =
         (Pattern.topOf Mock.testSort)
-            { substitution = Substitution.unsafeWrap
+            { Conditional.substitution = Substitution.unsafeWrap
                 [   ( ElemVar Mock.x
                     , Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z)
                     )
@@ -87,11 +99,11 @@ test_simplify =
             }
     substToX =
         (Pattern.topOf Mock.testSort)
-            { substitution =
+            { Conditional.substitution =
                 Substitution.unsafeWrap [(ElemVar Mock.y, mkElemVar Mock.x)] }
     substOfX =
         (Pattern.topOf Mock.testSort)
-            { substitution = Substitution.unsafeWrap
+            { Conditional.substitution = Substitution.unsafeWrap
                 [ ( ElemVar Mock.y
                   , Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.z)
                   )
@@ -102,7 +114,7 @@ test_simplify =
     predicateCycleY =
         Condition.fromPredicate
         $ Predicate.makeAndPredicate
-            (Predicate.makeCeilPredicate_ (f y))
+            (Predicate.makeCeilPredicate Mock.testSort (f y))
             (Predicate.makeEqualsPredicate_ y (f y))
     substCycleY =
         mconcat
@@ -154,7 +166,7 @@ test_makeEvaluate =
                     [ Conditional
                         { term = Mock.f gOfA
                         , predicate =
-                            makeCeilPredicate_ (Mock.h gOfA)
+                            makeCeilPredicate Mock.testSort (Mock.h gOfA)
                         , substitution = Substitution.unsafeWrap
                             [(ElemVar Mock.y, fOfA)]
                         }

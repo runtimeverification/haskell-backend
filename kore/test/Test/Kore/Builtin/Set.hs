@@ -1632,7 +1632,7 @@ return a partial result for unifying the second element of the pair.
  -}
 test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
-    testCaseWithSMT "unify Set with symbolic keys in axiom" $ do
+    testCaseWithSMT "zzzunify Set with symbolic keys in axiom" $ do
         config <- evaluate $ pair symbolicKey concreteSet
         actual <- runStep config axiom
         assertEqual "" expected actual
@@ -1652,7 +1652,16 @@ test_concretizeKeysAxiom =
             , ensures = Predicate.makeTruePredicate_
             , attributes = Default.def
             }
-    expected = Right (MultiOr [ pure symbolicKey ])
+    expected = Right $ MultiOr
+        [ Conditional
+            { term = symbolicKey
+            , predicate =
+                -- The sort is broken because the axiom is broken: the
+                -- rhs should have the same sort as the lhs.
+                makeTruePredicate (termLikeSort (pair symbolicKey concreteSet))
+            , substitution = mempty
+            }
+        ]
 
 test_isBuiltin :: [TestTree]
 test_isBuiltin =

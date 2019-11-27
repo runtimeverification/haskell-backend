@@ -25,8 +25,10 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Predicate
     ( Predicate
+    , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeNotPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
@@ -59,7 +61,7 @@ test_definitionEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.c
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -77,7 +79,9 @@ test_definitionEvaluation =
                 (Mock.functionalConstr10 Mock.c)
         assertEqual "" expect actual
     , testCase "Evaluation with remainder" $ do
-        let requirement = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
+        let requirement = makeEqualsPredicate Mock.testSort
+                (Mock.f Mock.a)
+                (Mock.g Mock.b)
             expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results =
@@ -124,7 +128,9 @@ test_definitionEvaluation =
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
             final2 = Mock.g Mock.b
-            requirement1 = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
+            requirement1 = makeEqualsPredicate Mock.testSort
+                (Mock.f Mock.a)
+                (Mock.g Mock.b)
             requirement2 = makeNotPredicate requirement1
             axiom1 = axiom initial final1 requirement1
             axiom2 = axiom initial final2 requirement2
@@ -151,7 +157,7 @@ test_definitionEvaluation =
         let expectConcrete =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
-                        { results = OrPattern.fromTermLikeUnsorted
+                        { results = OrPattern.fromTermLike
                             (Mock.g Mock.c)
                         , remainders = OrPattern.fromPatterns []
                         }
@@ -187,7 +193,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.c
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -210,7 +216,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.f Mock.a
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -239,7 +245,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.f Mock.a
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -284,7 +290,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.b
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -308,7 +314,9 @@ test_firstFullEvaluation =
                 (Mock.functionalConstr10 Mock.a)
         assertEqual "" expect actual
     , testCase "Apply with top configuration" $ do
-        let requirement = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
+        let requirement = makeEqualsPredicate Mock.testSort
+                (Mock.f Mock.a)
+                (Mock.g Mock.b)
         let expect =
                 AttemptedAxiom.Applied
                     AttemptedAxiomResults
@@ -345,7 +353,7 @@ test_firstFullEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.b
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -401,7 +409,7 @@ test_simplifierWithFallback =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -422,7 +430,9 @@ test_simplifierWithFallback =
                 (Mock.functionalConstr10 Mock.a)
         assertEqual "" expect actual
     , testCase "Uses first with remainder" $ do
-        let requirement = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
+        let requirement = makeEqualsPredicate Mock.testSort
+                (Mock.f Mock.a)
+                (Mock.g Mock.b)
             expect =
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = OrPattern.fromPatterns
@@ -468,7 +478,7 @@ test_simplifierWithFallback =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.f Mock.a
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]
@@ -517,7 +527,7 @@ test_builtinEvaluation =
                         { results = OrPattern.fromPatterns
                             [ Conditional
                                 { term = Mock.g Mock.a
-                                , predicate = makeTruePredicate_
+                                , predicate = makeTruePredicate Mock.testSort
                                 , substitution = mempty
                                 }
                             ]

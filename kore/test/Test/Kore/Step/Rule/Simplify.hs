@@ -12,14 +12,13 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    , makeCeilPredicate_
+    ( Predicate
+    , makeAndPredicate
+    , makeCeilPredicate
     , makeEqualsPredicate_
     , makeNotPredicate
+    , makeTruePredicate
     , makeTruePredicate_
-    )
-import Kore.Internal.Predicate
-    ( Predicate
     )
 import Kore.Internal.TermLike
     ( TermLike
@@ -27,6 +26,7 @@ import Kore.Internal.TermLike
     , mkElemVar
     , mkEquals_
     , mkOr
+    , termLikeSort
     )
 import Kore.Logger.Output
     ( emptyLogger
@@ -66,7 +66,8 @@ instance OnePathRuleBase Pair where
 
 instance OnePathRuleBase TermLike where
     t1 `rewritesTo` t2 =
-        Pair (t1, makeTruePredicate_) `rewritesTo` Pair (t2, makeTruePredicate_)
+        Pair (t1, makeTruePredicate (termLikeSort t1))
+        `rewritesTo` Pair (t2, makeTruePredicate_)
 
 test_simplifyRule :: [TestTree]
 test_simplifyRule =
@@ -123,7 +124,7 @@ test_simplifyRule =
 
     , testCase "Does not simplify ensures predicate" $ do
         let rule =
-                Pair (Mock.a,  makeTruePredicate_)
+                Pair (Mock.a,  makeTruePredicate Mock.testSort)
                 `rewritesTo`
                 Pair (Mock.cf, makeEqualsPredicate_ Mock.b Mock.b)
             expected = [rule]
@@ -159,7 +160,7 @@ test_simplifyRule =
     , testCase "Case where f(x) is defined;\
                \ Case where it is not is simplified" $ do
         let expected =
-                [   Pair (Mock.f x, makeCeilPredicate_ (Mock.f x))
+                [   Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
                     `rewritesTo`
                     Pair (Mock.a, makeTruePredicate_)
                 ]
