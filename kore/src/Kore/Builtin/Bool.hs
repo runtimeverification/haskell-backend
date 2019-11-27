@@ -70,7 +70,7 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers
         , symbolVerifiers
-        , patternVerifier
+        , patternVerifierHook
         }
 
 {- | Verify that hooked sort declarations are well-formed.
@@ -102,10 +102,9 @@ symbolVerifiers =
 
 {- | Verify that domain value patterns are well-formed.
  -}
-patternVerifier :: Builtin.PatternVerifier (TermLike variable)
-patternVerifier =
-    Builtin.domainValuePatternVerifier sort
-    $ Builtin.makeEncodedDomainValueVerifier sort patternVerifierWorker
+patternVerifierHook :: Builtin.PatternVerifierHook
+patternVerifierHook =
+    Builtin.domainValuePatternVerifierHook sort patternVerifierWorker
   where
     patternVerifierWorker domainValue =
         case externalChild of
