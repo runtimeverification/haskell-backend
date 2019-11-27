@@ -272,10 +272,7 @@ applicationSortsFromSymbolOrAliasSentence
 applicationSortsFromSymbolOrAliasSentence symbolOrAlias sentence = do
     Context { declaredSortVariables } <- Reader.ask
     mapM_
-        ( verifySort
-            lookupSortDeclaration
-            declaredSortVariables
-        )
+        (verifySort lookupSortDeclaration declaredSortVariables)
         (symbolOrAliasParams symbolOrAlias)
     symbolOrAliasSorts (symbolOrAliasParams symbolOrAlias) sentence
 
@@ -287,13 +284,12 @@ assertSameSort expectedSort actualSort =
     koreFailWithLocationsWhen
         (expectedSort /= actualSort)
         [expectedSort, actualSort]
-        ((renderStrict . Pretty.layoutCompact)
-         ("Expecting sort"
-          <+> Pretty.squotes (unparse expectedSort)
-          <+> "but got"
-          <+> Pretty.squotes (unparse actualSort)
-          <> Pretty.dot)
-        )
+    $ renderStrict . Pretty.layoutCompact
+    $ "Expecting sort"
+        <+> Pretty.squotes (unparse expectedSort)
+        <+> "but got"
+        <+> Pretty.squotes (unparse actualSort)
+        <>  Pretty.dot
 
 assertExpectedSort
     :: Maybe Sort
