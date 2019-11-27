@@ -23,6 +23,11 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
+import Debug.Trace
+import Kore.Unparser
+    ( unparseToString
+    )
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -60,7 +65,13 @@ import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
     )
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -98,6 +109,7 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     , SimplifierVariable
     )
+import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     )
@@ -132,6 +144,7 @@ import Kore.Unparser
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (ElemVar)
+    , extractElementVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
@@ -952,30 +965,74 @@ removalPredicate destination config =
         else do
             let termConfig = Conditional.term config
                 termDest   = Conditional.term destination
-            if ( isFunctionPattern termConfig
+            if isFunctionPattern termConfig
                && isFunctionPattern termDest
-               )
                 then do
                     let configAndDestTerms =
                             mkAnd termConfig termDest
                     unifiedConfigs <- simplifyTerm configAndDestTerms
+
+                    --traceM
+                    --    $ "\nUnification pattern:\n"
+                    --    <> foldr (\a b -> unparseToString a <> b) "" unifiedConfigs
                     if OrPattern.isFalse unifiedConfigs
                         then return Predicate.makeTruePredicate
                         else
-                            return
-                                . Predicate.makeNotPredicate
-                                . quantifyPredicate
-                                $ Predicate.makeAndPredicate
-                                    (Condition.toPredicate . Conditional.withoutTerm $ config)
-                                    (Condition.toPredicate . Conditional.withoutTerm $ destination)
+                            case Foldable.toList unifiedConfigs of
+                                [substPattern] -> do
+                                    let substPredicate =
+                                            Conditional.predicate (Conditional.withoutTerm substPattern)
+                                        substSubstitution =
+                                            Conditional.substitution (Conditional.withoutTerm substPattern)
+                                        destPredicate =
+                                            Conditional.predicate (Conditional.withoutTerm destination)
+                                        destSubstitution =
+                                            Conditional.substitution (Conditional.withoutTerm destination)
+                                        remPattern =
+                                            Pattern.fromCondition Conditional
+                                                { term = ()
+                                                , predicate =
+                                                    -- Predicate.makeNotPredicate $
+                                                    Predicate.makeAndPredicate
+                                                        substPredicate
+                                                        destPredicate
+                                                , substitution =
+                                                    substSubstitution <> destSubstitution
+                                                }
+                                        remainingFreeVars =
+                                            Set.toList
+                                            $ Set.difference
+                                                destinationVariablesModif
+                                                configVariables
+                                        destinationVariablesModif =
+                                            Attribute.FreeVariables.getFreeVariables
+                                            $ Pattern.freeVariables substPattern
+                                    evaluatedRem <- Exists.makeEvaluateWIP (mapMaybe extractElementVariable remainingFreeVars) remPattern
+                                    case Foldable.toList evaluatedRem of
+                                        [] -> return Predicate.makeTruePredicate
+                                        [evaluatedPattern] ->
+                                            return
+                                            . Predicate.makeNotPredicate
+                                            . Condition.toPredicate
+                                            . Conditional.withoutTerm
+                                            $ evaluatedPattern
+                                        _ -> do
+                                            traceM
+                                                $ "\nEvaluated rem:\n"
+                                                <> foldr (\a b -> unparseToString a <> b) "" evaluatedRem
+                                            error "TODO: evaluate remainder remove destination error message"
+                                    --traceM
+                                    --    $ "\nRemainder predicate:\n"
+                                    --    <> unparseToString remCondition
+                                _ -> error "TODO: remove destination unification error message"
                 else
                     return
-                        $ Predicate.makeNotPredicate
-                        $ quantifyPredicate
-                        $ Predicate.makeCeilPredicate
-                        $ mkAnd
-                        (Pattern.toTermLike destination)
-                        (Pattern.toTermLike config)
+                    . Predicate.makeNotPredicate
+                    . quantifyPredicate
+                    . Predicate.makeCeilPredicate
+                    $ mkAnd
+                    (Pattern.toTermLike destination)
+                    (Pattern.toTermLike config)
 
 getConfiguration
     :: forall goal
