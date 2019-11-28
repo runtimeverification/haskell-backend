@@ -949,6 +949,7 @@ removalPredicate
                             remainderElementVariables configuration substPattern
                     in if not (null extraNonElemVariables)
                         then
+                            -- TODO: factor out this error and prettify it
                             error
                                 ("Cannot quantify non-element variables: "
                                 ++ show (unparse <$> extraNonElemVariables))
