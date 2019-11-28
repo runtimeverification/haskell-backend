@@ -14,7 +14,11 @@ k_tests := \
 	impossible-branch.psearch.final \
 	sum
 prove_tests := \
-	not-not-spec \
+	add-spec \
+	max-spec \
+	sum-spec \
+	sum-div-spec \
+	double-sum-spec \
 
 merge_tests := \
     1 \

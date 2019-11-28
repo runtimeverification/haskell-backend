@@ -99,8 +99,6 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
     )
 
-import Debug.Trace
-
 data SimplificationTarget = AndT | EqualsT | AndUnifT | AllT
 
 {- | Unify two terms without discarding the terms.
@@ -123,17 +121,8 @@ termUnification
     => TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification first second = do
-    traceM
-        ("termUnification.start " ++ show (length (show first ++ show second)))
-    traceM
-        ("termUnification.start " ++ unparseToString first ++ "\n-----\n"
-        ++ unparseToString second)
-    result <- termUnificationWorker first second
-    traceM ("termUnification.end " ++ unparseToString result)
-    traceM
-        ("termUnification.end " ++ show (length (show first ++ show second)))
-    return result
+termUnification =
+    termUnificationWorker
   where
     termUnificationWorker
         :: TermLike variable

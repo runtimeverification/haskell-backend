@@ -128,8 +128,7 @@ of \texttt{\&\&}; this is the reason we annotated the syntax of
 \texttt{strict}. */
 
   rule I1 <= I2 => I1 <=Int I2
-  // rule ! T => notBool T
-  rule ! (notBool T) => T
+  rule ! T => notBool T
   rule true && B => B
   rule false && _ => false
 
