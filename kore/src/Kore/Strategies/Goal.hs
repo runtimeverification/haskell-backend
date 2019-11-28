@@ -135,8 +135,7 @@ import Kore.Unparser
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (ElemVar)
-    , extractElementVariable
+    ( extractElementVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
@@ -932,84 +931,86 @@ removalPredicate
     -> Pattern variable
     -- ^ Current configuration
     -> m (Predicate variable)
-removalPredicate destination config =
-    let
-        -- The variables of the destination that are missing from the
-        -- configuration. These are the variables which should be existentially
-        -- quantified in the removal predicate.
-        configVariables =
-            Attribute.FreeVariables.getFreeVariables
-            $ Pattern.freeVariables config
-        destinationVariables =
-            Attribute.FreeVariables.getFreeVariables
-            $ Pattern.freeVariables destination
-        extraVariables = Set.toList
-            $ Set.difference destinationVariables configVariables
-        extraElementVariables = [v | ElemVar v <- extraVariables]
-        extraNonElemVariables = filter (not . isElemVar) extraVariables
-        quantifyPredicate =
-            Predicate.makeMultipleExists extraElementVariables
-    in
-        if not (null extraNonElemVariables)
-        then error
-            ("Cannot quantify non-element variables: "
+removalPredicate
+    destination
+    configuration
+  | isFunctionPattern configTerm
+  , isFunctionPattern destTerm
+  = do
+    unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
+    if OrPattern.isFalse unifiedConfigs
+        then return Predicate.makeTruePredicate
+        else
+            case Foldable.toList unifiedConfigs of
+                [substPattern] ->
+                    let extraNonElemVariables =
+                            remainderNonElemVariables configuration substPattern
+                        extraElemVariables =
+                            remainderElementVariables configuration substPattern
+                    in if not (null extraNonElemVariables)
+                        then
+                            error
+                                ("Cannot quantify non-element variables: "
+                                ++ show (unparse <$> extraNonElemVariables))
+                        else do
+                            let remainderPattern =
+                                    Pattern.fromCondition
+                                    . Conditional.withoutTerm
+                                    $ (const <$> destination <*> substPattern)
+                            evaluatedRemainder <-
+                                Exists.makeEvaluate extraElemVariables remainderPattern
+                            return
+                                . Predicate.makeNotPredicate
+                                . Condition.toPredicate
+                                . Conditional.withoutTerm
+                                . OrPattern.toPattern
+                                $ evaluatedRemainder
+                _ -> error "TODO: error unification in remove destination"
+  | otherwise
+  =
+    let extraNonElemVariables =
+            remainderNonElemVariables configuration destination
+    in if not (null extraNonElemVariables)
+        then
+            error
+                ("Cannot quantify non-element variables: "
                 ++ show (unparse <$> extraNonElemVariables))
-        else do
-            let termConfig = Conditional.term config
-                termDest   = Conditional.term destination
-            if isFunctionPattern termConfig
-               && isFunctionPattern termDest
-                then do
-                    let configAndDestTerms =
-                            mkAnd termConfig termDest
-                    unifiedConfigs <- simplifyTerm configAndDestTerms
-                    if OrPattern.isFalse unifiedConfigs
-                        then return Predicate.makeTruePredicate
-                        else
-                            case Foldable.toList unifiedConfigs of
-                                [substPattern] -> do
-                                    let substPredicate =
-                                            Conditional.predicate (Conditional.withoutTerm substPattern)
-                                        substSubstitution =
-                                            Conditional.substitution (Conditional.withoutTerm substPattern)
-                                        destPredicate =
-                                            Conditional.predicate (Conditional.withoutTerm destination)
-                                        destSubstitution =
-                                            Conditional.substitution (Conditional.withoutTerm destination)
-                                        remPattern =
-                                            Pattern.fromCondition Conditional
-                                                { term = ()
-                                                , predicate =
-                                                    Predicate.makeAndPredicate
-                                                        substPredicate
-                                                        destPredicate
-                                                , substitution =
-                                                    substSubstitution <> destSubstitution
-                                                }
-                                        remainingFreeVars =
-                                            Set.toList
-                                            $ Set.difference
-                                                destinationVariablesModif
-                                                configVariables
-                                        destinationVariablesModif =
-                                            Attribute.FreeVariables.getFreeVariables
-                                            $ Pattern.freeVariables substPattern
-                                    evaluatedRem <- Exists.makeEvaluateWIP (mapMaybe extractElementVariable remainingFreeVars) remPattern
-                                    return
-                                        . Predicate.makeNotPredicate
-                                        . Condition.toPredicate
-                                        . Conditional.withoutTerm
-                                        . OrPattern.toPattern
-                                        $ evaluatedRem
-                                _ -> error "TODO: remove destination unification error message"
-                else
-                    return
-                    . Predicate.makeNotPredicate
-                    . quantifyPredicate
-                    . Predicate.makeCeilPredicate
-                    $ mkAnd
-                    (Pattern.toTermLike destination)
-                    (Pattern.toTermLike config)
+        else
+            return
+            . Predicate.makeNotPredicate
+            . quantifyPredicate
+            . Predicate.makeCeilPredicate
+            $ mkAnd
+                (Pattern.toTermLike destination)
+                (Pattern.toTermLike configuration)
+  where
+    Conditional { term = destTerm } = destination
+    Conditional { term = configTerm } = configuration
+    -- The variables of the destination that are missing from the
+    -- configuration. These are the variables which should be existentially
+    -- quantified in the removal predicate.
+    configVariables config =
+        Attribute.FreeVariables.getFreeVariables
+        $ Pattern.freeVariables config
+    destVariables dest =
+        Attribute.FreeVariables.getFreeVariables
+        $ Pattern.freeVariables dest
+    remainderVariables config dest =
+        Set.toList
+        $ Set.difference
+            (destVariables dest)
+            (configVariables config)
+    remainderNonElemVariables config dest =
+        filter (not . isElemVar) (remainderVariables config dest)
+    remainderElementVariables config dest =
+        mapMaybe
+            extractElementVariable
+            (remainderVariables config dest)
+    quantifyPredicate =
+        Predicate.makeMultipleExists
+        $ remainderElementVariables
+            configuration
+            destination
 
 getConfiguration
     :: forall goal

@@ -350,4 +350,4 @@ makeEvaluate
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate variable child =
-    runSimplifier Mock.env $ Exists.makeEvaluate variable child
+    runSimplifier Mock.env $ Exists.makeEvaluate [variable] child
