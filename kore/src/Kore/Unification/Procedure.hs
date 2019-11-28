@@ -41,8 +41,8 @@ import Kore.Unification.Unify
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser
 
--- |'unificationProcedure' atempts to simplify @t1 = t2@, assuming @t1@ and @t2@
--- are terms (functional patterns) to a substitution.
+-- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
+-- @t2@ are terms (functional patterns) to a substitution.
 -- If successful, it also produces a proof of how the substitution was obtained.
 -- If failing, it gives a 'UnificationError' reason for the failure.
 unificationProcedure
@@ -65,7 +65,7 @@ unificationProcedure p1 p2
         . Text.pack
         . show
         $ Pretty.vsep
-            [ "Attemptying to unify terms"
+            [ "Attempting to unify terms"
             , Pretty.indent 4 $ unparse p1
             , "with"
             , Pretty.indent 4 $ unparse p2

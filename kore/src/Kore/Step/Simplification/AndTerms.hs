@@ -99,7 +99,9 @@ import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
     )
 
-data SimplificationTarget = AndT | EqualsT | BothT
+import Debug.Trace
+
+data SimplificationTarget = AndT | EqualsT | AndUnifT | AllT
 
 {- | Unify two terms without discarding the terms.
 
@@ -121,8 +123,17 @@ termUnification
     => TermLike variable
     -> TermLike variable
     -> unifier (Pattern variable)
-termUnification =
-    termUnificationWorker
+termUnification first second = do
+    traceM
+        ("termUnification.start " ++ show (length (show first ++ show second)))
+    traceM
+        ("termUnification.start " ++ unparseToString first ++ "\n-----\n"
+        ++ unparseToString second)
+    result <- termUnificationWorker first second
+    traceM ("termUnification.end " ++ unparseToString result)
+    traceM
+        ("termUnification.end " ++ show (length (show first ++ show second)))
+    return result
   where
     termUnificationWorker
         :: TermLike variable
@@ -130,8 +141,9 @@ termUnification =
         -> unifier (Pattern variable)
     termUnificationWorker pat1 pat2 = do
         let
-            maybeTermUnification :: MaybeT unifier (Pattern variable)
-            maybeTermUnification = maybeTermAnd termUnificationWorker pat1 pat2
+            maybeTermUnification' :: MaybeT unifier (Pattern variable)
+            maybeTermUnification' =
+                maybeTermUnification termUnificationWorker pat1 pat2
             unsupportedPatternsError =
                 throwUnificationError
                     (unsupportedPatterns
@@ -139,7 +151,7 @@ termUnification =
                         pat1
                         pat2
                     )
-        Error.maybeT unsupportedPatternsError pure maybeTermUnification
+        Error.maybeT unsupportedPatternsError pure maybeTermUnification'
 
 maybeTermEquals
     :: SimplifierVariable variable
@@ -163,6 +175,17 @@ maybeTermAnd
     -> MaybeT unifier (Pattern variable)
 maybeTermAnd = maybeTransformTerm andFunctions
 
+maybeTermUnification
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => GHC.HasCallStack
+    => TermSimplifier variable unifier
+    -- ^ Used to simplify subterm "and".
+    -> TermLike variable
+    -> TermLike variable
+    -> MaybeT unifier (Pattern variable)
+maybeTermUnification = maybeTransformTerm unificationFunctions
+
 andFunctions
     :: forall variable unifier
     .  SimplifierVariable variable
@@ -174,13 +197,34 @@ andFunctions =
   where
     appliesToAnd :: (SimplificationTarget, a) -> Bool
     appliesToAnd (AndT, _) = True
+    appliesToAnd (AndUnifT, _) = True
     appliesToAnd (EqualsT, _) = False
-    appliesToAnd (BothT, _) = True
+    appliesToAnd (AllT, _) = True
 
     forAnd
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
     forAnd f = f Condition.topTODO SimplificationType.And
+
+unificationFunctions
+    :: forall variable unifier
+    .  SimplifierVariable variable
+    => MonadUnify unifier
+    => GHC.HasCallStack
+    => [TermTransformationOld variable unifier]
+unificationFunctions =
+    map (forUnification . snd) (filter appliesToUnification andEqualsFunctions)
+  where
+    appliesToUnification :: (SimplificationTarget, a) -> Bool
+    appliesToUnification (AndT, _) = False
+    appliesToUnification (AndUnifT, _) = True
+    appliesToUnification (EqualsT, _) = False
+    appliesToUnification (AllT, _) = True
+
+    forUnification
+        :: TermTransformation variable unifier
+        -> TermTransformationOld variable unifier
+    forUnification f = f Condition.topTODO SimplificationType.And
 
 equalsFunctions
     :: forall variable unifier
@@ -193,8 +237,9 @@ equalsFunctions =
   where
     appliesToEquals :: (SimplificationTarget, a) -> Bool
     appliesToEquals (AndT, _) = False
+    appliesToEquals (AndUnifT, _) = False
     appliesToEquals (EqualsT, _) = True
-    appliesToEquals (BothT, _) = True
+    appliesToEquals (AllT, _) = True
 
     forEquals
         :: TermTransformation variable unifier
@@ -208,27 +253,27 @@ andEqualsFunctions
     => GHC.HasCallStack
     => [(SimplificationTarget, TermTransformation variable unifier)]
 andEqualsFunctions = fmap mapEqualsFunctions
-    [ (AndT,    \_ _ s -> expandAlias (maybeTermAnd s), "expandAlias")
-    , (AndT,    \_ _ _ -> boolAnd, "boolAnd")
-    , (BothT,   \_ _ _ -> equalAndEquals, "equalAndEquals")
-    , (EqualsT, \p _ _ -> bottomTermEquals p, "bottomTermEquals")
-    , (EqualsT, \p _ _ -> termBottomEquals p, "termBottomEquals")
-    , (BothT,   \p t _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
-    , (BothT,   \p t _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
-    , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
-    , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
-    , (BothT,   \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
-    , (BothT,   \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
-    , (BothT,   \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
-    , (BothT,   \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
-    , (BothT,   \_ t s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
-    , (BothT,   \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
-    , (BothT,   \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
-    , (BothT,   \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
-    , (AndT,    \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
+    [ (AndUnifT, \_ _ s -> expandAlias (maybeTermAnd s), "expandAlias")
+    , (AndUnifT, \_ _ _ -> boolAnd, "boolAnd")
+    , (AllT,     \_ _ _ -> equalAndEquals, "equalAndEquals")
+    , (EqualsT,  \p _ _ -> bottomTermEquals p, "bottomTermEquals")
+    , (EqualsT,  \p _ _ -> termBottomEquals p, "termBottomEquals")
+    , (AllT,     \p t _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
+    , (AllT,     \p t _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
+    , (AllT,     \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
+    , (AllT,     \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (AllT,     \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
+    , (AllT,     \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
+    , (AllT,     \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
+    , (AllT,     \_ _ _ -> Builtin.Endianness.unifyEquals, "Builtin.Endianness.unifyEquals")
+    , (AllT,     \_ _ _ -> Builtin.Signedness.unifyEquals, "Builtin.Signedness.unifyEquals")
+    , (AllT,     \_ _ s -> Builtin.Map.unifyEquals s, "Builtin.Map.unifyEquals")
+    , (AllT,     \_ _ s -> Builtin.Set.unifyEquals s, "Builtin.Set.unifyEquals")
+    , (AllT,     \_ t s -> Builtin.List.unifyEquals t s, "Builtin.List.unifyEquals")
+    , (AllT,     \_ _ _ -> domainValueAndConstructorErrors, "domainValueAndConstructorErrors")
+    , (AllT,     \_ _ _ -> domainValueAndEqualsAssumesDifferent, "domainValueAndEqualsAssumesDifferent")
+    , (AllT,     \_ _ _ -> stringLiteralAndEqualsAssumesDifferent, "stringLiteralAndEqualsAssumesDifferent")
+    , (AndT,     \_ _ _ t1 t2 -> Error.hoistMaybe $ functionAnd t1 t2, "functionAnd")
     ]
   where
     mapEqualsFunctions (target, termTransform, name) =
