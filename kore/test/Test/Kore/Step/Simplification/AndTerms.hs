@@ -752,7 +752,7 @@ test_andTermsSimplification =
                 expect = Just
                     [ Conditional
                         { term = Mock.builtinList [Mock.a]
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.listSort
                         , substitution = Substitution.unsafeWrap
                             [(ElemVar x, Mock.builtinList [Mock.a])]
                         }
