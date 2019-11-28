@@ -23,11 +23,6 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
-import Debug.Trace
-import Kore.Unparser
-    ( unparseToString
-    )
-
 import Control.Applicative
     ( Alternative (..)
     )
@@ -64,9 +59,6 @@ import Kore.Debug
 import Kore.IndexedModule.IndexedModule
     ( IndexedModule (indexedModuleClaims)
     , VerifiedModule
-    )
-import Kore.Internal.Condition
-    ( Condition
     )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
@@ -971,10 +963,6 @@ removalPredicate destination config =
                     let configAndDestTerms =
                             mkAnd termConfig termDest
                     unifiedConfigs <- simplifyTerm configAndDestTerms
-
-                    --traceM
-                    --    $ "\nUnification pattern:\n"
-                    --    <> foldr (\a b -> unparseToString a <> b) "" unifiedConfigs
                     if OrPattern.isFalse unifiedConfigs
                         then return Predicate.makeTruePredicate
                         else
@@ -992,7 +980,6 @@ removalPredicate destination config =
                                             Pattern.fromCondition Conditional
                                                 { term = ()
                                                 , predicate =
-                                                    -- Predicate.makeNotPredicate $
                                                     Predicate.makeAndPredicate
                                                         substPredicate
                                                         destPredicate
@@ -1008,22 +995,12 @@ removalPredicate destination config =
                                             Attribute.FreeVariables.getFreeVariables
                                             $ Pattern.freeVariables substPattern
                                     evaluatedRem <- Exists.makeEvaluateWIP (mapMaybe extractElementVariable remainingFreeVars) remPattern
-                                    case Foldable.toList evaluatedRem of
-                                        [] -> return Predicate.makeTruePredicate
-                                        [evaluatedPattern] ->
-                                            return
-                                            . Predicate.makeNotPredicate
-                                            . Condition.toPredicate
-                                            . Conditional.withoutTerm
-                                            $ evaluatedPattern
-                                        _ -> do
-                                            traceM
-                                                $ "\nEvaluated rem:\n"
-                                                <> foldr (\a b -> unparseToString a <> b) "" evaluatedRem
-                                            error "TODO: evaluate remainder remove destination error message"
-                                    --traceM
-                                    --    $ "\nRemainder predicate:\n"
-                                    --    <> unparseToString remCondition
+                                    return
+                                        . Predicate.makeNotPredicate
+                                        . Condition.toPredicate
+                                        . Conditional.withoutTerm
+                                        . OrPattern.toPattern
+                                        $ evaluatedRem
                                 _ -> error "TODO: remove destination unification error message"
                 else
                     return
