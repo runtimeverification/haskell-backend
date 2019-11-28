@@ -2,12 +2,12 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
-Direct interface to equational rule application (step-wise execution).
+Direct interface to rule application (step-wise execution).
 See "Kore.Step" for the high-level strategy-based interface.
 
  -}
 
-module Kore.Step.EquationalStep
+module Kore.Step.RewriteStep
     ( RulePattern
     , UnificationProcedure (..)
     , UnifiedRule
@@ -43,7 +43,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Set
@@ -148,21 +147,13 @@ unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
-unwrapAndQuantifyConfiguration
+unwrapConfiguration
     :: forall variable
     .  InternalVariable variable
     => Pattern (Target variable)
     -> Pattern variable
-unwrapAndQuantifyConfiguration config@Conditional { substitution } =
-    if List.null targetVariables
-    then unwrappedConfig
-    else
-        Pattern.fromTermLike
-            (List.foldl'
-                quantify
-                (Pattern.toTermLike unwrappedConfig)
-                targetVariables
-            )
+unwrapConfiguration config@Conditional { substitution } =
+    Pattern.mapVariables Target.unwrapVariable configWithNewSubst
   where
     substitution' =
         Substitution.filter (foldMapVariable Target.isNonTarget)
@@ -170,20 +161,6 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
 
     configWithNewSubst :: Pattern (Target variable)
     configWithNewSubst = config { Pattern.substitution = substitution' }
-
-    unwrappedConfig :: Pattern variable
-    unwrappedConfig =
-        Pattern.mapVariables Target.unwrapVariable configWithNewSubst
-
-    targetVariables :: [ElementVariable variable]
-    targetVariables =
-        map (fmap Target.unwrapVariable)
-        . filter (Target.isTarget . getElementVariable)
-        . Pattern.freeElementVariables
-        $ configWithNewSubst
-
-    quantify :: TermLike variable -> ElementVariable variable -> TermLike variable
-    quantify = flip mkExists
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -316,7 +293,10 @@ finalizeAppliedRule renamedRule appliedConditions =
             substitution' = Substitution.toMap substitution
             RulePattern { right = finalTerm } = renamedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
-        return finalCondition { Pattern.term = finalTerm' }
+            finalConditionFreeVars =
+                Conditional.freeVariables (const mempty) finalCondition
+            finalTerm'' = freeTopExists finalConditionFreeVars finalTerm'
+        return finalCondition { Pattern.term = finalTerm'' }
 
 {- | Apply the remainder predicate to the given initial configuration.
 
@@ -371,7 +351,7 @@ finalizeRule initial unifiedRule =
         checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
-        let result = unwrapAndQuantifyConfiguration <$> final
+        let result = unwrapConfiguration <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 finalizeRulesParallel

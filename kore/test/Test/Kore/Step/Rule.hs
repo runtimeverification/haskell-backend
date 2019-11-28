@@ -82,9 +82,9 @@ axiomPatternsUnitTests =
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , right = varI2
+                    , right = mkAnd (mkTop sortAInt) varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                    , ensures = Predicate.wrapPredicate (mkTop sortAInt)
+                    , ensures = Predicate.makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -95,9 +95,9 @@ axiomPatternsUnitTests =
                 ( Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , right = varI2
+                    , right = mkAnd (mkTop sortAInt) varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                    , ensures = Predicate.wrapPredicate (mkTop sortAInt)
+                    , ensures = Predicate.makeTruePredicate
                     , attributes = def
                     }
                 )
@@ -214,9 +214,9 @@ axiomPatternsIntegrationTests =
         RulePattern
             { left
             , antiLeft = Nothing
-            , right
+            , right = mkAnd (mkTop sortTCell) right
             , requires = Predicate.wrapPredicate (mkTop sortTCell)
-            , ensures = Predicate.wrapPredicate (mkTop sortTCell)
+            , ensures = Predicate.makeTruePredicate
             , attributes = def
             }
 
