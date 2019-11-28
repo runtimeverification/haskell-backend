@@ -2,12 +2,12 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
-Direct interface to rule application (step-wise execution).
+Direct interface to equational rule application (step-wise execution).
 See "Kore.Step" for the high-level strategy-based interface.
 
  -}
 
-module Kore.Step.Step
+module Kore.Step.EquationalStep
     ( RulePattern
     , UnificationProcedure (..)
     , UnifiedRule
