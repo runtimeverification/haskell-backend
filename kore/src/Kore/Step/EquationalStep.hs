@@ -434,7 +434,7 @@ recoveryFunctionLikeResults initial results = do
                             [ "Expected singleton list of rules but found: "
                             , (Pretty.indent 4 . Pretty.vsep . Foldable.toList)
                                 (Pretty.pretty . term <$> appliedRules)
-                            , "This should be imposssible, as simplifiers for \
+                            , "This should be impossible, as simplifiers for \
                             \simplification are built from a single rule."
                             ]
 

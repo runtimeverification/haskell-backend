@@ -22,7 +22,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeFloorPredicate
+    , makeFloorPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
@@ -96,6 +96,6 @@ makeEvaluateNonBoolFloor
     OrPattern.fromPattern Conditional
         { term = mkTop_
         , predicate = Predicate.markSimplified
-            $ makeAndPredicate (makeFloorPredicate term) predicate
+            $ makeAndPredicate (makeFloorPredicate_ term) predicate
         , substitution = substitution
         }

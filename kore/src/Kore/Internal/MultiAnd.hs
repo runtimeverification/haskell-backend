@@ -35,7 +35,7 @@ import GHC.Generics
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -168,5 +168,5 @@ toPredicate
     -> Predicate variable
 toPredicate (MultiAnd predicates) =
     case predicates of
-        [] -> makeTruePredicate
+        [] -> makeTruePredicate_
         _  -> foldr1 makeAndPredicate predicates

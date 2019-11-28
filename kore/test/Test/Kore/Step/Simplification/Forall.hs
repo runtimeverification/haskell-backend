@@ -11,10 +11,11 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
+    , makeCeilPredicate_
+    , makeEqualsPredicate_
     , makeForallPredicate
     , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Forall as Forall
@@ -37,12 +38,12 @@ test_forallSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkForall Mock.x something1OfX
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
                 , Conditional
                     { term = mkForall Mock.x something2OfX
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
                 ]
@@ -112,16 +113,17 @@ test_forallSimplification =
                                 (mkEquals_ (mkElemVar Mock.y) fOfA)
                             )
                         )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate Mock.testSort
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Conditional
                     { term = Mock.f $ mkElemVar Mock.x
-                    , predicate = makeCeilPredicate (Mock.h (mkElemVar Mock.x))
+                    , predicate = makeCeilPredicate_ (Mock.h (mkElemVar Mock.x))
                     , substitution =
-                        Substitution.wrap [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
+                        Substitution.wrap
+                            [(ElemVar Mock.x, gOfA), (ElemVar Mock.y, fOfA)]
                     }
             )
         )
@@ -130,14 +132,14 @@ test_forallSimplification =
         (assertEqual "forall with substitution"
             Conditional
                 { term = fOfA
-                , predicate = makeCeilPredicate gOfA
+                , predicate = makeCeilPredicate_ gOfA
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Conditional
                     { term = fOfA
-                    , predicate = makeCeilPredicate gOfA
+                    , predicate = makeCeilPredicate_ gOfA
                     , substitution = mempty
                     }
             )
@@ -147,14 +149,14 @@ test_forallSimplification =
         (assertEqual "forall on term"
             Conditional
                 { term = mkForall Mock.x (mkAnd fOfX (mkCeil_ gOfA))
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate Mock.testSort
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Conditional
                     { term = fOfX
-                    , predicate = makeCeilPredicate gOfA
+                    , predicate = makeCeilPredicate_ gOfA
                     , substitution = mempty
                     }
             )
@@ -164,14 +166,14 @@ test_forallSimplification =
         (assertEqual "forall on term bool predicate"
             Conditional
                 { term = mkForall Mock.x fOfX
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Conditional
                     { term = fOfX
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
             )
@@ -189,14 +191,14 @@ test_forallSimplification =
                         )
                         (mkEquals_ (mkElemVar Mock.y) fOfA)
                     )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate Mock.testSort
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Conditional
                     { term = fOfA
-                    , predicate = makeCeilPredicate fOfX
+                    , predicate = makeCeilPredicate_ fOfX
                     , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
                     }
             )
@@ -209,8 +211,8 @@ test_forallSimplification =
                 { term = mkTop_
                 , predicate = makeForallPredicate Mock.x
                     (makeAndPredicate
-                        (makeCeilPredicate fOfX)
-                        (makeEqualsPredicate (mkElemVar Mock.y) fOfA)
+                        (makeCeilPredicate_ fOfX)
+                        (makeEqualsPredicate_ (mkElemVar Mock.y) fOfA)
                     )
                 , substitution = mempty
                 }
@@ -218,7 +220,7 @@ test_forallSimplification =
                 Mock.x
                 Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate fOfX
+                    , predicate = makeCeilPredicate_ fOfX
                     , substitution = Substitution.wrap [(ElemVar Mock.y, fOfA)]
                     }
             )
@@ -233,14 +235,14 @@ test_forallSimplification =
                             (mkAnd fOfX (mkEquals_ fOfX gOfA))
                             (mkEquals_ (mkElemVar Mock.y) hOfA)
                         )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate Mock.testSort
                 , substitution = mempty
                 }
             (makeEvaluate
                 Mock.x
                 Conditional
                     { term = fOfX
-                    , predicate = makeEqualsPredicate fOfX gOfA
+                    , predicate = makeEqualsPredicate_ fOfX gOfA
                     , substitution = Substitution.wrap [(ElemVar Mock.y, hOfA)]
                     }
             )
@@ -256,7 +258,7 @@ test_forallSimplification =
                 Mock.x
                 Pattern
                     { term = mkTop_
-                    , predicate = makeEqualsPredicate fOfX (Mock.f gOfA)
+                    , predicate = makeEqualsPredicate_ fOfX (Mock.f gOfA)
                     , substitution = [(Mock.x, gOfA)]
                     }
             )
@@ -272,12 +274,12 @@ test_forallSimplification =
     something2OfX = Mock.plain11 (mkElemVar Mock.x)
     something1OfXExpanded = Conditional
         { term = something1OfX
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
     something2OfXExpanded = Conditional
         { term = something2OfX
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 

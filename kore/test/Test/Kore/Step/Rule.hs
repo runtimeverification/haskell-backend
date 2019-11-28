@@ -84,7 +84,7 @@ axiomPatternsUnitTests =
                     , antiLeft = Nothing
                     , right = mkAnd (mkTop sortAInt) varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                    , ensures = Predicate.makeTruePredicate
+                    , ensures = Predicate.makeTruePredicate_
                     , attributes = def
                     }
                 )
@@ -97,7 +97,7 @@ axiomPatternsUnitTests =
                     , antiLeft = Nothing
                     , right = mkAnd (mkTop sortAInt) varI2
                     , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                    , ensures = Predicate.makeTruePredicate
+                    , ensures = Predicate.makeTruePredicate_
                     , attributes = def
                     }
                 )
@@ -216,7 +216,7 @@ axiomPatternsIntegrationTests =
             , antiLeft = Nothing
             , right = mkAnd (mkTop sortTCell) right
             , requires = Predicate.wrapPredicate (mkTop sortTCell)
-            , ensures = Predicate.makeTruePredicate
+            , ensures = Predicate.makeTruePredicate_
             , attributes = def
             }
 
@@ -312,8 +312,8 @@ test_patternToAxiomPatternAndBack =
     leftP = mkElemVar Mock.x
     antiLeftP = mkElemVar Mock.u
     rightP = mkExists Mock.y (mkElemVar Mock.y)
-    requiresP = Predicate.makeCeilPredicate (mkElemVar Mock.z)
-    ensuresP = Predicate.makeCeilPredicate (mkElemVar Mock.t)
+    requiresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
+    ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
     attributesWithPriority =
         def & field @"priority" .~ (Attribute.Priority (Just 0))
     perhapsFinalPattern attribute initialPattern = axiomPatternToPattern
@@ -529,7 +529,7 @@ testRulePattern =
         , right =
             -- Include a binder to ensure that we respect them.
             mkExists Mock.y (mkElemVar Mock.y)
-        , requires = Predicate.makeCeilPredicate (mkElemVar Mock.z)
-        , ensures = Predicate.makeCeilPredicate (mkElemVar Mock.t)
+        , requires = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
+        , ensures = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
         , attributes = def
         }

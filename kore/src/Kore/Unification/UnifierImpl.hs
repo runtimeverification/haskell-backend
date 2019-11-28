@@ -93,7 +93,7 @@ deduplicateSubstitution
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution =
-    worker Predicate.makeTruePredicate . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate_ . Substitution.toMultiMap
   where
     worker
         ::  Predicate variable

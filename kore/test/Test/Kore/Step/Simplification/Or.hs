@@ -1,7 +1,5 @@
 module Test.Kore.Step.Simplification.Or
-    ( test_topTermAnnihilates
-    , test_disjoinPredicates
-    , test_anyBottom
+    ( test_anyBottom
     , test_deduplicateMiddle
     , test_simplify
     , test_valueProperties
@@ -26,13 +24,10 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate
-    , makeFalsePredicate
-    , makeOrPredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.Predicate
     ( Predicate
+    , makeEqualsPredicate_
+    , makeFalsePredicate_
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Or
@@ -59,48 +54,6 @@ values into a simplifier that is to produce a single `OrPattern`. We
 run the simplifier to check correctness.
 
 -}
-
-test_topTermAnnihilates :: TestTree
-test_topTermAnnihilates =
-    testGroup "\\top term annihilates \\or when other components are equal"
-        [ expectation ((t1, p1, s1), (t2, p2, s2)) (tT, p1, s1)
-        | (t1, t2) <- [ (tT, tm), (tm, tT) ]  -- test commutativity over term
-        , p1 <- predicates, p2 <- predicates
-        , s1 <- substitutions, s2 <- substitutions
-        , let
-            -- If the predicates and substitutions are equal, expect the given
-            -- simplification. Otherwise, the term should not simplify.
-            expectation
-              | p1 == p2 && s1 == s2 = simplifiesTo
-              | otherwise            = \initial _ -> doesNotSimplify initial
-        -- These cases are handled by MultiOr.filterOr, so they are
-        -- not tested here.
-        , any not [isTop t1, isTop p1, isTop s1]
-        , any not [isTop t2, isTop p2, isTop s2]
-        ]
-  where
-    predicates = [ pT, pM, pm ]
-    substitutions = [ sT, sM, sm ]
-
-test_disjoinPredicates :: TestTree
-test_disjoinPredicates =
-    testGroup "Disjoin predicates when other components are equal"
-        [ expectation ((t1, p1, s1), (t2, p2, s2)) (t1, p', s')
-        | t1 <- terms, t2 <- terms
-        , p1 <- predicates, p2 <- predicates
-        , s1 <- substitutions, s2 <- substitutions
-        , let
-            -- If the terms are equal, expect the given simplification.
-            -- Otherwise, the predicates should not be merged.
-            expectation
-              | t1 == t2 && s1 == s2  = simplifiesTo
-              | otherwise = \initial _ -> doesNotSimplify initial
-            (p', s') = (makeOrPredicate p1 p2, s1)
-        ]
-  where
-    terms = [ tM, tm ]
-    predicates = [ pT, pM, pm ]
-    substitutions = [ sT, sM, sm ]
 
 test_anyBottom :: TestTree
 test_anyBottom =
@@ -193,22 +146,22 @@ testVar ident = ElementVariable $ Variable (testId ident) mempty Mock.testSort
 type TestPredicate = Predicate Variable
 
 pT :: TestPredicate
-pT = makeTruePredicate
+pT = makeTruePredicate_
 
 pm :: TestPredicate
 pm =
-    makeEqualsPredicate
+    makeEqualsPredicate_
         (mkElemVar $ testVar "left")
         (mkElemVar $ testVar "right")
 
 pM :: TestPredicate
 pM =
-    makeEqualsPredicate
+    makeEqualsPredicate_
         (mkElemVar $ testVar "LEFT")
         (mkElemVar $ testVar "RIGHT")
 
 p_ :: TestPredicate
-p_ = makeFalsePredicate
+p_ = makeFalsePredicate_
 
 type TestSubstitution = Substitution Variable
 
@@ -286,24 +239,6 @@ simplifiesTo (orChild -> or1, orChild -> or2) (orChild -> simplified) =
             [ prettyOr or1 or2
             , "to simplify to:"
             , Unparser.unparse simplified
-            ]
-        )
-
-doesNotSimplify
-    :: HasCallStack
-    => (TestConfig, TestConfig)
-    -> TestTree
-doesNotSimplify (orChild -> or1, orChild -> or2) =
-    actual_expected_name_intention
-        (simplifyEvaluated
-            (OrPattern.fromPattern or1)
-            (OrPattern.fromPattern or2)
-        )
-        (OrPattern.fromPatterns $ List.sort [or1, or2])
-        "or does not simplify"
-        (stateIntention
-            [ prettyOr or1 or2
-            , "does not simplify."
             ]
         )
 

@@ -129,8 +129,7 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers
         , symbolVerifiers
-        , domainValueVerifiers = mempty
-        , applicationVerifiers = mempty
+        , patternVerifierHook = mempty
         }
 
 {- | Verify that hooked sort declarations are well-formed.
@@ -253,7 +252,7 @@ evalElement =
         Builtin.getAttemptedAxiom
             (case arguments of
                 [_elem] ->
-                    case TermLike.asConcrete _elem of
+                    case Builtin.toKey _elem of
                         Just concrete ->
                             TermLike.assertNonSimplifiableKeys [_elem]
                             $ returnConcreteSet

@@ -86,8 +86,7 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers = mempty
         , symbolVerifiers
-        , domainValueVerifiers = mempty
-        , applicationVerifiers = mempty
+        , patternVerifierHook = mempty
         }
 
 {- | Verify that hooked symbol declarations are well-formed.

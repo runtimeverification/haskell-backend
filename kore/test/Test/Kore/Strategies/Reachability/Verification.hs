@@ -22,7 +22,7 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step.Rule
@@ -401,7 +401,11 @@ test_reachabilityVerification =
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
                 , substitution = mempty
                 }
             )
@@ -426,7 +430,11 @@ test_reachabilityVerification =
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
                 , substitution = mempty
                 }
             )
@@ -454,7 +462,11 @@ test_reachabilityVerification =
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
                 , substitution = mempty
                 }
             )
@@ -1017,8 +1029,8 @@ simpleOnePathTrustedClaim left right =
             { left = left
             , antiLeft = Nothing
             , right = right
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }
@@ -1034,8 +1046,8 @@ simpleAllPathTrustedClaim left right =
             { left = left
             , antiLeft = Nothing
             , right = right
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }

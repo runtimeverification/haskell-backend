@@ -30,7 +30,7 @@ test_existentiallyQuantifyTarget =
 
 target :: Predicate (Target Variable)
 target =
-    Predicate.makeEqualsPredicate
+    Predicate.makeEqualsPredicate_
         (mkElemVar $ NonTarget <$> Mock.x)
         (Mock.sigma
             (mkElemVar $ Target <$> Mock.y)

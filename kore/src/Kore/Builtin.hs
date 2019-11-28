@@ -15,7 +15,6 @@ This module is intended to be imported qualified.
  -}
 module Kore.Builtin
     ( Builtin.Verifiers (..)
-    , Builtin.DomainValueVerifiers
     , Builtin.ApplicationVerifiers
     , Builtin.Function
     , Builtin
@@ -23,10 +22,10 @@ module Kore.Builtin
     , Builtin.SortVerifier (..)
     , Builtin.ApplicationVerifier (..)
     , Builtin.SymbolKey (..)
+    , Builtin.PatternVerifierHook (..)
     , Builtin.lookupApplicationVerifier
     , Builtin.sortDeclVerifier
     , Builtin.symbolVerifier
-    , Builtin.verifyDomainValue
     , koreVerifiers
     , koreEvaluators
     , evaluators

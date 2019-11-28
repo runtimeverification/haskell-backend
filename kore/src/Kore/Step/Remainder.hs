@@ -144,7 +144,7 @@ substitutionConditions subst =
     MultiAnd.make (substitutionCoverageWorker <$> Substitution.unwrap subst)
   where
     substitutionCoverageWorker (x, t) =
-        Predicate.makeEqualsPredicate (mkVar x) t
+        Predicate.makeEqualsPredicate_ (mkVar x) t
 
 ceilChildOfApplicationOrTop
     :: forall variable m

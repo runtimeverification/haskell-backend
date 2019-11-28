@@ -29,6 +29,9 @@ import Test.Tasty.HUnit
     , testCase
     )
 
+import Control.Monad.IO.Unlift
+    ( MonadUnliftIO
+    )
 import qualified Control.Monad.Trans as Trans
 import Data.Function
     ( (&)
@@ -57,8 +60,6 @@ import Kore.ASTVerifier.PatternVerifier
     , verifyStandalonePattern
     )
 import qualified Kore.ASTVerifier.PatternVerifier as PatternVerifier
-    ( Context (..)
-    )
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Null as Attribute
 import Kore.Attribute.Symbol as Attribute
@@ -95,8 +96,14 @@ import qualified Kore.Internal.Symbol as Internal
     ( Symbol
     )
 import Kore.Internal.TermLike
+import Kore.Logger
+    ( MonadLog
+    )
 import Kore.Parser
     ( parseKorePattern
+    )
+import Kore.Profiler.Data
+    ( MonadProfiler
     )
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Result as Result
@@ -125,8 +132,8 @@ import Kore.Unparser
     ( unparseToString
     )
 import SMT
-    ( SMT
-    , runNoSMT
+    ( MonadSMT
+    , SMT
     )
 
 import Test.Kore.Builtin.Definition
@@ -210,17 +217,8 @@ verifyPattern expectedSort termLike =
     $ verifyStandalonePattern expectedSort parsedPattern
   where
     context =
-        PatternVerifier.Context
-            { indexedModule =
-                verifiedModule
-                & IndexedModule.eraseAxiomAttributes
-            , declaredVariables = mempty
-            , declaredSortVariables = mempty
-            , builtinDomainValueVerifiers =
-                Builtin.domainValueVerifiers Builtin.koreVerifiers
-            , builtinApplicationVerifiers =
-                Builtin.applicationVerifiers Builtin.koreVerifiers
-            }
+        PatternVerifier.verifiedModuleContext verifiedModule
+        & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
     parsedPattern = Builtin.externalize termLike
 
 testMetadataTools :: SmtMetadataTools StepperAttributes
@@ -250,15 +248,22 @@ testEnv =
 simplify :: TermLike Variable -> IO [Pattern Variable]
 simplify =
     id
-    . runNoSMT mempty
+    . runNoSMT
     . runSimplifier testEnv
     . Branch.gather
     . simplifyConditionalTerm Condition.top
 
-evaluate :: TermLike Variable -> SMT (Pattern Variable)
+evaluate
+    :: (MonadSMT smt, MonadUnliftIO smt, MonadProfiler smt, MonadLog smt)
+    => TermLike Variable
+    -> smt (Pattern Variable)
 evaluate = runSimplifier testEnv . (`TermLike.simplify` Condition.top)
 
-evaluateT :: Trans.MonadTrans t => TermLike Variable -> t SMT (Pattern Variable)
+evaluateT
+    :: Trans.MonadTrans t
+    => (MonadSMT smt, MonadUnliftIO smt, MonadProfiler smt, MonadLog smt)
+    => TermLike Variable
+    -> t smt (Pattern Variable)
 evaluateT = Trans.lift . evaluate
 
 evaluateToList :: TermLike Variable -> SMT [Pattern Variable]

@@ -15,6 +15,9 @@ import Kore.Internal.Predicate
     ( makeTruePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Sort
+    ( stringMetaSort
+    )
 import Kore.Step.Simplification.StringLiteral
     ( simplify
     )
@@ -28,7 +31,7 @@ test_stringLiteralSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkStringLiteral "a"
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate stringMetaSort
                     , substitution = mempty
                     }
                 ]

@@ -43,9 +43,10 @@ import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
     , makeEqualsPredicate
+    , makeEqualsPredicate_
     , makeMultipleAndPredicate
     , makeNotPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
     ( TermLike
@@ -356,7 +357,7 @@ test_onePathStrategy =
                 [ ProofState.Goal $ makeOnePathRuleFromPatterns
                     ( Conditional
                         { term = Mock.f Mock.b
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate_
                         , substitution =
                             Substitution.unsafeWrap
                                 [(ElemVar Mock.x, Mock.b)]
@@ -366,7 +367,7 @@ test_onePathStrategy =
                 , ProofState.Goal $ makeOnePathRuleFromPatterns
                     ( Conditional
                         { term = Mock.f Mock.c
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate_
                         , substitution =
                             Substitution.unsafeWrap
                                 [(ElemVar Mock.x, Mock.c)]
@@ -374,31 +375,30 @@ test_onePathStrategy =
                     )
                     (fromTermLike $ Mock.functionalConstr11 Mock.a)
                 , ProofState.Goal $ makeOnePathRuleFromPatterns
-                    ( Conditional
+                    Conditional
                         { term = Mock.h (TermLike.mkElemVar Mock.x)
                         , predicate =  -- TODO(virgil): Better and simplification.
                             makeAndPredicate
                                 (makeAndPredicate
                                     (makeNotPredicate
-                                        (makeEqualsPredicate
+                                        (makeEqualsPredicate Mock.testSort
                                             (TermLike.mkElemVar Mock.x) Mock.a
                                         )
                                     )
                                     (makeNotPredicate
-                                        (makeEqualsPredicate
+                                        (makeEqualsPredicate_
                                             (TermLike.mkElemVar Mock.x) Mock.b
                                         )
                                     )
                                 )
                                 (makeNotPredicate
-                                    (makeEqualsPredicate
+                                    (makeEqualsPredicate_
                                         (TermLike.mkElemVar Mock.x)
                                         Mock.c
                                     )
                                 )
                         , substitution = mempty
                         }
-                    )
                     (fromTermLike $ Mock.functionalConstr11 Mock.a)
                 ]
         assertEqual ""
@@ -449,14 +449,22 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
-        let equalsXA = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.a
-            equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
-            equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
+        let equalsXA =
+                makeEqualsPredicate Mock.testSort
+                    (TermLike.mkElemVar Mock.x)
+                    Mock.a
+            equalsXB =
+                makeEqualsPredicate Mock.testSort
+                    (TermLike.mkElemVar Mock.x)
+                    Mock.b
+            equalsXC = makeEqualsPredicate Mock.testSort
+                (TermLike.mkElemVar Mock.x)
+                Mock.c
         assertEqual ""
             [ ProofState.Goal $ makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.f Mock.b
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
                     }
@@ -465,7 +473,7 @@ test_onePathStrategy =
             , ProofState.Goal $ makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.f Mock.c
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
                     }
@@ -507,7 +515,7 @@ test_onePathStrategy =
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 Mock.b)
                 Mock.a
-                $ makeEqualsPredicate
+                $ makeEqualsPredicate_
                     Mock.c
                     $ Mock.f Mock.b
             ]
@@ -521,23 +529,22 @@ test_onePathStrategy =
             [ rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 Mock.b)
                 Mock.a
-                $ makeEqualsPredicate
+                $ makeEqualsPredicate_
                     Mock.c
                     $ Mock.f Mock.b
             ]
         assertEqual ""
             [ ProofState.GoalRemainder
             $ makeOnePathRuleFromPatterns
-                ( Conditional
+                Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate =
                         makeNotPredicate
-                            $ makeEqualsPredicate
+                            $ makeEqualsPredicate Mock.testSort
                                 Mock.c
                                 $ Mock.f Mock.b
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             , ProofState.Proven
             ]
@@ -562,7 +569,7 @@ test_onePathStrategy =
                 [ rewriteWithPredicate
                     (TermLike.mkElemVar Mock.xInt)
                     (Mock.builtinInt 1)
-                    (makeEqualsPredicate
+                    (makeEqualsPredicate_
                         (Mock.lessInt
                             (TermLike.mkElemVar Mock.xInt) (Mock.builtinInt 2)
                         )
@@ -580,7 +587,7 @@ test_onePathStrategy =
                 [ rewriteReachabilityWithPredicate
                     (TermLike.mkElemVar Mock.xInt)
                     (Mock.builtinInt 1)
-                    (makeEqualsPredicate
+                    (makeEqualsPredicate_
                         (Mock.lessInt
                             (TermLike.mkElemVar Mock.xInt) (Mock.builtinInt 2)
                         )
@@ -604,7 +611,7 @@ test_onePathStrategy =
             (makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -619,7 +626,7 @@ test_onePathStrategy =
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -629,7 +636,7 @@ test_onePathStrategy =
             , rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.c
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -642,7 +649,7 @@ test_onePathStrategy =
             (OnePath $ makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -657,7 +664,7 @@ test_onePathStrategy =
             [ rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -667,7 +674,7 @@ test_onePathStrategy =
             , rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.c
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -677,10 +684,10 @@ test_onePathStrategy =
             ]
         assertEqual ""
             [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                (Conditional
+                Conditional
                     { term = Mock.a
                     , predicate =
-                        makeEqualsPredicate
+                        makeEqualsPredicate Mock.testSort
                             (Mock.lessInt
                                 (Mock.fTestInt Mock.b)
                                 (Mock.builtinInt 0)
@@ -688,7 +695,6 @@ test_onePathStrategy =
                             (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             ]
             [ _actual
@@ -706,7 +712,7 @@ test_onePathStrategy =
             (makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -721,7 +727,7 @@ test_onePathStrategy =
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -734,7 +740,7 @@ test_onePathStrategy =
             (OnePath $ makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -749,7 +755,7 @@ test_onePathStrategy =
             [ rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -759,10 +765,10 @@ test_onePathStrategy =
             ]
         assertEqual ""
             [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                ( Conditional
+                Conditional
                     { term = Mock.a
                     , predicate =
-                        makeEqualsPredicate
+                        makeEqualsPredicate Mock.testSort
                             (Mock.lessInt
                                 (Mock.fTestInt Mock.b)
                                 (Mock.builtinInt 0)
@@ -770,7 +776,6 @@ test_onePathStrategy =
                             (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             ]
             [ _actual ]
@@ -789,8 +794,8 @@ simpleRewrite left right =
         { left = left
         , antiLeft = Nothing
         , right = right
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
+        , requires = makeTruePredicate_
+        , ensures = makeTruePredicate_
         , attributes = def
         }
 
@@ -813,7 +818,7 @@ rewriteWithPredicate left right predicate =
         , antiLeft = Nothing
         , right = right
         , requires = predicate
-        , ensures = makeTruePredicate
+        , ensures = makeTruePredicate_
         , attributes = def
         }
 
