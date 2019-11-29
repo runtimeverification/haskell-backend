@@ -22,7 +22,7 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
-    , freeTopExists
+    , topExistsToImplicitForall
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -686,21 +686,27 @@ refreshVariables
     originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
     subst = mkVar <$> rename
 
-freeTopExists
+{-| Given a collection of 'FreeVariables' and a term, it removes
+all existential quantifications at the top of the term,
+renaming them (if needed) to avoid clashing with the given free variables.
+-}
+topExistsToImplicitForall
     :: forall variable
     .  Substitute.SubstitutionVariable variable
     => FreeVariables variable
     -> TermLike variable
     -> TermLike variable
-freeTopExists
+topExistsToImplicitForall
     (FreeVariables.getFreeVariables -> avoid)
     term
   =
     substitute subst termWithoutExists
   where
-    (termWithoutExists, exists) = removeTopExists term Set.empty
+    (termWithoutExists, quantifiedVars) = removeTopExists term Set.empty
     originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
-    rename = Fresh.refreshVariables (avoid <> originalFreeVariables) exists
+    rename :: Map (UnifiedVariable variable) (UnifiedVariable variable)
+    rename =
+        Fresh.refreshVariables (avoid <> originalFreeVariables) quantifiedVars
     subst = mkVar <$> rename
     removeTopExists
         :: TermLike variable -> Set.Set (UnifiedVariable variable)

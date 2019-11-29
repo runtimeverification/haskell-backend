@@ -76,9 +76,9 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( freeTopExists
-    , isFunctionPattern
+    ( isFunctionPattern
     , mkAnd
+    , topExistsToImplicitForall
     )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
@@ -755,7 +755,7 @@ removeDestination goal = errorBracket $ do
     configFreeVars = Pattern.freeVariables configuration
 
     RulePattern { right, ensures } = toRulePattern goal
-    right' = freeTopExists configFreeVars right
+    right' = topExistsToImplicitForall configFreeVars right
     destination =
         Pattern.withCondition right' (Conditional.fromPredicate ensures)
 
