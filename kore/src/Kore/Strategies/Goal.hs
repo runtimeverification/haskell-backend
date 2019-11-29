@@ -133,6 +133,7 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
+    , unparseToString
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
@@ -974,23 +975,29 @@ removalPredicate
                                 $ evaluatedRemainder
                 _ -> error "TODO: error unification in remove destination"
   | otherwise
-  =
-    let extraNonElemVariables =
-            remainderNonElemVariables configuration destination
-    in if not (null extraNonElemVariables)
-        then
-            error
-                ("Cannot quantify non-element variables: "
-                ++ show (unparse <$> extraNonElemVariables))
-        else
-            return
-            . Predicate.makeNotPredicate
-            . quantifyPredicate
-            . Predicate.makeCeilPredicate_
-            $ mkAnd
-                (Pattern.toTermLike destination)
-                (Pattern.toTermLike configuration)
+  = error functionLikeErrorMsg
+    -- let extraNonElemVariables =
+    --         remainderNonElemVariables configuration destination
+    -- in if not (null extraNonElemVariables)
+    --     then
+    --         error
+    --             ("Cannot quantify non-element variables: "
+    --             ++ show (unparse <$> extraNonElemVariables))
+    --     else
+    --         return
+    --         . Predicate.makeNotPredicate
+    --         . quantifyPredicate
+    --         . Predicate.makeCeilPredicate_
+    --         $ mkAnd
+    --             (Pattern.toTermLike destination)
+    --             (Pattern.toTermLike configuration)
   where
+    functionLikeErrorMsg =
+         "Remove destination: not function patterns"
+        -- <> "\nConfiguration term:\n"
+        -- <> if isFunctionPattern configTerm then "is function-like" else unparseToString configTerm
+        <> "\nDestination term:\n"
+        <> if isFunctionPattern destTerm then "is function-like" else show destTerm
     Conditional { term = destTerm } = destination
     Conditional { term = configTerm } = configuration
     -- The variables of the destination that are missing from the
