@@ -12,14 +12,13 @@ import qualified Kore.Internal.MultiAnd as MultiAnd
     ( extractPatterns
     )
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeCeilPredicate
-    , makeEqualsPredicate
+    , makeEqualsPredicate_
     , makeNotPredicate
     , makeTruePredicate
-    )
-import Kore.Internal.Predicate
-    ( Predicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
     ( TermLike
@@ -27,6 +26,7 @@ import Kore.Internal.TermLike
     , mkElemVar
     , mkEquals_
     , mkOr
+    , termLikeSort
     )
 import Kore.Logger.Output
     ( emptyLogger
@@ -66,7 +66,8 @@ instance OnePathRuleBase Pair where
 
 instance OnePathRuleBase TermLike where
     t1 `rewritesTo` t2 =
-        Pair (t1, makeTruePredicate) `rewritesTo` Pair (t2, makeTruePredicate)
+        Pair (t1, makeTruePredicate (termLikeSort t1))
+        `rewritesTo` Pair (t2, makeTruePredicate_)
 
 test_simplifyRule :: [TestTree]
 test_simplifyRule =
@@ -114,18 +115,18 @@ test_simplifyRule =
         let expected = [Mock.a `rewritesTo` Mock.cf]
 
         actual <- runSimplifyRule
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.b Mock.b)
+            (   Pair (Mock.a,  makeEqualsPredicate_ Mock.b Mock.b)
                 `rewritesTo`
-                Pair (Mock.cf, makeTruePredicate)
+                Pair (Mock.cf, makeTruePredicate_)
             )
 
         assertEqual "" expected actual
 
     , testCase "Does not simplify ensures predicate" $ do
         let rule =
-                Pair (Mock.a,  makeTruePredicate)
+                Pair (Mock.a,  makeTruePredicate Mock.testSort)
                 `rewritesTo`
-                Pair (Mock.cf, makeEqualsPredicate Mock.b Mock.b)
+                Pair (Mock.cf, makeEqualsPredicate_ Mock.b Mock.b)
             expected = [rule]
 
         actual <- runSimplifyRule rule
@@ -136,9 +137,9 @@ test_simplifyRule =
         let expected = [Mock.a `rewritesTo` Mock.f Mock.b]
 
         actual <- runSimplifyRule
-            (   Pair (Mock.a,  makeEqualsPredicate Mock.b x)
+            (   Pair (Mock.a,  makeEqualsPredicate_ Mock.b x)
                 `rewritesTo`
-                Pair (Mock.f x, makeTruePredicate)
+                Pair (Mock.f x, makeTruePredicate_)
             )
 
         assertEqual "" expected actual
@@ -159,15 +160,15 @@ test_simplifyRule =
     , testCase "Case where f(x) is defined;\
                \ Case where it is not is simplified" $ do
         let expected =
-                [   Pair (Mock.f x, makeCeilPredicate (Mock.f x))
+                [   Pair (Mock.f x, makeCeilPredicate Mock.testSort (Mock.f x))
                     `rewritesTo`
-                    Pair (Mock.a, makeTruePredicate)
+                    Pair (Mock.a, makeTruePredicate_)
                 ]
 
         actual <- runSimplifyRule
-            (   Pair (Mock.f x, makeTruePredicate)
+            (   Pair (Mock.f x, makeTruePredicate_)
                 `rewritesTo`
-                Pair (Mock.a, makeTruePredicate)
+                Pair (Mock.a, makeTruePredicate_)
             )
 
         assertEqual "" expected actual
@@ -177,9 +178,9 @@ test_simplifyRule =
                 ]
 
         actual <- runSimplifyRule
-            (   Pair (Mock.functional10 x, makeTruePredicate)
+            (   Pair (Mock.functional10 x, makeTruePredicate_)
                 `rewritesTo`
-                Pair (Mock.a, makeTruePredicate)
+                Pair (Mock.a, makeTruePredicate_)
             )
 
         assertEqual "" expected actual
@@ -190,16 +191,16 @@ test_simplifyRule =
                 ( Mock.b
                 , makeAndPredicate
                     (makeNotPredicate
-                        (makeEqualsPredicate x Mock.b)
+                        (makeEqualsPredicate_ x Mock.b)
                     )
                     (makeNotPredicate
                         (makeNotPredicate
-                            (makeEqualsPredicate x Mock.b)
+                            (makeEqualsPredicate_ x Mock.b)
                         )
                     )
                 )
               `rewritesTo`
-              Pair (Mock.a, makeTruePredicate)
+              Pair (Mock.a, makeTruePredicate_)
             )
         assertEqual "" expected actual
     ]

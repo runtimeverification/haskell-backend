@@ -129,7 +129,7 @@ verifiers =
     Builtin.Verifiers
         { sortDeclVerifiers
         , symbolVerifiers
-        , patternVerifier = mempty
+        , patternVerifierHook = mempty
         }
 
 {- | Verify that hooked sort declarations are well-formed.

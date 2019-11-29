@@ -76,13 +76,15 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( isFunctionPattern
+    ( freeTopExists
+    , isFunctionPattern
     , mkAnd
     )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
 import qualified Kore.Step.Result as Result
+import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( AllPathRule (..)
     , FromRulePattern (..)
@@ -109,7 +111,6 @@ import Kore.Step.Simplification.Simplify
     ( simplifyTerm
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     )
@@ -749,8 +750,13 @@ removeDestination goal = errorBracket $ do
     let result = Conditional.andPredicate configuration removal
     pure $ makeRuleFromPatterns goal result destination
   where
-    destination = getDestination goal
     configuration = getConfiguration goal
+    configFreeVars = Pattern.freeVariables configuration
+
+    RulePattern { right, ensures } = toRulePattern goal
+    right' = freeTopExists configFreeVars right
+    destination =
+        Pattern.withCondition right' (Conditional.fromPredicate ensures)
 
     errorBracket action =
         onException action
@@ -939,7 +945,7 @@ removalPredicate
   = do
     unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
     if OrPattern.isFalse unifiedConfigs
-        then return Predicate.makeTruePredicate
+        then return Predicate.makeTruePredicate_
         else
             case Foldable.toList unifiedConfigs of
                 [substPattern] ->
@@ -980,7 +986,7 @@ removalPredicate
             return
             . Predicate.makeNotPredicate
             . quantifyPredicate
-            . Predicate.makeCeilPredicate
+            . Predicate.makeCeilPredicate_
             $ mkAnd
                 (Pattern.toTermLike destination)
                 (Pattern.toTermLike configuration)

@@ -2,12 +2,12 @@
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
 
-Direct interface to rule application (step-wise execution).
+Direct interface to equational rule application (step-wise execution).
 See "Kore.Step" for the high-level strategy-based interface.
 
  -}
 
-module Kore.Step.Step
+module Kore.Step.EquationalStep
     ( RulePattern
     , UnificationProcedure (..)
     , UnifiedRule
@@ -434,7 +434,7 @@ recoveryFunctionLikeResults initial results = do
                             [ "Expected singleton list of rules but found: "
                             , (Pretty.indent 4 . Pretty.vsep . Foldable.toList)
                                 (Pretty.pretty . term <$> appliedRules)
-                            , "This should be imposssible, as simplifiers for \
+                            , "This should be impossible, as simplifiers for \
                             \simplification are built from a single rule."
                             ]
 

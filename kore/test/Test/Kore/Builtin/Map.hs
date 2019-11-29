@@ -140,32 +140,46 @@ genMapSortedVariable sort genElement =
         (Range.linear 0 32)
         ((,) <$> standaloneGen (elementVariableGen sort) <*> genElement)
 
-test_lookupUnit :: TestTree
+test_lookupUnit :: [TestTree]
 test_lookupUnit =
-    testPropertyWithSolver
-        "lookup{}(unit{}(), key) === \\bottom{}()"
-        (do
-            key <- forAll genIntegerPattern
-            let patLookup = lookupMap unitMap key
-                predicate = mkEquals_ mkBottom_ patLookup
-            (===) Pattern.bottom =<< evaluateT patLookup
-            (===) Pattern.top    =<< evaluateT predicate
-        )
+    [ testPropertyWithoutSolver "lookup{}(unit{}(), key) === \\bottom{}()" $ do
+        key <- forAll genIntegerPattern
+        let patLookup = lookupMap unitMap key
+            predicate = mkEquals_ mkBottom_ patLookup
+        (===) Pattern.bottom =<< evaluateT patLookup
+        (===) Pattern.top    =<< evaluateT predicate
+    , testPropertyWithoutSolver "lookupOrDefault{}(unit{}(), key, default) === default" $ do
+        key <- forAll genIntegerPattern
+        def <- forAll genIntegerPattern
+        let patLookup = lookupOrDefaultMap unitMap key def
+            predicate = mkEquals_ def patLookup
+        (===) (Pattern.fromTermLike def) =<< evaluateT patLookup
+        (===) Pattern.top                =<< evaluateT predicate
+    ]
 
-test_lookupUpdate :: TestTree
+test_lookupUpdate :: [TestTree]
 test_lookupUpdate =
-    testPropertyWithSolver
-        "lookup{}(update{}(map, key, val), key) === val"
-        (do
-            patKey <- forAll genIntegerPattern
-            patVal <- forAll genIntegerPattern
-            patMap <- forAll genMapPattern
-            let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
-                predicate = mkEquals_ patLookup patVal
-                expect = Pattern.fromTermLike patVal
-            (===) expect      =<< evaluateT patLookup
-            (===) Pattern.top =<< evaluateT predicate
-        )
+    [ testPropertyWithoutSolver "lookup{}(update{}(map, key, val), key) === val" $ do
+        patKey <- forAll genIntegerPattern
+        patVal <- forAll genIntegerPattern
+        patMap <- forAll genMapPattern
+        let patLookup = lookupMap (updateMap patMap patKey patVal) patKey
+            predicate = mkEquals_ patLookup patVal
+            expect = Pattern.fromTermLike patVal
+        (===) expect      =<< evaluateT patLookup
+        (===) Pattern.top =<< evaluateT predicate
+    , testPropertyWithoutSolver "lookupOrDefault{}(update{}(map, key, val), key, def) === val" $ do
+        patKey <- forAll genIntegerPattern
+        patDef <- forAll genIntegerPattern
+        patVal <- forAll genIntegerPattern
+        patMap <- forAll genMapPattern
+        let patUpdate = updateMap patMap patKey patVal
+            patLookup = lookupOrDefaultMap patUpdate patKey patDef
+            predicate = mkEquals_ patLookup patVal
+            expect = Pattern.fromTermLike patVal
+        (===) expect      =<< evaluateT patLookup
+        (===) Pattern.top =<< evaluateT predicate
+    ]
 
 test_removeUnit :: TestTree
 test_removeUnit =
@@ -635,7 +649,7 @@ test_unifyEmptyWithEmpty =
     expect =
         Conditional
             { term = emptyMapDV
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate mapSort
             , substitution = Substitution.unsafeWrap []
             }
 
@@ -687,7 +701,7 @@ test_unifySelectFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -721,7 +735,7 @@ test_unifySelectSingletonFromSingleton =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar keyVar, key)
@@ -749,7 +763,7 @@ test_unifySelectFromSingletonWithoutLeftovers =
                 expect =
                     Conditional
                         { term = singleton
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar keyVar, key)
@@ -784,7 +798,7 @@ test_unifySelectFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [(key2, value2)])
@@ -795,7 +809,7 @@ test_unifySelectFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [(key1, value1)])
@@ -838,7 +852,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect1 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -851,7 +865,7 @@ test_unifySelectTwoFromTwoElementMap =
                 expect2 =
                     Conditional
                         { term = mapDV
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -889,7 +903,7 @@ test_unifySameSymbolicKey =
                 expect1 =
                     Conditional
                         { term = mapValue
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar mapVar, asInternal [])
@@ -943,7 +957,7 @@ test_unifySameSymbolicKeySymbolicOpaque =
                 expect1 =
                     Conditional
                         { term = unifiedMap
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate mapSort
                         , substitution =
                             Substitution.unsafeWrap
                                 [ (ElemVar minMapVar, mkElemVar maxMapVar)
@@ -1043,7 +1057,7 @@ test_concretizeKeys =
     expected =
         Conditional
             { term = mkPair intSort mapSort key (asInternal [(key, val)])
-            , predicate = Predicate.makeTruePredicate
+            , predicate = Predicate.makeTruePredicate (termLikeSort original)
             , substitution =
                 Substitution.unsafeWrap [(ElemVar v, val), (ElemVar x, key)]
             }
@@ -1086,11 +1100,20 @@ test_concretizeKeysAxiom =
             { left = mkPair intSort mapSort x symbolicMap
             , antiLeft = Nothing
             , right = v
-            , requires = Predicate.makeTruePredicate
-            , ensures = Predicate.makeTruePredicate
+            , requires = Predicate.makeTruePredicate_
+            , ensures = Predicate.makeTruePredicate_
             , attributes = Default.def
             }
-    expected = Right (MultiOr [ pure val ])
+    expected = Right $ MultiOr
+        [ Conditional
+            { term = val
+            , predicate =
+                -- The sort is broken because the axiom is broken: the
+                -- rhs should have the same sort as the lhs.
+                makeTruePredicate (termLikeSort (pair symbolicKey symbolicMap))
+            , substitution = mempty
+            }
+        ]
 
 test_renormalize :: [TestTree]
 test_renormalize =
@@ -1154,7 +1177,7 @@ test_renormalize =
         -- ^ opaque terms
         -> NormalizedMap (TermLike Concrete) (TermLike Variable)
     mkMap abstract concrete opaque =
-        Domain.wrapAc $ Domain.NormalizedAc
+        Domain.wrapAc Domain.NormalizedAc
             { elementsWithVariables = Domain.MapElement <$> abstract
             , concreteElements =
                 Map.fromList (Bifunctor.second Domain.MapValue <$> concrete)

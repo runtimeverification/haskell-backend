@@ -14,10 +14,14 @@ module Kore.Step.Simplification.DomainValue
 import Kore.Internal.Conditional
     ( Conditional
     )
-import Kore.Internal.MultiOr as MultiOr
+import Kore.Internal.MultiOr
+    ( MultiOr
+    )
+import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrPattern
     ( OrPattern
     )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.TermLike
 
 {-| 'simplify' simplifies a 'DomainValue' pattern, which means returning
@@ -27,8 +31,8 @@ simplify
     :: InternalVariable variable
     => DomainValue Sort (OrPattern variable)
     -> OrPattern variable
-simplify builtin =
-    MultiOr.filterOr $ do
+simplify builtin@DomainValue {domainValueSort} =
+    OrPattern.coerceSort domainValueSort $ MultiOr.filterOr $ do
         child <- simplifyDomainValue builtin
         return (markSimplified . mkDomainValue <$> child)
 

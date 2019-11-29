@@ -24,9 +24,9 @@ import qualified Kore.Internal.Pattern as Pattern
     )
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeEqualsPredicate
-    , makeFloorPredicate
-    , makeTruePredicate
+    , makeEqualsPredicate_
+    , makeFloorPredicate_
+    , makeTruePredicate_
     )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
@@ -55,7 +55,7 @@ test_floorSimplification =
             (OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeFloorPredicate (mkOr a b)
+                    , predicate = makeFloorPredicate_ (mkOr a b)
                     , substitution = mempty
                     }
                 ]
@@ -128,8 +128,8 @@ test_floorSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeFloorPredicate a)
-                            (makeEqualsPredicate fOfA gOfA)
+                            (makeFloorPredicate_ a)
+                            (makeEqualsPredicate_ fOfA gOfA)
                     , substitution = Substitution.wrap [(ElemVar x, fOfB)]
                     }
                 ]
@@ -137,7 +137,7 @@ test_floorSimplification =
             (makeEvaluate
                 Conditional
                     { term = a
-                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , predicate = makeEqualsPredicate_ fOfA gOfA
                     , substitution = Substitution.wrap [(ElemVar x, fOfB)]
                     }
             )
@@ -166,12 +166,12 @@ test_floorSimplification =
     gOfA = mkApplySymbol gSymbol [a]
     aExpanded = Conditional
         { term = a
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
     bExpanded = Conditional
         { term = b
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 

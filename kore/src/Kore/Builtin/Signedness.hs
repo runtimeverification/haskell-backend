@@ -51,8 +51,8 @@ import qualified Kore.Verified as Verified
 verifiers :: Verifiers
 verifiers =
     mempty
-        { patternVerifier =
-            (applicationPatternVerifiers . HashMap.fromList)
+        { patternVerifierHook =
+            (applicationPatternVerifierHooks . HashMap.fromList)
                 [ (KlabelSymbolKey signedKey  , signedVerifier  )
                 , (KlabelSymbolKey unsignedKey, unsignedVerifier)
                 ]

@@ -40,8 +40,8 @@ import Kore.Internal.OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    , makeTruePredicate
+    ( makeCeilPredicate_
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.Matcher
@@ -111,7 +111,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.ElemVar Mock.x, Mock.a)]
                     }
@@ -126,7 +126,7 @@ test_matcherEqualHeads =
         let expect = Just $ MultiOr.make
                 [ Conditional
                     { term = ()
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ (UnifiedVariable.ElemVar Mock.x, mkElemVar Mock.y)
                         ]
@@ -199,7 +199,7 @@ test_matcherEqualHeads =
             let expect = Just $ MultiOr.make
                     [ Conditional
                         { term = ()
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate_
                         , substitution = Substitution.unsafeWrap
                             [(UnifiedVariable.ElemVar Mock.x, Mock.a)]
                         }
@@ -217,7 +217,7 @@ test_matcherVariableFunction =
     [ testCase "Functional" $ do
         let expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeTruePredicate
+                    { predicate = makeTruePredicate_
                     , substitution =
                         Substitution.unsafeWrap
                             [ ( UnifiedVariable.ElemVar Mock.x
@@ -233,7 +233,7 @@ test_matcherVariableFunction =
     , testCase "SetVariable vs Function" $ do
         let expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeTruePredicate
+                    { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.SetVar Mock.setX, Mock.cf)]
                     , term = ()
@@ -245,7 +245,7 @@ test_matcherVariableFunction =
     , testCase "SetVariable vs Bottom" $ do
         let expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeTruePredicate
+                    { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.SetVar Mock.setX, mkBottom Mock.testSort)]
                     , term = ()
@@ -257,7 +257,7 @@ test_matcherVariableFunction =
     , testCase "Function" $ do
         let expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeCeilPredicate Mock.cf
+                    { predicate = makeCeilPredicate_ Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [(UnifiedVariable.ElemVar Mock.x, Mock.cf)]
                     , term = ()
@@ -285,7 +285,7 @@ test_matcherVariableFunction =
             x = ElementVariable $ Variable (testId "x") mempty Mock.subSort
             expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeTruePredicate
+                    { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ ( UnifiedVariable.ElemVar x
                           , Mock.sortInjectionSubSubToSub a
@@ -315,7 +315,7 @@ test_matcherVariableFunction =
         let
             expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeTruePredicate
+                    { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ ( UnifiedVariable.ElemVar xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
@@ -343,7 +343,7 @@ test_matcherVariableFunction =
         let
             expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeTruePredicate
+                    { predicate = makeTruePredicate_
                     , substitution = Substitution.unsafeWrap
                         [ ( UnifiedVariable.ElemVar xSub
                           , Mock.sortInjectionSubSubToSub aSubSub
@@ -371,7 +371,7 @@ test_matcherVariableFunction =
         [ testCase "Function" $ do
             let expect = Just $ MultiOr.make
                     [ Conditional
-                        { predicate = makeCeilPredicate Mock.cf
+                        { predicate = makeCeilPredicate_ Mock.cf
                         , substitution =
                             Substitution.unsafeWrap
                                 [(UnifiedVariable.ElemVar Mock.x, Mock.cf)]
@@ -405,7 +405,7 @@ test_matcherVariableFunction =
                     (Just . OrCondition.fromCondition)
                     (Condition.fromSingleSubstitution
                         (UnifiedVariable.ElemVar Mock.x, evaluated))
-                        { predicate = makeCeilPredicate evaluated }
+                        { predicate = makeCeilPredicate_ evaluated }
             actual <- matchDefinition (mkElemVar Mock.x) evaluated
             assertEqual "" expect actual
         ]
@@ -430,7 +430,7 @@ test_matcherMergeSubresults =
     [ testCase "Application" $ do
         let expect = Just $ MultiOr.make
                 [ Conditional
-                    { predicate = makeCeilPredicate Mock.cf
+                    { predicate = makeCeilPredicate_ Mock.cf
                     , substitution = Substitution.unsafeWrap
                         [ (UnifiedVariable.ElemVar Mock.x, Mock.cf)
                         , (UnifiedVariable.ElemVar Mock.y, Mock.b)
@@ -485,7 +485,7 @@ test_matching_Bool =
     substitution subst = Just $ MultiOr.make
         [ Conditional
             { term = ()
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate_
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkBool subst)
@@ -516,7 +516,7 @@ test_matching_Int =
     substitution subst = Just $ MultiOr.make
         [ Conditional
             { term = ()
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate_
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkInt subst)
@@ -549,7 +549,7 @@ test_matching_String =
     substitution subst = Just $ MultiOr.make
         [ Conditional
             { term = ()
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate_
             , substitution =
                 Substitution.unsafeWrap
                     ((fmap . fmap) mkStr subst)

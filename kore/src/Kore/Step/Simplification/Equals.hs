@@ -46,7 +46,7 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate
+    , makeEqualsPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
@@ -325,7 +325,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeEqualsPredicate firstTerm secondTerm
+                    $ makeEqualsPredicate_ firstTerm secondTerm
                 , substitution = mempty
                 }
 
@@ -366,7 +366,7 @@ makeEvaluateTermsToPredicate first second configurationCondition
             return
                 $ OrCondition.fromCondition . Condition.fromPredicate
                 $ Predicate.markSimplified
-                $ makeEqualsPredicate first second
+                $ makeEqualsPredicate_ first second
         Just predicatedOr -> do
             firstCeilOr <- Ceil.makeEvaluateTerm configurationCondition first
             secondCeilOr <- Ceil.makeEvaluateTerm configurationCondition second
@@ -441,6 +441,6 @@ termEqualsAnd p1 p2 =
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeEqualsPredicate first second
+                    $ makeEqualsPredicate_ first second
                 , substitution = mempty
                 }

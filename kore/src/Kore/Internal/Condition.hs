@@ -20,12 +20,16 @@ module Kore.Internal.Condition
     , toPredicate
     , freeVariables
     , hasFreeVariable
+    , coerceSort
+    , conditionSort
     , Kore.Internal.Condition.mapVariables
     , fromNormalizationSimplified
     -- * Re-exports
     , Conditional (..)
     , Conditional.andCondition
     ) where
+
+import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables
@@ -78,7 +82,7 @@ top :: InternalVariable variable => Condition variable
 top =
     Conditional
         { term = ()
-        , predicate = Predicate.makeTruePredicate
+        , predicate = Predicate.makeTruePredicate_
         , substitution = mempty
         }
 
@@ -90,7 +94,7 @@ bottom :: InternalVariable variable => Condition variable
 bottom =
     Conditional
         { term = ()
-        , predicate = Predicate.makeFalsePredicate
+        , predicate = Predicate.makeFalsePredicate_
         , substitution = mempty
         }
 
@@ -174,9 +178,26 @@ fromNormalizationSimplified Normalization { normalized, denormalized } =
             else result
       where
         childrenAreSimplified =
-            all (TermLike.isSimplified) (map dropVariable childrenList)
+            all TermLike.isSimplified (map dropVariable childrenList)
 
         dropVariable
             :: (UnifiedVariable variable, TermLike variable)
             -> TermLike variable
         dropVariable = snd
+
+conditionSort :: Condition variable -> Sort
+conditionSort Conditional {term = (), predicate} =
+    Predicate.predicateSort predicate
+
+coerceSort
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => Sort -> Condition variable -> Condition variable
+coerceSort
+    sort
+    Conditional {term = (), predicate, substitution}
+  =
+    Conditional
+        { term = ()
+        , predicate = Predicate.coerceSort sort predicate
+        , substitution
+        }

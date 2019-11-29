@@ -1332,7 +1332,7 @@ unifyOpaqueVariable
             [(TermLike variable, Domain.Value normalized (TermLike variable))]
         , [TermLike variable]
         )
-unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] = do
+unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] =
     noCheckUnifyOpaqueChildren unifyChildren v1 second
 unifyOpaqueVariable
     tools
@@ -1504,7 +1504,7 @@ unifyEqualsElementPermutations unifier firsts seconds = do
 {- |Given two lists generates k-permutation pairings and merges them using the
 provided merge function.
 
-k is the lenghth of the second list, which means that, if the @[b]@ list is
+k is the length of the second list, which means that, if the @[b]@ list is
 longer than the @[a]@ list, this will not generate any k-permutations.
 However, it will probably take a long time to generate nothing.
 

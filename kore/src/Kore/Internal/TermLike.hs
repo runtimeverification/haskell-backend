@@ -22,6 +22,7 @@ module Kore.Internal.TermLike
     , hasConstructorLikeTop
     , freeVariables
     , refreshVariables
+    , freeTopExists
     , termLikeSort
     , hasFreeVariable
     , withoutFreeVariable
@@ -685,6 +686,29 @@ refreshVariables
     originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
     subst = mkVar <$> rename
 
+freeTopExists
+    :: forall variable
+    .  Substitute.SubstitutionVariable variable
+    => FreeVariables variable
+    -> TermLike variable
+    -> TermLike variable
+freeTopExists
+    (FreeVariables.getFreeVariables -> avoid)
+    term
+  =
+    substitute subst termWithoutExists
+  where
+    (termWithoutExists, exists) = removeTopExists term Set.empty
+    originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
+    rename = Fresh.refreshVariables (avoid <> originalFreeVariables) exists
+    subst = mkVar <$> rename
+    removeTopExists
+        :: TermLike variable -> Set.Set (UnifiedVariable variable)
+        -> (TermLike variable, Set.Set (UnifiedVariable variable))
+    removeTopExists (Exists_ _ var term') set
+        = removeTopExists term' (Set.insert (ElemVar var) set)
+    removeTopExists term' set = (term', set)
+
 {- | Is the 'TermLike' a function pattern?
  -}
 isFunctionPattern :: TermLike variable -> Bool
@@ -1059,7 +1083,10 @@ forceSort
     => Sort
     -> TermLike variable
     -> TermLike variable
-forceSort forcedSort = Recursive.apo forceSortWorker
+forceSort forcedSort =
+    if forcedSort == predicateSort
+        then id
+        else Recursive.apo forceSortWorker
   where
     forceSortWorker original@(Recursive.project -> attrs :< pattern') =
         (:<)

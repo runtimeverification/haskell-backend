@@ -20,7 +20,7 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeInPredicate
+    ( makeInPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
@@ -105,7 +105,7 @@ makeEvaluateNonBoolIn patt1 patt2 =
         { term = mkTop_
         , predicate =
             Predicate.markSimplified
-            $ makeInPredicate
+            $ makeInPredicate_
                 -- TODO: Wrap in 'contained' and 'container'.
                 (Pattern.toTermLike patt1)
                 (Pattern.toTermLike patt2)
