@@ -587,49 +587,49 @@ initializeProver
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -> (InitializedProver -> simplifier a)
     -> simplifier a
-initializeProver definitionModule specModule within =
-    initialize definitionModule
-    $ \initialized -> do
-        tools <- Simplifier.askMetadataTools
-        let Initialized { rewriteRules } = initialized
-            changedSpecClaims
-                :: [(Attribute.Axiom, MaybeChanged (ReachabilityRule Variable))]
-            changedSpecClaims =
-                map
-                    (Bifunctor.second $ expandClaim tools)
-                    (Goal.extractClaims specModule)
-            mapMSecond
-                :: Monad m
-                => (rule -> m [rule'])
-                -> (attributes, rule) -> m [(attributes, rule')]
-            mapMSecond f (attribute, rule) = do
-                simplified <- f rule
-                return (map ((,) attribute) simplified)
-            simplifyToList
-                :: ReachabilityRule Variable
-                -> simplifier [ReachabilityRule Variable]
-            simplifyToList rules = do
-                simplified <- simplifyRuleLhs rules
-                return (MultiAnd.extractPatterns simplified)
+initializeProver definitionModule specModule within = do
+    tools <- Simplifier.askMetadataTools
+    let rewriteRules = extractRewriteAxioms definitionModule
+        changedSpecClaims
+            :: [(Attribute.Axiom, MaybeChanged (ReachabilityRule Variable))]
+        changedSpecClaims =
+            map
+                (Bifunctor.second $ expandClaim tools)
+                (Goal.extractClaims specModule)
+        mapMSecond
+            :: Monad m
+            => (rule -> m [rule'])
+            -> (attributes, rule) -> m [(attributes, rule')]
+        mapMSecond f (attribute, rule) = do
+            simplified <- f rule
+            return (map ((,) attribute) simplified)
+        simplifyToList
+            :: SimplifyRuleLHS rule
+            => rule
+            -> simplifier [rule]
+        simplifyToList rule = do
+            simplified <- simplifyRuleLhs rule
+            return (MultiAnd.extractPatterns simplified)
 
-        Log.withLogScope (Log.Scope "ExpandedClaim")
-            $ mapM_ (logChangedClaim . snd) changedSpecClaims
+    Log.withLogScope (Log.Scope "ExpandedClaim")
+        $ mapM_ (logChangedClaim . snd) changedSpecClaims
 
-        let specClaims :: [(Attribute.Axiom, ReachabilityRule Variable)]
-            specClaims =
-                map (Bifunctor.second fromMaybeChanged) changedSpecClaims
+    let specClaims :: [(Attribute.Axiom, ReachabilityRule Variable)]
+        specClaims =
+            map (Bifunctor.second fromMaybeChanged) changedSpecClaims
 
-        -- This assertion should come before simplifiying the claims,
-        -- since simplification should remove all trivial claims.
-        assertSomeClaims specClaims
-        simplifiedSpecClaims <-
-            mapM (mapMSecond simplifyToList) specClaims
-        specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
-            $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let claims = fmap makeClaim specAxioms
-            axioms = coerce rewriteRules
-            initializedProver = InitializedProver { axioms, claims}
-        within initializedProver
+    -- This assertion should come before simplifying the claims,
+    -- since simplification should remove all trivial claims.
+    assertSomeClaims specClaims
+    simplifiedSpecClaims <-
+        mapM (mapMSecond simplifyToList) specClaims
+    specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
+        $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
+    simplifiedRewrite <- mapM simplifyToList rewriteRules
+    let claims = fmap makeClaim specAxioms
+        axioms = coerce (concat simplifiedRewrite)
+        initializedProver = InitializedProver { axioms, claims}
+    within initializedProver
   where
     expandClaim
         :: SmtMetadataTools attributes
