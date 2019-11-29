@@ -76,7 +76,8 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( isFunctionPattern
+    ( pattern And_
+    , isFunctionPattern
     , mkAnd
     , topExistsToImplicitForall
     )
@@ -133,7 +134,6 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
-    , unparseToString
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
@@ -747,17 +747,22 @@ removeDestination
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 removeDestination goal = errorBracket $ do
-    removal <- removalPredicate destination configuration
+    removal <- removalPredicate (destination right') configuration
     let result = Conditional.andPredicate configuration removal
-    pure $ makeRuleFromPatterns goal result destination
+    pure $ makeRuleFromPatterns goal result (destination right')
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
 
-    RulePattern { right, ensures } = toRulePattern goal
+    RulePattern { right } = toRulePattern goal
     right' = topExistsToImplicitForall configFreeVars right
-    destination =
-        Pattern.withCondition right' (Conditional.fromPredicate ensures)
+    destination (And_ _ pred' term') =
+        Conditional
+            { term = term'
+            , predicate = Predicate.wrapPredicate pred'
+            , substitution = mempty
+            }
+    destination _ = error "Right hand side of claim is ill-formed."
 
     errorBracket action =
         onException action
@@ -956,7 +961,7 @@ removalPredicate
                             remainderElementVariables configuration substPattern
                     in if not (null extraNonElemVariables)
                         then
-                            -- TODO: factor out this error and prettify it
+                            -- TODO: prettify
                             error
                                 ("Cannot quantify non-element variables: "
                                 ++ show (unparse <$> extraNonElemVariables))
@@ -975,22 +980,8 @@ removalPredicate
                                 $ evaluatedRemainder
                 _ -> error "TODO: error unification in remove destination"
   | otherwise
+  -- TODO: refactor and prettify
   = error functionLikeErrorMsg
-    -- let extraNonElemVariables =
-    --         remainderNonElemVariables configuration destination
-    -- in if not (null extraNonElemVariables)
-    --     then
-    --         error
-    --             ("Cannot quantify non-element variables: "
-    --             ++ show (unparse <$> extraNonElemVariables))
-    --     else
-    --         return
-    --         . Predicate.makeNotPredicate
-    --         . quantifyPredicate
-    --         . Predicate.makeCeilPredicate_
-    --         $ mkAnd
-    --             (Pattern.toTermLike destination)
-    --             (Pattern.toTermLike configuration)
   where
     functionLikeErrorMsg =
          "Remove destination: not function patterns"
@@ -1020,11 +1011,6 @@ removalPredicate
         mapMaybe
             extractElementVariable
             (remainderVariables config dest)
-    quantifyPredicate =
-        Predicate.makeMultipleExists
-        $ remainderElementVariables
-            configuration
-            destination
 
 getConfiguration
     :: forall goal
