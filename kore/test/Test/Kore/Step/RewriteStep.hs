@@ -1,4 +1,4 @@
-module Test.Kore.Step.Step
+module Test.Kore.Step.RewriteStep
     ( test_applyInitialConditions
     , test_unifyRule
     , test_applyRewriteRule_
@@ -42,11 +42,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
-import Kore.Step.RewriteStep hiding
-    ( applyInitialConditions
-    , applyRewriteRulesParallel
-    , applyRewriteRulesSequence
-    , unifyRule
+import Kore.Step.RewriteStep
+    ( Results
+    , UnificationProcedure (..)
     )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule

@@ -825,6 +825,11 @@ axiomPatternToPattern
   =
     TermLike.mkImplies left right
 
+{-
+TODO(traiansf): Use different representations for rewrite 'RulePattern'
+  (without ensures) and equational 'RulePattern' (with ensures)
+  to avoid the need for the error below.
+-}
 errorEnsures :: InternalVariable variable => Predicate variable -> a
 errorEnsures ensures =
     error . show . Pretty.vsep $
