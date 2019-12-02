@@ -756,6 +756,7 @@ removeDestination goal = errorBracket $ do
 
     RulePattern { right } = toRulePattern goal
     right' = topExistsToImplicitForall configFreeVars right
+
     destination (And_ _ pred' term') =
         Conditional
             { term = term'
@@ -961,10 +962,9 @@ removalPredicate
                             remainderElementVariables configuration substPattern
                     in if not (null extraNonElemVariables)
                         then
-                            -- TODO: prettify
-                            error
-                                ("Cannot quantify non-element variables: "
-                                ++ show (unparse <$> extraNonElemVariables))
+                            error . show . Pretty.vsep $
+                                "Cannot quantify non-element variables: "
+                                : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
                         else do
                             let remainderPattern =
                                     Pattern.fromCondition
@@ -978,17 +978,26 @@ removalPredicate
                                 . Conditional.withoutTerm
                                 . OrPattern.toPattern
                                 $ evaluatedRemainder
-                _ -> error "TODO: error unification in remove destination"
-  | otherwise
-  -- TODO: refactor and prettify
-  = error functionLikeErrorMsg
+                _ -> error . show . Pretty.vsep $
+                    [ "Unifying the terms of the configuration and the\
+                      \ destination has unexpectedly produced more than one\
+                      \ unification case."
+                    , Pretty.indent 2 "Unification cases:"
+                    ]
+                    <> fmap
+                        (Pretty.indent 4 . unparse)
+                        (Foldable.toList unifiedConfigs)
+  | otherwise =
+      error . show . Pretty.vsep $
+          [ "The remove destination step expects\
+            \ the configuration and the destination terms\
+            \ to be function-like."
+          , Pretty.indent 2 "Configuration term:"
+          , Pretty.indent 4 (unparse configTerm)
+          , Pretty.indent 2 "Destination term:"
+          , Pretty.indent 4 (unparse destTerm)
+          ]
   where
-    functionLikeErrorMsg =
-         "Remove destination: not function patterns"
-        -- <> "\nConfiguration term:\n"
-        -- <> if isFunctionPattern configTerm then "is function-like" else unparseToString configTerm
-        <> "\nDestination term:\n"
-        <> if isFunctionPattern destTerm then "is function-like" else show destTerm
     Conditional { term = destTerm } = destination
     Conditional { term = configTerm } = configuration
     -- The variables of the destination that are missing from the
