@@ -46,6 +46,7 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+import qualified Kore.IndexedModule.SortGraph as SortGraph
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -84,6 +85,7 @@ import Kore.Step.Rule as RulePattern
     , rulePattern
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
+import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -1351,6 +1353,10 @@ testEvaluators = Builtin.koreEvaluators verifiedModule
 testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create
 
+testInjSimplifier :: InjSimplifier
+testInjSimplifier =
+    mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
+
 testEnv :: Env Simplifier
 testEnv =
     Env
@@ -1365,4 +1371,5 @@ testEnv =
                 , mapSimplifiers
                 ]
         , memo = Memo.forgetful
+        , injSimplifier = testInjSimplifier
         }
