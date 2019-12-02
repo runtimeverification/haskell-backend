@@ -30,6 +30,9 @@ import qualified Control.Monad as Monad
 import Control.Monad.Catch
     ( MonadCatch
     )
+import Control.Monad.Extra
+    ( concatMapM
+    )
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
     )
@@ -563,7 +566,7 @@ initialize
     -> simplifier a
 initialize verifiedModule within = do
     rewriteRules <- Profiler.initialization "simplifyRewriteRule" $
-        mapM Rule.simplifyRewriteRule (extractRewriteAxioms verifiedModule)
+        concatMapM simplifyRuleLhsToList (extractRewriteAxioms verifiedModule)
     let initialized = Initialized { rewriteRules }
     within initialized
 
@@ -578,6 +581,16 @@ data MaybeChanged a = Changed !a | Unchanged !a
 fromMaybeChanged :: MaybeChanged a -> a
 fromMaybeChanged (Changed a) = a
 fromMaybeChanged (Unchanged a) = a
+
+simplifyRuleLhsToList
+    :: forall simplifier a
+    .  MonadSimplify simplifier
+    => SimplifyRuleLHS a
+    => a
+    -> simplifier [a]
+simplifyRuleLhsToList rule = do
+    simplified <- simplifyRuleLhs rule
+    return (MultiAnd.extractPatterns simplified)
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver
@@ -603,13 +616,6 @@ initializeProver definitionModule specModule within = do
         mapMSecond f (attribute, rule) = do
             simplified <- f rule
             return (map ((,) attribute) simplified)
-        simplifyToList
-            :: SimplifyRuleLHS rule
-            => rule
-            -> simplifier [rule]
-        simplifyToList rule = do
-            simplified <- simplifyRuleLhs rule
-            return (MultiAnd.extractPatterns simplified)
 
     Log.withLogScope (Log.Scope "ExpandedClaim")
         $ mapM_ (logChangedClaim . snd) changedSpecClaims
@@ -622,10 +628,10 @@ initializeProver definitionModule specModule within = do
     -- since simplification should remove all trivial claims.
     assertSomeClaims specClaims
     simplifiedSpecClaims <-
-        mapM (mapMSecond simplifyToList) specClaims
+        mapM (mapMSecond simplifyRuleLhsToList) specClaims
     specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
         $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-    simplifiedRewrite <- mapM simplifyToList rewriteRules
+    simplifiedRewrite <- mapM simplifyRuleLhsToList rewriteRules
     let claims = fmap makeClaim specAxioms
         axioms = coerce (concat simplifiedRewrite)
         initializedProver = InitializedProver { axioms, claims}
