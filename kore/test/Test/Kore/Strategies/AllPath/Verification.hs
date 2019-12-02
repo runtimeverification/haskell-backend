@@ -27,7 +27,6 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( AllPathRule (..)
-    , RewriteRule (..)
     , RulePattern (..)
     )
 import Kore.Strategies.Goal
@@ -298,7 +297,15 @@ simpleClaim
     -> TermLike Variable
     -> AllPathRule Variable
 simpleClaim left right =
-    AllPathRule . getRewriteRule $ simpleRewrite left right
+    AllPathRule
+    $ RulePattern
+            { left = left
+            , antiLeft = Nothing
+            , right = mkAnd mkTop_ right
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
+            , attributes = def
+            }
 
 simpleTrustedClaim
     :: TermLike Variable

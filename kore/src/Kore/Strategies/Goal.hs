@@ -749,7 +749,7 @@ removeDestination
 removeDestination goal = errorBracket $ do
     removal <- removalPredicate (destination right') configuration
     let result = Conditional.andPredicate configuration removal
-    pure $ makeRuleFromPatterns goal result (destination right')
+    pure $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
