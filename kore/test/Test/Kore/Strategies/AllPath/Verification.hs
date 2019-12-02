@@ -59,17 +59,20 @@ test_allPathVerification =
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
-    , testCase "b or c spec" $ do
-        -- Axioms: a => b
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- runVerification
-            (Limit 2)
-            [ simpleAxiom Mock.a Mock.b ]
-            [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
-        assertEqual ""
-            (Right ())
-            actual
+    -- TODO(Ana): this should be uncommented if we decide
+    --            that the destination doesn't need to be
+    --            function-like
+    -- , testCase "b or c spec" $ do
+    --     -- Axioms: a => b
+    --     -- Claims: a => b #Or c
+    --     -- Expected: success
+    --     actual <- runVerification
+    --         (Limit 2)
+    --         [ simpleAxiom Mock.a Mock.b ]
+    --         [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
+    --     assertEqual ""
+    --         (Right ())
+    --         actual
     , testCase "Everything is provable when we have cyclic rules" $ do
         -- Axioms: a => a
         -- Claims: a => b
@@ -81,21 +84,24 @@ test_allPathVerification =
         assertEqual ""
             (Right ())
             actual
-    , testCase "Concurrent rules" $ do
-        -- Axioms:
-        --     a => b
-        --     a => c
-        -- Claims: a => b #Or c
-        -- Expected: success
-        actual <- runVerification
-            (Limit 2)
-            [ simpleAxiom Mock.a Mock.b
-            , simpleAxiom Mock.a Mock.c
-            ]
-            [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
-        assertEqual ""
-            (Right ())
-            actual
+    -- TODO(Ana): this should be uncommented if we decide
+    --            that the destination doesn't need to be
+    --            function-like
+    -- , testCase "Concurrent rules" $ do
+    --     -- Axioms:
+    --     --     a => b
+    --     --     a => c
+    --     -- Claims: a => b #Or c
+    --     -- Expected: success
+    --     actual <- runVerification
+    --         (Limit 2)
+    --         [ simpleAxiom Mock.a Mock.b
+    --         , simpleAxiom Mock.a Mock.c
+    --         ]
+    --         [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
+    --     assertEqual ""
+    --         (Right ())
+    --         actual
     , testCase "Provable using one-path; not provable using all-path" $ do
         -- Axioms:
         --     a => b
