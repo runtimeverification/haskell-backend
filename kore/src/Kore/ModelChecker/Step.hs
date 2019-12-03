@@ -48,6 +48,7 @@ import Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     )
 import qualified Kore.Step.Result as StepResult
+import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)
     , allPathGlobally
@@ -61,7 +62,6 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
-import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     , TransitionT
