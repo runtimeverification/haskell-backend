@@ -23,11 +23,6 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
-import Debug.Trace
-import Kore.Unparser
-    ( unparseToString
-    )
-
 import Control.Applicative
     ( Alternative (..)
     )
@@ -607,7 +602,7 @@ transitionRuleTemplate
 
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = trace "\n\nchecking stuuuck\n\n" empty
+    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
     transitionRuleWorker Simplify (Goal g) =
         Profile.timeStrategy "Goal.Simplify"
@@ -773,7 +768,7 @@ removeDestination (Goal goal) = errorBracket $ do
                 =<< simplifyAndRemoveTopExists
                     (Conditional.andPredicate configuration removal)
             if not (null simplifiedRemoval)
-                then trace "\n\nhiiiiiii\n\n" $ return . GoalStuck $ goal
+                then return . GoalStuck $ goal
                 else do
                     let result = Conditional.andPredicate configuration removal
                     pure . Goal $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
@@ -807,7 +802,7 @@ removeDestination (GoalRemainder goal) = errorBracket $ do
                 =<< ( simplifyAndRemoveTopExists
                     $ Conditional.andPredicate configuration removal)
             if not (null simplifiedRemoval)
-                then trace "\n\nhiiiiiii\n\n" $ return . GoalStuck $ goal
+                then return . GoalStuck $ goal
                 else do
                     let result = Conditional.andPredicate configuration removal
                     pure . GoalRemainder $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
