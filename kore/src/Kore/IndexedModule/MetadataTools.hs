@@ -19,7 +19,6 @@ module Kore.IndexedModule.MetadataTools
 import Data.Function
     ( on
     )
-import Data.Graph
 import Data.Map.Strict
     ( Map
     )
@@ -37,10 +36,10 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
-import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
+import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
     ( Symbol
@@ -101,8 +100,8 @@ extractMetadataTools
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
         { sortAttributes = getSortAttributes m
-        , isSubsortOf = checkSubsort
-        , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
+        , isSubsortOf = SortGraph.isSubsortOf sortGraph
+        , subsorts = SortGraph.subsortsOf sortGraph
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
         , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
@@ -111,36 +110,9 @@ extractMetadataTools m constructorsExtractor smtExtractor =
         , sortConstructors = constructors
         }
   where
-    subsortTable :: Map Sort [Sort]
-    subsortTable = Map.unionsWith (++)
-        [ Map.insert subsort [] $ Map.singleton supersort [subsort]
-        | Subsort subsort supersort <- indexedModuleSubsorts m]
+    !sortGraph = SortGraph.fromIndexedModule m
 
     constructors = constructorsExtractor m
-
-    -- In `sortGraph`, an edge (a, b) represents a subsort relationship between
-    -- b and a.
-    (sortGraph, vertexToSort, sortToVertex) =
-        graphFromEdges [ ((),supersort,subsorts)
-                        | (supersort,subsorts)
-                            <- Map.toList subsortTable]
-    getSortFromId :: Vertex -> Sort
-    getSortFromId sortId =
-        let (_, sort, _) = vertexToSort sortId
-        in sort
-
-    getSubsorts :: Sort -> [Vertex]
-    getSubsorts = maybe [] (reachable sortGraph) . sortToVertex
-
-    checkSubsort :: Sort -> Sort -> Bool
-    checkSubsort =
-        let
-            realCheckSubsort subsort supersort
-              | Just subId <- sortToVertex subsort
-              , Just supId <- sortToVertex supersort =
-                path sortGraph supId subId
-            realCheckSubsort _ _ = False
-        in realCheckSubsort
 
     overloadPairsSet = Set.fromList overloadPairsList
 
