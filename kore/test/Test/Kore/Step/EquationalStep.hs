@@ -30,19 +30,19 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-import qualified Kore.Step.Result as Result
-    ( mergeResults
-    )
 import Kore.Step.EquationalStep
     ( Results
     , UnificationProcedure (..)
     )
 import qualified Kore.Step.EquationalStep as Step
+import qualified Kore.Step.Result as Result
+    ( mergeResults
+    )
 import qualified Kore.Step.RewriteStep as Step
-    ( result
-    , results
-    , gatherResults
+    ( gatherResults
     , remainders
+    , result
+    , results
     )
 import Kore.Step.Rule
     ( EqualityRule (..)
@@ -57,9 +57,9 @@ import Kore.Unification.Error
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
-    ( runUnifierT
+    ( MonadUnify
     , SimplifierVariable
-    , MonadUnify
+    , runUnifierT
     )
 import Kore.Variables.Fresh
     ( nextVariable
