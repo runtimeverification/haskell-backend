@@ -48,6 +48,7 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , mkAnd
@@ -114,6 +115,27 @@ makeOnePathRuleFromPatterns
         { left
         , antiLeft = Nothing
         , right = mkAnd mkTop_ right
+        , requires
+        , ensures
+        , attributes = Default.def
+        }
+
+makeOnePathRuleFromPatterns'
+    :: Pattern Variable
+    -> Pattern Variable
+    -> OnePathRule Variable
+makeOnePathRuleFromPatterns'
+    configuration
+    destination
+  =
+    let (left, Condition.toPredicate -> requires) =
+            Pattern.splitTerm configuration
+        (right, Condition.toPredicate -> ensures) =
+            Pattern.splitTerm destination
+    in coerce RulePattern
+        { left
+        , antiLeft = Nothing
+        , right = right
         , requires
         , ensures
         , attributes = Default.def
@@ -292,7 +314,7 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
-    , testCase "Differentiated axioms" $ do
+    , testCase "TESTING Differentiated axioms" $ do
         -- Goal: constr10(x) => constr11(a)
         -- Coinductive axiom: constr11(a) => g(a)
         -- Coinductive axiom: constr11(b) => f(b)
@@ -421,7 +443,7 @@ test_onePathStrategy =
         --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
         actual@[ _actual1, _actual2, _actual3 ] <-
             runOnePathSteps
-                (Limit 2)
+                (Limit 3)
                 (makeOnePathRule
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
@@ -784,6 +806,40 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
+    , testCase "Check goal stuck after remove destination" $ do
+        -- Goal: X && X = a => X && X != a
+        -- Coinductive axiom: -
+        -- Normal axiom: -
+        -- Expected: stuck, since the terms unify but the conditions do not
+        let goal =
+                makeOnePathRuleFromPatterns'
+                    ( Conditional
+                        { term = TermLike.mkElemVar Mock.x
+                        , predicate =
+                            makeEqualsPredicate_ Mock.a (TermLike.mkElemVar Mock.x)
+                        , substitution = mempty
+                        }
+                    )
+                    ( Conditional
+                        { term =
+                            mkAnd
+                                ( Predicate.unwrapPredicate . makeNotPredicate
+                                    $ makeEqualsPredicate_
+                                        Mock.a
+                                        (TermLike.mkElemVar Mock.x)
+
+                                )
+                                ( TermLike.mkElemVar Mock.x )
+                        , predicate = makeTruePredicate_
+                        , substitution = mempty
+                        }
+                    )
+        [ _actual ] <- runOnePathSteps
+            (Limit 1)
+            goal
+            []
+            []
+        assertEqual "" (ProofState.Goal goal) _actual
     ]
 
 simpleRewrite

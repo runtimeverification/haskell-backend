@@ -23,6 +23,11 @@ module Kore.Strategies.Goal
     , isTrusted
     ) where
 
+import Debug.Trace
+import Kore.Unparser
+    ( unparseToString
+    )
+
 import Control.Applicative
     ( Alternative (..)
     )
@@ -602,7 +607,7 @@ transitionRuleTemplate
 
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+    transitionRuleWorker CheckGoalStuck (GoalStuck _) = trace "\n\nchecking stuuuck\n\n" empty
 
     transitionRuleWorker Simplify (Goal g) =
         Profile.timeStrategy "Goal.Simplify"
@@ -761,13 +766,14 @@ removeDestination
 removeDestination (Goal goal) = errorBracket $ do
     removal <- removalPredicate (destination right') configuration
     if isTop removal
-        then do
-            let result = Conditional.andPredicate configuration removal
-            pure . Goal $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+        then return . Goal $ goal
         else do
-            simplifiedRemoval <- simplifyTerm $ Predicate.unwrapPredicate removal
-            if isTop simplifiedRemoval
-                then return . GoalStuck $ goal
+            simplifiedRemoval <-
+                SMT.Evaluator.filterMultiOr
+                =<< simplifyAndRemoveTopExists
+                    (Conditional.andPredicate configuration removal)
+            if not (null simplifiedRemoval)
+                then trace "\n\nhiiiiiii\n\n" $ return . GoalStuck $ goal
                 else do
                     let result = Conditional.andPredicate configuration removal
                     pure . Goal $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
@@ -794,13 +800,14 @@ removeDestination (Goal goal) = errorBracket $ do
 removeDestination (GoalRemainder goal) = errorBracket $ do
     removal <- removalPredicate (destination right') configuration
     if isTop removal
-        then do
-            let result = Conditional.andPredicate configuration removal
-            pure . GoalRemainder $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+        then return . GoalRemainder $ goal
         else do
-            simplifiedRemoval <- simplifyTerm $ Predicate.unwrapPredicate removal
-            if isTop simplifiedRemoval
-                then return . GoalStuck $ goal
+            simplifiedRemoval <-
+                SMT.Evaluator.filterMultiOr
+                =<< ( simplifyAndRemoveTopExists
+                    $ Conditional.andPredicate configuration removal)
+            if not (null simplifiedRemoval)
+                then trace "\n\nhiiiiiii\n\n" $ return . GoalStuck $ goal
                 else do
                     let result = Conditional.andPredicate configuration removal
                     pure . GoalRemainder $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
