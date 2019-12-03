@@ -128,6 +128,7 @@ import Kore.Syntax.Variable
     )
 import Kore.TopBottom
     ( isBottom
+    , isTop
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -438,6 +439,10 @@ instance Goal (ReachabilityRule Variable) where
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
+            GoalStuck _ ->
+                case prim of
+                    CheckGoalStuck -> empty
+                    _ -> return proofstate
             Proven ->
                 case prim of
                     CheckProven -> empty
@@ -556,7 +561,7 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , removeDestinationTemplate
-        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+        :: ProofState goal goal -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
         :: [Rule goal]
@@ -597,6 +602,8 @@ transitionRuleTemplate
 
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
+    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+
     transitionRuleWorker Simplify (Goal g) =
         Profile.timeStrategy "Goal.Simplify"
         $ Goal <$> simplifyTemplate g
@@ -604,12 +611,12 @@ transitionRuleTemplate
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate g
 
-    transitionRuleWorker RemoveDestination (Goal g) =
+    transitionRuleWorker RemoveDestination goal@(Goal _) =
         Profile.timeStrategy "Goal.RemoveDestination"
-        $ Goal <$> removeDestinationTemplate g
-    transitionRuleWorker RemoveDestination (GoalRemainder g) =
+        $ removeDestinationTemplate goal
+    transitionRuleWorker RemoveDestination goal@(GoalRemainder _) =
         Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ GoalRemainder <$> removeDestinationTemplate g
+        $ removeDestinationTemplate goal
 
     transitionRuleWorker TriviallyValid (Goal g)
       | isTriviallyValidTemplate g = return Proven
@@ -742,14 +749,25 @@ allPathFollowupStep claims axioms =
 removeDestination
     :: MonadCatch m
     => MonadSimplify m
+    => ProofState.ProofState goal ~ ProofState goal goal
     => FromRulePattern goal
     => ToRulePattern goal
-    => goal
-    -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal = errorBracket $ do
+    => ProofState goal goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+removeDestination (Goal goal) = errorBracket $ do
     removal <- removalPredicate (destination right') configuration
-    let result = Conditional.andPredicate configuration removal
-    pure $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+    if isTop removal
+        then do
+            let result = Conditional.andPredicate configuration removal
+            pure . Goal $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+        else do
+            -- simplifiedRemoval <- simplify removal
+            let simplifiedRemoval = undefined :: Predicate Variable
+            if isTop simplifiedRemoval
+                then return . GoalStuck $ goal
+                else do
+                    let result = Conditional.andPredicate configuration removal
+                    pure . Goal $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
@@ -770,6 +788,41 @@ removeDestination goal = errorBracket $ do
             (formatExceptionInfo
                 ("configuration=" <> unparseToText configuration)
             )
+removeDestination (GoalRemainder goal) = errorBracket $ do
+    removal <- removalPredicate (destination right') configuration
+    if isTop removal
+        then do
+            let result = Conditional.andPredicate configuration removal
+            pure . GoalRemainder $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+        else do
+            -- simplifiedRemoval <- simplify removal
+            let simplifiedRemoval = undefined :: Predicate Variable
+            if isTop simplifiedRemoval
+                then return . GoalStuck $ goal
+                else do
+                    let result = Conditional.andPredicate configuration removal
+                    pure . GoalRemainder $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+  where
+    configuration = getConfiguration goal
+    configFreeVars = Pattern.freeVariables configuration
+
+    RulePattern { right } = toRulePattern goal
+    right' = topExistsToImplicitForall configFreeVars right
+
+    destination (And_ _ pred' term') =
+        Conditional
+            { term = term'
+            , predicate = Predicate.wrapPredicate pred'
+            , substitution = mempty
+            }
+    destination _ = error "Right hand side of claim is ill-formed."
+
+    errorBracket action =
+        onException action
+            (formatExceptionInfo
+                ("configuration=" <> unparseToText configuration)
+            )
+removeDestination state = return state
 
 simplify
     :: (MonadCatch m, MonadSimplify m)

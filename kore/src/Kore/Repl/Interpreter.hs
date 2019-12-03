@@ -865,6 +865,7 @@ tryAxiomClaimWorker mode ref = do
                         , goalTransformer    = runUnifier' first . term
                         , goalRemainderTransformer = runUnifier' first . term
                         , goalRewrittenTransformer = runUnifier' first . term
+                        , goalStuckTransformer = runUnifier' first . term
                         }
                     second
 
@@ -1159,6 +1160,9 @@ unparseStrategy omitList =
             <> makeKoreReplOutput (unparseToString $ fmap hide pat)
         , goalRewrittenTransformer =
             makeKoreReplOutput . unparseToString . fmap hide
+        , goalStuckTransformer = \pat ->
+            makeAuxReplOutput "StuckDebug: \n"
+            <> makeKoreReplOutput (unparseToString $ fmap hide pat)
         , provenValue = makeAuxReplOutput "Reached bottom"
         }
   where
