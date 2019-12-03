@@ -282,7 +282,7 @@ makeEvaluateNormalizedAc
         , concreteElements
         , opaque = []
         }
-  = TermLike.assertNonSimplifiableKeys concreteKeys . Just $ do
+  = TermLike.assertConstructorLikeKeys concreteKeys . Just $ do
     variableKeyConditions <- mapM
                                 (makeEvaluateTerm configurationCondition)
                                 variableKeys

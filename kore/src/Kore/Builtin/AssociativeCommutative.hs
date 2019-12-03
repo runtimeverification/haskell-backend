@@ -423,7 +423,7 @@ updateConcreteElements
     -> [(TermLike Concrete, value)]
     -> Maybe (Map (TermLike Concrete) value)
 updateConcreteElements elems newElems =
-    TermLike.assertNonSimplifiableKeys allKeys
+    TermLike.assertConstructorLikeKeys allKeys
         $ Foldable.foldrM (uncurry insertMissing) elems newElems
       where
         allKeys = Map.keys elems <> fmap fst newElems

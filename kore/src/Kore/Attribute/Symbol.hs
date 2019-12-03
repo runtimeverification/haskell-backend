@@ -50,7 +50,7 @@ module Kore.Attribute.Symbol
     , SymbolKywd (..)
     , symbolKywdAttribute
     -- * Derived attributes
-    , isNonSimplifiable
+    , isConstructorLike
     , isFunctional
     , isFunction
     , isTotal
@@ -182,8 +182,8 @@ instance Default Symbol where
     def = defaultSymbolAttributes
 
 -- | Is a symbol non-simplifiable?
-isNonSimplifiable :: StepperAttributes -> Bool
-isNonSimplifiable = do
+isConstructorLike :: StepperAttributes -> Bool
+isConstructorLike = do
     -- TODO(virgil): Add a 'non-simplifiable' attribute so that we can include
     -- more symbols here (e.g. Map.concat)
     Constructor isConstructor' <- constructor

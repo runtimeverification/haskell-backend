@@ -13,8 +13,8 @@ module Kore.Internal.TermLike
     , Builtin
     , extractAttributes
     , isSimplified
-    , isNonSimplifiable
-    , assertNonSimplifiableKeys
+    , isConstructorLike
+    , assertConstructorLikeKeys
     , markSimplified
     , isFunctionPattern
     , isFunctionalPattern
@@ -224,13 +224,13 @@ import qualified GHC.Stack as GHC
 
 import Generically
 import qualified Kore.Attribute.Pattern as Attribute
+import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
 import Kore.Attribute.Pattern.FreeVariables
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import qualified Kore.Attribute.Pattern.Function as Pattern
 import qualified Kore.Attribute.Pattern.Functional as Pattern
-import qualified Kore.Attribute.Pattern.NonSimplifiable as Pattern
 import qualified Kore.Attribute.Pattern.Simplified as Pattern
 import Kore.Attribute.Synthetic
 import Kore.Builtin.Endianness.Endianness
@@ -245,7 +245,7 @@ import Kore.Error
 import Kore.Internal.Alias
 import Kore.Internal.InternalBytes
 import Kore.Internal.Symbol hiding
-    ( isNonSimplifiable
+    ( isConstructorLike
     )
 import Kore.Internal.Variable
 import Kore.Sort
@@ -370,7 +370,7 @@ data TermLikeF variable child
         , Synthetic Pattern.Function
         , Synthetic Pattern.Defined
         , Synthetic Pattern.Simplified
-        , Synthetic Pattern.NonSimplifiable
+        , Synthetic Pattern.ConstructorLike
         ) via (Generically1 (TermLikeF variable))
 
 instance SOP.Generic (TermLikeF variable child)
@@ -1040,23 +1040,23 @@ externalizeFreshVariables termLike =
 isSimplified :: TermLike variable -> Bool
 isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
 
-isNonSimplifiable :: TermLike variable -> Bool
-isNonSimplifiable =
+isConstructorLike :: TermLike variable -> Bool
+isConstructorLike =
     isJust
-    . Pattern.isNonSimplifiable
-    . Attribute.nonSimplifiable
+    . Pattern.isConstructorLike
+    . Attribute.constructorLike
     . extractAttributes
 
-assertNonSimplifiableKeys
+assertConstructorLikeKeys
     :: SortedVariable variable
     => Foldable t
     => t (TermLike variable)
     -> a
     -> a
-assertNonSimplifiableKeys keys a
-    | any (not . isNonSimplifiable) keys =
+assertConstructorLikeKeys keys a
+    | any (not . isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . isNonSimplifiable) $ Foldable.toList keys
+                filter (not . isConstructorLike) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Maps and sets can only contain concrete keys\

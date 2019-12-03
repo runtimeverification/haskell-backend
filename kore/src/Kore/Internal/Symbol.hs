@@ -7,7 +7,7 @@ License     : NCSA
 module Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
-    , isNonSimplifiable
+    , isConstructorLike
     , isConstructor
     , isSortInjection
     , isFunctional
@@ -136,8 +136,8 @@ toSymbolOrAlias symbol =
 --
 -- Builtins like 'concat' need an additional condition, i.e. that the arguments
 -- are not .Map.
-isNonSimplifiable :: Symbol -> Bool
-isNonSimplifiable = Attribute.isNonSimplifiable . symbolAttributes
+isConstructorLike :: Symbol -> Bool
+isConstructorLike = Attribute.isConstructorLike . symbolAttributes
 
 isConstructor :: Symbol -> Bool
 isConstructor =
