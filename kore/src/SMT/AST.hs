@@ -17,7 +17,8 @@ module SMT.AST
     , SortDeclaration (..)
 
     , SExpr (..)
-    , buildSExpr, parseSExpr, readSExpr, readSExprs, sendSExpr, showSExpr
+    , buildSExpr, parseSExpr, parseSExprFile, readSExpr, readSExprs
+    , sendSExpr, showSExpr
     , nameFromSExpr
 
     , SmtConstructor
@@ -256,6 +257,12 @@ sendSExpr h = sendSExprWorker
 
 type Parser = Parsec Void Text
 
+parseSExprSpace :: Parser ()
+parseSExprSpace =
+    Lexer.space Parser.space1 skipLineComment empty
+  where
+    skipLineComment = Lexer.skipLineComment ";"
+
 -- | Basic S-expression parser.
 parseSExpr :: Parser SExpr
 parseSExpr = parseAtom <|> parseList
@@ -279,11 +286,12 @@ parseSExpr = parseAtom <|> parseList
     rparen :: Parser Char
     rparen = lexeme (Parser.char ')')
 
-    skipLineComment = Lexer.skipLineComment ";"
-    space = Lexer.space Parser.space1 skipLineComment empty
-
     lexeme :: Parser a -> Parser a
-    lexeme = Lexer.lexeme space
+    lexeme = Lexer.lexeme parseSExprSpace
+
+parseSExprFile :: Parser [SExpr]
+parseSExprFile =
+    parseSExprSpace *> Parser.some parseSExpr
 
 -- | Parse one S-expression.
 readSExpr :: MonadFail m => Text -> m SExpr
