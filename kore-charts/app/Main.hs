@@ -11,7 +11,6 @@ import Data.Aeson (FromJSON)
 import Data.Map (Map)
 import Data.Semigroup (Max (..))
 import Data.Semigroup (Min (..))
-import Data.Scientific (Scientific)
 import GHC.Generics (Generic)
 import Stats (Stats)
 
@@ -24,8 +23,6 @@ import Data.Monoid (First (getFirst))
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Map.Strict as Map
-import qualified Data.Scientific as Scientific
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Control.Lens as Lens
 import qualified Graphics.Rendering.Chart as Chart
@@ -47,81 +44,81 @@ main = do
     builds <- getBuilds job
     let profiled = mapMaybe (matchProfiled artifactName) builds
     buildStats <- Map.traverseWithKey (getBuildStats builds) profiled
-    let buildNumbers = Map.keysSet builds
-        firstBuild = Set.findMin buildNumbers
-        lastBuild = Set.findMax buildNumbers
-        buildRange = (firstBuild, lastBuild)
-        xAxis =
-            Chart.scaledAxis def
-            $ bimap fromBuildNumber fromBuildNumber buildRange
-        yAxisFrom project =
-            Chart.scaledAxis def
-            $ bimap fromInteger fromInteger yRange
-          where
-            yRange = (yMin, yMax)
-            yMin =
-                floor . fromScientific . getMin . fromMaybe 0
-                $ foldMap (Just . Min . project) buildStats
-            yMax =
-                ceiling . fromScientific . getMax . fromMaybe 0
-                $ foldMap (Just . Max . project) buildStats
-        series =
-            [ ("MUT CPU time / s", mutator_cpu_sec)
-            , ("max. live memory / Mbyte", max_live_mbytes)
-            ]
-        grid =
-            let
-                testName =
-                    FilePath.dropExtension . FilePath.takeFileName
-                    $ artifactName
-                title =
-                    testName
-                    & Chart.label style Chart.HTA_Left Chart.VTA_Centre
-                    & Chart.setPickFn Chart.nullPickFn
-                style =
-                    def
-                    & Chart.font_size .~ 14
-                    & Chart.font_weight .~ Chart.FontWeightBold
-                layout' yAxis = layoutTest (xAxis, yAxis) buildStats
-            in
-                Chart.wideAbove title . Chart.besideN
-                $ map Chart.layoutToGrid
-                $ do
-                    (seriesTitle, project) <- series
-                    let yAxis = yAxisFrom project
-                    [layout' yAxis seriesTitle project]
-    let fileOptions = def & Chart.Backend.fo_size .~ (800, 400)
+    let title = FilePath.dropExtension . FilePath.takeFileName $ artifactName
+        titleStyle =
+            def
+            & Chart.font_size .~ 14
+            & Chart.font_weight .~ Chart.FontWeightBold
+        layout =
+            plotStats buildStats
+            & Chart.layoutlr_title .~ title
+            & Chart.layoutlr_title_style .~ titleStyle
+        fileOptions = def & Chart.Backend.fo_size .~ (400, 400)
         pngFileName = FilePath.replaceExtension artifactName "png"
     _ <-
-        Chart.gridToRenderable grid
+        Chart.gridToRenderable (Chart.layoutLRToGrid layout)
         & Chart.fillBackground def
         & Chart.Backend.renderableToFile fileOptions pngFileName
     return ()
 
+newtype Time = Time { getTime :: Double }
+    deriving (Eq, Ord, Read, Show)
+    deriving (Floating, Fractional, Num, Real, RealFloat, RealFrac)
+
+instance Chart.PlotValue Time where
+    toValue = getTime
+    fromValue = Time
+    autoAxis = Chart.autoScaledAxis def
+
+newtype Space = Space { getSpace :: Double }
+    deriving (Eq, Ord, Read, Show)
+    deriving (Floating, Fractional, Num, Real, RealFloat, RealFrac)
+
+instance Chart.PlotValue Space where
+    toValue = getSpace
+    fromValue = Space
+    autoAxis = Chart.autoScaledAxis def
+
+newtype Log10 a = Log10 { getLog10 :: a }
+    deriving (Eq, Ord, Read, Show)
+    deriving (Floating, Fractional, Num, Real, RealFloat, RealFrac)
+
+log10 :: RealFloat a => a -> Log10 a
+log10 = Log10 . logBase 10
+
+instance
+    (Chart.PlotValue a, RealFloat a, Show a)
+    => Chart.PlotValue (Log10 a)
+  where
+    toValue = Chart.toValue . getLog10
+    fromValue = Log10 . Chart.fromValue
+    autoAxis points = Chart.scaledAxis def (inf, sup) points
+      where
+        inf =
+            fromInteger . floor   . getMin . fromMaybe 0
+            $ foldMap (Just . Min) points
+        sup =
+            fromInteger . ceiling . getMax . fromMaybe 0
+            $ foldMap (Just . Max) points
+
+plotStats
+    :: Map BuildNumber Stats
+    -> Chart.LayoutLR Double (Log10 Time) (Log10 Space)
+plotStats (Map.toList -> buildStats) = Chart.execEC $ do
+    Chart.layoutlr_x_axis     . Chart.laxis_title .= "Build number"
+    Chart.layoutlr_left_axis  . Chart.laxis_title .= "log_10(time / s)"
+    Chart.layoutlr_right_axis . Chart.laxis_title .= "log_10(space / Mbyte)"
+    Chart.plotLeft $ Chart.line "MUT CPU"
+        [ bimap fromBuildNumber (log10 . mutator_cpu_sec) <$> buildStats ]
+    Chart.plotLeft $ Chart.line "GC CPU"
+        [ bimap fromBuildNumber (log10 . gc_cpu_sec) <$> buildStats ]
+    Chart.plotRight $ Chart.line "max. live"
+        [ bimap fromBuildNumber (log10 . max_live_mbytes) <$> buildStats ]
+    Chart.plotRight $ Chart.line "allocated"
+        [ bimap fromBuildNumber (log10 . allocated_mbytes) <$> buildStats ]
+
 fromBuildNumber :: BuildNumber -> Double
 fromBuildNumber = fromInteger . unBuildNumber
-
-fromScientific :: Scientific -> Double
-fromScientific = logBase 10 . Scientific.toRealFloat
-
-layoutTest
-    :: (Chart.AxisFn Double, Chart.AxisFn Double)
-    -> Map BuildNumber Stats
-    -> String
-    -> (Stats -> Scientific)
-    -> Chart.Layout Double Double
-layoutTest (xAxis, yAxis) profiles title select = Chart.execEC $ do
-    let points =
-            profiles
-            & Map.map fromScientific . Map.map select
-            & Map.mapKeys fromBuildNumber
-            & Map.toAscList
-    Chart.layout_x_axis . Chart.laxis_generate .= xAxis
-    Chart.layout_x_axis . Chart.laxis_title .= "Build number"
-    Chart.layout_y_axis . Chart.laxis_generate .= yAxis
-    Chart.layout_y_axis . Chart.laxis_title .= "log_10(" <> title <> ")"
-    Chart.plot $ Chart.line "" [ points ]
-  where
 
 getJob :: String -> String -> IO Job
 getJob project name = do
@@ -216,8 +213,10 @@ getBuildStats builds buildNumber Artifact { relativePath } = do
     response <- Wreq.get url'
     Lens.view Wreq.responseBody <$> Wreq.asJSON response
 
-mutator_cpu_sec :: Stats -> Scientific
+gc_cpu_sec, mutator_cpu_sec :: Stats -> Time
+gc_cpu_sec = (/ 1_000_000_000) . fromIntegral . Stats.gc_cpu_ns
 mutator_cpu_sec = (/ 1_000_000_000) . fromIntegral . Stats.mutator_cpu_ns
 
-max_live_mbytes :: Stats -> Scientific
+allocated_mbytes, max_live_mbytes :: Stats -> Space
+allocated_mbytes = (/ 1_000_000) . fromIntegral . Stats.allocated_bytes
 max_live_mbytes = (/ 1_000_000) . fromIntegral . Stats.max_live_bytes
