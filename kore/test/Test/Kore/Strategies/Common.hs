@@ -22,7 +22,7 @@ import Kore.Step.Rule
     , rulePattern
     )
 import Kore.Step.Strategy
-    ( GraphSearchOrder(..)
+    ( GraphSearchOrder (..)
     )
 import Kore.Strategies.Goal
 import qualified Kore.Strategies.Verification as Verification
