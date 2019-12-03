@@ -28,6 +28,7 @@ dependencies:
   - data-default
   - exceptions
   - filepath
+  - kore
   - lens
   - scientific
   - text
@@ -58,6 +59,7 @@ default-extensions:
   - LambdaCase
   - MultiParamTypeClasses
   - NamedFieldPuns
+  - NumericUnderscores
   - OverloadedStrings
   - PatternSynonyms
   - RankNTypes

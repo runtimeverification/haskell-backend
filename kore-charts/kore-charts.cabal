@@ -1,10 +1,10 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.32.0.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 519562d20c94c231a3b7f92b105b012eed63bc8242fd810b80bf1ef0b788788c
+-- hash: e87fd765fc5c557a58e8322c97645551eb07ec2eae5b6a8aac1ef224534c505d
 
 name:           kore-charts
 version:        0.0.1.0
@@ -29,7 +29,7 @@ executable kore-charts
       Paths_kore_charts
   hs-source-dirs:
       app
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DerivingVia DuplicateRecordFields EmptyCase ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MultiParamTypeClasses NamedFieldPuns NumericUnderscores OverloadedStrings PatternSynonyms RankNTypes ScopedTypeVariables StandaloneDeriving TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -fno-ignore-asserts -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
   build-depends:
       Chart
@@ -42,6 +42,7 @@ executable kore-charts
     , data-default
     , exceptions
     , filepath
+    , kore
     , lens
     , scientific
     , text

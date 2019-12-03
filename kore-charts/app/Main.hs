@@ -2,24 +2,18 @@ module Main (main) where
 
 import Prelude hiding (filter)
 
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Catch
 import Data.Bifunctor
-import Data.Foldable
 import Data.Function
 import Data.Traversable
 import Data.Witherable
 
-import Control.Lens (Traversal')
 import Data.Aeson (FromJSON)
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as Lazy (ByteString)
 import Data.Map (Map)
 import Data.Semigroup (Max (..))
 import Data.Semigroup (Min (..))
 import Data.Scientific (Scientific)
 import GHC.Generics (Generic)
+import Stats (Stats)
 
 import Control.Lens ((.~))
 import Control.Lens ((.=))
@@ -29,9 +23,6 @@ import Data.Monoid (First (getFirst))
 
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as Aeson
-import qualified Data.Attoparsec.ByteString.Lazy as Attoparsec
-import qualified Data.ByteString as ByteString
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Scientific as Scientific
 import qualified Data.Set as Set
@@ -42,6 +33,8 @@ import qualified Graphics.Rendering.Chart.Backend.Cairo as Chart.Backend
 import qualified Graphics.Rendering.Chart.Easy as Chart
 import qualified Graphics.Rendering.Chart.Grid as Chart
 import qualified Network.Wreq as Wreq
+import qualified Stats
+import qualified System.Environment as Environment
 import qualified System.FilePath as FilePath
 
 jenkins :: String
@@ -49,17 +42,15 @@ jenkins = "https://office.runtimeverification.com/jenkins"
 
 main :: IO ()
 main = do
+    [artifactName] <- Environment.getArgs
     job <- getJob "haskell-backend" "master"
     builds <- getBuilds job
-    let profiled = mapMaybe matchProfiled builds
-    buildProfiles <- Map.traverseWithKey (getBuildProfile builds) profiled
-    let tests = foldMap Map.keysSet buildProfiles
-        testProfiles = Map.fromSet (testProfile buildProfiles) tests
-        buildNumbers = Map.keysSet builds
+    let profiled = mapMaybe (matchProfiled artifactName) builds
+    buildStats <- Map.traverseWithKey (getBuildStats builds) profiled
+    let buildNumbers = Map.keysSet builds
         firstBuild = Set.findMin buildNumbers
         lastBuild = Set.findMax buildNumbers
         buildRange = (firstBuild, lastBuild)
-        resident_mbytes = (/ 1000) . resident_kbytes
         xAxis =
             Chart.scaledAxis def
             $ bimap fromBuildNumber fromBuildNumber buildRange
@@ -70,41 +61,41 @@ main = do
             yRange = (yMin, yMax)
             yMin =
                 floor . fromScientific . getMin . fromMaybe 0
-                $ (foldMap . foldMap) (Just . Min . project) testProfiles
+                $ foldMap (Just . Min . project) buildStats
             yMax =
                 ceiling . fromScientific . getMax . fromMaybe 0
-                $ (foldMap . foldMap) (Just . Max . project) testProfiles
+                $ foldMap (Just . Max . project) buildStats
         series =
-            [ ("user time / s", user_sec)
-            , ("max. residency / Mbyte", resident_mbytes)
+            [ ("MUT CPU time / s", mutator_cpu_sec)
+            , ("max. live memory / Mbyte", max_live_mbytes)
             ]
         grid =
-            Chart.aboveN $ do
-                (test, profiles) <- Map.toList testProfiles
-                let title =
-                        semantics <> ":" <> testName
-                        & Chart.label style Chart.HTA_Left Chart.VTA_Centre
-                        & Chart.setPickFn Chart.nullPickFn
-                    testName = FilePath.takeFileName test
-                    semantics : _ = FilePath.splitDirectories test
-                    style =
-                        def
-                        & Chart.font_size .~ 14
-                        & Chart.font_weight .~ Chart.FontWeightBold
-                    layout' yAxis = layoutTest (xAxis, yAxis) profiles
-                return
-                    $ Chart.wideAbove title
-                    $ Chart.besideN
-                    $ map Chart.layoutToGrid
-                    $ do
-                        (seriesTitle, project) <- series
-                        let yAxis = yAxisFrom project
-                        [layout' yAxis seriesTitle project]
-    let fileOptions = def & Chart.Backend.fo_size .~ (800, 400 * Set.size tests)
+            let
+                testName =
+                    FilePath.dropExtension . FilePath.takeFileName
+                    $ artifactName
+                title =
+                    testName
+                    & Chart.label style Chart.HTA_Left Chart.VTA_Centre
+                    & Chart.setPickFn Chart.nullPickFn
+                style =
+                    def
+                    & Chart.font_size .~ 14
+                    & Chart.font_weight .~ Chart.FontWeightBold
+                layout' yAxis = layoutTest (xAxis, yAxis) buildStats
+            in
+                Chart.wideAbove title . Chart.besideN
+                $ map Chart.layoutToGrid
+                $ do
+                    (seriesTitle, project) <- series
+                    let yAxis = yAxisFrom project
+                    [layout' yAxis seriesTitle project]
+    let fileOptions = def & Chart.Backend.fo_size .~ (800, 400)
+        pngFileName = FilePath.replaceExtension artifactName "png"
     _ <-
         Chart.gridToRenderable grid
         & Chart.fillBackground def
-        & Chart.Backend.renderableToFile fileOptions "kore-charts.png"
+        & Chart.Backend.renderableToFile fileOptions pngFileName
     return ()
 
 fromBuildNumber :: BuildNumber -> Double
@@ -115,9 +106,9 @@ fromScientific = logBase 10 . Scientific.toRealFloat
 
 layoutTest
     :: (Chart.AxisFn Double, Chart.AxisFn Double)
-    -> Map BuildNumber Profile
+    -> Map BuildNumber Stats
     -> String
-    -> (Profile -> Scientific)
+    -> (Stats -> Scientific)
     -> Chart.Layout Double Double
 layoutTest (xAxis, yAxis) profiles title select = Chart.execEC $ do
     let points =
@@ -131,9 +122,6 @@ layoutTest (xAxis, yAxis) profiles title select = Chart.execEC $ do
     Chart.layout_y_axis . Chart.laxis_title .= "log_10(" <> title <> ")"
     Chart.plot $ Chart.line "" [ points ]
   where
-
-testProfile :: Map BuildNumber BuildProfile -> String -> Map BuildNumber Profile
-testProfile buildProfiles test = mapMaybe (Map.lookup test) buildProfiles
 
 getJob :: String -> String -> IO Job
 getJob project name = do
@@ -191,12 +179,12 @@ data Build =
 
 instance FromJSON Build
 
-matchProfiled :: Build -> Maybe Artifact
-matchProfiled Build { artifacts } =
+matchProfiled :: FilePath -> Build -> Maybe Artifact
+matchProfiled artifactName Build { artifacts } =
     getFirst (foldMap matchFileName artifacts)
   where
     matchFileName artifact@Artifact { fileName }
-      | fileName == "profile.json" = pure artifact
+      | fileName == artifactName   = pure artifact
       | otherwise                  = mempty
 
 data Result = Success | Aborted | Incomplete | Other String
@@ -221,92 +209,15 @@ data Artifact =
 
 instance FromJSON Artifact
 
-getBuildProfile :: Builds -> BuildNumber -> Artifact -> IO BuildProfile
-getBuildProfile builds buildNumber Artifact { relativePath } = do
+getBuildStats :: Builds -> BuildNumber -> Artifact -> IO Stats
+getBuildStats builds buildNumber Artifact { relativePath } = do
     let Just Build { url } = Map.lookup buildNumber builds
         url' = url <> "artifact/" <> relativePath
     response <- Wreq.get url'
-    profiles <- Lens.view Wreq.responseBody <$> asJSONs response
-    return (fold profiles)
+    Lens.view Wreq.responseBody <$> Wreq.asJSON response
 
-type BuildProfile = Map String Profile
+mutator_cpu_sec :: Stats -> Scientific
+mutator_cpu_sec = (/ 1_000_000_000) . fromIntegral . Stats.mutator_cpu_ns
 
--- | The only valid whitespace in a JSON document is space, newline,
--- carriage return, and tab.
-skipSpace :: Attoparsec.Parser ()
-skipSpace = Attoparsec.skipWhile $ \w -> any (== w) [ 0x20, 0x0a, 0x0d, 0x09 ]
-
-{- | Parse a sequence of JSON values.
-
-This is not a valid JSON document, but it's easy to work with and I don't care.
-
- -}
-jsons :: Attoparsec.Parser [Aeson.Value]
-jsons = some Aeson.json <* skipSpace <* Attoparsec.endOfInput
-
-responseContentType :: Traversal' (Wreq.Response body) ByteString
-responseContentType = Wreq.responseHeader "Content-Type"
-
-asJSONs
-    :: FromJSON json
-    => Wreq.Response Lazy.ByteString
-    -> IO (Wreq.Response [json])
-asJSONs response = withContext $ do
-    assertContentTypeJSON response
-    let responseBody = Lens.view Wreq.responseBody response
-    values <- fromJSONs responseBody
-    responseBody' <- traverse fromValue values
-    return (responseBody' <$ response)
-  where
-    isContentTypeJSON contentType
-      | ByteString.isPrefixOf "application/json" contentType = True
-      | ByteString.isPrefixOf "application/" contentType
-      , ByteString.isSuffixOf "+json" contentType = True
-      | otherwise = False
-
-    unknownContentType =
-        throwM $ Wreq.JSONError "unknown content type of response"
-
-    wrongContentType contentType =
-        throwM . Wreq.JSONError
-        $ "content type of response is " ++ show contentType
-
-    assertContentTypeJSON resp = do
-        contentType <- getContentType resp
-        unless (isContentTypeJSON contentType) (wrongContentType contentType)
-
-    getContentType resp =
-        Lens.preview responseContentType resp
-        & maybe unknownContentType return
-
-    fromJSONs :: Lazy.ByteString -> IO [Aeson.Value]
-    fromJSONs body =
-        parseOnly jsons body
-        & either (throwM . Wreq.JSONError) return
-
-    fromValue value =
-        Aeson.parseEither Aeson.parseJSON value
-        & either (throwM . Wreq.JSONError) return
-
-    withContext =
-        flip onException $ do
-            putStrLn "While parsing:"
-            print (Lens.view Wreq.responseBody response)
-
-parseOnly :: Attoparsec.Parser a -> Lazy.ByteString -> Either String a
-parseOnly parser byteString =
-    case Attoparsec.parse parser byteString of
-        Attoparsec.Fail _ [] err   -> Left err
-        Attoparsec.Fail _ ctxs err ->
-            Left (List.intercalate " > " ctxs ++ ": " ++ err)
-        Attoparsec.Done _ a        -> Right a
-
-data Profile =
-    Profile
-    { user_sec :: Scientific
-    , resident_kbytes :: Scientific
-    }
-    deriving (Show)
-    deriving (Generic)
-
-instance FromJSON Profile
+max_live_mbytes :: Stats -> Scientific
+max_live_mbytes = (/ 1_000_000) . fromIntegral . Stats.max_live_bytes
