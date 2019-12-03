@@ -1,4 +1,4 @@
-module Test.Kore.Step.Step
+module Test.Kore.Step.RewriteStep
     ( test_applyInitialConditions
     , test_unifyRule
     , test_applyRewriteRule_
@@ -42,19 +42,17 @@ import Kore.Internal.TermLike
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
+import Kore.Step.RewriteStep
+    ( Results
+    , UnificationProcedure (..)
+    )
+import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( RewriteRule (..)
     , RulePattern (..)
     , rulePattern
     )
 import qualified Kore.Step.Rule as RulePattern
-import Kore.Step.Step hiding
-    ( applyInitialConditions
-    , applyRewriteRulesParallel
-    , applyRewriteRulesSequence
-    , unifyRule
-    )
-import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationOrSubstitutionError (..)
@@ -299,7 +297,7 @@ test_applyRewriteRule_ =
 
     , testCase "rename quantified right variables" $ do
         let expect = Right [ OrPattern.fromPatterns [pure final] ]
-            final = mkExists (nextVariable <$> Mock.y) (mkElemVar Mock.y)
+            final = mkElemVar Mock.y
             initial = pure (mkElemVar Mock.y)
             axiom =
                 RewriteRule $ rulePattern
@@ -1019,7 +1017,7 @@ test_applyRewriteRulesParallel =
         -- Expected: exists x . x
         let
             results =
-                OrPattern.fromTermLike (mkExists Mock.x (mkElemVar Mock.x))
+                OrPattern.fromTermLike (mkElemVar Mock.x)
             remainders = OrPattern.bottom
             initialTerm = Mock.a
             initial = Pattern.fromTermLike initialTerm
@@ -1172,7 +1170,7 @@ test_applyRewriteRulesSequence =
         -- Expected: exists x . x
         let
             results =
-                OrPattern.fromTermLike (mkExists Mock.x (mkElemVar Mock.x))
+                OrPattern.fromTermLike (mkElemVar Mock.x)
             remainders = OrPattern.bottom
             initialTerm = Mock.a
             initial = Pattern.fromTermLike initialTerm

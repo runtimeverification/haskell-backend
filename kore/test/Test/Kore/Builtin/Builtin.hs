@@ -110,6 +110,7 @@ import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
+import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( RewriteRule
     )
@@ -120,7 +121,6 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
-import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
     ( ModuleName
     , ParsedDefinition

@@ -34,6 +34,10 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
+import Kore.Step.EquationalStep
+    ( UnificationProcedure (..)
+    )
+import qualified Kore.Step.EquationalStep as Step
 import Kore.Step.Remainder
     ( ceilChildOfApplicationOrTop
     )
@@ -50,10 +54,6 @@ import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
     )
-import Kore.Step.Step
-    ( UnificationProcedure (..)
-    )
-import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
 
