@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e87fd765fc5c557a58e8322c97645551eb07ec2eae5b6a8aac1ef224534c505d
+-- hash: adec25128ddcee76ca43ab613b100654abe54ccb0ae59dfd47c90511cd152f3f
 
 name:           kore-charts
 version:        0.0.1.0
@@ -26,6 +26,8 @@ source-repository head
 executable kore-charts
   main-is: Main.hs
   other-modules:
+      Jenkins
+      Plot
       Paths_kore_charts
   hs-source-dirs:
       app
@@ -40,6 +42,7 @@ executable kore-charts
     , bytestring
     , containers
     , data-default
+    , directory
     , exceptions
     , filepath
     , kore

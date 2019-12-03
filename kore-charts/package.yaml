@@ -26,6 +26,7 @@ dependencies:
   - attoparsec
   - containers
   - data-default
+  - directory
   - exceptions
   - filepath
   - kore
