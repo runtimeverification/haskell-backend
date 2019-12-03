@@ -38,12 +38,24 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable
     )
 
-{- | A pattern is 'ConstructorLike' if:
-    1. it's a 'BuiltinBool', 'BuiltinInt', 'BuiltinString' or a 'StringLiteral'
-    2. a constructor or a domain value of a non-hooked sort applied over
-    a 'ConstructorLike' pattern
-    3. a sort injection applied over a 'ConstructorLike' pattern 'pat',
-    where 'pat' does not also have a sort injection at the top.
+{- | A pattern is 'ConstructorLike' if logical equality is syntactic equality.
+
+In other words, a pattern is constructor-like if it is equal (in the logical
+'Equals' sense) to another constructor-like pattern if and only if it is
+syntactically equal (in the 'Eq' sense).
+
+Examples of patterns that are constructor-like:
+- 'BuiltinBool', 'BuiltinInt', 'BuiltinString', and 'InternalBytes'
+- 'StringLiteral'
+- constructors with constructor-like arguments
+- 'DomainValue' in a non-hooked sort
+- 'Inj' in its normal form (if its argument is not also 'Inj')
+
+Examples of patterns that are not constructor-like:
+- variables
+- function symbols
+- logical connectives
+
 -}
 newtype ConstructorLike =
     ConstructorLike
