@@ -4,7 +4,6 @@ License     : NCSA
 
 Direct interface to equational rule application (step-wise execution).
 
-
  -}
 
 module Kore.Step.EquationalStep
