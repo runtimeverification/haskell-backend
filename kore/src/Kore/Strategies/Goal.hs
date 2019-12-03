@@ -761,8 +761,7 @@ removeDestination (Goal goal) = errorBracket $ do
             let result = Conditional.andPredicate configuration removal
             pure . Goal $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
         else do
-            -- simplifiedRemoval <- simplify removal
-            let simplifiedRemoval = undefined :: Predicate Variable
+            simplifiedRemoval <- simplifyTerm $ Predicate.unwrapPredicate removal
             if isTop simplifiedRemoval
                 then return . GoalStuck $ goal
                 else do
@@ -795,8 +794,7 @@ removeDestination (GoalRemainder goal) = errorBracket $ do
             let result = Conditional.andPredicate configuration removal
             pure . GoalRemainder $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
         else do
-            -- simplifiedRemoval <- simplify removal
-            let simplifiedRemoval = undefined :: Predicate Variable
+            simplifiedRemoval <- simplifyTerm $ Predicate.unwrapPredicate removal
             if isTop simplifiedRemoval
                 then return . GoalStuck $ goal
                 else do
