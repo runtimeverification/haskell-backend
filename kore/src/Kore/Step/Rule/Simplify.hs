@@ -7,10 +7,6 @@ module Kore.Step.Rule.Simplify
     ( SimplifyRuleLHS (..)
     ) where
 
-import qualified Kore.Internal.Condition as Condition
-    ( toPredicate
-    , topTODO
-    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -85,20 +81,20 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
         simplifiedTerms <- Pattern.simplifyAndRemoveTopExists lhsWithPredicate
         fullySimplified <-
             simplifyConditionsWithSmt
-                (Condition.toPredicate Condition.topTODO)
+                requires
                 simplifiedTerms
         let rules =
                 map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
         return (MultiAnd.make rules)
       where
-        RulePattern {left} = rule
+        RulePattern {left, requires} = rule
 
         setRuleLeft
             :: RulePattern variable
             -> Pattern variable
             -> RulePattern variable
         setRuleLeft
-            rulePattern@RulePattern {requires}
+            rulePattern@RulePattern {requires = requires'}
             Conditional {term, predicate, substitution}
           =
             RulePattern.applySubstitution
@@ -107,7 +103,7 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
                     { RulePattern.left = term
                     , RulePattern.requires =
                         Predicate.coerceSort (termLikeSort term)
-                        $ makeAndPredicate predicate requires
+                        $ makeAndPredicate predicate requires'
                     }
 
 instance SimplifyRuleLHS (RewriteRule Variable) where
@@ -137,6 +133,8 @@ simplifyClaimRule rule@(RulePattern _ _ _ _ _ _) =
         { RulePattern.left =
             mkAnd
                 left
+                -- Add the predicate to the left term so that it gets simplified
+                -- by the rule pattern simplifier.
                 (mkAnd (Predicate.unwrapPredicate requires) (mkCeil_ left))
         , RulePattern.requires = makeTruePredicate_
         }

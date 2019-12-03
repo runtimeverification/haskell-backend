@@ -137,7 +137,6 @@ Returns Just False if the sort is a variable.
 isListSort :: SmtMetadataTools attrs -> Sort -> Maybe Bool
 isListSort = Builtin.isSort sort
 
-
 verifiers :: Builtin.Verifiers
 verifiers =
     Builtin.Verifiers
@@ -417,7 +416,7 @@ unifyEquals
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
 
-    unifyEquals0 pat1@(Var_ _) pat2
+    unifyEquals0 pat1@(ElemVar_ _) pat2
       | TermLike.isFunctionPattern pat2 =
         Monad.Trans.lift $ simplifyChild pat1 pat2
       | otherwise = empty
@@ -549,15 +548,19 @@ unifyEquals
             second
         return Pattern.bottom
 
+{- Normalizes a list expression.
+
+Currently it only removes empty lists from concatenations.
+-}
 normalize :: InternalVariable variable => TermLike variable -> TermLike variable
 normalize term@(App_ appHead children)
   | isSymbolConcat appHead =
     case map normalize children of
         [App_ childHead1 _, child2]
-            | isSymbolUnit childHead1 -> child2
+          | isSymbolUnit childHead1 -> child2
         [child1, App_ childHead2 _]
-            | isSymbolUnit childHead2 -> child1
+          | isSymbolUnit childHead2 -> child1
         normalizedChildren
-            | normalizedChildren == children -> term
-            | otherwise -> mkApplySymbol appHead normalizedChildren
+          | normalizedChildren == children -> term
+          | otherwise -> mkApplySymbol appHead normalizedChildren
 normalize term = term
