@@ -3,6 +3,7 @@ module Main (main) where
 import Prelude hiding (filter)
 
 import Data.Bifunctor
+import Data.Foldable
 import Data.Function
 import Data.Traversable
 import Data.Witherable
@@ -39,7 +40,11 @@ jenkins = "https://office.runtimeverification.com/jenkins"
 
 main :: IO ()
 main = do
-    [artifactName] <- Environment.getArgs
+    artifactNames <- Environment.getArgs
+    for_ artifactNames main1
+
+main1 :: FilePath -> IO ()
+main1 artifactName = do
     job <- getJob "haskell-backend" "master"
     builds <- getBuilds job
     let profiled = mapMaybe (matchProfiled artifactName) builds
