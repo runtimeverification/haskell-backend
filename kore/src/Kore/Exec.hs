@@ -481,8 +481,14 @@ extractRules rules = foldr addExtractRule (Right [])
 
     rulesByName :: Map.Map Text (RewriteRule Variable)
     rulesByName = Map.union
-        (Map.fromList (idRules rules))
-        (Map.fromList (labelRules rules))
+        (Map.fromListWith
+            (const $ const $ error "duplicate rule")
+            (idRules rules)
+        )
+        (Map.fromListWith
+            (const $ const $ error "duplicate rule")
+            (labelRules rules)
+        )
 
     extractRule :: Text -> Either Text (RewriteRule Variable)
     extractRule ruleName =

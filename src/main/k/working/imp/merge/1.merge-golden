@@ -10,12 +10,13 @@
                     )
                 ),
                 Lbl'-LT-'state'-GT-'{}(
+                    /* builtin: */
                     Lbl'Unds'Map'Unds'{}(
-                        Lbl'UndsPipe'-'-GT-Unds'{}(
+                        /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                             inj{SortId{}, SortKItem{}}(VarX:SortId{}),
                             VarI:SortKItem{}
                         ),
-                        VarDotVar3:SortMap{}
+                        /* opaque child: */ VarDotVar3:SortMap{}
                     )
                 )
             ),
@@ -30,12 +31,13 @@
                     kseq{}(VarI:SortKItem{}, VarDotVar2:SortK{})
                 ),
                 Lbl'-LT-'state'-GT-'{}(
+                    /* builtin: */
                     Lbl'Unds'Map'Unds'{}(
-                        Lbl'UndsPipe'-'-GT-Unds'{}(
+                        /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
                             inj{SortId{}, SortKItem{}}(VarX:SortId{}),
                             VarI:SortKItem{}
                         ),
-                        VarDotVar3:SortMap{}
+                        /* opaque child: */ VarDotVar3:SortMap{}
                     )
                 )
             ),
