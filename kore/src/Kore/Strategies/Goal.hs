@@ -666,6 +666,7 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
+        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
@@ -688,6 +689,7 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
+        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
@@ -711,6 +713,7 @@ allPathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
+        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DerivePar axioms
@@ -732,6 +735,7 @@ allPathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
+        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
