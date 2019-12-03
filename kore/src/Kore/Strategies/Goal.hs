@@ -73,11 +73,13 @@ import Kore.Internal.Predicate
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( mkAnd
+    , topExistsToImplicitForall
     )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
 import qualified Kore.Step.Result as Result
+import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( AllPathRule (..)
     , FromRulePattern (..)
@@ -100,7 +102,6 @@ import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     )
@@ -739,8 +740,13 @@ removeDestination goal = errorBracket $ do
         result = Conditional.andPredicate configuration removal
     pure $ makeRuleFromPatterns goal result destination
   where
-    destination = getDestination goal
     configuration = getConfiguration goal
+    configFreeVars = Pattern.freeVariables configuration
+
+    RulePattern { right, ensures } = toRulePattern goal
+    right' = topExistsToImplicitForall configFreeVars right
+    destination =
+        Pattern.withCondition right' (Conditional.fromPredicate ensures)
 
     errorBracket action =
         onException action
