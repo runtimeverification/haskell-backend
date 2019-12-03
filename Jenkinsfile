@@ -48,6 +48,13 @@ pipeline {
             '''
           }
         }
+        stage('Charts') {
+          steps {
+            sh '''
+              stack build --copy-bins kore-charts
+            '''
+          }
+        }
       }
     }
     stage('Unit Tests') {
@@ -84,6 +91,17 @@ pipeline {
         archiveArtifacts 'kevm-pop1-stats.json'
         archiveArtifacts 'kevm-sum-to-10-stats.json'
         archiveArtifacts 'kevm-sum-to-n-spec-stats.json'
+        sh '''
+          stack exec -- kore-charts \
+            'kevm-add0-stats.json' \
+            'kevm-pop1-stats.json' \
+            'kevm-sum-to-10-stats.json' \
+            'kevm-sum-to-n-spec-stats.json'
+        '''
+        archiveArtifacts 'kevm-add0-stats.png'
+        archiveArtifacts 'kevm-pop1-stats.png'
+        archiveArtifacts 'kevm-sum-to-10-stats.png'
+        archiveArtifacts 'kevm-sum-to-n-spec-stats.png'
       }
     }
     stage('Integration: KWASM') {
@@ -98,6 +116,17 @@ pipeline {
         archiveArtifacts 'kwasm-loops-spec-stats.json'
         archiveArtifacts 'kwasm-memory-symbolic-type-spec-stats.json'
         archiveArtifacts 'kwasm-locals-spec-stats.json'
+        sh '''
+          stack exec -- kore-charts \
+            'kwasm-simple-arithmetic-spec-stats.json' \
+            'kwasm-loops-spec-stats.json' \
+            'kwasm-memory-symbolic-type-spec-stats.json' \
+            'kwasm-locals-spec-stats.json' \
+        '''
+        archiveArtifacts 'kwasm-simple-arithmetic-spec-stats.png'
+        archiveArtifacts 'kwasm-loops-spec-stats.png'
+        archiveArtifacts 'kwasm-memory-symbolic-type-spec-stats.png'
+        archiveArtifacts 'kwasm-locals-spec-stats.png'
       }
     }
     stage('Update K Submodules') {
