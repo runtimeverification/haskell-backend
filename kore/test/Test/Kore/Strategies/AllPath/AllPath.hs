@@ -1,4 +1,12 @@
-module Test.Kore.Strategies.AllPath.AllPath where
+module Test.Kore.Strategies.AllPath.AllPath
+    ( test_unprovenNodes
+    , test_transitionRule_CheckProven
+    , test_transitionRule_CheckGoalRem
+    , test_transitionRule_RemoveDestination
+    , test_transitionRule_TriviallyValid
+    , test_transitionRule_DerivePar
+    , test_runStrategy
+    ) where
 
 import Test.Tasty
 
@@ -18,6 +26,10 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import Data.Stream.Infinite
+    ( Stream (..)
+    )
+import qualified Data.Stream.Infinite as Stream
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 import GHC.Stack
@@ -219,7 +231,7 @@ test_runStrategy =
         . unAllPathIdentity
         $ Strategy.runStrategy
             Goal.transitionRule
-            (Goal.strategy (unRule goal) [unRule goal] axioms)
+            (Foldable.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
             (ProofState.Goal . unRule $ goal)
     disproves
         :: HasCallStack
@@ -308,7 +320,7 @@ instance Goal.Goal Goal where
     type ProofState Goal a = ProofState.ProofState a
 
     strategy _ goals rules =
-        firstStep : repeat nextStep
+        firstStep :> Stream.iterate id nextStep
       where
         firstStep =
             (Strategy.sequence . map Strategy.apply)
@@ -366,12 +378,8 @@ instance Debug (Goal.Rule Goal)
 instance Diff (Goal.Rule Goal)
 
 -- | The destination-removal rule for our unit test goal.
-removeDestination
-    :: MonadSimplify m
-    => Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m Goal
-removeDestination (src, dst) =
-    return (difference src dst, dst)
+removeDestination :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
+removeDestination (src, dst) = return (difference src dst, dst)
 
 -- | The goal is trivially valid when the members are equal.
 isTriviallyValid :: Goal -> Bool
@@ -397,14 +405,8 @@ derivePar rules (src, dst) =
     applied = Maybe.mapMaybe applyRule rules
     goals = Foldable.asum (goal <$> applied)
 
-simplify
-    :: MonadSimplify m
-    => Goal
-    -> Strategy.TransitionT (Goal.Rule Goal) m Goal
+simplify :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
 simplify = return
-
-isTrusted :: Goal -> Bool
-isTrusted = undefined
 
 deriveSeq
     :: MonadSimplify m

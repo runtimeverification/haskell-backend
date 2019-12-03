@@ -1,4 +1,10 @@
-module Test.Kore.Step where
+module Test.Kore.Step
+    ( test_constructorRewriting
+    , test_ruleThatDoesn'tApply
+    , test_stepStrategy
+    , test_SMT
+    , test_unificationError
+    ) where
 
 import Test.Tasty
 
@@ -31,11 +37,11 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.Predicate
     ( Predicate
+    , makeEqualsPredicate
+    , makeEqualsPredicate_
+    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.Symbol
     ( Symbol (Symbol, symbolConstructor)
@@ -52,7 +58,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Sort
     ( Sort (..)
-    , SortActual (SortActual)
     )
 import Kore.Step
 import Kore.Step.Rule
@@ -64,9 +69,6 @@ import Kore.Step.Rule as RulePattern
     , rulePattern
     )
 import qualified Kore.Step.Strategy as Strategy
-import Kore.Syntax.Application
-    ( SymbolOrAlias (symbolOrAliasConstructor)
-    )
 import Kore.Syntax.ElementVariable
 import Kore.Syntax.Variable
     ( Variable (..)
@@ -147,13 +149,13 @@ takeSteps (Start start, wrappedAxioms) =
 compareTo
     :: HasCallStack
     => Expect -> Actual -> IO ()
-compareTo (Expect expected) actual = assertEqual "" (pure expected) actual
+compareTo (Expect expected) actual =
+    assertEqual "" (Pattern.fromTermLike expected) actual
 
 
     {- Types used in this file -}
 
 type CommonTermLike = TermLike Variable
-type CommonPattern = Pattern Variable
 
 -- Test types
 type TestPattern = CommonTermLike
@@ -175,13 +177,6 @@ var :: Text -> TestPattern
 var name =
     mkElemVar $ ElementVariable $ Variable (testId name) mempty Mock.testSort
 -- can the above be more abstract?
-
-sort :: Text -> Sort
-sort name =
-    SortActualSort $ SortActual
-      { sortActualName = testId name
-      , sortActualSorts = []
-      }
 
 rewritesTo :: TestPattern -> TestPattern -> RewriteRule Variable
 rewritesTo = (RewriteRule .) . rulePattern
@@ -206,18 +201,6 @@ rewriteIdentity =
         (mkElemVar (x1 Mock.testSort))
         (mkElemVar (x1 Mock.testSort))
 
-setRewriteIdentity :: RewriteRule Variable
-setRewriteIdentity =
-    RewriteRule $ rulePattern
-        (Mock.mkTestUnifiedVariable "@x")
-        (Mock.mkTestUnifiedVariable "@x")
-
-setRewriteFnIdentity :: RewriteRule Variable
-setRewriteFnIdentity =
-    RewriteRule $ rulePattern
-        (Mock.functionalConstr10 (Mock.mkTestUnifiedVariable "@x"))
-        (Mock.mkTestUnifiedVariable "@x")
-
 rewriteImplies :: RewriteRule Variable
 rewriteImplies =
     RewriteRule $ rulePattern
@@ -229,7 +212,7 @@ rewriteImplies =
 
 expectTwoAxioms :: [Pattern Variable]
 expectTwoAxioms =
-    [ pure (mkElemVar $ v1 Mock.testSort)
+    [ Pattern.fromTermLike (mkElemVar $ v1 Mock.testSort)
     , Pattern.fromTermLike
         $ mkImplies
             (mkElemVar $ v1 Mock.testSort)
@@ -241,7 +224,7 @@ actualTwoAxioms =
     runStep
         Conditional
             { term = mkElemVar (v1 Mock.testSort)
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate_
             , substitution = mempty
             }
         [ rewriteIdentity
@@ -255,7 +238,7 @@ initialFailSimple =
             metaSigma
                 (metaG (mkElemVar $ a1 Mock.testSort))
                 (metaF (mkElemVar $ b1 Mock.testSort))
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 
@@ -281,7 +264,7 @@ initialFailCycle =
             metaSigma
                 (mkElemVar $ a1 Mock.testSort)
                 (mkElemVar $ a1 Mock.testSort)
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 
@@ -304,15 +287,7 @@ initialIdentity :: Pattern Variable
 initialIdentity =
     Conditional
         { term = mkElemVar (v1 Mock.testSort)
-        , predicate = makeTruePredicate
-        , substitution = mempty
-        }
-
-initialFnIdentity :: Pattern Variable
-initialFnIdentity =
-    Conditional
-        { term = Mock.functionalConstr10 (mkElemVar (v1 Mock.testSort))
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate Mock.testSort
         , substitution = mempty
         }
 
@@ -324,18 +299,6 @@ actualIdentity =
     runStep
         initialIdentity
         [ rewriteIdentity ]
-
-setActualIdentity :: IO [Pattern Variable]
-setActualIdentity =
-    runStep
-        initialIdentity
-        [ setRewriteIdentity ]
-
-setActualFnIdentity :: IO [Pattern Variable]
-setActualFnIdentity =
-    runStep
-        initialFnIdentity
-        [ setRewriteFnIdentity ]
 
 test_stepStrategy :: [TestTree]
 test_stepStrategy =
@@ -376,7 +339,7 @@ smtTerm term = Mock.functionalConstr10 term
 smtSyntaxPredicate
     :: TermLike Variable -> PredicateState -> Predicate Variable
 smtSyntaxPredicate term predicateState =
-    makeEqualsPredicate
+    makeEqualsPredicate_
         (Mock.lessInt
             (Mock.fTestInt term)
             (Mock.builtinInt 0)
@@ -403,20 +366,20 @@ test_SMT =
         -- Expected: a | f(b) < 0
         [ _actual1 ] <- runStepMockEnv
             (smtPattern Mock.b PredicatePositive)
-            [ RewriteRule $ RulePattern
+            [ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , right = Mock.a
-                , ensures = makeTruePredicate
+                , ensures = makeTruePredicate_
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicatePositive
                 , attributes = def
                 }
-            , RewriteRule $ RulePattern
+            , RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , right = Mock.c
-                , ensures = makeTruePredicate
+                , ensures = makeTruePredicate_
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicateNegated
                 , attributes = def
@@ -436,7 +399,7 @@ test_SMT =
         [ _actual1 ] <- runStepMockEnv
             Conditional
                 { term = Mock.functionalConstr10 Mock.b
-                , predicate = makeEqualsPredicate
+                , predicate = makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt Mock.b)
                         (Mock.builtinInt 0)
@@ -448,9 +411,9 @@ test_SMT =
                 { left = Mock.functionalConstr10 (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , right = Mock.a
-                , ensures = makeTruePredicate
+                , ensures = makeTruePredicate_
                 , requires =
-                    makeEqualsPredicate
+                    makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                             (Mock.builtinInt 0)
@@ -463,7 +426,7 @@ test_SMT =
             [ Conditional
                 { term = Mock.a
                 , predicate =
-                    makeEqualsPredicate
+                    makeEqualsPredicate Mock.testSort
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -491,28 +454,10 @@ actualUnificationError =
                 metaSigma
                     (mkElemVar $ a1 Mock.testSort)
                     (metaI (mkElemVar $ b1 Mock.testSort))
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate_
             , substitution = mempty
             }
         [axiomMetaSigmaId]
-
-functionalConstructorAttributes :: Attribute.Symbol
-functionalConstructorAttributes =
-    Attribute.defaultSymbolAttributes
-        { Attribute.constructor = Attribute.Constructor True
-        , Attribute.functional = Attribute.Functional True
-        , Attribute.function = Attribute.Function True
-        , Attribute.injective = Attribute.Injective True
-        }
-
-mockSymbolAttributes :: SymbolOrAlias -> Attribute.Symbol
-mockSymbolAttributes patternHead
-  | symbolOrAliasConstructor patternHead == iId =
-    Attribute.defaultSymbolAttributes
-  | otherwise =
-    functionalConstructorAttributes
-  where
-    iId = symbolConstructor iSymbol
 
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
@@ -575,13 +520,6 @@ gSymbol = symbol "#g" & functional & constructor
 metaG :: TermLike Variable -> TermLike Variable
 metaG p = mkApplySymbol gSymbol [p]
 
-
-hSymbol :: Symbol
-hSymbol = symbol "#h" & functional & constructor
-
-metaH :: TermLike Variable -> TermLike Variable
-metaH p = mkApplySymbol hSymbol [p]
-
 iSymbol :: Symbol
 iSymbol = symbol "#i"
 
@@ -607,13 +545,3 @@ runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
     $ runStrategy transitionRule [allRewrites axioms] configuration
-
-runSteps
-    :: Pattern Variable
-    -- ^left-hand-side of unification
-    -> [RewriteRule Variable]
-    -> IO (Pattern Variable)
-runSteps configuration axioms =
-    (<$>) pickLongest
-    $ runSimplifier mockEnv
-    $ runStrategy transitionRule (repeat $ allRewrites axioms) configuration

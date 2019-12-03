@@ -5,6 +5,9 @@ module Test.Kore.Step.Simplification.Ceil
 import Test.Tasty
 
 import qualified Data.Map as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 
 import qualified Data.Sup as Sup
 import qualified Kore.Builtin.AssociativeCommutative as Ac
@@ -17,9 +20,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeCeilPredicate
-    , makeEqualsPredicate
-    , makeTruePredicate
+    , makeCeilPredicate_
+    , makeEqualsPredicate_
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -37,9 +40,6 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)
     )
 import qualified Kore.Unification.Substitution as Substitution
-import Kore.Variables.Fresh
-    ( FreshVariable
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -63,12 +63,12 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate somethingOfA
+                    , predicate = makeCeilPredicate_ somethingOfA
                     , substitution = mempty
                     }
                 , Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate somethingOfB
+                    , predicate = makeCeilPredicate_ somethingOfB
                     , substitution = mempty
                     }
                 ]
@@ -140,8 +140,8 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                        (makeCeilPredicate somethingOfA)
-                        (makeEqualsPredicate fOfA gOfA)
+                        (makeCeilPredicate_ somethingOfA)
+                        (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
@@ -149,7 +149,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = somethingOfA
-                , predicate = makeEqualsPredicate fOfA gOfA
+                , predicate = makeEqualsPredicate_ fOfA gOfA
                 , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual "ceil(something(a) and equals(f(a), g(a)))"
@@ -169,10 +169,10 @@ test_ceilSimplification =
                         , predicate =
                             makeAndPredicate
                                 (makeAndPredicate
-                                    (makeCeilPredicate somethingOfA)
-                                    (makeCeilPredicate somethingOfB)
+                                    (makeCeilPredicate_ somethingOfA)
+                                    (makeCeilPredicate_ somethingOfB)
                                 )
-                                (makeEqualsPredicate fOfA gOfA)
+                                (makeEqualsPredicate_ fOfA gOfA)
                         , substitution =
                             Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                         }
@@ -180,7 +180,7 @@ test_ceilSimplification =
             actual <- makeEvaluate
                 Conditional
                     { term = constructorTerm
-                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , predicate = makeEqualsPredicate_ fOfA gOfA
                     , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                     }
             assertEqual
@@ -193,7 +193,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = Mock.constr10 Mock.a
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "" expected actual
@@ -208,10 +208,10 @@ test_ceilSimplification =
                     , predicate =
                         makeAndPredicate
                             (makeAndPredicate
-                                (makeCeilPredicate somethingOfA)
-                                (makeCeilPredicate somethingOfB)
+                                (makeCeilPredicate_ somethingOfA)
+                                (makeCeilPredicate_ somethingOfB)
                             )
-                            (makeEqualsPredicate fOfA gOfA)
+                            (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
@@ -219,7 +219,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = Mock.functional20 somethingOfA somethingOfB
-                , predicate = makeEqualsPredicate fOfA gOfA
+                , predicate = makeEqualsPredicate_ fOfA gOfA
                 , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
@@ -236,8 +236,8 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate fOfA)
-                            (makeEqualsPredicate fOfA gOfA)
+                            (makeCeilPredicate_ fOfA)
+                            (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
@@ -245,7 +245,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = fOfA
-                , predicate = makeEqualsPredicate fOfA gOfA
+                , predicate = makeEqualsPredicate_ fOfA gOfA
                 , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
@@ -260,7 +260,7 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , predicate = makeEqualsPredicate_ fOfA gOfA
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
@@ -268,7 +268,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = Mock.a
-                , predicate = makeEqualsPredicate fOfA gOfA
+                , predicate = makeEqualsPredicate_ fOfA gOfA
                 , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
@@ -283,7 +283,7 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeEqualsPredicate fOfA gOfA
+                    , predicate = makeEqualsPredicate_ fOfA gOfA
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
@@ -291,7 +291,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = mkEvaluated Mock.a
-                , predicate = makeEqualsPredicate fOfA gOfA
+                , predicate = makeEqualsPredicate_ fOfA gOfA
                 , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
@@ -311,10 +311,10 @@ test_ceilSimplification =
                     , predicate =
                         makeAndPredicate
                             (makeAndPredicate
-                                (makeCeilPredicate fOfA)
-                                (makeCeilPredicate fOfB)
+                                (makeCeilPredicate_ fOfA)
+                                (makeCeilPredicate_ fOfB)
                             )
-                            (makeEqualsPredicate fOfA gOfA)
+                            (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
@@ -322,7 +322,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = Mock.functional20 fOfA fOfB
-                , predicate = makeEqualsPredicate fOfA gOfA
+                , predicate = makeEqualsPredicate_ fOfA gOfA
                 , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
@@ -341,8 +341,8 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeEqualsPredicate Mock.a Mock.cf)
-                            (makeEqualsPredicate fOfA gOfA)
+                            (makeEqualsPredicate_ Mock.a Mock.cf)
+                            (makeEqualsPredicate_ fOfA gOfA)
                     , substitution =
                         Substitution.unsafeWrap [(ElemVar Mock.x, fOfB)]
                     }
@@ -355,14 +355,14 @@ test_ceilSimplification =
                 (appliedMockEvaluator
                     Conditional
                         { term = mkTop_
-                        , predicate = makeEqualsPredicate Mock.a Mock.cf
+                        , predicate = makeEqualsPredicate_ Mock.a Mock.cf
                         , substitution = mempty
                         }
                 )
             )
             Conditional
                 { term = Mock.functional20 fOfA fOfB
-                , predicate = makeEqualsPredicate fOfA gOfA
+                , predicate = makeEqualsPredicate_ fOfA gOfA
                 , substitution = Substitution.wrap [(ElemVar Mock.x, fOfB)]
                 }
         assertEqual
@@ -375,7 +375,7 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
                 ]
@@ -387,16 +387,17 @@ test_ceilSimplification =
                 }
         assertEqual "ceil(1)" expected actual
     , testGroup "Builtin.Map"
-        [ testCase "concrete partial keys" $ do
-            -- maps assume that their keys are relatively functional, so
+        [ testCase "concrete keys" $ do
+            -- maps assume that their keys are non-simplifiable, so
             -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
-            let original = Mock.builtinMap [(fOfA, fOfB), (gOfA, gOfB)]
+            let original =
+                    Mock.builtinMap [(constr10OfA, fOfB), (constr11OfA, gOfB)]
                 expected =
                     OrPattern.fromPattern . Pattern.fromCondition
                     . Condition.fromPredicate
                     $ makeAndPredicate
-                        (makeCeilPredicate fOfB)
-                        (makeCeilPredicate gOfB)
+                        (makeCeilPredicate_ fOfB)
+                        (makeCeilPredicate_ gOfB)
             actual <- makeEvaluate $ Pattern.fromTermLike original
             assertEqual "" expected actual
         , testCase "abstract keys" $ do
@@ -412,7 +413,7 @@ test_ceilSimplification =
                         [Mock.m]
                 expected =
                     OrPattern.fromPattern . Pattern.fromCondition
-                    . Condition.fromPredicate . makeCeilPredicate
+                    . Condition.fromPredicate . makeCeilPredicate_
                     $ Mock.framedMap
                         [(mkElemVar Mock.x, mkElemVar Mock.y)]
                         [Mock.m]
@@ -427,15 +428,15 @@ test_ceilSimplification =
                     { term = mkTop_
                     , predicate =
                         makeAndPredicate
-                            (makeCeilPredicate fOfA)
-                            (makeCeilPredicate fOfB)
+                            (makeCeilPredicate_ fOfA)
+                            (makeCeilPredicate_ fOfB)
                     , substitution = mempty
                     }
                 ]
         actual <- makeEvaluate
             Conditional
                 { term = Mock.builtinList [fOfA, fOfB]
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "ceil(list)" expected actual
@@ -447,7 +448,7 @@ test_ceilSimplification =
         actual <- makeEvaluate
             Conditional
                 { term = Mock.builtinSet [asConcrete' fOfA, asConcrete' fOfB]
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "ceil(set)" expected actual
@@ -456,7 +457,7 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate fOfX
+                    , predicate = makeCeilPredicate_ fOfX
                     , substitution = mempty
                     }
                 ]
@@ -464,7 +465,7 @@ test_ceilSimplification =
             Conditional
                 { term = asInternalSet $
                     emptyNormalizedSet `with` VariableElement fOfX
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "ceil(set)" expected actual
@@ -473,7 +474,7 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate fOfXset
+                    , predicate = makeCeilPredicate_ fOfXset
                     , substitution = mempty
                     }
                 ]
@@ -481,7 +482,7 @@ test_ceilSimplification =
             Conditional
                 { term = asInternalSet $
                     emptyNormalizedSet `with` OpaqueSet fOfXset
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "ceil(set)" expected actual
@@ -491,7 +492,7 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkTop_
-                    , predicate = makeCeilPredicate
+                    , predicate = makeCeilPredicate_
                         (asInternalSet
                             ( emptyNormalizedSet
                             `with` OpaqueSet fOfXset
@@ -507,7 +508,7 @@ test_ceilSimplification =
                     emptyNormalizedSet
                         `with` OpaqueSet fOfXset
                         `with` OpaqueSet fOfYset
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "ceil(set set)" expected actual
@@ -520,6 +521,8 @@ test_ceilSimplification =
     fOfB = Mock.f Mock.b
     gOfA = Mock.g Mock.a
     gOfB = Mock.g Mock.b
+    constr10OfA = Mock.constr10 Mock.a
+    constr11OfA = Mock.constr11 Mock.a
     fOfX :: TermLike Variable
     fOfX = Mock.f (mkElemVar Mock.x)
     fOfXset :: TermLike Variable
@@ -530,15 +533,16 @@ test_ceilSimplification =
     somethingOfB = Mock.plain10 Mock.b
     somethingOfAExpanded = Conditional
         { term = somethingOfA
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
     somethingOfBExpanded = Conditional
         { term = somethingOfB
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
-    asConcrete' p = let Just r = TermLike.asConcrete p in r
+    asConcrete' p =
+        fromMaybe (error "Expected concrete pattern") (TermLike.asConcrete p)
     asInternalSet =
         Ac.asInternal Mock.metadataTools Mock.setSort . Domain.wrapAc
 
@@ -562,10 +566,7 @@ mockEvaluator
 mockEvaluator evaluation _ _ = return evaluation
 
 mapVariables
-    ::  ( FreshVariable variable
-        , SortedVariable variable
-        , Ord variable
-        )
+    :: InternalVariable variable
     => Pattern Variable
     -> Pattern variable
 mapVariables =

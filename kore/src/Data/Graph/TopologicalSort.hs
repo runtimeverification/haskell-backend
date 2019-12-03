@@ -41,7 +41,7 @@ nodes.
 Returns an error for graphs that have cycles.
 -}
 topologicalSort
-    :: (Ord node, Show node)
+    :: Ord node
     => Map.Map node [node]
     -> Either (TopologicalSortCycles node) [node]
 topologicalSort edges =

@@ -1,4 +1,21 @@
-module Test.Kore.Builtin.List where
+module Test.Kore.Builtin.List
+    ( test_getUnit
+    , test_getFirstElement
+    , test_getLastElement
+    , test_GetUpdate
+    , test_concatUnit
+    , test_concatAssociates
+    , test_simplify
+    , test_isBuiltin
+    , test_inUnit
+    , test_inElement
+    , test_inConcat
+    , hprop_unparse
+    --
+    , asInternal
+    , asTermLike
+    , genSeqInteger
+    ) where
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
@@ -13,20 +30,14 @@ import Data.Sequence
     )
 import qualified Data.Sequence as Seq
 
-import Kore.Attribute.Hook
-    ( Hook
-    )
-import qualified Kore.Attribute.Symbol as StepperAttributes
 import qualified Kore.Builtin.List as List
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
 
 import Test.Kore
     ( testId
     )
+import qualified Test.Kore.Builtin.Bool as Test.Bool
 import Test.Kore.Builtin.Builtin
 import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
@@ -125,6 +136,56 @@ test_GetUpdate =
             (===) Pattern.bottom =<< evaluateT patUpdated
             (===) Pattern.top =<< evaluateT predicate
 
+test_inUnit :: TestTree
+test_inUnit =
+    testPropertyWithSolver
+    "in{}(x, unit{}()) === \\dv{Bool{}}(\"false\")"
+    prop
+  where
+    prop = do
+        value <- forAll genInteger
+        let patValue = Test.Int.asInternal value
+            patIn = inList patValue unitList
+            patFalse = Test.Bool.asInternal False
+            predicate = mkEquals_ patFalse patIn
+        (===) (Test.Bool.asPattern False) =<< evaluateT patIn
+        (===) Pattern.top =<< evaluateT predicate
+
+test_inElement :: TestTree
+test_inElement =
+    testPropertyWithSolver
+    "in{}(x, element{}(x)) === \\dv{Bool{}}(\"true\")"
+    prop
+  where
+    prop = do
+        value <- forAll genInteger
+        let patValue = Test.Int.asInternal value
+            patElement = elementList patValue
+            patIn = inList patValue patElement
+            patTrue = Test.Bool.asInternal True
+            predicate = mkEquals_ patIn patTrue
+        (===) (Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) Pattern.top =<< evaluateT predicate
+
+test_inConcat :: TestTree
+test_inConcat =
+    testPropertyWithSolver
+    "in{}(x, concat{}(list, element{}(x))) === \\dv{Bool{}}(\"true\")"
+    prop
+  where
+    prop = do
+        value <- forAll genInteger
+        values <- forAll genSeqInteger
+        let patValue = Test.Int.asInternal value
+            patValues = asTermLike (Test.Int.asInternal <$> values)
+            patElement = elementList patValue
+            patConcat = concatList patValues patElement
+            patIn = inList patValue patConcat
+            patTrue = Test.Bool.asInternal True
+            predicate = mkEquals_ patIn patTrue
+        (===) (Test.Bool.asPattern True) =<< evaluateT patIn
+        (===) Pattern.top =<< evaluateT predicate
+
 test_concatUnit :: TestTree
 test_concatUnit =
     testPropertyWithSolver
@@ -200,9 +261,6 @@ test_isBuiltin =
         assertBool "" (not (List.isSymbolUnit Mock.aSymbol))
         assertBool "" (not (List.isSymbolUnit Mock.concatListSymbol))
     ]
-
-mockHookTools :: SmtMetadataTools Hook
-mockHookTools = StepperAttributes.hook <$> Mock.metadataTools
 
 -- | Specialize 'List.asPattern' to the builtin sort 'listSort'.
 asTermLike

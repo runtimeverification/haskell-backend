@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 {-|
 Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
@@ -123,7 +125,7 @@ checkClaim
                 ProofState.GoalLHS
                     Conditional
                         { term = left
-                        , predicate = Predicate.makeTruePredicate
+                        , predicate = Predicate.makeTruePredicate_
                         , substitution = mempty
                         }
         executionGraph <- State.evalStateT

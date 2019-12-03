@@ -35,10 +35,6 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import Kore.Logger
-    ( LogMessage
-    , WithLog
-    )
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -61,11 +57,9 @@ import Kore.Variables.UnifiedVariable
     )
 
 simplifyAnds
-    ::  forall variable unifier
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall variable unifier
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => NonEmpty (TermLike variable)
     -> unifier (Pattern variable)
 simplifyAnds (NonEmpty.sort -> patterns) = do
@@ -90,18 +84,16 @@ simplifyAnds (NonEmpty.sort -> patterns) = do
             Pattern.splitTerm intermediate
 
 deduplicateSubstitution
-    :: forall variable unifier
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    ::  forall variable unifier
+    .   SimplifierVariable variable
+    =>  MonadUnify unifier
     =>  Substitution variable
     ->  unifier
             ( Predicate variable
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution =
-    worker Predicate.makeTruePredicate . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate_ . Substitution.toMultiMap
   where
     worker
         ::  Predicate variable
@@ -143,11 +135,9 @@ deduplicateSubstitution =
     collectConditions = sequenceA
 
 normalizeOnce
-    ::  forall unifier variable term
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable term
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Conditional variable term
     -> unifier (Conditional variable term)
 normalizeOnce Conditional { term, predicate, substitution } = do
@@ -176,11 +166,9 @@ normalizeOnce Conditional { term, predicate, substitution } = do
         either Unifier.throwSubstitutionError return . normalizeSubstitution
 
 normalizeExcept
-    ::  forall unifier variable term
-    .   ( SimplifierVariable variable
-        , MonadUnify unifier
-        , WithLog LogMessage unifier
-        )
+    :: forall unifier variable term
+    .  SimplifierVariable variable
+    => MonadUnify unifier
     => Conditional variable term
     -> unifier (Conditional variable term)
 normalizeExcept conditional = do

@@ -1,4 +1,6 @@
-module Test.Kore.Step.Remainder where
+module Test.Kore.Step.Remainder
+    ( test_existentiallyQuantifyTarget
+    ) where
 
 import Test.Tasty
 
@@ -28,7 +30,7 @@ test_existentiallyQuantifyTarget =
 
 target :: Predicate (Target Variable)
 target =
-    Predicate.makeEqualsPredicate
+    Predicate.makeEqualsPredicate_
         (mkElemVar $ NonTarget <$> Mock.x)
         (Mock.sigma
             (mkElemVar $ Target <$> Mock.y)

@@ -47,7 +47,6 @@ import qualified Data.Map as Map
 import Data.Semigroup
     ( (<>)
     )
-import qualified Data.Set as Set
 import Data.Text
     ( Text
     , pack
@@ -119,7 +118,6 @@ import Kore.Error
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
     )
-import qualified Kore.IndexedModule.IndexedModule as IndexedModule
 import Kore.Logger.Output as Logger
 import Kore.Parser
     ( ParsedPattern
@@ -393,16 +391,9 @@ mainPatternVerify verifiedModule patt = do
             (runPatternVerifier context $ verifyStandalonePattern Nothing patt)
     either (error . printError) return verifyResult
   where
-    Builtin.Verifiers { domainValueVerifiers } = Builtin.koreVerifiers
     context =
-        PatternVerifier.Context
-            { indexedModule =
-                verifiedModule
-                & IndexedModule.eraseAxiomAttributes
-            , declaredSortVariables = Set.empty
-            , declaredVariables = emptyDeclaredVariables
-            , builtinDomainValueVerifiers = domainValueVerifiers
-            }
+        PatternVerifier.verifiedModuleContext verifiedModule
+        & PatternVerifier.withBuiltinVerifiers Builtin.koreVerifiers
 
 lookupMainModule
     :: Monad monad

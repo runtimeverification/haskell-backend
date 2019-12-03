@@ -1,0 +1,9 @@
+  <k>
+    1
+  </k>
+#And
+  {
+    ?X >=Int 1 andBool ?X <=Int 3
+  #Equals
+    true
+  }

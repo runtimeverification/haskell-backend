@@ -5,6 +5,7 @@ License     : NCSA
 -}
 module Kore.Internal.OrPattern
     ( OrPattern
+    , coerceSort
     , isSimplified
     , fromPatterns
     , toPatterns
@@ -22,6 +23,7 @@ module Kore.Internal.OrPattern
     ) where
 
 import qualified Data.Foldable as Foldable
+import qualified GHC.Stack as GHC
 
 import Kore.Internal.Condition
     ( Condition
@@ -98,7 +100,7 @@ bottom = fromPatterns []
 
 {-| 'isFalse' checks if the 'Or' is composed only of bottom items.
 -}
-isFalse :: Ord variable => OrPattern variable -> Bool
+isFalse :: OrPattern variable -> Bool
 isFalse = isBottom
 
 {- | @\\top@
@@ -113,7 +115,7 @@ top = fromPattern Pattern.top
 
 {-| 'isTrue' checks if the 'Or' has a single top pattern.
 -}
-isTrue :: Ord variable => OrPattern variable -> Bool
+isTrue :: OrPattern variable -> Bool
 isTrue = isTop
 
 {-| 'toPattern' transforms an 'OrPattern' into a 'Pattern.Pattern'.
@@ -164,3 +166,12 @@ toTermLike multiOr =
         [] -> mkBottom_
         [patt] -> Pattern.toTermLike patt
         patts -> Foldable.foldr1 mkOr (Pattern.toTermLike <$> patts)
+
+coerceSort
+    :: (GHC.HasCallStack, InternalVariable variable)
+    => Sort -> OrPattern variable -> OrPattern variable
+coerceSort sort =
+    fromPatterns
+    . map (Pattern.coerceSort sort)
+    . toPatterns
+

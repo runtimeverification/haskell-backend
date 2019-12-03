@@ -49,6 +49,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Profiler.Profile as Profiler
@@ -130,7 +131,6 @@ import qualified Kore.Step.Simplification.Top as Top
 import qualified Kore.Step.Simplification.Variable as Variable
     ( simplify
     )
-import qualified Kore.Substitute as Substitute
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -188,7 +188,6 @@ simplifyInternal
     ::  forall variable simplifier
     .   ( GHC.HasCallStack
         , SimplifierVariable variable
-        , Substitute.SubstitutionVariable variable
         , MonadSimplify simplifier
         )
     =>  TermLike variable
@@ -241,12 +240,15 @@ simplifyInternal term predicate = do
             Right termPredicate ->
                 return
                 $ OrPattern.fromPattern
-                $ Pattern.fromCondition
+                $ Pattern.fromConditionSorted (termLikeSort termLike)
                 $ assertConditionSimplified termLike
                 $ Condition.fromPredicate termPredicate
         | otherwise
         = assertTermNotPredicate $ tracer termLike $ do
-            termOr <- descendAndSimplify termLike
+            unfixedTermOr <- descendAndSimplify termLike
+            let termOr = OrPattern.coerceSort
+                    (termLikeSort termLike)
+                    unfixedTermOr
             returnIfSimplifiedOrContinue
                 termLike
                 (OrPattern.toPatterns termOr)
@@ -346,6 +348,7 @@ simplifyInternal term predicate = do
                     Conditional {substitution} -> substitution == mempty
             termAsPredicate =
                 Condition.fromPredicate <$> Predicate.makePredicate term
+
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =
@@ -355,8 +358,10 @@ simplifyInternal term predicate = do
         in case termLikeF of
             -- Unimplemented cases
             ApplyAliasF _ -> doNotSimplify
-            -- Do not simplify evaluated patterns.
+            -- Do not simplify non-simplifiable patterns.
             EvaluatedF  _ -> doNotSimplify
+            EndiannessF _ -> doNotSimplify
+            SignednessF _ -> doNotSimplify
             --
             AndF andF ->
                 And.simplify =<< simplifyChildren andF

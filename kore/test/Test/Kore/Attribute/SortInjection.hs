@@ -1,4 +1,10 @@
-module Test.Kore.Attribute.SortInjection where
+module Test.Kore.Attribute.SortInjection
+    ( test_sortInjection
+    , test_Attributes
+    , test_duplicate
+    , test_arguments
+    , test_parameters
+    ) where
 
 import Test.Tasty
 import Test.Tasty.HUnit

@@ -533,6 +533,16 @@ the result is `\bottom{}()`.
         [hook{}("MAP.lookup")]
 ~~~
 
+### MAP.lookupOrDefault
+
+If the given key is in the map, the result is the associated value; otherwise,
+the result is the given default.
+
+~~~
+    hooked-symbol lookupOrDefault{}(Map{}, Key{}, /* default: */ Value{}) : Value{}
+        [hook{}("MAP.lookupOrDefault")]
+~~~
+
 ### MAP.in_keys
 
 If the given key is in the map, the result is `\dv{Bool{}}("true")`; otherwise
@@ -541,6 +551,24 @@ the result is `\dv{Bool{}}("false")`.
 ~~~
     hooked-symbol inKeys{}(Map{}, Key{}) : Bool{}
         [hook{}("MAP.in_keys")]
+~~~
+
+### MAP.keys
+
+Takes a map and returns a set of its keys.
+
+~~~
+    hooked-symbol keys{}(Map{}) : Set{}
+        [hook{}("MAP.keys")]
+~~~
+
+### MAP.values
+
+Takes a map and returns a list of its values.
+
+~~~
+    hooked-symbol values{}(Map{}) : List{}
+        [hook{}("MAP.values")]
 ~~~
 
 ## LIST
@@ -609,6 +637,15 @@ is `\dv{Int{}}("0")` and the last element is `\dv{Int{}}("-1")`. The result is
 ~~~
     hooked-symbol update{}(List{}, Int{}, Elem{}) : List{}
         [hook{}("LIST.update")]
+~~~
+
+### LIST.in
+
+Is a value an element of the given list?
+
+~~~
+    hooked-symbol in{}(Elem{}, List{}) : Bool{}
+        [hook{}("LIST.in")]
 ~~~
 
 ## SET
@@ -845,3 +882,22 @@ using the provided value.
         [hook{}("BYTES.concat")]
 ~~~
 
+### BYTES.int2bytes
+
+`BYTES.int2bytes` represents the _value_ as _length_ bytes in `BigEndian` or
+`LittleEndian` order.
+
+~~~
+    hooked-symbol int2bytes{}(/* length */ Int{}, /* value */ Int{}, Endianness{}) : Bytes{}
+        [hook{}("BYTES.int2bytes")]
+~~~
+
+### BYTES.bytes2int
+
+`BYTES.bytes2int` decodes a `Signed` or `Unsigned` `Int` encoded as a
+`BigEndian` or `LittleEndian` `Bytes`.
+
+~~~
+    hooked-symbol bytes2int{}(Bytes{}, Endianness{}, Signedness{}) : Int{}
+        [hook{}("BYTES.bytes2int")]
+~~~

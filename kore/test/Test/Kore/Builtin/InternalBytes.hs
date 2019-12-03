@@ -1,8 +1,25 @@
-module Test.Kore.Builtin.InternalBytes where
+module Test.Kore.Builtin.InternalBytes
+    ( test_update
+    , test_get
+    , test_substr
+    , test_replaceAt
+    , test_padRight
+    , test_padLeft
+    , test_reverse
+    , test_length
+    , test_concat
+    , test_reverse_length
+    , test_update_get
+    , test_bytes2string_string2bytes
+    , test_int2bytes
+    , test_bytes2int
+    , test_InternalBytes
+    ) where
 
 import qualified Data.ByteString.Char8 as BS
 import Hedgehog hiding
     ( Concrete
+    , test
     )
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -11,6 +28,7 @@ import Test.Tasty
 import Data.ByteString
     ( ByteString
     )
+import qualified Data.ByteString as ByteString
 import Data.Char
     ( ord
     )
@@ -18,6 +36,7 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as T
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import GHC.Stack
     ( HasCallStack
     )
@@ -34,6 +53,7 @@ import Test.Kore.Builtin.Definition
 import qualified Test.Kore.Builtin.Int as Test.Int
 import qualified Test.Kore.Builtin.String as Test.String
 import Test.SMT
+import Test.Tasty.HUnit.Ext
 
 genString :: Gen Text
 genString = Gen.text (Range.linear 0 256) Gen.latin1
@@ -492,11 +512,110 @@ test_bytes2string_string2bytes =
                 ]
         (===) expect actual
 
+int2bytesData
+    :: [(Integer, Bool, ByteString)] -- ^ (integer, big endian?, bytes)
+int2bytesData =
+    [ (   0,  True, "\x00\x00\x00\x00")
+    , ( 128,  True,             "\x80")
+    , (-128,  True,             "\x80")
+    , (   2,  True,             "\x02")
+    , (-  2,  True,             "\xfe")
+    , (  16,  True,             "\x10")
+    , (- 16,  True,             "\xf0")
+    , ( 128,  True,         "\x00\x80")
+    , (-128,  True,         "\xff\x80")
+    , ( 128, False,         "\x80\x00")
+    , (-128, False,         "\x80\xff")
+    , (   0,  True,                 "")
+    ]
+
+test_int2bytes :: [TestTree]
+test_int2bytes =
+    map test int2bytesData
+  where
+    test
+        :: HasCallStack
+        => (Integer, Bool, ByteString)
+        -> TestTree
+    test (integer, bigEndian, bytes) =
+        testCase name $ do
+            let input =
+                    int2bytes
+                        (Test.Int.asInternal len)
+                        (Test.Int.asInternal integer)
+                        end
+                expect = [asPattern bytes]
+            actual <- simplify input
+            assertEqual "" expect actual
+      where
+        name =
+            let args =
+                    ( len
+                    , integer
+                    , if bigEndian then "BE" else "LE" :: String
+                    )
+            in show $ "int2bytes" <> Pretty.pretty args
+        len = fromIntegral $ ByteString.length bytes
+        end
+          | bigEndian = bigEndianBytes
+          | otherwise = littleEndianBytes
+
+test_bytes2int :: [TestTree]
+test_bytes2int =
+    map test int2bytesData
+  where
+    test
+        :: HasCallStack
+        => (Integer, Bool, ByteString)
+        -> TestTree
+    test (integer, bigEndian, bytes) =
+        testGroup name (mkCase <$> [True, False])
+      where
+        mkCase signed =
+            testCase (if signed then "signed" else "unsigned") $ do
+                let sign
+                      | signed    = signedBytes
+                      | otherwise = unsignedBytes
+                    underflow = (-2) * integer >= modulus
+                    int
+                      | not signed, integer < 0 = integer + modulus
+                      |     signed, underflow   = integer + modulus
+                      | otherwise               = integer
+                    modulus = 0x100 ^ ByteString.length bytes
+                    input = bytes2int (asInternal bytes) end sign
+                    expect = [Test.Int.asPattern int]
+                actual <- simplify input
+                assertEqual "" expect actual
+        name =
+            let args =
+                    ( ByteString.unpack bytes
+                    , if bigEndian then "BE" else "LE" :: String
+                    , "_" :: String
+                    )
+            in show $ "bytes2int" <> Pretty.pretty args
+        end
+          | bigEndian = bigEndianBytes
+          | otherwise = littleEndianBytes
+
+test_InternalBytes :: [TestTree]
+test_InternalBytes =
+    [ testCase "\\dv{Bytes{}}(\"00\")" $ do
+        let unverified =
+                mkDomainValue
+                $ DomainValue bytesSort
+                $ mkStringLiteral "00"
+            expect = Right $ asInternal "\x00"
+            actual = verifyPattern (Just bytesSort) unverified
+        assertEqual "" expect actual
+    ]
+
+-- * Helpers
+
 asInternal :: ByteString -> TermLike Variable
-asInternal = InternalBytes.asInternal bytesSort string2bytesBytesSymbol
+asInternal = InternalBytes.asInternal bytesSort
 
 asPattern :: ByteString -> Pattern Variable
-asPattern = InternalBytes.asPattern bytesSort string2bytesBytesSymbol
+asPattern = InternalBytes.asPattern bytesSort
 
 testBytes
     :: HasCallStack

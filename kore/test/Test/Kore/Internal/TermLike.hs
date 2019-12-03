@@ -1,4 +1,14 @@
-module Test.Kore.Internal.TermLike where
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
+module Test.Kore.Internal.TermLike
+    ( test_substitute
+    , test_externalizeFreshVariables
+    , test_refreshVariables
+    , test_hasConstructorLikeTop
+    --
+    , termLikeGen
+    , termLikeChildGen
+    ) where
 
 import qualified Hedgehog
 import qualified Hedgehog.Gen as Gen

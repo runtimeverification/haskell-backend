@@ -32,6 +32,7 @@ import Data.Functor.Const
 import Data.Functor.Identity
     ( Identity
     )
+import Data.Int
 import Data.Map
     ( Map
     )
@@ -66,6 +67,7 @@ import Data.Typeable
 import Data.Void
     ( Void
     )
+import Data.Word
 import Debug.Trace
     ( traceM
     )
@@ -161,7 +163,7 @@ class Debug a where
 
     debugPrec :: a -> Int -> Doc ann
     default debugPrec
-        :: (Generic a, HasDatatypeInfo a, All2 Debug (Code a))
+        :: (HasDatatypeInfo a, All2 Debug (Code a))
         => a
         -> Int  -- ^ surrounding precedence
         -> Doc ann
@@ -279,6 +281,15 @@ instance Debug Integer where
 instance Debug Int where
     debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
 
+instance Debug Int64 where
+    debugPrec x = \_ -> parens (x < 0) (Pretty.pretty x)
+
+instance Debug Word32 where
+    debugPrec x = \_ -> Pretty.pretty x
+
+instance Debug Word64 where
+    debugPrec x = \_ -> Pretty.pretty x
+
 instance Debug Char where
     debugPrec x = \_ -> Pretty.squotes (Pretty.pretty x)
 
@@ -392,7 +403,7 @@ class Diff a where
      -}
     diffPrec :: a -> a -> Maybe (Int -> Doc ann)
     default diffPrec
-        :: (Debug a, Generic a, HasDatatypeInfo a, All2 Diff (Code a))
+        :: (Debug a, HasDatatypeInfo a, All2 Diff (Code a))
         => a
         -> a
         -> Maybe (Int -> Doc ann)
@@ -440,7 +451,7 @@ the difference.
  -}
 diffPrecGeneric
     :: forall a ann
-    .  (Debug a, Generic a, HasDatatypeInfo a, All2 Diff (Code a))
+    .  (Debug a, HasDatatypeInfo a, All2 Diff (Code a))
     => a
     -> a
     -> Maybe (Int -> Doc ann)
@@ -536,6 +547,15 @@ instance Diff Integer where
     diffPrec = diffPrecEq
 
 instance Diff Int where
+    diffPrec = diffPrecEq
+
+instance Diff Int64 where
+    diffPrec = diffPrecEq
+
+instance Diff Word32 where
+    diffPrec = diffPrecEq
+
+instance Diff Word64 where
     diffPrec = diffPrecEq
 
 instance Diff Char where

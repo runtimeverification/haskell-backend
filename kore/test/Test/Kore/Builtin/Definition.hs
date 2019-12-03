@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+
 module Test.Kore.Builtin.Definition where
 
 import qualified Data.Bifunctor as Bifunctor
@@ -21,6 +24,8 @@ import Kore.Attribute.Sort.HasDomainValues
     )
 import qualified Kore.Attribute.Sort.Unit as Sort
 import Kore.Attribute.SortInjection
+import qualified Kore.Builtin.Endianness as Endianness
+import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Internal.ApplicationSorts
@@ -29,8 +34,10 @@ import Kore.Internal.Symbol
     , function
     , functional
     , hook
+    , klabel
     , smthook
     , sortInjection
+    , symbolKywd
     )
 import qualified Kore.Internal.Symbol as Internal
 import Kore.Internal.TermLike hiding
@@ -350,6 +357,9 @@ updateListSymbol :: Internal.Symbol
 updateListSymbol = builtinSymbol "updateList" listSort
     [listSort, intSort, intSort] & hook "LIST.update"
 
+inListSymbol :: Internal.Symbol
+inListSymbol = builtinSymbol "inList" boolSort [intSort, listSort] & hook "LIST.in"
+
 unitList :: TermLike Variable
 unitList = mkApplySymbol unitListSymbol []
 
@@ -372,6 +382,12 @@ updateList
     -> TermLike Variable
 updateList list poz value = mkApplySymbol updateListSymbol [list, poz, value]
 
+inList
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+inList x list = mkApplySymbol inListSymbol [x, list]
+
 -- ** Map
 
 unitMapSymbol :: Internal.Symbol
@@ -386,6 +402,11 @@ lookupMapSymbol :: Internal.Symbol
 lookupMapSymbol =
     builtinSymbol "lookupMap" intSort [mapSort, intSort]
     & hook "MAP.lookup"
+
+lookupOrDefaultMapSymbol :: Internal.Symbol
+lookupOrDefaultMapSymbol =
+    builtinSymbol "lookupOrDefaultMap" intSort [mapSort, intSort, intSort]
+    & hook "MAP.lookupOrDefault"
 
 elementMapSymbol :: Internal.Symbol
 elementMapSymbol =
@@ -437,6 +458,14 @@ lookupMap
     -> TermLike Variable
     -> TermLike Variable
 lookupMap map' key = mkApplySymbol lookupMapSymbol [map', key]
+
+lookupOrDefaultMap
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+lookupOrDefaultMap map' key def' =
+    mkApplySymbol lookupOrDefaultMapSymbol [map', key, def']
 
 elementMap
     :: TermLike Variable
@@ -619,6 +648,46 @@ string2TokenStringSymbol =
 
 -- * Bytes
 
+littleEndianBytesSymbol :: Internal.Symbol
+littleEndianBytesSymbol =
+    builtinSymbol "littleEndianBytes" endiannessSort []
+    & klabel "littleEndianBytes"
+    & symbolKywd
+
+littleEndianBytes :: TermLike Variable
+littleEndianBytes =
+    mkEndianness (Endianness.LittleEndian littleEndianBytesSymbol)
+
+bigEndianBytesSymbol :: Internal.Symbol
+bigEndianBytesSymbol =
+    builtinSymbol "bigEndianBytes" endiannessSort []
+    & klabel "bigEndianBytes"
+    & symbolKywd
+
+bigEndianBytes :: TermLike Variable
+bigEndianBytes =
+    mkEndianness (Endianness.BigEndian bigEndianBytesSymbol)
+
+signedBytesSymbol :: Internal.Symbol
+signedBytesSymbol =
+    builtinSymbol "signedBytes" signednessSort []
+    & klabel "signedBytes"
+    & symbolKywd
+
+signedBytes :: TermLike Variable
+signedBytes =
+    mkSignedness (Signedness.Signed signedBytesSymbol)
+
+unsignedBytesSymbol :: Internal.Symbol
+unsignedBytesSymbol =
+    builtinSymbol "unsignedBytes" signednessSort []
+    & klabel "unsignedBytes"
+    & symbolKywd
+
+unsignedBytes :: TermLike Variable
+unsignedBytes =
+    mkSignedness (Signedness.Unsigned unsignedBytesSymbol)
+
 bytes2stringBytesSymbol :: Internal.Symbol
 bytes2stringBytesSymbol =
     builtinSymbol "bytes2stringBytes" stringSort [bytesSort]
@@ -673,6 +742,31 @@ concatBytesSymbol :: Internal.Symbol
 concatBytesSymbol =
     builtinSymbol "concatBytes" bytesSort [bytesSort, bytesSort]
         & hook "BYTES.concat"
+
+int2bytesSymbol :: Internal.Symbol
+int2bytesSymbol =
+    builtinSymbol "int2bytes" bytesSort [intSort, intSort, endiannessSort]
+    & hook "BYTES.int2bytes"
+
+int2bytes
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+int2bytes len i end = mkApplySymbol int2bytesSymbol [len, i, end]
+
+bytes2intSymbol :: Internal.Symbol
+bytes2intSymbol =
+    builtinSymbol "bytes1int" intSort
+        [bytesSort, endiannessSort, signednessSort]
+    & hook "BYTES.bytes2int"
+
+bytes2int
+    :: TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+    -> TermLike Variable
+bytes2int bytes end sign = mkApplySymbol bytes2intSymbol [bytes, end, sign]
 
 -- * Krypto
 
@@ -1047,9 +1141,30 @@ bytesSort =
 
 bytesSortDecl :: ParsedSentence
 bytesSortDecl =
-    hookedSortDecl
-        bytesSort
-        [ hookAttribute "BYTES.Bytes" ]
+    hookedSortDecl bytesSort
+        [ hookAttribute "BYTES.Bytes"
+        , hasDomainValuesAttribute
+        ]
+
+endiannessSort :: Sort
+endiannessSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Endianness"
+        , sortActualSorts = []
+        }
+
+endiannessSortDecl :: ParsedSentence
+endiannessSortDecl = sortDecl endiannessSort
+
+signednessSort :: Sort
+signednessSort =
+    SortActualSort SortActual
+        { sortActualName = testId "Signedness"
+        , sortActualSorts = []
+        }
+
+signednessSortDecl :: ParsedSentence
+signednessSortDecl = sortDecl signednessSort
 
 -- -------------------------------------------------------------
 -- * Modules
@@ -1257,6 +1372,7 @@ listModule =
             , hookedSymbolDecl concatListSymbol
             , hookedSymbolDecl getListSymbol
             , hookedSymbolDecl updateListSymbol
+            , hookedSymbolDecl inListSymbol
             -- A second builtin List sort, to confuse 'asPattern'.
             , listSortDecl2
             , hookedSymbolDecl unitList2Symbol
@@ -1285,6 +1401,7 @@ mapModule =
             , hookedSymbolDecl elementMapSymbol
             , hookedSymbolDecl concatMapSymbol
             , hookedSymbolDecl lookupMapSymbol
+            , hookedSymbolDecl lookupOrDefaultMapSymbol
             , hookedSymbolDecl updateMapSymbol
             , hookedSymbolDecl inKeysMapSymbol
             , hookedSymbolDecl keysMapSymbol
@@ -1426,6 +1543,14 @@ bytesModule =
             , hookedSymbolDecl reverseBytesSymbol
             , hookedSymbolDecl lengthBytesSymbol
             , hookedSymbolDecl concatBytesSymbol
+            , hookedSymbolDecl int2bytesSymbol
+            , hookedSymbolDecl bytes2intSymbol
+            , endiannessSortDecl
+            , symbolDecl littleEndianBytesSymbol
+            , symbolDecl bigEndianBytesSymbol
+            , signednessSortDecl
+            , symbolDecl signedBytesSymbol
+            , symbolDecl unsignedBytesSymbol
             ]
         }
 

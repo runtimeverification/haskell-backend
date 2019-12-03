@@ -37,6 +37,7 @@ import Data.List.NonEmpty
     )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import Data.Text
     ( pack
     )
@@ -492,20 +493,23 @@ showAxiomByName =
         continue `equals` Continue
 
 logUpdatesState :: IO ()
-logUpdatesState =
+logUpdatesState = do
     let
         axioms  = []
         claim   = emptyClaim
-        command =
-            Log Logger.Info (makeLogScope ["scope1", "scope2"]) LogToStdErr
-    in do
-        Result { output, continue, state } <-
-            run command axioms [claim] claim
-        output   `equalsOutput` mempty
-        continue `equals`     Continue
-        state
-            `hasLogging`
-            (Logger.Info, (makeLogScope ["scope1", "scope2"]), LogToStdErr)
+        options =
+            Logger.KoreLogOptions
+                { logLevel = Logger.Info
+                , logScopes = Set.fromList ["scope1", "scope2"]
+                , logType = Logger.LogStdErr
+                , debugAppliedRuleOptions = mempty
+                }
+        command = Log options
+    Result { output, continue, state } <-
+        run command axioms [claim] claim
+    output   `equalsOutput` mempty
+    continue `equals`     Continue
+    state `hasLogging` options
 
 proveSecondClaim :: IO ()
 proveSecondClaim =
@@ -582,24 +586,23 @@ runWithState
     -> Claim
     -> (ReplState Claim -> ReplState Claim)
     -> IO Result
-runWithState command axioms claims claim stateTransformer
-  = Logger.withLogger logOptions $ \logger -> do
-        output <- newIORef (mempty :: ReplOutput)
-        mvar <- newMVar logger
-        let state = stateTransformer $ mkState axioms claims claim
-        let config = mkConfig mvar
-        (c, s) <-
-            liftSimplifier (Logger.swappableLogger mvar)
-            $ flip runStateT state
-            $ flip runReaderT config
-            $ replInterpreter0
-                (PrintAuxOutput . modifyAuxOutput $ output)
-                (PrintKoreOutput . modifyKoreOutput $ output)
-                command
-        output' <- readIORef output
-        return $ Result output' c s
+runWithState command axioms claims claim stateTransformer = do
+    let logger = mempty
+    output <- newIORef (mempty :: ReplOutput)
+    mvar <- newMVar logger
+    let state = stateTransformer $ mkState axioms claims claim
+    let config = mkConfig mvar
+    (c, s) <-
+        liftSimplifier (Logger.swappableLogger mvar)
+        $ flip runStateT state
+        $ flip runReaderT config
+        $ replInterpreter0
+            (PrintAuxOutput . modifyAuxOutput $ output)
+            (PrintKoreOutput . modifyKoreOutput $ output)
+            command
+    output' <- readIORef output
+    return $ Result output' c s
   where
-    logOptions = Logger.KoreLogOptions Logger.LogStdErr Logger.Debug mempty
     liftSimplifier logger =
         SMT.runSMT SMT.defaultConfig logger . Kore.runSimplifier testEnv
 
@@ -640,11 +643,11 @@ hasAlias st alias@AliasDefinition { name } =
 
 hasLogging
     :: ReplState Claim
-    -> (Logger.Severity, LogScope, LogType)
+    -> Logger.KoreLogOptions
     -> IO ()
 hasLogging st expectedLogging =
     let
-        actualLogging = logging st
+        actualLogging = koreLogOptions st
     in
         actualLogging `equals` expectedLogging
 
@@ -665,17 +668,22 @@ mkState
     -> ReplState Claim
 mkState axioms claims claim =
     ReplState
-        { axioms      = axioms
-        , claims      = claims
-        , claim       = claim
-        , claimIndex  = ClaimIndex 0
-        , graphs      = Map.singleton (ClaimIndex 0) graph'
-        , node        = ReplNode 0
-        , commands    = Seq.empty
-        , omit        = mempty
-        , labels      = Map.singleton (ClaimIndex 0) Map.empty
-        , aliases     = Map.empty
-        , logging     = (Logger.Debug, mempty, NoLogging)
+        { axioms         = axioms
+        , claims         = claims
+        , claim          = claim
+        , claimIndex     = ClaimIndex 0
+        , graphs         = Map.singleton (ClaimIndex 0) graph'
+        , node           = ReplNode 0
+        , commands       = Seq.empty
+        , omit           = mempty
+        , labels         = Map.singleton (ClaimIndex 0) Map.empty
+        , aliases        = Map.empty
+        , koreLogOptions = Logger.KoreLogOptions
+            { logLevel = Logger.Warning
+            , logScopes = mempty
+            , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
+            }
         }
   where
     graph' = emptyExecutionGraph claim

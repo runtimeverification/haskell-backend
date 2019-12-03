@@ -46,11 +46,10 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate
+    , makeEqualsPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
 import qualified Kore.Step.Simplification.And as And
     ( simplifyEvaluated
     )
@@ -326,7 +325,7 @@ makeEvaluateTermsAssumesNoBottom firstTerm secondTerm = do
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeEqualsPredicate firstTerm secondTerm
+                    $ makeEqualsPredicate_ firstTerm secondTerm
                 , substitution = mempty
                 }
 
@@ -367,7 +366,7 @@ makeEvaluateTermsToPredicate first second configurationCondition
             return
                 $ OrCondition.fromCondition . Condition.fromPredicate
                 $ Predicate.markSimplified
-                $ makeEqualsPredicate first second
+                $ makeEqualsPredicate_ first second
         Just predicatedOr -> do
             firstCeilOr <- Ceil.makeEvaluateTerm configurationCondition first
             secondCeilOr <- Ceil.makeEvaluateTerm configurationCondition second
@@ -415,9 +414,7 @@ termEqualsAnd p1 p2 =
 
     maybeTermEqualsWorker
         :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
+        .  MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> MaybeT unifier (Pattern variable)
@@ -425,9 +422,7 @@ termEqualsAnd p1 p2 =
 
     termEqualsAndWorker
         :: forall unifier
-        .   ( MonadUnify unifier
-            , Logger.WithLog Logger.LogMessage unifier
-            )
+        .  MonadUnify unifier
         => TermLike variable
         -> TermLike variable
         -> unifier (Pattern variable)
@@ -446,6 +441,6 @@ termEqualsAnd p1 p2 =
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeEqualsPredicate first second
+                    $ makeEqualsPredicate_ first second
                 , substitution = mempty
                 }

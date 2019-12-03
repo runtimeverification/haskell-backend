@@ -22,6 +22,7 @@ module Kore.Builtin.List.List
     , unitKey
     , getKey
     , updateKey
+    , inKey
     ) where
 
 import qualified Data.Function as Function
@@ -95,8 +96,7 @@ asInternal tools builtinListSort builtinListChild =
 {- | Render a 'Seq' as a Builtin list pattern.
 -}
 asBuiltin
-    :: InternalVariable variable
-    => SmtMetadataTools Attribute.Symbol
+    :: SmtMetadataTools Attribute.Symbol
     -> Sort
     -> Seq (TermLike variable)
     -> Domain.Builtin (TermLike Concrete) (TermLike variable)
@@ -189,3 +189,6 @@ getKey = "LIST.get"
 
 updateKey :: IsString s => s
 updateKey = "LIST.update"
+
+inKey :: IsString s => s
+inKey = "LIST.in"

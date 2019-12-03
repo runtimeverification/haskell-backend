@@ -16,6 +16,9 @@ import Control.Exception
     ( assert
     )
 import qualified Control.Monad.Trans as Monad.Trans
+import Data.Text.Prettyprint.Doc
+    ( Doc
+    )
 import qualified GHC.Stack as GHC
 import Prelude hiding
     ( concat
@@ -83,19 +86,37 @@ overloadedAndEqualsOverloading
     termMerger
     tools
     first@(App_ firstHead _)
-    second@(App_ sortInjection [App_ secondHead secondChildren])
+    (App_ sortInjection [App_ secondHead secondChildren])
   | MetadataTools.isOverloading tools firstHead secondHead
   = equalInjectiveHeadsAndEquals
         termMerger
         first
         (resolveOverloading sortInjection firstHead secondHead secondChildren)
-  | MetadataTools.isConstructorOrOverloaded tools secondHead
+overloadedAndEqualsOverloading
+    _termMerger
+    tools
+    first@(App_ _ _)
+    second@(App_ _ [child])
+  | Just typeName <- notUnifiableType child
   = Monad.Trans.lift $ do
         explainBottom
-            "Cannot unify overloaded constructor with different injected ctor."
+            ("Cannot unify overloaded constructor with " <> typeName <> ".")
             first
             second
         empty
+  where
+    notUnifiableType :: TermLike variable -> Maybe (Doc ())
+    notUnifiableType (App_ appHead _)
+      | MetadataTools.isConstructorOrOverloaded tools appHead
+      = Just "different injected ctor"
+    notUnifiableType (DV_ _ _) = Just "injected domain value"
+    notUnifiableType (BuiltinBool_ _) = Just "injected builtin bool"
+    notUnifiableType (BuiltinInt_ _) = Just "injected builtin int"
+    notUnifiableType (BuiltinList_ _) = Just "injected builtin list"
+    notUnifiableType (BuiltinMap_ _) = Just "injected builtin map"
+    notUnifiableType (BuiltinSet_ _) = Just "injected builtin set"
+    notUnifiableType (BuiltinString_ _) = Just "injected builtin string"
+    notUnifiableType _ = Nothing
 overloadedAndEqualsOverloading _ _ _ _ = empty
 
 resolveOverloading

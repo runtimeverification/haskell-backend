@@ -73,11 +73,10 @@ import qualified Control.Monad.Trans.Class as Monad.Trans
 import Control.Monad.Trans.Except
     ( runExceptT
     )
-import Data.Coerce
-    ( Coercible
-    , coerce
-    )
 import qualified Data.Foldable as Foldable
+import Data.Function
+    ( on
+    )
 import Data.Functor
     ( ($>)
     )
@@ -108,6 +107,7 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as Text.Lazy
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Data.Typeable as Typeable
 import GHC.Exts
     ( toList
     )
@@ -138,12 +138,13 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger as Logger
+import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
 import Kore.Step.Rule
-    ( RulePattern (..)
+    ( ReachabilityRule (..)
+    , RulePattern (..)
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Rule as Axiom
@@ -263,7 +264,7 @@ replInterpreter0 printAux printKore replCmd = do
                 TryAlias name      -> tryAlias name printAux printKore
                 LoadScript file    -> loadScript file    $> Continue
                 ProofStatus        -> proofStatus        $> Continue
-                Log s sc t         -> handleLog (s,sc,t) $> Continue
+                Log opts           -> handleLog opts     $> Continue
                 Exit               -> exit
     (ReplOutput output, shouldContinue) <- evaluateCommand command
     liftIO $ Foldable.traverse_
@@ -357,8 +358,7 @@ showClaim =
 showAxiom
     :: MonadState (ReplState claim) m
     => axiom ~ Rule claim
-    => Coercible axiom (RulePattern Variable)
-    => Coercible (RulePattern Variable) axiom
+    => ToRulePattern axiom
     => Unparse axiom
     => MonadWriter ReplOutput m
     => Either AxiomIndex RuleName
@@ -481,9 +481,9 @@ loadScript file = parseEvalScript file
 
 handleLog
     :: MonadState (ReplState claim) m
-    => (Logger.Severity, LogScope, LogType)
+    => Logger.KoreLogOptions
     -> m ()
-handleLog t = field @"logging" .= t
+handleLog t = field @"koreLogOptions" .= t
 
 -- | Focuses the node with id equals to 'n'.
 selectNode
@@ -593,8 +593,7 @@ allProofs = do
         . Strategy.graph
 
     notStartedProofs
-        :: Claim claim
-        => Map.Map ClaimIndex (ExecutionGraph axiom)
+        :: Map.Map ClaimIndex (ExecutionGraph axiom)
         -> Map.Map ClaimIndex claim
         -> Map.Map ClaimIndex GraphProofStatus
     notStartedProofs gphs cls =
@@ -627,7 +626,7 @@ showRule configNode = do
         Just rule -> do
             axioms <- Lens.use (field @"axioms")
             tell . showRewriteRule $ rule
-            let ruleIndex = getRuleIndex . coerce $ rule
+            let ruleIndex = getRuleIndex . toRulePattern $ rule
             putStrLn'
                 $ fromMaybe "Error: identifier attribute wasn't initialized."
                 $ showAxiomOrClaim (length axioms) ruleIndex
@@ -813,16 +812,43 @@ tryAxiomClaimWorker mode ref = do
             getAxiomOrClaimByName
             ref
     case maybeAxiomOrClaim of
-       Nothing ->
-           putStrLn' "Could not find axiom or claim."
-       Just axiomOrClaim -> do
-           node <- Lens.use (field @"node")
-           case mode of
-               Never ->
-                   showUnificationFailure axiomOrClaim node
-               IfPossible ->
-                   tryForceAxiomOrClaim axiomOrClaim node
+        Nothing ->
+            putStrLn' "Could not find axiom or claim."
+        Just axiomOrClaim -> do
+            claim <- Lens.use (field @"claim")
+            if isReachabilityRule claim && notEqualClaimTypes axiomOrClaim claim
+                then putStrLn' "Only claims of the same type as the current\
+                               \ claim can be applied as rewrite rules."
+                else do
+                    node <- Lens.use (field @"node")
+                    case mode of
+                        Never ->
+                            showUnificationFailure axiomOrClaim node
+                        IfPossible ->
+                            tryForceAxiomOrClaim axiomOrClaim node
   where
+    notEqualClaimTypes :: Either axiom claim -> claim -> Bool
+    notEqualClaimTypes axiomOrClaim' claim' =
+        not (either (const True) (equalClaimTypes claim') axiomOrClaim')
+
+    equalClaimTypes :: claim -> claim -> Bool
+    equalClaimTypes =
+        isSameType `on` castToReachability
+
+    castToReachability :: claim -> Maybe (ReachabilityRule Variable)
+    castToReachability = Typeable.cast
+
+    isReachabilityRule :: claim -> Bool
+    isReachabilityRule = isJust . castToReachability
+
+    isSameType
+        :: Maybe (ReachabilityRule Variable)
+        -> Maybe (ReachabilityRule Variable)
+        -> Bool
+    isSameType (Just (OnePath _)) (Just (OnePath _)) = True
+    isSameType (Just (AllPath _)) (Just (AllPath _)) = True
+    isSameType _ _ = False
+
     showUnificationFailure
         :: Either axiom claim
         -> ReplNode
@@ -872,7 +898,7 @@ tryAxiomClaimWorker mode ref = do
         first' = TermLike.refreshVariables (TermLike.freeVariables second) first
 
     extractLeftPattern :: Either axiom claim -> TermLike Variable
-    extractLeftPattern = left . either coerce coerce
+    extractLeftPattern = left . either toRulePattern toRulePattern
 
 -- | Removes specified node and all its child nodes.
 clear
@@ -1082,7 +1108,6 @@ performStepNoBranching =
 -- 'performStepNoBranching'.
 recursiveForcedStep
     :: Claim claim
-    => axiom ~ Rule claim
     => MonadSimplify m
     => MonadIO m
     => Natural
@@ -1101,7 +1126,7 @@ recursiveForcedStep n node
 
 -- | Display a rule as a String.
 showRewriteRule
-    :: Coercible (RulePattern Variable) rule
+    :: ToRulePattern rule
     => Unparse rule
     => rule
     -> ReplOutput
@@ -1110,7 +1135,7 @@ showRewriteRule rule =
     <> makeAuxReplOutput
         (show . Pretty.pretty . extractSourceAndLocation $ rule')
   where
-    rule' = coerce rule
+    rule' = toRulePattern rule
 
     extractSourceAndLocation
         :: RulePattern Variable
@@ -1172,14 +1197,14 @@ printNotFound = putStrLn' "Variable or index not found"
 -- parameter is needed in order to distinguish between axioms and claims and
 -- represents the number of available axioms.
 showDotGraph
-    :: Coercible axiom (RulePattern Variable)
+    :: ToRulePattern axiom
     => Int -> InnerGraph axiom -> IO ()
 showDotGraph len =
     flip Graph.runGraphvizCanvas' Graph.Xlib
         . Graph.graphToDot (graphParams len)
 
 saveDotGraph
-    :: Coercible axiom (RulePattern Variable)
+    :: ToRulePattern axiom
     => Int
     -> InnerGraph axiom
     -> FilePath
@@ -1196,7 +1221,7 @@ saveDotGraph len gr file =
         $ path <> ".jpeg"
 
 graphParams
-    :: Coercible axiom (RulePattern Variable)
+    :: ToRulePattern axiom
     => Int
     -> Graph.GraphvizParams
          Graph.Node

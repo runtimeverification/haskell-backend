@@ -41,8 +41,7 @@ import qualified Data.Bifunctor as Bifunctor
     , second
     )
 import Data.Coerce
-    ( Coercible
-    , coerce
+    ( coerce
     )
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
@@ -51,14 +50,8 @@ import qualified Data.Map as Map
 import Data.Maybe
     ( mapMaybe
     )
-import Data.Proxy
-    ( Proxy
-    )
 import Data.Text
     ( Text
-    )
-import GHC.Stack
-    ( HasCallStack
     )
 import System.Exit
     ( ExitCode (..)
@@ -113,7 +106,7 @@ import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
 import Kore.Step.Rule
     ( EqualityRule
-    , ImplicationRule (..)
+    , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , extractImplicationClaims
@@ -152,11 +145,7 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Claim
-    , CommonProofState
     , verify
-    )
-import Kore.TopBottom
-    ( TopBottom (..)
     )
 import Kore.Unparser
     ( unparseToText
@@ -289,29 +278,21 @@ search verifiedModule strategy termLike searchPattern searchConfig =
 
 -- | Proving a spec given as a module containing rules to be proven
 prove
-    ::  forall claim smt
+    ::  forall smt
       . ( Log.WithLog Log.LogMessage smt
         , MonadCatch smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
-        , Claim claim
-        , Eq claim
-        , Show claim
-        , Show (Goal.Rule claim)
-        , TopBottom claim
-        , Goal.ProofState claim (Pattern Variable) ~ CommonProofState
         )
     => Limit Natural
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> Proxy claim
-    -- ^ Proxy for the claim type
     -> smt (Either (TermLike Variable) ())
-prove limit definitionModule specModule claimProxy =
-    evalProver definitionModule specModule claimProxy
+prove limit definitionModule specModule =
+    evalProver definitionModule specModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         result <-
@@ -322,23 +303,19 @@ prove limit definitionModule specModule claimProxy =
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
         return $ Bifunctor.first Pattern.toTermLike result
   where
-    extractUntrustedClaims' :: [claim] -> [claim]
+    extractUntrustedClaims'
+        :: [ReachabilityRule Variable]
+        -> [ReachabilityRule Variable]
     extractUntrustedClaims' =
         filter (not . Goal.isTrusted)
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
 proveWithRepl
-    :: forall claim
-     . Claim claim
-    => Eq claim
-    => TopBottom claim
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    :: VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> Proxy claim
-    -- ^ Proxy for the claim type
     -> MVar (Log.LogAction IO Log.SomeEntry)
     -> Repl.Data.ReplScript
     -- ^ Optional script
@@ -350,13 +327,12 @@ proveWithRepl
 proveWithRepl
     definitionModule
     specModule
-    claimProxy
     mvar
     replScript
     replMode
     outputFile
   =
-    evalProver definitionModule specModule claimProxy
+    evalProver definitionModule specModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         Repl.runRepl axioms claims mvar replScript replMode outputFile
@@ -382,8 +358,7 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             specClaims = extractImplicationClaims specModule
         assertSomeClaims specClaims
         assertSingleClaim specClaims
-        let
-            axioms = fmap Bounded.Axiom rewriteRules
+        let axioms = fmap Bounded.Axiom rewriteRules
             claims = fmap makeClaim specClaims
 
         Bounded.checkClaim
@@ -526,16 +501,17 @@ assertSomeClaims claims =
         ++  "on the representation of claims."
 
 makeClaim
-    :: Coercible (RulePattern Variable) claim
+    :: Goal.FromRulePattern claim
+    => Goal.ToRulePattern claim
     => (Attribute.Axiom, claim) -> claim
-makeClaim (attributes, rule) =
-    coerce RulePattern
+makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
+    Goal.fromRulePattern ruleType RulePattern
         { attributes = attributes
-        , left = left . coerce $ rule
-        , antiLeft = antiLeft . coerce $ rule
-        , right = right . coerce $ rule
-        , requires = requires . coerce $ rule
-        , ensures = ensures . coerce $ rule
+        , left = left rule
+        , antiLeft = antiLeft rule
+        , right = right rule
+        , requires = requires rule
+        , ensures = ensures rule
         }
 
 simplifyRuleOnSecond
@@ -543,8 +519,8 @@ simplifyRuleOnSecond
     => (Attribute.Axiom, claim)
     -> simplifier (Attribute.Axiom, claim)
 simplifyRuleOnSecond (atts, rule) = do
-    rule' <- Rule.simplifyRewriteRule (RewriteRule . coerce $ rule)
-    return (atts, coerce . getRewriteRule $ rule')
+    rule' <- Rule.simplifyRewriteRule (RewriteRule . Goal.toRulePattern $ rule)
+    return (atts, Goal.fromRulePattern rule . getRewriteRule $ rule')
 
 -- | Construct an execution graph for the given input pattern.
 execute
@@ -591,10 +567,10 @@ initialize verifiedModule within = do
     let initialized = Initialized { rewriteRules }
     within initialized
 
-data InitializedProver claim =
+data InitializedProver =
     InitializedProver
-        { axioms :: ![Goal.Rule claim]
-        , claims :: ![claim]
+        { axioms :: ![Goal.Rule (ReachabilityRule Variable)]
+        , claims :: ![ReachabilityRule Variable]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -605,14 +581,11 @@ fromMaybeChanged (Unchanged a) = a
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initializeProver
-    :: forall simplifier claim a
+    :: forall simplifier a
     .  MonadSimplify simplifier
-    => Claim claim
-    => Eq claim
-    => TopBottom claim
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> VerifiedModule StepperAttributes Attribute.Axiom
-    -> (InitializedProver claim -> simplifier a)
+    -> (InitializedProver -> simplifier a)
     -> simplifier a
 initializeProver definitionModule specModule within =
     initialize definitionModule
@@ -620,7 +593,7 @@ initializeProver definitionModule specModule within =
         tools <- Simplifier.askMetadataTools
         let Initialized { rewriteRules } = initialized
             changedSpecClaims
-                :: [(Attribute.Axiom, MaybeChanged claim)]
+                :: [(Attribute.Axiom, MaybeChanged (ReachabilityRule Variable))]
             changedSpecClaims =
                 map
                     (Bifunctor.second $ expandClaim tools)
@@ -633,7 +606,8 @@ initializeProver definitionModule specModule within =
                 simplified <- f rule
                 return (map ((,) attribute) simplified)
             simplifyToList
-                :: claim -> simplifier [claim]
+                :: ReachabilityRule Variable
+                -> simplifier [ReachabilityRule Variable]
             simplifyToList rules = do
                 simplified <- simplifyRuleLhs rules
                 return (MultiAnd.extractPatterns simplified)
@@ -641,7 +615,7 @@ initializeProver definitionModule specModule within =
         Log.withLogScope (Log.Scope "ExpandedClaim")
             $ mapM_ (logChangedClaim . snd) changedSpecClaims
 
-        let specClaims :: [(Attribute.Axiom, claim)]
+        let specClaims :: [(Attribute.Axiom, ReachabilityRule Variable)]
             specClaims =
                 map (Bifunctor.second fromMaybeChanged) changedSpecClaims
 
@@ -652,16 +626,15 @@ initializeProver definitionModule specModule within =
             mapM (mapMSecond simplifyToList) specClaims
         specAxioms <- Profiler.initialization "simplifyRuleOnSecond"
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
-        let
-            axioms = coerce <$> rewriteRules
-            claims = fmap makeClaim specAxioms
+        let claims = fmap makeClaim specAxioms
+            axioms = coerce rewriteRules
             initializedProver = InitializedProver { axioms, claims}
         within initializedProver
   where
     expandClaim
         :: SmtMetadataTools attributes
-        -> claim
-        -> MaybeChanged claim
+        -> ReachabilityRule Variable
+        -> MaybeChanged (ReachabilityRule Variable)
     expandClaim tools claim =
         if claim /= expanded
             then Changed expanded
@@ -670,32 +643,26 @@ initializeProver definitionModule specModule within =
         expanded = expandSingleConstructors tools claim
 
     logChangedClaim
-        :: HasCallStack
-        => MaybeChanged claim
+        :: MaybeChanged (ReachabilityRule Variable)
         -> simplifier ()
     logChangedClaim (Changed claim) =
         Log.logInfo ("Claim variables were expanded:\n" <> unparseToText claim)
     logChangedClaim (Unchanged _) = return ()
 
 evalProver
-    ::  forall claim smt a
+    ::  forall smt a
       . ( Log.WithLog Log.LogMessage smt
         , MonadProfiler smt
         , MonadUnliftIO smt
         , MonadSMT smt
-        , Claim claim
-        , Eq claim
-        , TopBottom claim
         )
     => VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> Proxy claim
-    -- ^ Proxy for the claim type
-    -> (InitializedProver claim -> Simplifier.SimplifierT smt a)
+    -> (InitializedProver -> Simplifier.SimplifierT smt a)
     -- The prover
     -> smt a
-evalProver definitionModule specModule _ prover =
+evalProver definitionModule specModule prover =
     evalSimplifier definitionModule
     $ initializeProver definitionModule specModule prover

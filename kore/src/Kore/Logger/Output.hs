@@ -9,6 +9,9 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Logger.Output
     ( KoreLogType (..)
     , KoreLogOptions (..)
+    , koreLogFilters
+    , filterScopes
+    , filterSeverity
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
@@ -73,12 +76,6 @@ import Data.Time.LocalTime
     , getCurrentTimeZone
     , utcToLocalTime
     )
-import GHC.Stack
-    ( CallStack
-    , getCallStack
-    , popCallStack
-    , prettyCallStack
-    )
 import Options.Applicative
     ( Parser
     , help
@@ -90,15 +87,16 @@ import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 
 import Kore.Logger
+import Kore.Logger.DebugAppliedRule
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
 data KoreLogType
     = LogStdErr
-    -- ^ log to StdErr when '--log StdErr' is passed
-    | LogFileText
-    -- ^ log to "./kore-(date).log" when '--log FileText' is passed
-    deriving (Read)
+    -- ^ log to stderr (default)
+    | LogFileText FilePath
+    -- ^ log to specified file when '--log <filename>' is passed.
+    deriving (Eq, Show)
 
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
 -- desired output method and the minimum 'Severity'.
@@ -109,7 +107,9 @@ data KoreLogOptions = KoreLogOptions
     -- ^ minimal log level, passed via "--log-level"
     , logScopes :: Set Scope
     -- ^ scopes to show, empty means show all
+    , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     }
+    deriving (Eq, Show)
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
@@ -121,22 +121,48 @@ withLogger
     => KoreLogOptions
     -> (LogAction m SomeEntry -> IO a)
     -> IO a
-withLogger KoreLogOptions { logType, logLevel, logScopes } cont =
+withLogger koreLogOptions@KoreLogOptions { logType } continue =
     case logType of
-        LogStdErr   ->
-            cont (stderrLogger logLevel logScopes)
-        LogFileText -> do
-            fileName <- getKoreLogFileName
-            Colog.withLogTextFile fileName
-                $ cont . makeKoreLogger logLevel logScopes
+        LogStdErr -> continue $ koreLogFilters koreLogOptions stderrLogger
+        LogFileText filename ->
+            Colog.withLogTextFile filename
+            $ continue . koreLogFilters koreLogOptions . makeKoreLogger
+
+koreLogFilters
+    :: Applicative m
+    => KoreLogOptions
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+koreLogFilters koreLogOptions baseLogger =
+    id
+    $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
+    $ filterSeverity logLevel
+    $ filterScopes logScopes
+    $ baseLogger
   where
-    getKoreLogFileName :: IO String
-    getKoreLogFileName = do
-        currentTimeDate <- getLocalTime
-        pure
-            $ "kore-"
-            <> formatLocalTime "%Y-%m-%d-%H-%M-%S" currentTimeDate
-            <> ".log"
+    KoreLogOptions { logLevel, logScopes } = koreLogOptions
+    KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
+
+{- | Select log entries with 'Severity' greater than or equal to the level.
+ -}
+filterSeverity
+    :: Applicative m
+    => Severity  -- ^ level
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+filterSeverity level = Colog.cfilter (\ent -> entrySeverity ent >= level)
+
+{- | Select log entries with 'Scope's in the active set.
+ -}
+filterScopes
+    :: Applicative m
+    => Set Scope  -- ^ active scopes
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+filterScopes scopes
+  | null scopes = id
+  | otherwise =
+    Colog.cfilter (\ent -> not $ Set.disjoint (entryScopes ent) scopes)
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
@@ -149,17 +175,14 @@ parseKoreLogOptions =
     <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
     <*> (parseScope <|> pure mempty)
+    <*> parseDebugAppliedRuleOptions
   where
     parseType =
         option
             (maybeReader parseTypeString)
             $ long "log"
-            <> help "Log type: stderr, filetext"
-    parseTypeString =
-        \case
-            "stderr"   -> pure LogStdErr
-            "filetext" -> pure LogFileText
-            _          -> Nothing
+            <> help "Name of the log file"
+    parseTypeString filename = pure $ LogFileText filename
     parseLevel =
         option
             (maybeReader parseSeverity)
@@ -172,7 +195,6 @@ parseKoreLogOptions =
             "warning"  -> pure Warning
             "error"    -> pure Error
             "critical" -> pure Critical
-            ""         -> pure Warning
             _          -> Nothing
     parseScope =
         option
@@ -197,14 +219,11 @@ parseKoreLogOptions =
 makeKoreLogger
     :: forall m
     .  MonadIO m
-    => Severity
-    -> Set Scope
-    -> LogAction m Text
+    => LogAction m Text
     -> LogAction m SomeEntry
-makeKoreLogger minSeverity currentScope logToText =
-    Colog.cfilter (shouldLog minSeverity currentScope)
-        . Colog.cmapM withTimestamp
-        $ contramap messageToText logToText
+makeKoreLogger logToText =
+    Colog.cmapM withTimestamp
+    $ contramap messageToText logToText
   where
     messageToText :: WithTimestamp -> Text
     messageToText (WithTimestamp entry localTime) =
@@ -230,9 +249,8 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stderrLogger :: MonadIO m => Severity -> Set Scope -> LogAction m SomeEntry
-stderrLogger logLevel logScopes =
-    makeKoreLogger logLevel logScopes Colog.logTextStderr
+stderrLogger :: MonadIO io => LogAction io SomeEntry
+stderrLogger = makeKoreLogger Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 
@@ -252,33 +270,11 @@ swappableLogger mvar =
     worker a logAction = Colog.unLogAction logAction a
 
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
-defaultLogPretty scopedEntry =
-    case toLogMessage <$> unwrapScope scopedEntry of
-        (scope, LogMessage { severity, message, callstack }) ->
-            Pretty.hsep
-                [ Pretty.brackets (Pretty.pretty severity)
-                , Pretty.brackets (prettyScope $ reverse scope)
-                , ":"
-                , Pretty.pretty message
-                , Pretty.brackets (formatCallstack callstack)
-                ]
+defaultLogPretty entry =
+    Pretty.hsep
+        [ Pretty.brackets (Pretty.pretty severity)
+        , ":"
+        , Pretty.pretty entry
+        ]
   where
-    prettyScope :: [Scope] -> Pretty.Doc ann
-    prettyScope =
-        mconcat
-            . zipWith (<>) ("" : repeat ".")
-            . fmap Pretty.pretty
-    formatCallstack :: GHC.Stack.CallStack -> Pretty.Doc ann
-    formatCallstack cs
-      | length (getCallStack cs) <= 1 = mempty
-      | otherwise                     = callStackToBuilder cs
-    callStackToBuilder :: GHC.Stack.CallStack -> Pretty.Doc ann
-    callStackToBuilder = Pretty.pretty . prettyCallStack . popCallStack
-
-unwrapScope :: SomeEntry -> ([Scope], SomeEntry)
-unwrapScope se =
-    case fromEntry se of
-        Nothing -> ([], se)
-        Just WithScope { entry, scope } ->
-            (scope : fst (unwrapScope entry), entry)
-
+    severity = entrySeverity entry

@@ -51,7 +51,7 @@ test_simplifyEvaluated =
     , equalsXAWithSortedBottom `patternBecomes` [Pattern.top]
     , [substXA] `becomes_` [notEqualsXA]
     , [equalsXA, equalsXB] `becomes_` [neitherXAB]
-    , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXA]
+    , [xAndEqualsXA] `becomes_` [termNotX, notEqualsXASorted]
     , [termXAndY] `becomes_` [termNotX, termNotY]
     , [termNotXAndY] `becomes_` [termX, termNotY]
     ]
@@ -134,17 +134,22 @@ equalsXB :: Pattern Variable
 equalsXB = fromPredicate equalsXB_
 
 equalsXA_ :: Predicate Variable
-equalsXA_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+equalsXA_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
 
 equalsXB_ :: Predicate Variable
-equalsXB_ = Predicate.makeEqualsPredicate (mkElemVar Mock.x) Mock.b
+equalsXB_ = Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.b
 
 notEqualsXA :: Pattern Variable
 notEqualsXA = fromPredicate $ Predicate.makeNotPredicate equalsXA_
 
+notEqualsXASorted :: Pattern Variable
+notEqualsXASorted =
+    Pattern.coerceSort Mock.testSort notEqualsXA
+
 neitherXAB :: Pattern Variable
 neitherXAB =
-    fromPredicate
+    Pattern.coerceSort Mock.testSort
+    $ fromPredicate
     $ Predicate.makeAndPredicate
         (Predicate.makeNotPredicate equalsXA_)
         (Predicate.makeNotPredicate equalsXB_)

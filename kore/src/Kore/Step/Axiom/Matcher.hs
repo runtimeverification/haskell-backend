@@ -69,7 +69,7 @@ import Kore.Internal.MultiAnd
 import qualified Kore.Internal.MultiAnd as MultiAnd
 import Kore.Internal.Predicate
     ( Predicate
-    , makeCeilPredicate
+    , makeCeilPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike hiding
@@ -98,7 +98,6 @@ import Kore.Unification.Unify
     ( MonadUnify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
-import Kore.Unparser
 import Kore.Variables.Binding
 import Kore.Variables.Fresh
     ( FreshVariable
@@ -186,7 +185,7 @@ matchIncremental termLike1 termLike2 =
         $ unsupportedPatterns "Unknown match case" termLike1 termLike2
 
 matchEqualHeads
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: MonadUnify unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 -- Terminal patterns
@@ -202,6 +201,10 @@ matchEqualHeads (Pair (Bottom_ _) (Bottom_ _)) =
     return ()
 matchEqualHeads (Pair (Top_ _) (Top_ _)) =
     return ()
+matchEqualHeads (Pair (Endianness_ symbol1) (Endianness_ symbol2)) =
+    Monad.guard (symbol1 == symbol2)
+matchEqualHeads (Pair (Signedness_ symbol1) (Signedness_ symbol2)) =
+    Monad.guard (symbol1 == symbol2)
 -- Non-terminal patterns
 matchEqualHeads (Pair (Ceil_ _ _ term1) (Ceil_ _ _ term2)) =
     push (Pair term1 term2)
@@ -514,7 +517,6 @@ setSubstitute sVariable termLike = do
 
 substituteTermLike
     :: MatchingVariable variable
-    => (Show variable, Unparse variable)
     => Map (UnifiedVariable variable) (TermLike variable)
     -> TermLike variable
     -> TermLike variable
@@ -536,7 +538,7 @@ definedTerm termLike
   | isDefinedPattern termLike = return ()
   | otherwise = field @"predicate" <>= definedTermLike
   where
-    definedTermLike = MultiAnd.make [makeCeilPredicate termLike]
+    definedTermLike = MultiAnd.make [makeCeilPredicate_ termLike]
 
 {- | Ensure that the given variable is a target variable.
 
@@ -637,7 +639,7 @@ rightAlignLists internal1 internal2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
 matchNormalizedAc
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: MonadUnify unifier
     => (Pair (Builtin.Value normalized (TermLike variable)) -> MatcherT variable unifier ())
     ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
         -> TermLike variable

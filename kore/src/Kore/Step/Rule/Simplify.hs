@@ -33,11 +33,12 @@ import Kore.Internal.Pattern
     )
 import Kore.Internal.Predicate
     ( makeAndPredicate
-    , makeCeilPredicate
+    , makeCeilPredicate_
     )
 import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
+    , ReachabilityRule (..)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -72,7 +73,7 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
         let lhsPredicate =
                 makeAndPredicate
                     requires
-                    (makeCeilPredicate left)
+                    (makeCeilPredicate_ left)
             definedLhs =
                 Conditional.withCondition left
                 $ Condition.fromPredicate lhsPredicate
@@ -105,3 +106,9 @@ instance SimplifyRuleLHS (OnePathRule Variable) where
 
 instance SimplifyRuleLHS (AllPathRule Variable) where
     simplifyRuleLhs = fmap (fmap AllPathRule) . simplifyRuleLhs . getAllPathRule
+
+instance SimplifyRuleLHS (ReachabilityRule Variable) where
+    simplifyRuleLhs (OnePath rule) =
+        (fmap . fmap) OnePath $ simplifyRuleLhs rule
+    simplifyRuleLhs (AllPath rule) =
+        (fmap . fmap) AllPath $ simplifyRuleLhs rule

@@ -34,7 +34,6 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Unify as Unify
-import Kore.Unparser
 
 {- | Unify two application patterns with equal, injective heads.
 
@@ -82,11 +81,8 @@ to be different; therefore their conjunction is @\\bottom@.
 
  -}
 constructorAndEqualsAssumesDifferentHeads
-    ::  ( Eq variable
-        , SortedVariable variable
-        , Unparse variable
-        , MonadUnify unifier
-        )
+    :: InternalVariable variable
+    => MonadUnify unifier
     => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable

@@ -43,7 +43,6 @@ import Kore.Step.SMT.Translate
 import Kore.Syntax.Sentence
     ( SentenceAxiom (..)
     )
-import Kore.Unparser
 import SMT
     ( MonadSMT (..)
     , SExpr (..)
@@ -70,8 +69,7 @@ declareSMTLemmas m = do
     tools = given
 
     declareRule
-        :: Given (SmtMetadataTools StepperAttributes)
-        => ( Attribute.Axiom , SentenceAxiom (TermLike Variable) )
+        :: (Attribute.Axiom, SentenceAxiom (TermLike Variable))
         -> m (Maybe ())
     declareRule (atts, axiomDeclaration) = runMaybeT $ do
         guard (isSmtLemma $ Attribute.smtLemma atts)
@@ -92,7 +90,6 @@ declareSMTLemmas m = do
 translateUninterpreted
     :: ( Ord p
        , p ~ TermLike variable
-       , Unparse variable
        , Monad m
        )
     => SExpr  -- ^ type name

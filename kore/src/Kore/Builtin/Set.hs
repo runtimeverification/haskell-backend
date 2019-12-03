@@ -15,9 +15,8 @@ builtin modules.
 module Kore.Builtin.Set
     ( sort
     , assertSort
-    , sortDeclVerifiers
     , isSetSort
-    , symbolVerifiers
+    , verifiers
     , builtinFunctions
     , Domain.Builtin
     , returnConcreteSet
@@ -124,6 +123,14 @@ isSetSort = Builtin.isSort sort
  -}
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
+
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers
+        , symbolVerifiers
+        , patternVerifierHook = mempty
+        }
 
 {- | Verify that hooked sort declarations are well-formed.
 
@@ -245,9 +252,10 @@ evalElement =
         Builtin.getAttemptedAxiom
             (case arguments of
                 [_elem] ->
-                    case TermLike.asConcrete _elem of
+                    case Builtin.toKey _elem of
                         Just concrete ->
-                            returnConcreteSet
+                            TermLike.assertNonSimplifiableKeys [_elem]
+                            $ returnConcreteSet
                                 resultSort
                                 (Map.singleton concrete Domain.SetValue)
                         Nothing ->
@@ -402,7 +410,9 @@ evalList2set =
                         [_map] -> _map
                         _      -> Builtin.wrongArity Set.list2setKey
             _list <- List.expectConcreteBuiltinList Set.list2setKey _list
-            let _set = Map.fromList
+            let _set =
+                    TermLike.assertNonSimplifiableKeys _list
+                        $ Map.fromList
                             $ fmap (\x -> (x, Domain.SetValue))
                             $ Foldable.toList _list
             returnConcreteSet resultSort _set

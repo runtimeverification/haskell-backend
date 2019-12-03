@@ -53,8 +53,7 @@ import Data.Bitraversable
     , bitraverse
     )
 import Data.Coerce
-    ( Coercible
-    , coerce
+    ( coerce
     )
 import qualified Data.Default as Default
 import Data.Foldable
@@ -140,16 +139,11 @@ import Kore.Syntax.Variable
     )
 
 -- | Creates a fresh execution graph for the given claim.
-emptyExecutionGraph
-    :: Claim claim
-    => axiom ~ Rule claim
-    => claim -> ExecutionGraph axiom
+emptyExecutionGraph :: Claim claim => claim -> ExecutionGraph axiom
 emptyExecutionGraph =
-    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . coerce
+    Strategy.emptyExecutionGraph . extractConfig . RewriteRule . toRulePattern
   where
-    extractConfig
-        :: RewriteRule Variable
-        -> CommonProofState
+    extractConfig :: RewriteRule Variable -> CommonProofState
     extractConfig (RewriteRule RulePattern { left, requires }) =
         Goal $ Conditional left requires mempty
 
@@ -185,8 +179,7 @@ getAxiomByIndex index = Lens.preuse $ field @"axioms" . Lens.element index
 getAxiomByName
     :: MonadState (ReplState claim) m
     => axiom ~ Rule claim
-    => Coercible axiom (RulePattern Variable)
-    => Coercible (RulePattern Variable) axiom
+    => ToRulePattern axiom
     => String
     -- ^ label attribute
     -> m (Maybe axiom)
@@ -234,7 +227,7 @@ getAxiomOrClaimByName (RuleName name) = do
             return . Just . Left $ axiom
 
 isNameEqual
-    :: Coercible rule (RulePattern Variable)
+    :: ToRulePattern rule
     => String -> rule -> Bool
 isNameEqual name rule =
     maybe
@@ -246,12 +239,12 @@ isNameEqual name rule =
         )
 
 getNameText
-    :: Coercible rule (RulePattern Variable)
+    :: ToRulePattern rule
     => rule -> AttrLabel.Label
 getNameText =
     Attribute.label
     . attributes
-    . coerce
+    . toRulePattern
 
 -- | Transforms an axiom or claim index into an axiom or claim if they could be
 -- found.
@@ -267,20 +260,15 @@ getAxiomOrClaimByIndex =
             (getClaimByIndex . coerce)
 
 getInternalIdentifier
-    :: Coercible rule (RulePattern Variable)
+    :: ToRulePattern rule
     => rule -> Attribute.RuleIndex
 getInternalIdentifier =
     Attribute.identifier
     . Rule.attributes
-    . coerce
+    . toRulePattern
 
 -- | Update the currently selected claim to prove.
-switchToProof
-    :: MonadState (ReplState claim) m
-    => Claim claim
-    => claim
-    -> ClaimIndex
-    -> m ()
+switchToProof :: MonadState (ReplState claim) m => claim -> ClaimIndex -> m ()
 switchToProof claim cindex =
     modify (\st -> st
         { claim = claim
@@ -420,23 +408,24 @@ liftSimplifierWithLogger
     -> m a
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
-    (severity, logScope, logType) <- logging <$> get
+    ReplState { koreLogOptions } <- get
+    let Logger.KoreLogOptions { logType } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
-    let scopes = unLogScope logScope
-        logger = Logger.makeKoreLogger severity scopes textLogger
+    let logger =
+            Logger.koreLogFilters koreLogOptions
+            $ Logger.makeKoreLogger textLogger
     _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
     pure result
   where
     logTypeToLogger
-        :: LogType
+        :: Logger.KoreLogType
         -> t m (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
-            NoLogging   -> pure (mempty, Nothing)
-            LogToStdErr -> pure (Logger.logTextStderr, Nothing)
-            LogToFile file -> do
+            Logger.LogStdErr -> pure (Logger.logTextStderr, Nothing)
+            Logger.LogFileText file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
                 pure (Logger.logTextHandle handle, Just handle)
 
@@ -616,9 +605,9 @@ createOnePathClaim (claim, cpattern) =
     $ Rule.RulePattern
         { left = cpattern
         , antiLeft = Nothing
-        , right = Rule.right . coerce $ claim
-        , requires = Predicate.makeTruePredicate
-        , ensures = Rule.ensures . coerce $ claim
+        , right = Rule.right . toRulePattern $ claim
+        , requires = Predicate.makeTruePredicate_
+        , ensures = Rule.ensures . toRulePattern $ claim
         , attributes = Default.def
         }
 
@@ -634,7 +623,6 @@ conjOfOnePathClaims claims sort =
 
 generateInProgressOPClaims
     :: Claim claim
-    => axiom ~ Rule claim
     => MonadState (ReplState claim) m
     => m [Rule.OnePathRule Variable]
 generateInProgressOPClaims = do
@@ -660,7 +648,7 @@ generateInProgressOPClaims = do
         -> [Rule.OnePathRule Variable]
     notStartedOPClaims graphs claims =
         Rule.OnePathRule
-        . coerce
+        . toRulePattern
         <$> filter (not . isTrusted)
                 ( (claims !!)
                 . unClaimIndex
@@ -702,7 +690,7 @@ currentClaimSort = do
     return . TermLike.termLikeSort
         . Rule.onePathRuleToPattern
         . Rule.OnePathRule
-        . coerce
+        . toRulePattern
         $ claims
 
 sortLeafsByType :: InnerGraph axiom -> Map.Map NodeState [Graph.Node]

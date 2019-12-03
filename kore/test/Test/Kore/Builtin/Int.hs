@@ -1,6 +1,33 @@
 {-# LANGUAGE MagicHash #-}
 
-module Test.Kore.Builtin.Int where
+module Test.Kore.Builtin.Int
+    (
+      test_gt, test_ge, test_eq, test_le, test_lt, test_ne
+    , test_min, test_max
+    , test_add, test_sub, test_mul, test_abs
+    , test_tdiv, test_tmod, test_tdivZero, test_tmodZero
+    , test_emod
+    , test_and, test_or, test_xor, test_not
+    , test_shl, test_shr
+    , test_pow, test_powmod, test_log2
+    , test_unifyEqual_NotEqual
+    , test_unifyEqual_Equal
+    , test_unifyAnd_NotEqual
+    , test_unifyAnd_Equal
+    , test_unifyAndEqual_Equal
+    , test_unifyAnd_Fn
+    , hprop_unparse
+    --
+    , asInternal
+    , asPattern
+    , asConcretePattern
+    , asPartialPattern
+    , genIntegerPattern
+    , genConcreteIntegerPattern
+    , genInteger
+    , intLiteral
+    , testInt
+    ) where
 
 import Hedgehog hiding
     ( Concrete
@@ -28,9 +55,9 @@ import GHC.Integer.Logarithms
     ( integerLog2#
     )
 
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Int as Int
 import Kore.Internal.Pattern
+import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 
@@ -66,7 +93,7 @@ testUnary symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
-    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 -- | Test a binary operator hooked to the given symbol.
 testBinary
@@ -83,7 +110,7 @@ testBinary symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 -- | Test a comparison operator hooked to the given symbol
 testComparison
@@ -100,7 +127,7 @@ testComparison symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 -- | Test a partial unary operator hooked to the given symbol.
 testPartialUnary
@@ -116,7 +143,7 @@ testPartialUnary symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
-    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 -- | Test a partial binary operator hooked to the given symbol.
 testPartialBinary
@@ -133,7 +160,7 @@ testPartialBinary symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 -- | Test a partial binary operator hooked to the given symbol, passing zero as
 -- the second argument.
@@ -150,7 +177,7 @@ testPartialBinaryZero symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, 0])
         (===) expect actual
   where
-    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 -- | Test a partial ternary operator hooked to the given symbol.
 testPartialTernary
@@ -168,7 +195,7 @@ testPartialTernary symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b, c])
         (===) expect actual
   where
-    Just name = Attribute.getHook . Attribute.hook $ symbolAttributes symb
+    name = expectHook symb
 
 -- Comparison operators
 test_gt :: TestTree
@@ -368,7 +395,7 @@ test_unifyAnd_Equal =
     testCaseWithSMT "unifyAnd BuiltinInteger: Equal" $ do
         let dv1 = asInternal 2
         actual <- evaluate $ mkAnd dv1 dv1
-        assertEqual' "" (pure dv1) actual
+        assertEqual' "" (Pattern.fromTermLike dv1) actual
 
 -- | "\and"ed then "\equal"ed internal Integers that are equal
 test_unifyAndEqual_Equal :: TestTree
@@ -388,7 +415,7 @@ test_unifyAnd_Fn =
             expect =
                 Conditional
                     { term = dv
-                    , predicate = makeEqualsPredicate dv fnPat
+                    , predicate = makeEqualsPredicate intSort dv fnPat
                     , substitution = mempty
                     }
         actual <- evaluateT $ mkAnd dv fnPat

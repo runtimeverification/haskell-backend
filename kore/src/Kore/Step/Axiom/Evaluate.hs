@@ -5,20 +5,20 @@ License     : NCSA
 -}
 module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
-    , resultsToAttemptedAxiom
     ) where
 
+import Control.Error
+    ( maybeT
+    )
 import Control.Lens.Combinators as Lens
-import qualified Data.Foldable as Foldable
+import qualified Control.Monad as Monad
 import Data.Function
 import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
 import qualified Kore.Internal.Condition as Condition
-import Kore.Internal.MultiOr
-    ( MultiOr (..)
-    )
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -34,6 +34,10 @@ import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
+import Kore.Step.EquationalStep
+    ( UnificationProcedure (..)
+    )
+import qualified Kore.Step.EquationalStep as Step
 import Kore.Step.Remainder
     ( ceilChildOfApplicationOrTop
     )
@@ -47,82 +51,60 @@ import qualified Kore.Step.Rule as RulePattern
     )
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
-    ( AttemptedAxiom (..)
-    , AttemptedAxiomResults (..)
-    , MonadSimplify
+    ( MonadSimplify
     , SimplifierVariable
     )
-import Kore.Step.Step
-    ( UnificationProcedure (..)
-    )
-import qualified Kore.Step.Step as Step
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
 
 evaluateAxioms
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
     => [EqualityRule Variable]
     -> TermLike variable
     -> Predicate variable
     -> simplifier (Step.Results variable)
-evaluateAxioms
-    definitionRules
-    patt
-    predicate
+evaluateAxioms definitionRules termLike predicate
   | any ruleIsConcrete definitionRules
-  , not (TermLike.isConcrete patt)
-  = return mempty
+  , not (TermLike.isConcrete termLike)
+  = return notApplicable
   | otherwise
-  = do
+  = maybeNotApplicable $ do
     let
         -- TODO (thomas.tuegel): Figure out how to get the initial conditions
         -- and apply them here, to remove remainder branches sooner.
-        expanded, evaluated :: Pattern variable
-        expanded = Pattern.fromTermLike patt
+        expanded :: Pattern variable
+        expanded = Pattern.fromTermLike termLike
 
-        evaluated = Pattern.fromTermLike $ mkEvaluated patt
+    resultss <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    Monad.guard (any Result.hasResults resultss)
+    mapM_ rejectNarrowing resultss
 
-    eitherResults <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    ceilChild <- ceilChildOfApplicationOrTop Condition.topTODO termLike
+    let
+        results =
+            Result.mergeResults resultss
+            & Result.mapConfigs
+                keepResultUnchanged
+                ( markRemainderEvaluated
+                . introduceDefinedness ceilChild
+                )
+        keepResultUnchanged = id
+        introduceDefinedness = flip Pattern.andCondition
+        markRemainderEvaluated = fmap TermLike.mkEvaluated
 
-    case eitherResults of
-        Left _ -> return Result.Results
-                        { results = mempty, remainders = MultiOr [evaluated] }
-        Right results
-          | any (any Step.isNarrowingResult . Result.results) results ->
-            return Result.Results
-                { results = mempty, remainders = MultiOr [evaluated] }
-          | (not . any Result.hasResults) results ->
-            return Result.Results
-                { results = mempty, remainders = MultiOr [evaluated] }
-          | otherwise -> do
-            ceilChild <- ceilChildOfApplicationOrTop Condition.topTODO patt
-            let
-                result =
-                    Result.mergeResults results
-                    & Result.mapConfigs
-                        keepResultUnchanged
-                        ( markRemainderEvaluated
-                        . introduceDefinedness ceilChild
-                        )
-                keepResultUnchanged = id
-                introduceDefinedness = flip Pattern.andCondition
-                markRemainderEvaluated = fmap TermLike.mkEvaluated
-
-            simplifiedResult <-
-                Lens.traverseOf
-                    (field @"results" . Lens.traversed . field @"result")
-                    (OrPattern.simplifyConditionsWithSmt predicate)
-                    result
-                    >>= Lens.traverseOf (field @"remainders")
-                        (OrPattern.simplifyConditionsWithSmt predicate)
-
-            let Result.Results { results = returnedResults } = simplifiedResult
-
-            if (all null . fmap Result.result) returnedResults
-                then return Result.Results
-                    { results = mempty, remainders = MultiOr [evaluated] }
-                else return simplifiedResult
+    let simplify = OrPattern.simplifyConditionsWithSmt predicate
+    simplified <-
+        return results
+        >>= Lens.traverseOf (field @"results" . Lens.traversed . field @"result") simplify
+        >>= Lens.traverseOf (field @"remainders") simplify
+    -- This guard is wrong: It leaves us unable to distinguish between a
+    -- not-applicable result and a Bottom result. This check should be handled
+    -- in Kore.Step.Step, but the initial condition is not available there.
+    Monad.guard (any (not . null) $ Result.results simplified)
+    return simplified
 
   where
     ruleIsConcrete =
@@ -131,11 +113,22 @@ evaluateAxioms
         . RulePattern.attributes
         . getEqualityRule
 
+    notApplicable =
+        Result.Results
+            { results = mempty
+            , remainders = OrPattern.fromTermLike $ mkEvaluated termLike
+            }
+
+    maybeNotApplicable = maybeT (return notApplicable) return
+
     unwrapEqualityRule (EqualityRule rule) =
         RulePattern.mapVariables fromVariable rule
 
-    applyRules (Step.toConfigurationVariables -> initial) rules
-      = Unifier.runUnifierT
+    rejectNarrowing (Result.results -> results) =
+        (Monad.guard . not) (any Step.isNarrowingResult results)
+
+    applyRules (Step.toConfigurationVariables -> initial) rules =
+        Unifier.maybeUnifierT
         $ Step.applyRulesSequence unificationProcedure initial rules
 
     ignoreUnificationErrors unification pattern1 pattern2 =
@@ -150,16 +143,3 @@ evaluateAxioms
 
     unificationProcedure =
         UnificationProcedure (ignoreUnificationErrors matchIncremental)
-
-resultsToAttemptedAxiom
-    :: (Ord variable)
-    => Result.Results rule (Pattern variable)
-    -> AttemptedAxiom variable
-resultsToAttemptedAxiom
-    (Result.Results results remainders)
-  | null results'
-    = NotApplicable
-  | otherwise
-    = Applied $ AttemptedAxiomResults results' remainders
-  where
-    results' = Foldable.fold $ fmap Result.result results

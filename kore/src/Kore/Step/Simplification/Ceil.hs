@@ -50,16 +50,12 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    , makeTruePredicate
+    ( makeCeilPredicate_
+    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Logger
-    ( LogMessage
-    , WithLog
-    )
 import qualified Kore.Step.Function.Evaluator as Axiom
     ( evaluatePattern
     )
@@ -105,10 +101,8 @@ carry around.
 
 -}
 simplifyEvaluated
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
@@ -119,10 +113,8 @@ simplifyEvaluated predicate child =
 for details.
 -}
 makeEvaluate
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
@@ -132,10 +124,8 @@ makeEvaluate predicate child
   | otherwise              = makeEvaluateNonBoolCeil predicate child
 
 makeEvaluateNonBoolCeil
-    ::  ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
@@ -161,11 +151,9 @@ makeEvaluateNonBoolCeil predicate patt@Conditional {term}
 -- NOTE (hs-boot): Please update Ceil.hs-boot file when changing the
 -- signature.
 makeEvaluateTerm
-    ::  forall variable simplifier
-    .   ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    :: forall variable simplifier
+    .  SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> TermLike variable
     -> simplifier (OrCondition variable)
@@ -200,7 +188,7 @@ makeEvaluateTerm
             configurationCondition
             Conditional
                 { term = ()
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
             (mkCeil_ term)
@@ -208,7 +196,7 @@ makeEvaluateTerm
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeCeilPredicate term
+                    $ makeCeilPredicate_ term
                 , substitution = mempty
                 }
             )
@@ -229,10 +217,8 @@ makeEvaluateTerm
 -}
 makeEvaluateBuiltin
     :: forall variable simplifier
-    .   ( SimplifierVariable variable
-        , MonadSimplify simplifier
-        , WithLog LogMessage simplifier
-        )
+    .  SimplifierVariable variable
+    => MonadSimplify simplifier
     => Condition variable
     -> Builtin (TermLike variable)
     -> simplifier (OrCondition variable)
@@ -248,7 +234,7 @@ makeEvaluateBuiltin
   where
     unsimplified =
         OrCondition.fromCondition . Condition.fromPredicate
-        $ Predicate.markSimplified . makeCeilPredicate $ mkBuiltin patt
+        $ Predicate.markSimplified . makeCeilPredicate_ $ mkBuiltin patt
 makeEvaluateBuiltin predicate (Domain.BuiltinList l) = do
     children <- mapM (makeEvaluateTerm predicate) (Foldable.toList l)
     let
@@ -269,7 +255,7 @@ makeEvaluateBuiltin
         OrCondition.fromCondition
             (Condition.fromPredicate
                 (Predicate.markSimplified
-                    (makeCeilPredicate (mkBuiltin patt))
+                    (makeCeilPredicate_ (mkBuiltin patt))
                 )
             )
 makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top
@@ -296,12 +282,13 @@ makeEvaluateNormalizedAc
         , concreteElements
         , opaque = []
         }
-  = Just $ do
+  = TermLike.assertNonSimplifiableKeys concreteKeys . Just $ do
     variableKeyConditions <- mapM
                                 (makeEvaluateTerm configurationCondition)
                                 variableKeys
     variableValueConditions <- evaluateValues variableValues
     concreteValueConditions <- evaluateValues concreteValues
+
 
     elementsWithVariablesDistinct <-
         evaluateDistinct variableKeys concreteKeys

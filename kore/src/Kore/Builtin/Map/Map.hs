@@ -28,6 +28,7 @@ module Kore.Builtin.Map.Map
     , in_keysKey
     , keysKey
     , lookupKey
+    , lookupOrDefaultKey
     , removeAllKey
     , removeKey
     , unitKey
@@ -63,6 +64,9 @@ concatKey = "MAP.concat"
 
 lookupKey :: IsString s => s
 lookupKey = "MAP.lookup"
+
+lookupOrDefaultKey :: IsString s => s
+lookupOrDefaultKey = "MAP.lookupOrDefault"
 
 elementKey :: IsString s => s
 elementKey = "MAP.element"

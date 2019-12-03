@@ -26,6 +26,7 @@ import Control.Monad.Catch
     ( MonadCatch
     , catch
     , catchAll
+    , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -42,9 +43,6 @@ import Control.Monad.State.Strict
     ( MonadState
     , StateT
     , evalStateT
-    )
-import Data.Coerce
-    ( coerce
     )
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
@@ -70,6 +68,7 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
@@ -165,7 +164,13 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , omit       = mempty
             , labels     = Map.empty
             , aliases    = Map.empty
-            , logging    = (Logger.Debug, mempty, NoLogging)
+            , koreLogOptions =
+                Logger.KoreLogOptions
+                    { logType = Logger.LogStdErr
+                    , logScopes = mempty
+                    , logLevel = Logger.Warning
+                    , debugAppliedRuleOptions = mempty
+                    }
             }
 
     config :: Config claim m
@@ -193,10 +198,12 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         :: Int
         -> [claim]
         -> [claim]
-    addIndexesToClaims len cls =
-        fmap
-            (coerce . addIndex)
-            (zip (fmap coerce cls) [len..])
+    addIndexesToClaims len claims'' =
+        let toAxiomAndBack claim' index =
+                ruleToGoal
+                    claim'
+                    $ addIndex (goalToRule claim', index)
+        in zipWith toAxiomAndBack claims'' [len..]
 
     addIndex
         :: (axiom, Int)
@@ -210,10 +217,11 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
         -> axiom
     modifyAttribute att rule =
         let rp = axiomToRulePatt rule in
-            coerce $ rp { Rule.attributes = att }
+            fromRulePattern rule
+                $ rp { Rule.attributes = att }
 
     axiomToRulePatt :: axiom -> Rule.RulePattern Variable
-    axiomToRulePatt = coerce
+    axiomToRulePatt = toRulePattern
 
     getAttribute :: axiom -> Attribute.Axiom
     getAttribute = Rule.attributes . axiomToRulePatt
@@ -225,9 +233,8 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
     makeRuleIndex :: Int -> RuleIndex -> RuleIndex
     makeRuleIndex n _ = RuleIndex (Just n)
 
-    firstClaim :: Claim claim => claim
-    firstClaim =
-        claims' !! unClaimIndex firstClaimIndex
+    firstClaim :: claim
+    firstClaim = claims' !! unClaimIndex firstClaimIndex
 
     firstClaimExecutionGraph :: ExecutionGraph axiom
     firstClaimExecutionGraph = emptyExecutionGraph firstClaim
@@ -248,20 +255,22 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
                 $ verifyClaimStep claim claims axioms graph node
             else pure graph
 
-    catchInterruptWithDefault :: MonadCatch m => MonadIO m => a -> m a -> m a
+    catchInterruptWithDefault :: a -> m a -> m a
     catchInterruptWithDefault def sa =
-        catch sa $ \UserInterrupt -> do
-            liftIO $ putStrLn "Step evaluation interrupted."
-            pure def
+        catch sa $ \case
+            UserInterrupt -> do
+                liftIO $ putStrLn "Step evaluation interrupted."
+                pure def
+            e -> throwM e
 
-    catchEverything :: MonadCatch m => MonadIO m => a -> m a -> m a
+    catchEverything :: a -> m a -> m a
     catchEverything def sa =
         catchAll sa $ \e -> do
             liftIO $ putStrLn "Stepper evaluation errored."
             liftIO $ putStrLn (show e)
             pure def
 
-    replGreeting :: MonadIO m => m ()
+    replGreeting :: m ()
     replGreeting =
         liftIO $
             putStrLn "Welcome to the Kore Repl! Use 'help' to get started.\n"

@@ -118,8 +118,7 @@ import Kore.Syntax.ElementVariable
     ( ElementVariable (getElementVariable)
     )
 import Kore.Syntax.Variable
-    ( SortedVariable
-    , sortedVariableSort
+    ( sortedVariableSort
     )
 import Kore.Unification.Unify
     ( MonadUnify
@@ -231,7 +230,7 @@ instance TermWrapper Domain.NormalizedMap where
             _ -> Builtin.wrongArity "MAP.element"
       | Map.isSymbolConcat symbol =
         case args of
-            [set1, set2] -> toNormalized set1 <> toNormalized set2
+            [map1, map2] -> toNormalized map1 <> toNormalized map2
             _ -> Builtin.wrongArity "MAP.concat"
     toNormalized patt =
         (Normalized . Domain.wrapAc) Domain.NormalizedAc
@@ -420,11 +419,14 @@ Return 'Nothing' if there are any duplicate keys.
 
  -}
 updateConcreteElements
-    :: Ord key
-    => Map key value
-    -> [(key, value)]
-    -> Maybe (Map key value)
-updateConcreteElements = Foldable.foldrM (uncurry insertMissing)
+    :: Map (TermLike Concrete) value
+    -> [(TermLike Concrete, value)]
+    -> Maybe (Map (TermLike Concrete) value)
+updateConcreteElements elems newElems =
+    TermLike.assertNonSimplifiableKeys allKeys
+        $ Foldable.foldrM (uncurry insertMissing) elems newElems
+      where
+        allKeys = Map.keys elems <> fmap fst newElems
 
 {- | Sort the abstract elements.
 
@@ -763,10 +765,7 @@ unifyEqualsNormalized
     sort1 = termLikeSort first
 
     normalize1
-        ::  ( MonadUnify unifier
-            , Ord variable
-            )
-        => TermLike variable
+        :: TermLike variable
         -> MaybeT unifier (TermNormalizedAc normalized variable)
     normalize1 patt =
         case toNormalized patt of
@@ -1181,8 +1180,7 @@ The keys of the two structures are assumend to be disjoint.
 -}
 unifyEqualsElementLists
     ::  forall normalized variable unifier
-    .   ( Domain.AcWrapper normalized
-        , SimplifierVariable variable
+    .   ( SimplifierVariable variable
         , MonadUnify unifier
         , TermWrapper normalized
         , Traversable (Domain.Value normalized)
@@ -1334,7 +1332,7 @@ unifyOpaqueVariable
             [(TermLike variable, Domain.Value normalized (TermLike variable))]
         , [TermLike variable]
         )
-unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] = do
+unifyOpaqueVariable _ _ unifyChildren v1 [] [second@(ElemVar_ _)] =
     noCheckUnifyOpaqueChildren unifyChildren v1 second
 unifyOpaqueVariable
     tools
@@ -1364,8 +1362,7 @@ unifyOpaqueVariable
 
 noCheckUnifyOpaqueChildren
     ::  ( MonadUnify unifier
-        , Ord variable
-        , SortedVariable variable
+        , InternalVariable variable
         )
     => (TermLike variable -> TermLike variable -> unifier (Pattern variable))
     -> TermLike.ElementVariable variable
@@ -1507,7 +1504,7 @@ unifyEqualsElementPermutations unifier firsts seconds = do
 {- |Given two lists generates k-permutation pairings and merges them using the
 provided merge function.
 
-k is the lenghth of the second list, which means that, if the @[b]@ list is
+k is the length of the second list, which means that, if the @[b]@ list is
 longer than the @[a]@ list, this will not generate any k-permutations.
 However, it will probably take a long time to generate nothing.
 

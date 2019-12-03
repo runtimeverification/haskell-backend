@@ -15,7 +15,7 @@ builtin modules.
 @
  -}
 module Kore.Builtin.Krypto
-    ( symbolVerifiers
+    ( verifiers
     , builtinFunctions
     , signatureToKey
     -- * Constants
@@ -80,6 +80,14 @@ ecdsaRecoverKey = "KRYPTO.ecdsaRecover"
 sha256Key = "KRYPTO.sha256"
 sha3256Key = "KRYPTO.sha3256"
 ripemd160Key = "KRYPTO.ripemd160"
+
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers = mempty
+        , symbolVerifiers
+        , patternVerifierHook = mempty
+        }
 
 {- | Verify that hooked symbol declarations are well-formed.
 
@@ -222,7 +230,11 @@ recoverPublicKey recId (r, s) e =
             (mulMod n (invMod n r) (n - e `mod` n))
             (ecc_g curveParams)
   where
-    p256k1@(CurveFP (CurvePrime p curveParams)) = getCurveByName SEC_p256k1
+    p256k1 = getCurveByName SEC_p256k1
+    CurvePrime p curveParams =
+        case p256k1 of
+            CurveFP curvePrime@(CurvePrime _ _) -> curvePrime
+            _ -> error "Expected CurveFP!"
 
     n = ecc_n curveParams
 

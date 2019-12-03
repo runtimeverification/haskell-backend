@@ -17,12 +17,8 @@ module Kore.Step.Axiom.EvaluationStrategy
     ) where
 
 import qualified Data.Foldable as Foldable
-import Data.Maybe
-    ( isJust
-    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
 
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.Condition
@@ -35,9 +31,13 @@ import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
-import Kore.Internal.TermLike
-import qualified Kore.Proof.Value as Value
+import Kore.Internal.TermLike as TermLike
+import Kore.Logger.WarnSimplificationWithRemainder
+    ( warnSimplificationWithRemainder
+    )
 import Kore.Step.Axiom.Evaluate
+import qualified Kore.Step.EquationalStep as Step
+import Kore.Step.Result as Results
 import Kore.Step.Rule
     ( EqualityRule (..)
     )
@@ -48,12 +48,9 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
     )
-import qualified Kore.Step.Step as Step
 import Kore.Unparser
     ( unparse
     )
-
-import qualified Kore.Logger as Logger
 
 {-|Describes whether simplifiers are allowed to return multiple results or not.
 -}
@@ -73,30 +70,24 @@ definitionEvaluation
     :: [EqualityRule Variable]
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
-    BuiltinAndAxiomSimplifier $ \term predicate -> do
-        let ea = evaluateAxioms
-                    rules
-                    term
-                    (Condition.toPredicate predicate)
-        res <- Step.assertFunctionLikeResults
-                (Step.toConfigurationVariables (Pattern.fromTermLike term))
-                ea
-        return $ resultsToAttemptedAxiom res
+    BuiltinAndAxiomSimplifier $ \term condition -> do
+        let predicate = Condition.toPredicate condition
+        results <- evaluateAxioms rules term predicate
+        let attempted = Results.toAttemptedAxiom results
+        Step.assertFunctionLikeResults term results
+        return attempted
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
     :: EqualityRule Variable
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
-    BuiltinAndAxiomSimplifier $ \term predicate -> do
-        let ea = evaluateAxioms
-                    [rule]
-                    term
-                    (Condition.toPredicate predicate)
-        res <- Step.recoveryFunctionLikeResults
-                (Step.toConfigurationVariables (Pattern.fromTermLike term))
-                ea
-        return $ resultsToAttemptedAxiom res
+    BuiltinAndAxiomSimplifier $ \term condition -> do
+        let predicate = Condition.toPredicate condition
+        results <- evaluateAxioms [rule] term predicate
+        let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
+        Step.recoveryFunctionLikeResults initial results
+        return $ Results.toAttemptedAxiom results
 
 {- | Creates an evaluator for a function from all the rules that define it.
 
@@ -115,19 +106,22 @@ totalDefinitionEvaluation rules =
   where
     totalDefinitionEvaluationWorker
         :: forall variable simplifier
-        .  (SimplifierVariable variable, MonadSimplify simplifier)
+        .  ( SimplifierVariable variable
+           , MonadSimplify simplifier
+           )
         => TermLike variable
         -> Condition variable
         -> simplifier (AttemptedAxiom variable)
-    totalDefinitionEvaluationWorker term predicate = do
-        result0 <- evaluateAxioms
-                    rules
-                    term
-                    (Condition.toPredicate predicate)
-        let result = resultsToAttemptedAxiom result0
-        if hasRemainders result
-            then return AttemptedAxiom.NotApplicable
-            else return result
+    totalDefinitionEvaluationWorker term condition = do
+        let predicate = Condition.toPredicate condition
+        results <- evaluateAxioms rules term predicate
+        let attempted = rejectRemainders $ Results.toAttemptedAxiom results
+        Step.assertFunctionLikeResults term results
+        return attempted
+
+    rejectRemainders attempted
+      | hasRemainders attempted = AttemptedAxiom.NotApplicable
+      | otherwise               = attempted
 
 {-| Creates an evaluator that choses the result of the first evaluator that
 returns Applicable.
@@ -165,7 +159,9 @@ builtinEvaluation evaluator =
 
 evaluateBuiltin
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
     => BuiltinAndAxiomSimplifier
     -- ^ Map from axiom IDs to axiom evaluators
     -> TermLike variable
@@ -190,11 +186,14 @@ evaluateBuiltin
                 ]
         _ -> return result
   where
-    isValue pat = isJust $ Value.fromTermLike =<< asConcrete pat
+    isValue pat =
+        maybe False TermLike.isNonSimplifiable $ asConcrete pat
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier
-    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    .  ( SimplifierVariable variable
+       , MonadSimplify simplifier
+       )
     => [BuiltinAndAxiomSimplifier]
     -> AcceptsMultipleResults
     -> TermLike variable
@@ -218,14 +217,14 @@ applyFirstSimplifierThatWorks
           | acceptsMultipleResults multipleResults -> return applicationResult
           -- below this point multiple results are not accepted
           | length (MultiOr.extractPatterns orResults) > 1 ->
-              -- We should only allow multiple simplification results
-              -- when they are created by unification splitting the
-              -- configuration.
-              -- However, right now, we shouldn't be able to get more
-              -- than one result, so we throw an error.
-              error . show . Pretty.vsep $
+            -- We should only allow multiple simplification results
+            -- when they are created by unification splitting the
+            -- configuration.
+            -- However, right now, we shouldn't be able to get more
+            -- than one result, so we throw an error.
+            error . show . Pretty.vsep $
                 [ "Unexpected simplification result with more \
-                  \than one configuration:"
+                    \than one configuration:"
                 , Pretty.indent 2 "input:"
                 , Pretty.indent 4 (unparse patt)
                 , Pretty.indent 2 "results:"
@@ -236,24 +235,14 @@ applyFirstSimplifierThatWorks
                     (unparse <$> Foldable.toList orRemainders)
                 ]
           | not (OrPattern.isFalse orRemainders) ->  do
-              Logger.logWarning
-                  . Pretty.renderStrict . Pretty.layoutCompact . Pretty.vsep
-                  $ [ "Simplification result with remainder:"
-                    , Pretty.indent 2 "input pattern:"
-                    , Pretty.indent 4 (unparse patt)
-                    , Pretty.indent 2 "input predicate:"
-                    , Pretty.indent 4 (unparse predicate)
-                    , Pretty.indent 2 "results:"
-                    , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> Foldable.toList orResults)
-                    , Pretty.indent 2 "remainders:"
-                    , (Pretty.indent 4 . Pretty.vsep)
-                        (unparse <$> Foldable.toList orRemainders)
-                    , "Rule will be skipped."
-                    ]
-              -- TODO (traiansf): this might generate too much output
-              --    replace log with a logOnce when that becomes available
-              tryNextSimplifier
+            warnSimplificationWithRemainder
+                patt
+                predicate
+                orResults
+                orRemainders
+            -- TODO (traiansf): this might generate too much output
+            --    replace log with a logOnce when that becomes available
+            tryNextSimplifier
           | otherwise -> return applicationResult
         AttemptedAxiom.NotApplicable -> tryNextSimplifier
   where

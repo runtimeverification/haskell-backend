@@ -22,9 +22,6 @@ import qualified Data.Foldable as Foldable
 import Data.List
     ( intercalate
     )
-import Data.Proxy
-    ( Proxy (..)
-    )
 import Data.Reflection
 import Data.Semigroup
     ( (<>)
@@ -118,18 +115,11 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step
-import Kore.Step.Rule
-    ( OnePathRule (..)
-    , RewriteRule (..)
-    )
 import Kore.Step.Search
     ( SearchType (..)
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
-import Kore.Strategies.Goal
-    ( Rule (OnePathRewriteRule)
-    )
 import Kore.Syntax.Definition
     ( ModuleName (..)
     )
@@ -140,6 +130,7 @@ import SMT
     ( MonadSMT
     )
 import qualified SMT
+import Stats
 
 import GlobalMain
 
@@ -184,9 +175,7 @@ parseKoreSearchOptions =
             "Search type (selects potential solutions)"
             (map (\s -> (show s, s)) [ ONE, FINAL, STAR, PLUS ])
 
-parseSum
-    :: Eq value
-    => String -> String -> String -> [(String, value)] -> Parser value
+parseSum :: String -> String -> String -> [(String, value)] -> Parser value
 parseSum metaName longName helpMsg options =
     option (readSum longName options)
         (  metavar metaName
@@ -264,6 +253,7 @@ data KoreExecOptions = KoreExecOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
     , koreProveOptions    :: !(Maybe KoreProveOptions)
     , koreMergeOptions    :: !(Maybe KoreMergeOptions)
+    , rtsStatistics       :: !(Maybe FilePath)
     }
 
 -- | Command Line Argument Parser
@@ -315,6 +305,7 @@ parseKoreExecOptions =
         <*> pure Nothing
         <*> optional parseKoreProveOptions
         <*> optional parseKoreMergeOptions
+        <*> optional parseRtsStatistics
     SMT.Config { timeOut = defaultTimeOut } = SMT.defaultConfig
     readSMTTimeOut = do
         i <- auto
@@ -353,6 +344,14 @@ parseKoreExecOptions =
                 , long "module"
                 , help "The name of the main module in the Kore definition."
                 ]
+    parseRtsStatistics =
+        strOption (mconcat infos)
+      where
+        infos =
+            [ metavar "FILENAME"
+            , long "rts-statistics"
+            , help "Write runtime statistics to FILENAME in JSON format."
+            ]
 
 -- | modifiers for the Command line parser description
 parserInfoModifiers :: InfoMod options
@@ -370,19 +369,28 @@ main = do
     Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
-mainWithOptions execOptions@KoreExecOptions { koreLogOptions } =
-    (=<<) exitWith $ runLoggerT koreLogOptions $ case () of
-    ()
-      | Just proveOptions <- koreProveOptions execOptions ->
+mainWithOptions execOptions = do
+    let KoreExecOptions { koreLogOptions } = execOptions
+    exitCode <- runLoggerT koreLogOptions go
+    let KoreExecOptions { rtsStatistics } = execOptions
+    Foldable.forM_ rtsStatistics $ \filePath ->
+        writeStats filePath =<< getStats
+    exitWith exitCode
+  where
+    KoreExecOptions { koreProveOptions } = execOptions
+    KoreExecOptions { koreSearchOptions } = execOptions
+    KoreExecOptions { koreMergeOptions } = execOptions
+    go
+      | Just proveOptions <- koreProveOptions =
         koreProve execOptions proveOptions
 
-      | Just searchOptions <- koreSearchOptions execOptions ->
+      | Just searchOptions <- koreSearchOptions =
         koreSearch execOptions searchOptions
 
-      | Just mergeOptions <- koreMergeOptions execOptions ->
+      | Just mergeOptions <- koreMergeOptions =
         koreMerge execOptions mergeOptions
 
-      | otherwise ->
+      | otherwise =
         koreRun execOptions
 
 koreSearch :: KoreExecOptions -> KoreSearchOptions -> Main ExitCode
@@ -449,7 +457,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove stepLimit mainModule specModule (Proxy @(OnePathRule Variable))
+                <$> prove stepLimit mainModule specModule
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where

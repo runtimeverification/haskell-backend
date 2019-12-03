@@ -64,7 +64,6 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
-import Data.Hashable
 import qualified Data.List as List
 import Data.Maybe
 import Data.Sequence
@@ -312,8 +311,6 @@ insChildNode configNode =
 executionHistoryStep
     :: forall m config rule prim
     .  Monad m
-    => Hashable config
-    => Show config
     => (prim -> config -> TransitionT rule m config)
     -- ^ Transition rule
     -> Strategy prim
@@ -389,7 +386,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  (MonadProfiler m, Show config, Show rule)
+    .  MonadProfiler m
     => (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> GraphSearchOrder
@@ -514,7 +511,7 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  (MonadProfiler m, Show config, Show rule)
+    .  MonadProfiler m
     => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
@@ -527,7 +524,7 @@ runStrategy applyPrim instrs0 config0 =
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
-    .  (MonadProfiler m, Show config, Show rule)
+    .  MonadProfiler m
     => (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]

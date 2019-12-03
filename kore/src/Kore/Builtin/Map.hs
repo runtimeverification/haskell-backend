@@ -14,8 +14,7 @@ builtin modules.
  -}
 module Kore.Builtin.Map
     ( sort
-    , sortDeclVerifiers
-    , symbolVerifiers
+    , verifiers
     , builtinFunctions
     , Map.asTermLike
     , internalize
@@ -113,6 +112,14 @@ isMapSort = Builtin.isSort sort
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
 
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers
+        , symbolVerifiers
+        , patternVerifierHook = mempty
+        }
+
 {- | Verify that hooked sort declarations are well-formed.
 
   See also: 'Builtin.verifySortDecl'
@@ -154,6 +161,10 @@ symbolVerifiers =
       )
     , ( Map.lookupKey
       , Builtin.verifySymbol acceptAnySort [assertSort, acceptAnySort]
+      )
+    , ( Map.lookupOrDefaultKey
+      , Builtin.verifySymbol acceptAnySort
+            [assertSort, acceptAnySort, acceptAnySort]
       )
     , ( Map.unitKey
       , Builtin.verifySymbol assertSort []
@@ -259,6 +270,22 @@ evalLookup =
       where
         maybeBottom = maybe Pattern.bottom Pattern.fromTermLike
 
+evalLookupOrDefault :: Builtin.Function
+evalLookupOrDefault =
+    Builtin.functionEvaluator evalLookupOrDefault0
+  where
+    evalLookupOrDefault0 :: Builtin.FunctionImplementation
+    evalLookupOrDefault0 _ [_map, _key, _def] =
+        Builtin.getAttemptedAxiom $ do
+            _key <- hoistMaybe $ Builtin.toKey _key
+            _map <- expectConcreteBuiltinMap Map.lookupKey _map
+            Builtin.appliedFunction
+                . Pattern.fromTermLike
+                . fromMaybe _def
+                . fmap Domain.getMapValue
+                $ Map.lookup _key _map
+    evalLookupOrDefault0 _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
+
 -- | evaluates the map element builtin.
 evalElement :: Builtin.Function
 evalElement =
@@ -270,9 +297,10 @@ evalElement =
                     case arguments of
                         [_key, _value] -> (_key, _value)
                         _ -> Builtin.wrongArity Map.elementKey
-            case TermLike.asConcrete _key of
+            case Builtin.toKey _key of
                 Just concrete ->
-                    returnConcreteMap
+                    TermLike.assertNonSimplifiableKeys [_key]
+                    $ returnConcreteMap
                         resultSort
                         (Map.singleton concrete (Domain.MapValue _value))
                 Nothing ->
@@ -329,6 +357,8 @@ evalUpdate =
                         _ -> Builtin.wrongArity Map.updateKey
             _key <- hoistMaybe $ Builtin.toKey _key
             _map <- expectConcreteBuiltinMap Map.updateKey _map
+            TermLike.assertNonSimplifiableKeys (_key : Map.keys _map)
+                $ return ()
             returnConcreteMap
                 resultSort
                 (Map.insert _key (Domain.MapValue value) _map)
@@ -454,6 +484,7 @@ builtinFunctions =
     Map.fromList
         [ (Map.concatKey, evalConcat)
         , (Map.lookupKey, evalLookup)
+        , (Map.lookupOrDefaultKey, evalLookupOrDefault)
         , (Map.elementKey, evalElement)
         , (Map.unitKey, evalUnit)
         , (Map.updateKey, evalUpdate)

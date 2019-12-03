@@ -1,4 +1,19 @@
-module Test.Kore.Builtin.Bool where
+module Test.Kore.Builtin.Bool
+    ( test_or
+    , test_orElse
+    , test_and
+    , test_andThen
+    , test_xor
+    , test_ne
+    , test_eq
+    , test_not
+    , test_implies
+    , test_simplification
+    , hprop_unparse
+    --
+    , asPattern
+    , asInternal
+    ) where
 
 import Hedgehog
 import qualified Hedgehog.Gen as Gen
@@ -6,8 +21,6 @@ import Test.Tasty
 
 import qualified Data.Text as Text
 
-import Kore.Attribute.Hook
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Bool as Bool
 import Kore.Internal.Pattern
 import Kore.Internal.TermLike
@@ -72,8 +85,7 @@ testBinary symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a, b])
         (===) expect actual
   where
-    Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
-        symbolAttributes symb
+    name = expectHook symb
 
 -- | Test a unary operator hooked to the given symbol
 testUnary
@@ -89,8 +101,7 @@ testUnary symb impl =
         actual <- evaluateT $ mkApplySymbol symb (asInternal <$> [a])
         (===) expect actual
   where
-    Attribute.Symbol { Attribute.hook = Hook { getHook = Just name } } =
-        symbolAttributes symb
+    name = expectHook symb
 
 test_simplification :: TestTree
 test_simplification =
@@ -104,8 +115,8 @@ test_simplification =
         , testGroup "and"
             [ mkAnd _True  _False `becomes` bottom
             , mkAnd _False _True  `becomes` bottom
-            , mkAnd _True  _True  `becomes` pure _True
-            , mkAnd _False _False `becomes` pure _False
+            , mkAnd _True  _True  `becomes` asPattern True
+            , mkAnd _False _False `becomes` asPattern False
             ]
         ]
       where
@@ -122,7 +133,6 @@ test_simplification =
                 $ SMT.withSolver
                 $ evaluate makerInput
             assertEqual "" expected actual
-
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)

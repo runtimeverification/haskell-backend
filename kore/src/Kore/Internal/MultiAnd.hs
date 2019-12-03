@@ -35,7 +35,7 @@ import GHC.Generics
 import Kore.Internal.Predicate
     ( Predicate
     , makeAndPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.Variable
 import Kore.TopBottom
@@ -101,18 +101,12 @@ patternToAndBool patt
 
 {-| 'make' constructs a normalized 'MultiAnd'.
 -}
-make
-    :: (Ord term, TopBottom term)
-    => [term]
-    -> MultiAnd term
+make :: (Ord term, TopBottom term) => [term] -> MultiAnd term
 make patts = filterAnd (MultiAnd patts)
 
 {-| Returns the patterns inside an @\and@.
 -}
-extractPatterns
-    :: TopBottom term
-    => MultiAnd term
-    -> [term]
+extractPatterns :: MultiAnd term -> [term]
 extractPatterns = getMultiAnd
 
 
@@ -174,5 +168,5 @@ toPredicate
     -> Predicate variable
 toPredicate (MultiAnd predicates) =
     case predicates of
-        [] -> makeTruePredicate
+        [] -> makeTruePredicate_
         _  -> foldr1 makeAndPredicate predicates

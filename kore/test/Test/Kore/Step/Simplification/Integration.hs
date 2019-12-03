@@ -34,14 +34,18 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeAndPredicate
     , makeCeilPredicate
+    , makeCeilPredicate_
     , makeEqualsPredicate
-    , makeFloorPredicate
+    , makeEqualsPredicate_
+    , makeFloorPredicate_
     , makeIffPredicate
     , makeImpliesPredicate
     , makeInPredicate
+    , makeInPredicate_
     , makeNotPredicate
     , makeOrPredicate
     , makeTruePredicate
+    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
@@ -108,7 +112,7 @@ test_simplificationIntegration =
                                 )
                             )
                             mkTop_
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
@@ -145,7 +149,7 @@ test_simplificationIntegration =
                                 )
                             )
                             mkTop_
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
@@ -155,7 +159,7 @@ test_simplificationIntegration =
                 OrPattern.fromPatterns
                     [ Conditional
                         { term = mkTop_
-                        , predicate = makeCeilPredicate
+                        , predicate = makeCeilPredicate_
                             (mkAnd
                                 (Mock.plain10 Mock.cf)
                                 (Mock.plain10 (mkElemVar Mock.x))
@@ -178,7 +182,7 @@ test_simplificationIntegration =
                                 (mkElemVar Mock.y)
                             )
                         )
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
@@ -215,7 +219,9 @@ test_simplificationIntegration =
         assertEqual "" expect actual
     , testCase "function application with top predicate" $ do
         let requirement =
-                makeEqualsPredicate (Mock.f (mkElemVar Mock.x)) (Mock.g Mock.b)
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.b)
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
@@ -262,7 +268,7 @@ test_simplificationIntegration =
                             (mkElemVar Mock.xInt)
                     , predicate =
                         makeNotPredicate
-                        $ makeEqualsPredicate
+                        $ makeEqualsPredicate Mock.intSort
                             (mkElemVar Mock.xInt)
                             (Mock.builtinInt 0)
                     , substitution = mempty
@@ -304,7 +310,7 @@ test_simplificationIntegration =
                         $ Mock.tdivInt
                             (mkElemVar Mock.xInt)
                             (mkElemVar Mock.xInt)
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
@@ -332,7 +338,7 @@ test_simplificationIntegration =
                                             (mkElemVar Mock.xInt)
                                             (mkElemVar Mock.xInt)
                                     )
-                                    (makeNotPredicate $ makeEqualsPredicate
+                                    (makeNotPredicate $ makeEqualsPredicate_
                                         (mkElemVar Mock.xInt)
                                         (Mock.builtinInt 0)
                                     )
@@ -348,7 +354,7 @@ test_simplificationIntegration =
                         $ Mock.tdivInt
                             (mkElemVar Mock.xInt)
                             (mkElemVar Mock.xInt)
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
             )
@@ -363,7 +369,7 @@ test_simplificationIntegration =
                         mkExists
                             Mock.x
                             (mkEquals_ (mkElemVar Mock.x) (mkElemVar Mock.y))
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
@@ -378,7 +384,7 @@ test_simplificationIntegration =
                         mkExists
                             Mock.x
                             (mkEquals_ (mkElemVar Mock.y) (mkElemVar Mock.x))
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
@@ -401,7 +407,7 @@ test_simplificationIntegration =
             expect = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkExists Mock.x (Mock.f (mkElemVar Mock.x))
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
                     }
                 ]
@@ -418,14 +424,16 @@ test_simplificationIntegration =
                 )
                 Conditional
                     { term = Mock.cf
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate_
                     , substitution = mempty
                     }
         assertEqual "" expect actual
     , testCase "simplification with top predicate (exists variable capture)"
       $ do
         let requirement =
-                makeEqualsPredicate (Mock.f (mkElemVar Mock.x)) (Mock.g Mock.b)
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.b)
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
@@ -457,7 +465,9 @@ test_simplificationIntegration =
     , testCase "simplification with top predicate (forall variable capture)"
       $ do
         let requirement =
-                makeEqualsPredicate (Mock.f (mkElemVar Mock.x)) (Mock.g Mock.b)
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkElemVar Mock.x))
+                    (Mock.g Mock.b)
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
@@ -488,7 +498,9 @@ test_simplificationIntegration =
         assertEqual "" expect actual
     , testCase "simplification with top predicate (nu variable capture)" $ do
         let requirement =
-                makeEqualsPredicate (Mock.f (mkSetVar Mock.setX)) (Mock.g Mock.b)
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkSetVar Mock.setX))
+                    (Mock.g Mock.b)
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
@@ -519,7 +531,9 @@ test_simplificationIntegration =
         assertEqual "" expect actual
     , testCase "simplification with top predicate (mu variable capture)" $ do
         let requirement =
-                makeEqualsPredicate (Mock.f (mkSetVar Mock.setX)) (Mock.g Mock.b)
+                makeEqualsPredicate Mock.testSort
+                    (Mock.f (mkSetVar Mock.setX))
+                    (Mock.g Mock.b)
             expect =
                 OrPattern.fromPatterns
                 [ Conditional
@@ -552,14 +566,14 @@ test_simplificationIntegration =
         let expected = OrPattern.fromPatterns
                 [Conditional
                     { term = mkNot Mock.bSort0
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate Mock.testSort0
                     , substitution = mempty
                     }
                 ]
         actual <- evaluate
             Conditional
                 { term = mkIff Mock.bSort0 mkBottom_
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate Mock.testSort0
                 , substitution = mempty
                 }
         assertEqual "" expected actual
@@ -567,33 +581,33 @@ test_simplificationIntegration =
         let expected = OrPattern.fromPatterns
                 [ Conditional
                     { term = mkRewrites (mkElemVar Mock.x) mkBottom_
-                    , predicate = makeTruePredicate
+                    , predicate = makeTruePredicate Mock.testSort
                     , substitution = mempty
                     }
                 ]
         actual <- evaluate
             Conditional
                 { term = mkRewrites (mkElemVar Mock.x) mkBottom_
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "" expected actual
     , testCase "Or to pattern" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.boolSort
                     , predicate = makeIffPredicate
                         (makeOrPredicate
-                            (makeInPredicate
-                                (mkCeil_ Mock.cf)
-                                (mkCeil_ Mock.cg)
+                            (makeInPredicate Mock.boolSort
+                                (mkCeil Mock.setSort Mock.cf)
+                                (mkCeil Mock.setSort Mock.cg)
                             )
-                            (makeInPredicate
-                                (mkCeil_ Mock.cf)
+                            (makeInPredicate_
+                                (mkCeil Mock.setSort Mock.cf)
                                 (asInternal (Set.fromList []))
                             )
                         )
-                        (makeCeilPredicate Mock.ch)
+                        (makeCeilPredicate_ Mock.ch)
                     , substitution = mempty
                     }
                 ]
@@ -608,7 +622,7 @@ test_simplificationIntegration =
                         )
                     )
                     (mkCeil_ Mock.ch)
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "" expected actual
@@ -619,8 +633,8 @@ test_simplificationIntegration =
 
         let expected = OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkTop_
-                    , predicate = makeInPredicate
+                    { term = mkTop Mock.otherSort
+                    , predicate = makeInPredicate Mock.otherSort
                         (mkNu iz (Mock.builtinInt 595))
                         (mkAnd
                             (Mock.tdivInt mkTop_ mkTop_)
@@ -653,8 +667,8 @@ test_simplificationIntegration =
                     , substitution = mempty
                     }
                 , Conditional
-                    { term = mkTop_
-                    , predicate = makeInPredicate
+                    { term = mkTop Mock.otherSort
+                    , predicate = makeInPredicate Mock.otherSort
                         (mkNu iz (Mock.builtinInt 595))
                         (mkAnd
                             (Mock.tdivInt mkTop_ mkTop_)
@@ -717,7 +731,7 @@ test_simplificationIntegration =
                             )
                         )
                     )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "" expected actual
@@ -741,16 +755,17 @@ test_simplificationIntegration =
                         )
                     )
                     Mock.unitList
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertBool "Expecting simplification" (OrPattern.isSimplified actual)
     , testCase "Forall simplification" $ do
         let expected = OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.otherSort
                     , predicate =
-                        makeCeilPredicate (mkEvaluated (mkBottom Mock.mapSort))
+                        makeCeilPredicate Mock.otherSort
+                            (mkEvaluated (mkBottom Mock.mapSort))
                     , substitution = mempty
                     }
                 ]
@@ -763,7 +778,7 @@ test_simplificationIntegration =
                         (mkNot (mkBottom Mock.mapSort))
                         (mkEvaluated mkBottom_)
                     )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "" expected actual
@@ -778,34 +793,34 @@ test_simplificationIntegration =
 
         let expected = OrPattern.fromPatterns
                 [ Conditional
-                    { term = mkTop_
+                    { term = mkTop Mock.stringSort
                     , predicate = makeAndPredicate
                         (makeImpliesPredicate
-                            (makeInPredicate
+                            (makeInPredicate Mock.stringSort
                                 (mkMu k
-                                    (asInternal (Set.fromList [Mock.ch]))
+                                    (asInternal (Set.fromList [Mock.a]))
                                 )
                                 (Mock.fSet mkTop_)
                             )
                             (makeIffPredicate
-                                (makeFloorPredicate
+                                (makeFloorPredicate_
                                     (mkEvaluated (mkBottom Mock.testSort))
                                 )
-                                (makeEqualsPredicate Mock.aSubSubsort mkTop_)
+                                (makeEqualsPredicate_ Mock.aSubSubsort mkTop_)
                             )
                         )
                         (makeImpliesPredicate
-                            (makeInPredicate
+                            (makeInPredicate_
                                 (mkMu k
                                     (mkEvaluated Mock.unitSet)
                                 )
                                 (Mock.fSet mkTop_)
                             )
                             (makeIffPredicate
-                                (makeFloorPredicate
+                                (makeFloorPredicate_
                                     (mkEvaluated (mkBottom Mock.testSort))
                                 )
-                                (makeEqualsPredicate Mock.aSubSubsort mkTop_)
+                                (makeEqualsPredicate_ Mock.aSubSubsort mkTop_)
                             )
                         )
                     , substitution = mempty
@@ -819,7 +834,7 @@ test_simplificationIntegration =
                             (mkMu k
                                 (mkOr
                                     (mkEvaluated Mock.unitSet)
-                                    (mkExists mw (Mock.elementSet Mock.ch))
+                                    (mkExists mw (Mock.elementSet Mock.a))
                                 )
                             )
                             (Mock.fSet (mkFloor_ (mkTop Mock.mapSort)))
@@ -841,7 +856,7 @@ test_simplificationIntegration =
                         )
                     )
 
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertEqual "" expected actual
@@ -855,7 +870,7 @@ test_simplificationIntegration =
                             (mkEvaluated (mkEvaluated (mkTop Mock.setSort)))
                         )
                     )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertBool "Expecting simplification" (OrPattern.isSimplified actual)
@@ -872,7 +887,7 @@ test_simplificationIntegration =
                         )
                         mkTop_
                     )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
@@ -882,7 +897,7 @@ test_simplificationIntegration =
                 { term = mkAnd
                     (Mock.elementList Mock.plain00)
                     (Mock.elementList Mock.functional00)
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
@@ -895,7 +910,7 @@ test_simplificationIntegration =
                         (Mock.functionalConstr21 Mock.cf Mock.cf)
                         (Mock.functionalConstr21 Mock.ch Mock.cg)
                     )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
@@ -910,10 +925,32 @@ test_simplificationIntegration =
                             (mkOr Mock.cf Mock.cg)
                         )
                     )
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "equals-predicate with sort change simplification" $ do
+        actual <- evaluate
+            Conditional
+                { term =
+                    mkEquals Mock.testSort
+                        (mkIn Mock.subSort
+                            (mkStringLiteral "a")
+                            (mkStringLiteral "b")
+                        )
+                        mkBottom_
+                , predicate = makeTruePredicate_
+                , substitution = mempty
+                }
+        assertBool "" (OrPattern.isSimplified actual)
+    , testCase "Preserves predicate sort" $ do
+        let patt = Conditional
+                { term = mkTop Mock.listSort
+                , predicate = makeInPredicate Mock.listSort Mock.cf Mock.cg
+                , substitution = mempty
+                }
+        actual <- evaluate patt
+        assertEqual "" (OrPattern.fromPattern patt) actual
     ]
 
 
@@ -949,7 +986,7 @@ test_substitute =
                             Mock.functionalConstr20
                                 Mock.a
                                 (Mock.functionalConstr10 Mock.a)
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
                             , (ElemVar Mock.y, Mock.functionalConstr10 Mock.a)
@@ -978,7 +1015,7 @@ test_substitute =
                     [ Pattern.Conditional
                         { term =
                             Mock.functionalConstr20 Mock.a Mock.a
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
                             , (ElemVar Mock.y, Mock.a)
@@ -1012,7 +1049,7 @@ test_substituteMap =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
                         { term = Mock.functionalConstr20 Mock.a testMapA
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
                             , (ElemVar Mock.y, testMapA)
@@ -1046,7 +1083,7 @@ test_substituteList =
                 OrPattern.fromPatterns
                     [ Pattern.Conditional
                         { term = Mock.functionalConstr20 Mock.a testListA
-                        , predicate = makeTruePredicate
+                        , predicate = makeTruePredicate Mock.testSort
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.a)
                             , (ElemVar Mock.y, testListA)
@@ -1137,7 +1174,7 @@ axiom left right predicate =
         , antiLeft = Nothing
         , right
         , requires = predicate
-        , ensures = makeTruePredicate
+        , ensures = makeTruePredicate_
         , attributes = Default.def
         }
 

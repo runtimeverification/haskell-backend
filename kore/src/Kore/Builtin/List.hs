@@ -17,8 +17,7 @@ builtin modules.
 module Kore.Builtin.List
     ( sort
     , assertSort
-    , sortDeclVerifiers
-    , symbolVerifiers
+    , verifiers
     , builtinFunctions
     , Builtin
     , returnList
@@ -49,6 +48,7 @@ import Control.Applicative
     )
 import Control.Error
     ( MaybeT
+    , hoistMaybe
     )
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans as Monad.Trans
@@ -73,6 +73,7 @@ import Data.Text
     )
 import qualified Data.Text as Text
 
+import qualified Kore.Builtin.Bool as Bool
 import Kore.Builtin.Builtin
     ( acceptAnySort
     )
@@ -120,6 +121,14 @@ import qualified Kore.Unification.Unify as Monad.Unify
 assertSort :: Builtin.SortVerifier
 assertSort = Builtin.verifySort sort
 
+verifiers :: Builtin.Verifiers
+verifiers =
+    Builtin.Verifiers
+        { sortDeclVerifiers
+        , symbolVerifiers
+        , patternVerifierHook = mempty
+        }
+
 {- | Verify that hooked sort declarations are well-formed.
 
   See also: 'Builtin.verifySortDecl'
@@ -165,10 +174,13 @@ symbolVerifiers =
     , ( getKey
       , Builtin.verifySymbol acceptAnySort [assertSort, Int.assertSort]
       )
-    ,   ( updateKey
-        , Builtin.verifySymbol assertSort
+    , ( updateKey
+      , Builtin.verifySymbol assertSort
             [assertSort, Int.assertSort, acceptAnySort]
-        )
+      )
+    , ( inKey
+      , Builtin.verifySymbol Bool.assertSort [acceptAnySort, assertSort]
+      )
     ]
 
 {- | Abort function evaluation if the argument is not a List domain value.
@@ -275,6 +287,20 @@ evalUpdate =
                 else Builtin.appliedFunction Pattern.bottom
     evalUpdate0 _ _ = Builtin.wrongArity updateKey
 
+evalIn :: Builtin.Function
+evalIn =
+    Builtin.functionEvaluator evalIn0
+  where
+    evalIn0 :: Builtin.FunctionImplementation
+    evalIn0 resultSort [_elem, _list] =
+        Builtin.getAttemptedAxiom $ do
+            _list <- expectConcreteBuiltinList inKey _list
+            _elem <- hoistMaybe $ Builtin.toKey _elem
+            Builtin.appliedFunction
+                $ Bool.asPattern resultSort
+                $ _elem `elem` _list
+    evalIn0 _ _ = Builtin.wrongArity inKey
+
 evalUnit :: Builtin.Function
 evalUnit =
     Builtin.functionEvaluator evalUnit0
@@ -331,6 +357,7 @@ builtinFunctions =
         , (unitKey, evalUnit)
         , (getKey, evalGet)
         , (updateKey, evalUpdate)
+        , (inKey, evalIn)
         ]
 
 {- | Simplify the conjunction or equality of two concrete List domain values.
