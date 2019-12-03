@@ -6,9 +6,11 @@ License     : NCSA
 module Kore.Step.Simplification.InjSimplifier
     ( InjSimplifier (..)
     , mkInjSimplifier
+    , normalize
     ) where
 
 import qualified Control.Exception as Exception
+import qualified Data.Functor.Foldable as Recursive
 import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
@@ -169,3 +171,16 @@ mkInjSimplifier sortGraph =
       where
         Inj { injFrom = injFrom1, injTo = injTo1 } = inj1
         Inj { injFrom = injFrom2, injTo = injTo2 } = inj2
+
+normalize
+    :: InternalVariable variable
+    => InjSimplifier
+    -> TermLike variable
+    -> TermLike variable
+normalize InjSimplifier { evaluateInj } =
+    Recursive.fold worker
+  where
+    worker (_ :< termLikeF) =
+        case termLikeF of
+            InjF inj -> evaluateInj inj
+            _ -> synthesize termLikeF

@@ -76,7 +76,7 @@ import Kore.Internal.TermLike hiding
     ( substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.Simplification.InjSimplifier
+import Kore.Step.Simplification.InjSimplifier as InjSimplifier
 import Kore.Step.Simplification.Simplify
     ( SimplifierVariable
     )
@@ -415,7 +415,8 @@ matching solution (so that it is always normalized). @substitute@ ensures that:
 
  -}
 substitute
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: forall unifier variable
+    .  (MatchingVariable variable, MonadUnify unifier)
     => ElementVariable variable
     -> TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
@@ -437,11 +438,13 @@ substitute eVariable termLike = do
 
     -- Push the dependent deferred pairs to the front of the queue.
     Foldable.traverse_ push dep
-    -- Apply the substitution to the queued pairs.
-    field @"queued" . Lens.mapped %= substitute2
 
-    -- Apply the substitution to the accumulated matching solution.
-    field @"substitution" . Lens.mapped %= substitute1
+    Monad.State.get
+        -- Apply the substitution to the queued pairs.
+        >>= (field @"queued" . traverse) substitute2
+        -- Apply the substitution to the accumulated matching solution.
+        >>= (field @"substitution" . traverse) substitute1
+        >>= Monad.State.put
     field @"predicate" . Lens.mapped %= Predicate.substitute subst
 
     return ()
@@ -449,8 +452,24 @@ substitute eVariable termLike = do
     variable = ElemVar eVariable
     isIndependent = not . any (hasFreeVariable variable)
     subst = Map.singleton variable termLike
-    substitute2 = fmap substitute1
-    substitute1 = Builtin.renormalize . TermLike.substitute subst
+
+    substitute2
+        :: Pair (TermLike variable)
+        -> MaybeT (MatcherT variable unifier) (Pair (TermLike variable))
+    substitute2 = traverse substitute1
+
+    substitute1
+        :: TermLike variable
+        -> MaybeT (MatcherT variable unifier) (TermLike variable)
+    substitute1 termLike' = do
+        injSimplifier <- Simplifier.askInjSimplifier
+        termLike'
+            & TermLike.substitute subst
+            -- Injected Map and Set keys must be properly normalized before
+            -- calling Builtin.renormalize.
+            & InjSimplifier.normalize injSimplifier
+            & Builtin.renormalize
+            & return
 
 {- | Record a set substitution in the matching solution.
 
