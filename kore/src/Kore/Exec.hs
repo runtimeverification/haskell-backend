@@ -481,8 +481,14 @@ extractRules rules = foldr addExtractRule (Right [])
 
     rulesByName :: Map.Map Text (RewriteRule Variable)
     rulesByName = Map.union
-        (Map.fromList (idRules rules))
-        (Map.fromList (labelRules rules))
+        (Map.fromListWith
+            (const $ const $ error "duplicate rule")
+            (idRules rules)
+        )
+        (Map.fromListWith
+            (const $ const $ error "duplicate rule")
+            (labelRules rules)
+        )
 
     extractRule :: Text -> Either Text (RewriteRule Variable)
     extractRule ruleName =
@@ -559,14 +565,24 @@ execute verifiedModule strategy inputPattern =
 
 -- | Collect various rules and simplifiers in preparation to execute.
 initialize
-    :: MonadSimplify simplifier
+    :: forall a simplifier
+    .  MonadSimplify simplifier
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> (Initialized -> simplifier a)
     -> simplifier a
 initialize verifiedModule within = do
-    rewriteRules <- Profiler.initialization "simplifyRewriteRule" $
-        mapM Rule.simplifyRewriteRule (extractRewriteAxioms verifiedModule)
-    let initialized = Initialized { rewriteRules }
+    let rewriteRules = extractRewriteAxioms verifiedModule
+        simplifyToList
+            :: SimplifyRuleLHS rule
+            => rule
+            -> simplifier [rule]
+        simplifyToList rule = do
+            simplified <- simplifyRuleLhs rule
+            return (MultiAnd.extractPatterns simplified)
+    rewriteAxioms <- Profiler.initialization "simplifyRewriteRule" $
+        mapM simplifyToList rewriteRules
+    --let axioms = coerce (concat simplifiedRewrite)
+    let initialized = Initialized { rewriteRules = concat rewriteAxioms }
     within initialized
 
 data InitializedProver =
@@ -608,10 +624,11 @@ initializeProver definitionModule specModule within =
                 simplified <- f rule
                 return (map ((,) attribute) simplified)
             simplifyToList
-                :: ReachabilityRule Variable
-                -> simplifier [ReachabilityRule Variable]
-            simplifyToList rules = do
-                simplified <- simplifyRuleLhs rules
+                :: SimplifyRuleLHS rule
+                => rule
+                -> simplifier [rule]
+            simplifyToList rule = do
+                simplified <- simplifyRuleLhs rule
                 return (MultiAnd.extractPatterns simplified)
 
         Log.withLogScope (Log.Scope "ExpandedClaim")
@@ -620,8 +637,7 @@ initializeProver definitionModule specModule within =
         let specClaims :: [(Attribute.Axiom, ReachabilityRule Variable)]
             specClaims =
                 map (Bifunctor.second fromMaybeChanged) changedSpecClaims
-
-        -- This assertion should come before simplifiying the claims,
+        -- This assertion should come before simplifying the claims,
         -- since simplification should remove all trivial claims.
         assertSomeClaims specClaims
         simplifiedSpecClaims <-
