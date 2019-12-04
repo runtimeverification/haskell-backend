@@ -21,6 +21,9 @@ import Kore.Step.Rule
     ( RewriteRule (..)
     , rulePattern
     )
+import Kore.Step.Strategy
+    ( GraphSearchOrder (..)
+    )
 import Kore.Strategies.Goal
 import qualified Kore.Strategies.Verification as Verification
 
@@ -46,6 +49,7 @@ runVerification stepLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
+        BreadthFirst
         claims
         axioms
         (map applyStepLimit . selectUntrusted $ claims)
