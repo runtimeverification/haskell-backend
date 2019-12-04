@@ -8,10 +8,10 @@ RUN    apt update                                                               
     && apt upgrade --yes                                                         \
     && apt install --yes                                                         \
            autoconf bison clang-6.0 cmake curl flex gcc git jq libboost-test-dev \
-           libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev libtool             \
-           libyaml-cpp-dev libz3-dev make maven opam openjdk-8-jdk pandoc        \
-           pkg-config python3 python-pygments python-recommonmark python-sphinx  \
-           time zlib1g-dev
+           libcairo2-dev libffi-dev libgmp-dev libjemalloc-dev libmpfr-dev       \
+           libtool libyaml-cpp-dev libz3-dev make maven opam openjdk-8-jdk       \
+           pandoc pkg-config python3 python-pygments python-recommonmark         \
+           python-sphinx time zlib1g-dev
 
 RUN    git clone 'https://github.com/z3prover/z3' --branch=z3-4.6.0 \
     && cd z3                                                        \
