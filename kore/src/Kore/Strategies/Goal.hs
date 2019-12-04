@@ -954,7 +954,7 @@ removalPredicate
     if OrPattern.isFalse unifiedConfigs
         then return Predicate.makeTruePredicate_
         else
-            case Foldable.toList unifiedConfigs of
+            case OrPattern.toPatterns unifiedConfigs of
                 [substPattern] ->
                     let extraNonElemVariables =
                             remainderNonElemVariables configuration substPattern
@@ -1057,4 +1057,3 @@ makeRuleFromPatterns ruleType configuration destination =
         , ensures
         , attributes = Default.def
         }
-
