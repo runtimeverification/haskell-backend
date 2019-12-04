@@ -663,11 +663,11 @@ onePathFirstStep
 onePathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DeriveSeq axioms
@@ -686,11 +686,11 @@ onePathFollowupStep
 onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DeriveSeq claims
@@ -710,11 +710,11 @@ allPathFirstStep
 allPathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DerivePar axioms
@@ -732,11 +732,11 @@ allPathFollowupStep
 allPathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , CheckGoalStuck
         , Simplify
         , TriviallyValid
         , DeriveSeq claims

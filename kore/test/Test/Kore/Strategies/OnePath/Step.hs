@@ -2,10 +2,6 @@ module Test.Kore.Strategies.OnePath.Step
     ( test_onePathStrategy
     ) where
 
-import Kore.Unparser
-    ( unparseToString
-    )
-
 import Test.Tasty
 
 import Data.Coerce
@@ -45,10 +41,8 @@ import Kore.Internal.Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makeAndPredicate
     , makeEqualsPredicate
     , makeEqualsPredicate_
-    , makeMultipleAndPredicate
     , makeNotPredicate
     , makeTruePredicate_
     )
@@ -85,10 +79,6 @@ import Kore.Syntax.Module
     )
 import Kore.Syntax.Variable
     ( Variable (..)
-    )
-import qualified Kore.Unification.Substitution as Substitution
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
     )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -318,7 +308,7 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
-    , testCase "TESTING1 Differentiated axioms" $ do
+    , testCase "Differentiated axioms" $ do
         -- Goal: constr10(x) => constr11(a)
         -- Coinductive axiom: constr11(a) => g(a)
         -- Coinductive axiom: constr11(b) => f(b)
@@ -328,10 +318,16 @@ test_onePathStrategy =
         -- Normal axiom: constr11(x) => h(x)
         -- Normal axiom: constr10(x) => constr11(x)
         -- Expected:
-        --   (f(b) and x=b)
-        --   or (f(c) and x=c)
-        --   or (h(x) and x!=a and x!=b and x!=c )
-        actual <-
+        --   Stuck after removing the destination during
+        --   the second step.
+        --
+        --   If remove destination didn't
+        --   detect that the conditions do not meet, then
+        --   the configuration would have resulted in:
+        --      (f(b) and x=b)
+        --      or (f(c) and x=c)
+        --      or (h(x) and x!=a and x!=b and x!=c )
+        actual@[ _actual ] <-
             runOnePathSteps
                 (Limit 2)
                 (makeOnePathRule
@@ -382,80 +378,14 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expected =
-                [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.b
-                        , predicate = makeTruePredicate_
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [(ElemVar Mock.x, Mock.b)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.Goal $ makeOnePathRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.c
-                        , predicate = makeTruePredicate_
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [(ElemVar Mock.x, Mock.c)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.Goal $ makeOnePathRuleFromPatterns
-                    Conditional
-                        { term = Mock.h (TermLike.mkElemVar Mock.x)
-                        , predicate =  -- TODO(virgil): Better and simplification.
-                            makeAndPredicate
-                                (makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate Mock.testSort
-                                            (TermLike.mkElemVar Mock.x) Mock.a
-                                        )
-                                    )
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate_
-                                            (TermLike.mkElemVar Mock.x) Mock.b
-                                        )
-                                    )
-                                )
-                                (makeNotPredicate
-                                    (makeEqualsPredicate_
-                                        (TermLike.mkElemVar Mock.x)
-                                        Mock.c
-                                    )
-                                )
-                        , substitution = mempty
-                        }
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                [ ProofState.GoalStuck
+                    $ makeOnePathRule
+                        (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
+                        (Mock.functionalConstr11 Mock.a)
                 ]
-        putStrLn "\nActual"
-        putStrLn
-            $ foldl
-                (\a b ->
-                    "\n"
-                    <> a
-                    <> "\n"
-                    <> show (fmap unparseToString b)
-                    <> "\n"
-                )
-                ""
-                actual
-        putStrLn "\nExpected"
-        putStrLn
-            $ foldl
-                (\a b ->
-                    "\n"
-                    <> a
-                    <> "\n"
-                    <> show (fmap unparseToString b)
-                    <> "\n"
-                )
-                ""
-                expected
-        -- assertEqual ""
-        --     expected
-        --     actual
+        assertEqual ""
+            expected
+            actual
         assertEqual "onepath == reachability onepath"
             (fmap (fmap OnePath) actual)
             actualReach
@@ -465,14 +395,19 @@ test_onePathStrategy =
         -- Normal axiom: constr11(c) => f(c)
         -- Normal axiom: constr10(x) => constr11(x)
         -- Expected:
-        --   Bottom
-        --   or (f(b) and x=b)
-        --   or (f(c) and x=c)
-        --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
-        -- actual@[ _actual1, _actual2, _actual3 ] <-
-        actual <-
+        --   Stuck after removing the destination during
+        --   the second step.
+        --
+        --   If remove destination didn't
+        --   detect that the conditions do not meet, then
+        --   the configuration would have resulted in:
+        --      Proven
+        --      or (f(b) and x=b)
+        --      or (f(c) and x=c)
+        --      GoalRemainder (functionalConstr11(x) and x!=a and x!=b and x!=c )
+        actual@[ _actual ] <-
             runOnePathSteps
-                (Limit 3)
+                (Limit 2)
                 (makeOnePathRule
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                     (Mock.functionalConstr11 Mock.a)
@@ -502,112 +437,15 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
-        let equalsXA =
-                makeEqualsPredicate Mock.testSort
-                    (TermLike.mkElemVar Mock.x)
-                    Mock.a
-            equalsXB =
-                makeEqualsPredicate Mock.testSort
-                    (TermLike.mkElemVar Mock.x)
-                    Mock.b
-            equalsXC = makeEqualsPredicate Mock.testSort
-                (TermLike.mkElemVar Mock.x)
-                Mock.c
         let expected =
-                [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                    (Conditional
-                        { term = Mock.f Mock.b
-                        , predicate = makeTruePredicate_
-                        , substitution =
-                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.Goal $ makeOnePathRuleFromPatterns
-                    (Conditional
-                        { term = Mock.f Mock.c
-                        , predicate = makeTruePredicate_
-                        , substitution =
-                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.GoalRemainder $ makeOnePathRuleFromPatterns
-                    (Conditional
-                        { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
-                        , predicate =
-                            makeMultipleAndPredicate
-                                [ makeNotPredicate equalsXA
-                                , makeNotPredicate equalsXB
-                                , makeNotPredicate equalsXC
-                                ]
-                        , substitution = mempty
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                [ ProofState.GoalStuck
+                    $ makeOnePathRule
+                        (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
+                        (Mock.functionalConstr11 Mock.a)
                 ]
-        putStrLn "\nActual"
-        putStrLn
-            $ foldl
-                (\a b ->
-                    "\n"
-                    <> a
-                    <> "\n"
-                    <> show (fmap unparseToString b)
-                    <> "\n"
-                )
-                ""
-                actual
-        putStrLn "\nExpected"
-        putStrLn
-            $ foldl
-                (\a b ->
-                    "\n"
-                    <> a
-                    <> "\n"
-                    <> show (fmap unparseToString b)
-                    <> "\n"
-                )
-                ""
-                expected
-        -- assertEqual ""
-        --     [ ProofState.Goal $ makeOnePathRuleFromPatterns
-        --         (Conditional
-        --             { term = Mock.f Mock.b
-        --             , predicate = makeTruePredicate_
-        --             , substitution =
-        --                 Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-        --             }
-        --         )
-        --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
-        --     , ProofState.Goal $ makeOnePathRuleFromPatterns
-        --         (Conditional
-        --             { term = Mock.f Mock.c
-        --             , predicate = makeTruePredicate_
-        --             , substitution =
-        --                 Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-        --             }
-        --         )
-        --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
-        --     , ProofState.GoalRemainder $ makeOnePathRuleFromPatterns
-        --         (Conditional
-        --             { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
-        --             , predicate =
-        --                 makeMultipleAndPredicate
-        --                     [ makeNotPredicate equalsXA
-        --                     , makeNotPredicate equalsXB
-        --                     , makeNotPredicate equalsXC
-        --                     ]
-        --             , substitution = mempty
-        --             }
-        --         )
-        --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
-        --     ]
-        --     actual
-            -- [ _actual1
-            -- , _actual2
-            -- , _actual3
-            -- ]
+        assertEqual ""
+            expected
+            actual
         assertEqual "onepath == reachability onepath"
             (fmap (fmap OnePath) actual)
             actualReach
@@ -893,7 +731,7 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
-    , testCase "Check goal stuck after remove destination" $ do
+    , testCase "Goal stuck after remove destination" $ do
         -- Goal: X && X = a => X && X != a
         -- Coinductive axiom: -
         -- Normal axiom: -
@@ -903,7 +741,7 @@ test_onePathStrategy =
                     ( Conditional
                         { term = TermLike.mkElemVar Mock.x
                         , predicate =
-                            makeEqualsPredicate_ Mock.a (TermLike.mkElemVar Mock.x)
+                            makeEqualsPredicate_ (TermLike.mkElemVar Mock.x) Mock.a
                         , substitution = mempty
                         }
                     )
@@ -912,8 +750,8 @@ test_onePathStrategy =
                             mkAnd
                                 ( Predicate.unwrapPredicate . makeNotPredicate
                                     $ makeEqualsPredicate_
-                                        Mock.a
                                         (TermLike.mkElemVar Mock.x)
+                                        Mock.a
 
                                 )
                                 ( TermLike.mkElemVar Mock.x )
@@ -926,7 +764,7 @@ test_onePathStrategy =
             goal
             []
             []
-        assertEqual "" (ProofState.Goal goal) _actual
+        assertEqual "" (ProofState.GoalStuck goal) _actual
     ]
 
 simpleRewrite
@@ -988,7 +826,7 @@ runSteps
     -- ^left-hand-side of unification
     -> [Strategy (Prim goal)]
     -> IO a
-runSteps graphFilter picker configuration strategy' =
+runSteps graphFilter picker goal strategy' =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
@@ -996,7 +834,7 @@ runSteps graphFilter picker configuration strategy' =
         give metadataTools
             $ declareSMTLemmas
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-        runStrategy transitionRule strategy' (ProofState.Goal configuration)
+        runStrategy transitionRule strategy' (ProofState.Goal goal)
   where
     mockEnv = Mock.env
     Env {metadataTools} = mockEnv

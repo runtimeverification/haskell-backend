@@ -60,7 +60,8 @@ data ProofState a
     -- ^ We already rewrote the goal this step.
     | GoalStuck a
     -- ^ If the terms unify and the condition does not imply
-    -- the goal, the proof is "stuck".
+    -- the goal, the proof is stuck. This state should be reachable
+    -- only by applying RemoveDestination.
     | Proven
     -- ^ The parent goal was proven.
     deriving (Eq, Show, Ord, Functor, GHC.Generic)
