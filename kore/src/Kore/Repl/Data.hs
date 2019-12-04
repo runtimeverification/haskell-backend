@@ -520,7 +520,7 @@ data StepResult
     -- ^ configuration branched
     deriving (Show)
 
-data NodeState = StuckNode | StuckNodeDebug | UnevaluatedNode
+data NodeState = StuckNode | UnevaluatedNode
     deriving (Eq, Ord, Show)
 
 data AliasError

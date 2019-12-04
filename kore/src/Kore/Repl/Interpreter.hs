@@ -1161,7 +1161,7 @@ unparseStrategy omitList =
         , goalRewrittenTransformer =
             makeKoreReplOutput . unparseToString . fmap hide
         , goalStuckTransformer = \pat ->
-            makeAuxReplOutput "StuckDebug: \n"
+            makeAuxReplOutput "Stuck: \n"
             <> makeKoreReplOutput (unparseToString $ fmap hide pat)
         , provenValue = makeAuxReplOutput "Reached bottom"
         }

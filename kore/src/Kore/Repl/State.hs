@@ -503,7 +503,7 @@ getNodeState graph node =
             { goalTransformer = const . Just $ UnevaluatedNode
             , goalRemainderTransformer = const . Just $ StuckNode
             , goalRewrittenTransformer = const . Just $ UnevaluatedNode
-            , goalStuckTransformer = const . Just $ StuckNodeDebug
+            , goalStuckTransformer = const . Just $ StuckNode
             , provenValue = Nothing
             }
         . Graph.lab'
