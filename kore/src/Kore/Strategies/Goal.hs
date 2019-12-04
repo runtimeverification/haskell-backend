@@ -668,7 +668,6 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
         , TriviallyValid
         , DeriveSeq axioms
         , Simplify
@@ -691,7 +690,6 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
         , TriviallyValid
         , DeriveSeq claims
         , Simplify
@@ -715,7 +713,6 @@ allPathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
         , TriviallyValid
         , DerivePar axioms
         , Simplify
@@ -737,7 +734,6 @@ allPathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
         , TriviallyValid
         , DeriveSeq claims
         , Simplify
@@ -759,20 +755,45 @@ removeDestination
     => ToRulePattern goal
     => ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestination (Goal goal) = errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
-    removal <- removalPredicate (destination right') configuration
-    if isTop removal
-        then return . Goal $ goal
-        else do
-            simplifiedRemoval <-
-                SMT.Evaluator.filterMultiOr
-                =<< simplifyAndRemoveTopExists
-                    (Conditional.andPredicate configuration removal)
-            if not (null simplifiedRemoval)
-                then return . GoalStuck $ goal
-                else do
-                    let result = Conditional.andPredicate configuration removal
-                    pure . Goal $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+removeDestination =
+    \case
+        Goal goal ->
+            removeDestinationWorker Goal goal
+        GoalRemainder goal ->
+            removeDestinationWorker GoalRemainder goal
+        state -> return state
+
+removeDestinationWorker
+    :: MonadCatch m
+    => MonadSimplify m
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => FromRulePattern goal
+    => ToRulePattern goal
+    => (goal -> ProofState goal goal)
+    -> goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+removeDestinationWorker stateConstructor goal =
+    errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
+        removal <- removalPredicate (destination right') configuration
+        if isTop removal
+            then return . stateConstructor $ goal
+            else do
+                simplifiedRemoval <-
+                    SMT.Evaluator.filterMultiOr
+                    =<< simplifyAndRemoveTopExists
+                        (Conditional.andPredicate configuration removal)
+                if not (null simplifiedRemoval)
+                    then return . GoalStuck $ goal
+                    else do
+                        let simplifiedRules =
+                                flip
+                                    (makeRuleFromPatterns goal)
+                                    (getDestination goal)
+                                <$> simplifiedRemoval
+                        Foldable.asum
+                            ( return . stateConstructor
+                            <$> simplifiedRules
+                            )
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
@@ -795,43 +816,6 @@ removeDestination (Goal goal) = errorBracket . assertEnsuresIsTop goalAsRulePatt
             (formatExceptionInfo
                 ("configuration=" <> unparseToText configuration)
             )
-removeDestination (GoalRemainder goal) = errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
-    removal <- removalPredicate (destination right') configuration
-    if isTop removal
-        then return . GoalRemainder $ goal
-        else do
-            simplifiedRemoval <-
-                SMT.Evaluator.filterMultiOr
-                =<< ( simplifyAndRemoveTopExists
-                    $ Conditional.andPredicate configuration removal)
-            if not (null simplifiedRemoval)
-                then return . GoalStuck $ goal
-                else do
-                    let result = Conditional.andPredicate configuration removal
-                    pure . GoalRemainder $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
-  where
-    configuration = getConfiguration goal
-    configFreeVars = Pattern.freeVariables configuration
-
-    goalAsRulePattern = toRulePattern goal
-    RulePattern { right } = goalAsRulePattern
-
-    right' = topExistsToImplicitForall configFreeVars right
-
-    destination (And_ _ pred' term') =
-        Conditional
-            { term = term'
-            , predicate = Predicate.wrapPredicate pred'
-            , substitution = mempty
-            }
-    destination _ = error "Right hand side of claim is ill-formed."
-
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
-removeDestination state = return state
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
