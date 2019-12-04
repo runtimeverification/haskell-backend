@@ -114,11 +114,11 @@ makeOnePathRuleFromPatterns
         , attributes = Default.def
         }
 
-makeOnePathRuleFromPatterns'
+makeOnePathRuleFromPatternsWithCond
     :: Pattern Variable
     -> Pattern Variable
     -> OnePathRule Variable
-makeOnePathRuleFromPatterns'
+makeOnePathRuleFromPatternsWithCond
     configuration
     destination
   =
@@ -389,7 +389,7 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             (fmap (fmap OnePath) actual)
             actualReach
-    , testCase "TESTING2 Stuck pattern" $ do
+    , testCase "Stuck pattern" $ do
         -- Goal: constr10(x) => constr11(a)
         -- Coinductive axiom: constr11(b) => f(b)
         -- Normal axiom: constr11(c) => f(c)
@@ -737,7 +737,7 @@ test_onePathStrategy =
         -- Normal axiom: -
         -- Expected: stuck, since the terms unify but the conditions do not
         let goal =
-                makeOnePathRuleFromPatterns'
+                makeOnePathRuleFromPatternsWithCond
                     ( Conditional
                         { term = TermLike.mkElemVar Mock.x
                         , predicate =
