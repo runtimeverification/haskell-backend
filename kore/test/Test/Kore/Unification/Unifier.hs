@@ -190,8 +190,9 @@ andSimplifySuccess
     -> Assertion
 andSimplifySuccess term1 term2 results = do
     let expect = map unificationResult results
-    Right subst' <-
-        runSMT
+    subst' <-
+        fmap (either (error . show) id)
+        $ runSMT
         $ runSimplifier testEnv
         $ Monad.Unify.runUnifierT
         $ simplifyAnds (unificationProblem term1 term2 :| [])
