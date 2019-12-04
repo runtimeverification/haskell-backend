@@ -1472,6 +1472,7 @@ subsorts =
     [ (subSubsort, subSort)
     , (subSubsort, topSort)
     , (subSort, topSort)
+    , (testSort, topSort)
     , (subSubsort, otherSort)
     , (subOthersort, otherSort)
     , (otherSort, topSort)

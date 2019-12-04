@@ -55,11 +55,27 @@ data InjSimplifier =
                 where lower < lo
         @
          -}
+
+        , evaluateCeilInj
+            :: forall variable
+            .  GHC.HasCallStack
+            => InternalVariable variable
+            => Ceil Sort (Inj (TermLike variable))
+            -> Ceil Sort (TermLike variable)
+        {- ^ Evaluate the 'Ceil' of 'Inj':
+
+        @
+            \ceil{outer, middle}(inj{inner, middle}(x))
+            ===
+            \ceil{outer, inner}(x)
+                where inner < middle
+        @
+         -}
         }
 
 mkInjSimplifier :: SortGraph -> InjSimplifier
 mkInjSimplifier sortGraph =
-    InjSimplifier { evaluateInj, unifyInj, isOrderedInj }
+    InjSimplifier { evaluateInj, unifyInj, isOrderedInj, evaluateCeilInj }
   where
     isSubsortOf' = isSubsortOf sortGraph
 
@@ -101,6 +117,19 @@ mkInjSimplifier sortGraph =
                 innerSortsAgree = injFrom inj == injTo inj'
 
             _ -> synthesize $ InjF inj
+
+    evaluateCeilInj
+        :: forall variable
+        .  Ceil Sort (Inj (TermLike variable))
+        -> Ceil Sort (TermLike variable)
+    evaluateCeilInj Ceil { ceilResultSort, ceilChild = inj }
+      | not (isOrderedInj inj) = unorderedInj inj
+      | otherwise =
+        Ceil
+            { ceilOperandSort = injFrom inj
+            , ceilResultSort
+            , ceilChild = injChild inj
+            }
 
     unifyInj
         :: forall variable
