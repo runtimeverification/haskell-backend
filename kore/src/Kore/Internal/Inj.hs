@@ -93,11 +93,8 @@ instance Debug a => Debug (Inj a)
 instance (Debug a, Diff a) => Diff (Inj a)
 
 instance Unparse a => Unparse (Inj a) where
-    unparse = unparse . toApplication
-    {-# INLINE unparse #-}
-
-    unparse2 = unparse2 . toApplication
-    {-# INLINE unparse2 #-}
+    unparse inj = Pretty.hsep ["/* Inj: */", unparse (toApplication inj)]
+    unparse2 inj = Pretty.hsep ["/* Inj: */", unparse2 (toApplication inj)]
 
 instance Synthetic Sort Inj where
     synthetic Inj { injFrom, injTo, injChild } =
