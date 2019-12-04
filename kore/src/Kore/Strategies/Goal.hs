@@ -95,6 +95,7 @@ import Kore.Step.Rule
     , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
+    , assertEnsuresIsTop
     , fromSentenceAxiom
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -746,15 +747,17 @@ removeDestination
     => ToRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal = errorBracket $ do
-    removal <- removalPredicate (destination right') configuration
-    let result = Conditional.andPredicate configuration removal
-    pure $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+removeDestination goal =
+    errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
+        removal <- removalPredicate (destination right') configuration
+        let result = Conditional.andPredicate configuration removal
+        pure $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
 
-    RulePattern { right } = toRulePattern goal
+    goalAsRulePattern = toRulePattern goal
+    RulePattern { right } = goalAsRulePattern
     right' = topExistsToImplicitForall configFreeVars right
 
     destination (And_ _ pred' term') =
