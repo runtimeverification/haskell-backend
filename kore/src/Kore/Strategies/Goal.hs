@@ -783,16 +783,12 @@ removeDestinationWorker stateConstructor goal =
                         (Conditional.andPredicate configuration removal)
                 if not (null simplifiedRemoval)
                     then return . GoalStuck $ goal
-                    else do
-                        let simplifiedRules =
-                                flip
-                                    (makeRuleFromPatterns goal)
-                                    (getDestination goal)
-                                <$> simplifiedRemoval
-                        Foldable.asum
-                            ( return . stateConstructor
-                            <$> simplifiedRules
-                            )
+                    else
+                        return . stateConstructor
+                        $ makeRuleFromPatterns
+                            goal
+                            Pattern.bottom
+                            (Pattern.fromTermLike right')
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
