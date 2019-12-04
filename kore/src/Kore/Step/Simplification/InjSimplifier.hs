@@ -96,11 +96,11 @@ mkInjSimplifier sortGraph =
         => Inj (TermLike variable)
         -> TermLike variable
     evaluateInj inj
-      -- _| not (isOrderedInj inj) = unorderedInj inj
+      | not (isOrderedInj inj) = unorderedInj inj
       | otherwise =
         case injChild inj of
             Inj_ inj'
-              -- _| not (isOrderedInj inj') -> unorderedInj inj
+              | not (isOrderedInj inj') -> unorderedInj inj
               | otherwise ->
                 Exception.assert sameConstructor
                 . Exception.assert innerSortsAgree

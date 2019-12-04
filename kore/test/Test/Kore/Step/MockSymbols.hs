@@ -1478,6 +1478,8 @@ subsorts =
     , (otherSort, topSort)
     , (subSort, testSort)
     , (testSort0, testSort)
+    , (mapSort, testSort)
+    , (listSort, testSort)
     ]
 
 builtinMap
