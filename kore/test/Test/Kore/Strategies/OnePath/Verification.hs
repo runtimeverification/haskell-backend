@@ -345,7 +345,7 @@ simpleClaim
     -> OnePathRule Variable
 simpleClaim left right =
     OnePathRule
-    $ RulePattern
+    RulePattern
             { left = left
             , antiLeft = Nothing
             , right = mkAnd mkTop_ right
