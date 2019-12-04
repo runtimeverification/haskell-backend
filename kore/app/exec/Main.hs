@@ -19,6 +19,9 @@ import Control.Monad.Trans
     )
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
+import Data.Limit
+    ( Limit (..)
+    )
 import Data.List
     ( intercalate
     )
@@ -72,9 +75,6 @@ import System.IO
     , withFile
     )
 
-import Data.Limit
-    ( Limit (..)
-    )
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol as Attribute
@@ -404,7 +404,7 @@ koreSearch execOptions searchOptions = do
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     final <- execute execOptions mainModule $ do
-        search mainModule strategy' initial target config
+        search Unlimited mainModule strategy' initial target config --TODO andrei burdusa
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where
@@ -422,8 +422,8 @@ koreRun execOptions = do
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <- execute execOptions mainModule $ do
-        final <- exec mainModule strategy' initial
-        exitCode <- execGetExitCode mainModule strategy' final
+        final <- exec Unlimited mainModule strategy' initial --TODO andrei burdusa
+        exitCode <- execGetExitCode Unlimited mainModule strategy' final --TODO andrei burdusa
         return (exitCode, final)
     lift $ renderResult execOptions (unparse final)
     return exitCode
@@ -447,6 +447,7 @@ koreProve execOptions proveOptions = do
             then do
                 checkResult <-
                     boundedModelCheck
+                        Unlimited --TODO andrei burdusa
                         stepLimit
                         mainModule
                         specModule
@@ -457,7 +458,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove graphSearch stepLimit mainModule specModule
+                <$> prove graphSearch Unlimited stepLimit mainModule specModule --TODO andrei burdusa
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where

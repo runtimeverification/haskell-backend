@@ -132,7 +132,7 @@ runStrategy
     -> ExecutionGraph Natural Prim
 runStrategy strategy z =
     let
-        Identity rs = Strategy.runStrategy transitionPrim strategy z
+        Identity rs = Strategy.runStrategy Unlimited transitionPrim strategy z --TODO andrei burdusa
     in
         rs
 

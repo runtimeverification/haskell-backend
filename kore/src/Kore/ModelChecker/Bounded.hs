@@ -16,7 +16,7 @@ import qualified Control.Monad.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Limit
-    ( Limit
+    ( Limit (..)
     )
 import qualified Data.Limit as Limit
 import qualified Data.Text as Text
@@ -98,7 +98,8 @@ bmcStrategy
 checkClaim
     :: forall m
     .  MonadSimplify m
-    =>  (  CommonModalPattern
+    => Limit Natural
+    ->  (  CommonModalPattern
         -> [Strategy (Prim CommonModalPattern (RewriteRule Variable))]
         )
     -- ^ Creates a one-step strategy from a target pattern. See
@@ -109,6 +110,7 @@ checkClaim
     -- for each.
     -> m (CheckResult (TermLike Variable))
 checkClaim
+    limit
     strategyBuilder
     searchOrder
     (ImplicationRule RulePattern { left, right }, stepLimit)
@@ -130,6 +132,7 @@ checkClaim
                         }
         executionGraph <- State.evalStateT
                             (runStrategyWithSearchOrder
+                                limit
                                 transitionRule'
                                 strategy
                                 searchOrder

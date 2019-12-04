@@ -17,6 +17,9 @@ import Data.Function
 import Data.Generics.Product
 import qualified Data.Set as Set
 
+import Data.Limit
+    ( Limit (..)
+    )
 import Data.Text
     ( Text
     )
@@ -142,6 +145,7 @@ takeSteps (Start start, wrappedAxioms) =
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
+            Unlimited  --TODO andrei burdusa
             transitionRule
             (repeat $ allRewrites axioms)
             (pure configuration)
@@ -534,7 +538,7 @@ runStep
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
-    $ runStrategy transitionRule [allRewrites axioms] configuration
+    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration
 
 runStepMockEnv
     :: Pattern Variable
@@ -544,4 +548,4 @@ runStepMockEnv
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy transitionRule [allRewrites axioms] configuration
+    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration --TODO andrei burdusa

@@ -64,6 +64,9 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.List as List
 import Data.Maybe
 import Data.Sequence
@@ -87,6 +90,7 @@ import Prelude hiding
     )
 
 import Kore.Step.Transition
+import Numeric.Natural
 
 assert :: Bool -> a -> a
 assert b a = if b then a else error "assertion failed"
@@ -387,12 +391,13 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 constructExecutionGraph
     :: forall m config rule instr
     .  MonadProfiler m
-    => (instr -> config -> TransitionT rule m config)
+    => Limit Natural
+    -> (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> GraphSearchOrder
     -> config
     -> m (ExecutionGraph config rule)
-constructExecutionGraph transit instrs0 searchOrder0 config0 = do
+constructExecutionGraph _ transit instrs0 searchOrder0 config0 = do
     finalGraph <- State.execStateT
                     (unfoldWorker initialSeed searchOrder0)
                     initialGraph
@@ -512,20 +517,22 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 runStrategy
     :: forall m prim rule config
     .  MonadProfiler m
-    => (prim -> config -> TransitionT rule m config)
+    => Limit Natural
+    -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies
     -> config
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
-runStrategy applyPrim instrs0 config0 =
-    runStrategyWithSearchOrder applyPrim instrs0 BreadthFirst config0
+runStrategy limit applyPrim instrs0 config0 =
+    runStrategyWithSearchOrder limit applyPrim instrs0 BreadthFirst config0
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
     .  MonadProfiler m
-    => (prim -> config -> TransitionT rule m config)
+    => Limit Natural
+    -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies
@@ -534,8 +541,9 @@ runStrategyWithSearchOrder
     -> config
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
-runStrategyWithSearchOrder applyPrim instrs0 searchOrder0 config0 =
+runStrategyWithSearchOrder limit applyPrim instrs0 searchOrder0 config0 =
     constructExecutionGraph
+        limit
         (transitionRule applyPrim)
         instrs0
         searchOrder0

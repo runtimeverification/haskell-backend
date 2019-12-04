@@ -43,6 +43,7 @@ test_allPathVerification =
         -- Claims: a => a
         -- Expected: success
         actual <- runVerification
+            Unlimited
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.a ]
@@ -54,6 +55,7 @@ test_allPathVerification =
         -- Claims: a => b
         -- Expected: error a
         actual <- runVerification
+            Unlimited
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.b ]
@@ -65,6 +67,7 @@ test_allPathVerification =
         -- Claims: a => b #Or c
         -- Expected: success
         actual <- runVerification
+            Unlimited
             (Limit 2)
             [ simpleAxiom Mock.a Mock.b ]
             [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
@@ -76,6 +79,7 @@ test_allPathVerification =
         -- Claims: a => b
         -- Expected: success
         actual <- runVerification
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.a ]
             [ simpleClaim Mock.a Mock.b ]
@@ -89,6 +93,7 @@ test_allPathVerification =
         -- Claims: a => b #Or c
         -- Expected: success
         actual <- runVerification
+            Unlimited
             (Limit 2)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.a Mock.c
@@ -104,6 +109,7 @@ test_allPathVerification =
         -- Claim: a => b
         -- Expected: error c
         actual <- runVerification
+            Unlimited
             (Limit 2)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.a Mock.c
@@ -119,6 +125,7 @@ test_allPathVerification =
         -- Claim: constr10(x) => b
         -- Expected: success
         actual <- runVerification
+            Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom (Mock.functionalConstr11 (mkElemVar Mock.x)) Mock.b
@@ -134,6 +141,7 @@ test_allPathVerification =
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
         actual <- runVerification
+            Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom
@@ -162,6 +170,7 @@ test_allPathVerification =
         -- Claim: d => e
         -- Expected: success
         actual <- runVerification
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -181,6 +190,7 @@ test_allPathVerification =
         -- Claim: d => e
         -- Expected: error c
         actual <- runVerification
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -200,6 +210,7 @@ test_allPathVerification =
         -- Claim: d => c
         -- Expected: error e
         actual <- runVerification
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -218,6 +229,7 @@ test_allPathVerification =
         -- Claim: b => c
         -- Expected: error b
         actual <- runVerification
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -235,6 +247,7 @@ test_allPathVerification =
         -- Claim: a => d
         -- Expected: error b
         actual <- runVerification
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -252,6 +265,7 @@ test_allPathVerification =
         -- Claim: a => d
         -- Expected: success
         actual <- runVerification
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -273,6 +287,7 @@ test_allPathVerification =
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
         actual <- runVerification
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c

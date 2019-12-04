@@ -32,7 +32,6 @@ import qualified Data.Stream.Infinite as Stream
 import Data.Typeable
     ( Typeable
     )
-
 import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
@@ -99,14 +98,16 @@ verify
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
-    => GraphSearchOrder
+    => Limit Natural
+    -> GraphSearchOrder
     -> [claim]
     -> [Rule claim]
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify searchOrder claims axioms = mapM_ (verifyClaim searchOrder claims axioms)
+verify limit searchOrder claims axioms =
+    mapM_ (verifyClaim limit searchOrder claims axioms)
 
 verifyClaim
     :: forall claim m
@@ -114,12 +115,13 @@ verifyClaim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
-    => GraphSearchOrder
+    => Limit Natural
+    -> GraphSearchOrder
     -> [claim]
     -> [Rule claim]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
-verifyClaim searchOrder claims axioms (goal, stepLimit) =
+verifyClaim limit searchOrder claims axioms (goal, stepLimit) =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
@@ -130,6 +132,7 @@ verifyClaim searchOrder claims axioms (goal, stepLimit) =
                 (Foldable.toList $ strategy goal claims axioms)
     executionGraph <-
         runStrategyWithSearchOrder
+            limit
             (modifiedTransitionRule destination)
             limitedStrategy
             searchOrder

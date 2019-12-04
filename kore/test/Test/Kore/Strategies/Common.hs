@@ -42,13 +42,15 @@ runVerification
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
     => Limit Natural
+    -> Limit Natural
     -> [Rule claim]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
-runVerification stepLimit axioms claims =
+runVerification breadthlimit stepLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
+        breadthlimit
         BreadthFirst
         claims
         axioms

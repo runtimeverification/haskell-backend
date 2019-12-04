@@ -75,6 +75,7 @@ test_exec = testCase "exec" $ actual >>= assertEqual "" expected
     actual =
         SMT.runSMT SMT.defaultConfig emptyLogger
         $ exec
+            Unlimited --TODO andrei burdusa
             verifiedModule
             (Limit.replicate unlimited . anyRewrite)
             inputPattern
@@ -113,6 +114,7 @@ test_search =
         finalPattern <-
             SMT.runSMT SMT.defaultConfig emptyLogger
             $ search
+                Unlimited --TODO andrei burdusa
                 verifiedModule
                 (Limit.replicate unlimited . allRewrites)
                 inputPattern
@@ -315,6 +317,7 @@ test_execGetExitCode =
     actual testModule exitCode =
         SMT.runSMT SMT.defaultConfig emptyLogger
         $ execGetExitCode
+            Unlimited --TODO andrei burdusa
             (verifiedMyModule testModule)
             (Limit.replicate unlimited . anyRewrite)
             $ Int.asInternal myIntSort exitCode
