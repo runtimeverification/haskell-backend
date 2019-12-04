@@ -170,7 +170,10 @@ simplifyEvaluated variable simplified
     evaluated <- traverse (makeEvaluate [variable]) simplified
     return (OrPattern.flatten evaluated)
 
-{-| evaluates an 'Exists' given its two 'Pattern' children.
+{-| Evaluates a multiple 'Exists' given a pattern and a list of
+variables which are existentially quantified in the pattern. This
+also sorts the list of variables to ensure that those which are present
+in the substitution are evaluated with the pattern first.
 
 See 'simplify' for detailed documentation.
 -}
