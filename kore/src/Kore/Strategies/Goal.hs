@@ -613,12 +613,8 @@ transitionRuleTemplate
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate g
 
-    transitionRuleWorker RemoveDestination goal@(Goal _) =
-        Profile.timeStrategy "Goal.RemoveDestination"
-        $ removeDestinationTemplate goal
-    transitionRuleWorker RemoveDestination goal@(GoalRemainder _) =
-        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ removeDestinationTemplate goal
+    transitionRuleWorker RemoveDestination goal =
+        removeDestinationTemplate goal
 
     transitionRuleWorker TriviallyValid (Goal g)
       | isTriviallyValidTemplate g = return Proven
@@ -759,9 +755,11 @@ removeDestination
 removeDestination =
     \case
         Goal goal ->
-            removeDestinationWorker Goal goal
+            Profile.timeStrategy "Goal.RemoveDestination"
+            $ removeDestinationWorker Goal goal
         GoalRemainder goal ->
-            removeDestinationWorker GoalRemainder goal
+            Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+            $ removeDestinationWorker GoalRemainder goal
         state -> return state
 
 removeDestinationWorker
