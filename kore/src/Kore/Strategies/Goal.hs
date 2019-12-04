@@ -61,8 +61,12 @@ import Kore.IndexedModule.IndexedModule
     , VerifiedModule
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -72,7 +76,9 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( mkAnd
+    ( pattern And_
+    , isFunctionPattern
+    , mkAnd
     , topExistsToImplicitForall
     )
 import qualified Kore.Profiler.Profile as Profile
@@ -89,6 +95,7 @@ import Kore.Step.Rule
     , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
+    , assertEnsuresIsTop
     , fromSentenceAxiom
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -98,8 +105,12 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     , SimplifierVariable
     )
+import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
+    )
+import Kore.Step.Simplification.Simplify
+    ( simplifyTerm
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import Kore.Step.Strategy
@@ -127,7 +138,7 @@ import Kore.Unparser
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (ElemVar)
+    ( extractElementVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
@@ -731,22 +742,31 @@ allPathFollowupStep claims axioms =
 -- | Remove the destination of the goal.
 removeDestination
     :: MonadCatch m
+    => MonadSimplify m
     => FromRulePattern goal
     => ToRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal = errorBracket $ do
-    let removal = removalPredicate destination configuration
-        result = Conditional.andPredicate configuration removal
-    pure $ makeRuleFromPatterns goal result destination
+removeDestination goal =
+    errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
+        removal <- removalPredicate (destination right') configuration
+        let result = Conditional.andPredicate configuration removal
+        pure $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
 
-    RulePattern { right, ensures } = toRulePattern goal
+    goalAsRulePattern = toRulePattern goal
+    RulePattern { right } = goalAsRulePattern
     right' = topExistsToImplicitForall configFreeVars right
-    destination =
-        Pattern.withCondition right' (Conditional.fromPredicate ensures)
+
+    destination (And_ _ pred' term') =
+        Conditional
+            { term = term'
+            , predicate = Predicate.wrapPredicate pred'
+            , substitution = mempty
+            }
+    destination _ = error "Right hand side of claim is ill-formed."
 
     errorBracket action =
         onException action
@@ -921,39 +941,89 @@ deriveSeq rules goal = errorBracket $ do
  -}
 removalPredicate
     :: SimplifierVariable variable
+    => MonadSimplify m
     => Pattern variable
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> Predicate variable
-removalPredicate destination config =
-    let
-        -- The variables of the destination that are missing from the
-        -- configuration. These are the variables which should be existentially
-        -- quantified in the removal predicate.
-        configVariables =
-            Attribute.FreeVariables.getFreeVariables
-            $ Pattern.freeVariables config
-        destinationVariables =
-            Attribute.FreeVariables.getFreeVariables
-            $ Pattern.freeVariables destination
-        extraVariables = Set.toList
-            $ Set.difference destinationVariables configVariables
-        extraElementVariables = [v | ElemVar v <- extraVariables]
-        extraNonElemVariables = filter (not . isElemVar) extraVariables
-        quantifyPredicate =
-            Predicate.makeMultipleExists extraElementVariables
-    in
-        if not (null extraNonElemVariables)
-        then error
-            ("Cannot quantify non-element variables: "
-                ++ show (unparse <$> extraNonElemVariables))
-        else Predicate.makeNotPredicate
-            $ quantifyPredicate
-            $ Predicate.makeCeilPredicate_
-            $ mkAnd
-                (Pattern.toTermLike destination)
-                (Pattern.toTermLike config)
+    -> m (Predicate variable)
+removalPredicate
+    destination
+    configuration
+  | isFunctionPattern configTerm
+  , isFunctionPattern destTerm
+  = do
+    unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
+    if OrPattern.isFalse unifiedConfigs
+        then return Predicate.makeTruePredicate_
+        else
+            case OrPattern.toPatterns unifiedConfigs of
+                [substPattern] -> do
+                    let extraElemVariables =
+                            getExtraElemVariables configuration substPattern
+                        remainderPattern =
+                            Pattern.fromCondition
+                            . Conditional.withoutTerm
+                            $ (const <$> destination <*> substPattern)
+                    evaluatedRemainder <-
+                        Exists.makeEvaluate extraElemVariables remainderPattern
+                    return
+                        . Predicate.makeNotPredicate
+                        . Condition.toPredicate
+                        . Conditional.withoutTerm
+                        . OrPattern.toPattern
+                        $ evaluatedRemainder
+                _ ->
+                    error . show . Pretty.vsep $
+                    [ "Unifying the terms of the configuration and the\
+                    \ destination has unexpectedly produced more than one\
+                    \ unification case."
+                    , Pretty.indent 2 "Unification cases:"
+                    ]
+                    <> fmap
+                        (Pretty.indent 4 . unparse)
+                        (Foldable.toList unifiedConfigs)
+  | otherwise =
+      error . show . Pretty.vsep $
+          [ "The remove destination step expects\
+          \ the configuration and the destination terms\
+          \ to be function-like."
+          , Pretty.indent 2 "Configuration term:"
+          , Pretty.indent 4 (unparse configTerm)
+          , Pretty.indent 2 "Destination term:"
+          , Pretty.indent 4 (unparse destTerm)
+          ]
+  where
+    Conditional { term = destTerm } = destination
+    Conditional { term = configTerm } = configuration
+    -- The variables of the destination that are missing from the
+    -- configuration. These are the variables which should be existentially
+    -- quantified in the removal predicate.
+    getExtraElemVariables config dest =
+        let extraNonElemVariables = remainderNonElemVariables config dest
+        in if not . null $ extraNonElemVariables
+            then
+                error . show . Pretty.vsep $
+                    "Cannot quantify non-element variables: "
+                    : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
+            else remainderElementVariables config dest
+    configVariables config =
+        Attribute.FreeVariables.getFreeVariables
+        $ Pattern.freeVariables config
+    destVariables dest =
+        Attribute.FreeVariables.getFreeVariables
+        $ Pattern.freeVariables dest
+    remainderVariables config dest =
+        Set.toList
+        $ Set.difference
+            (destVariables dest)
+            (configVariables config)
+    remainderNonElemVariables config dest =
+        filter (not . isElemVar) (remainderVariables config dest)
+    remainderElementVariables config dest =
+        mapMaybe
+            extractElementVariable
+            (remainderVariables config dest)
 
 getConfiguration
     :: forall goal
@@ -991,4 +1061,3 @@ makeRuleFromPatterns ruleType configuration destination =
         , ensures
         , attributes = Default.def
         }
-

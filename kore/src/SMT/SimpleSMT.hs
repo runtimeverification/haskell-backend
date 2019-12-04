@@ -366,7 +366,7 @@ stop solver@Solver { hIn, hOut, hErr, hProc } = do
 loadFile :: Solver -> FilePath -> IO ()
 loadFile s file = do
     txt <- Text.readFile file
-    case Parser.runParser (Parser.some parseSExpr) file txt of
+    case Parser.runParser parseSExprFile file txt of
         Left err -> fail (show err)
         Right exprs ->
             mapM_ (command s) exprs

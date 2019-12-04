@@ -4,6 +4,7 @@ module Test.Kore.Builtin.List
     , test_getLastElement
     , test_GetUpdate
     , test_concatUnit
+    , test_concatUnitSymbolic
     , test_concatAssociates
     , test_simplify
     , test_isBuiltin
@@ -203,6 +204,29 @@ test_concatUnit =
         expectValues <- evaluateT patValues
         (===) expectValues =<< evaluateT patConcat1
         (===) expectValues =<< evaluateT patConcat2
+        (===) Pattern.top  =<< evaluateT predicate1
+        (===) Pattern.top  =<< evaluateT predicate2
+
+test_concatUnitSymbolic :: TestTree
+test_concatUnitSymbolic =
+    testPropertyWithSolver
+        "concat{}(unit{}(), x) === concat{}(xs, unit{}()) === x"
+        prop
+  where
+    prop = do
+        let patUnit = mkApplySymbol unitListSymbol []
+            patSymbolic = mkElemVar $ ElementVariable Variable
+                { variableName = testId "x"
+                , variableCounter = mempty
+                , variableSort = listSort
+                }
+            patConcat1 = mkApplySymbol concatListSymbol [ patUnit, patSymbolic ]
+            patConcat2 = mkApplySymbol concatListSymbol [ patSymbolic, patUnit ]
+            predicate1 = mkEquals_ patSymbolic patConcat1
+            predicate2 = mkEquals_ patSymbolic patConcat2
+        expectSymbolic <- evaluateT patSymbolic
+        (===) expectSymbolic =<< evaluateT patConcat1
+        (===) expectSymbolic =<< evaluateT patConcat2
         (===) Pattern.top  =<< evaluateT predicate1
         (===) Pattern.top  =<< evaluateT predicate2
 
