@@ -318,299 +318,299 @@ test_onePathStrategy =
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
-    -- , testCase "TESTING1 Differentiated axioms" $ do
-    --     -- Goal: constr10(x) => constr11(a)
-    --     -- Coinductive axiom: constr11(a) => g(a)
-    --     -- Coinductive axiom: constr11(b) => f(b)
-    --     -- Normal axiom: constr11(a) => g(a)
-    --     -- Normal axiom: constr11(b) => g(b)
-    --     -- Normal axiom: constr11(c) => f(c)
-    --     -- Normal axiom: constr11(x) => h(x)
-    --     -- Normal axiom: constr10(x) => constr11(x)
-    --     -- Expected:
-    --     --   (f(b) and x=b)
-    --     --   or (f(c) and x=c)
-    --     --   or (h(x) and x!=a and x!=b and x!=c )
-    --     actual <-
-    --         runOnePathSteps
-    --             (Limit 2)
-    --             (makeOnePathRule
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
-    --                 (Mock.functionalConstr11 Mock.a)
-    --             )
-    --             [ makeOnePathRule (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-    --             , makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
-    --             ]
-    --             [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
-    --             , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
-    --             , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
-    --             , simpleRewrite
-    --                 (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-    --                 (Mock.h (TermLike.mkElemVar Mock.y))
-    --             , simpleRewrite
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
-    --                 (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-    --             ]
-    --     actualReach <-
-    --         runOnePathSteps
-    --             (Limit 2)
-    --             (makeReachabilityOnePathRule
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
-    --                 (Mock.functionalConstr11 Mock.a)
-    --             )
-    --             [ makeReachabilityOnePathRule
-    --                 (Mock.functionalConstr11 Mock.a)
-    --                 (Mock.g Mock.a)
-    --             , makeReachabilityOnePathRule
-    --                 (Mock.functionalConstr11 Mock.b)
-    --                 (Mock.f Mock.b)
-    --             ]
-    --             [ simpleReachabilityRewrite
-    --                 (Mock.functionalConstr11 Mock.a)
-    --                 (Mock.g Mock.a)
-    --             , simpleReachabilityRewrite
-    --                 (Mock.functionalConstr11 Mock.b)
-    --                 (Mock.g Mock.b)
-    --             , simpleReachabilityRewrite
-    --                 (Mock.functionalConstr11 Mock.c)
-    --                 (Mock.f Mock.c)
-    --             , simpleReachabilityRewrite
-    --                 (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-    --                 (Mock.h (TermLike.mkElemVar Mock.y))
-    --             , simpleReachabilityRewrite
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
-    --                 (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-    --             ]
-    --     let expected =
-    --             [ ProofState.Goal $ makeOnePathRuleFromPatterns
-    --                 ( Conditional
-    --                     { term = Mock.f Mock.b
-    --                     , predicate = makeTruePredicate_
-    --                     , substitution =
-    --                         Substitution.unsafeWrap
-    --                             [(ElemVar Mock.x, Mock.b)]
-    --                     }
-    --                 )
-    --                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --             , ProofState.Goal $ makeOnePathRuleFromPatterns
-    --                 ( Conditional
-    --                     { term = Mock.f Mock.c
-    --                     , predicate = makeTruePredicate_
-    --                     , substitution =
-    --                         Substitution.unsafeWrap
-    --                             [(ElemVar Mock.x, Mock.c)]
-    --                     }
-    --                 )
-    --                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --             , ProofState.Goal $ makeOnePathRuleFromPatterns
-    --                 Conditional
-    --                     { term = Mock.h (TermLike.mkElemVar Mock.x)
-    --                     , predicate =  -- TODO(virgil): Better and simplification.
-    --                         makeAndPredicate
-    --                             (makeAndPredicate
-    --                                 (makeNotPredicate
-    --                                     (makeEqualsPredicate Mock.testSort
-    --                                         (TermLike.mkElemVar Mock.x) Mock.a
-    --                                     )
-    --                                 )
-    --                                 (makeNotPredicate
-    --                                     (makeEqualsPredicate_
-    --                                         (TermLike.mkElemVar Mock.x) Mock.b
-    --                                     )
-    --                                 )
-    --                             )
-    --                             (makeNotPredicate
-    --                                 (makeEqualsPredicate_
-    --                                     (TermLike.mkElemVar Mock.x)
-    --                                     Mock.c
-    --                                 )
-    --                             )
-    --                     , substitution = mempty
-    --                     }
-    --                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --             ]
-    --     putStrLn "\nActual"
-    --     putStrLn
-    --         $ foldl
-    --             (\a b ->
-    --                 "\n"
-    --                 <> a
-    --                 <> "\n"
-    --                 <> show (fmap unparseToString b)
-    --                 <> "\n"
-    --             )
-    --             ""
-    --             actual
-    --     putStrLn "\nExpected"
-    --     putStrLn
-    --         $ foldl
-    --             (\a b ->
-    --                 "\n"
-    --                 <> a
-    --                 <> "\n"
-    --                 <> show (fmap unparseToString b)
-    --                 <> "\n"
-    --             )
-    --             ""
-    --             expected
-    --     -- assertEqual ""
-    --     --     expected
-    --     --     actual
-    --     -- assertEqual "onepath == reachability onepath"
-    --     --     (fmap (fmap OnePath) actual)
-    --     --     actualReach
-    -- , testCase "TESTING2 Stuck pattern" $ do
-    --     -- Goal: constr10(x) => constr11(a)
-    --     -- Coinductive axiom: constr11(b) => f(b)
-    --     -- Normal axiom: constr11(c) => f(c)
-    --     -- Normal axiom: constr10(x) => constr11(x)
-    --     -- Expected:
-    --     --   Bottom
-    --     --   or (f(b) and x=b)
-    --     --   or (f(c) and x=c)
-    --     --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
-    --     -- actual@[ _actual1, _actual2, _actual3 ] <-
-    --     actual <-
-    --         runOnePathSteps
-    --             (Limit 3)
-    --             (makeOnePathRule
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
-    --                 (Mock.functionalConstr11 Mock.a)
-    --             )
-    --             [ makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
-    --             ]
-    --             [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
-    --             , simpleRewrite
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
-    --                 (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-    --             ]
-    --     actualReach <-
-    --         runOnePathSteps
-    --             (Limit 2)
-    --             (makeReachabilityOnePathRule
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
-    --                 (Mock.functionalConstr11 Mock.a)
-    --             )
-    --             [ makeReachabilityOnePathRule
-    --                 (Mock.functionalConstr11 Mock.b)
-    --                 (Mock.f Mock.b)
-    --             ]
-    --             [ simpleReachabilityRewrite
-    --                 (Mock.functionalConstr11 Mock.c)
-    --                 (Mock.f Mock.c)
-    --             , simpleReachabilityRewrite
-    --                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
-    --                 (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
-    --             ]
-    --     let equalsXA =
-    --             makeEqualsPredicate Mock.testSort
-    --                 (TermLike.mkElemVar Mock.x)
-    --                 Mock.a
-    --         equalsXB =
-    --             makeEqualsPredicate Mock.testSort
-    --                 (TermLike.mkElemVar Mock.x)
-    --                 Mock.b
-    --         equalsXC = makeEqualsPredicate Mock.testSort
-    --             (TermLike.mkElemVar Mock.x)
-    --             Mock.c
-    --     let expected =
-    --             [ ProofState.Goal $ makeOnePathRuleFromPatterns
-    --                 (Conditional
-    --                     { term = Mock.f Mock.b
-    --                     , predicate = makeTruePredicate_
-    --                     , substitution =
-    --                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-    --                     }
-    --                 )
-    --                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --             , ProofState.Goal $ makeOnePathRuleFromPatterns
-    --                 (Conditional
-    --                     { term = Mock.f Mock.c
-    --                     , predicate = makeTruePredicate_
-    --                     , substitution =
-    --                         Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-    --                     }
-    --                 )
-    --                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --             , ProofState.GoalRemainder $ makeOnePathRuleFromPatterns
-    --                 (Conditional
-    --                     { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
-    --                     , predicate =
-    --                         makeMultipleAndPredicate
-    --                             [ makeNotPredicate equalsXA
-    --                             , makeNotPredicate equalsXB
-    --                             , makeNotPredicate equalsXC
-    --                             ]
-    --                     , substitution = mempty
-    --                     }
-    --                 )
-    --                 (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --             ]
-    --     putStrLn "\nActual"
-    --     putStrLn
-    --         $ foldl
-    --             (\a b ->
-    --                 "\n"
-    --                 <> a
-    --                 <> "\n"
-    --                 <> show (fmap unparseToString b)
-    --                 <> "\n"
-    --             )
-    --             ""
-    --             actual
-    --     putStrLn "\nExpected"
-    --     putStrLn
-    --         $ foldl
-    --             (\a b ->
-    --                 "\n"
-    --                 <> a
-    --                 <> "\n"
-    --                 <> show (fmap unparseToString b)
-    --                 <> "\n"
-    --             )
-    --             ""
-    --             expected
-    --     -- assertEqual ""
-    --     --     [ ProofState.Goal $ makeOnePathRuleFromPatterns
-    --     --         (Conditional
-    --     --             { term = Mock.f Mock.b
-    --     --             , predicate = makeTruePredicate_
-    --     --             , substitution =
-    --     --                 Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-    --     --             }
-    --     --         )
-    --     --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --     --     , ProofState.Goal $ makeOnePathRuleFromPatterns
-    --     --         (Conditional
-    --     --             { term = Mock.f Mock.c
-    --     --             , predicate = makeTruePredicate_
-    --     --             , substitution =
-    --     --                 Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-    --     --             }
-    --     --         )
-    --     --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --     --     , ProofState.GoalRemainder $ makeOnePathRuleFromPatterns
-    --     --         (Conditional
-    --     --             { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
-    --     --             , predicate =
-    --     --                 makeMultipleAndPredicate
-    --     --                     [ makeNotPredicate equalsXA
-    --     --                     , makeNotPredicate equalsXB
-    --     --                     , makeNotPredicate equalsXC
-    --     --                     ]
-    --     --             , substitution = mempty
-    --     --             }
-    --     --         )
-    --     --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
-    --     --     ]
-    --     --     actual
-    --         -- [ _actual1
-    --         -- , _actual2
-    --         -- , _actual3
-    --         -- ]
-    --     assertEqual "onepath == reachability onepath"
-    --         (fmap (fmap OnePath) actual)
-    --         actualReach
+    , testCase "TESTING1 Differentiated axioms" $ do
+        -- Goal: constr10(x) => constr11(a)
+        -- Coinductive axiom: constr11(a) => g(a)
+        -- Coinductive axiom: constr11(b) => f(b)
+        -- Normal axiom: constr11(a) => g(a)
+        -- Normal axiom: constr11(b) => g(b)
+        -- Normal axiom: constr11(c) => f(c)
+        -- Normal axiom: constr11(x) => h(x)
+        -- Normal axiom: constr10(x) => constr11(x)
+        -- Expected:
+        --   (f(b) and x=b)
+        --   or (f(c) and x=c)
+        --   or (h(x) and x!=a and x!=b and x!=c )
+        actual <-
+            runOnePathSteps
+                (Limit 2)
+                (makeOnePathRule
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
+                    (Mock.functionalConstr11 Mock.a)
+                )
+                [ makeOnePathRule (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                ]
+                [ simpleRewrite (Mock.functionalConstr11 Mock.a) (Mock.g Mock.a)
+                , simpleRewrite (Mock.functionalConstr11 Mock.b) (Mock.g Mock.b)
+                , simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
+                , simpleRewrite
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                    (Mock.h (TermLike.mkElemVar Mock.y))
+                , simpleRewrite
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                ]
+        actualReach <-
+            runOnePathSteps
+                (Limit 2)
+                (makeReachabilityOnePathRule
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
+                    (Mock.functionalConstr11 Mock.a)
+                )
+                [ makeReachabilityOnePathRule
+                    (Mock.functionalConstr11 Mock.a)
+                    (Mock.g Mock.a)
+                , makeReachabilityOnePathRule
+                    (Mock.functionalConstr11 Mock.b)
+                    (Mock.f Mock.b)
+                ]
+                [ simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.a)
+                    (Mock.g Mock.a)
+                , simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.b)
+                    (Mock.g Mock.b)
+                , simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.c)
+                    (Mock.f Mock.c)
+                , simpleReachabilityRewrite
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                    (Mock.h (TermLike.mkElemVar Mock.y))
+                , simpleReachabilityRewrite
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                ]
+        let expected =
+                [ ProofState.Goal $ makeOnePathRuleFromPatterns
+                    ( Conditional
+                        { term = Mock.f Mock.b
+                        , predicate = makeTruePredicate_
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(ElemVar Mock.x, Mock.b)]
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                , ProofState.Goal $ makeOnePathRuleFromPatterns
+                    ( Conditional
+                        { term = Mock.f Mock.c
+                        , predicate = makeTruePredicate_
+                        , substitution =
+                            Substitution.unsafeWrap
+                                [(ElemVar Mock.x, Mock.c)]
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                , ProofState.Goal $ makeOnePathRuleFromPatterns
+                    Conditional
+                        { term = Mock.h (TermLike.mkElemVar Mock.x)
+                        , predicate =  -- TODO(virgil): Better and simplification.
+                            makeAndPredicate
+                                (makeAndPredicate
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate Mock.testSort
+                                            (TermLike.mkElemVar Mock.x) Mock.a
+                                        )
+                                    )
+                                    (makeNotPredicate
+                                        (makeEqualsPredicate_
+                                            (TermLike.mkElemVar Mock.x) Mock.b
+                                        )
+                                    )
+                                )
+                                (makeNotPredicate
+                                    (makeEqualsPredicate_
+                                        (TermLike.mkElemVar Mock.x)
+                                        Mock.c
+                                    )
+                                )
+                        , substitution = mempty
+                        }
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                ]
+        putStrLn "\nActual"
+        putStrLn
+            $ foldl
+                (\a b ->
+                    "\n"
+                    <> a
+                    <> "\n"
+                    <> show (fmap unparseToString b)
+                    <> "\n"
+                )
+                ""
+                actual
+        putStrLn "\nExpected"
+        putStrLn
+            $ foldl
+                (\a b ->
+                    "\n"
+                    <> a
+                    <> "\n"
+                    <> show (fmap unparseToString b)
+                    <> "\n"
+                )
+                ""
+                expected
+        -- assertEqual ""
+        --     expected
+        --     actual
+        assertEqual "onepath == reachability onepath"
+            (fmap (fmap OnePath) actual)
+            actualReach
+    , testCase "TESTING2 Stuck pattern" $ do
+        -- Goal: constr10(x) => constr11(a)
+        -- Coinductive axiom: constr11(b) => f(b)
+        -- Normal axiom: constr11(c) => f(c)
+        -- Normal axiom: constr10(x) => constr11(x)
+        -- Expected:
+        --   Bottom
+        --   or (f(b) and x=b)
+        --   or (f(c) and x=c)
+        --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
+        -- actual@[ _actual1, _actual2, _actual3 ] <-
+        actual <-
+            runOnePathSteps
+                (Limit 3)
+                (makeOnePathRule
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
+                    (Mock.functionalConstr11 Mock.a)
+                )
+                [ makeOnePathRule (Mock.functionalConstr11 Mock.b) (Mock.f Mock.b)
+                ]
+                [ simpleRewrite (Mock.functionalConstr11 Mock.c) (Mock.f Mock.c)
+                , simpleRewrite
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                ]
+        actualReach <-
+            runOnePathSteps
+                (Limit 2)
+                (makeReachabilityOnePathRule
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
+                    (Mock.functionalConstr11 Mock.a)
+                )
+                [ makeReachabilityOnePathRule
+                    (Mock.functionalConstr11 Mock.b)
+                    (Mock.f Mock.b)
+                ]
+                [ simpleReachabilityRewrite
+                    (Mock.functionalConstr11 Mock.c)
+                    (Mock.f Mock.c)
+                , simpleReachabilityRewrite
+                    (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
+                ]
+        let equalsXA =
+                makeEqualsPredicate Mock.testSort
+                    (TermLike.mkElemVar Mock.x)
+                    Mock.a
+            equalsXB =
+                makeEqualsPredicate Mock.testSort
+                    (TermLike.mkElemVar Mock.x)
+                    Mock.b
+            equalsXC = makeEqualsPredicate Mock.testSort
+                (TermLike.mkElemVar Mock.x)
+                Mock.c
+        let expected =
+                [ ProofState.Goal $ makeOnePathRuleFromPatterns
+                    (Conditional
+                        { term = Mock.f Mock.b
+                        , predicate = makeTruePredicate_
+                        , substitution =
+                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                , ProofState.Goal $ makeOnePathRuleFromPatterns
+                    (Conditional
+                        { term = Mock.f Mock.c
+                        , predicate = makeTruePredicate_
+                        , substitution =
+                            Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                , ProofState.GoalRemainder $ makeOnePathRuleFromPatterns
+                    (Conditional
+                        { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
+                        , predicate =
+                            makeMultipleAndPredicate
+                                [ makeNotPredicate equalsXA
+                                , makeNotPredicate equalsXB
+                                , makeNotPredicate equalsXC
+                                ]
+                        , substitution = mempty
+                        }
+                    )
+                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                ]
+        putStrLn "\nActual"
+        putStrLn
+            $ foldl
+                (\a b ->
+                    "\n"
+                    <> a
+                    <> "\n"
+                    <> show (fmap unparseToString b)
+                    <> "\n"
+                )
+                ""
+                actual
+        putStrLn "\nExpected"
+        putStrLn
+            $ foldl
+                (\a b ->
+                    "\n"
+                    <> a
+                    <> "\n"
+                    <> show (fmap unparseToString b)
+                    <> "\n"
+                )
+                ""
+                expected
+        -- assertEqual ""
+        --     [ ProofState.Goal $ makeOnePathRuleFromPatterns
+        --         (Conditional
+        --             { term = Mock.f Mock.b
+        --             , predicate = makeTruePredicate_
+        --             , substitution =
+        --                 Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
+        --             }
+        --         )
+        --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
+        --     , ProofState.Goal $ makeOnePathRuleFromPatterns
+        --         (Conditional
+        --             { term = Mock.f Mock.c
+        --             , predicate = makeTruePredicate_
+        --             , substitution =
+        --                 Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
+        --             }
+        --         )
+        --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
+        --     , ProofState.GoalRemainder $ makeOnePathRuleFromPatterns
+        --         (Conditional
+        --             { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
+        --             , predicate =
+        --                 makeMultipleAndPredicate
+        --                     [ makeNotPredicate equalsXA
+        --                     , makeNotPredicate equalsXB
+        --                     , makeNotPredicate equalsXC
+        --                     ]
+        --             , substitution = mempty
+        --             }
+        --         )
+        --         (fromTermLike $ Mock.functionalConstr11 Mock.a)
+        --     ]
+        --     actual
+            -- [ _actual1
+            -- , _actual2
+            -- , _actual3
+            -- ]
+        assertEqual "onepath == reachability onepath"
+            (fmap (fmap OnePath) actual)
+            actualReach
     , testCase "Axiom with requires" $ do
         -- Goal:  constr10(b) => a
         -- Coinductive axiom: n/a
