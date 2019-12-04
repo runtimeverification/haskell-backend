@@ -955,33 +955,26 @@ removalPredicate
         then return Predicate.makeTruePredicate_
         else
             case OrPattern.toPatterns unifiedConfigs of
-                [substPattern] ->
-                    let extraNonElemVariables =
-                            remainderNonElemVariables configuration substPattern
-                        extraElemVariables =
-                            remainderElementVariables configuration substPattern
-                    in if not (null extraNonElemVariables)
-                        then
-                            error . show . Pretty.vsep $
-                                "Cannot quantify non-element variables: "
-                                : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
-                        else do
-                            let remainderPattern =
-                                    Pattern.fromCondition
-                                    . Conditional.withoutTerm
-                                    $ (const <$> destination <*> substPattern)
-                            evaluatedRemainder <-
-                                Exists.makeEvaluate extraElemVariables remainderPattern
-                            return
-                                . Predicate.makeNotPredicate
-                                . Condition.toPredicate
-                                . Conditional.withoutTerm
-                                . OrPattern.toPattern
-                                $ evaluatedRemainder
-                _ -> error . show . Pretty.vsep $
+                [substPattern] -> do
+                    let extraElemVariables =
+                            getExtraElemVariables configuration substPattern
+                        remainderPattern =
+                            Pattern.fromCondition
+                            . Conditional.withoutTerm
+                            $ (const <$> destination <*> substPattern)
+                    evaluatedRemainder <-
+                        Exists.makeEvaluate extraElemVariables remainderPattern
+                    return
+                        . Predicate.makeNotPredicate
+                        . Condition.toPredicate
+                        . Conditional.withoutTerm
+                        . OrPattern.toPattern
+                        $ evaluatedRemainder
+                _ ->
+                    error . show . Pretty.vsep $
                     [ "Unifying the terms of the configuration and the\
-                      \ destination has unexpectedly produced more than one\
-                      \ unification case."
+                    \ destination has unexpectedly produced more than one\
+                    \ unification case."
                     , Pretty.indent 2 "Unification cases:"
                     ]
                     <> fmap
@@ -990,8 +983,8 @@ removalPredicate
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
-            \ the configuration and the destination terms\
-            \ to be function-like."
+          \ the configuration and the destination terms\
+          \ to be function-like."
           , Pretty.indent 2 "Configuration term:"
           , Pretty.indent 4 (unparse configTerm)
           , Pretty.indent 2 "Destination term:"
@@ -1003,6 +996,14 @@ removalPredicate
     -- The variables of the destination that are missing from the
     -- configuration. These are the variables which should be existentially
     -- quantified in the removal predicate.
+    getExtraElemVariables config dest =
+        let extraNonElemVariables = remainderNonElemVariables config dest
+        in if not . null $ extraNonElemVariables
+            then
+                error . show . Pretty.vsep $
+                    "Cannot quantify non-element variables: "
+                    : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
+            else remainderElementVariables config dest
     configVariables config =
         Attribute.FreeVariables.getFreeVariables
         $ Pattern.freeVariables config
