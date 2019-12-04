@@ -57,7 +57,7 @@ data Inj a =
     deriving (Functor, Foldable, Traversable)
 
 instance Eq a => Eq (Inj a) where
-    (==) a b =
+    (==) a@(Inj _ _ _ _ _) b =
             Function.on (==) injConstructor a b
         &&  Function.on (==) injFrom a b
         &&  Function.on (==) injTo a b
@@ -65,11 +65,12 @@ instance Eq a => Eq (Inj a) where
     {-# INLINE (==) #-}
 
 instance Ord a => Ord (Inj a) where
-    compare a b =
+    compare a@(Inj _ _ _ _ _) b =
             Function.on compare injConstructor a b
         <>  Function.on compare injFrom a b
         <>  Function.on compare injTo a b
         <>  Function.on compare injChild a b
+    {-# INLINE compare #-}
 
 instance Hashable a => Hashable (Inj a) where
     hashWithSalt salt inj@(Inj _ _ _ _ _) =
