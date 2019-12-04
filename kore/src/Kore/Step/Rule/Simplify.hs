@@ -81,13 +81,13 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
         simplifiedTerms <- Pattern.simplifyAndRemoveTopExists lhsWithPredicate
         fullySimplified <-
             simplifyConditionsWithSmt
-                requires
+                makeTruePredicate_
                 simplifiedTerms
         let rules =
                 map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)
         return (MultiAnd.make rules)
       where
-        RulePattern {left, requires} = rule
+        RulePattern {left} = rule
 
         setRuleLeft
             :: RulePattern variable
