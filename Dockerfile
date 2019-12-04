@@ -39,6 +39,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.28.0
 ENV LC_ALL=C.UTF-8
 ADD --chown=user:user stack.yaml /home/user/.tmp-haskell/
 ADD --chown=user:user kore/package.yaml /home/user/.tmp-haskell/kore/
+ADD --chown=user:user kore-charts/package.yaml /home/user/.tmp-haskell/kore-charts/
 RUN    cd /home/user/.tmp-haskell \
     && stack build --only-snapshot --test --bench --haddock \
     && stack build --only-snapshot stylish-haskell
