@@ -1315,6 +1315,7 @@ testModule =
         , moduleSentences =
             [ Builtin.importParsedModule Builtin.testModuleName
             , Builtin.importParsedModule natModuleName
+            , Builtin.subsortDecl Builtin.intSort Builtin.kSort
             ]
         }
 
