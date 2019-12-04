@@ -285,19 +285,21 @@ prove
         , MonadUnliftIO smt
         , MonadSMT smt
         )
-    => Limit Natural
+    => Strategy.GraphSearchOrder
+    -> Limit Natural
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> smt (Either (TermLike Variable) ())
-prove limit definitionModule specModule =
+prove searchOrder limit definitionModule specModule =
     evalProver definitionModule specModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         result <-
             runExceptT
             $ verify
+                searchOrder
                 claims
                 axioms
                 (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
