@@ -70,7 +70,7 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
@@ -831,15 +831,29 @@ functionAnd
     -> TermLike variable
     -> Maybe (Pattern variable)
 functionAnd first second
-  | isFunctionPattern first, isFunctionPattern second =
-    return Conditional
-        { term = first  -- different for Equals
+  | not (isFunctionPattern first) || not (isFunctionPattern second) = empty
+  | App_ symbol _ <- first
+  , Symbol.isDeclaredFunction symbol
+  , TermLike.isNonSimplifiable second
+  , isFunctionPattern first, isFunctionPattern second
+  =
+    return (Pattern.withCondition second condition)
+  | App_ symbol _ <- second
+  , Symbol.isDeclaredFunction symbol
+  , TermLike.isNonSimplifiable first
+  =
+    return (Pattern.withCondition first condition)
+  | App_ symbol1 _ <- first
+  , App_ symbol2 _ <- second
+  , Symbol.isDeclaredFunction symbol1
+  , Symbol.isDeclaredFunction symbol2
+  =
+    return (Pattern.withCondition first condition)
+  | otherwise = empty
+  where
+    condition =
         -- Ceil predicate not needed since first being
         -- bottom will make the entire term bottom. However,
         -- one must be careful to not just drop the term.
-        , predicate =
-            Predicate.markSimplified
-            $ makeEqualsPredicate_ first second
-        , substitution = mempty
-        }
-  | otherwise = empty
+        Condition.fromPredicate . Predicate.markSimplified
+        $ makeEqualsPredicate_ first second
