@@ -89,6 +89,11 @@ import qualified Type.Reflection as Reflection
 
 import Kore.Logger
 import Kore.Logger.DebugAppliedRule
+import Kore.Logger.DebugAxiomEvaluation
+    ( DebugAxiomEvaluationOptions
+    , filterDebugAxiomEvaluation
+    , parseDebugAxiomEvaluationOptions
+    )
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
@@ -109,6 +114,7 @@ data KoreLogOptions = KoreLogOptions
     , logScopes :: Set Scope
     -- ^ scopes to show, empty means show all
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
+    , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
     }
     deriving (Eq, Show)
 
@@ -138,11 +144,13 @@ koreLogFilters koreLogOptions baseLogger =
     id
     $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
     $ filterSeverity logLevel
+    $ filterDebugAxiomEvaluation debugAxiomEvaluationOptions
     $ filterScopes logScopes
     $ baseLogger
   where
     KoreLogOptions { logLevel, logScopes } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
+    KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
 
 {- | Select log entries with 'Severity' greater than or equal to the level.
  -}
@@ -177,6 +185,7 @@ parseKoreLogOptions =
     <*> (parseLevel <|> pure Warning)
     <*> (parseScope <|> pure mempty)
     <*> parseDebugAppliedRuleOptions
+    <*> parseDebugAxiomEvaluationOptions
   where
     parseType =
         option
