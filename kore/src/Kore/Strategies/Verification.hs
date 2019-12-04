@@ -99,13 +99,14 @@ verify
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
-    => [claim]
+    => GraphSearchOrder
+    -> [claim]
     -> [Rule claim]
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify claims axioms = mapM_ (verifyClaim claims axioms)
+verify searchOrder claims axioms = mapM_ (verifyClaim searchOrder claims axioms)
 
 verifyClaim
     :: forall claim m
@@ -113,11 +114,12 @@ verifyClaim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
-    => [claim]
+    => GraphSearchOrder
+    -> [claim]
     -> [Rule claim]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
-verifyClaim claims axioms (goal, stepLimit) =
+verifyClaim searchOrder claims axioms (goal, stepLimit) =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
@@ -127,8 +129,11 @@ verifyClaim claims axioms (goal, stepLimit) =
                 stepLimit
                 (Foldable.toList $ strategy goal claims axioms)
     executionGraph <-
-        runStrategy
-            (modifiedTransitionRule destination) limitedStrategy startPattern
+        runStrategyWithSearchOrder
+            (modifiedTransitionRule destination)
+            limitedStrategy
+            searchOrder
+            startPattern
     -- Throw the first unproven configuration as an error.
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where

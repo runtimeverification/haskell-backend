@@ -3,7 +3,10 @@ Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 Direct interface to equational rule application (step-wise execution).
+<<<<<<< HEAD
 See "Kore.Step" for the high-level strategy-based interface.
+=======
+>>>>>>> upstream/master
 
  -}
 

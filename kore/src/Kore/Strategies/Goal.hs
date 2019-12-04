@@ -95,6 +95,7 @@ import Kore.Step.Rule
     , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
+    , assertEnsuresIsTop
     , fromSentenceAxiom
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -758,7 +759,7 @@ removeDestination
     => ToRulePattern goal
     => ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestination (Goal goal) = errorBracket $ do
+removeDestination (Goal goal) = errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
     removal <- removalPredicate (destination right') configuration
     if isTop removal
         then return . Goal $ goal
@@ -776,7 +777,9 @@ removeDestination (Goal goal) = errorBracket $ do
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
 
-    RulePattern { right } = toRulePattern goal
+    goalAsRulePattern = toRulePattern goal
+    RulePattern { right } = goalAsRulePattern
+
     right' = topExistsToImplicitForall configFreeVars right
 
     destination (And_ _ pred' term') =
@@ -792,7 +795,7 @@ removeDestination (Goal goal) = errorBracket $ do
             (formatExceptionInfo
                 ("configuration=" <> unparseToText configuration)
             )
-removeDestination (GoalRemainder goal) = errorBracket $ do
+removeDestination (GoalRemainder goal) = errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
     removal <- removalPredicate (destination right') configuration
     if isTop removal
         then return . GoalRemainder $ goal
@@ -810,7 +813,9 @@ removeDestination (GoalRemainder goal) = errorBracket $ do
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
 
-    RulePattern { right } = toRulePattern goal
+    goalAsRulePattern = toRulePattern goal
+    RulePattern { right } = goalAsRulePattern
+
     right' = topExistsToImplicitForall configFreeVars right
 
     destination (And_ _ pred' term') =
@@ -1011,34 +1016,27 @@ removalPredicate
     if OrPattern.isFalse unifiedConfigs
         then return Predicate.makeTruePredicate_
         else
-            case Foldable.toList unifiedConfigs of
-                [substPattern] ->
-                    let extraNonElemVariables =
-                            remainderNonElemVariables configuration substPattern
-                        extraElemVariables =
-                            remainderElementVariables configuration substPattern
-                    in if not (null extraNonElemVariables)
-                        then
-                            error . show . Pretty.vsep $
-                                "Cannot quantify non-element variables: "
-                                : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
-                        else do
-                            let remainderPattern =
-                                    Pattern.fromCondition
-                                    . Conditional.withoutTerm
-                                    $ (const <$> destination <*> substPattern)
-                            evaluatedRemainder <-
-                                Exists.makeEvaluate extraElemVariables remainderPattern
-                            return
-                                . Predicate.makeNotPredicate
-                                . Condition.toPredicate
-                                . Conditional.withoutTerm
-                                . OrPattern.toPattern
-                                $ evaluatedRemainder
-                _ -> error . show . Pretty.vsep $
+            case OrPattern.toPatterns unifiedConfigs of
+                [substPattern] -> do
+                    let extraElemVariables =
+                            getExtraElemVariables configuration substPattern
+                        remainderPattern =
+                            Pattern.fromCondition
+                            . Conditional.withoutTerm
+                            $ (const <$> destination <*> substPattern)
+                    evaluatedRemainder <-
+                        Exists.makeEvaluate extraElemVariables remainderPattern
+                    return
+                        . Predicate.makeNotPredicate
+                        . Condition.toPredicate
+                        . Conditional.withoutTerm
+                        . OrPattern.toPattern
+                        $ evaluatedRemainder
+                _ ->
+                    error . show . Pretty.vsep $
                     [ "Unifying the terms of the configuration and the\
-                      \ destination has unexpectedly produced more than one\
-                      \ unification case."
+                    \ destination has unexpectedly produced more than one\
+                    \ unification case."
                     , Pretty.indent 2 "Unification cases:"
                     ]
                     <> fmap
@@ -1047,8 +1045,8 @@ removalPredicate
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
-            \ the configuration and the destination terms\
-            \ to be function-like."
+          \ the configuration and the destination terms\
+          \ to be function-like."
           , Pretty.indent 2 "Configuration term:"
           , Pretty.indent 4 (unparse configTerm)
           , Pretty.indent 2 "Destination term:"
@@ -1060,6 +1058,14 @@ removalPredicate
     -- The variables of the destination that are missing from the
     -- configuration. These are the variables which should be existentially
     -- quantified in the removal predicate.
+    getExtraElemVariables config dest =
+        let extraNonElemVariables = remainderNonElemVariables config dest
+        in if not . null $ extraNonElemVariables
+            then
+                error . show . Pretty.vsep $
+                    "Cannot quantify non-element variables: "
+                    : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
+            else remainderElementVariables config dest
     configVariables config =
         Attribute.FreeVariables.getFreeVariables
         $ Pattern.freeVariables config
@@ -1114,4 +1120,3 @@ makeRuleFromPatterns ruleType configuration destination =
         , ensures
         , attributes = Default.def
         }
-
