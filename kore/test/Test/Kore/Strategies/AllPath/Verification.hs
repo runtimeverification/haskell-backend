@@ -304,7 +304,7 @@ simpleClaim
     -> AllPathRule Variable
 simpleClaim left right =
     AllPathRule
-    $ RulePattern
+    RulePattern
             { left = left
             , antiLeft = Nothing
             , right = mkAnd mkTop_ right
