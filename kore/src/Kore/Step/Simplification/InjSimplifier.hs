@@ -73,6 +73,12 @@ data InjSimplifier =
          -}
         }
 
+-- | Ignore 'UnorderedInj' errors in 'evaluateInj' and 'evaluateCeilInj' below.
+ignoreUnorderedInj :: Bool
+ignoreUnorderedInj =
+    -- TODO (thomas.tuegel): Fix the frontend and change to 'False'.
+    True
+
 mkInjSimplifier :: SortGraph -> InjSimplifier
 mkInjSimplifier sortGraph =
     InjSimplifier { evaluateInj, unifyInj, isOrderedInj, evaluateCeilInj }
@@ -96,11 +102,12 @@ mkInjSimplifier sortGraph =
         => Inj (TermLike variable)
         -> TermLike variable
     evaluateInj inj
-      | not (isOrderedInj inj) = unorderedInj inj
+      | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
       | otherwise =
         case injChild inj of
             Inj_ inj'
-              | not (isOrderedInj inj') -> unorderedInj inj
+              | not ignoreUnorderedInj, not (isOrderedInj inj') ->
+                unorderedInj inj
               | otherwise ->
                 Exception.assert sameConstructor
                 . Exception.assert innerSortsAgree
@@ -123,7 +130,7 @@ mkInjSimplifier sortGraph =
         .  Ceil Sort (Inj (TermLike variable))
         -> Ceil Sort (TermLike variable)
     evaluateCeilInj Ceil { ceilResultSort, ceilChild = inj }
-      | not (isOrderedInj inj) = unorderedInj inj
+      | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
       | otherwise =
         Ceil
             { ceilOperandSort = injFrom inj
