@@ -457,7 +457,7 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove stepLimit mainModule specModule
+                <$> prove graphSearch stepLimit mainModule specModule
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
