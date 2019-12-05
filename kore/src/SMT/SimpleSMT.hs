@@ -281,10 +281,6 @@ newSolver exe opts logger = do
 
     return solver
 
-wrapScope :: [Logger.Scope] -> Logger.SomeEntry -> Logger.SomeEntry
-wrapScope scopes entry =
-    foldr (\s e -> Logger.SomeEntry $ Logger.WithScope e s) entry scopes
-
 logWith
     :: GHC.HasCallStack
     => Logger.Severity
@@ -296,14 +292,8 @@ logWith severity Solver { logger } scope a =
     logger Colog.<& message
   where
     message =
-        wrapScope scope
-            $ Logger.SomeEntry
-                $ Logger.WithScope
-                    { entry =
-                        Logger.SomeEntry
-                            $ Logger.LogMessage a severity callStack
-                    , scope = Logger.Scope "SimpleSMT"
-                    }
+        Logger.SomeEntry
+        $ Logger.LogMessage a severity callStack
 
 debug :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
 debug = logWith Logger.Debug

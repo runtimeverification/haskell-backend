@@ -131,7 +131,7 @@ decidePredicate
     => Predicate variable
     -> simplifier (Maybe Bool)
 decidePredicate korePredicate =
-    withLogScope "decidePredicate" $ SMT.withSolver $ runMaybeT $ do
+    SMT.withSolver $ runMaybeT $ do
         tools <- Simplifier.askMetadataTools
         smtPredicate <- goTranslatePredicate tools korePredicate
         result <-
@@ -181,9 +181,7 @@ translateUninterpreted t pat =
         logVariableAssignment n
         return var
     logVariableAssignment n =
-        withLogScope "Evaluator"
-        . withLogScope "translateUninterpreted"
-        . logDebug
+        logDebug
         . Text.pack . show
         . Pretty.nest 4 . Pretty.sep
         $ [Pretty.pretty n, "|->", unparse pat]

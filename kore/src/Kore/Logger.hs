@@ -11,7 +11,6 @@ module Kore.Logger
     , Severity (..)
     , Scope (..)
     , WithLog
-    , WithScope (..)
     , LogAction (..)
     , log
     , logDebug
@@ -205,33 +204,13 @@ logCritical
     -> m ()
 logCritical = log Critical
 
-data WithScope = WithScope
-    { entry :: SomeEntry
-    , scope :: Scope
-    } deriving Typeable
-
-instance Entry WithScope where
-    entryScopes WithScope { entry, scope } =
-        Set.insert scope (entryScopes entry)
-
-    entrySeverity WithScope { entry } = entrySeverity entry
-
-instance Pretty WithScope where
-    pretty WithScope { entry } = Pretty.pretty entry
-
 withLogScope
     :: forall m a
     .  WithLog LogMessage m
-    => Scope
-    -- ^ new scope
-    -> m a
+    => m a
     -- ^ continuation / enclosure for the new scope
     -> m a
-withLogScope newScope =
-    logScope appendScope
-  where
-    appendScope entry =
-        toEntry $ WithScope entry newScope
+withLogScope = id
 
 -- ---------------------------------------------------------------------
 -- * LoggerT

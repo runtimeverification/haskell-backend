@@ -85,6 +85,7 @@ import Options.Applicative
     )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
+import qualified Type.Reflection as Reflection
 
 import Kore.Logger
 import Kore.Logger.DebugAppliedRule
@@ -269,12 +270,26 @@ swappableLogger mvar =
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
 
+-- class Entry entry => PeelEntry entry where
+--     peelEntry :: entry -> Reflection.TypeRep entry
+--
+-- instance PeelEntry SomeEntry where
+--     peelEntry (SomeEntry entry) = Reflection.typeOf $ peelEntry entry
+--
+-- instance PeelEntry WithScope where
+--     peelEntry (WithScope { entry, scope }) = Reflection.typeOf $ peelEntry entry
+--
+
+-- f :: Entry entry => entry -> Reflection.TypeRep SomeEntry
+-- -- f (SomeEntry (WithScope { entry, scope })) = f . toEntry $ entry
+-- f (SomeEntry entry) = Reflection.typeOf . toEntry $ entry
+
+--  . Reflection.typeOf . fromJust .
+
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
-defaultLogPretty entry =
+defaultLogPretty (SomeEntry entry) =
     Pretty.hsep
-        [ Pretty.brackets (Pretty.pretty severity)
+        [ Pretty.brackets (Pretty.viaShow . show . Reflection.typeOf $ entry)
         , ":"
         , Pretty.pretty entry
         ]
-  where
-    severity = entrySeverity entry
