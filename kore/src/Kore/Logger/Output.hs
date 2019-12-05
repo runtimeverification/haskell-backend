@@ -270,22 +270,6 @@ swappableLogger mvar =
     release = liftIO . putMVar mvar
     worker a logAction = Colog.unLogAction logAction a
 
--- class Entry entry => PeelEntry entry where
---     peelEntry :: entry -> Reflection.TypeRep entry
---
--- instance PeelEntry SomeEntry where
---     peelEntry (SomeEntry entry) = Reflection.typeOf $ peelEntry entry
---
--- instance PeelEntry WithScope where
---     peelEntry (WithScope { entry, scope }) = Reflection.typeOf $ peelEntry entry
---
-
--- f :: Entry entry => entry -> Reflection.TypeRep SomeEntry
--- -- f (SomeEntry (WithScope { entry, scope })) = f . toEntry $ entry
--- f (SomeEntry entry) = Reflection.typeOf . toEntry $ entry
-
---  . Reflection.typeOf . fromJust .
-
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
 defaultLogPretty (SomeEntry entry) =
     Pretty.hsep
