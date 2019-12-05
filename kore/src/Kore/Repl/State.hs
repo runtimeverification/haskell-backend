@@ -503,6 +503,7 @@ getNodeState graph node =
             { goalTransformer = const . Just $ UnevaluatedNode
             , goalRemainderTransformer = const . Just $ StuckNode
             , goalRewrittenTransformer = const . Just $ UnevaluatedNode
+            , goalStuckTransformer = const . Just $ StuckNode
             , provenValue = Nothing
             }
         . Graph.lab'
@@ -518,6 +519,7 @@ nodeToPattern graph node =
         { goalTransformer = Just . toTermLike
         , goalRemainderTransformer = Just . toTermLike
         , goalRewrittenTransformer = Just . toTermLike
+        , goalStuckTransformer = Just . toTermLike
         , provenValue = Nothing
         }
     . Graph.lab'
