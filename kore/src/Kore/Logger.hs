@@ -18,7 +18,6 @@ module Kore.Logger
     , logWarning
     , logError
     , logCritical
-    , withLogScope
     , liftLogAction
     , hoistLogAction
     , LoggerT (..)
@@ -203,14 +202,6 @@ logCritical
     => Text
     -> m ()
 logCritical = log Critical
-
-withLogScope
-    :: forall m a
-    .  WithLog LogMessage m
-    => m a
-    -- ^ continuation / enclosure for the new scope
-    -> m a
-withLogScope = id
 
 -- ---------------------------------------------------------------------
 -- * LoggerT

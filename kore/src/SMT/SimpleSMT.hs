@@ -272,7 +272,7 @@ newSolver exe opts logger = do
         let handler X.SomeException {} = return ()
         X.handle handler $ Monad.forever $ do
             errs <- Text.hGetLine hErr
-            debug solver ["stderr"] errs
+            debug solver errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
@@ -285,25 +285,24 @@ logWith
     :: GHC.HasCallStack
     => Logger.Severity
     -> Solver
-    -> [Logger.Scope]
     -> Text
     -> IO ()
-logWith severity Solver { logger } scope a =
+logWith severity Solver { logger } a =
     logger Colog.<& message
   where
     message =
         Logger.SomeEntry
         $ Logger.LogMessage a severity callStack
 
-debug :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+debug :: GHC.HasCallStack => Solver -> Text -> IO ()
 debug = logWith Logger.Debug
 
-warn :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
+warn :: GHC.HasCallStack => Solver -> Text -> IO ()
 warn = logWith Logger.Warning
 
 send :: Solver -> SExpr -> IO ()
 send solver@Solver { hIn } command' = do
-    debug solver ["send"] (buildText command')
+    debug solver (buildText command')
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
@@ -312,7 +311,7 @@ recv :: Solver -> IO SExpr
 recv solver@Solver { hOut } = do
     responseLines <- readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
-    debug solver ["recv"] resp
+    debug solver resp
     readSExpr resp
   where
     {-| Reads an SMT response.
@@ -344,7 +343,7 @@ stop solver@Solver { hIn, hOut, hErr, hProc } = do
     send solver (List [Atom "exit"])
     ec <- waitForProcess hProc
     let handler :: X.IOException -> IO ()
-        handler ex = (debug solver ["stop"] . Text.pack) (show ex)
+        handler ex = (debug solver . Text.pack) (show ex)
     X.handle handler $ do
         hClose hIn
         hClose hOut
@@ -637,11 +636,11 @@ check solver = do
         Atom "unknown" -> do
             Monad.when featureProduceAssertions $ do
                 asserts <- command solver (List [Atom "get-assertions"])
-                warn solver ["check"] (buildText asserts)
+                warn solver (buildText asserts)
             return Unknown
         Atom "sat"     -> do
             model <- command solver (List [Atom "get-model"])
-            debug solver ["check"] (buildText model)
+            debug solver (buildText model)
             return Sat
         _ -> fail $ unlines
             [ "Unexpected result from the SMT solver:"
