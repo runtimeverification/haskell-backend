@@ -1,28 +1,34 @@
 module Main (main) where
 
-import Prelude hiding (filter)
-
+import Control.Lens
+    ( (.~)
+    )
+import Data.Default
+    ( def
+    )
 import Data.Foldable
 import Data.Function
-import Data.Witherable
-
-import Data.Map (Map)
-import Stats (Stats)
-
-import Control.Lens ((.~))
-import Data.Default (def)
-
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
+import Data.Witherable
 import qualified Graphics.Rendering.Chart as Chart
 import qualified Graphics.Rendering.Chart.Backend.Cairo as Chart.Backend
 import qualified Graphics.Rendering.Chart.Grid as Chart
-import qualified Stats
+import Prelude hiding
+    ( filter
+    )
 import qualified System.Directory as Directory
 import qualified System.Environment as Environment
 import qualified System.FilePath as FilePath
 
 import Jenkins
 import Plot
+import Stats
+    ( Stats
+    )
+import qualified Stats
 
 main :: IO ()
 main = do

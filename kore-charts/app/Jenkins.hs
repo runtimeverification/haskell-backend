@@ -6,25 +6,35 @@ module Jenkins
     , Builds, getBuilds
     ) where
 
-import Prelude hiding (filter)
-
-import Data.Traversable
-
-import Data.Aeson (FromJSON)
-import Data.Map (Map)
-import GHC.Generics (Generic)
-import Stats (Stats)
-
-import Data.Monoid (First (getFirst))
-
+import qualified Control.Lens as Lens
+import Data.Aeson
+    ( FromJSON
+    )
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as Aeson
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
+import Data.Monoid
+    ( First (getFirst)
+    )
 import qualified Data.Text as Text
-import qualified Control.Lens as Lens
+import Data.Traversable
+import GHC.Generics
+    ( Generic
+    )
 import qualified Network.Wreq as Wreq
+import Prelude hiding
+    ( filter
+    )
+import Stats
+    ( Stats
+    )
 
-import Plot (BuildNumber)
+import Plot
+    ( BuildNumber
+    )
 
 jenkins :: String
 jenkins = "https://office.runtimeverification.com/jenkins"

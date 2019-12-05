@@ -6,29 +6,48 @@ module Plot
     , BuildNumber (..)
     ) where
 
-import Prelude hiding (filter)
-
-import Data.Bifunctor
-import Data.Function
-
-import Data.Aeson (FromJSON)
-import Data.Map (Map)
-import Data.Semigroup (Max (..))
-import Data.Semigroup (Min (..))
-import GHC.Generics (Generic)
-import Stats (Stats)
-
-import Control.Lens ((.~))
-import Control.Lens ((.=))
-import Data.Default (def)
-import Data.Maybe (fromMaybe)
-
+import Control.Lens
+    ( (.~)
+    )
+import Control.Lens
+    ( (.=)
+    )
+import Data.Aeson
+    ( FromJSON
+    )
 import qualified Data.Aeson as Aeson
+import Data.Bifunctor
+import Data.Default
+    ( def
+    )
+import Data.Function
+import Data.Map
+    ( Map
+    )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromMaybe
+    )
+import Data.Semigroup
+    ( Max (..)
+    )
+import Data.Semigroup
+    ( Min (..)
+    )
+import GHC.Generics
+    ( Generic
+    )
 import qualified Graphics.Rendering.Chart as Chart
 import qualified Graphics.Rendering.Chart.Easy as Chart
-import qualified Stats
+import Prelude hiding
+    ( filter
+    )
 import qualified System.FilePath as FilePath
+
+import Stats
+    ( Stats
+    )
+import qualified Stats
 
 newtype Time = Time { getTime :: Double }
     deriving (Eq, Ord, Read, Show)
