@@ -288,6 +288,7 @@ getNonSimplifiableDependencies interesting var termLike =
         Var_ v | v == var -> Set.empty
         _ -> Recursive.fold (nonSimplifiableAbove interesting) termLike
 
+-- TODO (thomas.tuegel): Refactor to use NonSimplifiable attribute.
 nonSimplifiableAbove
     :: forall variable
     .  Ord variable
@@ -301,6 +302,7 @@ nonSimplifiableAbove interesting p =
         ApplySymbolF Application { applicationSymbolOrAlias }
             | Symbol.isNonSimplifiable applicationSymbolOrAlias ->
                 dependencies
+        InjF _ -> dependencies
         _ -> Set.empty
   where
     dependencies :: Set (UnifiedVariable variable)
