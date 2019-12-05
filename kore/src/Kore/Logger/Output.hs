@@ -273,7 +273,7 @@ swappableLogger mvar =
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
 defaultLogPretty (SomeEntry entry) =
     Pretty.hsep
-        [ Pretty.brackets (Pretty.viaShow . show . Reflection.typeOf $ entry)
+        [ Pretty.brackets (Pretty.viaShow . Reflection.typeOf $ entry)
         , ":"
         , Pretty.pretty entry
         ]
