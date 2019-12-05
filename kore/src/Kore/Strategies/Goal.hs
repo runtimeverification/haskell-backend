@@ -781,7 +781,7 @@ removeDestinationWorker stateConstructor goal =
                     SMT.Evaluator.filterMultiOr
                     =<< simplifyAndRemoveTopExists
                         (Conditional.andPredicate configuration removal)
-                if not (null simplifiedRemoval)
+                if not (isBottom simplifiedRemoval)
                     then return . GoalStuck $ goal
                     else
                         return . stateConstructor
