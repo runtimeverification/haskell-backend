@@ -36,6 +36,7 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , isFreeOf
+    , assertEnsuresIsTop
     , wEF
     , wAF
     , aPG
@@ -825,6 +826,16 @@ axiomPatternToPattern
   =
     TermLike.mkImplies left right
 
+
+assertEnsuresIsTop
+    :: InternalVariable variable
+    => RulePattern variable
+    -> a
+    -> a
+assertEnsuresIsTop RulePattern { ensures } next =
+    if ensures /= Predicate.makeTruePredicate_
+        then errorEnsures ensures
+        else next
 {-
 TODO(traiansf): Use different representations for rewrite 'RulePattern'
   (without ensures) and equational 'RulePattern' (with ensures)

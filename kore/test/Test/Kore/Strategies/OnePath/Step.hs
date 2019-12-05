@@ -50,6 +50,8 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
     ( TermLike
+    , mkAnd
+    , mkTop_
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Rule
@@ -94,7 +96,7 @@ makeOnePathRule
     -> TermLike Variable
     -> OnePathRule Variable
 makeOnePathRule term dest =
-    OnePathRule $ rulePattern term dest
+    OnePathRule $ rulePattern term (mkAnd mkTop_ dest)
 
 makeOnePathRuleFromPatterns
     :: Pattern Variable
@@ -111,7 +113,7 @@ makeOnePathRuleFromPatterns
     in coerce RulePattern
         { left
         , antiLeft = Nothing
-        , right
+        , right = mkAnd mkTop_ right
         , requires
         , ensures
         , attributes = Default.def

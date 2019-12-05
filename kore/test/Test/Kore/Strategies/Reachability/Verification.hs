@@ -29,7 +29,6 @@ import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , RewriteRule (..)
     , RulePattern (..)
     )
 import Kore.Strategies.Goal
@@ -1064,14 +1063,30 @@ simpleOnePathClaim
     -> TermLike Variable
     -> ReachabilityRule Variable
 simpleOnePathClaim left right =
-    OnePath . OnePathRule . getRewriteRule $ simpleRewrite left right
+    OnePath . OnePathRule
+    $ RulePattern
+            { left = left
+            , antiLeft = Nothing
+            , right = mkAnd mkTop_ right
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
+            , attributes = def
+            }
 
 simpleAllPathClaim
     :: TermLike Variable
     -> TermLike Variable
     -> ReachabilityRule Variable
 simpleAllPathClaim left right =
-    AllPath . AllPathRule . getRewriteRule $ simpleRewrite left right
+    AllPath . AllPathRule
+    $ RulePattern
+            { left = left
+            , antiLeft = Nothing
+            , right = mkAnd mkTop_ right
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
+            , attributes = def
+            }
 
 simpleOnePathTrustedClaim
     :: TermLike Variable

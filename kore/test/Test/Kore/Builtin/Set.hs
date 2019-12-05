@@ -1632,7 +1632,7 @@ return a partial result for unifying the second element of the pair.
  -}
 test_concretizeKeysAxiom :: TestTree
 test_concretizeKeysAxiom =
-    testCaseWithSMT "zzzunify Set with symbolic keys in axiom" $ do
+    testCaseWithSMT "unify Set with symbolic keys in axiom" $ do
         config <- evaluate $ pair symbolicKey concreteSet
         actual <- runStep config axiom
         assertEqual "" expected actual
