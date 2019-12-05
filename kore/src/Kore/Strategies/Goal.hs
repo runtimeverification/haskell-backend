@@ -665,7 +665,6 @@ onePathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , TriviallyValid
         , DeriveSeq axioms
         , Simplify
         , TriviallyValid
@@ -687,7 +686,6 @@ onePathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , TriviallyValid
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -710,7 +708,6 @@ allPathFirstStep axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , TriviallyValid
         , DerivePar axioms
         , Simplify
         , TriviallyValid
@@ -731,7 +728,6 @@ allPathFollowupStep claims axioms =
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , TriviallyValid
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -748,7 +744,6 @@ removeDestination
     :: MonadCatch m
     => MonadSimplify m
     => ProofState.ProofState goal ~ ProofState goal goal
-    => FromRulePattern goal
     => ToRulePattern goal
     => ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
@@ -766,7 +761,6 @@ removeDestinationWorker
     :: MonadCatch m
     => MonadSimplify m
     => ProofState.ProofState goal ~ ProofState goal goal
-    => FromRulePattern goal
     => ToRulePattern goal
     => (goal -> ProofState goal goal)
     -> goal
@@ -783,12 +777,7 @@ removeDestinationWorker stateConstructor goal =
                         (Conditional.andPredicate configuration removal)
                 if not (isBottom simplifiedRemoval)
                     then return . GoalStuck $ goal
-                    else
-                        return . stateConstructor
-                        $ makeRuleFromPatterns
-                            goal
-                            Pattern.bottom
-                            (Pattern.fromTermLike right')
+                    else return Proven
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
