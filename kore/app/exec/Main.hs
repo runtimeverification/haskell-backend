@@ -207,12 +207,12 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         , strategy =
             -- Search relies on exploring the entire space of states.
             allRewrites
-        , stepLimit = min stepLimit searchTypeStepLimit
+        , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
     KoreSearchOptions { searchType } = koreSearchOpts
-    KoreExecOptions { stepLimit } = koreExecOpts
-    searchTypeStepLimit =
+    KoreExecOptions { depthLimit } = koreExecOpts
+    searchTypeDepthLimit =
         case searchType of
             ONE -> Limit 1
             _ -> Unlimited
@@ -247,7 +247,8 @@ data KoreExecOptions = KoreExecOptions
     , smtTimeOut          :: !SMT.TimeOut
     , smtPrelude          :: !(Maybe FilePath)
     , smtSolver           :: !Solver
-    , stepLimit           :: !(Limit Natural)
+    , breadthLimit          :: !(Limit Natural)
+    , depthLimit          :: !(Limit Natural)
     , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
@@ -299,7 +300,8 @@ parseKoreExecOptions =
                 )
             )
         <*> parseSolver
-        <*> parseStepLimit
+        <*> parseBreadthLimit
+        <*> parseDepthLimit
         <*> parseStrategy
         <*> parseKoreLogOptions
         <*> pure Nothing
@@ -312,7 +314,8 @@ parseKoreExecOptions =
         if i <= 0
             then readerError "smt-timeout must be a positive integer."
             else return $ SMT.TimeOut $ Limit i
-    parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
+    parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
         option (readSum "strategy" strategies)
             (  metavar "STRATEGY"
@@ -329,6 +332,12 @@ parseKoreExecOptions =
             , ("any-heating-cooling", heatingCooling anyRewrite)
             , ("all-heating-cooling", heatingCooling allRewrites)
             ]
+    breadth =
+        option auto
+            (  metavar "BREADTH"
+            <> long "breadth"
+            <> help "Execute up to BREADTH steps."
+            )
     depth =
         option auto
             (  metavar "DEPTH"
@@ -404,14 +413,14 @@ koreSearch execOptions searchOptions = do
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     final <- execute execOptions mainModule $ do
-        search Unlimited mainModule strategy' initial target config --TODO andrei burdusa
+        search breadthLimit mainModule strategy' initial target config
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where
     KoreSearchOptions { bound, searchType } = searchOptions
     config = Search.Config { bound, searchType }
-    KoreExecOptions { stepLimit, strategy } = execOptions
-    strategy' = Limit.replicate stepLimit . strategy
+    KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
+    strategy' = Limit.replicate depthLimit . strategy
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
@@ -422,14 +431,14 @@ koreRun execOptions = do
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <- execute execOptions mainModule $ do
-        final <- exec Unlimited mainModule strategy' initial --TODO andrei burdusa
-        exitCode <- execGetExitCode Unlimited mainModule strategy' final --TODO andrei burdusa
+        final <- exec breadthLimit mainModule strategy' initial
+        exitCode <- execGetExitCode breadthLimit mainModule strategy' final
         return (exitCode, final)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
-    KoreExecOptions { stepLimit, strategy } = execOptions
-    strategy' = Limit.replicate stepLimit . strategy
+    KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
+    strategy' = Limit.replicate depthLimit . strategy
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
@@ -441,14 +450,14 @@ koreProve execOptions proveOptions = do
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
     (exitCode, final) <- execute execOptions mainModule $ do
-        let KoreExecOptions { stepLimit } = execOptions
+        let KoreExecOptions { breadthLimit, depthLimit } = execOptions
             KoreProveOptions { graphSearch, bmc } = proveOptions
         if bmc
             then do
                 checkResult <-
                     boundedModelCheck
-                        Unlimited --TODO andrei burdusa
-                        stepLimit
+                        breadthLimit
+                        depthLimit
                         mainModule
                         specModule
                         graphSearch
@@ -458,7 +467,12 @@ koreProve execOptions proveOptions = do
                     Bounded.Failed final -> return (failure final)
             else
                 either failure (const success)
-                <$> prove graphSearch Unlimited stepLimit mainModule specModule --TODO andrei burdusa
+                <$> prove
+                        graphSearch
+                        breadthLimit
+                        depthLimit
+                        mainModule
+                        specModule
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where

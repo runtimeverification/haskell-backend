@@ -46,7 +46,7 @@ runVerification
     -> [Rule claim]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
-runVerification breadthlimit stepLimit axioms claims =
+runVerification breadthlimit depthLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
@@ -54,8 +54,8 @@ runVerification breadthlimit stepLimit axioms claims =
         BreadthFirst
         claims
         axioms
-        (map applyStepLimit . selectUntrusted $ claims)
+        (map applyDepthLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env
-    applyStepLimit claim = (claim, stepLimit)
+    applyDepthLimit claim = (claim, depthLimit)
     selectUntrusted = filter (not . isTrusted)

@@ -233,7 +233,7 @@ test_runStrategy =
         runIdentity
         . unAllPathIdentity
         $ Strategy.runStrategy
-            Unlimited --TODO andrei burdusa
+            Unlimited
             Goal.transitionRule
             (Foldable.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
             (ProofState.Goal . unRule $ goal)

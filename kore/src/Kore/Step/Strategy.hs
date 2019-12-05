@@ -51,7 +51,8 @@ import Control.Applicative
     ( Alternative (empty, (<|>))
     )
 import Control.Monad
-    ( (>=>)
+    ( when
+    , (>=>)
     )
 import Control.Monad.State.Strict
     ( MonadState
@@ -66,6 +67,7 @@ import Data.Graph.Inductive.PatriciaTree
     )
 import Data.Limit
     ( Limit (..)
+    , withinLimit
     )
 import qualified Data.List as List
 import Data.Maybe
@@ -397,7 +399,7 @@ constructExecutionGraph
     -> GraphSearchOrder
     -> config
     -> m (ExecutionGraph config rule)
-constructExecutionGraph _ transit instrs0 searchOrder0 config0 = do
+constructExecutionGraph depthLimit transit instrs0 searchOrder0 config0 = do
     finalGraph <- State.execStateT
                     (unfoldWorker initialSeed searchOrder0)
                     initialGraph
@@ -419,6 +421,8 @@ constructExecutionGraph _ transit instrs0 searchOrder0 config0 = do
       | []              <- instrs = unfoldWorker rest searchOrder
       | instr : instrs' <- instrs
       = Profile.executionQueueLength (Seq.length rest) $ do
+        when ((not . withinLimit depthLimit . fromIntegral . Seq.length) rest)
+            $ error "Number of concurrent branches limit exceeded"
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         case searchOrder of
@@ -525,8 +529,8 @@ runStrategy
     -> config
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
-runStrategy limit applyPrim instrs0 config0 =
-    runStrategyWithSearchOrder limit applyPrim instrs0 BreadthFirst config0
+runStrategy breadthlimit applyPrim instrs0 config0 =
+    runStrategyWithSearchOrder breadthlimit applyPrim instrs0 BreadthFirst config0
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
@@ -541,9 +545,9 @@ runStrategyWithSearchOrder
     -> config
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
-runStrategyWithSearchOrder limit applyPrim instrs0 searchOrder0 config0 =
+runStrategyWithSearchOrder breadthlimit applyPrim instrs0 searchOrder0 config0 =
     constructExecutionGraph
-        limit
+        breadthlimit
         (transitionRule applyPrim)
         instrs0
         searchOrder0

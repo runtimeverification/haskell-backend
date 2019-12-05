@@ -192,9 +192,9 @@ exec
     -> TermLike Variable
     -- ^ The input pattern
     -> smt (TermLike Variable)
-exec limit verifiedModule strategy initialTerm =
+exec breadthlimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
-        execution <- execute limit verifiedModule' strategy initialTerm
+        execution <- execute breadthlimit verifiedModule' strategy initialTerm
         let
             Execution { executionGraph } = execution
             finalConfig = pickLongest executionGraph
@@ -229,13 +229,13 @@ execGetExitCode
     -> TermLike Variable
     -- ^ The final pattern (top cell) to extract the exit code
     -> smt ExitCode
-execGetExitCode limit indexedModule strategy' finalTerm =
+execGetExitCode breadthlimit indexedModule strategy' finalTerm =
     case resolveInternalSymbol indexedModule $ noLocationId "LblgetExitCode" of
         Nothing -> return ExitSuccess
         Just mkExitCodeSymbol -> do
             exitCodePattern <-
                 -- TODO (thomas.tuegel): Run in original execution context.
-                exec limit indexedModule strategy'
+                exec breadthlimit indexedModule strategy'
                 $ mkApplySymbol (mkExitCodeSymbol []) [finalTerm]
             case exitCodePattern of
                 Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
@@ -262,9 +262,9 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike Variable)
-search limit verifiedModule strategy termLike searchPattern searchConfig =
+search breadthlimit verifiedModule strategy termLike searchPattern searchConfig =
     evalSimplifier verifiedModule $ do
-        execution <- execute limit verifiedModule strategy termLike
+        execution <- execute breadthlimit verifiedModule strategy termLike
         let
             Execution { executionGraph } = execution
             match target config = Search.matchWith target config
@@ -542,7 +542,7 @@ execute
     -> TermLike Variable
     -- ^ The input pattern
     -> simplifier Execution
-execute limit verifiedModule strategy inputPattern =
+execute breadthlimit verifiedModule strategy inputPattern =
     Log.withLogScope "setUpConcreteExecution"
     $ initialize verifiedModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
@@ -558,7 +558,7 @@ execute limit verifiedModule strategy inputPattern =
               where
                 patternSort = termLikeSort inputPattern
             runStrategy' =
-                runStrategy limit transitionRule (strategy rewriteRules)
+                runStrategy breadthlimit transitionRule (strategy rewriteRules)
         executionGraph <- runStrategy' initialPattern
         return Execution
             { simplifier

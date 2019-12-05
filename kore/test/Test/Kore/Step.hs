@@ -145,7 +145,7 @@ takeSteps (Start start, wrappedAxioms) =
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
-            Unlimited  --TODO andrei burdusa
+            Unlimited
             transitionRule
             (repeat $ allRewrites axioms)
             (pure configuration)
@@ -548,4 +548,4 @@ runStepMockEnv
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration --TODO andrei burdusa
+    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration
