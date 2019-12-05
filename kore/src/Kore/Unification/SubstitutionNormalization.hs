@@ -81,13 +81,13 @@ normalizeSubstitution substitution =
     maybe bottom fromNormalization $ normalize substitution
   where
     bottom = return Condition.bottom
-    fromNormalization Normalization { normalized, denormalized }
+    fromNormalization normalization@Normalization { normalized, denormalized }
       | null denormalized =
         pure
         $ Condition.fromSubstitution
         $ Substitution.unsafeWrap normalized
       | otherwise =
-        throwError (SimplifiableCycle variables)
+        throwError $ SimplifiableCycle variables normalization
       where
         (variables, _) = unzip denormalized
 
