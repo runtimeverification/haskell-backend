@@ -24,10 +24,8 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.Predicate
-    ( makeAndPredicate
-    )
-import Kore.Internal.Predicate
     ( Predicate
+    , makeAndPredicate
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
@@ -53,8 +51,7 @@ simplifyConditionsWithSmt predicate' unsimplified = do
             -- able to retrieve them unchanged after adding predicate' to them,
             -- simplification and SMT filtering
             let wrapped = addPredicate $ conditionalAsTerm simplified
-            resimplified <- simplifyCondition wrapped
-            return resimplified
+            simplifyCondition wrapped
     filteredWrappedPatterns <-
         SMT.Evaluator.filterMultiOr simplifiedWrappedPatterns
     return (MultiOr.filterOr (Conditional.term <$> filteredWrappedPatterns))
