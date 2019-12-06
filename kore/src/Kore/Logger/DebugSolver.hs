@@ -5,8 +5,8 @@ License     : NCSA
 -}
 
 module Kore.Logger.DebugSolver
-    ( DebugSolverSend (..)
-    , DebugSolverRecv (..)
+    ( logDebugSolverSendWith
+    , logDebugSolverRecvWith
     ) where
 
 import Data.Text
@@ -18,7 +18,10 @@ import Data.Text.Prettyprint.Doc
 
 import Kore.Logger
     ( Entry (..)
+    , LogAction
     , Severity (Debug)
+    , SomeEntry
+    , logWith
     )
 
 newtype DebugSolverSend =
@@ -46,3 +49,17 @@ instance Entry DebugSolverSend where
 instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
     entryScopes _ = mempty
+
+logDebugSolverSendWith
+    :: LogAction m SomeEntry
+    -> Text
+    -> m ()
+logDebugSolverSendWith logger smtText =
+    logWith logger $ DebugSolverSend smtText
+
+logDebugSolverRecvWith
+    :: LogAction m SomeEntry
+    -> Text
+    -> m ()
+logDebugSolverRecvWith logger smtText =
+    logWith logger $ DebugSolverRecv smtText

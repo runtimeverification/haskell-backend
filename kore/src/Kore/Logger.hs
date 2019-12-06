@@ -20,6 +20,7 @@ module Kore.Logger
     , logCritical
     , liftLogAction
     , hoistLogAction
+    , logWith
     , LoggerT (..)
     , SomeEntry (..)
     , someEntry
@@ -301,3 +302,11 @@ instance Monad m => MonadLog (LoggerT m) where
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
     {-# INLINE lift #-}
+
+logWith
+    :: Entry entry
+    => LogAction m SomeEntry
+    -> entry
+    -> m ()
+logWith logger entry =
+    logger Colog.<& toEntry entry

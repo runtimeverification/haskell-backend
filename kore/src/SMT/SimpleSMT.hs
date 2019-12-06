@@ -216,8 +216,8 @@ import Kore.Debug hiding
     )
 import qualified Kore.Logger as Logger
 import Kore.Logger.DebugSolver
-    ( DebugSolverRecv (..)
-    , DebugSolverSend (..)
+    ( logDebugSolverRecvWith
+    , logDebugSolverSendWith
     )
 import SMT.AST
 
@@ -298,14 +298,6 @@ logMessageWith severity Solver { logger } a =
         Logger.SomeEntry
         $ Logger.LogMessage a severity callStack
 
-logWith
-    :: Logger.Entry entry
-    => Solver
-    -> entry
-    -> IO ()
-logWith Solver { logger } entry =
-    logger Colog.<& Logger.toEntry entry
-
 debug :: GHC.HasCallStack => Solver -> Text -> IO ()
 debug = logMessageWith Logger.Debug
 
@@ -313,17 +305,17 @@ warn :: GHC.HasCallStack => Solver -> Text -> IO ()
 warn = logMessageWith Logger.Warning
 
 send :: Solver -> SExpr -> IO ()
-send solver@Solver { hIn } command' = do
-    logWith solver $ DebugSolverSend (buildText command')
+send Solver { hIn, logger } command' = do
+    logDebugSolverSendWith logger (buildText command')
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
 
 recv :: Solver -> IO SExpr
-recv solver@Solver { hOut } = do
+recv Solver { hOut, logger } = do
     responseLines <- readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
-    logWith solver $ DebugSolverRecv resp
+    logDebugSolverRecvWith logger resp
     readSExpr resp
   where
     {-| Reads an SMT response.
