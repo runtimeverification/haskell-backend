@@ -108,6 +108,8 @@ data KoreLogOptions = KoreLogOptions
     -- ^ minimal log level, passed via "--log-level"
     , logScopes :: Set Scope
     -- ^ scopes to show, empty means show all
+    , logEntries :: Set Text
+    -- ^ entries to show, empty means show all
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     }
     deriving (Eq, Show)
@@ -139,9 +141,10 @@ koreLogFilters koreLogOptions baseLogger =
     $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
     $ filterSeverity logLevel
     $ filterScopes logScopes
+    $ filterEntries logEntries
     $ baseLogger
   where
-    KoreLogOptions { logLevel, logScopes } = koreLogOptions
+    KoreLogOptions { logLevel, logScopes, logEntries } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
 
 {- | Select log entries with 'Severity' greater than or equal to the level.
@@ -165,6 +168,22 @@ filterScopes scopes
   | otherwise =
     Colog.cfilter (\ent -> not $ Set.disjoint (entryScopes ent) scopes)
 
+{- | Select log entries with entry names in the active set.
+ -}
+filterEntries
+    :: Applicative m
+    => Set Text
+    -- ^ active entries
+    -> LogAction m SomeEntry
+    -> LogAction m SomeEntry
+filterEntries entries
+  | null entries = id
+  | otherwise =
+    Colog.cfilter (\ent -> entryTypeName ent `elem` entries)
+  where
+    entryTypeName (SomeEntry entry) =
+        Text.pack . show . Reflection.typeOf $ entry
+
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options = withLogger options . runReaderT . getLoggerT
@@ -176,6 +195,7 @@ parseKoreLogOptions =
     <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
     <*> (parseScope <|> pure mempty)
+    <*> (parseEntries <|> pure mempty)
     <*> parseDebugAppliedRuleOptions
   where
     parseType =
@@ -197,6 +217,18 @@ parseKoreLogOptions =
             "error"    -> pure Error
             "critical" -> pure Critical
             _          -> Nothing
+    parseEntries :: Parser (Set Text)
+    parseEntries =
+        option
+            parseCommaSeparatedEntries
+            $ long "log-entry"
+            <> help "Log entry"
+    parseCommaSeparatedEntries = maybeReader $ Parser.parseMaybe entryParser
+    entryParser :: Parser.Parsec String String (Set Text)
+    entryParser = do
+        args <- many itemParser
+        pure . Set.fromList $ args
+    parseScope :: Parser (Set Scope)
     parseScope =
         option
             parseCommaSeparatedScopes
@@ -206,12 +238,12 @@ parseKoreLogOptions =
     scopeParser :: Parser.Parsec String String (Set Scope)
     scopeParser = do
         args <- many itemParser
-        pure . Set.fromList $ args
-    itemParser :: Parser.Parsec String String Scope
+        pure . Set.fromList . fmap Scope $ args
+    itemParser :: Parser.Parsec String String Text
     itemParser = do
         argument <- some (Parser.noneOf [','])
         _ <- void (Parser.char ',') <|> Parser.eof
-        pure . Scope . Text.pack $ argument
+        pure . Text.pack $ argument
 
 -- Creates a kore logger which:
 --     * filters messages that have lower severity than the provided severity
