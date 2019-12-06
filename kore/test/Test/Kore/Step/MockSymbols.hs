@@ -180,6 +180,8 @@ plain00Sort0Id :: Id
 plain00Sort0Id = testId "plain00Sort0"
 plain00SubsortId :: Id
 plain00SubsortId = testId "plain00Subsort"
+plain00OtherSortId :: Id
+plain00OtherSortId = testId "plain00OtherSort"
 plain00SubSubsortId :: Id
 plain00SubSubsortId = testId "plain00SubSubsort"
 plain10Id :: Id
@@ -365,6 +367,9 @@ plain00Sort0Symbol = symbol plain00Sort0Id [] testSort0
 
 plain00SubsortSymbol :: Symbol
 plain00SubsortSymbol = symbol plain00SubsortId [] subSort
+
+plain00OtherSortSymbol :: Symbol
+plain00OtherSortSymbol = symbol plain00OtherSortId [] otherSort
 
 plain00SubSubsortSymbol :: Symbol
 plain00SubSubsortSymbol = symbol plain00SubSubsortId [] subSubsort
@@ -749,6 +754,9 @@ plain00Sort0 = Internal.mkApplySymbol plain00Sort0Symbol []
 plain00Subsort :: InternalVariable variable => TermLike variable
 plain00Subsort = Internal.mkApplySymbol plain00SubsortSymbol []
 
+plain00OtherSort :: InternalVariable variable => TermLike variable
+plain00OtherSort = Internal.mkApplySymbol plain00OtherSortSymbol []
+
 plain00SubSubsort :: InternalVariable variable => TermLike variable
 plain00SubSubsort = Internal.mkApplySymbol plain00SubSubsortSymbol []
 
@@ -1123,6 +1131,7 @@ symbols =
     , plain00Sort0Symbol
     , plain00SubsortSymbol
     , plain00SubSubsortSymbol
+    , plain00OtherSortSymbol
     , plain10Symbol
     , plain11Symbol
     , plain20Symbol
