@@ -285,37 +285,45 @@ newSolver exe opts logger = do
 
     return solver
 
-logWith
+logMessageWith
     :: GHC.HasCallStack
     => Logger.Severity
     -> Solver
     -> Text
     -> IO ()
-logWith severity Solver { logger } a =
+logMessageWith severity Solver { logger } a =
     logger Colog.<& message
   where
     message =
         Logger.SomeEntry
         $ Logger.LogMessage a severity callStack
 
+logWith
+    :: Logger.Entry entry
+    => Solver
+    -> entry
+    -> IO ()
+logWith Solver { logger } entry =
+    logger Colog.<& Logger.toEntry entry
+
 debug :: GHC.HasCallStack => Solver -> Text -> IO ()
-debug = logWith Logger.Debug
+debug = logMessageWith Logger.Debug
 
 warn :: GHC.HasCallStack => Solver -> Text -> IO ()
-warn = logWith Logger.Warning
+warn = logMessageWith Logger.Warning
 
 send :: Solver -> SExpr -> IO ()
-send Solver { hIn, logger } command' = do
-    logger Colog.<& Logger.toEntry (DebugSolverSend (buildText command'))
+send solver@Solver { hIn } command' = do
+    logWith solver $ DebugSolverSend (buildText command')
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
 
 recv :: Solver -> IO SExpr
-recv Solver { hOut, logger } = do
+recv solver@Solver { hOut } = do
     responseLines <- readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
-    logger Colog.<& Logger.toEntry (DebugSolverRecv resp)
+    logWith solver $ DebugSolverRecv resp
     readSExpr resp
   where
     {-| Reads an SMT response.
