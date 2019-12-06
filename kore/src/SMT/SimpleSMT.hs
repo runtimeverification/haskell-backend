@@ -168,9 +168,7 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.IO as Text
-import qualified Data.Text.Lazy as Text.Lazy
 import qualified GHC.Generics as GHC
 import GHC.Stack
     ( callStack
@@ -306,7 +304,7 @@ warn = logMessageWith Logger.Warning
 
 send :: Solver -> SExpr -> IO ()
 send Solver { hIn, logger } command' = do
-    logDebugSolverSendWith logger (buildText command')
+    logDebugSolverSendWith logger command'
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
@@ -623,9 +621,6 @@ defineFun proc f as t e = do
         [ Atom f, List [ List [const x,a] | (x,a) <- as ], t, e]
     return (const f)
 
-
-buildText :: SExpr -> Text
-buildText = Text.Lazy.toStrict . Text.Builder.toLazyText . buildSExpr
 
 -- | Assume a fact.
 assert :: Solver -> SExpr -> IO ()
