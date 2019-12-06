@@ -110,7 +110,7 @@ checkClaim
     -- for each.
     -> m (CheckResult (TermLike Variable))
 checkClaim
-    breadthlimit
+    breadthLimit
     strategyBuilder
     searchOrder
     (ImplicationRule RulePattern { left, right }, depthLimit)
@@ -132,7 +132,7 @@ checkClaim
                         }
         executionGraph <- State.evalStateT
                             (runStrategyWithSearchOrder
-                                breadthlimit
+                                breadthLimit
                                 transitionRule'
                                 strategy
                                 searchOrder

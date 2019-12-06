@@ -317,7 +317,6 @@ test_execGetExitCode =
     actual testModule exitCode =
         SMT.runSMT SMT.defaultConfig emptyLogger
         $ execGetExitCode
-            Unlimited
             (verifiedMyModule testModule)
             (Limit.replicate unlimited . anyRewrite)
             $ Int.asInternal myIntSort exitCode

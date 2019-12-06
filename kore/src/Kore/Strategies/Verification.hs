@@ -106,8 +106,8 @@ verify
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify breadthlimit searchOrder claims axioms =
-    mapM_ (verifyClaim breadthlimit searchOrder claims axioms)
+verify breadthLimit searchOrder claims axioms =
+    mapM_ (verifyClaim breadthLimit searchOrder claims axioms)
 
 verifyClaim
     :: forall claim m
@@ -121,7 +121,7 @@ verifyClaim
     -> [Rule claim]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
-verifyClaim breadthlimit searchOrder claims axioms (goal, depthLimit) =
+verifyClaim breadthLimit searchOrder claims axioms (goal, depthLimit) =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
@@ -132,7 +132,7 @@ verifyClaim breadthlimit searchOrder claims axioms (goal, depthLimit) =
                 (Foldable.toList $ strategy goal claims axioms)
     executionGraph <-
         runStrategyWithSearchOrder
-            breadthlimit
+            breadthLimit
             (modifiedTransitionRule destination)
             limitedStrategy
             searchOrder

@@ -247,7 +247,7 @@ data KoreExecOptions = KoreExecOptions
     , smtTimeOut          :: !SMT.TimeOut
     , smtPrelude          :: !(Maybe FilePath)
     , smtSolver           :: !Solver
-    , breadthLimit          :: !(Limit Natural)
+    , breadthLimit        :: !(Limit Natural)
     , depthLimit          :: !(Limit Natural)
     , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
     , koreLogOptions      :: !KoreLogOptions
@@ -336,7 +336,7 @@ parseKoreExecOptions =
         option auto
             (  metavar "BREADTH"
             <> long "breadth"
-            <> help "Execute up to BREADTH steps."
+            <> help "Allow up to BREADTH parallel execution branches."
             )
     depth =
         option auto
@@ -432,7 +432,7 @@ koreRun execOptions = do
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <- execute execOptions mainModule $ do
         final <- exec breadthLimit mainModule strategy' initial
-        exitCode <- execGetExitCode breadthLimit mainModule strategy' final
+        exitCode <- execGetExitCode mainModule strategy' final
         return (exitCode, final)
     lift $ renderResult execOptions (unparse final)
     return exitCode

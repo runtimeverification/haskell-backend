@@ -231,7 +231,6 @@ test_Or =
             expect @=? actual
         ]
 
-
 prop_depthLimit :: Integer -> Property
 prop_depthLimit i =
     (i >= 0) ==> (expect === actual)

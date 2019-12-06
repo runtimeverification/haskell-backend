@@ -852,7 +852,7 @@ runSteps
     -- ^left-hand-side of unification
     -> [Strategy (Prim goal)]
     -> IO a
-runSteps breadthlimit graphFilter picker configuration strategy' =
+runSteps breadthLimit graphFilter picker configuration strategy' =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
@@ -860,7 +860,7 @@ runSteps breadthlimit graphFilter picker configuration strategy' =
         give metadataTools
             $ declareSMTLemmas
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-        runStrategy breadthlimit transitionRule strategy' (ProofState.Goal configuration)
+        runStrategy breadthLimit transitionRule strategy' (ProofState.Goal configuration)
   where
     mockEnv = Mock.env
     Env {metadataTools} = mockEnv

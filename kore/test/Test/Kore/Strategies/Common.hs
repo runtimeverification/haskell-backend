@@ -46,11 +46,11 @@ runVerification
     -> [Rule claim]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
-runVerification breadthlimit depthLimit axioms claims =
+runVerification breadthLimit depthLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
-        breadthlimit
+        breadthLimit
         BreadthFirst
         claims
         axioms
