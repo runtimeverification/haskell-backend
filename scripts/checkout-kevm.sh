@@ -2,12 +2,12 @@
 
 set -exuo pipefail
 
-mkdir -p $(dirname $KWASM_DIR)
+mkdir -p $(dirname $KEVM_DIR)
 
-rm -rf $KWASM_DIR
-git clone --recurse-submodules 'https://github.com/kframework/wasm-semantics' $KWASM_DIR --branch 'master'
+rm -rf $KEVM_DIR
+git clone --recurse-submodules 'https://github.com/kframework/evm-semantics' $KEVM_DIR --branch 'master'
 
-cd $KWASM_DIR
+cd $KEVM_DIR
 
 # Display the HEAD commit on evm-semantics for the log.
 git show -s HEAD
@@ -16,5 +16,7 @@ git show -s HEAD
 rm -rf deps/k/k-distribution/target/release/k
 mkdir -p deps/k/k-distribution/target/release
 ln -s $TOP/.build/k deps/k/k-distribution/target/release
+
+[[ "$OPAM_SETUP_SKIP" != "false" ]] || ./deps/k/k-distribution/target/release/k/bin/k-configure-opam-dev
 
 make build-haskell -B
