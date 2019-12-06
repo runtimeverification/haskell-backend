@@ -485,6 +485,7 @@ because it contained simplifiable cycles.
 data Normalization variable =
     Normalization
         { normalized, denormalized :: !(UnwrappedSubstitution variable) }
+    deriving (Eq, Ord, Show)
     deriving GHC.Generic
 
 instance SOP.Generic (Normalization variable)

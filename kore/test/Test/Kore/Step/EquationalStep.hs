@@ -55,6 +55,9 @@ import Kore.Unification.Error
     , unsupportedPatterns
     )
 import qualified Kore.Unification.Procedure as Unification
+import Kore.Unification.Substitution
+    ( Normalization (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.UnifierT
     ( MonadUnify
@@ -248,15 +251,13 @@ test_applyEquationalRule_ =
         let expect =
                 -- TODO(virgil): This should probably be a normal result with
                 -- b=h(b) in the predicate.
-                Left
-                $ SubstitutionError
-                $ SimplifiableCycle [ElemVar Mock.y]
+                Left . SubstitutionError
+                $ SimplifiableCycle [ElemVar Mock.y] normalization
+            fy = Mock.functional10 (mkElemVar Mock.y)
+            normalization = mempty { denormalized = [(ElemVar Mock.y, fy)] }
             initial =
                 Conditional
-                    { term =
-                        Mock.sigma
-                            (mkElemVar Mock.x)
-                            (Mock.functional10 (mkElemVar Mock.y))
+                    { term = Mock.sigma (mkElemVar Mock.x) fy
                     , predicate = makeTruePredicate_
                     , substitution =
                         Substitution.wrap [(ElemVar Mock.y, mkElemVar Mock.x)]

@@ -13,7 +13,6 @@ import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
-import qualified Data.Set as Set
 import GHC.Stack
     ( HasCallStack
     )
@@ -55,22 +54,16 @@ makeMetadataTools
     :: HasCallStack
     => [(SymbolOrAlias, StepperAttributes)]
     -> [(Sort, Attribute.Sort)]
-    -> [(Sort, Sort)]
     -> [(SymbolOrAlias, ApplicationSorts)]
     -> SMT.AST.SmtDeclarations
     -> Map.Map Id Attribute.Constructors
     -> SmtMetadataTools StepperAttributes
-makeMetadataTools
-    attr sortTypes isSubsortOf sorts declarations sortConstructors
-  =
+makeMetadataTools attr sortTypes sorts declarations sortConstructors =
     MetadataTools
         { sortAttributes = caseBasedFunction sortTypes
         -- TODO(Vladimir): fix the inconsistency that both 'subsorts' and
         -- 'isSubsortOf' only work with direct (non-transitive) relationships.
         -- For now, we can manually add the relationships for tests.
-        , isSubsortOf = \first second -> (first, second) `elem` isSubsortOf
-        , subsorts = \sort ->
-            Set.fromList . fmap snd . filter ((==) sort . fst) $ isSubsortOf
         , applicationSorts = caseBasedFunction sorts
         , symbolAttributes =
             caseBasedFunction

@@ -76,16 +76,7 @@ import Kore.Internal.TermLike hiding
     ( substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.Simplification.AndTerms
-    ( SortInjectionMatch (SortInjectionMatch)
-    , simplifySortInjections
-    )
-import qualified Kore.Step.Simplification.AndTerms as SortInjectionMatch
-    ( SortInjectionMatch (..)
-    )
-import qualified Kore.Step.Simplification.AndTerms as SortInjectionSimplification
-    ( SortInjectionSimplification (..)
-    )
+import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.Simplify
     ( SimplifierVariable
     )
@@ -106,6 +97,7 @@ import qualified Kore.Variables.Fresh as Variables
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import Pair
 
 -- * Matching
 
@@ -130,6 +122,7 @@ matchOne pair =
     <|> matchBuiltinList pair
     <|> matchBuiltinMap  pair
     <|> matchBuiltinSet  pair
+    <|> matchInj         pair
     )
     & Error.maybeT (defer pair) return
 
@@ -272,28 +265,12 @@ matchVariable (Pair (SetVar_ variable1) term2) = do
 matchVariable _ = empty
 
 matchApplication
-    :: (MatchingVariable variable, MonadUnify unifier)
+    :: MonadUnify unifier
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchApplication
-    (Pair term1@(App_ symbol1 children1) term2@(App_ symbol2 children2))
-
-  -- Match identical symbols.
-  | symbol1 == symbol2 =
+matchApplication (Pair (App_ symbol1 children1) (App_ symbol2 children2)) = do
+    Monad.guard (symbol1 == symbol2)
     Foldable.traverse_ push (zipWith Pair children1 children2)
-
-  -- Match conformable sort injections.
-  | otherwise = do
-    Monad.guard (sort1 == sort2)
-    tools <- Simplifier.askMetadataTools
-    case simplifySortInjections tools term1 term2 of
-        Just (SortInjectionSimplification.Matching injMatch) -> do
-            let SortInjectionMatch { firstChild, secondChild } = injMatch
-            push (Pair firstChild secondChild)
-        _ -> empty
-  where
-    sort1 = termLikeSort term1
-    sort2 = termLikeSort term2
 matchApplication _ = empty
 
 matchBuiltinList
@@ -358,17 +335,18 @@ matchBuiltinMap (Pair (BuiltinMap_ map1) (BuiltinMap_ map2)) =
         & mkBuiltinMap
 matchBuiltinMap _ = empty
 
+matchInj
+    :: (MatchingVariable variable, MonadUnify unifier)
+    => Pair (TermLike variable)
+    -> MaybeT (MatcherT variable unifier) ()
+matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
+    InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
+    unifyInj inj1 inj2 & maybe empty (push . injChild)
+matchInj _ = empty
+
 -- * Implementation
 
 type MatchingVariable variable = SimplifierVariable variable
-
-{- | A matching constraint is a @Pair@ of patterns.
-
-The first pattern will be made to match the second.
-
- -}
-data Pair a = Pair !a !a
-    deriving (Foldable, Functor)
 
 {- | The internal state of the matching algorithm.
  -}
