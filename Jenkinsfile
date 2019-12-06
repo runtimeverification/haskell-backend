@@ -20,6 +20,7 @@ pipeline {
       steps {
         sh '''
           ./scripts/check.sh
+          curl 'https://office.runtimeverification.com/jenkins/job/haskell-backend/job/master/api/json'
         '''
       }
     }
