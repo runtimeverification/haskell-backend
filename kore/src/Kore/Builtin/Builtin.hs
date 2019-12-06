@@ -99,7 +99,7 @@ import Kore.Internal.Pattern as Pattern
     , withCondition
     )
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate
+    ( makeEqualsPredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
@@ -526,7 +526,7 @@ unifyEqualsUnsolved SimplificationType.And a b = do
     return (unified `Pattern.withCondition` predicate)
 unifyEqualsUnsolved SimplificationType.Equals a b =
     return Pattern.top
-        {predicate = Predicate.markSimplified $ makeEqualsPredicate a b}
+        {predicate = Predicate.markSimplified $ makeEqualsPredicate_ a b}
 
 makeDomainValueTerm
     :: InternalVariable variable

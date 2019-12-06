@@ -12,8 +12,18 @@ module Kore.Step.Simplification.Exists
     , makeEvaluate
     ) where
 
+import Control.Monad
+    ( foldM
+    )
 import qualified Control.Monad.Trans as Monad.Trans
+import qualified Data.Foldable as Foldable
+import Data.List
+    ( sortBy
+    )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( mapMaybe
+    )
 import GHC.Stack
     ( HasCallStack
     )
@@ -92,6 +102,7 @@ import Kore.Unification.UnifierT
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
+    , extractElementVariable
     )
 
 
@@ -156,41 +167,76 @@ simplifyEvaluated variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
   | otherwise = do
-    evaluated <- traverse (makeEvaluate variable) simplified
+    evaluated <- traverse (makeEvaluate [variable]) simplified
     return (OrPattern.flatten evaluated)
 
-{-| evaluates an 'Exists' given its two 'Pattern' children.
+{-| Evaluates a multiple 'Exists' given a pattern and a list of
+variables which are existentially quantified in the pattern. This
+also sorts the list of variables to ensure that those which are present
+in the substitution are evaluated with the pattern first.
 
 See 'simplify' for detailed documentation.
 -}
 makeEvaluate
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable
+    :: forall simplifier variable
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
+    => [ElementVariable variable]
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluate variable original
-  = fmap OrPattern.fromPatterns $ Branch.gather $ do
-    normalized <- simplifyCondition original
-    let Conditional { substitution = normalizedSubstitution } = normalized
-    case splitSubstitution variable normalizedSubstitution of
-        (Left boundTerm, freeSubstitution) ->
-            makeEvaluateBoundLeft
-                variable
-                boundTerm
-                normalized { Conditional.substitution = freeSubstitution }
-        (Right boundSubstitution, freeSubstitution) -> do
-            matched <- Monad.Trans.lift $ matchesToVariableSubstitution
-                variable
-                normalized { Conditional.substitution = boundSubstitution }
-            if matched
-                then return normalized
-                    { Conditional.predicate = Predicate.makeTruePredicate
-                    , Conditional.substitution = freeSubstitution
-                    }
-                else makeEvaluateBoundRight
+makeEvaluate variables original = do
+    let sortedVariables = sortBy substVariablesFirst variables
+    fmap OrPattern.fromPatterns
+        . Branch.gather
+        $ foldM (flip makeEvaluateWorker) original sortedVariables
+  where
+    makeEvaluateWorker
+        :: ElementVariable variable
+        -> Pattern variable
+        -> BranchT simplifier (Pattern variable)
+    makeEvaluateWorker variable original' = do
+        normalized <- simplifyCondition original'
+        let Conditional { substitution = normalizedSubstitution } = normalized
+        case splitSubstitution variable normalizedSubstitution of
+            (Left boundTerm, freeSubstitution) ->
+                makeEvaluateBoundLeft
                     variable
-                    freeSubstitution
+                    boundTerm
+                    normalized { Conditional.substitution = freeSubstitution }
+            (Right boundSubstitution, freeSubstitution) -> do
+                matched <- Monad.Trans.lift $ matchesToVariableSubstitution
+                    variable
                     normalized { Conditional.substitution = boundSubstitution }
+                if matched
+                    then return normalized
+                        { Conditional.predicate = Predicate.makeTruePredicate_
+                        , Conditional.substitution = freeSubstitution
+                        }
+                    else makeEvaluateBoundRight
+                        variable
+                        freeSubstitution
+                        normalized { Conditional.substitution = boundSubstitution }
+
+    substVariablesFirst
+        :: ElementVariable variable
+        -> ElementVariable variable
+        -> Ordering
+    substVariablesFirst var1 var2
+        | var1 `elem` substVariables
+        , not (var2 `elem` substVariables)
+        = LT
+        | not (var1 `elem` substVariables)
+        , var2 `elem` substVariables
+        = GT
+        | otherwise = EQ
+
+    substVariables =
+        mapMaybe
+            extractElementVariable
+            $ Foldable.toList
+            $ Substitution.variables
+                (Conditional.substitution original)
+
+
 
 matchesToVariableSubstitution
     :: (SimplifierVariable variable, MonadSimplify simplifier)

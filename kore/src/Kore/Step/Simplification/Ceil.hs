@@ -50,8 +50,8 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeCeilPredicate
-    , makeTruePredicate
+    ( makeCeilPredicate_
+    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
@@ -61,6 +61,7 @@ import qualified Kore.Step.Function.Evaluator as Axiom
     )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import qualified Kore.Step.Simplification.Equals as Equals
+import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
@@ -179,16 +180,24 @@ makeEvaluateTerm
             let ceils = getArguments simplifiedChildren
             And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 
-      | BuiltinF child <- projected = makeEvaluateBuiltin
-                                        configurationCondition
-                                        child
+      | BuiltinF child <- projected =
+        makeEvaluateBuiltin configurationCondition child
+
+      | InjF inj <- projected = do
+        InjSimplifier { evaluateCeilInj } <- askInjSimplifier
+        (makeEvaluateTerm configurationCondition . ceilChild . evaluateCeilInj)
+            Ceil
+                { ceilResultSort = termLikeSort term -- sort is irrelevant
+                , ceilOperandSort = termLikeSort term
+                , ceilChild = inj
+                }
 
       | otherwise = do
         evaluation <- Axiom.evaluatePattern
             configurationCondition
             Conditional
                 { term = ()
-                , predicate = makeTruePredicate
+                , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
             (mkCeil_ term)
@@ -196,7 +205,7 @@ makeEvaluateTerm
                 { term = mkTop_
                 , predicate =
                     Predicate.markSimplified
-                    $ makeCeilPredicate term
+                    $ makeCeilPredicate_ term
                 , substitution = mempty
                 }
             )
@@ -234,7 +243,7 @@ makeEvaluateBuiltin
   where
     unsimplified =
         OrCondition.fromCondition . Condition.fromPredicate
-        $ Predicate.markSimplified . makeCeilPredicate $ mkBuiltin patt
+        $ Predicate.markSimplified . makeCeilPredicate_ $ mkBuiltin patt
 makeEvaluateBuiltin predicate (Domain.BuiltinList l) = do
     children <- mapM (makeEvaluateTerm predicate) (Foldable.toList l)
     let
@@ -255,7 +264,7 @@ makeEvaluateBuiltin
         OrCondition.fromCondition
             (Condition.fromPredicate
                 (Predicate.markSimplified
-                    (makeCeilPredicate (mkBuiltin patt))
+                    (makeCeilPredicate_ (mkBuiltin patt))
                 )
             )
 makeEvaluateBuiltin _ (Domain.BuiltinBool _) = return OrCondition.top

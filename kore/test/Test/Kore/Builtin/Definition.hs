@@ -24,6 +24,13 @@ import Kore.Attribute.Sort.HasDomainValues
     )
 import qualified Kore.Attribute.Sort.Unit as Sort
 import Kore.Attribute.SortInjection
+import Kore.Attribute.Subsort
+    ( subsortAttribute
+    )
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
+import qualified Kore.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import qualified Kore.Builtin.Signedness as Signedness
 import Kore.Domain.Builtin
@@ -34,6 +41,7 @@ import Kore.Internal.Symbol
     , function
     , functional
     , hook
+    , injective
     , klabel
     , smthook
     , sortInjection
@@ -293,12 +301,17 @@ injSymbol lSort rSort =
         , symbolSorts = applicationSorts (Arguments [lSort]) rSort
         }
     & sortInjection
+    & injective
 
 inj :: Sort -> TermLike Variable -> TermLike Variable
-inj toSort termLike =
-    mkApplySymbol (injSymbol fromSort toSort) [termLike]
+inj injTo injChild =
+    (synthesize . InjF)
+        Inj { injConstructor, injFrom, injTo, injAttributes, injChild }
   where
-    fromSort = termLikeSort termLike
+    injFrom = termLikeSort injChild
+    symbol = injSymbol injFrom injTo
+    Internal.Symbol { symbolConstructor = injConstructor } = symbol
+    Internal.Symbol { symbolAttributes = injAttributes } = symbol
 
 keqBool, kneqBool
     :: TermLike Variable
@@ -890,7 +903,9 @@ boolSort =
 
 -- | Declare 'boolSort' in a Kore module.
 boolSortDecl :: ParsedSentence
-boolSortDecl = hookedSortDecl boolSort [ hookAttribute "BOOL.Bool" ]
+boolSortDecl =
+    hookedSortDecl boolSort
+        [ hasDomainValuesAttribute, hookAttribute "BOOL.Bool" ]
 
 builtinBool :: Bool -> InternalBool
 builtinBool builtinBoolValue =
@@ -911,7 +926,9 @@ intSort =
 
 -- | Declare 'intSort' in a Kore module.
 intSortDecl :: ParsedSentence
-intSortDecl = hookedSortDecl intSort [ hookAttribute "INT.Int" ]
+intSortDecl =
+    hookedSortDecl intSort
+        [ hasDomainValuesAttribute, hookAttribute "INT.Int" ]
 
 builtinInt :: Integer -> InternalInt
 builtinInt builtinIntValue =
@@ -1122,9 +1139,8 @@ userTokenSort =
 -- | Declare 'stringSort' in a Kore module.
 stringSortDecl :: ParsedSentence
 stringSortDecl =
-    hookedSortDecl
-        stringSort
-        [ hookAttribute "STRING.String" ]
+    hookedSortDecl stringSort
+        [ hasDomainValuesAttribute, hookAttribute "STRING.String" ]
 
 -- | Declare a user defined token sort in a Kore module
 userTokenSortDecl :: ParsedSentence
@@ -1328,6 +1344,28 @@ kEqualModule =
             ]
         }
 
+subsortDecl :: Sort -> Sort -> ParsedSentence
+subsortDecl subsort supersort =
+    asSentence decl
+  where
+    decl :: ParsedSentenceAxiom
+    decl =
+        SentenceAxiom
+            { sentenceAxiomParameters = [sortVariableR]
+            , sentenceAxiomPattern =
+                Builtin.externalize
+                . mkExists x
+                $ mkEquals sortR
+                    (mkElemVar x)
+                    (inj supersort (mkElemVar y))
+            , sentenceAxiomAttributes =
+                Attributes [subsortAttribute subsort supersort]
+            }
+    sortVariableR = SortVariable "R"
+    sortR = SortVariableSort sortVariableR
+    x = elemVarS "x" supersort
+    y = elemVarS "y" subsort
+
 injSymbolDecl :: ParsedSentence
 injSymbolDecl =
     asSentence decl
@@ -1343,7 +1381,7 @@ injSymbolDecl =
                         in symbolConstructor
                     , symbolParams = [fromSortVariable, toSortVariable]
                     }
-            , sentenceSymbolSorts = [fromSort, toSort]
+            , sentenceSymbolSorts = [fromSort]
             , sentenceSymbolResultSort = toSort
             , sentenceSymbolAttributes =
                 Attributes
@@ -1601,6 +1639,10 @@ testModule =
             , importParsedModule stringModuleName
             , importParsedModule bytesModuleName
             , importParsedModule kryptoModuleName
+            , subsortDecl boolSort kItemSort
+            , subsortDecl intSort kItemSort
+            , subsortDecl idSort kItemSort
+            , subsortDecl kItemSort kSort
             ]
         }
 

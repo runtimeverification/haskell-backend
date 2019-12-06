@@ -22,14 +22,13 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
-    , RewriteRule (..)
     , RulePattern (..)
     )
 import Kore.Strategies.Goal
@@ -401,7 +400,11 @@ test_reachabilityVerification =
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
                 , substitution = mempty
                 }
             )
@@ -426,7 +429,11 @@ test_reachabilityVerification =
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
                 , substitution = mempty
                 }
             )
@@ -454,7 +461,11 @@ test_reachabilityVerification =
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
                 , substitution = mempty
                 }
             )
@@ -997,14 +1008,30 @@ simpleOnePathClaim
     -> TermLike Variable
     -> ReachabilityRule Variable
 simpleOnePathClaim left right =
-    OnePath . OnePathRule . getRewriteRule $ simpleRewrite left right
+    OnePath . OnePathRule
+    $ RulePattern
+            { left = left
+            , antiLeft = Nothing
+            , right = mkAnd mkTop_ right
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
+            , attributes = def
+            }
 
 simpleAllPathClaim
     :: TermLike Variable
     -> TermLike Variable
     -> ReachabilityRule Variable
 simpleAllPathClaim left right =
-    AllPath . AllPathRule . getRewriteRule $ simpleRewrite left right
+    AllPath . AllPathRule
+    $ RulePattern
+            { left = left
+            , antiLeft = Nothing
+            , right = mkAnd mkTop_ right
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
+            , attributes = def
+            }
 
 simpleOnePathTrustedClaim
     :: TermLike Variable
@@ -1017,8 +1044,8 @@ simpleOnePathTrustedClaim left right =
             { left = left
             , antiLeft = Nothing
             , right = right
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }
@@ -1034,8 +1061,8 @@ simpleAllPathTrustedClaim left right =
             { left = left
             , antiLeft = Nothing
             , right = right
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
+            , requires = makeTruePredicate_
+            , ensures = makeTruePredicate_
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }

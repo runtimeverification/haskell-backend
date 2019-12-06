@@ -50,7 +50,11 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute
     )
 import qualified Kore.Attribute.Sort.Element as Attribute
 import qualified Kore.Attribute.Sort.Unit as Attribute
+import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
 import qualified Kore.Builtin.Bool as Builtin.Bool
 import qualified Kore.Builtin.Int as Builtin.Int
 import qualified Kore.Builtin.List as List
@@ -61,10 +65,13 @@ import qualified Kore.Domain.Builtin as Domain
 import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
+import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.ApplicationSorts
     ( ApplicationSorts
     )
-import Kore.Internal.Symbol
+import Kore.Internal.Symbol hiding
+    ( sortInjection
+    )
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -84,6 +91,7 @@ import Kore.Step.Simplification.Data
     , MonadSimplify
     )
 import qualified Kore.Step.Simplification.Data as SimplificationData.DoNotUse
+import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
     ( BuiltinAndAxiomSimplifierMap
@@ -914,84 +922,76 @@ injective11 arg = Internal.mkApplySymbol injective11Symbol [arg]
 
 sortInjection
     :: InternalVariable variable
-    => GHC.HasCallStack
     => Sort
     -> TermLike variable
     -> TermLike variable
-sortInjection toSort termLike =
-    Internal.mkApplySymbol (sortInjectionSymbol fromSort toSort) [termLike]
+sortInjection injTo termLike =
+    (synthesize . Internal.InjF) Internal.Inj
+        { injConstructor
+        , injFrom
+        , injTo
+        , injChild = termLike
+        , injAttributes
+        }
   where
-    fromSort = Internal.termLikeSort termLike
+    injFrom = Internal.termLikeSort termLike
+    Symbol { symbolConstructor = injConstructor } = symbol'
+    Symbol { symbolAttributes = injAttributes } = symbol'
+    symbol' = sortInjectionSymbol injFrom injTo
 
 sortInjection10
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjection10 arg = Internal.mkApplySymbol sortInjection10Symbol [arg]
+sortInjection10 = sortInjection testSort
 
 sortInjection11
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjection11 arg = Internal.mkApplySymbol sortInjection11Symbol [arg]
+sortInjection11 = sortInjection testSort
 
 sortInjection0ToTop
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjection0ToTop arg =
-    Internal.mkApplySymbol sortInjection0ToTopSymbol [arg]
+sortInjection0ToTop = sortInjection topSort
 
 sortInjectionSubToTop
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjectionSubToTop arg =
-    Internal.mkApplySymbol sortInjectionSubToTopSymbol [arg]
+sortInjectionSubToTop = sortInjection topSort
 
 sortInjectionSubSubToTop
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjectionSubSubToTop arg =
-    Internal.mkApplySymbol sortInjectionSubSubToTopSymbol [arg]
+sortInjectionSubSubToTop = sortInjection topSort
 
 sortInjectionSubSubToSub
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjectionSubSubToSub arg =
-    Internal.mkApplySymbol sortInjectionSubSubToSubSymbol [arg]
+sortInjectionSubSubToSub = sortInjection subSort
 
 sortInjectionSubSubToOther
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjectionSubSubToOther arg =
-    Internal.mkApplySymbol sortInjectionSubSubToOtherSymbol [arg]
+sortInjectionSubSubToOther = sortInjection otherSort
 
 sortInjectionSubOtherToOther
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjectionSubOtherToOther arg =
-    Internal.mkApplySymbol sortInjectionSubOtherToOtherSymbol [arg]
+sortInjectionSubOtherToOther = sortInjection otherSort
 
 sortInjectionOtherToTop
     :: InternalVariable variable
-    => GHC.HasCallStack
     => TermLike variable
     -> TermLike variable
-sortInjectionOtherToTop arg =
-    Internal.mkApplySymbol sortInjectionOtherToTopSymbol [arg]
+sortInjectionOtherToTop = sortInjection topSort
 
 unitMap :: InternalVariable variable => TermLike variable
 unitMap = Internal.mkApplySymbol unitMapSymbol []
@@ -1472,9 +1472,14 @@ subsorts =
     [ (subSubsort, subSort)
     , (subSubsort, topSort)
     , (subSort, topSort)
+    , (testSort, topSort)
     , (subSubsort, otherSort)
     , (subOthersort, otherSort)
     , (otherSort, topSort)
+    , (subSort, testSort)
+    , (testSort0, testSort)
+    , (mapSort, testSort)
+    , (listSort, testSort)
     ]
 
 builtinMap
@@ -1563,7 +1568,6 @@ emptyMetadataTools =
         [] -- attributesMapping
         [] -- headTypeMapping
         [] -- sortAttributesMapping
-        [] -- subsorts
         emptySmtDeclarations
         Map.empty -- sortConstructors
 
@@ -1572,7 +1576,6 @@ metadataTools =
     Mock.makeMetadataTools
         attributesMapping
         sortAttributesMapping
-        subsorts
         headSortsMapping
         smtDeclarations
         sortConstructors
@@ -1588,6 +1591,11 @@ predicateSimplifier
 predicateSimplifier =
     Simplifier.Condition.create SubstitutionSimplifier.substitutionSimplifier
 
+injSimplifier :: InjSimplifier
+injSimplifier =
+    (mkInjSimplifier . SortGraph.fromSubsorts)
+        [ Subsort { subsort, supersort } | (subsort, supersort) <- subsorts ]
+
 env :: MonadSimplify simplifier => Env simplifier
 env =
     Env
@@ -1596,6 +1604,7 @@ env =
         , simplifierCondition = predicateSimplifier
         , simplifierAxioms = axiomSimplifiers
         , memo = Memo.forgetful
+        , injSimplifier
         }
 
 generatorSetup :: ConsistentKore.Setup

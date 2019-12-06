@@ -116,6 +116,7 @@ translatePredicate translateUninterpreted predicate =
             MuF _ -> empty
             NuF _ -> empty
             ApplySymbolF _ -> empty
+            InjF _ -> empty
             ApplyAliasF _ -> empty
             BuiltinF _ -> empty
             DomainValueF _ -> empty

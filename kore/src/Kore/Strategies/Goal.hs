@@ -61,8 +61,12 @@ import Kore.IndexedModule.IndexedModule
     , VerifiedModule
     )
 import qualified Kore.Internal.Condition as Condition
+import Kore.Internal.Conditional
+    ( Conditional (..)
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -72,12 +76,16 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( mkAnd
+    ( pattern And_
+    , isFunctionPattern
+    , mkAnd
+    , topExistsToImplicitForall
     )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
 import qualified Kore.Step.Result as Result
+import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( AllPathRule (..)
     , FromRulePattern (..)
@@ -87,6 +95,7 @@ import Kore.Step.Rule
     , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
+    , assertEnsuresIsTop
     , fromSentenceAxiom
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -96,11 +105,14 @@ import Kore.Step.Simplification.Data
     ( MonadSimplify
     , SimplifierVariable
     )
+import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
     ( simplifyAndRemoveTopExists
     )
+import Kore.Step.Simplification.Simplify
+    ( simplifyTerm
+    )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
-import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     )
@@ -117,6 +129,7 @@ import Kore.Syntax.Variable
     )
 import Kore.TopBottom
     ( isBottom
+    , isTop
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -126,7 +139,7 @@ import Kore.Unparser
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (ElemVar)
+    ( extractElementVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
@@ -427,6 +440,10 @@ instance Goal (ReachabilityRule Variable) where
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
+            GoalStuck _ ->
+                case prim of
+                    CheckGoalStuck -> empty
+                    _ -> return proofstate
             Proven ->
                 case prim of
                     CheckProven -> empty
@@ -545,7 +562,8 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , removeDestinationTemplate
-        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+        :: ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
         :: [Rule goal]
@@ -586,6 +604,8 @@ transitionRuleTemplate
 
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
+    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+
     transitionRuleWorker Simplify (Goal g) =
         Profile.timeStrategy "Goal.Simplify"
         $ Goal <$> simplifyTemplate g
@@ -593,12 +613,8 @@ transitionRuleTemplate
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate g
 
-    transitionRuleWorker RemoveDestination (Goal g) =
-        Profile.timeStrategy "Goal.RemoveDestination"
-        $ Goal <$> removeDestinationTemplate g
-    transitionRuleWorker RemoveDestination (GoalRemainder g) =
-        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ GoalRemainder <$> removeDestinationTemplate g
+    transitionRuleWorker RemoveDestination goal =
+        removeDestinationTemplate goal
 
     transitionRuleWorker TriviallyValid (Goal g)
       | isTriviallyValidTemplate g = return Proven
@@ -644,12 +660,11 @@ onePathFirstStep
 onePathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DeriveSeq axioms
         , Simplify
         , TriviallyValid
@@ -666,12 +681,11 @@ onePathFollowupStep
 onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -689,12 +703,11 @@ allPathFirstStep
 allPathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DerivePar axioms
         , Simplify
         , TriviallyValid
@@ -710,12 +723,11 @@ allPathFollowupStep
 allPathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -730,17 +742,58 @@ allPathFollowupStep claims axioms =
 -- | Remove the destination of the goal.
 removeDestination
     :: MonadCatch m
-    => FromRulePattern goal
+    => MonadSimplify m
+    => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
-    => goal
-    -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal = errorBracket $ do
-    let removal = removalPredicate destination configuration
-        result = Conditional.andPredicate configuration removal
-    pure $ makeRuleFromPatterns goal result destination
+    => ProofState goal goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+removeDestination =
+    \case
+        Goal goal ->
+            Profile.timeStrategy "Goal.RemoveDestination"
+            $ removeDestinationWorker Goal goal
+        GoalRemainder goal ->
+            Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+            $ removeDestinationWorker GoalRemainder goal
+        state -> return state
+
+removeDestinationWorker
+    :: MonadCatch m
+    => MonadSimplify m
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ToRulePattern goal
+    => (goal -> ProofState goal goal)
+    -> goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+removeDestinationWorker stateConstructor goal =
+    errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
+        removal <- removalPredicate (destination right') configuration
+        if isTop removal
+            then return . stateConstructor $ goal
+            else do
+                simplifiedRemoval <-
+                    SMT.Evaluator.filterMultiOr
+                    =<< simplifyAndRemoveTopExists
+                        (Conditional.andPredicate configuration removal)
+                if not (isBottom simplifiedRemoval)
+                    then return . GoalStuck $ goal
+                    else return Proven
   where
-    destination = getDestination goal
     configuration = getConfiguration goal
+    configFreeVars = Pattern.freeVariables configuration
+
+    goalAsRulePattern = toRulePattern goal
+    RulePattern { right } = goalAsRulePattern
+
+    right' = topExistsToImplicitForall configFreeVars right
+
+    destination (And_ _ pred' term') =
+        Conditional
+            { term = term'
+            , predicate = Predicate.wrapPredicate pred'
+            , substitution = mempty
+            }
+    destination _ = error "Right hand side of claim is ill-formed."
 
     errorBracket action =
         onException action
@@ -915,39 +968,89 @@ deriveSeq rules goal = errorBracket $ do
  -}
 removalPredicate
     :: SimplifierVariable variable
+    => MonadSimplify m
     => Pattern variable
     -- ^ Destination
     -> Pattern variable
     -- ^ Current configuration
-    -> Predicate variable
-removalPredicate destination config =
-    let
-        -- The variables of the destination that are missing from the
-        -- configuration. These are the variables which should be existentially
-        -- quantified in the removal predicate.
-        configVariables =
-            Attribute.FreeVariables.getFreeVariables
-            $ Pattern.freeVariables config
-        destinationVariables =
-            Attribute.FreeVariables.getFreeVariables
-            $ Pattern.freeVariables destination
-        extraVariables = Set.toList
-            $ Set.difference destinationVariables configVariables
-        extraElementVariables = [v | ElemVar v <- extraVariables]
-        extraNonElemVariables = filter (not . isElemVar) extraVariables
-        quantifyPredicate =
-            Predicate.makeMultipleExists extraElementVariables
-    in
-        if not (null extraNonElemVariables)
-        then error
-            ("Cannot quantify non-element variables: "
-                ++ show (unparse <$> extraNonElemVariables))
-        else Predicate.makeNotPredicate
-            $ quantifyPredicate
-            $ Predicate.makeCeilPredicate
-            $ mkAnd
-                (Pattern.toTermLike destination)
-                (Pattern.toTermLike config)
+    -> m (Predicate variable)
+removalPredicate
+    destination
+    configuration
+  | isFunctionPattern configTerm
+  , isFunctionPattern destTerm
+  = do
+    unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
+    if OrPattern.isFalse unifiedConfigs
+        then return Predicate.makeTruePredicate_
+        else
+            case OrPattern.toPatterns unifiedConfigs of
+                [substPattern] -> do
+                    let extraElemVariables =
+                            getExtraElemVariables configuration substPattern
+                        remainderPattern =
+                            Pattern.fromCondition
+                            . Conditional.withoutTerm
+                            $ (const <$> destination <*> substPattern)
+                    evaluatedRemainder <-
+                        Exists.makeEvaluate extraElemVariables remainderPattern
+                    return
+                        . Predicate.makeNotPredicate
+                        . Condition.toPredicate
+                        . Conditional.withoutTerm
+                        . OrPattern.toPattern
+                        $ evaluatedRemainder
+                _ ->
+                    error . show . Pretty.vsep $
+                    [ "Unifying the terms of the configuration and the\
+                    \ destination has unexpectedly produced more than one\
+                    \ unification case."
+                    , Pretty.indent 2 "Unification cases:"
+                    ]
+                    <> fmap
+                        (Pretty.indent 4 . unparse)
+                        (Foldable.toList unifiedConfigs)
+  | otherwise =
+      error . show . Pretty.vsep $
+          [ "The remove destination step expects\
+          \ the configuration and the destination terms\
+          \ to be function-like."
+          , Pretty.indent 2 "Configuration term:"
+          , Pretty.indent 4 (unparse configTerm)
+          , Pretty.indent 2 "Destination term:"
+          , Pretty.indent 4 (unparse destTerm)
+          ]
+  where
+    Conditional { term = destTerm } = destination
+    Conditional { term = configTerm } = configuration
+    -- The variables of the destination that are missing from the
+    -- configuration. These are the variables which should be existentially
+    -- quantified in the removal predicate.
+    getExtraElemVariables config dest =
+        let extraNonElemVariables = remainderNonElemVariables config dest
+        in if not . null $ extraNonElemVariables
+            then
+                error . show . Pretty.vsep $
+                    "Cannot quantify non-element variables: "
+                    : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
+            else remainderElementVariables config dest
+    configVariables config =
+        Attribute.FreeVariables.getFreeVariables
+        $ Pattern.freeVariables config
+    destVariables dest =
+        Attribute.FreeVariables.getFreeVariables
+        $ Pattern.freeVariables dest
+    remainderVariables config dest =
+        Set.toList
+        $ Set.difference
+            (destVariables dest)
+            (configVariables config)
+    remainderNonElemVariables config dest =
+        filter (not . isElemVar) (remainderVariables config dest)
+    remainderElementVariables config dest =
+        mapMaybe
+            extractElementVariable
+            (remainderVariables config dest)
 
 getConfiguration
     :: forall goal
@@ -985,4 +1088,3 @@ makeRuleFromPatterns ruleType configuration destination =
         , ensures
         , attributes = Default.def
         }
-

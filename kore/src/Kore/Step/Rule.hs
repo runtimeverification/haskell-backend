@@ -36,6 +36,7 @@ module Kore.Step.Rule
     , refreshRulePattern
     , onePathRuleToPattern
     , isFreeOf
+    , assertEnsuresIsTop
     , wEF
     , wAF
     , aPG
@@ -204,8 +205,8 @@ rulePattern left right =
         { left
         , antiLeft = Nothing
         , right
-        , requires = Predicate.makeTruePredicate
-        , ensures  = Predicate.makeTruePredicate
+        , requires = Predicate.makeTruePredicate_
+        , ensures  = Predicate.makeTruePredicate_
         , attributes = Default.def
         }
 
@@ -606,41 +607,37 @@ patternToAxiomPattern attributes pat =
             (TermLike.And_ _
                 (TermLike.Not_ _ antiLeft)
                 (TermLike.And_ _ requires lhs))
-            (TermLike.And_ _ ensures rhs)
+            rhs
           | isJust . getPriority . Attribute.priority $ attributes  ->
             pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                 { left = lhs
                 , antiLeft = Just antiLeft
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
-                , ensures = Predicate.wrapPredicate ensures
+                , ensures = Predicate.makeTruePredicate_
                 , attributes
                 }
         -- normal rewrite axioms
-        -- TODO (thomas.tuegel): Allow \and{_}(ensures, rhs) to be wrapped in
-        -- quantifiers.
-        TermLike.Rewrites_ _
-            (TermLike.And_ _ requires lhs)
-            (TermLike.And_ _ ensures rhs) ->
+        TermLike.Rewrites_ _ (TermLike.And_ _ requires lhs) rhs ->
                 pure $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = lhs
                     , antiLeft = Nothing
                     , right = rhs
                     , requires = Predicate.wrapPredicate requires
-                    , ensures = Predicate.wrapPredicate ensures
+                    , ensures = Predicate.makeTruePredicate_
                     , attributes
                     }
         -- Reachability claims
         TermLike.Implies_ _
             (TermLike.And_ _ requires lhs)
-            (TermLike.ApplyAlias_ op (Arguments [TermLike.And_ _ ensures rhs]))
+            (TermLike.ApplyAlias_ op (Arguments [rhs]))
           | Just constructor <- qualifiedAxiomOpToConstructor op ->
             pure $ constructor RulePattern
                 { left = lhs
                 , antiLeft = Nothing
                 , right = rhs
                 , requires = Predicate.wrapPredicate requires
-                , ensures = Predicate.wrapPredicate ensures
+                , ensures = Predicate.makeTruePredicate_
                 , attributes
                 }
         -- function axioms: general
@@ -665,8 +662,8 @@ patternToAxiomPattern attributes pat =
                 { left = lhs
                 , antiLeft = Nothing
                 , right = rhs
-                , requires = Predicate.makeTruePredicate
-                , ensures = Predicate.makeTruePredicate
+                , requires = Predicate.makeTruePredicate_
+                , ensures = Predicate.makeTruePredicate_
                 , attributes
                 }
         -- definedness axioms
@@ -675,8 +672,8 @@ patternToAxiomPattern attributes pat =
                 { left = ceil
                 , antiLeft = Nothing
                 , right = TermLike.mkTop resultSort
-                , requires = Predicate.makeTruePredicate
-                , ensures = Predicate.makeTruePredicate
+                , requires = Predicate.makeTruePredicate_
+                , ensures = Predicate.makeTruePredicate_
                 , attributes
                 }
         TermLike.Forall_ _ _ child -> patternToAxiomPattern attributes child
@@ -688,8 +685,8 @@ patternToAxiomPattern attributes pat =
                     { left = lhs
                     , antiLeft = Nothing
                     , right = rhs
-                    , requires = Predicate.makeTruePredicate
-                    , ensures = Predicate.makeTruePredicate
+                    , requires = Predicate.makeTruePredicate_
+                    , ensures = Predicate.makeTruePredicate_
                     , attributes
                     }
         _
@@ -725,12 +722,14 @@ axiomPatternToPattern
             )
         )
     )
+  | ensures == Predicate.makeTruePredicate_
   =
     TermLike.mkRewrites
         (TermLike.mkAnd
             (TermLike.mkNot antiLeftTerm)
             (TermLike.mkAnd (Predicate.unwrapPredicate requires) left))
-        (TermLike.mkAnd (Predicate.unwrapPredicate ensures) right)
+        right
+  | otherwise = errorEnsures ensures
 
 axiomPatternToPattern
     (RewriteAxiomPattern
@@ -738,10 +737,12 @@ axiomPatternToPattern
             (RulePattern left _ right requires ensures _)
         )
     )
+  | ensures == Predicate.makeTruePredicate_
   =
     TermLike.mkRewrites
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
-        (TermLike.mkAnd (Predicate.unwrapPredicate ensures) right)
+        right
+  | otherwise = errorEnsures ensures
 
 axiomPatternToPattern
     (OnePathClaimPattern
@@ -749,13 +750,15 @@ axiomPatternToPattern
             (RulePattern left _ right requires ensures _)
         )
     )
+  | ensures == Predicate.makeTruePredicate_
   =
     TermLike.mkImplies
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (TermLike.mkApplyAlias
             op
-            [TermLike.mkAnd (Predicate.unwrapPredicate ensures) right]
+            [right]
         )
+  | otherwise = errorEnsures ensures
   where
     op = wEF $ TermLike.termLikeSort left
 
@@ -765,13 +768,15 @@ axiomPatternToPattern
             (RulePattern left _ right requires ensures _)
         )
     )
+  | ensures == Predicate.makeTruePredicate_
   =
     TermLike.mkImplies
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (TermLike.mkApplyAlias
             op
-            [TermLike.mkAnd (Predicate.unwrapPredicate ensures) right]
+            [right]
         )
+  | otherwise = errorEnsures ensures
   where
     op = wAF $ TermLike.termLikeSort left
 
@@ -821,6 +826,28 @@ axiomPatternToPattern
     )
   =
     TermLike.mkImplies left right
+
+assertEnsuresIsTop
+    :: InternalVariable variable
+    => RulePattern variable
+    -> a
+    -> a
+assertEnsuresIsTop RulePattern { ensures } next =
+    if ensures /= Predicate.makeTruePredicate_
+        then errorEnsures ensures
+        else next
+
+{-
+TODO(traiansf): Use different representations for rewrite 'RulePattern'
+  (without ensures) and equational 'RulePattern' (with ensures)
+  to avoid the need for the error below.
+-}
+errorEnsures :: InternalVariable variable => Predicate variable -> a
+errorEnsures ensures =
+    error . show . Pretty.vsep $
+        [ "Expecting ensures to be Top but got"
+        , Pretty.indent 4 $ unparse ensures
+        ]
 
 {- | Construct a 'VerifiedKoreSentence' corresponding to 'RewriteRule'.
 

@@ -193,7 +193,9 @@ test_SubstitutionSimplifier =
                     actualConditions = OrCondition.toConditions actual
                     actualSubstitutions =
                         Condition.substitution <$> actualConditions
-                assertEqual "" expect actualConditions
+                assertEqual ""
+                    (fixExpectedSorts expect actualConditions)
+                    actualConditions
                 assertBool "Expected normalized substitutions"
                     (all Substitution.isNormalized actualSubstitutions)
             , testCase "unification" $ do
@@ -207,9 +209,8 @@ test_SubstitutionSimplifier =
                         Right $
                             Condition.fromNormalizationSimplified normalization
                       | otherwise =
-                        Left
-                        $ SubstitutionError
-                        $ SimplifiableCycle (fst <$> denormalized)
+                        Left . SubstitutionError
+                        $ SimplifiableCycle (fst <$> denormalized) normalization
                     expect
                       | null results = Right []
                       | otherwise    = (: []) <$> traverse expect1 results
@@ -217,10 +218,24 @@ test_SubstitutionSimplifier =
                     actualSubstitutions =
                         (map . map) Condition.substitution <$> actualConditions
                     allNormalized = (all . all . all) Substitution.isNormalized
-                assertEqual "" expect actualConditions
+                    expectSorted = case actualConditions of
+                        Left _ -> expect
+                        Right r ->
+                            map (\expct' -> fixExpectedSorts expct' (concat r))
+                            <$> expect
+                assertEqual ""
+                    expectSorted
+                    actualConditions
                 assertBool "Expected normalized substitutions"
                     (allNormalized actualSubstitutions)
             ]
+
+    fixExpectedSorts expect actual =
+        case actual of
+            [] -> expect
+            first:_ ->
+                let sort = Condition.conditionSort first
+                in map (Condition.coerceSort sort) expect
 
 x, y, z, xs, ys :: UnifiedVariable Variable
 x = ElemVar Mock.x

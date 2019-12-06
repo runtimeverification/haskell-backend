@@ -17,6 +17,7 @@ import Branch
     )
 import qualified Branch as Branch
 import Kore.Internal.Condition as Condition
+import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
     , mergeAll
@@ -134,4 +135,4 @@ makeExpandedApplication symbol children = do
             (map Pattern.substitution children)
     let term = symbolApplication symbol (Pattern.term <$> children)
 
-    return $ Pattern.withCondition term merged
+    return $ Conditional.withCondition term merged

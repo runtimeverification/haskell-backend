@@ -80,6 +80,7 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.Condition as Condition
     ( top
     )
@@ -109,16 +110,17 @@ import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
+import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
     ( RewriteRule
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
+import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
-import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
     ( ModuleName
     , ParsedDefinition
@@ -235,6 +237,10 @@ testEvaluators = Builtin.koreEvaluators verifiedModule
 testTermLikeSimplifier :: TermLikeSimplifier
 testTermLikeSimplifier = Simplifier.create
 
+testInjSimplifier :: InjSimplifier
+testInjSimplifier =
+    mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
+
 testEnv :: MonadSimplify simplifier => Env simplifier
 testEnv =
     Env
@@ -243,6 +249,7 @@ testEnv =
         , simplifierCondition = testConditionSimplifier
         , simplifierAxioms = testEvaluators
         , memo = Memo.forgetful
+        , injSimplifier = testInjSimplifier
         }
 
 simplify :: TermLike Variable -> IO [Pattern Variable]

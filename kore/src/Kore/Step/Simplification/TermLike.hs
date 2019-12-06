@@ -49,6 +49,7 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
     , TermLikeF (..)
+    , termLikeSort
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Profiler.Profile as Profiler
@@ -97,6 +98,9 @@ import qualified Kore.Step.Simplification.In as In
     ( simplify
     )
 import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
+    ( simplify
+    )
+import qualified Kore.Step.Simplification.Inj as Inj
     ( simplify
     )
 import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
@@ -239,12 +243,15 @@ simplifyInternal term predicate = do
             Right termPredicate ->
                 return
                 $ OrPattern.fromPattern
-                $ Pattern.fromCondition
+                $ Pattern.fromConditionSorted (termLikeSort termLike)
                 $ assertConditionSimplified termLike
                 $ Condition.fromPredicate termPredicate
         | otherwise
         = assertTermNotPredicate $ tracer termLike $ do
-            termOr <- descendAndSimplify termLike
+            unfixedTermOr <- descendAndSimplify termLike
+            let termOr = OrPattern.coerceSort
+                    (termLikeSort termLike)
+                    unfixedTermOr
             returnIfSimplifiedOrContinue
                 termLike
                 (OrPattern.toPatterns termOr)
@@ -344,6 +351,7 @@ simplifyInternal term predicate = do
                     Conditional {substitution} -> substitution == mempty
             termAsPredicate =
                 Condition.fromPredicate <$> Predicate.makePredicate term
+
     descendAndSimplify :: TermLike variable -> simplifier (OrPattern variable)
     descendAndSimplify termLike =
         let doNotSimplify =
@@ -363,6 +371,8 @@ simplifyInternal term predicate = do
             ApplySymbolF applySymbolF ->
                 Application.simplify predicate
                     =<< simplifyChildren applySymbolF
+            InjF injF ->
+                Inj.simplify predicate =<< simplifyChildren injF
             CeilF ceilF ->
                 Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->

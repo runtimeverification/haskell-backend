@@ -1,49 +1,43 @@
 {- |
-Copyright   : (c) Runtime Verification, 2018
+Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 Direct interface to rule application (step-wise execution).
 See "Kore.Step" for the high-level strategy-based interface.
-
  -}
 
-module Kore.Step.Step
-    ( RulePattern
-    , UnificationProcedure (..)
-    , UnifiedRule
+module Kore.Step.RewriteStep
+    ( UnificationProcedure (..)
+    , applyRewriteRulesParallel
+    , Step.gatherResults
+    , unwrapRule
     , withoutUnification
+    , applyRewriteRulesSequence
+    -- Below exports are just for tests
     , Results
     , Step.remainders
-    , Step.results
-    , Result
-    , isNarrowingResult
-    , Step.appliedRule
     , Step.result
-    , Step.gatherResults
-    , Step.withoutRemainders
-    , assertFunctionLikeResults
-    , recoveryFunctionLikeResults
-    , checkSubstitutionCoverage
-    , unifyRule
-    , unifyRules
+    , Step.results
     , applyInitialConditions
-    , finalizeAppliedRule
-    , unwrapRule
-    , finalizeRulesParallel
-    , applyRulesParallel
-    , applyRewriteRulesParallel
-    , finalizeRulesSequence
-    , applyRulesSequence
-    , applyRewriteRulesSequence
-    , toConfigurationVariables
+    , unifyRule
+    -- Below exports are just for EquationalStep
+    -- TODO(traiansf): review and remove once EquationalStep is rewritten
+    , Result
+    , unifyRules
+    , applyRemainder
     , toAxiomVariables
+    , toConfigurationVariables
+    , checkFunctionLike
+    , checkSubstitutionCoverage
+    , wouldNarrowWith
+    , simplifyPredicate
+    , assertFunctionLikeResults
     ) where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Set
@@ -71,7 +65,6 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import Kore.Logger.DebugAppliedRule
@@ -129,16 +122,6 @@ type Result variable =
 type Results variable =
     Step.Results (UnifiedRule (Target variable)) (Pattern variable)
 
-{- | Is the result a symbolic rewrite, i.e. a narrowing result?
-
-The result is narrowing if the unifier's substitution is missing any variable
-from the left-hand side of the rule.
-
- -}
-isNarrowingResult :: Ord variable => Result variable -> Bool
-isNarrowingResult Step.Result { appliedRule } =
-    (not . Set.null) (wouldNarrowWith appliedRule)
-
 {- | Unwrap the variables in a 'RulePattern'.
  -}
 unwrapRule
@@ -148,21 +131,13 @@ unwrapRule = Rule.mapVariables Target.unwrapVariable
 
 {- | Remove axiom variables from the substitution and unwrap all variables.
  -}
-unwrapAndQuantifyConfiguration
+unwrapConfiguration
     :: forall variable
     .  InternalVariable variable
     => Pattern (Target variable)
     -> Pattern variable
-unwrapAndQuantifyConfiguration config@Conditional { substitution } =
-    if List.null targetVariables
-    then unwrappedConfig
-    else
-        Pattern.fromTermLike
-            (List.foldl'
-                quantify
-                (Pattern.toTermLike unwrappedConfig)
-                targetVariables
-            )
+unwrapConfiguration config@Conditional { substitution } =
+    Pattern.mapVariables Target.unwrapVariable configWithNewSubst
   where
     substitution' =
         Substitution.filter (foldMapVariable Target.isNonTarget)
@@ -170,20 +145,6 @@ unwrapAndQuantifyConfiguration config@Conditional { substitution } =
 
     configWithNewSubst :: Pattern (Target variable)
     configWithNewSubst = config { Pattern.substitution = substitution' }
-
-    unwrappedConfig :: Pattern variable
-    unwrappedConfig =
-        Pattern.mapVariables Target.unwrapVariable configWithNewSubst
-
-    targetVariables :: [ElementVariable variable]
-    targetVariables =
-        map (fmap Target.unwrapVariable)
-        . filter (Target.isTarget . getElementVariable)
-        . Pattern.freeElementVariables
-        $ configWithNewSubst
-
-    quantify :: TermLike variable -> ElementVariable variable -> TermLike variable
-    quantify = flip mkExists
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -269,7 +230,7 @@ applyInitialConditions initial unification = do
         $ Monad.Unify.gather
         $ simplifyPredicate (initial <> unification)
     evaluated <- SMT.Evaluator.filterMultiOr applied
-    -- If 'applied' is \bottom, the rule is considered to not apply and
+    -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
     -- then the rule is considered to apply with a \bottom result.
     TopBottom.guardAgainstBottom evaluated
@@ -316,7 +277,11 @@ finalizeAppliedRule renamedRule appliedConditions =
             substitution' = Substitution.toMap substitution
             RulePattern { right = finalTerm } = renamedRule
             finalTerm' = TermLike.substitute substitution' finalTerm
-        return finalCondition { Pattern.term = finalTerm' }
+            finalConditionFreeVars =
+                Conditional.freeVariables (const mempty) finalCondition
+            finalTerm'' =
+                topExistsToImplicitForall finalConditionFreeVars finalTerm'
+        return finalCondition { Pattern.term = finalTerm'' }
 
 {- | Apply the remainder predicate to the given initial configuration.
 
@@ -371,7 +336,7 @@ finalizeRule initial unifiedRule =
         checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
-        let result = unwrapAndQuantifyConfiguration <$> final
+        let result = unwrapConfiguration <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
 finalizeRulesParallel
@@ -400,84 +365,10 @@ assertFunctionLikeResults
     -> Results variable'
     -> m ()
 assertFunctionLikeResults termLike results =
-    let appliedRules = fmap Result.appliedRule $ Results.results results
+    let appliedRules = Result.appliedRule <$> Results.results results
     in case checkFunctionLike appliedRules termLike of
         Left err -> error err
         _        -> return ()
-
-{-
-This is implementing the ideas from the [Applying axioms by matching]
-(https://github.com/kframework/kore/blob/master/docs/2019-09-25-Applying-Axioms-By-Matching.md)
-design doc, which checks that the unified lhs of the rule fully matches
-(is equal to) the configuration term and that the lhs predicate is
-implied by the configuration predicate.
--}
-recoveryFunctionLikeResults
-    :: forall variable simplifier
-    .  SimplifierVariable variable
-    => Simplifier.MonadSimplify simplifier
-    => Pattern (Target variable)
-    -> Results variable
-    -> simplifier ()
-recoveryFunctionLikeResults initial results = do
-    let appliedRules = fmap Result.appliedRule $ Results.results results
-    case checkFunctionLike appliedRules (Conditional.term initial) of
-        Right _  -> return ()
-        Left err -> moreChecksAfterError appliedRules err
-  where
-    moreChecksAfterError appliedRules err = do
-        let
-            appliedRule =
-                case appliedRules of
-                    rule Seq.:<| Seq.Empty -> rule
-                    _ -> error $ show $ Pretty.vsep
-                            [ "Expected singleton list of rules but found: "
-                            , (Pretty.indent 4 . Pretty.vsep . Foldable.toList)
-                                (Pretty.pretty . term <$> appliedRules)
-                            , "This should be imposssible, as simplifiers for \
-                            \simplification are built from a single rule."
-                            ]
-
-            Conditional { term = ruleTerm, substitution = ruleSubstitution } =
-                appliedRule
-            RulePattern { left = alpha_t', requires = alpha_p'} = ruleTerm
-
-            substitution' = Substitution.toMap ruleSubstitution
-
-            alpha_t = TermLike.substitute substitution' alpha_t'
-            alpha_p = Predicate.substitute substitution' alpha_p'
-            phi_p = Conditional.predicate initial
-            phi_t = Conditional.term initial
-
-        res1 <- SMT.Evaluator.evaluate
-                    $ Predicate.makeAndPredicate
-                        phi_p
-                        (Predicate.makeNotPredicate alpha_p)
-
-        Monad.when (res1 /= Just False) $ error $ show $ Pretty.vsep
-            [ "Couldn't recover simplification coverage error: "
-            , Pretty.indent 4 (Pretty.pretty err)
-            , "Configuration condition "
-            , Pretty.indent 4 $ unparse phi_p
-            , "doesn't imply rule condition "
-            , Pretty.indent 4 $ unparse alpha_p
-            ]
-        let alpha_t_sorted = fullyOverrideSort' (termLikeSort phi_t) alpha_t
-        Monad.when (phi_t /= alpha_t_sorted) $ error $ show $ Pretty.vsep
-            [ "Couldn't recover simplification coverage error: "
-            , Pretty.indent 4 (Pretty.pretty err)
-            , "Rule lhs "
-            , Pretty.indent 4 $ unparse alpha_t'
-            , "doesn't match configuration"
-            , Pretty.indent 4 $ unparse phi_t
-            ]
-        -- what we would like to check above is that phi_p -> phi_t = alpha_t,
-        -- but that's hard to do for non-functional patterns,
-        -- so we check for (syntactic) equality instead.
-        return ()
-    fullyOverrideSort' sort term
-      | sort == termLikeSort term = term
-      | otherwise = fullyOverrideSort sort term
 
 finalizeRulesSequence
     :: forall unifier variable

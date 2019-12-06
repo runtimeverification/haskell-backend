@@ -65,7 +65,7 @@ checkImplicationIsTop lhs rhs =
                         )
                 result = Conditional
                     { term = resultTerm
-                    , predicate = Predicate.makeTruePredicate
+                    , predicate = Predicate.makeTruePredicate_
                     , substitution = mempty
                     }
             orResult <- Pattern.simplifyAndRemoveTopExists result

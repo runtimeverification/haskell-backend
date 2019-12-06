@@ -48,6 +48,7 @@ import Kore.IndexedModule.MetadataTools
     ( SmtMetadataTools
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
+import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Logger
 import Kore.Profiler.Data
     ( MonadProfiler (profile)
@@ -56,6 +57,7 @@ import qualified Kore.Step.Axiom.EvaluationStrategy as Axiom.EvaluationStrategy
 import qualified Kore.Step.Axiom.Registry as Axiom.Registry
 import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Condition
+import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Rule as Rule
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
@@ -74,6 +76,7 @@ data Env simplifier =
         , simplifierCondition :: !(ConditionSimplifier simplifier)
         , simplifierAxioms    :: !BuiltinAndAxiomSimplifierMap
         , memo                :: !(Memo.Self simplifier)
+        , injSimplifier       :: !InjSimplifier
         }
 
 {- | @Simplifier@ represents a simplification action.
@@ -141,6 +144,9 @@ instance
     askMemo = asks memo
     {-# INLINE askMemo #-}
 
+    askInjSimplifier = asks injSimplifier
+    {-# INLINE askInjSimplifier #-}
+
 {- | Run a simplification, returning the results along all branches.
  -}
 runSimplifierBranch
@@ -186,7 +192,9 @@ evalSimplifier verifiedModule simplifier = do
             , simplifierCondition
             , simplifierAxioms = earlySimplifierAxioms
             , memo = Memo.forgetful
+            , injSimplifier
             }
+    injSimplifier = mkInjSimplifier $ SortGraph.fromIndexedModule verifiedModule
     -- It's safe to build the MetadataTools using the external
     -- IndexedModule because MetadataTools doesn't retain any
     -- knowledge of the patterns which are internalized.
@@ -228,4 +236,5 @@ evalSimplifier verifiedModule simplifier = do
             , simplifierCondition
             , simplifierAxioms
             , memo
+            , injSimplifier
             }

@@ -1,12 +1,13 @@
 \rewrites{SortGeneratedTopCell{}}(
     \and{SortGeneratedTopCell{}}(
+        /* Created by <makeAndPredicate> at src/Kore/Internal/Predicate.hs:576:32 */
         \and{SortGeneratedTopCell{}}(
             \ceil{SortMap{}, SortGeneratedTopCell{}}(
                 /* builtin: */
                 Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        inj{SortId{}, SortKItem{}}(VarX:SortId{}),
-                        inj{SortInt{}, SortKItem{}}(VarI:SortInt{})
+                        /* Inj: */ inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                        /* Inj: */ inj{SortInt{}, SortKItem{}}(VarI:SortInt{})
                     ),
                     /* opaque child: */ VarDotVar3:SortMap{}
                 )
@@ -15,15 +16,15 @@
                 /* builtin: */
                 Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        inj{SortId{}, SortKItem{}}(VarX:SortId{}),
-                        inj{SortInt{}, SortKItem{}}(VarI:SortInt{})
+                        /* Inj: */ inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                        /* Inj: */ inj{SortInt{}, SortKItem{}}(VarI:SortInt{})
                     ),
                     /* opaque child: */ VarDotVar3:SortMap{}
                 ),
                 /* builtin: */
                 Lbl'Unds'Map'Unds'{}(
                     /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                        inj{SortId{}, SortKItem{}}(VarX0:SortId{}),
+                        /* Inj: */ inj{SortId{}, SortKItem{}}(VarX0:SortId{}),
                         VarI0:SortKItem{}
                     ),
                     /* opaque child: */ VarDotVar30:SortMap{}
@@ -34,25 +35,32 @@
             Lbl'-LT-'T'-GT-'{}(
                 Lbl'-LT-'k'-GT-'{}(
                     kseq{}(
-                        inj{SortStmt{}, SortKItem{}}(
+                        /* Inj: */ inj{SortStmt{}, SortKItem{}}(
                             Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
                                 VarX:SortId{},
-                                inj{SortInt{}, SortAExp{}}(VarI:SortInt{})
+                                /* Inj: */ inj{SortInt{}, SortAExp{}}(
+                                    VarI:SortInt{}
+                                )
                             )
                         ),
                         kseq{}(
-                            inj{SortId{}, SortKItem{}}(VarX0:SortId{}),
+                            /* Inj: */ inj{SortId{}, SortKItem{}}(
+                                VarX0:SortId{}
+                            ),
                             VarDotVar20:SortK{}
                         )
                     )
                 ),
                 Lbl'-LT-'state'-GT-'{}(
+                    /* builtin: */
                     Lbl'Unds'Map'Unds'{}(
-                        Lbl'UndsPipe'-'-GT-Unds'{}(
-                            inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                        /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                            /* Inj: */ inj{SortId{}, SortKItem{}}(
+                                VarX:SortId{}
+                            ),
                             Var'Unds'0:SortKItem{}
                         ),
-                        VarDotVar3:SortMap{}
+                        /* opaque child: */ VarDotVar3:SortMap{}
                     )
                 )
             ),
@@ -67,12 +75,15 @@
                     kseq{}(VarI0:SortKItem{}, VarDotVar20:SortK{})
                 ),
                 Lbl'-LT-'state'-GT-'{}(
+                    /* builtin: */
                     Lbl'Unds'Map'Unds'{}(
-                        Lbl'UndsPipe'-'-GT-Unds'{}(
-                            inj{SortId{}, SortKItem{}}(VarX0:SortId{}),
+                        /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                            /* Inj: */ inj{SortId{}, SortKItem{}}(
+                                VarX0:SortId{}
+                            ),
                             VarI0:SortKItem{}
                         ),
-                        VarDotVar30:SortMap{}
+                        /* opaque child: */ VarDotVar30:SortMap{}
                     )
                 )
             ),

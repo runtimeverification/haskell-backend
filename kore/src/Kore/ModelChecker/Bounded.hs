@@ -128,7 +128,7 @@ checkClaim
                 ProofState.GoalLHS
                     Conditional
                         { term = left
-                        , predicate = Predicate.makeTruePredicate
+                        , predicate = Predicate.makeTruePredicate_
                         , substitution = mempty
                         }
         executionGraph <- State.evalStateT

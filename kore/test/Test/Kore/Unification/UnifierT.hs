@@ -35,6 +35,9 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
+import Kore.Unification.Substitution
+    ( Normalization (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
@@ -72,10 +75,13 @@ test_simplifyCondition =
         Foldable.traverse_ assertNormalizedPredicatesMulti actual
     , testCase "x = f(x)" $ do
         let x = ElemVar Mock.x
-            expect = (Left . SubstitutionError) (SimplifiableCycle [x])
+            expect =
+                Left . SubstitutionError
+                $ SimplifiableCycle [x] normalization
+            normalization = mempty { denormalized }
+            denormalized = [(x, Mock.f (mkVar x))]
             input =
-                (Condition.fromSubstitution . Substitution.wrap)
-                    [(x, Mock.f (mkVar x))]
+                (Condition.fromSubstitution . Substitution.wrap) denormalized
         actual <- normalizeExcept input
         assertEqual "Expected SubstitutionError" expect actual
     , testCase "x = id(x)" $ do
@@ -90,7 +96,7 @@ test_simplifyCondition =
   where
     existsPredicate =
         Predicate.makeMultipleExists [Mock.y, Mock.z]
-        $ Predicate.makeEqualsPredicate
+        $ Predicate.makeEqualsPredicate_
             (mkElemVar Mock.x)
             (Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.z))
 
@@ -181,7 +187,7 @@ test_mergeAndNormalizeSubstitutions =
                         [ Conditional
                             { term = ()
                             , predicate =
-                                Predicate.makeEqualsPredicate
+                                Predicate.makeEqualsPredicate_
                                     Mock.a
                                     (Mock.f Mock.a)
                             , substitution = Substitution.unsafeWrap
@@ -209,8 +215,10 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let
                 expect =
-                    Left $ SubstitutionError
-                        (SimplifiableCycle [ElemVar Mock.y])
+                    Left . SubstitutionError
+                    $ SimplifiableCycle
+                        [ElemVar Mock.y]
+                        mempty
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -229,8 +237,10 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let
                 expect =
-                    Left $ SubstitutionError
-                        (SimplifiableCycle [ElemVar Mock.y])
+                    Left . SubstitutionError
+                    $ SimplifiableCycle
+                        [ElemVar Mock.y]
+                        mempty
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -272,6 +282,10 @@ test_mergeAndNormalizeSubstitutions =
                     $ SubstitutionError
                     $ SimplifiableCycle
                         [ ElemVar Mock.x, ElemVar Mock.y ]
+                        Substitution.Normalization
+                            { normalized = []
+                            , denormalized = []
+                            }
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -308,7 +322,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeEqualsPredicate Mock.cf Mock.cg
+                            Predicate.makeEqualsPredicate_ Mock.cf Mock.cg
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.cf) ]
                         }
@@ -317,7 +331,7 @@ test_mergeAndNormalizeSubstitutions =
                 normalize
                     Conditional
                         { term = ()
-                        , predicate = Predicate.makeTruePredicate
+                        , predicate = Predicate.makeTruePredicate_
                         , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.cf)
                             , (ElemVar Mock.x, Mock.constr10 Mock.cg)
@@ -332,7 +346,7 @@ test_mergeAndNormalizeSubstitutions =
                     [ Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate
+                            Predicate.makeCeilPredicate_
                             $ Mock.f Mock.a
                         , substitution = Substitution.unsafeWrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)
@@ -345,7 +359,7 @@ test_mergeAndNormalizeSubstitutions =
                     Conditional
                         { term = ()
                         , predicate =
-                            Predicate.makeCeilPredicate
+                            Predicate.makeCeilPredicate_
                             $ Mock.f (mkElemVar Mock.y)
                         , substitution = Substitution.wrap
                             [ (ElemVar Mock.x, Mock.constr10 Mock.a)

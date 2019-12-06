@@ -54,8 +54,10 @@ import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     , elemVarS
+    , mkAnd
     , mkBottom_
     , mkElemVar
+    , mkTop_
     )
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
@@ -553,7 +555,7 @@ add1 =
 
 zeroToTen :: Claim
 zeroToTen =
-    coerce $ rulePatternWithName zero ten "0to10Claim"
+    coerce $ rulePatternWithName zero (mkAnd mkTop_ ten) "0to10Claim"
   where
     zero = Int.asInternal intSort 0
     ten  = Int.asInternal intSort 10
@@ -561,7 +563,7 @@ zeroToTen =
 emptyClaim :: Claim
 emptyClaim =
     coerce
-    $ rulePatternWithName mkBottom_ mkBottom_ "emptyClaim"
+    $ rulePatternWithName mkBottom_ (mkAnd mkTop_ mkBottom_) "emptyClaim"
 
 rulePatternWithName
     :: InternalVariable variable

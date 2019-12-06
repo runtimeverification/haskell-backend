@@ -181,7 +181,7 @@ simplifyAnds
     => MakeAnd monad
     -> NonEmpty (TermLike variable)
     -> monad (Pattern variable)
-simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) = do
+simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
     foldM simplifyAnds' Pattern.top patterns
   where
     simplifyAnds'
@@ -215,7 +215,7 @@ deduplicateSubstitution
             , Map (UnifiedVariable variable) (TermLike variable)
             )
 deduplicateSubstitution makeAnd' =
-    worker Predicate.makeTruePredicate . checkSetVars . Substitution.toMultiMap
+    worker Predicate.makeTruePredicate_ . checkSetVars . Substitution.toMultiMap
   where
     checkSetVars m
       | isProblematic m = error

@@ -22,12 +22,11 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( makeEqualsPredicate
     , makeNotPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( OnePathRule (..)
-    , RewriteRule (..)
     , RulePattern (..)
     )
 import Kore.Strategies.Goal
@@ -160,7 +159,11 @@ test_onePathVerification =
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
                 , predicate =
-                    makeNotPredicate $ makeEqualsPredicate (mkElemVar Mock.x) Mock.a
+                    makeNotPredicate
+                        (makeEqualsPredicate Mock.testSort
+                            (mkElemVar Mock.x)
+                            Mock.a
+                        )
                 , substitution = mempty
                 }
             )
@@ -341,7 +344,15 @@ simpleClaim
     -> TermLike Variable
     -> OnePathRule Variable
 simpleClaim left right =
-    OnePathRule . getRewriteRule $ simpleRewrite left right
+    OnePathRule
+    RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , right = mkAnd mkTop_ right
+        , requires = makeTruePredicate_
+        , ensures = makeTruePredicate_
+        , attributes = def
+        }
 
 simpleTrustedClaim
     :: TermLike Variable
@@ -349,12 +360,12 @@ simpleTrustedClaim
     -> OnePathRule Variable
 simpleTrustedClaim left right =
     OnePathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , right = right
-            , requires = makeTruePredicate
-            , ensures = makeTruePredicate
-            , attributes = def
-                { Attribute.trusted = Attribute.Trusted True }
-            }
+    RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , right = right
+        , requires = makeTruePredicate_
+        , ensures = makeTruePredicate_
+        , attributes = def
+            { Attribute.trusted = Attribute.Trusted True }
+        }

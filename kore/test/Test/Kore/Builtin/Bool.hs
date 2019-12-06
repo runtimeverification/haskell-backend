@@ -115,8 +115,8 @@ test_simplification =
         , testGroup "and"
             [ mkAnd _True  _False `becomes` bottom
             , mkAnd _False _True  `becomes` bottom
-            , mkAnd _True  _True  `becomes` pure _True
-            , mkAnd _False _False `becomes` pure _False
+            , mkAnd _True  _True  `becomes` asPattern True
+            , mkAnd _False _False `becomes` asPattern False
             ]
         ]
       where
@@ -133,7 +133,6 @@ test_simplification =
                 $ SMT.withSolver
                 $ evaluate makerInput
             assertEqual "" expected actual
-
 
 hprop_unparse :: Property
 hprop_unparse = hpropUnparse (asInternal <$> Gen.bool)

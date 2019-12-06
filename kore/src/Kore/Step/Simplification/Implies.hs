@@ -168,7 +168,7 @@ makeEvaluateImpliesNonBool
                 $ mkImplies
                     (Pattern.toTermLike pattern1)
                     (Pattern.toTermLike pattern2)
-            , predicate = Predicate.makeTruePredicate
+            , predicate = Predicate.makeTruePredicate_
             , substitution = mempty
             }
         ]

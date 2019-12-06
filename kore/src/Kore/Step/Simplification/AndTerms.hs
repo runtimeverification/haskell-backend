@@ -8,12 +8,9 @@ Stability   : experimental
 Portability : portable
 -}
 module Kore.Step.Simplification.AndTerms
-    ( simplifySortInjections
-    , termUnification
+    ( termUnification
     , maybeTermAnd
     , maybeTermEquals
-    , SortInjectionMatch (..)
-    , SortInjectionSimplification (..)
     , TermSimplifier
     , TermTransformationOld
     , cannotUnifyDistinctDomainValues
@@ -35,7 +32,6 @@ import Control.Exception
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
-import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
@@ -43,17 +39,12 @@ import Prelude hiding
     ( concat
     )
 
-import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Endianness as Builtin.Endianness
 import qualified Kore.Builtin.List as Builtin.List
 import qualified Kore.Builtin.Map as Builtin.Map
 import qualified Kore.Builtin.Set as Builtin.Set
 import qualified Kore.Builtin.Signedness as Builtin.Signedness
 import qualified Kore.Domain.Builtin as Domain
-import Kore.IndexedModule.MetadataTools
-    ( SmtMetadataTools
-    )
-import qualified Kore.IndexedModule.MetadataTools as MetadataTools
 import Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
@@ -64,9 +55,9 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
-    , makeEqualsPredicate
+    , makeEqualsPredicate_
     , makeNotPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.Symbol as Symbol
@@ -75,6 +66,7 @@ import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.ExpandAlias
     ( expandAlias
     )
+import Kore.Step.Simplification.InjSimplifier
 import Kore.Step.Simplification.NoConfusion
 import Kore.Step.Simplification.Overloading
 import Kore.Step.Simplification.SimplificationType
@@ -94,6 +86,7 @@ import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import Pair
 
 import {-# SOURCE #-} qualified Kore.Step.Simplification.Ceil as Ceil
     ( makeEvaluateTerm
@@ -216,7 +209,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
     , (BothT,   \p t _ -> variableFunctionAndEquals p t, "variableFunctionAndEquals")
     , (BothT,   \p t _ -> functionVariableAndEquals p t, "functionVariableAndEquals")
     , (BothT,   \_ _ s -> equalInjectiveHeadsAndEquals s, "equalInjectiveHeadsAndEquals")
-    , (BothT,   \_ _ s -> sortInjectionAndEqualsAssumesDifferentHeads s, "sortInjectionAndEqualsAssumesDifferentHeads")
+    , (BothT,   \_ _ s -> sortInjectionAndEquals s, "sortInjectionAndEquals")
     , (BothT,   \_ _ _ -> constructorSortInjectionAndEquals, "constructorSortInjectionAndEquals")
     , (BothT,   \_ _ _ -> constructorAndEqualsAssumesDifferentHeads, "constructorAndEqualsAssumesDifferentHeads")
     , (BothT,   \_ _ s -> overloadedConstructorSortInjectionAndEquals s, "overloadedConstructorSortInjectionAndEquals")
@@ -307,7 +300,7 @@ maybeTransformTerm
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-maybeTransformTerm topTransformers childTransformers first second = do
+maybeTransformTerm topTransformers childTransformers first second =
     Foldable.asum
         (map
             (\f -> f
@@ -428,7 +421,7 @@ variableFunctionAndEquals
   =
     return Conditional
         { term = if v2 > v1 then second else first
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution =
             Substitution.wrap
                 [ if v2 > v1 then (ElemVar v1, second) else (ElemVar v2, first)
@@ -495,167 +488,32 @@ sorts of the conjoined patterns, such as,
 when @src1@ is a subsort of @src2@.
 
  -}
-sortInjectionAndEqualsAssumesDifferentHeads
+sortInjectionAndEquals
     ::  forall variable unifier
     .   ( InternalVariable variable
         , MonadUnify unifier
         )
-    => GHC.HasCallStack
     => TermSimplifier variable unifier
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-sortInjectionAndEqualsAssumesDifferentHeads termMerger first second = do
-    tools <- Simplifier.askMetadataTools
-    case simplifySortInjections tools first second of
-        Nothing ->
-            Monad.Trans.lift
-                $ throwUnificationError
-                $ unsupportedPatterns
-                    "Unimplemented sort injection unification"
-                    first
-                    second
-        Just NotInjection -> empty
-        Just NotMatching -> Monad.Trans.lift $ do
-            explainBottom
-                "Unification of sort injections failed due to mismatch. \
-                \This can happen either because one of them is a constructor \
-                \or because their sort intersection is empty."
-                first
-                second
-            empty
-        Just (Matching sortInjectionMatch) -> Monad.Trans.lift $ do
-            merged <- termMerger firstChild secondChild
-            if Pattern.isBottom merged
-                then do
-                    explainBottom
-                        "Unification of sort injections failed when \
-                        \merging application children: \
-                        \the result is bottom."
-                        first
-                        second
-                    empty
-                else
-                    return $ applyInjection injectionHead <$> merged
-          where
-            SortInjectionMatch { firstChild, secondChild } = sortInjectionMatch
-            SortInjectionMatch { injectionHead } = sortInjectionMatch
+sortInjectionAndEquals
+    termMerger first@(Inj_ inj1) second@(Inj_ inj2)
+  = Monad.Trans.lift $ do
+    InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
+    maybe emptyIntersection merge $ unifyInj inj1 inj2
   where
-    applyInjection injectionHead term = mkApplySymbol injectionHead [term]
-
-data SortInjectionMatch variable =
-    SortInjectionMatch
-        { injectionHead :: !Symbol
-        , sort :: !Sort
-        , firstChild :: !(TermLike variable)
-        , secondChild :: !(TermLike variable)
-        }
-
-data SortInjectionSimplification variable
-  = NotInjection
-  | NotMatching
-  | Matching !(SortInjectionMatch variable)
-
-simplifySortInjections
-    :: forall variable
-    .  InternalVariable variable
-    => GHC.HasCallStack
-    => SmtMetadataTools Attribute.Symbol
-    -> TermLike variable
-    -> TermLike variable
-    -> Maybe (SortInjectionSimplification variable)
-simplifySortInjections
-    tools
-    (App_
-        firstHead@Symbol
-            { symbolConstructor = firstConstructor
-            , symbolParams = [firstOrigin, firstDestination]
-            }
-        (Arguments [firstChild])
-    )
-    (App_
-        secondHead@Symbol
-            { symbolConstructor = secondConstructor
-            , symbolParams = [secondOrigin, secondDestination]
-            }
-        (Arguments [secondChild])
-    )
-  | isFirstSortInjection && isSecondSortInjection =
-    assert (firstHead /= secondHead)
-    $ assert (firstDestination == secondDestination)
-    $ assert (firstConstructor == secondConstructor)
-    $ case () of
-        _
-          | firstOrigin `isSubsortOf` secondOrigin -> Just mergeFirstIntoSecond
-
-          | secondOrigin `isSubsortOf` firstOrigin -> Just mergeSecondIntoFirst
-
-          | isFirstConstructorLike || isSecondConstructorLike
-            -> Just NotMatching
-
-          | Set.null sortIntersection -> Just NotMatching
-
-          | otherwise -> Nothing
-  where
-    subsorts = MetadataTools.subsorts tools
-
-    isFirstSortInjection = Symbol.isSortInjection firstHead
-    isSecondSortInjection = Symbol.isSortInjection firstHead
-
-    isSubsortOf = MetadataTools.isSubsortOf tools
-
-    isFirstConstructorLike = hasConstructorLikeTop firstChild
-    isSecondConstructorLike = hasConstructorLikeTop secondChild
-
-    {- |
-        Merge the terms inside a sort injection,
-
-        \inj{src1, dst}(a) ∧ \inj{src2, dst}(b)
-        ===
-        \inj{src2, dst}(\inj{src1, src2}(a) ∧ b)
-
-        when src1 is a subsort of src2.
-     -}
-    mergeFirstIntoSecond ::  SortInjectionSimplification variable
-    mergeFirstIntoSecond =
-        Matching SortInjectionMatch
-            { injectionHead = secondHead
-            , sort = firstDestination
-            , firstChild = sortInjection firstOrigin secondOrigin firstChild
-            , secondChild = secondChild
-            }
-
-    {- |
-        Merge the terms inside a sort injection,
-
-        \inj{src1, dst}(a) ∧ \inj{src2, dst}(b)
-        ===
-        \inj{src1, dst}(a ∧ \inj{src2, src1}(b))
-
-        when src2 is a subsort of src1.
-     -}
-    mergeSecondIntoFirst :: SortInjectionSimplification variable
-    mergeSecondIntoFirst =
-        Matching SortInjectionMatch
-            { injectionHead = firstHead
-            , sort = firstDestination
-            , firstChild = firstChild
-            , secondChild = sortInjection secondOrigin firstOrigin secondChild
-            }
-
-    sortInjection
-        :: Sort
-        -> Sort
-        -> TermLike variable
-        -> TermLike variable
-    sortInjection originSort destinationSort term =
-        mkApplySymbol
-            (Symbol.coerceSortInjection firstHead originSort destinationSort)
-            [term]
-    firstSubsorts = subsorts firstOrigin
-    secondSubsorts = subsorts secondOrigin
-    sortIntersection = Set.intersection firstSubsorts secondSubsorts
-simplifySortInjections _ _ _ = Just NotInjection
+    emptyIntersection = do
+        explainBottom "Empty sort intersection" first second
+        empty
+    merge inj@Inj { injChild = Pair child1 child2 } = do
+        InjSimplifier { evaluateInj } <- Simplifier.askInjSimplifier
+        childPattern <- termMerger child1 child2
+        let (childTerm, childCondition) = Pattern.splitTerm childPattern
+        return $ Pattern.withCondition
+            (evaluateInj inj { injChild = childTerm })
+            childCondition
+sortInjectionAndEquals _ _ _ = empty
 
 {- | Unify a constructor application pattern with a sort injection pattern.
 
@@ -664,30 +522,27 @@ returns @\\bottom@.
 
  -}
 constructorSortInjectionAndEquals
-    ::  ( SimplifierVariable variable
-        , MonadUnify unifier
-        )
-    => GHC.HasCallStack
+    :: SimplifierVariable variable
+    => MonadUnify unifier
     => TermLike variable
     -> TermLike variable
     -> MaybeT unifier a
-constructorSortInjectionAndEquals
-    first@(App_ firstHead _)
-    second@(App_ secondHead _)
-  | isConstructorSortInjection =
-    assert (firstHead /= secondHead) $ Monad.Trans.lift $ do
-        explainBottom
-            "Cannot unify constructors with sort injections."
-            first
-            second
-        empty
-  where
-    -- Are we asked to unify a constructor with a sort injection?
-    isConstructorSortInjection =
-        (||)
-            (Symbol.isConstructor   firstHead && Symbol.isSortInjection secondHead)
-            (Symbol.isSortInjection firstHead && Symbol.isConstructor   secondHead)
+constructorSortInjectionAndEquals first@(Inj_ _) second@(App_ symbol2 _)
+  | Symbol.isConstructor symbol2 =
+    Monad.Trans.lift $ noConfusionInjectionConstructor first second
+constructorSortInjectionAndEquals first@(App_ symbol1 _) second@(Inj_ _)
+  | Symbol.isConstructor symbol1 =
+    Monad.Trans.lift $ noConfusionInjectionConstructor first second
 constructorSortInjectionAndEquals _ _ = empty
+
+noConfusionInjectionConstructor
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => TermLike variable
+    -> TermLike variable
+    -> unifier a
+noConfusionInjectionConstructor =
+    explainAndReturnBottom "No confusion: sort injections and constructors"
 
 {- | Unifcation or equality for a domain value pattern vs a constructor
 application.
@@ -840,7 +695,7 @@ functionAnd first second
         -- one must be careful to not just drop the term.
         , predicate =
             Predicate.markSimplified
-            $ makeEqualsPredicate first second
+            $ makeEqualsPredicate_ first second
         , substitution = mempty
         }
   | otherwise = empty

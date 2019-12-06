@@ -41,14 +41,16 @@ import Kore.Internal.Conditional
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( Predicate
-    , makeAndPredicate
     , makeEqualsPredicate
-    , makeMultipleAndPredicate
+    , makeEqualsPredicate_
     , makeNotPredicate
-    , makeTruePredicate
+    , makeTruePredicate_
     )
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
+    , mkAnd
+    , mkTop_
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Rule
@@ -78,10 +80,6 @@ import Kore.Syntax.Module
 import Kore.Syntax.Variable
     ( Variable (..)
     )
-import qualified Kore.Unification.Substitution as Substitution
-import Kore.Variables.UnifiedVariable
-    ( UnifiedVariable (..)
-    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -93,7 +91,7 @@ makeOnePathRule
     -> TermLike Variable
     -> OnePathRule Variable
 makeOnePathRule term dest =
-    OnePathRule $ rulePattern term dest
+    OnePathRule $ rulePattern term (mkAnd mkTop_ dest)
 
 makeOnePathRuleFromPatterns
     :: Pattern Variable
@@ -110,7 +108,28 @@ makeOnePathRuleFromPatterns
     in coerce RulePattern
         { left
         , antiLeft = Nothing
-        , right
+        , right = mkAnd mkTop_ right
+        , requires
+        , ensures
+        , attributes = Default.def
+        }
+
+makeOnePathRuleFromPatternsWithCond
+    :: Pattern Variable
+    -> Pattern Variable
+    -> OnePathRule Variable
+makeOnePathRuleFromPatternsWithCond
+    configuration
+    destination
+  =
+    let (left, Condition.toPredicate -> requires) =
+            Pattern.splitTerm configuration
+        (right, Condition.toPredicate -> ensures) =
+            Pattern.splitTerm destination
+    in coerce RulePattern
+        { left
+        , antiLeft = Nothing
+        , right = right
         , requires
         , ensures
         , attributes = Default.def
@@ -299,10 +318,16 @@ test_onePathStrategy =
         -- Normal axiom: constr11(x) => h(x)
         -- Normal axiom: constr10(x) => constr11(x)
         -- Expected:
-        --   (f(b) and x=b)
-        --   or (f(c) and x=c)
-        --   or (h(x) and x!=a and x!=b and x!=c )
-        actual <-
+        --   Stuck after removing the destination during
+        --   the second step.
+        --
+        --   If remove destination didn't
+        --   detect that the conditions do not meet, then
+        --   the configuration would have resulted in:
+        --      (f(b) and x=b)
+        --      or (f(c) and x=c)
+        --      or (h(x) and x!=a and x!=b and x!=c )
+        actual@[ _actual ] <-
             runOnePathSteps
                 (Limit 2)
                 (makeOnePathRule
@@ -353,53 +378,10 @@ test_onePathStrategy =
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
         let expected =
-                [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.b
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [(ElemVar Mock.x, Mock.b)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.Goal $ makeOnePathRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.f Mock.c
-                        , predicate = makeTruePredicate
-                        , substitution =
-                            Substitution.unsafeWrap
-                                [(ElemVar Mock.x, Mock.c)]
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
-                , ProofState.Goal $ makeOnePathRuleFromPatterns
-                    ( Conditional
-                        { term = Mock.h (TermLike.mkElemVar Mock.x)
-                        , predicate =  -- TODO(virgil): Better and simplification.
-                            makeAndPredicate
-                                (makeAndPredicate
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (TermLike.mkElemVar Mock.x) Mock.a
-                                        )
-                                    )
-                                    (makeNotPredicate
-                                        (makeEqualsPredicate
-                                            (TermLike.mkElemVar Mock.x) Mock.b
-                                        )
-                                    )
-                                )
-                                (makeNotPredicate
-                                    (makeEqualsPredicate
-                                        (TermLike.mkElemVar Mock.x)
-                                        Mock.c
-                                    )
-                                )
-                        , substitution = mempty
-                        }
-                    )
-                    (fromTermLike $ Mock.functionalConstr11 Mock.a)
+                [ ProofState.GoalStuck
+                    $ makeOnePathRule
+                        (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
+                        (Mock.functionalConstr11 Mock.a)
                 ]
         assertEqual ""
             expected
@@ -413,11 +395,17 @@ test_onePathStrategy =
         -- Normal axiom: constr11(c) => f(c)
         -- Normal axiom: constr10(x) => constr11(x)
         -- Expected:
-        --   Bottom
-        --   or (f(b) and x=b)
-        --   or (f(c) and x=c)
-        --   Stuck (functionalConstr11(x) and x!=a and x!=b and x!=c )
-        actual@[ _actual1, _actual2, _actual3 ] <-
+        --   Stuck after removing the destination during
+        --   the second step.
+        --
+        --   If remove destination didn't
+        --   detect that the conditions do not meet, then
+        --   the configuration would have resulted in:
+        --      Proven
+        --      or (f(b) and x=b)
+        --      or (f(c) and x=c)
+        --      GoalRemainder (functionalConstr11(x) and x!=a and x!=b and x!=c )
+        actual@[ _actual ] <-
             runOnePathSteps
                 (Limit 2)
                 (makeOnePathRule
@@ -449,46 +437,15 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
-        let equalsXA = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.a
-            equalsXB = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.b
-            equalsXC = makeEqualsPredicate (TermLike.mkElemVar Mock.x) Mock.c
+        let expected =
+                [ ProofState.GoalStuck
+                    $ makeOnePathRule
+                        (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
+                        (Mock.functionalConstr11 Mock.a)
+                ]
         assertEqual ""
-            [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                (Conditional
-                    { term = Mock.f Mock.b
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.b)]
-                    }
-                )
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
-            , ProofState.Goal $ makeOnePathRuleFromPatterns
-                (Conditional
-                    { term = Mock.f Mock.c
-                    , predicate = makeTruePredicate
-                    , substitution =
-                        Substitution.unsafeWrap [(ElemVar Mock.x, Mock.c)]
-                    }
-                )
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
-            , ProofState.GoalRemainder $ makeOnePathRuleFromPatterns
-                (Conditional
-                    { term = Mock.functionalConstr11 (TermLike.mkElemVar Mock.x)
-                    , predicate =
-                        makeMultipleAndPredicate
-                            [ makeNotPredicate equalsXA
-                            , makeNotPredicate equalsXB
-                            , makeNotPredicate equalsXC
-                            ]
-                    , substitution = mempty
-                    }
-                )
-                (fromTermLike $ Mock.functionalConstr11 Mock.a)
-            ]
-            [ _actual1
-            , _actual2
-            , _actual3
-            ]
+            expected
+            actual
         assertEqual "onepath == reachability onepath"
             (fmap (fmap OnePath) actual)
             actualReach
@@ -507,7 +464,7 @@ test_onePathStrategy =
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 Mock.b)
                 Mock.a
-                $ makeEqualsPredicate
+                $ makeEqualsPredicate_
                     Mock.c
                     $ Mock.f Mock.b
             ]
@@ -521,23 +478,22 @@ test_onePathStrategy =
             [ rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 Mock.b)
                 Mock.a
-                $ makeEqualsPredicate
+                $ makeEqualsPredicate_
                     Mock.c
                     $ Mock.f Mock.b
             ]
         assertEqual ""
             [ ProofState.GoalRemainder
             $ makeOnePathRuleFromPatterns
-                ( Conditional
+                Conditional
                     { term = Mock.functionalConstr10 Mock.b
                     , predicate =
                         makeNotPredicate
-                            $ makeEqualsPredicate
+                            $ makeEqualsPredicate Mock.testSort
                                 Mock.c
                                 $ Mock.f Mock.b
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             , ProofState.Proven
             ]
@@ -562,7 +518,7 @@ test_onePathStrategy =
                 [ rewriteWithPredicate
                     (TermLike.mkElemVar Mock.xInt)
                     (Mock.builtinInt 1)
-                    (makeEqualsPredicate
+                    (makeEqualsPredicate_
                         (Mock.lessInt
                             (TermLike.mkElemVar Mock.xInt) (Mock.builtinInt 2)
                         )
@@ -580,7 +536,7 @@ test_onePathStrategy =
                 [ rewriteReachabilityWithPredicate
                     (TermLike.mkElemVar Mock.xInt)
                     (Mock.builtinInt 1)
-                    (makeEqualsPredicate
+                    (makeEqualsPredicate_
                         (Mock.lessInt
                             (TermLike.mkElemVar Mock.xInt) (Mock.builtinInt 2)
                         )
@@ -604,7 +560,7 @@ test_onePathStrategy =
             (makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -619,7 +575,7 @@ test_onePathStrategy =
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -629,7 +585,7 @@ test_onePathStrategy =
             , rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.c
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -642,7 +598,7 @@ test_onePathStrategy =
             (OnePath $ makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -657,7 +613,7 @@ test_onePathStrategy =
             [ rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -667,7 +623,7 @@ test_onePathStrategy =
             , rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.c
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -677,10 +633,10 @@ test_onePathStrategy =
             ]
         assertEqual ""
             [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                (Conditional
+                Conditional
                     { term = Mock.a
                     , predicate =
-                        makeEqualsPredicate
+                        makeEqualsPredicate Mock.testSort
                             (Mock.lessInt
                                 (Mock.fTestInt Mock.b)
                                 (Mock.builtinInt 0)
@@ -688,7 +644,6 @@ test_onePathStrategy =
                             (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             ]
             [ _actual
@@ -706,7 +661,7 @@ test_onePathStrategy =
             (makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -721,7 +676,7 @@ test_onePathStrategy =
             [ rewriteWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -734,7 +689,7 @@ test_onePathStrategy =
             (OnePath $ makeOnePathRuleFromPatterns
                 (Conditional
                     { term = Mock.functionalConstr10 Mock.b
-                    , predicate = makeEqualsPredicate
+                    , predicate = makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -749,7 +704,7 @@ test_onePathStrategy =
             [ rewriteReachabilityWithPredicate
                 (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
                 Mock.a
-                (makeEqualsPredicate
+                (makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                         (Mock.builtinInt 0)
@@ -759,10 +714,10 @@ test_onePathStrategy =
             ]
         assertEqual ""
             [ ProofState.Goal $ makeOnePathRuleFromPatterns
-                ( Conditional
+                Conditional
                     { term = Mock.a
                     , predicate =
-                        makeEqualsPredicate
+                        makeEqualsPredicate Mock.testSort
                             (Mock.lessInt
                                 (Mock.fTestInt Mock.b)
                                 (Mock.builtinInt 0)
@@ -770,13 +725,46 @@ test_onePathStrategy =
                             (Mock.builtinBool True)
                     , substitution = mempty
                     }
-                )
                 (fromTermLike Mock.a)
             ]
             [ _actual ]
         assertEqual "onepath == reachability onepath"
             (fmap OnePath _actual)
             _actualReach
+    , testCase "Goal stuck after remove destination" $ do
+        -- Goal: X && X = a => X && X != a
+        -- Coinductive axiom: -
+        -- Normal axiom: -
+        -- Expected: stuck, since the terms unify but the conditions do not
+        let goal =
+                makeOnePathRuleFromPatternsWithCond
+                    ( Conditional
+                        { term = TermLike.mkElemVar Mock.x
+                        , predicate =
+                            makeEqualsPredicate_ (TermLike.mkElemVar Mock.x) Mock.a
+                        , substitution = mempty
+                        }
+                    )
+                    ( Conditional
+                        { term =
+                            mkAnd
+                                ( Predicate.unwrapPredicate . makeNotPredicate
+                                    $ makeEqualsPredicate_
+                                        (TermLike.mkElemVar Mock.x)
+                                        Mock.a
+
+                                )
+                                ( TermLike.mkElemVar Mock.x )
+                        , predicate = makeTruePredicate_
+                        , substitution = mempty
+                        }
+                    )
+        [ _actual ] <- runOnePathSteps
+            (Limit 1)
+            goal
+            []
+            []
+        assertEqual "" (ProofState.GoalStuck goal) _actual
     ]
 
 simpleRewrite
@@ -789,8 +777,8 @@ simpleRewrite left right =
         { left = left
         , antiLeft = Nothing
         , right = right
-        , requires = makeTruePredicate
-        , ensures = makeTruePredicate
+        , requires = makeTruePredicate_
+        , ensures = makeTruePredicate_
         , attributes = def
         }
 
@@ -813,7 +801,7 @@ rewriteWithPredicate left right predicate =
         , antiLeft = Nothing
         , right = right
         , requires = predicate
-        , ensures = makeTruePredicate
+        , ensures = makeTruePredicate_
         , attributes = def
         }
 
@@ -838,7 +826,7 @@ runSteps
     -- ^left-hand-side of unification
     -> [Strategy (Prim goal)]
     -> IO a
-runSteps graphFilter picker configuration strategy' =
+runSteps graphFilter picker goal strategy' =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
@@ -846,7 +834,7 @@ runSteps graphFilter picker configuration strategy' =
         give metadataTools
             $ declareSMTLemmas
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-        runStrategy transitionRule strategy' (ProofState.Goal configuration)
+        runStrategy transitionRule strategy' (ProofState.Goal goal)
   where
     mockEnv = Mock.env
     Env {metadataTools} = mockEnv

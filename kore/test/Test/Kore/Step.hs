@@ -15,7 +15,6 @@ import Data.Default
     )
 import Data.Function
 import Data.Generics.Product
-import qualified Data.Set as Set
 
 import Data.Text
     ( Text
@@ -37,11 +36,11 @@ import Kore.Internal.Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
-    ( makeEqualsPredicate
-    , makeTruePredicate
-    )
-import Kore.Internal.Predicate
     ( Predicate
+    , makeEqualsPredicate
+    , makeEqualsPredicate_
+    , makeTruePredicate
+    , makeTruePredicate_
     )
 import Kore.Internal.Symbol
     ( Symbol (Symbol, symbolConstructor)
@@ -150,7 +149,8 @@ takeSteps (Start start, wrappedAxioms) =
 compareTo
     :: HasCallStack
     => Expect -> Actual -> IO ()
-compareTo (Expect expected) actual = assertEqual "" (pure expected) actual
+compareTo (Expect expected) actual =
+    assertEqual "" (Pattern.fromTermLike expected) actual
 
 
     {- Types used in this file -}
@@ -212,7 +212,7 @@ rewriteImplies =
 
 expectTwoAxioms :: [Pattern Variable]
 expectTwoAxioms =
-    [ pure (mkElemVar $ v1 Mock.testSort)
+    [ Pattern.fromTermLike (mkElemVar $ v1 Mock.testSort)
     , Pattern.fromTermLike
         $ mkImplies
             (mkElemVar $ v1 Mock.testSort)
@@ -224,7 +224,7 @@ actualTwoAxioms =
     runStep
         Conditional
             { term = mkElemVar (v1 Mock.testSort)
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate_
             , substitution = mempty
             }
         [ rewriteIdentity
@@ -238,7 +238,7 @@ initialFailSimple =
             metaSigma
                 (metaG (mkElemVar $ a1 Mock.testSort))
                 (metaF (mkElemVar $ b1 Mock.testSort))
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 
@@ -264,7 +264,7 @@ initialFailCycle =
             metaSigma
                 (mkElemVar $ a1 Mock.testSort)
                 (mkElemVar $ a1 Mock.testSort)
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate_
         , substitution = mempty
         }
 
@@ -287,7 +287,7 @@ initialIdentity :: Pattern Variable
 initialIdentity =
     Conditional
         { term = mkElemVar (v1 Mock.testSort)
-        , predicate = makeTruePredicate
+        , predicate = makeTruePredicate Mock.testSort
         , substitution = mempty
         }
 
@@ -339,7 +339,7 @@ smtTerm term = Mock.functionalConstr10 term
 smtSyntaxPredicate
     :: TermLike Variable -> PredicateState -> Predicate Variable
 smtSyntaxPredicate term predicateState =
-    makeEqualsPredicate
+    makeEqualsPredicate_
         (Mock.lessInt
             (Mock.fTestInt term)
             (Mock.builtinInt 0)
@@ -366,20 +366,20 @@ test_SMT =
         -- Expected: a | f(b) < 0
         [ _actual1 ] <- runStepMockEnv
             (smtPattern Mock.b PredicatePositive)
-            [ RewriteRule $ RulePattern
+            [ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , right = Mock.a
-                , ensures = makeTruePredicate
+                , ensures = makeTruePredicate_
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicatePositive
                 , attributes = def
                 }
-            , RewriteRule $ RulePattern
+            , RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , right = Mock.c
-                , ensures = makeTruePredicate
+                , ensures = makeTruePredicate_
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicateNegated
                 , attributes = def
@@ -399,7 +399,7 @@ test_SMT =
         [ _actual1 ] <- runStepMockEnv
             Conditional
                 { term = Mock.functionalConstr10 Mock.b
-                , predicate = makeEqualsPredicate
+                , predicate = makeEqualsPredicate_
                     (Mock.lessInt
                         (Mock.fTestInt Mock.b)
                         (Mock.builtinInt 0)
@@ -411,9 +411,9 @@ test_SMT =
                 { left = Mock.functionalConstr10 (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
                 , right = Mock.a
-                , ensures = makeTruePredicate
+                , ensures = makeTruePredicate_
                 , requires =
-                    makeEqualsPredicate
+                    makeEqualsPredicate_
                         (Mock.lessInt
                             (Mock.fTestInt (TermLike.mkElemVar Mock.x))
                             (Mock.builtinInt 0)
@@ -426,7 +426,7 @@ test_SMT =
             [ Conditional
                 { term = Mock.a
                 , predicate =
-                    makeEqualsPredicate
+                    makeEqualsPredicate Mock.testSort
                         (Mock.lessInt
                             (Mock.fTestInt Mock.b)
                             (Mock.builtinInt 0)
@@ -454,7 +454,7 @@ actualUnificationError =
                 metaSigma
                     (mkElemVar $ a1 Mock.testSort)
                     (metaI (mkElemVar $ b1 Mock.testSort))
-            , predicate = makeTruePredicate
+            , predicate = makeTruePredicate_
             , substitution = mempty
             }
         [axiomMetaSigmaId]
@@ -462,8 +462,6 @@ actualUnificationError =
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
     { sortAttributes = const def
-    , isSubsortOf = const $ const False
-    , subsorts = Set.singleton
     , applicationSorts = undefined
     , symbolAttributes = undefined
     , isOverloading = undefined

@@ -19,16 +19,12 @@ module Kore.IndexedModule.MetadataTools
 import Data.Function
     ( on
     )
-import Data.Graph
 import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( mapMaybe
-    )
-import Data.Set
-    ( Set
     )
 import qualified Data.Set as Set
 
@@ -37,7 +33,6 @@ import qualified Kore.Attribute.Sort as Attribute
 import qualified Kore.Attribute.Sort.Constructors as Attribute
     ( Constructors
     )
-import Kore.Attribute.Subsort
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
@@ -59,11 +54,6 @@ import Kore.Syntax.Application
 data MetadataTools sortConstructors smt attributes = MetadataTools
     { sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
-    , isSubsortOf :: Sort -> Sort -> Bool
-    {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
-       including when @a@ equals @b@. -}
-    , subsorts :: Sort -> Set Sort
-    -- ^ get the subsorts for a sort
     , applicationSorts :: SymbolOrAlias -> ApplicationSorts
     -- ^ Sorts for a specific symbol application.
     , symbolAttributes :: Id -> attributes
@@ -101,8 +91,6 @@ extractMetadataTools
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
         { sortAttributes = getSortAttributes m
-        , isSubsortOf = checkSubsort
-        , subsorts = Set.fromList . fmap getSortFromId . getSubsorts
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
         , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
@@ -111,36 +99,7 @@ extractMetadataTools m constructorsExtractor smtExtractor =
         , sortConstructors = constructors
         }
   where
-    subsortTable :: Map Sort [Sort]
-    subsortTable = Map.unionsWith (++)
-        [ Map.insert subsort [] $ Map.singleton supersort [subsort]
-        | Subsort subsort supersort <- indexedModuleSubsorts m]
-
     constructors = constructorsExtractor m
-
-    -- In `sortGraph`, an edge (a, b) represents a subsort relationship between
-    -- b and a.
-    (sortGraph, vertexToSort, sortToVertex) =
-        graphFromEdges [ ((),supersort,subsorts)
-                        | (supersort,subsorts)
-                            <- Map.toList subsortTable]
-    getSortFromId :: Vertex -> Sort
-    getSortFromId sortId =
-        let (_, sort, _) = vertexToSort sortId
-        in sort
-
-    getSubsorts :: Sort -> [Vertex]
-    getSubsorts = maybe [] (reachable sortGraph) . sortToVertex
-
-    checkSubsort :: Sort -> Sort -> Bool
-    checkSubsort =
-        let
-            realCheckSubsort subsort supersort
-              | Just subId <- sortToVertex subsort
-              , Just supId <- sortToVertex supersort =
-                path sortGraph supId subId
-            realCheckSubsort _ _ = False
-        in realCheckSubsort
 
     overloadPairsSet = Set.fromList overloadPairsList
 
