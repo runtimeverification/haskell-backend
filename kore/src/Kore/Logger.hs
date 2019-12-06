@@ -224,11 +224,9 @@ instance Entry LogMessage where
     entryScopes _ = Set.empty
 
 instance Pretty LogMessage where
-    pretty LogMessage { severity, message, callstack } =
+    pretty LogMessage { message, callstack } =
         Pretty.hsep
-            [ Pretty.brackets (Pretty.pretty severity)
-            , ":"
-            , Pretty.pretty message
+            [ Pretty.pretty message
             , Pretty.brackets (formatCallstack callstack)
             ]
       where
