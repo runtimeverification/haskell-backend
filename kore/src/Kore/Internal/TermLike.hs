@@ -133,6 +133,7 @@ module Kore.Internal.TermLike
     , pattern Evaluated_
     , pattern Endianness_
     , pattern Signedness_
+    , pattern Inj_
     -- * Re-exports
     , module Kore.Internal.Variable
     , Substitute.SubstitutionVariable
@@ -143,6 +144,7 @@ module Kore.Internal.TermLike
     , CofreeF (..), Comonad (..)
     , Sort (..), SortActual (..), SortVariable (..)
     , stringMetaSort
+    , module Kore.Internal.Inj
     , module Kore.Internal.InternalBytes
     , module Kore.Syntax.And
     , module Kore.Syntax.Application
@@ -243,6 +245,7 @@ import Kore.Debug
 import qualified Kore.Domain.Builtin as Domain
 import Kore.Error
 import Kore.Internal.Alias
+import Kore.Internal.Inj
 import Kore.Internal.InternalBytes
 import Kore.Internal.Symbol hiding
     ( isNonSimplifiable
@@ -360,6 +363,7 @@ data TermLikeF variable child
     | VariableF      !(Const (UnifiedVariable variable) child)
     | EndiannessF    !(Const Endianness child)
     | SignednessF    !(Const Signedness child)
+    | InjF           !(Inj child)
     deriving (Eq, Ord, Show)
     deriving (Functor, Foldable, Traversable)
     deriving (GHC.Generic, GHC.Generic1)
@@ -451,6 +455,7 @@ traverseVariablesF traversing =
         EvaluatedF childP -> pure (EvaluatedF childP)
         EndiannessF endianness -> pure (EndiannessF endianness)
         SignednessF signedness -> pure (SignednessF signedness)
+        InjF inj -> pure (InjF inj)
   where
     traverseConstVariable (Const variable) =
         Const <$> traverse traversing variable
@@ -1209,6 +1214,7 @@ forceSortPredicate
         InhabitantF _ -> illSorted forcedSort original
         EndiannessF _ -> illSorted forcedSort original
         SignednessF _ -> illSorted forcedSort original
+        InjF _ -> illSorted forcedSort original
 
 {- | Call the argument function with two patterns whose sorts agree.
 
@@ -2431,3 +2437,6 @@ pattern Endianness_ endianness <-
 pattern Signedness_ :: Signedness -> TermLike child
 pattern Signedness_ signedness <-
     (Recursive.project -> _ :< SignednessF (Const signedness))
+
+pattern Inj_ :: Inj (TermLike child) -> TermLike child
+pattern Inj_ inj <- (Recursive.project -> _ :< InjF inj)

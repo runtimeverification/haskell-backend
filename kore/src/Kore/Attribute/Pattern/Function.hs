@@ -20,6 +20,10 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.Inj
+    ( Inj
+    )
+import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
@@ -160,4 +164,8 @@ instance Synthetic Function Inhabitant where
 instance Synthetic Function (Const (UnifiedVariable variable)) where
     synthetic (Const (ElemVar _)) = Function True
     synthetic (Const (SetVar _)) = Function False
+    {-# INLINE synthetic #-}
+
+instance Synthetic Function Inj where
+    synthetic = synthetic . Inj.toApplication
     {-# INLINE synthetic #-}

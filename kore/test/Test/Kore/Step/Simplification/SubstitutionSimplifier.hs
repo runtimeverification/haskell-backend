@@ -209,9 +209,8 @@ test_SubstitutionSimplifier =
                         Right $
                             Condition.fromNormalizationSimplified normalization
                       | otherwise =
-                        Left
-                        $ SubstitutionError
-                        $ SimplifiableCycle (fst <$> denormalized)
+                        Left . SubstitutionError
+                        $ SimplifiableCycle (fst <$> denormalized) normalization
                     expect
                       | null results = Right []
                       | otherwise    = (: []) <$> traverse expect1 results
