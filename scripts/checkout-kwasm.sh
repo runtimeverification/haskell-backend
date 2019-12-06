@@ -2,10 +2,6 @@
 
 set -exuo pipefail
 
-TOP=${TOP:-$(git rev-parse --show-toplevel)}
-KWASM_DIR=$TOP/wasm-semantics
-export KWASM_DIR
-
 mkdir -p $(dirname $KWASM_DIR)
 
 rm -rf $KWASM_DIR
