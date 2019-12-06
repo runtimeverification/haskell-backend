@@ -37,7 +37,7 @@ import Plot
     )
 
 jenkins :: String
-jenkins = "https://office.runtimeverification.com/jenkins"
+jenkins = "http://office.runtimeverification.com/jenkins"
 
 getJob :: String -> String -> IO Job
 getJob project name = do
