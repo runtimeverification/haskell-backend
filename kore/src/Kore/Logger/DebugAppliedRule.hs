@@ -174,8 +174,4 @@ filterDebugAppliedRule debugAppliedRuleOptions baseLogAction logAction =
 
 matchDebugAppliedRule :: SomeEntry -> Maybe DebugAppliedRule
 matchDebugAppliedRule entry =
-    fromEntry entry <|> throughScope
-  where
-    throughScope = do
-        entry' <- fromEntry entry
-        matchDebugAppliedRule entry'
+    fromEntry entry

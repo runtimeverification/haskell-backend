@@ -23,10 +23,14 @@ import Kore.Logger
     , SomeEntry
     , logWith
     )
+import SMT.AST
+    ( SExpr (..)
+    )
+import qualified SMT.AST as SMT
 
 newtype DebugSolverSend =
     DebugSolverSend
-        { getSendSExpr :: Text
+        { getSendSExpr :: SExpr
         }
 
 newtype DebugSolverRecv =
@@ -36,7 +40,7 @@ newtype DebugSolverRecv =
 
 instance Pretty DebugSolverSend where
     pretty DebugSolverSend { getSendSExpr } =
-        pretty getSendSExpr
+        pretty . SMT.buildText $ getSendSExpr
 
 instance Pretty DebugSolverRecv where
     pretty DebugSolverRecv { getRecvSExpr } =
@@ -52,10 +56,10 @@ instance Entry DebugSolverRecv where
 
 logDebugSolverSendWith
     :: LogAction m SomeEntry
-    -> Text
+    -> SExpr
     -> m ()
-logDebugSolverSendWith logger smtText =
-    logWith logger $ DebugSolverSend smtText
+logDebugSolverSendWith logger sExpr =
+    logWith logger $ DebugSolverSend sExpr
 
 logDebugSolverRecvWith
     :: LogAction m SomeEntry
