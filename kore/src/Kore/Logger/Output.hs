@@ -11,7 +11,7 @@ module Kore.Logger.Output
     , KoreLogOptions (..)
     , koreLogFilters
     , filterScopes
-    , filterSeverity
+    , filterEntryAndSeverity
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
@@ -139,22 +139,30 @@ koreLogFilters
 koreLogFilters koreLogOptions baseLogger =
     id
     $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
-    $ filterSeverity logLevel
+    $ filterEntryAndSeverity logLevel logEntries
     $ filterScopes logScopes
-    $ filterEntries logEntries
-    $ baseLogger
+    baseLogger
   where
     KoreLogOptions { logLevel, logScopes, logEntries } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
 
-{- | Select log entries with 'Severity' greater than or equal to the level.
+{- | Select log entries with 'Severity' greater than or equal to the level
+    or those entries contained in the active set.
  -}
-filterSeverity
+filterEntryAndSeverity
     :: Applicative m
-    => Severity  -- ^ level
+    => Severity
+    -- ^ level
+    -> Set Text
+    -- ^ active entries
     -> LogAction m SomeEntry
     -> LogAction m SomeEntry
-filterSeverity level = Colog.cfilter (\ent -> entrySeverity ent >= level)
+filterEntryAndSeverity level logEntries =
+    Colog.cfilter
+        (\entry ->
+            (entrySeverity entry >= level)
+            || (entryTypeText entry `elem` logEntries)
+        )
 
 {- | Select log entries with 'Scope's in the active set.
  -}
@@ -167,22 +175,6 @@ filterScopes scopes
   | null scopes = id
   | otherwise =
     Colog.cfilter (\ent -> not $ Set.disjoint (entryScopes ent) scopes)
-
-{- | Select log entries with entry names in the active set.
- -}
-filterEntries
-    :: Applicative m
-    => Set Text
-    -- ^ active entries
-    -> LogAction m SomeEntry
-    -> LogAction m SomeEntry
-filterEntries entries
-  | null entries = id
-  | otherwise =
-    Colog.cfilter (\ent -> entryTypeName ent `elem` entries)
-  where
-    entryTypeName (SomeEntry entry) =
-        Text.pack . show . Reflection.typeOf $ entry
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a

@@ -21,6 +21,7 @@ module Kore.Logger
     , liftLogAction
     , hoistLogAction
     , logWith
+    , entryTypeText
     , LoggerT (..)
     , SomeEntry (..)
     , someEntry
@@ -76,6 +77,7 @@ import Data.String
 import Data.Text
     ( Text
     )
+import qualified Data.Text as Text
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
@@ -90,6 +92,7 @@ import qualified GHC.Stack as GHC
 import Prelude hiding
     ( log
     )
+import qualified Type.Reflection as Reflection
 
 import Control.Monad.Counter
     ( CounterT
@@ -308,3 +311,7 @@ logWith
     -> m ()
 logWith logger entry =
     logger Colog.<& toEntry entry
+
+entryTypeText :: SomeEntry -> Text
+entryTypeText (SomeEntry entry) =
+    Text.pack . show . Reflection.typeOf $ entry
