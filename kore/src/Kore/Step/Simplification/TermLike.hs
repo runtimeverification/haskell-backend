@@ -100,6 +100,9 @@ import qualified Kore.Step.Simplification.In as In
 import qualified Kore.Step.Simplification.Inhabitant as Inhabitant
     ( simplify
     )
+import qualified Kore.Step.Simplification.Inj as Inj
+    ( simplify
+    )
 import qualified Kore.Step.Simplification.InternalBytes as InternalBytes
     ( simplify
     )
@@ -368,6 +371,8 @@ simplifyInternal term predicate = do
             ApplySymbolF applySymbolF ->
                 Application.simplify predicate
                     =<< simplifyChildren applySymbolF
+            InjF injF ->
+                Inj.simplify predicate =<< simplifyChildren injF
             CeilF ceilF ->
                 Ceil.simplify predicate =<< simplifyChildren ceilF
             EqualsF equalsF ->

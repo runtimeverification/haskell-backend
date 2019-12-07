@@ -61,6 +61,7 @@ import qualified Kore.Step.Function.Evaluator as Axiom
     )
 import qualified Kore.Step.Simplification.AndPredicates as And
 import qualified Kore.Step.Simplification.Equals as Equals
+import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Not as Not
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.TopBottom
@@ -179,9 +180,17 @@ makeEvaluateTerm
             let ceils = simplifiedChildren
             And.simplifyEvaluatedMultiPredicate (MultiAnd.make ceils)
 
-      | BuiltinF child <- projected = makeEvaluateBuiltin
-                                        configurationCondition
-                                        child
+      | BuiltinF child <- projected =
+        makeEvaluateBuiltin configurationCondition child
+
+      | InjF inj <- projected = do
+        InjSimplifier { evaluateCeilInj } <- askInjSimplifier
+        (makeEvaluateTerm configurationCondition . ceilChild . evaluateCeilInj)
+            Ceil
+                { ceilResultSort = termLikeSort term -- sort is irrelevant
+                , ceilOperandSort = termLikeSort term
+                , ceilChild = inj
+                }
 
       | otherwise = do
         evaluation <- Axiom.evaluatePattern

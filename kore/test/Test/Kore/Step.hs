@@ -15,7 +15,6 @@ import Data.Default
     )
 import Data.Function
 import Data.Generics.Product
-import qualified Data.Set as Set
 
 import Data.Text
     ( Text
@@ -462,8 +461,6 @@ actualUnificationError =
 mockMetadataTools :: SmtMetadataTools Attribute.Symbol
 mockMetadataTools = MetadataTools
     { sortAttributes = const def
-    , isSubsortOf = const $ const False
-    , subsorts = Set.singleton
     , applicationSorts = undefined
     , symbolAttributes = undefined
     , isOverloading = undefined

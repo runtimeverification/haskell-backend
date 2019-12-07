@@ -81,13 +81,13 @@ normalizeSubstitution substitution =
     maybe bottom fromNormalization $ normalize substitution
   where
     bottom = return Condition.bottom
-    fromNormalization Normalization { normalized, denormalized }
+    fromNormalization normalization@Normalization { normalized, denormalized }
       | null denormalized =
         pure
         $ Condition.fromSubstitution
         $ Substitution.unsafeWrap normalized
       | otherwise =
-        throwError (SimplifiableCycle variables)
+        throwError $ SimplifiableCycle variables normalization
       where
         (variables, _) = unzip denormalized
 
@@ -288,6 +288,7 @@ getNonSimplifiableDependencies interesting var termLike =
         Var_ v | v == var -> Set.empty
         _ -> Recursive.fold (nonSimplifiableAbove interesting) termLike
 
+-- TODO (thomas.tuegel): Refactor to use NonSimplifiable attribute.
 nonSimplifiableAbove
     :: forall variable
     .  Ord variable
@@ -301,6 +302,7 @@ nonSimplifiableAbove interesting p =
         ApplySymbolF Application { applicationSymbolOrAlias }
             | Symbol.isNonSimplifiable applicationSymbolOrAlias ->
                 dependencies
+        InjF _ -> dependencies
         _ -> Set.empty
   where
     dependencies :: Set (UnifiedVariable variable)

@@ -27,6 +27,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
@@ -35,6 +36,10 @@ import Kore.Internal.TermLike
 import Kore.Sort
 import Kore.Syntax.Application
 import Kore.Syntax.Variable
+import Kore.Unification.Substitution
+    ( Normalization
+    , wrapNormalization
+    )
 import Kore.Unparser
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -104,29 +109,38 @@ substitutions.
 data SubstitutionError =
     forall variable.
     InternalVariable variable =>
-    SimplifiableCycle [UnifiedVariable variable]
+    SimplifiableCycle [UnifiedVariable variable] (Normalization variable)
     -- ^ the circularity path may pass through non-constructors: maybe solvable.
 
 instance Debug SubstitutionError where
-    debugPrec (SimplifiableCycle variables) prec =
+    debugPrec (SimplifiableCycle variables normalization) prec =
         (if (prec >= 10) then Pretty.parens else id)
-        $ "SimplifiableCycle" Pretty.<+> debugPrec variables 10
+        $ Pretty.hsep
+            [ "SimplifiableCycle"
+            , debugPrec variables 10
+            , debugPrec normalization 10
+            ]
 
 instance Diff SubstitutionError where
     diffPrec = diffPrecIgnore
 
 instance Show SubstitutionError where
-    showsPrec prec (SimplifiableCycle variables) =
+    showsPrec prec (SimplifiableCycle variables normalization) =
         showParen (prec >= 10)
         $ showString "SimplifiableCycle "
         . showList variables
+        . showString " "
+        . showsPrec 10 normalization
 
 instance Pretty SubstitutionError where
-    pretty (SimplifiableCycle vars) =
+    pretty (SimplifiableCycle variables substitution) =
         Pretty.vsep
-        ( "Non-constructor circular variable dependency:"
-        : (unparse <$> vars)
-        )
+            [ "Simplifiable circular variable dependency:"
+            , (Pretty.indent 4 . Pretty.vsep) (unparse <$> variables)
+            , "in substitution:"
+            , (Pretty.indent 4 . unparse)
+                (Predicate.fromSubstitution $ wrapNormalization substitution)
+            ]
 
 -- Trivially promote substitution errors to sum-type errors
 substitutionToUnifyOrSubError
