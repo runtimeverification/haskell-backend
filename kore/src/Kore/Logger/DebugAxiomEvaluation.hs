@@ -12,6 +12,7 @@ module Kore.Logger.DebugAxiomEvaluation
     , parseDebugAxiomEvaluationOptions
 
     -- * logging functions. Import qualified.
+    , attemptAxiom
     , end
     , notEvaluated
     , reevaluation
@@ -48,6 +49,9 @@ import Options.Applicative
     )
 import qualified Options.Applicative as Options
 
+import Kore.Attribute.SourceLocation as Attribute
+    ( SourceLocation
+    )
 import Kore.Logger
     ( Entry (fromEntry, toEntry)
     , LogAction (LogAction)
@@ -78,6 +82,7 @@ data DebugAxiomEvaluation =
 
 data AxiomEvaluationState
     = Start
+    | AttemptingAxiom SourceLocation
     | NotEvaluated
     | Reevaluation
     | End
@@ -93,6 +98,13 @@ instance Pretty DebugAxiomEvaluation where
         case state of
             Start ->
                 Pretty.sep ["Starting:", Pretty.pretty identifier]
+            AttemptingAxiom sourceLocation ->
+                Pretty.sep
+                    [ "Attempting axiom "
+                    , Pretty.pretty sourceLocation
+                    , "for:"
+                    , Pretty.pretty identifier
+                    ]
             NotEvaluated ->
                 Pretty.sep ["No results for:", Pretty.pretty identifier]
             Reevaluation ->
@@ -135,6 +147,13 @@ reevaluation
     => Maybe AxiomIdentifier
     -> log ()
 reevaluation = logState Reevaluation
+
+attemptAxiom
+    :: MonadLog log
+    => SourceLocation
+    -> Maybe AxiomIdentifier
+    -> log ()
+attemptAxiom sourceLocation = logState (AttemptingAxiom sourceLocation)
 
 logState
     :: MonadLog log
