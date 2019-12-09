@@ -145,7 +145,6 @@ koreLogFilters koreLogOptions baseLogger =
     $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
     $ filterDebugAxiomEvaluation debugAxiomEvaluationOptions
     $ filterSeverity logLevel
-    $ filterDebugAxiomEvaluation debugAxiomEvaluationOptions
     $ filterScopes logScopes
     $ baseLogger
   where
