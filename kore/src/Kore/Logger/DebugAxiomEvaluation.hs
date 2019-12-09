@@ -211,7 +211,7 @@ filterDebugAxiomEvaluation
             { identifier, secondaryIdentifier, severity = Info }
                 <- fromEntry entry
         let textIdentifier :: Maybe Text
-            textIdentifier = (Text.pack . show) <$> identifier
+            textIdentifier = (Text.pack . show . Pretty.pretty) <$> identifier
 
             isSelectedIdentifier :: Text -> Bool
             isSelectedIdentifier toCheck =
