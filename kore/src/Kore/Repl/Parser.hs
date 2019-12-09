@@ -23,7 +23,13 @@ import Data.Functor
 import Data.List
     ( nub
     )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import Prelude hiding
     ( log
@@ -252,12 +258,12 @@ log :: Parser ReplCommand
 log = do
     literal "log"
     logLevel <- severity
-    logScopes <- unLogScope <$> logScope
     logType <- parseLogType
+    logEntries <- parseLogEntries
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
     pure $ Log Logger.KoreLogOptions
-        { logType, logLevel, logScopes, debugAppliedRuleOptions }
+        { logType, logLevel, logEntries, debugAppliedRuleOptions }
 
 severity :: Parser Logger.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
@@ -268,13 +274,13 @@ severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
     sError    = Logger.Error    <$ literal "error"
     sCritical = Logger.Critical <$ literal "critical"
 
-logScope :: Parser LogScope
-logScope =
-    LogScope . Set.fromList
-        <$$> literal "[" *> many scope <* literal "]"
+parseLogEntries :: Parser (Set Text)
+parseLogEntries =
+    Set.fromList
+        <$$> literal "[" *> many entry <* literal "]"
   where
-      scope =
-          Logger.Scope . Text.pack
+      entry =
+          Text.pack
             <$$> wordWithout ['[', ']', ',']
             <* optional (literal ",")
 

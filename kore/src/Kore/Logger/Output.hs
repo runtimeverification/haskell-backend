@@ -10,7 +10,6 @@ module Kore.Logger.Output
     ( KoreLogType (..)
     , KoreLogOptions (..)
     , koreLogFilters
-    , filterScopes
     , filterEntryAndSeverity
     , withLogger
     , parseKoreLogOptions
@@ -106,8 +105,6 @@ data KoreLogOptions = KoreLogOptions
     -- ^ desired output method, see 'KoreLogType'
     , logLevel  :: Severity
     -- ^ minimal log level, passed via "--log-level"
-    , logScopes :: Set Scope
-    -- ^ scopes to show, empty means show all
     , logEntries :: Set Text
     -- ^ entries to show, empty means show all
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
@@ -140,10 +137,9 @@ koreLogFilters koreLogOptions baseLogger =
     id
     $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
     $ filterEntryAndSeverity logLevel logEntries
-    $ filterScopes logScopes
     baseLogger
   where
-    KoreLogOptions { logLevel, logScopes, logEntries } = koreLogOptions
+    KoreLogOptions { logLevel, logEntries } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
 
 {- | Select log entries with 'Severity' greater than or equal to the level
@@ -164,18 +160,6 @@ filterEntryAndSeverity level logEntries =
             || (entryTypeText entry `elem` logEntries)
         )
 
-{- | Select log entries with 'Scope's in the active set.
- -}
-filterScopes
-    :: Applicative m
-    => Set Scope  -- ^ active scopes
-    -> LogAction m SomeEntry
-    -> LogAction m SomeEntry
-filterScopes scopes
-  | null scopes = id
-  | otherwise =
-    Colog.cfilter (\ent -> not $ Set.disjoint (entryScopes ent) scopes)
-
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options = withLogger options . runReaderT . getLoggerT
@@ -186,7 +170,6 @@ parseKoreLogOptions =
     KoreLogOptions
     <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
-    <*> (parseScope <|> pure mempty)
     <*> (parseEntries <|> pure mempty)
     <*> parseDebugAppliedRuleOptions
   where
@@ -220,17 +203,6 @@ parseKoreLogOptions =
     entryParser = do
         args <- many itemParser
         pure . Set.fromList $ args
-    parseScope :: Parser (Set Scope)
-    parseScope =
-        option
-            parseCommaSeparatedScopes
-            $ long "log-scope"
-            <> help "Log scope"
-    parseCommaSeparatedScopes = maybeReader $ Parser.parseMaybe scopeParser
-    scopeParser :: Parser.Parsec String String (Set Scope)
-    scopeParser = do
-        args <- many itemParser
-        pure . Set.fromList . fmap Scope $ args
     itemParser :: Parser.Parsec String String Text
     itemParser = do
         argument <- some (Parser.noneOf [','])
