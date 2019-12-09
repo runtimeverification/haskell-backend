@@ -426,6 +426,7 @@ logTests =
             , logScopes = mempty
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log critical [scope1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
@@ -433,6 +434,7 @@ logTests =
             , logScopes = Set.singleton "scope1"
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log info [ scope1,  scope2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
@@ -440,6 +442,7 @@ logTests =
             , logScopes = Set.fromList ["scope1", "scope2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log info [ scope1  scope2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
@@ -447,5 +450,6 @@ logTests =
             , logScopes = Set.fromList ["scope1", "scope2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     ]
