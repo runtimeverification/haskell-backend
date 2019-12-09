@@ -16,6 +16,11 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
+import Debug.Trace
+import Kore.TopBottom
+    ( isBottom
+    )
+
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -184,7 +189,14 @@ evaluateBuiltin
                     <> " to reduce concrete pattern:"
                 , Pretty.indent 4 (unparse patt)
                 ]
-        _ -> return result
+        _ ->
+            case result of
+                Applied (AttemptedAxiomResults {results , remainders}) -> do
+                    if (isBottom results && isBottom remainders)
+                        then traceM "\n\nBOTTOM\n\n"
+                        else return ()
+                    return result
+                _ -> return result
   where
     isValue pat =
         maybe False TermLike.isNonSimplifiable $ asConcrete pat
