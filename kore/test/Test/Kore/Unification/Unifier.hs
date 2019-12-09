@@ -819,17 +819,13 @@ injUnificationTests =
                 (Mock.sortInjectionSubToTop (mkElemVar Mock.xSubSort))
             )
             [ UnificationResult
-                { term =
-                    -- TODO (virgil): Fix this in unification, injection
-                    -- composition should be reduced to one injection.
-                    Mock.sortInjectionSubToTop
-                        (Mock.sortInjectionSubSubToSub Mock.aSubSubsort)
+                { term = Mock.sortInjectionSubSubToTop Mock.aSubSubsort
                 , substitution =
                     [   ( "xSubSort"
                         , Mock.sortInjectionSubSubToSub Mock.aSubSubsort
                         )
                     ]
-                , predicate = Predicate.makeTruePredicate Mock.subSort
+                , predicate = Predicate.makeTruePredicate Mock.topSort
                 }
             ]
     , testCase "unmatching injections" $

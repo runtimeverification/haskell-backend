@@ -15,6 +15,9 @@ import qualified Data.Functor.Foldable as Recursive
 import qualified GHC.Stack as GHC
 
 import qualified Kore.Attribute.Null as Attribute
+import Kore.Attribute.Synthetic
+    ( synthesize
+    )
 import qualified Kore.Builtin.Bool.Bool as Bool
 import qualified Kore.Builtin.Endianness.Endianness as Endianness
 import qualified Kore.Builtin.Int.Int as Int
@@ -26,6 +29,7 @@ import qualified Kore.Builtin.Signedness.Signedness as Signedness
 import qualified Kore.Builtin.String.String as String
 import qualified Kore.Domain.Builtin as Domain
 import qualified Kore.Internal.Alias as Alias
+import qualified Kore.Internal.Inj as Inj
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Syntax.Pattern as Syntax
@@ -75,6 +79,9 @@ externalize =
             InternalBytesF (Const internalBytes) ->
                 (toPatternF . Recursive.project)
                     (InternalBytes.asTermLike internalBytes)
+            InjF inj ->
+                (toPatternF . Recursive.project . synthesize . ApplySymbolF)
+                    (Inj.toApplication inj)
             _ -> toPatternF termLikeBase
       where
         termLikeBase@(_ :< termLikeF) = Recursive.project termLike
@@ -130,5 +137,6 @@ externalize =
                 $ mapHead Symbol.toSymbolOrAlias
                 $ Signedness.toApplication
                 $ getConst signednessF
+            InjF _ -> error "Unexpected sort injection"
             BuiltinF _ -> error "Unexpected internal builtin"
             InternalBytesF _ -> error "Unexpected internal builtin"

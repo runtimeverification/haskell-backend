@@ -305,13 +305,13 @@ simpleClaim
 simpleClaim left right =
     AllPathRule
     RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , right = mkAnd mkTop_ right
-            , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
-            , attributes = def
-            }
+        { left = left
+        , antiLeft = Nothing
+        , right = mkAnd mkTop_ right
+        , requires = makeTruePredicate_
+        , ensures = makeTruePredicate_
+        , attributes = def
+        }
 
 simpleTrustedClaim
     :: TermLike Variable
@@ -319,12 +319,12 @@ simpleTrustedClaim
     -> AllPathRule Variable
 simpleTrustedClaim left right =
     AllPathRule
-    $ RulePattern
-            { left = left
-            , antiLeft = Nothing
-            , right = right
-            , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
-            , attributes = def
-                { Attribute.trusted = Attribute.Trusted True }
-            }
+    RulePattern
+        { left = left
+        , antiLeft = Nothing
+        , right = right
+        , requires = makeTruePredicate_
+        , ensures = makeTruePredicate_
+        , attributes = def
+            { Attribute.trusted = Attribute.Trusted True }
+        }

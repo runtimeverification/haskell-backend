@@ -62,6 +62,7 @@ import qualified Kore.Builtin.Bool as Bool
 import qualified Kore.Builtin.Builtin as Builtin
 import qualified Kore.Builtin.Endianness as Endianness
 import Kore.Builtin.External
+import qualified Kore.Builtin.Inj as Inj
 import qualified Kore.Builtin.Int as Int
 import qualified Kore.Builtin.InternalBytes as InternalBytes
 import qualified Kore.Builtin.KEqual as KEqual
@@ -97,6 +98,7 @@ koreVerifiers =
     mempty
     <> Bool.verifiers
     <> Endianness.verifiers
+    <> Inj.verifiers
     <> Int.verifiers
     <> InternalBytes.verifiers
     <> KEqual.verifiers

@@ -20,6 +20,7 @@ module SMT.AST
     , buildSExpr, parseSExpr, parseSExprFile, readSExpr, readSExprs
     , sendSExpr, showSExpr
     , nameFromSExpr
+    , buildText
 
     , SmtConstructor
     , SmtConstructorArgument
@@ -306,3 +307,6 @@ readSExprs txt =
     fromMaybe
         []
         (Parser.parseMaybe (Parser.some parseSExpr) txt)
+
+buildText :: SExpr -> Text
+buildText = Text.Lazy.toStrict . Text.Builder.toLazyText . buildSExpr

@@ -23,6 +23,9 @@ import Kore.Domain.Builtin
 import Kore.Internal.Alias
     ( Alias
     )
+import Kore.Internal.Inj
+    ( Inj (..)
+    )
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
@@ -210,6 +213,14 @@ instance Synthetic ConstructorLike (Const InternalBytes) where
 
 instance Synthetic ConstructorLike (Top sort) where
     synthetic = const (ConstructorLike Nothing)
+    {-# INLINE synthetic #-}
+
+instance Synthetic NonSimplifiable Inj where
+    synthetic Inj { injChild } = NonSimplifiable $ do
+        childHead <- isNonSimplifiable injChild
+        case childHead of
+            SortInjectionHead -> Nothing
+            _                 -> pure SortInjectionHead
     {-# INLINE synthetic #-}
 
 data ConstructorLikeHead = ConstructorLikeHead

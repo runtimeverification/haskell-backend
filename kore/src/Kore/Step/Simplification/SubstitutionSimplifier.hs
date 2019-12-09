@@ -181,7 +181,7 @@ simplifyAnds
     => MakeAnd monad
     -> NonEmpty (TermLike variable)
     -> monad (Pattern variable)
-simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) = do
+simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
     foldM simplifyAnds' Pattern.top patterns
   where
     simplifyAnds'

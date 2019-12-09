@@ -85,6 +85,7 @@ import Options.Applicative
     )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
+import qualified Type.Reflection as Reflection
 
 import Kore.Logger
 import Kore.Logger.DebugAppliedRule
@@ -270,11 +271,11 @@ swappableLogger mvar =
     worker a logAction = Colog.unLogAction logAction a
 
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
-defaultLogPretty entry =
+defaultLogPretty (SomeEntry entry) =
     Pretty.hsep
-        [ Pretty.brackets (Pretty.pretty severity)
+        [ Pretty.brackets (Pretty.pretty . entrySeverity $ entry)
+        , ":"
+        , Pretty.brackets (Pretty.viaShow . Reflection.typeOf $ entry)
         , ":"
         , Pretty.pretty entry
         ]
-  where
-    severity = entrySeverity entry

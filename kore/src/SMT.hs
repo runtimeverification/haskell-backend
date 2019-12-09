@@ -305,8 +305,7 @@ instance MonadUnliftIO m => MonadLog (SmtT m) where
 
 instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
     withSolver (SmtT action) =
-        Logger.withLogScope "SMT.withSolver"
-        $ withSolverT' $ \solver -> do
+        withSolverT' $ \solver -> do
             -- Create an unshared "dummy" mutex for the solver.
             mvar <- liftIO $ newMVar solver
             -- Run the inner action with the unshared mutex.
@@ -315,12 +314,10 @@ instance (MonadIO m, MonadUnliftIO m) => MonadSMT (SmtT m) where
                 SimpleSMT.inNewScope solver (runInIO $ runReaderT action mvar)
 
     declare name typ =
-        Logger.withLogScope "SMT.declare"
-        $ withSolverT' $ \solver -> liftIO $ SimpleSMT.declare solver name typ
+        withSolverT' $ \solver -> liftIO $ SimpleSMT.declare solver name typ
 
     declareFun declaration =
-        Logger.withLogScope "SMT.declareFun"
-        $ withSolverT' $ \solver ->
+        withSolverT' $ \solver ->
             liftIO $ SimpleSMT.declareFun solver declaration
 
     declareSort declaration =
