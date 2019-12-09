@@ -41,6 +41,7 @@ import Kore.Logger
     )
 import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
     ( attemptAxiom
+    , klabelIdentifier
     )
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
@@ -138,6 +139,7 @@ evaluateAxioms equalityRules termLike predicate
         DebugAxiomEvaluation.attemptAxiom
             sourceLocation
             (matchAxiomIdentifier left)
+            (DebugAxiomEvaluation.klabelIdentifier left)
 
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete

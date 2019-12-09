@@ -17,6 +17,9 @@ module Kore.Logger.DebugAxiomEvaluation
     , notEvaluated
     , reevaluation
     , start
+
+    -- * Helpers
+    , klabelIdentifier
     ) where
 
 import Control.Applicative
@@ -51,6 +54,21 @@ import qualified Options.Applicative as Options
 
 import Kore.Attribute.SourceLocation as Attribute
     ( SourceLocation
+    )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol (Symbol)
+    )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol.DoNotUse
+import qualified Kore.Attribute.Symbol.Klabel as Attribute
+    ( Klabel (Klabel)
+    )
+import Kore.Internal.Symbol
+    ( Symbol (Symbol)
+    )
+import qualified Kore.Internal.Symbol as Attribute.Symbol.DoNotUse
+import Kore.Internal.TermLike
+    ( pattern App_
+    , TermLike
     )
 import Kore.Logger
     ( Entry (fromEntry, toEntry)
@@ -118,6 +136,7 @@ start
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 start = logState Start
 
@@ -127,6 +146,7 @@ end
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 end = logState End
 
@@ -136,6 +156,7 @@ notEvaluated
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 notEvaluated = logState NotEvaluated
 
@@ -145,6 +166,7 @@ reevaluation
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 reevaluation = logState Reevaluation
 
@@ -152,6 +174,7 @@ attemptAxiom
     :: MonadLog log
     => SourceLocation
     -> Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 attemptAxiom sourceLocation = logState (AttemptingAxiom sourceLocation)
 
@@ -159,11 +182,12 @@ logState
     :: MonadLog log
     => AxiomEvaluationState
     -> Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
-logState state identifier =
+logState state identifier secondaryIdentifier =
     logM DebugAxiomEvaluation
         { identifier
-        , secondaryIdentifier = Nothing
+        , secondaryIdentifier
         , state
         , severity = Info
         }
@@ -248,3 +272,16 @@ filterDebugAxiomEvaluation
 
     DebugAxiomEvaluationOptions { debugAxiomEvaluation } =
         debugAxiomEvaluationOptions
+
+klabelIdentifier :: TermLike variable -> Maybe Text
+klabelIdentifier
+    (App_
+        Symbol
+            {symbolAttributes = Attribute.Symbol
+                {klabel = Attribute.Klabel {getKlabel}}
+            }
+        _
+    )
+  =
+    getKlabel
+klabelIdentifier _ = Nothing
