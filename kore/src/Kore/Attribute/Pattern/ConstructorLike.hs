@@ -48,16 +48,18 @@ In other words, a pattern is constructor-like if it is equal (in the logical
 syntactically equal (in the 'Eq' sense).
 
 Examples of patterns that are constructor-like:
-- 'BuiltinBool', 'BuiltinInt', 'BuiltinString', and 'InternalBytes'
-- 'StringLiteral'
-- constructors with constructor-like arguments
-- 'DomainValue' in a non-hooked sort
-- 'Inj' in its normal form (if its argument is not also 'Inj')
+
+* 'BuiltinBool', 'BuiltinInt', 'BuiltinString', and 'InternalBytes'
+* 'StringLiteral'
+* constructors with constructor-like arguments
+* 'DomainValue' in a non-hooked sort
+* 'Inj' in its normal form (if its argument is not also 'Inj')
 
 Examples of patterns that are not constructor-like:
-- variables
-- function symbols
-- logical connectives
+
+* variables
+* function symbols
+* logical connectives
 
 -}
 newtype ConstructorLike =
