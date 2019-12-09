@@ -54,7 +54,6 @@ import Kore.Logger
     , MonadLog
     , Severity (..)
     , SomeEntry
-    , WithScope (WithScope)
     , logM
     , unLogAction
     )
@@ -71,7 +70,7 @@ We will log the applied rule and its unification or matching condition.
 data DebugAxiomEvaluation =
     DebugAxiomEvaluation
     { identifier :: !(Maybe AxiomIdentifier)
-    , secondaryIdentifier :: Maybe Text
+    , secondaryIdentifier :: !(Maybe Text)
     , state :: !AxiomEvaluationState
     , severity :: !Severity
     }
@@ -204,13 +203,7 @@ filterDebugAxiomEvaluation
         unLogAction baseLogAction (fixEntry entry)
   where
     fixEntry :: SomeEntry -> SomeEntry
-    fixEntry entry =
-        fromMaybe entry (fixAxiomEvaluation entry <|> throughScope entry)
-
-    throughScope :: SomeEntry -> Maybe SomeEntry
-    throughScope entry = do
-        WithScope { entry = entry' } <- fromEntry entry
-        return (fixEntry entry')
+    fixEntry entry = fromMaybe entry (fixAxiomEvaluation entry)
 
     fixAxiomEvaluation :: SomeEntry -> Maybe SomeEntry
     fixAxiomEvaluation entry = do
