@@ -192,12 +192,11 @@ parseKoreLogOptions =
             "error"    -> pure Error
             "critical" -> pure Critical
             _          -> Nothing
-    parseEntries :: Parser (Set Text)
     parseEntries =
         option
             parseCommaSeparatedEntries
             $ long "log-entry"
-            <> help "Log entry"
+            <> help "Log entry: logs entries of supplied types"
     parseCommaSeparatedEntries = maybeReader $ Parser.parseMaybe entryParser
     entryParser :: Parser.Parsec String String (Set Text)
     entryParser = do

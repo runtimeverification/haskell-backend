@@ -328,15 +328,19 @@ helpText =
     \<alias>                               runs an existing alias\n\
     \load file                             loads the file as a repl script\n\
     \proof-status                          shows status for each claim\n\
-    \log <severity> [<scope>] <type>       configures the logging output\n\
+    \log <severity> [<entry>] <type>       configures the logging output\n\
     \                                      <severity> can be debug, info,\
-                                           \ warning, error, or critical\n\
-    \                                      [<scope>] is the list of scopes\
+                                           \ warning, error, or critical;\
+                                           \ is optional and defaults to warning\n\
+    \                                      [<entry>] is the list of entries\
                                            \ separated by white spaces or\
-                                           \ commas, e.g. '[scope1, scope2]';\n\
-    \                                      these scopes are used for filtering\
+                                           \ commas, e.g. '[entry1, entry2]';\n\
+    \                                      these entries are used for filtering\
                                            \ the logged information, for example,\
-                                           \ '[]' will log all scopes\n\
+                                           \ '[]' will log all entries with <severity>;\n\
+    \                                      '[entry1, entry2]' will only log entries of\
+                                           \ types entry1 or entry2 as well as entries of\
+                                           \ severity <severity>\n\
     \                                      <type> can be 'stderr' or\n\
                                            \'file filename'\n\
     \exit                                  exits the repl\
