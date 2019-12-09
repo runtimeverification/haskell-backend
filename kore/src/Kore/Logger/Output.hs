@@ -106,7 +106,7 @@ data KoreLogOptions = KoreLogOptions
     , logLevel  :: Severity
     -- ^ minimal log level, passed via "--log-level"
     , logEntries :: Set Text
-    -- ^ entries to show, empty means show all
+    -- ^ extra entries to show, ignoring 'logLevel'
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     }
     deriving (Eq, Show)
