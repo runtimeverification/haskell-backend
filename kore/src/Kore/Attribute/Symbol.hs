@@ -181,11 +181,9 @@ defaultSymbolAttributes =
 instance Default Symbol where
     def = defaultSymbolAttributes
 
--- | Is a symbol non-simplifiable?
+-- | Is a symbol constructor-like?
 isConstructorLike :: StepperAttributes -> Bool
 isConstructorLike = do
-    -- TODO(virgil): Add a 'non-simplifiable' attribute so that we can include
-    -- more symbols here (e.g. Map.concat)
     Constructor isConstructor' <- constructor
     SortInjection isSortInjection' <- sortInjection
     return (isSortInjection' || isConstructor')

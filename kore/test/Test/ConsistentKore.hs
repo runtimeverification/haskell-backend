@@ -747,7 +747,7 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
                 , sort = SpecificSort collectionSort
                 , attributes = AttributeRequirements
                     { isConstructorLike = False
-                    -- We could generate non-simplifiable or concrete lists
+                    -- We could generate constructor-like or concrete lists
                     -- if we wanted to.
                     , isConcrete = False
                     }
@@ -795,7 +795,7 @@ maybeMapBuiltinGenerator Setup { maybeMapSorts } =
                 , sort = SpecificSort collectionSort
                 , attributes = AttributeRequirements
                     { isConstructorLike = False
-                    -- We could generate non-simplifiable or concrete maps
+                    -- We could generate constructor-like or concrete maps
                     -- if we wanted to.
                     , isConcrete = False
                     }
@@ -827,7 +827,7 @@ maybeSetBuiltinGenerator Setup { maybeSetSorts } =
                 , sort = SpecificSort collectionSort
                 , attributes = AttributeRequirements
                     { isConstructorLike = False
-                    -- We could generate non-simplifiable or concrete sets
+                    -- We could generate constructor-like or concrete sets
                     -- if we wanted to.
                     , isConcrete = False
                     }
@@ -939,7 +939,7 @@ symbolGenerator
                 if BuiltinMap.isSymbolElement symbol
                     || BuiltinSet.isSymbolElement symbol
                     then requestConcrete . requestConstructorLike
-                    -- TODO (virgil): also allow non-simplifiable stuff
+                    -- TODO (virgil): also allow constructor-like stuff
                     -- with variables.
                     else id
         maybeTerms <- request $ mapM termGenerator applicationSortsOperands

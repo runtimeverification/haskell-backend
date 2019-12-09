@@ -89,8 +89,8 @@ instance Synthetic ConstructorLike (Bottom sort) where
 
 instance Synthetic ConstructorLike (Application Symbol) where
     synthetic application
-        -- The constructor application is non-simplifiable if all
-        -- its children are non-simplifiable.
+        -- The constructor application is constructor-like if all
+        -- its children are constructor-like.
         | Symbol.isConstructor symbol
         , childrenAreConstructorLike =
             ConstructorLike . Just $ ConstructorLikeHead
@@ -121,9 +121,11 @@ instance Synthetic ConstructorLike (Ceil sort) where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
--- A domain value is not technically a constructor, but it is
--- constructor-like for builtin domains, at least from the
--- perspective of normalization (normalized means non-simplifiable here).
+{- |
+A domain value is not technically a constructor, but it is constructor-like for
+builtin domains, at least from the perspective of normalization (normalized
+means constructor-like here).
+ -}
 instance Synthetic ConstructorLike (DomainValue sort) where
     synthetic domainValue
         | isJust . isConstructorLike $ child =
@@ -184,9 +186,11 @@ instance Synthetic ConstructorLike (Rewrites sort) where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
--- A domain value is not technically a constructor, but it is
--- constructor-like for builtin domains, at least from the
--- perspective of normalization (normalized means non-simplifiable here).
+{- |
+A builtin value is not technically a constructor, but it is constructor-like for
+builtin domains, at least from the perspective of normalization (normalized
+means constructor-like here).
+ -}
 instance Synthetic ConstructorLike (Builtin key) where
     synthetic =
         \case
@@ -215,9 +219,9 @@ instance Synthetic ConstructorLike (Top sort) where
     synthetic = const (ConstructorLike Nothing)
     {-# INLINE synthetic #-}
 
-instance Synthetic NonSimplifiable Inj where
-    synthetic Inj { injChild } = NonSimplifiable $ do
-        childHead <- isNonSimplifiable injChild
+instance Synthetic ConstructorLike Inj where
+    synthetic Inj { injChild } = ConstructorLike $ do
+        childHead <- isConstructorLike injChild
         case childHead of
             SortInjectionHead -> Nothing
             _                 -> pure SortInjectionHead

@@ -1064,8 +1064,8 @@ assertConstructorLikeKeys keys a
                 filter (not . isConstructorLike) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
-                [ "Maps and sets can only contain concrete keys\
-                  \ (resp. elements) which are non-simplifiable."
+                [ "Map and Set may only contain constructor-like \
+                  \keys (resp. elements)."
                 , Pretty.indent 2 "Simplifiable keys:"
                 ]
                 <> fmap (Pretty.indent 4 . unparse) simplifiableKeys

@@ -11,23 +11,23 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_TermLike :: [TestTree]
 test_TermLike =
-    [ testCase "Non-simplifiable BuiltinInt" $
+    [ testCase "constructor-like BuiltinInt" $
         Mock.builtinInt 3 `shouldBeConstructorLike` True
-    , testCase "Non-simplifiable BuiltinBool" $
+    , testCase "constructor-like BuiltinBool" $
         Mock.builtinBool True `shouldBeConstructorLike` True
-    , testCase "Non-simplifiable BuiltinString" $
+    , testCase "constructor-like BuiltinString" $
         Mock.builtinString "test" `shouldBeConstructorLike` True
-    , testCase "Non-simplifiable DomainValue" $
+    , testCase "constructor-like DomainValue" $
         domainValue `shouldBeConstructorLike` True
     , testCase "Simplifiable BuiltinSet" $
         Mock.builtinSet [Mock.a, Mock.b] `shouldBeConstructorLike` False
-    , testCase "Single constructor is non-simplifiable" $
+    , testCase "Single constructor is constructor-like" $
         Mock.a `shouldBeConstructorLike` True
-    , testCase "Non-simplifiable with constructor at the top" $
+    , testCase "constructor-like with constructor at the top" $
         Mock.constr10 (Mock.builtinInt 3) `shouldBeConstructorLike` True
     , testCase "Simplifiable pattern contains symbol which is only functional" $
         Mock.constr10 (Mock.f Mock.a) `shouldBeConstructorLike` False
-    , testCase "Non-simplifiable pattern with constructor and sort injection" $
+    , testCase "constructor-like pattern with constructor and sort injection" $
         Mock.constr10
             ( Mock.sortInjection
                 Mock.testSort
@@ -43,7 +43,7 @@ test_TermLike =
                 )
             )
         `shouldBeConstructorLike` False
-    , testCase "Non-simplifiable pattern with two non-consecutive sort injections" $
+    , testCase "constructor-like pattern with two non-consecutive sort injections" $
         Mock.sortInjection
             Mock.intSort
             ( Mock.constr10
