@@ -7,12 +7,16 @@ module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
     ) where
 
+import Control.Comonad.Trans.Cofree
+    ( CofreeF ((:<))
+    )
 import Control.Error
     ( maybeT
     )
 import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
 import Data.Function
+import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
@@ -68,7 +72,7 @@ evaluateAxioms
     -> simplifier (Step.Results variable)
 evaluateAxioms definitionRules termLike predicate
   | any ruleIsConcrete definitionRules
-  , not (TermLike.isConcrete termLike)
+  , not (all TermLike.isNonSimplifiable termLikeF)
   = return notApplicable
   | otherwise
   = maybeNotApplicable $ do
@@ -107,6 +111,9 @@ evaluateAxioms definitionRules termLike predicate
     return simplified
 
   where
+    termLikeF = case Recursive.project termLike of
+        _ :< result -> result
+
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete
         . Attribute.Axiom.concrete
