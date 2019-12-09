@@ -26,9 +26,6 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( mapMaybe
     )
-import Data.Set
-    ( Set
-    )
 import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Axiom as Attribute
@@ -39,7 +36,6 @@ import qualified Kore.Attribute.Sort.Constructors as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
 import Kore.IndexedModule.IndexedModule
 import Kore.IndexedModule.Resolvers
-import qualified Kore.IndexedModule.SortGraph as SortGraph
 import Kore.Internal.ApplicationSorts
 import Kore.Internal.Symbol
     ( Symbol
@@ -58,11 +54,6 @@ import Kore.Syntax.Application
 data MetadataTools sortConstructors smt attributes = MetadataTools
     { sortAttributes :: Sort -> Attribute.Sort
     -- ^ get the attributes of a sort
-    , isSubsortOf :: Sort -> Sort -> Bool
-    {- ^ @isSubsortOf a b@ is true if sort @a@ is a subsort of sort @b@,
-       including when @a@ equals @b@. -}
-    , subsorts :: Sort -> Set Sort
-    -- ^ get the subsorts for a sort
     , applicationSorts :: SymbolOrAlias -> ApplicationSorts
     -- ^ Sorts for a specific symbol application.
     , symbolAttributes :: Id -> attributes
@@ -100,8 +91,6 @@ extractMetadataTools
 extractMetadataTools m constructorsExtractor smtExtractor =
     MetadataTools
         { sortAttributes = getSortAttributes m
-        , isSubsortOf = SortGraph.isSubsortOf sortGraph
-        , subsorts = SortGraph.subsortsOf sortGraph
         , applicationSorts = getHeadApplicationSorts m
         , symbolAttributes = getSymbolAttributes m
         , isOverloading = checkOverloading `on` Symbol.toSymbolOrAlias
@@ -110,8 +99,6 @@ extractMetadataTools m constructorsExtractor smtExtractor =
         , sortConstructors = constructors
         }
   where
-    !sortGraph = SortGraph.fromIndexedModule m
-
     constructors = constructorsExtractor m
 
     overloadPairsSet = Set.fromList overloadPairsList

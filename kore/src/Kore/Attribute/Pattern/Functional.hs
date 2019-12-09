@@ -21,6 +21,10 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.Inj
+    ( Inj
+    )
+import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
@@ -197,4 +201,8 @@ instance Synthetic Functional Inhabitant where
 
 instance Synthetic Functional (Const Sort) where
     synthetic = const (Functional False)
+    {-# INLINE synthetic #-}
+
+instance Synthetic Functional Inj where
+    synthetic = synthetic . Inj.toApplication
     {-# INLINE synthetic #-}

@@ -21,6 +21,10 @@ import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
 import qualified Kore.Internal.Alias as Internal
+import Kore.Internal.Inj
+    ( Inj
+    )
+import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
@@ -60,9 +64,9 @@ instance Synthetic Defined (Bottom sort) where
 -- arguments are 'Defined'.
 instance Synthetic Defined (Application Internal.Symbol) where
     synthetic application =
-        functionSymbol <> Foldable.fold children
+        totalSymbol <> Foldable.fold children
       where
-        functionSymbol = Defined (Internal.isTotal symbol)
+        totalSymbol = Defined (Internal.isTotal symbol)
         children = applicationChildren application
         symbol = applicationSymbolOrAlias application
 
@@ -200,3 +204,6 @@ instance Synthetic Defined (Const (UnifiedVariable variable)) where
     synthetic (Const (ElemVar _))= Defined True
     synthetic (Const (SetVar _))= Defined False
     {-# INLINE synthetic #-}
+
+instance Synthetic Defined Inj where
+    synthetic = synthetic . Inj.toApplication

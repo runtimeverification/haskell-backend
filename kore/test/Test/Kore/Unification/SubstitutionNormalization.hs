@@ -274,11 +274,11 @@ test_normalize =
         -> Normalization Variable
         -- ^ Expected output
         -> TestTree
-    test testName input Normalization { normalized, denormalized } =
+    test testName input normalization =
         testGroup testName
             [ testCase "normalize" $ do
                 let actual = normalize input
-                let expect = Normalization { normalized, denormalized }
+                let expect = normalization
                 assertEqual "" (Just expect) actual
             , testCase "normalizeSubstitution" $ do
                 let actual = normalizeSubstitution input
@@ -288,9 +288,13 @@ test_normalize =
                         $ Condition.fromSubstitution
                         $ Substitution.wrap normalized
                       | otherwise =
-                        Left $ SimplifiableCycle (fst <$> denormalized)
+                        Left $ SimplifiableCycle
+                            (fst <$> denormalized)
+                            normalization
                 assertEqual "" expect actual
             ]
+      where
+        Normalization { normalized, denormalized } = normalization
 
     testBottom
         :: GHC.HasCallStack
