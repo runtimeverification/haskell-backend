@@ -11,7 +11,6 @@ module Kore.Logger
     , Severity (..)
     , Scope (..)
     , WithLog
-    , WithScope (..)
     , LogAction (..)
     , log
     , logDebug
@@ -19,9 +18,9 @@ module Kore.Logger
     , logWarning
     , logError
     , logCritical
-    , withLogScope
     , liftLogAction
     , hoistLogAction
+    , logWith
     , LoggerT (..)
     , SomeEntry (..)
     , someEntry
@@ -205,34 +204,6 @@ logCritical
     -> m ()
 logCritical = log Critical
 
-data WithScope = WithScope
-    { entry :: SomeEntry
-    , scope :: Scope
-    } deriving Typeable
-
-instance Entry WithScope where
-    entryScopes WithScope { entry, scope } =
-        Set.insert scope (entryScopes entry)
-
-    entrySeverity WithScope { entry } = entrySeverity entry
-
-instance Pretty WithScope where
-    pretty WithScope { entry } = Pretty.pretty entry
-
-withLogScope
-    :: forall m a
-    .  WithLog LogMessage m
-    => Scope
-    -- ^ new scope
-    -> m a
-    -- ^ continuation / enclosure for the new scope
-    -> m a
-withLogScope newScope =
-    logScope appendScope
-  where
-    appendScope entry =
-        toEntry $ WithScope entry newScope
-
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
@@ -253,11 +224,9 @@ instance Entry LogMessage where
     entryScopes _ = Set.empty
 
 instance Pretty LogMessage where
-    pretty LogMessage { severity, message, callstack } =
+    pretty LogMessage { message, callstack } =
         Pretty.hsep
-            [ Pretty.brackets (Pretty.pretty severity)
-            , ":"
-            , Pretty.pretty message
+            [ Pretty.pretty message
             , Pretty.brackets (formatCallstack callstack)
             ]
       where
@@ -331,3 +300,11 @@ instance Monad m => MonadLog (LoggerT m) where
 instance MonadTrans LoggerT where
     lift = LoggerT . Monad.Trans.lift
     {-# INLINE lift #-}
+
+logWith
+    :: Entry entry
+    => LogAction m SomeEntry
+    -> entry
+    -> m ()
+logWith logger entry =
+    logger Colog.<& toEntry entry

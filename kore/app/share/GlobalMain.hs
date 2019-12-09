@@ -368,9 +368,7 @@ clockSomethingIO description something = do
     return x
   where
     logMessage end start =
-        Logger.WithScope
-            (mkMessage start end)
-            (Scope "TimingInfo")
+        mkMessage start end
     mkMessage start end =
         SomeEntry $ Logger.LogMessage
             { message =
