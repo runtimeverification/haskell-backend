@@ -427,6 +427,20 @@ logTests =
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             }
+    , "log [] stderr"
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Warning
+            , logEntries = mempty
+            , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
+            }
+    , "log [entry1] stderr"
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Warning
+            , logEntries = Set.singleton "entry1"
+            , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
+            }
     , "log critical [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Critical

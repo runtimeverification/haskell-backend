@@ -257,13 +257,16 @@ saveSession =
 log :: Parser ReplCommand
 log = do
     literal "log"
-    logLevel <- severity
-    logType <- parseLogType
+    logLevel <- parseSeverityWithDefault
     logEntries <- parseLogEntries
+    logType <- parseLogType
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
     pure $ Log Logger.KoreLogOptions
         { logType, logLevel, logEntries, debugAppliedRuleOptions }
+  where
+    parseSeverityWithDefault =
+        maybe Logger.Warning id <$> optional severity
 
 severity :: Parser Logger.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
