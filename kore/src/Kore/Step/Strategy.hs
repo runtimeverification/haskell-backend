@@ -45,11 +45,13 @@ module Kore.Step.Strategy
     , executionHistoryStep
     , emptyExecutionGraph
     , module Kore.Step.Transition
+    , LimitExceeded (..)
     ) where
 
 import Control.Applicative
     ( Alternative (empty, (<|>))
     )
+import qualified Control.Exception as Exception
 import Control.Monad
     ( when
     , (>=>)
@@ -374,6 +376,11 @@ emptyExecutionGraph config =
 -}
 data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
+data LimitExceeded = LimitExceeded | Other
+    deriving Show
+
+instance Exception.Exception LimitExceeded
+
 {- | Execute a 'Strategy'.
 
  The primitive strategy rule is used to execute the 'apply' strategy. The
@@ -422,7 +429,7 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
       | instr : instrs' <- instrs
       = Profile.executionQueueLength (Seq.length rest) $ do
         when (exeedsLimit rest)
-            $ error "Number of concurrent branches limit exceeded"
+            $ Exception.throw LimitExceeded --error "Number of concurrent branches limit exceeded"
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         case searchOrder of

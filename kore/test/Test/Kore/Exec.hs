@@ -1,6 +1,7 @@
 module Test.Kore.Exec
     ( test_exec
     , test_search
+    , test_searchExeedingBreadthLimit
     , test_execGetExitCode
     ) where
 
@@ -9,8 +10,10 @@ import Test.Tasty
 import Control.Applicative
     ( liftA2
     )
+import Control.Exception as Exception
+import Control.Monad.Except
 import Data.Limit
-    ( Limit (Unlimited)
+    ( Limit (..)
     )
 import qualified Data.Limit as Limit
 import qualified Data.Map as Map
@@ -57,6 +60,9 @@ import Kore.Step.Search
     ( SearchType (..)
     )
 import qualified Kore.Step.Search as Search
+import Kore.Step.Strategy
+    ( LimitExceeded (..)
+    )
 import Kore.Syntax.Definition hiding
     ( Symbol
     )
@@ -115,6 +121,76 @@ test_search =
             SMT.runSMT SMT.defaultConfig emptyLogger
             $ search
                 Unlimited
+                verifiedModule
+                (Limit.replicate unlimited . allRewrites)
+                inputPattern
+                searchPattern
+                Search.Config { bound = Unlimited, searchType }
+        let results =
+                fromMaybe
+                    (error "Expected search results")
+                    (extractSearchResults finalPattern)
+        return results
+    verifiedModule = verifiedMyModule Module
+        { moduleName = ModuleName "MY-MODULE"
+        , moduleSentences =
+            [ asSentence mySortDecl
+            , asSentence $ constructorDecl "a"
+            , asSentence $ constructorDecl "b"
+            , asSentence $ constructorDecl "c"
+            , asSentence $ constructorDecl "d"
+            , asSentence $ constructorDecl "e"
+            , functionalAxiom "a"
+            , functionalAxiom "b"
+            , functionalAxiom "c"
+            , functionalAxiom "d"
+            , functionalAxiom "e"
+            , rewriteAxiom "a" "b"
+            , rewriteAxiom "a" "c"
+            , rewriteAxiom "c" "d"
+            , rewriteAxiom "e" "a"
+            ]
+        , moduleAttributes = Attributes []
+        }
+    inputPattern = applyToNoArgs mySort "a"
+    expected =
+        let
+            a = applyToNoArgs mySort "a"
+            b = applyToNoArgs mySort "b"
+            c = applyToNoArgs mySort "c"
+            d = applyToNoArgs mySort "d"
+        in
+            \case
+                ONE -> Set.fromList [b, c]
+                STAR -> Set.fromList [a, b, c, d]
+                PLUS -> Set.fromList [b, c, d]
+                FINAL -> Set.fromList [b, d]
+
+test_searchExeedingBreadthLimit :: [TestTree]
+test_searchExeedingBreadthLimit =
+    [ makeTestCase searchType | searchType <- [ ONE, STAR, PLUS, FINAL] ]
+  where
+    unlimited :: Limit Integer
+    unlimited = Unlimited
+    makeTestCase searchType =
+        testCase
+            ("Exceed bredth limit: " <> show searchType)
+            (assertion searchType)
+    assertion searchType = do
+        shouldFail searchType `catch` handleException
+
+    handleException LimitExceeded = pure ()
+    handleException _ = error $ "fail"
+
+    shouldFail searchType = do
+        a <- actual searchType
+        when (a == expected searchType) $ Exception.throw Other
+
+    actual searchType = do
+        finalPattern <-
+            SMT.runSMT SMT.defaultConfig emptyLogger
+            $ search
+                (Limit 0)
                 verifiedModule
                 (Limit.replicate unlimited . allRewrites)
                 inputPattern
