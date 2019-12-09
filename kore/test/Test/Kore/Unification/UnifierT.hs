@@ -35,6 +35,9 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Unification.Error
+import Kore.Unification.Substitution
+    ( Normalization (..)
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Variables.UnifiedVariable
@@ -72,10 +75,13 @@ test_simplifyCondition =
         Foldable.traverse_ assertNormalizedPredicatesMulti actual
     , testCase "x = f(x)" $ do
         let x = ElemVar Mock.x
-            expect = (Left . SubstitutionError) (SimplifiableCycle [x])
+            expect =
+                Left . SubstitutionError
+                $ SimplifiableCycle [x] normalization
+            normalization = mempty { denormalized }
+            denormalized = [(x, Mock.f (mkVar x))]
             input =
-                (Condition.fromSubstitution . Substitution.wrap)
-                    [(x, Mock.f (mkVar x))]
+                (Condition.fromSubstitution . Substitution.wrap) denormalized
         actual <- normalizeExcept input
         assertEqual "Expected SubstitutionError" expect actual
     , testCase "x = id(x)" $ do
@@ -209,8 +215,10 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let
                 expect =
-                    Left $ SubstitutionError
-                        (SimplifiableCycle [ElemVar Mock.y])
+                    Left . SubstitutionError
+                    $ SimplifiableCycle
+                        [ElemVar Mock.y]
+                        mempty
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -229,8 +237,10 @@ test_mergeAndNormalizeSubstitutions =
         $ do
             let
                 expect =
-                    Left $ SubstitutionError
-                        (SimplifiableCycle [ElemVar Mock.y])
+                    Left . SubstitutionError
+                    $ SimplifiableCycle
+                        [ElemVar Mock.y]
+                        mempty
             actual <-
                 merge
                     [   ( ElemVar Mock.x
@@ -272,6 +282,10 @@ test_mergeAndNormalizeSubstitutions =
                     $ SubstitutionError
                     $ SimplifiableCycle
                         [ ElemVar Mock.x, ElemVar Mock.y ]
+                        Substitution.Normalization
+                            { normalized = []
+                            , denormalized = []
+                            }
             actual <-
                 merge
                     [   ( ElemVar Mock.x

@@ -378,8 +378,14 @@ instance Debug (Goal.Rule Goal)
 instance Diff (Goal.Rule Goal)
 
 -- | The destination-removal rule for our unit test goal.
-removeDestination :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
-removeDestination (src, dst) = return (difference src dst, dst)
+removeDestination
+    :: ProofState
+    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
+removeDestination (ProofState.Goal (src, dst)) =
+    return . ProofState.Goal $ (difference src dst, dst)
+removeDestination (ProofState.GoalRemainder (src, dst)) =
+    return . ProofState.GoalRemainder $ (difference src dst, dst)
+removeDestination state = return state
 
 -- | The goal is trivially valid when the members are equal.
 isTriviallyValid :: Goal -> Bool
@@ -468,6 +474,7 @@ instance MonadSimplify AllPathIdentity where
     askSimplifierAxioms = undefined
     localSimplifierAxioms = undefined
     askMemo = undefined
+    askInjSimplifier = undefined
 
 differentLengthPaths :: [Goal.Rule Goal]
 differentLengthPaths =

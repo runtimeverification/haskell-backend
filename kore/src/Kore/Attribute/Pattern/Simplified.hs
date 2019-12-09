@@ -19,6 +19,10 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Synthetic
 import Kore.Debug
 import Kore.Domain.Builtin
+import Kore.Internal.Inj
+    ( Inj
+    )
+import qualified Kore.Internal.Inj as Inj
 import Kore.Internal.InternalBytes
     ( InternalBytes
     )
@@ -159,4 +163,8 @@ instance Synthetic Simplified (Builtin sort) where
 
 instance Synthetic Simplified Inhabitant where
     synthetic = notSimplified
+    {-# INLINE synthetic #-}
+
+instance Synthetic Simplified Inj where
+    synthetic = synthetic . Inj.toApplication
     {-# INLINE synthetic #-}

@@ -88,12 +88,12 @@ substitutionSimplifier =
       | null denormalized =
         return (Condition.fromNormalizationSimplified normalization)
       | otherwise =
-        simplifiableCycle denormalized
+        simplifiableCycle
       where
-        simplifiableCycle denorm =
-            throwSubstitutionError (SimplifiableCycle variables)
+        simplifiableCycle =
+            throwSubstitutionError $ SimplifiableCycle variables normalization
           where
-            (variables, _) = unzip denorm
+            (variables, _) = unzip denormalized
 
 unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =

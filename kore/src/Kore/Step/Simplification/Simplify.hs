@@ -108,6 +108,9 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Memo as Memo
+import Kore.Step.Simplification.InjSimplifier
+    ( InjSimplifier
+    )
 import Kore.Syntax.Application
 import Kore.Unparser
 import ListT
@@ -201,6 +204,14 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
         => m (Memo.Self m)
     askMemo = Memo.liftSelf Monad.Trans.lift <$> Monad.Trans.lift askMemo
     {-# INLINE askMemo #-}
+
+    -- | Retrieve the 'InjSimplifier' for the Kore context.
+    askInjSimplifier :: m InjSimplifier
+    default askInjSimplifier
+        :: (MonadTrans t, MonadSimplify n, m ~ t n)
+        => m InjSimplifier
+    askInjSimplifier = Monad.Trans.lift askInjSimplifier
+    {-# INLINE askInjSimplifier #-}
 
 instance (WithLog LogMessage m, MonadSimplify m, Monoid w)
     => MonadSimplify (AccumT w m)

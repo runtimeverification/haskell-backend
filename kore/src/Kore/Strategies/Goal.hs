@@ -129,6 +129,7 @@ import Kore.Syntax.Variable
     )
 import Kore.TopBottom
     ( isBottom
+    , isTop
     )
 import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
@@ -439,6 +440,10 @@ instance Goal (ReachabilityRule Variable) where
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
+            GoalStuck _ ->
+                case prim of
+                    CheckGoalStuck -> empty
+                    _ -> return proofstate
             Proven ->
                 case prim of
                     CheckProven -> empty
@@ -557,7 +562,8 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , removeDestinationTemplate
-        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+        :: ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
         :: [Rule goal]
@@ -598,6 +604,8 @@ transitionRuleTemplate
 
     transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
 
+    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+
     transitionRuleWorker Simplify (Goal g) =
         Profile.timeStrategy "Goal.Simplify"
         $ Goal <$> simplifyTemplate g
@@ -605,12 +613,8 @@ transitionRuleTemplate
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate g
 
-    transitionRuleWorker RemoveDestination (Goal g) =
-        Profile.timeStrategy "Goal.RemoveDestination"
-        $ Goal <$> removeDestinationTemplate g
-    transitionRuleWorker RemoveDestination (GoalRemainder g) =
-        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ GoalRemainder <$> removeDestinationTemplate g
+    transitionRuleWorker RemoveDestination goal =
+        removeDestinationTemplate goal
 
     transitionRuleWorker TriviallyValid (Goal g)
       | isTriviallyValidTemplate g = return Proven
@@ -656,12 +660,11 @@ onePathFirstStep
 onePathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DeriveSeq axioms
         , Simplify
         , TriviallyValid
@@ -678,12 +681,11 @@ onePathFollowupStep
 onePathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -701,12 +703,11 @@ allPathFirstStep
 allPathFirstStep axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DerivePar axioms
         , Simplify
         , TriviallyValid
@@ -722,12 +723,11 @@ allPathFollowupStep
 allPathFollowupStep claims axioms =
     (Strategy.sequence . map Strategy.apply)
         [ CheckProven
+        , CheckGoalStuck
         , CheckGoalRemainder
         , Simplify
         , TriviallyValid
         , RemoveDestination
-        , Simplify
-        , TriviallyValid
         , DeriveSeq claims
         , Simplify
         , TriviallyValid
@@ -743,21 +743,48 @@ allPathFollowupStep claims axioms =
 removeDestination
     :: MonadCatch m
     => MonadSimplify m
-    => FromRulePattern goal
+    => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
-    => goal
-    -> Strategy.TransitionT (Rule goal) m goal
-removeDestination goal =
+    => ProofState goal goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+removeDestination =
+    \case
+        Goal goal ->
+            Profile.timeStrategy "Goal.RemoveDestination"
+            $ removeDestinationWorker Goal goal
+        GoalRemainder goal ->
+            Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+            $ removeDestinationWorker GoalRemainder goal
+        state -> return state
+
+removeDestinationWorker
+    :: MonadCatch m
+    => MonadSimplify m
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ToRulePattern goal
+    => (goal -> ProofState goal goal)
+    -> goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+removeDestinationWorker stateConstructor goal =
     errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
         removal <- removalPredicate (destination right') configuration
-        let result = Conditional.andPredicate configuration removal
-        pure $ makeRuleFromPatterns goal result (Pattern.fromTermLike right')
+        if isTop removal
+            then return . stateConstructor $ goal
+            else do
+                simplifiedRemoval <-
+                    SMT.Evaluator.filterMultiOr
+                    =<< simplifyAndRemoveTopExists
+                        (Conditional.andPredicate configuration removal)
+                if not (isBottom simplifiedRemoval)
+                    then return . GoalStuck $ goal
+                    else return Proven
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
 
     goalAsRulePattern = toRulePattern goal
     RulePattern { right } = goalAsRulePattern
+
     right' = topExistsToImplicitForall configFreeVars right
 
     destination (And_ _ pred' term') =

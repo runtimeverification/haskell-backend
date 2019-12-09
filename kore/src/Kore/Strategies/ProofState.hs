@@ -20,13 +20,15 @@ import qualified GHC.Generics as GHC
 
 import Kore.Debug
 
-{- | The primitive transitions of the all-path reachability proof strategy.
+{- | The primitive transitions of the reachability proof strategy.
  -}
 data Prim rule
     = CheckProven
     -- ^ End execution on this branch if the state is 'Proven'.
     | CheckGoalRemainder
     -- ^ End execution on this branch if the state is 'GoalRemainder'.
+    | CheckGoalStuck
+    -- ^ End execution on this branch immediately if the state is 'GoalStuck'.
     | ResetGoal
     -- ^ Mark all goals rewritten previously as new goals.
     | Simplify
@@ -39,6 +41,7 @@ data Prim rule
 instance Filterable Prim where
     mapMaybe _ CheckProven        = CheckProven
     mapMaybe _ CheckGoalRemainder = CheckGoalRemainder
+    mapMaybe _ CheckGoalStuck     = CheckGoalStuck
     mapMaybe _ ResetGoal          = ResetGoal
     mapMaybe _ Simplify           = Simplify
     mapMaybe _ RemoveDestination  = RemoveDestination
@@ -46,7 +49,7 @@ instance Filterable Prim where
     mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
     mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
 
-{- | The state of the all-path reachability proof strategy for @goal@.
+{- | The state of the reachability proof strategy for @goal@.
  -}
 data ProofState a
     = Goal a
@@ -55,6 +58,10 @@ data ProofState a
     -- ^ The indicated goal remains after rewriting.
     | GoalRewritten a
     -- ^ We already rewrote the goal this step.
+    | GoalStuck a
+    -- ^ If the terms unify and the condition does not imply
+    -- the goal, the proof is stuck. This state should be reachable
+    -- only by applying RemoveDestination.
     | Proven
     -- ^ The parent goal was proven.
     deriving (Eq, Show, Ord, Functor, GHC.Generic)
@@ -78,6 +85,7 @@ extractUnproven :: ProofState a -> Maybe a
 extractUnproven (Goal t)    = Just t
 extractUnproven (GoalRewritten t) = Just t
 extractUnproven (GoalRemainder t) = Just t
+extractUnproven (GoalStuck t) = Just t
 extractUnproven Proven      = Nothing
 
 extractGoalRem :: ProofState a -> Maybe a
@@ -89,6 +97,7 @@ data ProofStateTransformer a val =
         { goalTransformer :: a -> val
         , goalRemainderTransformer :: a -> val
         , goalRewrittenTransformer :: a -> val
+        , goalStuckTransformer :: a -> val
         , provenValue :: val
         }
 
@@ -103,6 +112,7 @@ proofState
         { goalTransformer
         , goalRemainderTransformer
         , goalRewrittenTransformer
+        , goalStuckTransformer
         , provenValue
         }
   =
@@ -110,4 +120,5 @@ proofState
         Goal goal -> goalTransformer goal
         GoalRemainder goal -> goalRemainderTransformer goal
         GoalRewritten goal -> goalRewrittenTransformer goal
+        GoalStuck goal -> goalStuckTransformer goal
         Proven -> provenValue

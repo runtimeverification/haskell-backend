@@ -513,6 +513,17 @@ test_ceilSimplification =
                 }
         assertEqual "ceil(set set)" expected actual
         assertBool "" (OrPattern.isSimplified actual)
+    , testCase "ceil of sort injection" $ do
+        let expected =
+                OrPattern.fromPattern Conditional
+                    { term = mkTop_
+                    , predicate = makeCeilPredicate_ fOfA
+                    , substitution = mempty
+                    }
+        actual <- (makeEvaluate . Pattern.fromTermLike)
+            (Mock.sortInjection Mock.topSort fOfA)
+        assertEqual "ceil(f(a))" expected actual
+        assertBool "simplified" (OrPattern.isSimplified actual)
     ]
   where
     fOfA :: TermLike Variable
