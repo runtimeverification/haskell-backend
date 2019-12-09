@@ -32,6 +32,9 @@ import Control.Exception
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
+import Data.Function
+    ( (&)
+    )
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Stack as GHC
@@ -497,22 +500,19 @@ sortInjectionAndEquals
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-sortInjectionAndEquals
-    termMerger first@(Inj_ inj1) second@(Inj_ inj2)
-  = Monad.Trans.lift $ do
+sortInjectionAndEquals termMerger first@(Inj_ inj1) second@(Inj_ inj2) = do
     InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
-    maybe emptyIntersection merge $ unifyInj inj1 inj2
+    unifyInj inj1 inj2 & either distinct merge
   where
-    emptyIntersection = do
-        explainBottom "Empty sort intersection" first second
-        empty
-    merge inj@Inj { injChild = Pair child1 child2 } = do
-        InjSimplifier { evaluateInj } <- Simplifier.askInjSimplifier
+    emptyIntersection = explainAndReturnBottom "Empty sort intersection"
+    distinct Distinct = Monad.Trans.lift $ emptyIntersection first second
+    distinct Unknown = empty
+    merge inj@Inj { injChild = Pair child1 child2 } = Monad.Trans.lift $ do
         childPattern <- termMerger child1 child2
+        InjSimplifier { evaluateInj } <- askInjSimplifier
         let (childTerm, childCondition) = Pattern.splitTerm childPattern
-        return $ Pattern.withCondition
-            (evaluateInj inj { injChild = childTerm })
-            childCondition
+            inj' = evaluateInj inj { injChild = childTerm }
+        return $ Pattern.withCondition inj' childCondition
 sortInjectionAndEquals _ _ _ = empty
 
 {- | Unify a constructor application pattern with a sort injection pattern.
