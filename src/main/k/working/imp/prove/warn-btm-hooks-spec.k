@@ -1,3 +1,5 @@
+requires "domains.k"
+
 module VERIFICATION
   imports IMP
 
@@ -12,8 +14,9 @@ endmodule
 module WARN-BTM-HOOKS-SPEC
   imports VERIFICATION
   imports IMP
+  imports MAP
 
-  rule <k> runTest ( Rho[3] ) => doneTest(X) </k>
-    requires Rho ==K (1 |-> 2)
+  rule <k> runTest ( X ) => doneTest( Y ) </k>
+    requires X ==K (.Map [3])
 
 endmodule
