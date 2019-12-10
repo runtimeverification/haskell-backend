@@ -514,6 +514,7 @@ logUpdatesState = do
     continue `equals`     Continue
     state `hasLogging` options
 
+
 proveSecondClaim :: IO ()
 proveSecondClaim =
     let
