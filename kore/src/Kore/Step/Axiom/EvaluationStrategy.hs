@@ -187,7 +187,7 @@ evaluateBuiltin
         _ -> return result
   where
     isValue pat =
-        maybe False TermLike.isNonSimplifiable $ asConcrete pat
+        maybe False TermLike.isConstructorLike $ asConcrete pat
 
 applyFirstSimplifierThatWorks
     :: forall variable simplifier

@@ -23,11 +23,11 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Debug
+import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Defined
 import Kore.Attribute.Pattern.FreeVariables
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
-import Kore.Attribute.Pattern.NonSimplifiable
 import Kore.Attribute.Pattern.Simplified
 import Kore.Attribute.Synthetic
 import Kore.Internal.Symbol
@@ -86,10 +86,10 @@ instance Synthetic Simplified (Const Endianness) where
     synthetic = const (Simplified True)
     {-# INLINE synthetic #-}
 
-instance Synthetic NonSimplifiable (Const Endianness) where
+instance Synthetic ConstructorLike (Const Endianness) where
     synthetic =
         -- Endianness symbols are constructors
-        const (NonSimplifiable (Just ConstructorLikeHead))
+        const (ConstructorLike (Just ConstructorLikeHead))
     {-# INLINE synthetic #-}
 
 toSymbol :: Endianness -> Symbol

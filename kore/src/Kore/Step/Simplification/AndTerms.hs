@@ -236,8 +236,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
             mresult <- getResult
             case mresult of
                 Nothing -> do
-                    Logger.withLogScope (Logger.Scope "AndTerms")
-                        . Logger.logDebug . Text.pack . show
+                    Logger.logDebug . Text.pack . show
                         $ Pretty.hsep
                             [ "Evaluator"
                             , Pretty.pretty fnName
@@ -245,8 +244,7 @@ andEqualsFunctions = fmap mapEqualsFunctions
                             ]
                     return mresult
                 Just result -> do
-                    Logger.withLogScope (Logger.Scope "AndTerms")
-                        . Logger.logDebug . Text.pack . show
+                    Logger.logDebug . Text.pack . show
                         $ Pretty.vsep
                             [ Pretty.hsep
                                 [ "Evaluator"

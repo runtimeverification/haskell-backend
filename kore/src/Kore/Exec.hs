@@ -540,8 +540,7 @@ execute
     -- ^ The input pattern
     -> simplifier Execution
 execute verifiedModule strategy inputPattern =
-    Log.withLogScope "setUpConcreteExecution"
-    $ initialize verifiedModule $ \initialized -> do
+    initialize verifiedModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
         simplifier <- Simplifier.askSimplifierTermLike
         axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
@@ -630,8 +629,7 @@ initializeProver definitionModule specModule within =
                 simplified <- simplifyRuleLhs rule
                 return (MultiAnd.extractPatterns simplified)
 
-        Log.withLogScope (Log.Scope "ExpandedClaim")
-            $ mapM_ (logChangedClaim . snd) changedSpecClaims
+        mapM_ (logChangedClaim . snd) changedSpecClaims
 
         let specClaims :: [(Attribute.Axiom, ReachabilityRule Variable)]
             specClaims =

@@ -137,8 +137,7 @@ checkClaim
                                 startState)
                             Nothing
 
-        Logger.withLogScope (Logger.Scope "BMCStats")
-            . Logger.logInfo
+        Logger.logInfo
             . Text.pack
             $ ("searched states: " ++ (show . Graph.order . graph $ executionGraph))
 

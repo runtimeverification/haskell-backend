@@ -29,7 +29,6 @@ import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
 import Kore.Attribute.Synthetic
-import Kore.Debug
 import qualified Kore.Internal.MultiOr as MultiOr
     ( flatten
     , merge
@@ -46,6 +45,12 @@ import Kore.Internal.Pattern
 import qualified Kore.Internal.Pattern as Pattern
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
+import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
+    ( end
+    , notEvaluated
+    , reevaluation
+    , start
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( axiomBranching
     , axiomEvaluation
@@ -208,37 +213,39 @@ maybeEvaluatePattern
   = do
     BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
     Trans.lift . tracing $ do
-        let conditions = configurationCondition <> childrenCondition
-        result <-
-            Profile.axiomEvaluation identifier
-            $ evaluator termLike conditions
-        flattened <- case result of
-            AttemptedAxiom.NotApplicable ->
-                return AttemptedAxiom.NotApplicable
-            AttemptedAxiom.Applied AttemptedAxiomResults
-                { results = orResults
-                , remainders = orRemainders
-                } -> do
-                    simplified <-
-                        Profile.resimplification
-                            identifier (length orResults)
-                        $ mapM simplifyIfNeeded orResults
-                    let simplifiedResult = MultiOr.flatten simplified
-                    Profile.axiomBranching
-                        identifier
-                        (length orResults)
-                        (length simplifiedResult)
-                    return
-                        (AttemptedAxiom.Applied AttemptedAxiomResults
-                            { results = simplifiedResult
-                            , remainders = orRemainders
-                            }
-                        )
-        merged <-
+        merged <- bracketAxiomEvaluationLog $ do
+            let conditions = configurationCondition <> childrenCondition
+            result <-
+                Profile.axiomEvaluation identifier
+                $ evaluator termLike conditions
+            flattened <- case result of
+                AttemptedAxiom.NotApplicable -> do
+                    DebugAxiomEvaluation.notEvaluated identifier
+                    return AttemptedAxiom.NotApplicable
+                AttemptedAxiom.Applied AttemptedAxiomResults
+                    { results = orResults
+                    , remainders = orRemainders
+                    } -> do
+                        DebugAxiomEvaluation.reevaluation identifier
+                        simplified <-
+                            Profile.resimplification
+                                identifier (length orResults)
+                            $ mapM simplifyIfNeeded orResults
+                        let simplifiedResult = MultiOr.flatten simplified
+                        Profile.axiomBranching
+                            identifier
+                            (length orResults)
+                            (length simplifiedResult)
+                        return
+                            (AttemptedAxiom.Applied AttemptedAxiomResults
+                                { results = simplifiedResult
+                                , remainders = orRemainders
+                                }
+                            )
             Profile.mergeSubstitutions identifier
-            $ mergeWithConditionAndSubstitution
-                childrenCondition
-                flattened
+                $ mergeWithConditionAndSubstitution
+                    childrenCondition
+                    flattened
         case merged of
             AttemptedAxiom.NotApplicable ->
                 return defaultValue
@@ -251,11 +258,16 @@ maybeEvaluatePattern
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
-    tracing =
-        traceNonErrorMonad
-            D_Function_evaluatePattern
-            [ debugArg "axiomIdentifier" identifier ]
-        . Profile.equalitySimplification identifier termLike
+    tracing = Profile.equalitySimplification identifier termLike
+
+    bracketAxiomEvaluationLog
+        :: simplifier (AttemptedAxiom variable)
+        -> simplifier (AttemptedAxiom variable)
+    bracketAxiomEvaluationLog action = do
+        DebugAxiomEvaluation.start identifier
+        result <- action
+        DebugAxiomEvaluation.end identifier
+        return result
 
     unchangedPatt =
         Conditional
