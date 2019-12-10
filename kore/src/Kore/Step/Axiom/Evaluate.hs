@@ -7,12 +7,14 @@ module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
     ) where
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( maybeT
     )
 import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
 import Data.Function
+import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
@@ -68,7 +70,9 @@ evaluateAxioms
     -> simplifier (Step.Results variable)
 evaluateAxioms definitionRules termLike predicate
   | any ruleIsConcrete definitionRules
-  , not (TermLike.isConcrete termLike)
+  -- All of the current pattern's children (most likely an ApplicationF)
+  -- must be ConstructorLike in order to be evaluated with "concrete" rules.
+  , not (all TermLike.isConstructorLike termLikeF)
   = return notApplicable
   | otherwise
   = maybeNotApplicable $ do
@@ -107,6 +111,8 @@ evaluateAxioms definitionRules termLike predicate
     return simplified
 
   where
+    termLikeF = Cofree.tailF (Recursive.project termLike)
+
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete
         . Attribute.Axiom.concrete

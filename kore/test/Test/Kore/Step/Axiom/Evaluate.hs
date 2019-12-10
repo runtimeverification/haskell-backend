@@ -56,6 +56,9 @@ test_evaluateAxioms =
     , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to F(x)"
         [axiom_ (f x) (g x) & concreteEqualityRule]
         (f x, makeTruePredicate_)
+    , doesn'tApply "F(x) => G(x) [concrete] doesn't apply to f(cf)"
+        [axiom_ (f x) (g x) & concreteEqualityRule]
+        (f cf, makeTruePredicate_)
     , doesn'tApply "F(x) => G(x) doesn't apply to F(top)"
         [axiom_ (f x) (g x)]
         (f mkTop_, makeTruePredicate_)
@@ -101,6 +104,9 @@ test_evaluateAxioms =
 f, g :: TermLike Variable -> TermLike Variable
 f = Mock.functionalConstr10
 g = Mock.functionalConstr11
+
+cf :: TermLike Variable
+cf = Mock.cf
 
 sigma :: TermLike Variable -> TermLike Variable -> TermLike Variable
 sigma = Mock.functionalConstr20
