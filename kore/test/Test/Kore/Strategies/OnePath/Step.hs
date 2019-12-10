@@ -46,15 +46,13 @@ import Kore.Internal.Predicate
     , makeNotPredicate
     , makeTruePredicate_
     )
-import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
     ( TermLike
-    , mkAnd
-    , mkTop_
     )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Step.Rule
     ( OnePathRule (..)
+    , RHS (..)
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
@@ -91,7 +89,7 @@ makeOnePathRule
     -> TermLike Variable
     -> OnePathRule Variable
 makeOnePathRule term dest =
-    OnePathRule $ rulePattern term (mkAnd mkTop_ dest)
+    OnePathRule $ rulePattern term dest
 
 makeOnePathRuleFromPatterns
     :: Pattern Variable
@@ -108,9 +106,12 @@ makeOnePathRuleFromPatterns
     in coerce RulePattern
         { left
         , antiLeft = Nothing
-        , right = mkAnd mkTop_ right
         , requires
-        , ensures
+        , rhs = RHS
+            { existentials = []
+            , right
+            , ensures
+            }
         , attributes = Default.def
         }
 
@@ -129,9 +130,12 @@ makeOnePathRuleFromPatternsWithCond
     in coerce RulePattern
         { left
         , antiLeft = Nothing
-        , right = right
         , requires
-        , ensures
+        , rhs = RHS
+            { existentials = []
+            , right
+            , ensures
+            }
         , attributes = Default.def
         }
 
@@ -746,16 +750,12 @@ test_onePathStrategy =
                         }
                     )
                     ( Conditional
-                        { term =
-                            mkAnd
-                                ( Predicate.unwrapPredicate . makeNotPredicate
-                                    $ makeEqualsPredicate_
-                                        (TermLike.mkElemVar Mock.x)
-                                        Mock.a
-
-                                )
-                                ( TermLike.mkElemVar Mock.x )
-                        , predicate = makeTruePredicate_
+                        { term = TermLike.mkElemVar Mock.x
+                        , predicate =
+                            makeNotPredicate
+                                $ makeEqualsPredicate_
+                                    (TermLike.mkElemVar Mock.x)
+                                    Mock.a
                         , substitution = mempty
                         }
                     )
@@ -776,9 +776,12 @@ simpleRewrite left right =
     $ RewriteRule RulePattern
         { left = left
         , antiLeft = Nothing
-        , right = right
         , requires = makeTruePredicate_
-        , ensures = makeTruePredicate_
+        , rhs = RHS
+            { existentials = []
+            , right
+            , ensures = makeTruePredicate_
+            }
         , attributes = def
         }
 
@@ -799,9 +802,12 @@ rewriteWithPredicate left right predicate =
     $ RewriteRule RulePattern
         { left = left
         , antiLeft = Nothing
-        , right = right
         , requires = predicate
-        , ensures = makeTruePredicate_
+        , rhs = RHS
+            { existentials = []
+            , right
+            , ensures = makeTruePredicate_
+            }
         , attributes = def
         }
 

@@ -27,6 +27,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( OnePathRule (..)
+    , RHS (..)
     , RulePattern (..)
     )
 import Kore.Strategies.Goal
@@ -348,9 +349,12 @@ simpleClaim left right =
     RulePattern
         { left = left
         , antiLeft = Nothing
-        , right = mkAnd mkTop_ right
         , requires = makeTruePredicate_
-        , ensures = makeTruePredicate_
+        , rhs = RHS
+            { existentials = []
+            , right
+            , ensures = makeTruePredicate_
+            }
         , attributes = def
         }
 
@@ -363,9 +367,12 @@ simpleTrustedClaim left right =
     RulePattern
         { left = left
         , antiLeft = Nothing
-        , right = right
         , requires = makeTruePredicate_
-        , ensures = makeTruePredicate_
+        , rhs = RHS
+            { existentials = []
+            , right
+            , ensures = makeTruePredicate_
+            }
         , attributes = def
             { Attribute.trusted = Attribute.Trusted True }
         }

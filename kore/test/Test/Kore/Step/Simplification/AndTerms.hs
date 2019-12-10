@@ -48,6 +48,7 @@ import Kore.Step.Axiom.Registry
     )
 import Kore.Step.Rule
     ( EqualityRule (EqualityRule)
+    , RHS (..)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -1033,24 +1034,33 @@ test_equalsTermsSimplification =
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cf
                             , antiLeft = Nothing
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkElemVar Mock.y))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkElemVar Mock.y) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkElemVar Mock.y))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkElemVar Mock.y) Mock.b)
-                                    )
                             , requires = makeTruePredicate_
-                            , ensures = makeTruePredicate_
+                            , rhs = RHS
+                                { existentials = []
+                                , right =
+                                    mkOr
+                                        (mkAnd
+                                            (mkEquals_
+                                                (Mock.f (mkElemVar Mock.y))
+                                                Mock.a
+                                            )
+                                            (mkEquals_
+                                                (mkElemVar Mock.y)
+                                                Mock.a
+                                            )
+                                        )
+                                        (mkAnd
+                                            (mkEquals_
+                                                (Mock.f (mkElemVar Mock.y))
+                                                Mock.b
+                                            )
+                                            (mkEquals_
+                                                (mkElemVar Mock.y)
+                                                Mock.b
+                                            )
+                                        )
+                                , ensures = makeTruePredicate_
+                                }
                             , attributes = def
                                 {Attribute.simplification = Simplification True}
                             }
@@ -1122,24 +1132,33 @@ test_equalsTermsSimplification =
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cf
                             , antiLeft = Nothing
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkElemVar Mock.y))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkElemVar Mock.y) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.f (mkElemVar Mock.y))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkElemVar Mock.y) Mock.b)
-                                    )
                             , requires = makeTruePredicate_
-                            , ensures = makeTruePredicate_
+                            , rhs = RHS
+                                { existentials = []
+                                , right =
+                                    mkOr
+                                        (mkAnd
+                                            (mkEquals_
+                                                (Mock.f (mkElemVar Mock.y))
+                                                Mock.a
+                                            )
+                                            (mkEquals_
+                                                (mkElemVar Mock.y)
+                                                Mock.a
+                                            )
+                                        )
+                                        (mkAnd
+                                            (mkEquals_
+                                                (Mock.f (mkElemVar Mock.y))
+                                                Mock.b
+                                            )
+                                            (mkEquals_
+                                                (mkElemVar Mock.y)
+                                                Mock.b
+                                            )
+                                        )
+                                , ensures = makeTruePredicate_
+                                }
                             , attributes = def
                                 {Attribute.simplification = Simplification True}
                             }
@@ -1150,24 +1169,33 @@ test_equalsTermsSimplification =
                     ,   [ EqualityRule RulePattern
                             { left = mkCeil sortVar Mock.cg
                             , antiLeft = Nothing
-                            , right =
-                                mkOr
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.g (mkElemVar Mock.z))
-                                            Mock.a
-                                        )
-                                        (mkEquals_ (mkElemVar Mock.z) Mock.a)
-                                    )
-                                    (mkAnd
-                                        (mkEquals_
-                                            (Mock.g (mkElemVar Mock.z))
-                                            Mock.b
-                                        )
-                                        (mkEquals_ (mkElemVar Mock.z) Mock.b)
-                                    )
                             , requires = makeTruePredicate_
-                            , ensures = makeTruePredicate_
+                            , rhs = RHS
+                                { existentials = []
+                                , right =
+                                    mkOr
+                                        (mkAnd
+                                            (mkEquals_
+                                                (Mock.g (mkElemVar Mock.z))
+                                                Mock.a
+                                            )
+                                            (mkEquals_
+                                                (mkElemVar Mock.z)
+                                                Mock.a
+                                            )
+                                        )
+                                        (mkAnd
+                                            (mkEquals_
+                                                (Mock.g (mkElemVar Mock.z))
+                                                Mock.b
+                                            )
+                                            (mkEquals_
+                                                (mkElemVar Mock.z)
+                                                Mock.b
+                                            )
+                                        )
+                                , ensures = makeTruePredicate_
+                                }
                             , attributes = def
                                 {Attribute.simplification = Simplification True}
                             }

@@ -37,6 +37,9 @@ import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
     )
+import Kore.Step.Rule
+    ( RHS
+    )
 import Kore.Step.Rule.Expand
 import Kore.Step.Rule.Simplify
 import Kore.Step.Simplification.Simplify
@@ -138,7 +141,7 @@ verifyClaim searchOrder claims axioms (goal, stepLimit) =
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     modifiedTransitionRule
-        :: Pattern Variable
+        :: RHS Variable
         -> Prim claim
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
@@ -199,7 +202,7 @@ transitionRule'
     .  (MonadCatch m, MonadSimplify m)
     => Claim claim
     => claim
-    -> Pattern Variable
+    -> RHS Variable
     -> Prim claim
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState

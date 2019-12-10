@@ -66,7 +66,8 @@ import Kore.Step.RewriteStep
     , wouldNarrowWith
     )
 import Kore.Step.Rule
-    ( RulePattern (RulePattern, left, requires)
+    ( RHS (RHS)
+    , RulePattern (RulePattern, left, requires)
     )
 import qualified Kore.Step.Rule as Rule
 import qualified Kore.Step.Simplification.Simplify as Simplifier
@@ -164,11 +165,18 @@ finalizeAppliedRule renamedRule appliedConditions =
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
+        let rhs = Rule.rhs renamedRule
+            existentials = Rule.existentials rhs
+        Monad.unless (null existentials)
+            $ (error . show. Pretty.vsep)
+               [ "Quantification in RHS of an equation is not yet supported."
+               , Pretty.indent 4 $ Pretty.list $ unparse <$> existentials
+               ]
         -- Combine the initial conditions, the unification conditions, and the
         -- axiom ensures clause. The axiom requires clause is included by
         -- unifyRule.
         let
-            RulePattern { ensures } = renamedRule
+            RHS { ensures } = rhs
             ensuresCondition = Condition.fromPredicate ensures
             preFinalCondition = appliedCondition <> ensuresCondition
         finalCondition <- simplifyPredicate preFinalCondition
@@ -177,7 +185,7 @@ finalizeAppliedRule renamedRule appliedConditions =
         let
             Conditional { substitution } = finalCondition
             substitution' = Substitution.toMap substitution
-            RulePattern { right = finalTerm } = renamedRule
+            RHS { right = finalTerm } = rhs
             finalTerm' = TermLike.substitute substitution' finalTerm
         return finalCondition { Pattern.term = finalTerm' }
 

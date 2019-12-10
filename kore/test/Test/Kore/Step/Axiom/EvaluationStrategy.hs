@@ -34,7 +34,8 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+    ( RHS (..)
+    , RulePattern (..)
     )
 import Kore.Step.Rule
     ( EqualityRule (EqualityRule)
@@ -169,9 +170,12 @@ test_definitionEvaluation =
                 [ EqualityRule RulePattern
                     { left = Mock.functionalConstr10 (mkElemVar Mock.x)
                     , antiLeft = Nothing
-                    , right = Mock.g (mkElemVar Mock.x)
                     , requires = makeTruePredicate_
-                    , ensures = makeTruePredicate_
+                    , rhs = RHS
+                        { existentials = []
+                        , right = Mock.g (mkElemVar Mock.x)
+                        , ensures = makeTruePredicate_
+                        }
                     , attributes = def
                         { Attribute.Axiom.concrete = Attribute.Concrete True }
                     }
@@ -584,9 +588,12 @@ axiom left right predicate =
     EqualityRule RulePattern
         { left
         , antiLeft = Nothing
-        , right
         , requires = predicate
-        , ensures = makeTruePredicate_
+        , rhs = RHS
+            { existentials = []
+            , right
+            , ensures = makeTruePredicate_
+            }
         , attributes = def
         }
 

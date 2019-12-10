@@ -28,6 +28,7 @@ import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
+    , RHS (..)
     , ReachabilityRule (..)
     , RulePattern (..)
     )
@@ -1012,9 +1013,12 @@ simpleOnePathClaim left right =
     $ RulePattern
             { left = left
             , antiLeft = Nothing
-            , right = mkAnd mkTop_ right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = RHS
+                { existentials = []
+                , right
+                , ensures = makeTruePredicate_
+                }
             , attributes = def
             }
 
@@ -1027,9 +1031,12 @@ simpleAllPathClaim left right =
     $ RulePattern
             { left = left
             , antiLeft = Nothing
-            , right = mkAnd mkTop_ right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = RHS
+                { existentials = []
+                , right
+                , ensures = makeTruePredicate_
+                }
             , attributes = def
             }
 
@@ -1043,9 +1050,12 @@ simpleOnePathTrustedClaim left right =
     $ RulePattern
             { left = left
             , antiLeft = Nothing
-            , right = right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = RHS
+                { existentials = []
+                , right
+                , ensures = makeTruePredicate_
+                }
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }
@@ -1058,11 +1068,14 @@ simpleAllPathTrustedClaim left right =
     AllPath
     . AllPathRule
     $ RulePattern
-            { left = left
+            { left
             , antiLeft = Nothing
-            , right = right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = RHS
+                { existentials = []
+                , right
+                , ensures = makeTruePredicate_
+                }
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }

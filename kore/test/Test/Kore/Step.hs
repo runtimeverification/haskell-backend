@@ -60,7 +60,8 @@ import Kore.Sort
     )
 import Kore.Step
 import Kore.Step.Rule
-    ( RewriteRule (RewriteRule)
+    ( RHS (..)
+    , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     )
 import Kore.Step.Rule as RulePattern
@@ -368,17 +369,23 @@ test_SMT =
             [ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
-                , right = Mock.a
-                , ensures = makeTruePredicate_
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicatePositive
+                , rhs = RHS
+                    { existentials = []
+                    , right = Mock.a
+                    , ensures = makeTruePredicate_
+                    }
                 , attributes = def
                 }
             , RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
-                , right = Mock.c
-                , ensures = makeTruePredicate_
+                , rhs = RHS
+                    { existentials = []
+                    , right = Mock.c
+                    , ensures = makeTruePredicate_
+                    }
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicateNegated
                 , attributes = def
@@ -409,8 +416,11 @@ test_SMT =
             [ RewriteRule RulePattern
                 { left = Mock.functionalConstr10 (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
-                , right = Mock.a
-                , ensures = makeTruePredicate_
+                , rhs = RHS
+                    { existentials = []
+                    , right = Mock.a
+                    , ensures = makeTruePredicate_
+                    }
                 , requires =
                     makeEqualsPredicate_
                         (Mock.lessInt

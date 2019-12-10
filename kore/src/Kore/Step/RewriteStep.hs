@@ -266,7 +266,12 @@ finalizeAppliedRule renamedRule appliedConditions =
         -- axiom ensures clause. The axiom requires clause is included by
         -- unifyRule.
         let
-            RulePattern { ensures } = renamedRule
+            avoidVars =
+                Condition.freeVariables appliedCondition
+                <> Rule.freeVariables renamedRule
+            finalPattern =
+                Rule.topExistsToImplicitForall avoidVars (Rule.rhs renamedRule)
+            Conditional { predicate = ensures } = finalPattern
             ensuresCondition = Condition.fromPredicate ensures
             preFinalCondition = appliedCondition <> ensuresCondition
         finalCondition <- simplifyPredicate preFinalCondition
@@ -275,13 +280,9 @@ finalizeAppliedRule renamedRule appliedConditions =
         let
             Conditional { substitution } = finalCondition
             substitution' = Substitution.toMap substitution
-            RulePattern { right = finalTerm } = renamedRule
+            Conditional { term = finalTerm} = finalPattern
             finalTerm' = TermLike.substitute substitution' finalTerm
-            finalConditionFreeVars =
-                Conditional.freeVariables (const mempty) finalCondition
-            finalTerm'' =
-                topExistsToImplicitForall finalConditionFreeVars finalTerm'
-        return finalCondition { Pattern.term = finalTerm'' }
+        return finalCondition { Pattern.term = finalTerm' }
 
 {- | Apply the remainder predicate to the given initial configuration.
 

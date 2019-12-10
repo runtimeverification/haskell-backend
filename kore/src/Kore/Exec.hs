@@ -517,9 +517,8 @@ makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
         { attributes = attributes
         , left = left rule
         , antiLeft = antiLeft rule
-        , right = right rule
         , requires = requires rule
-        , ensures = ensures rule
+        , rhs = rhs rule
         }
 
 simplifyRuleOnSecond

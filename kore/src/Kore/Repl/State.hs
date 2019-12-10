@@ -607,9 +607,8 @@ createOnePathClaim (claim, cpattern) =
     $ Rule.RulePattern
         { left = cpattern
         , antiLeft = Nothing
-        , right = Rule.right . toRulePattern $ claim
         , requires = Predicate.makeTruePredicate_
-        , ensures = Rule.ensures . toRulePattern $ claim
+        , rhs = Rule.rhs . toRulePattern $ claim
         , attributes = Default.def
         }
 

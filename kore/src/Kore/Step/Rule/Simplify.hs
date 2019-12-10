@@ -76,7 +76,7 @@ class SimplifyRuleLHS rule where
 
 instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
   where
-    simplifyRuleLhs rule@(RulePattern _ _ _ _ _ _) = do
+    simplifyRuleLhs rule@(RulePattern _ _ _ _ _) = do
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <- Pattern.simplifyAndRemoveTopExists lhsWithPredicate
         fullySimplified <-
@@ -128,7 +128,7 @@ simplifyClaimRule
     :: (MonadSimplify simplifier, SimplifierVariable variable)
     => RulePattern variable
     -> simplifier (MultiAnd (RulePattern variable))
-simplifyClaimRule rule@(RulePattern _ _ _ _ _ _) =
+simplifyClaimRule rule@(RulePattern _ _ _ _ _) =
     simplifyRuleLhs rule
         { RulePattern.left =
             mkAnd
