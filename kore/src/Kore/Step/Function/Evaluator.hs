@@ -129,7 +129,7 @@ evaluateApplication
     canMemoize
       | Symbol.isMemo symbol
       , (isTop childrenCondition && isTop configurationCondition)
-        || all TermLike.isNonSimplifiable application
+        || all TermLike.isConstructorLike application
       = traverse asConcrete application
       | otherwise
       = Nothing
