@@ -16,11 +16,6 @@ module Kore.Step.Axiom.EvaluationStrategy
     , simplifierWithFallback
     ) where
 
-import Debug.Trace
-import Kore.TopBottom
-    ( isBottom
-    )
-
 import qualified Data.Foldable as Foldable
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
@@ -37,6 +32,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Logger.WarnBottomHook
+    ( warnBottomHook
+    )
 import Kore.Logger.WarnSimplificationWithRemainder
     ( warnSimplificationWithRemainder
     )
@@ -52,6 +50,9 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
+    )
+import Kore.TopBottom
+    ( isBottom
     )
 import Kore.Unparser
     ( unparse
@@ -189,14 +190,14 @@ evaluateBuiltin
                     <> " to reduce concrete pattern:"
                 , Pretty.indent 4 (unparse patt)
                 ]
-        _ ->
-            case result of
-                Applied (AttemptedAxiomResults {results , remainders}) -> do
-                    if (isBottom results && isBottom remainders)
-                        then traceM "\n\nBOTTOM\n\n"
-                        else return ()
-                    return result
-                _ -> return result
+        Applied AttemptedAxiomResults { results , remainders }
+          | App_ appHead _ <- patt
+          , Just hook_ <- Attribute.getHook (symbolHook appHead)
+          , isBottom results
+          , isBottom remainders -> do
+              warnBottomHook hook_ patt
+              return result
+        _ -> return result
   where
     isValue pat =
         maybe False TermLike.isNonSimplifiable $ asConcrete pat
