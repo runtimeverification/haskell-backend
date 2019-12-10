@@ -376,7 +376,7 @@ emptyExecutionGraph config =
 -}
 data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
-data LimitExceeded = LimitExceeded | Other
+data LimitExceeded = LimitExceeded
     deriving Show
 
 instance Exception.Exception LimitExceeded

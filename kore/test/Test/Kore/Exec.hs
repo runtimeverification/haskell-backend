@@ -176,15 +176,14 @@ test_searchExeedingBreadthLimit =
         testCase
             ("Exceed bredth limit: " <> show searchType)
             (assertion searchType)
-    assertion searchType = do
-        shouldFail searchType `catch` handleException
+            
+    assertion searchType =
+        shouldExeedBreadthLimit searchType `catch` \LimitExceeded -> pure ()
 
-    handleException LimitExceeded = pure ()
-    handleException _ = error $ "fail"
-
-    shouldFail searchType = do
+    shouldExeedBreadthLimit searchType = do
         a <- actual searchType
-        when (a == expected searchType) $ Exception.throw Other
+        when (a == expected searchType)
+            $ assertFailure "Did not exceed bredth limit"
 
     actual searchType = do
         finalPattern <-
