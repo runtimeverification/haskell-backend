@@ -204,10 +204,12 @@ topExistsToImplicitForall
     ensuresFreeVariables =
         FreeVariables.getFreeVariables (Predicate.freeVariables ensures)
     originalFreeVariables = rightFreeVariables <> ensuresFreeVariables
+    bindExistsFreeVariables =
+        foldr Set.delete originalFreeVariables (ElemVar <$> existentials)
     rename :: Map (UnifiedVariable variable) (UnifiedVariable variable)
     rename =
         refreshVariables
-            (avoid <> originalFreeVariables)
+            (avoid <> bindExistsFreeVariables)
             (Set.fromList $ ElemVar <$> existentials)
     subst = TermLike.mkVar <$> rename
 
