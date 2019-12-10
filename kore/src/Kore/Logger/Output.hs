@@ -170,7 +170,7 @@ parseKoreLogOptions =
     KoreLogOptions
     <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
-    <*> (parseEntries <|> pure mempty)
+    <*> (mconcat <$> many parseEntries)
     <*> parseDebugAppliedRuleOptions
   where
     parseType =
@@ -195,8 +195,8 @@ parseKoreLogOptions =
     parseEntries =
         option
             parseCommaSeparatedEntries
-            $ long "log-entry"
-            <> help "Log entry: logs entries of supplied types"
+            $ long "log-entries"
+            <> help "Log entries: logs entries of supplied types"
     parseCommaSeparatedEntries = maybeReader $ Parser.parseMaybe entryParser
     entryParser :: Parser.Parsec String String (Set Text)
     entryParser = do
@@ -204,7 +204,7 @@ parseKoreLogOptions =
         pure . Set.fromList $ args
     itemParser :: Parser.Parsec String String Text
     itemParser = do
-        argument <- some (Parser.noneOf [','])
+        argument <- some (Parser.noneOf [',', ' '])
         _ <- void (Parser.char ',') <|> Parser.eof
         pure . Text.pack $ argument
 
