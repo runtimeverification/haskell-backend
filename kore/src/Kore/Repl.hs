@@ -68,6 +68,9 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.DebugSolver as Logger
+    ( emptyDebugSolverOptions
+    )
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
@@ -171,6 +174,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
                     , logLevel = Logger.Warning
                     , debugAppliedRuleOptions = mempty
                     , debugAxiomEvaluationOptions = mempty
+                    , debugSolverOptions = Logger.emptyDebugSolverOptions
                     }
             }
 

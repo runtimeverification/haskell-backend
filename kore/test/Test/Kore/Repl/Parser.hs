@@ -10,6 +10,9 @@ import Test.Tasty
     )
 
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.DebugSolver as Logger
+    ( emptyDebugSolverOptions
+    )
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Parser
@@ -427,6 +430,7 @@ logTests =
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log [] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
@@ -451,6 +455,7 @@ logTests =
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log info [ entry1,  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
@@ -459,6 +464,7 @@ logTests =
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log info [ entry1  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
@@ -467,5 +473,6 @@ logTests =
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     ]
