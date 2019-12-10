@@ -7,7 +7,7 @@ License     : NCSA
 module Kore.Internal.Symbol
     ( Symbol (..)
     , toSymbolOrAlias
-    , isNonSimplifiable
+    , isConstructorLike
     , isConstructor
     , isSortInjection
     , isFunctional
@@ -122,22 +122,22 @@ toSymbolOrAlias symbol =
         , symbolOrAliasParams = symbolParams symbol
         }
 
--- | Is a symbol not simplifiable?
+-- | Is a symbol constructor-like?
 --
--- sigma is non-simplifiable if whenever we have the following
+-- A symbol @sigma@ is constructor-like if whenever we have the following
 -- * Context[y] is not simplifiable to a pattern without y
 -- * sigma(..., x, ...) != bottom
 -- then Context[sigma(..., x, ...)] cannot be simplified to either x or
 -- something that does not contain x as a free variable.
 --
 -- Note that constructors and sort injection are natural candidates for
--- non-simplifiable patterns. Builtins like 'element' (for sets, lists and maps)
--- are also good candidates for non-simplifiable symbols.
+-- constructor-like patterns. Builtins like 'element' (for sets, lists and maps)
+-- are also good candidates for constructor-like symbols.
 --
 -- Builtins like 'concat' need an additional condition, i.e. that the arguments
 -- are not .Map.
-isNonSimplifiable :: Symbol -> Bool
-isNonSimplifiable = Attribute.isNonSimplifiable . symbolAttributes
+isConstructorLike :: Symbol -> Bool
+isConstructorLike = Attribute.isConstructorLike . symbolAttributes
 
 isConstructor :: Symbol -> Bool
 isConstructor =

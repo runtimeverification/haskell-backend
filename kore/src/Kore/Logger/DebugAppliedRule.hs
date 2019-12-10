@@ -113,9 +113,9 @@ debugAppliedRule rule =
 See also: 'parseDebugAppliedRuleOptions'
 
  -}
-data DebugAppliedRuleOptions =
+newtype DebugAppliedRuleOptions =
     DebugAppliedRuleOptions
-        { debugAppliedRules :: !(Set Id)
+        { debugAppliedRules :: Set Id
         }
     deriving (Eq, Show)
 
@@ -174,8 +174,4 @@ filterDebugAppliedRule debugAppliedRuleOptions baseLogAction logAction =
 
 matchDebugAppliedRule :: SomeEntry -> Maybe DebugAppliedRule
 matchDebugAppliedRule entry =
-    fromEntry entry <|> throughScope
-  where
-    throughScope = do
-        WithScope { entry = entry' } <- fromEntry entry
-        matchDebugAppliedRule entry'
+    fromEntry entry
