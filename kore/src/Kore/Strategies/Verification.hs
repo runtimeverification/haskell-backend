@@ -98,6 +98,7 @@ verify
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
+    => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
     -> [claim]
@@ -115,6 +116,7 @@ verifyClaim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
+    => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
     -> [claim]

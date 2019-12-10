@@ -52,6 +52,9 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import Kore.Step
+    ( Prim (..)
+    )
+import Kore.Step
     ( allRewrites
     , anyRewrite
     )
@@ -62,6 +65,7 @@ import Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import Kore.Step.Strategy
     ( LimitExceeded (..)
+    , Strategy (..)
     )
 import Kore.Syntax.Definition hiding
     ( Symbol
@@ -176,10 +180,12 @@ test_searchExeedingBreadthLimit =
         testCase
             ("Exceed bredth limit: " <> show searchType)
             (assertion searchType)
-            
-    assertion searchType =
-        shouldExeedBreadthLimit searchType `catch` \LimitExceeded -> pure ()
 
+    assertion searchType =
+        shouldExeedBreadthLimit searchType `catch`
+            \(_ :: LimitExceeded (Strategy (Prim Rewrite))) -> pure ()
+
+    shouldExeedBreadthLimit :: SearchType -> IO ()
     shouldExeedBreadthLimit searchType = do
         a <- actual searchType
         when (a == expected searchType)

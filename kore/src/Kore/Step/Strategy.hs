@@ -77,6 +77,7 @@ import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import Data.Typeable
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -376,10 +377,11 @@ emptyExecutionGraph config =
 -}
 data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
-data LimitExceeded = LimitExceeded
-    deriving Show
+data LimitExceeded instr = LimitExceeded (Seq (Graph.Node, [instr]))
+    deriving (Show, Typeable)
 
-instance Exception.Exception LimitExceeded
+instance (Show instr, Typeable instr)
+    => Exception.Exception (LimitExceeded instr)
 
 {- | Execute a 'Strategy'.
 
@@ -400,6 +402,8 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 constructExecutionGraph
     :: forall m config rule instr
     .  MonadProfiler m
+    => Show instr
+    => Typeable instr
     => Limit Natural
     -> (instr -> config -> TransitionT rule m config)
     -> [instr]
@@ -429,7 +433,7 @@ constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
       | instr : instrs' <- instrs
       = Profile.executionQueueLength (Seq.length rest) $ do
         when (exeedsLimit rest)
-            $ Exception.throw LimitExceeded --error "Number of concurrent branches limit exceeded"
+            $ Exception.throw $ LimitExceeded rest
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         case searchOrder of
@@ -530,6 +534,8 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 runStrategy
     :: forall m prim rule config
     .  MonadProfiler m
+    => Show prim
+    => Typeable prim
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
@@ -544,6 +550,8 @@ runStrategy breadthLimit applyPrim instrs0 config0 =
 runStrategyWithSearchOrder
     :: forall m prim rule config
     .  MonadProfiler m
+    => Show prim
+    => Typeable prim
     => Limit Natural
     -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
