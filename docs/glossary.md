@@ -3,6 +3,20 @@
 1. (noun, acronym)
    Bounded model checking. Execute the program on all paths for a given number of steps (a.k.a. bound), attempting to identify given properties (bugs, unexpected behaviours, and so on) in the execution graph.
 
+<a name="constructor-like"></a>*constructor-like*
+
+1. (adjective)
+   A pattern is *constructor-like* if logical equality is syntactic equality.  A
+   pattern is constructor-like if it is logically equal (in the `\equals` sense)
+   to another constructor-like pattern if and only if the patterns are
+   syntactically equal. The constructor-like patterns of a sort comprise a
+   normal form of elements in that sort.
+1. (adjective)
+   A symbol is *constructor-like* if it may form the head of a constructor-like
+   application pattern (in the sense defined above). Roughly, this means the
+   symbol has injectivity and no-confusion axioms.
+
+
 <a name="function"></a>*function*
 
 1. (noun)

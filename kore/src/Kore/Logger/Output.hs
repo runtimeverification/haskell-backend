@@ -85,9 +85,15 @@ import Options.Applicative
     )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
+import qualified Type.Reflection as Reflection
 
 import Kore.Logger
 import Kore.Logger.DebugAppliedRule
+import Kore.Logger.DebugAxiomEvaluation
+    ( DebugAxiomEvaluationOptions
+    , filterDebugAxiomEvaluation
+    , parseDebugAxiomEvaluationOptions
+    )
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
@@ -108,6 +114,7 @@ data KoreLogOptions = KoreLogOptions
     , logScopes :: Set Scope
     -- ^ scopes to show, empty means show all
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
+    , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
     }
     deriving (Eq, Show)
 
@@ -136,12 +143,14 @@ koreLogFilters
 koreLogFilters koreLogOptions baseLogger =
     id
     $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
+    $ filterDebugAxiomEvaluation debugAxiomEvaluationOptions
     $ filterSeverity logLevel
     $ filterScopes logScopes
     $ baseLogger
   where
     KoreLogOptions { logLevel, logScopes } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
+    KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
 
 {- | Select log entries with 'Severity' greater than or equal to the level.
  -}
@@ -176,6 +185,7 @@ parseKoreLogOptions =
     <*> (parseLevel <|> pure Warning)
     <*> (parseScope <|> pure mempty)
     <*> parseDebugAppliedRuleOptions
+    <*> parseDebugAxiomEvaluationOptions
   where
     parseType =
         option
@@ -270,11 +280,11 @@ swappableLogger mvar =
     worker a logAction = Colog.unLogAction logAction a
 
 defaultLogPretty :: SomeEntry -> Pretty.Doc ann
-defaultLogPretty entry =
+defaultLogPretty (SomeEntry entry) =
     Pretty.hsep
-        [ Pretty.brackets (Pretty.pretty severity)
+        [ Pretty.brackets (Pretty.pretty . entrySeverity $ entry)
+        , ":"
+        , Pretty.brackets (Pretty.viaShow . Reflection.typeOf $ entry)
         , ":"
         , Pretty.pretty entry
         ]
-  where
-    severity = entrySeverity entry
