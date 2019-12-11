@@ -92,7 +92,6 @@ data DebugAxiomEvaluation =
     { identifier :: !(Maybe AxiomIdentifier)
     , secondaryIdentifier :: !(Maybe Text)
     , state :: !AxiomEvaluationState
-    , severity :: !Severity
     }
     deriving (Eq, Typeable)
 
@@ -105,7 +104,7 @@ data AxiomEvaluationState
     deriving Eq
 
 instance Entry DebugAxiomEvaluation where
-    entrySeverity DebugAxiomEvaluation {severity} = severity
+    entrySeverity _ = Debug
 
 instance Pretty DebugAxiomEvaluation where
     pretty DebugAxiomEvaluation { identifier, state } =
@@ -185,7 +184,6 @@ logState state identifier secondaryIdentifier =
         { identifier
         , secondaryIdentifier
         , state
-        , severity = Info
         }
 
 {- | Options (from the command-line) specifying when to log specific axiom
