@@ -119,7 +119,7 @@ test_unifyInj =
             Injections with
                 - different child sorts, and
                 - a common subsort, and
-                - at least on constructor-like child
+                - at least one constructor-like child
             are known to be distinct.
          -}
         (inj topSort ctorSub)
