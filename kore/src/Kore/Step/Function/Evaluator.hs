@@ -25,6 +25,9 @@ import Control.Exception
 import qualified Control.Monad.Trans as Trans
 import qualified Data.Foldable as Foldable
 import Data.Function
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import qualified Branch as BranchT
@@ -47,6 +50,7 @@ import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
     ( end
+    , klabelIdentifier
     , notEvaluated
     , reevaluation
     , start
@@ -220,13 +224,17 @@ maybeEvaluatePattern
                 $ evaluator termLike conditions
             flattened <- case result of
                 AttemptedAxiom.NotApplicable -> do
-                    DebugAxiomEvaluation.notEvaluated identifier
+                    DebugAxiomEvaluation.notEvaluated
+                        identifier
+                        klabelIdentifier
                     return AttemptedAxiom.NotApplicable
                 AttemptedAxiom.Applied AttemptedAxiomResults
                     { results = orResults
                     , remainders = orRemainders
                     } -> do
-                        DebugAxiomEvaluation.reevaluation identifier
+                        DebugAxiomEvaluation.reevaluation
+                            identifier
+                            klabelIdentifier
                         simplified <-
                             Profile.resimplification
                                 identifier (length orResults)
@@ -258,15 +266,18 @@ maybeEvaluatePattern
     identifier :: Maybe AxiomIdentifier
     identifier = AxiomIdentifier.matchAxiomIdentifier termLike
 
+    klabelIdentifier :: Maybe Text
+    klabelIdentifier = DebugAxiomEvaluation.klabelIdentifier termLike
+
     tracing = Profile.equalitySimplification identifier termLike
 
     bracketAxiomEvaluationLog
         :: simplifier (AttemptedAxiom variable)
         -> simplifier (AttemptedAxiom variable)
     bracketAxiomEvaluationLog action = do
-        DebugAxiomEvaluation.start identifier
+        DebugAxiomEvaluation.start identifier klabelIdentifier
         result <- action
-        DebugAxiomEvaluation.end identifier
+        DebugAxiomEvaluation.end identifier klabelIdentifier
         return result
 
     unchangedPatt =
