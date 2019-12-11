@@ -107,8 +107,6 @@ data AxiomEvaluationState
 instance Entry DebugAxiomEvaluation where
     entrySeverity DebugAxiomEvaluation {severity} = severity
 
-    entryScopes _ = Set.singleton "AxiomEvaluation"
-
 instance Pretty DebugAxiomEvaluation where
     pretty DebugAxiomEvaluation { identifier, state } =
         case state of

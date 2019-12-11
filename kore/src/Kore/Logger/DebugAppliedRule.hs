@@ -77,8 +77,6 @@ newtype DebugAppliedRule =
 instance Entry DebugAppliedRule where
     entrySeverity _ = Debug
 
-    entryScopes _ = mempty
-
 instance Pretty DebugAppliedRule where
     pretty DebugAppliedRule { appliedRule } =
         Pretty.vsep

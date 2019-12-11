@@ -76,8 +76,6 @@ warnSimplificationWithRemainder
 instance Entry WarnSimplificationWithRemainder where
     entrySeverity _ = Warning
 
-    entryScopes _ = mempty
-
 instance Pretty WarnSimplificationWithRemainder where
     pretty entry =
         Pretty.vsep
