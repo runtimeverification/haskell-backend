@@ -439,6 +439,7 @@ logTests =
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
@@ -447,6 +448,7 @@ logTests =
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log critical [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions

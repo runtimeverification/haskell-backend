@@ -15,9 +15,6 @@ module Kore.Logger.DebugSolver
     , solverTranscriptLogger
     ) where
 
-import Control.Applicative
-    ( Alternative ((<|>))
-    )
 import Data.Text
     ( Text
     )
@@ -33,6 +30,10 @@ import qualified Data.Text.Prettyprint.Doc.Render.Text as Pretty
     )
 import Options.Applicative
     ( Parser
+    , help
+    , long
+    , optional
+    , strOption
     )
 
 import Kore.Logger
@@ -41,12 +42,6 @@ import Kore.Logger
     , Severity (Debug)
     , SomeEntry
     , logWith
-    )
-import Kore.Logger.LogType
-    ( KoreLogType (LogNone)
-    )
-import qualified Kore.Logger.LogType as LogType
-    ( parseCommandLine
     )
 import SMT.AST
     ( SExpr (..)
@@ -107,7 +102,6 @@ solverTranscriptLogger textLogger =
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
         . pretty
 
-
 matchDebugSolverSend :: SomeEntry -> Maybe DebugSolverSend
 matchDebugSolverSend = fromEntry
 
@@ -119,7 +113,7 @@ See also: 'parseDebugSolverOptions'
 -}
 newtype DebugSolverOptions =
     DebugSolverOptions
-        { logType :: KoreLogType
+        { logFile :: Maybe FilePath
         }
     deriving (Eq, Show)
 
@@ -127,7 +121,12 @@ newtype DebugSolverOptions =
 parseDebugSolverOptions :: Parser DebugSolverOptions
 parseDebugSolverOptions =
     DebugSolverOptions
-    <$> (LogType.parseCommandLine "solver-transcript" <|> pure LogNone)
+    <$> optional
+        (strOption
+            (  long "solver-transcript"
+            <> help "Name of the file for the SMT solver transcript."
+            )
+        )
 
 emptyDebugSolverOptions :: DebugSolverOptions
-emptyDebugSolverOptions = DebugSolverOptions {logType = LogNone}
+emptyDebugSolverOptions = DebugSolverOptions {logFile = Nothing}
