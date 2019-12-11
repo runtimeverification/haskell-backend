@@ -78,7 +78,7 @@ data InjSimplifier =
                 where lower < lo
         @
 
-        Returns 'Unmatched' if the sort injections cannot match, or 'Unknown' if
+        Returns 'Distinct' if the sort injections cannot match, or 'Unknown' if
         further simplification could produce matching injections.
          -}
 
