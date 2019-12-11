@@ -207,6 +207,6 @@ transitionRule'
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' ruleType destination prim state = do
-    let goal = flip (makeRuleFromPatterns ruleType) destination <$> state
+    let goal = flip (configurationDestinationToRule ruleType) destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next

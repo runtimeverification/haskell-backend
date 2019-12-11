@@ -620,7 +620,7 @@ conjOfOnePathClaims claims sort =
     foldr
         TermLike.mkAnd
         (TermLike.mkTop sort)
-        $ fmap Rule.onePathRuleToPattern claims
+        $ fmap Rule.onePathRuleToTerm claims
 
 generateInProgressOPClaims
     :: Claim claim
@@ -689,7 +689,7 @@ currentClaimSort
 currentClaimSort = do
     claims <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
-        . Rule.onePathRuleToPattern
+        . Rule.onePathRuleToTerm
         . Rule.OnePathRule
         . toRulePattern
         $ claims

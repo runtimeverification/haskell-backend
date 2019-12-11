@@ -17,7 +17,7 @@ module Kore.Step.Rule
     , ToRulePattern (..)
     , FromRulePattern (..)
     , allPathGlobally
-    , axiomPatternToPattern
+    , axiomPatternToTerm
     , rulePattern
     , isHeatingRule
     , isCoolingRule
@@ -33,10 +33,10 @@ module Kore.Step.Rule
     , mkRewriteAxiom
     , mkEqualityAxiom
     , mkCeilAxiom
-    , patternToAxiomPattern
+    , termToAxiomPattern
     , refreshRulePattern
     , topExistsToImplicitForall
-    , onePathRuleToPattern
+    , onePathRuleToTerm
     , isFreeOf
     , wEF
     , wAF
@@ -274,7 +274,7 @@ rulePattern left right =
         { left
         , antiLeft = Nothing
         , requires = Predicate.makeTruePredicate_
-        , rhs = patternToRHS right
+        , rhs = termToRHS right
         , attributes = Default.def
         }
 
@@ -298,8 +298,8 @@ instance
     InternalVariable variable
     => Unparse (EqualityRule variable)
   where
-    unparse = unparse . axiomPatternToPattern . FunctionAxiomPattern
-    unparse2 = unparse2 . axiomPatternToPattern . FunctionAxiomPattern
+    unparse = unparse . axiomPatternToTerm . FunctionAxiomPattern
+    unparse2 = unparse2 . axiomPatternToTerm . FunctionAxiomPattern
 
 {-  | Rewrite-based rule pattern.
 -}
@@ -321,8 +321,8 @@ instance
     InternalVariable variable
     => Unparse (RewriteRule variable)
   where
-    unparse = unparse . axiomPatternToPattern . RewriteAxiomPattern
-    unparse2 = unparse2 . axiomPatternToPattern . RewriteAxiomPattern
+    unparse = unparse . axiomPatternToTerm . RewriteAxiomPattern
+    unparse2 = unparse2 . axiomPatternToTerm . RewriteAxiomPattern
 
 {-  | Implication-based pattern.
 -}
@@ -344,8 +344,8 @@ instance
     InternalVariable variable
     => Unparse (ImplicationRule variable)
   where
-    unparse = unparse . axiomPatternToPattern . ImplicationAxiomPattern
-    unparse2 = unparse2 . axiomPatternToPattern . ImplicationAxiomPattern
+    unparse = unparse . axiomPatternToTerm . ImplicationAxiomPattern
+    unparse2 = unparse2 . axiomPatternToTerm . ImplicationAxiomPattern
 
 -- | modalities
 weakExistsFinally :: Text
@@ -384,8 +384,8 @@ instance Debug variable => Debug (OnePathRule variable)
 instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance InternalVariable variable => Unparse (OnePathRule variable) where
-    unparse = unparse . axiomPatternToPattern . OnePathClaimPattern
-    unparse2 = unparse2 .  axiomPatternToPattern . OnePathClaimPattern
+    unparse = unparse . axiomPatternToTerm . OnePathClaimPattern
+    unparse2 = unparse2 .  axiomPatternToTerm . OnePathClaimPattern
 
 instance TopBottom (OnePathRule variable) where
     isTop _ = False
@@ -435,8 +435,8 @@ instance Debug variable => Debug (AllPathRule variable)
 instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance InternalVariable variable => Unparse (AllPathRule variable) where
-    unparse = unparse . axiomPatternToPattern . AllPathClaimPattern
-    unparse2 = unparse2 . axiomPatternToPattern . AllPathClaimPattern
+    unparse = unparse . axiomPatternToTerm . AllPathClaimPattern
+    unparse2 = unparse2 . axiomPatternToTerm . AllPathClaimPattern
 
 instance TopBottom (AllPathRule variable) where
     isTop _ = False
@@ -555,37 +555,37 @@ fromSentenceAxiom sentenceAxiom = do
     attributes <-
         (Attribute.Parser.liftParser . Attribute.Parser.parseAttributes)
             (Syntax.sentenceAxiomAttributes sentenceAxiom)
-    patternToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
+    termToAxiomPattern attributes (Syntax.sentenceAxiomPattern sentenceAxiom)
 
-rhsToPattern
+rhsToTerm
     :: InternalVariable variable
     => RHS variable
     -> TermLike.TermLike variable
-rhsToPattern (RHS existentials right ensures) =
+rhsToTerm (RHS existentials right ensures) =
     TermLike.mkExistsN existentials rhs
   where
     rhs = case ensures of
         Predicate.PredicateTrue -> right
         _ -> TermLike.mkAnd (Predicate.unwrapPredicate ensures) right
 
-patternToRHS
+termToRHS
     :: InternalVariable variable
     => TermLike.TermLike variable
     -> RHS variable
-patternToRHS (TermLike.Exists_ _ v pat) =
+termToRHS (TermLike.Exists_ _ v pat) =
     rhs { existentials = v : existentials rhs }
   where
-    rhs = patternToRHS pat
-patternToRHS (TermLike.And_ _ ensures right) =
+    rhs = termToRHS pat
+termToRHS (TermLike.And_ _ ensures right) =
     RHS { existentials = [], right, ensures = Predicate.wrapPredicate ensures }
-patternToRHS right =
+termToRHS right =
     RHS { existentials = [], right, ensures = Predicate.makeTruePredicate_ }
 
-onePathRuleToPattern
+onePathRuleToTerm
     :: InternalVariable variable
     => OnePathRule variable
     -> TermLike.TermLike variable
-onePathRuleToPattern
+onePathRuleToTerm
     ( OnePathRule
         (RulePattern left antiLeft requires rhs _)
     )
@@ -598,7 +598,7 @@ onePathRuleToPattern
         )
         (TermLike.mkApplyAlias (wEF sort) [right])
   where
-    right = rhsToPattern rhs
+    right = rhsToTerm rhs
     sort :: Sort
     sort = TermLike.termLikeSort right
 
@@ -647,22 +647,22 @@ aPG sort = Alias
     , aliasRight = TermLike.mkTop sort
     }
 
-{- | Match a pure pattern encoding an 'QualifiedAxiomPattern'.
+{- | Match a term encoding an 'QualifiedAxiomPattern'.
 
-@patternToAxiomPattern@ returns an error if the given 'CommonPattern' does
+@patternToAxiomPattern@ returns an error if the given 'TermLike' does
 not encode a normal rewrite or function axiom.
 -}
-patternToAxiomPattern
+termToAxiomPattern
     :: SubstitutionVariable variable
     => Attribute.Axiom
     -> TermLike.TermLike variable
     -> Either (Error AxiomPatternError) (QualifiedAxiomPattern variable)
-patternToAxiomPattern attributes pat =
+termToAxiomPattern attributes pat =
     case pat of
         TermLike.Rewrites_ _ (TermLike.ApplyAlias_ alias params) rhs ->
             case substituteInAlias alias params of
                 TermLike.And_ _ requires lhs ->
-                    patternToAxiomPattern
+                    termToAxiomPattern
                         attributes
                         (TermLike.mkRewrites (TermLike.mkAnd requires lhs) rhs)
                 _ -> (error . show. Pretty.vsep)
@@ -677,7 +677,7 @@ patternToAxiomPattern attributes pat =
             rhs ->
                 case substituteInAlias alias params of
                     TermLike.And_ _ requires lhs ->
-                        patternToAxiomPattern
+                        termToAxiomPattern
                             attributes
                             (TermLike.mkRewrites
                                 (TermLike.mkAnd
@@ -700,7 +700,7 @@ patternToAxiomPattern attributes pat =
                 { left = lhs
                 , antiLeft = Just antiLeft
                 , requires = Predicate.wrapPredicate requires
-                , rhs = patternToRHS rhs
+                , rhs = termToRHS rhs
                 , attributes
                 }
         -- normal rewrite axioms
@@ -709,7 +709,7 @@ patternToAxiomPattern attributes pat =
                     { left = lhs
                     , antiLeft = Nothing
                     , requires = Predicate.wrapPredicate requires
-                    , rhs = patternToRHS rhs
+                    , rhs = termToRHS rhs
                     , attributes
                     }
         -- Reachability claims
@@ -721,7 +721,7 @@ patternToAxiomPattern attributes pat =
                 { left = lhs
                 , antiLeft = Nothing
                 , requires = Predicate.wrapPredicate requires
-                , rhs = patternToRHS rhs
+                , rhs = termToRHS rhs
                 , attributes
                 }
         -- function axioms: general
@@ -769,7 +769,7 @@ patternToAxiomPattern attributes pat =
                     }
                 , attributes
                 }
-        TermLike.Forall_ _ _ child -> patternToAxiomPattern attributes child
+        TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
         -- implication axioms:
         -- init -> modal_op ( prop )
         TermLike.Implies_ _ lhs rhs@(TermLike.ApplyAlias_ op _)
@@ -802,7 +802,7 @@ patternToAxiomPattern attributes pat =
             headName = getId (aliasConstructor symbol)
 
 
-axiomPatternToPattern
+axiomPatternToTerm
     :: Debug variable
     => Ord variable
     => Show variable
@@ -810,7 +810,7 @@ axiomPatternToPattern
     => SortedVariable variable
     => QualifiedAxiomPattern variable
     -> TermLike.TermLike variable
-axiomPatternToPattern
+axiomPatternToTerm
     (RewriteAxiomPattern
         (RewriteRule
             (RulePattern
@@ -823,9 +823,9 @@ axiomPatternToPattern
         (TermLike.mkAnd
             (TermLike.mkNot antiLeftTerm)
             (TermLike.mkAnd (Predicate.unwrapPredicate requires) left))
-        (rhsToPattern rhs)
+        (rhsToTerm rhs)
 
-axiomPatternToPattern
+axiomPatternToTerm
     (RewriteAxiomPattern
         (RewriteRule
             (RulePattern left _ requires rhs _)
@@ -834,9 +834,9 @@ axiomPatternToPattern
   =
     TermLike.mkRewrites
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
-        (rhsToPattern rhs)
+        (rhsToTerm rhs)
 
-axiomPatternToPattern
+axiomPatternToTerm
     (OnePathClaimPattern
         (OnePathRule
             (RulePattern left _ requires rhs _)
@@ -847,12 +847,12 @@ axiomPatternToPattern
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (TermLike.mkApplyAlias
             op
-            [rhsToPattern rhs]
+            [rhsToTerm rhs]
         )
   where
     op = wEF $ TermLike.termLikeSort left
 
-axiomPatternToPattern
+axiomPatternToTerm
     (AllPathClaimPattern
         (AllPathRule
             (RulePattern left _ requires rhs _)
@@ -863,12 +863,12 @@ axiomPatternToPattern
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (TermLike.mkApplyAlias
             op
-            [rhsToPattern rhs]
+            [rhsToTerm rhs]
         )
   where
     op = wAF $ TermLike.termLikeSort left
 
-axiomPatternToPattern
+axiomPatternToTerm
     (FunctionAxiomPattern
         (EqualityRule
             (RulePattern
@@ -882,7 +882,7 @@ axiomPatternToPattern
     )
   | resultSort1 == resultSort2 = left
 
-axiomPatternToPattern
+axiomPatternToTerm
     (FunctionAxiomPattern
         (EqualityRule
             (RulePattern
@@ -897,7 +897,7 @@ axiomPatternToPattern
   =
     TermLike.mkEquals_ left right
 
-axiomPatternToPattern
+axiomPatternToTerm
     (FunctionAxiomPattern
         (EqualityRule (RulePattern left _ requires (RHS _ right _) _))
     )
@@ -906,7 +906,7 @@ axiomPatternToPattern
         (Predicate.unwrapPredicate requires)
         (TermLike.mkAnd (TermLike.mkEquals_ left right) TermLike.mkTop_)
 
-axiomPatternToPattern
+axiomPatternToTerm
     (ImplicationAxiomPattern
         (ImplicationRule (RulePattern left _ _ (RHS _ right _) _))
     )
@@ -1016,7 +1016,7 @@ rhsFreeVariables
     :: InternalVariable variable
     => RHS variable
     -> FreeVariables variable
-rhsFreeVariables = TermLike.freeVariables . rhsToPattern
+rhsFreeVariables = TermLike.freeVariables . rhsToTerm
 
 {- | Extract the free variables of a 'RulePattern'.
  -}

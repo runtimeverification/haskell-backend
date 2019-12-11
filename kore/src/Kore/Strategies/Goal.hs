@@ -16,7 +16,7 @@ module Kore.Strategies.Goal
     , onePathFollowupStep
     , allPathFirstStep
     , allPathFollowupStep
-    , makeRuleFromPatterns
+    , configurationDestinationToRule
     , getConfiguration
     , getDestination
     , transitionRuleTemplate
@@ -794,10 +794,10 @@ simplify goal = errorBracket $ do
         $ simplifyAndRemoveTopExists configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
-        then pure $ makeRuleFromPatterns goal Pattern.bottom destination
+        then pure $ configurationDestinationToRule goal Pattern.bottom destination
         else do
             let simplifiedRules =
-                    fmap (flip (makeRuleFromPatterns goal) destination) filteredConfigs
+                    fmap (flip (configurationDestinationToRule goal) destination) filteredConfigs
             Foldable.asum (pure <$> simplifiedRules)
   where
     destination = getDestination goal
@@ -868,8 +868,8 @@ derivePar rules goal = errorBracket $ do
                         (pure . GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
-                        (flip (makeRuleFromPatterns goal) destination)
-                        (flip (makeRuleFromPatterns goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
                         (Result.mergeResults results)
             results' <-
                 traverseConfigs (mapRules onePathResults)
@@ -929,8 +929,8 @@ deriveSeq rules goal = errorBracket $ do
                         (pure . GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
-                        (flip (makeRuleFromPatterns goal) destination)
-                        (flip (makeRuleFromPatterns goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
                         (Result.mergeResults results)
             results' <-
                 traverseConfigs (mapRules onePathResults)
@@ -1048,14 +1048,17 @@ getDestination
     -> RHS Variable
 getDestination (toRulePattern -> RulePattern { rhs }) = rhs
 
-makeRuleFromPatterns
+{-|Given a rule to use as a prototype, a 'Pattern' to use as the configuration
+and a 'RHS' containing the destination, makes a rule out of them.
+-}
+configurationDestinationToRule
     :: forall rule
     .  FromRulePattern rule
     => rule
     -> Pattern Variable
     -> RHS Variable
     -> rule
-makeRuleFromPatterns ruleType configuration rhs =
+configurationDestinationToRule ruleType configuration rhs =
     let (left, Condition.toPredicate -> requires) =
             Pattern.splitTerm configuration
     in fromRulePattern ruleType $ RulePattern

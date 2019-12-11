@@ -325,8 +325,8 @@ test_patternToAxiomPatternAndBack =
     ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
     attributesWithPriority =
         def & field @"priority" .~ (Attribute.Priority (Just 0))
-    perhapsFinalPattern attribute initialPattern = axiomPatternToPattern
-        <$> patternToAxiomPattern attribute initialPattern
+    perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
+        <$> termToAxiomPattern attribute initialPattern
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
