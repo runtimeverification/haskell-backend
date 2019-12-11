@@ -1,12 +1,12 @@
 module PATH
   import DOMAINS
   syntax S ::= "a" | "b" | "c"
-  syntax T ::= f(S) | g(S) | "end"
+  syntax T ::= total(S) | partial(S) | "end"
 
-  rule f(a) => end
-  rule f(b) => end
-  rule f(c) => end
+  rule total(a) => end
+  rule total(b) => end
+  rule total(c) => end
 
-  rule g(a) => end
-  rule g(b) => end
+  rule partial(a) => end
+  rule partial(b) => end
 endmodule
