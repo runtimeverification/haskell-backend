@@ -220,35 +220,31 @@ parseDebugAxiomEvaluationOptions =
             (  Options.metavar "SIMPLIFICATION_IDENTIFIER"
             <> Options.long "debug-simplification-axiom"
             <> Options.help
-                (  "Log at the info level every rule applied for the "
+                (  "Log every rule applied for the "
                 <> "SIMPLIFICATION_IDENTIFIER."
                 )
             )
 
-{- | Modify a 'LogAction' to display selected applied rules.
-
-The "base" 'LogAction' is used to log the applied rule whenever it matches the
-rules specified by 'DebugAppliedRuleOptions'. All other entries are forwarded to
-the "fallback" 'LogAction'.
-
+{- | Function to modify a 'LogAction' to display selected applied rules.
  -}
 filterDebugAxiomEvaluation
     :: DebugAxiomEvaluationOptions
-    -> SomeEntry  -- ^ base 'LogAction'
+    -> SomeEntry
     -> Bool
 filterDebugAxiomEvaluation
     debugAxiomEvaluationOptions
     entry
   =
-    fromMaybe False fixAxiomEvaluation
+    fromMaybe False findAxiomEvaluation
   where
-    fixAxiomEvaluation :: Maybe Bool
-    fixAxiomEvaluation = do
+    findAxiomEvaluation :: Maybe Bool
+    findAxiomEvaluation = do
         DebugAxiomEvaluation
-            { identifier, secondaryIdentifier, severity = Info }
+            { identifier, secondaryIdentifier }
                 <- fromEntry entry
         let textIdentifier :: Maybe Text
-            textIdentifier = (Text.pack . show . Pretty.pretty) <$> identifier
+            textIdentifier =
+                Text.pack . show . Pretty.pretty <$> identifier
 
             isSelectedIdentifier :: Text -> Bool
             isSelectedIdentifier toCheck =
