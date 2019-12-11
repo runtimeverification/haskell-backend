@@ -10,7 +10,6 @@ module Kore.Logger.Output
     ( KoreLogType (..)
     , KoreLogOptions (..)
     , koreLogFilters
-    , filterEntryAndSeverity
     , withLogger
     , parseKoreLogOptions
     , emptyLogger
@@ -134,31 +133,34 @@ koreLogFilters
     -> LogAction m SomeEntry
     -> LogAction m SomeEntry
 koreLogFilters koreLogOptions baseLogger =
-    id
-    $ filterDebugAppliedRule debugAppliedRuleOptions baseLogger
-    $ filterEntryAndSeverity logLevel logEntries
+    Colog.cfilter
+        (\entry ->
+            filterEntry logEntries entry
+            || filterSeverity logLevel entry
+            || filterDebugAppliedRule debugAppliedRuleOptions entry
+        )
     baseLogger
   where
     KoreLogOptions { logLevel, logEntries } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
 
-{- | Select log entries with 'Severity' greater than or equal to the level
-    or those entries contained in the active set.
+{- | Select the log entry types present in the active set.
  -}
-filterEntryAndSeverity
-    :: Applicative m
-    => Severity
-    -- ^ level
-    -> Set Text
-    -- ^ active entries
-    -> LogAction m SomeEntry
-    -> LogAction m SomeEntry
-filterEntryAndSeverity level logEntries =
-    Colog.cfilter
-        (\entry ->
-            (entrySeverity entry >= level)
-            || (entryTypeText entry `elem` logEntries)
-        )
+filterEntry
+    :: Set Text
+    -> SomeEntry
+    -> Bool
+filterEntry logEntries entry =
+    entryTypeText entry `elem` logEntries
+
+{- | Select log entries with 'Severity' greater than or equal to the level.
+ -}
+filterSeverity
+    :: Severity
+    -> SomeEntry
+    -> Bool
+filterSeverity level entry =
+    entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
