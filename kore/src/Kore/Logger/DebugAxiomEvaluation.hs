@@ -12,10 +12,14 @@ module Kore.Logger.DebugAxiomEvaluation
     , parseDebugAxiomEvaluationOptions
 
     -- * logging functions. Import qualified.
+    , attemptAxiom
     , end
     , notEvaluated
     , reevaluation
     , start
+
+    -- * Helpers
+    , klabelIdentifier
     ) where
 
 import Control.Applicative
@@ -48,6 +52,24 @@ import Options.Applicative
     )
 import qualified Options.Applicative as Options
 
+import Kore.Attribute.SourceLocation as Attribute
+    ( SourceLocation
+    )
+import qualified Kore.Attribute.Symbol as Attribute
+    ( Symbol (Symbol)
+    )
+import qualified Kore.Attribute.Symbol as Attribute.Symbol.DoNotUse
+import qualified Kore.Attribute.Symbol.Klabel as Attribute
+    ( Klabel (Klabel)
+    )
+import Kore.Internal.Symbol
+    ( Symbol (Symbol)
+    )
+import qualified Kore.Internal.Symbol as Attribute.Symbol.DoNotUse
+import Kore.Internal.TermLike
+    ( pattern App_
+    , TermLike
+    )
 import Kore.Logger
     ( Entry (fromEntry, toEntry)
     , LogAction (LogAction)
@@ -78,6 +100,7 @@ data DebugAxiomEvaluation =
 
 data AxiomEvaluationState
     = Start
+    | AttemptingAxiom SourceLocation
     | NotEvaluated
     | Reevaluation
     | End
@@ -93,6 +116,13 @@ instance Pretty DebugAxiomEvaluation where
         case state of
             Start ->
                 Pretty.sep ["Starting:", Pretty.pretty identifier]
+            AttemptingAxiom sourceLocation ->
+                Pretty.sep
+                    [ "Attempting axiom "
+                    , Pretty.pretty sourceLocation
+                    , "for:"
+                    , Pretty.pretty identifier
+                    ]
             NotEvaluated ->
                 Pretty.sep ["No results for:", Pretty.pretty identifier]
             Reevaluation ->
@@ -106,6 +136,7 @@ start
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 start = logState Start
 
@@ -115,6 +146,7 @@ end
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 end = logState End
 
@@ -124,6 +156,7 @@ notEvaluated
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 notEvaluated = logState NotEvaluated
 
@@ -133,18 +166,28 @@ reevaluation
     :: forall log
     .  MonadLog log
     => Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
 reevaluation = logState Reevaluation
+
+attemptAxiom
+    :: MonadLog log
+    => SourceLocation
+    -> Maybe AxiomIdentifier
+    -> Maybe Text
+    -> log ()
+attemptAxiom sourceLocation = logState (AttemptingAxiom sourceLocation)
 
 logState
     :: MonadLog log
     => AxiomEvaluationState
     -> Maybe AxiomIdentifier
+    -> Maybe Text
     -> log ()
-logState state identifier =
+logState state identifier secondaryIdentifier =
     logM DebugAxiomEvaluation
         { identifier
-        , secondaryIdentifier = Nothing
+        , secondaryIdentifier
         , state
         , severity = Info
         }
@@ -229,3 +272,16 @@ filterDebugAxiomEvaluation
 
     DebugAxiomEvaluationOptions { debugAxiomEvaluation } =
         debugAxiomEvaluationOptions
+
+klabelIdentifier :: TermLike variable -> Maybe Text
+klabelIdentifier
+    (App_
+        Symbol
+            {symbolAttributes = Attribute.Symbol
+                {klabel = Attribute.Klabel {getKlabel}}
+            }
+        _
+    )
+  =
+    getKlabel
+klabelIdentifier _ = Nothing
