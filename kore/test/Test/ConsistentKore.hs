@@ -141,7 +141,7 @@ data SortRequirements
     deriving (Eq, Ord, Show)
 
 data AttributeRequirements = AttributeRequirements
-    { isNonSimplifiable :: !Bool
+    { isConstructorLike :: !Bool
     , isConcrete :: !Bool
     }
     deriving (Eq, Ord, Show)
@@ -182,7 +182,7 @@ data MapSorts = MapSorts
 data Context = Context
     { availableElementVariables :: !(Set.Set (ElementVariable Variable))
     , availableSetVariables :: !(Set.Set (SetVariable Variable))
-    , onlyNonSimplifiable :: !Bool
+    , onlyConstructorLike :: !Bool
     , onlyConcrete :: !Bool
     }
     deriving (Eq, Ord, Show)
@@ -215,7 +215,7 @@ runTermGen
     context = Context
         { availableElementVariables = freeElementVariables
         , availableSetVariables = freeSetVariables
-        , onlyNonSimplifiable = False
+        , onlyConstructorLike = False
         , onlyConcrete = False
         }
 
@@ -240,9 +240,9 @@ localContext :: (Context -> Context) -> Gen a -> Gen a
 localContext transformer =
     Reader.local (Arrow.second transformer)
 
-requestNonSimplifiable :: Gen a -> Gen a
-requestNonSimplifiable  =
-    localContext (\context -> context {onlyNonSimplifiable = True})
+requestConstructorLike :: Gen a -> Gen a
+requestConstructorLike  =
+    localContext (\context -> context {onlyConstructorLike = True})
 
 requestConcrete :: Gen a -> Gen a
 requestConcrete  =
@@ -349,7 +349,7 @@ _checkTermImplemented term@(Recursive.project -> _ :< termF) =
 
 termGenerators :: Gen (Map.Map SortRequirements [TermGenerator])
 termGenerators = do
-    (setup, Context {onlyNonSimplifiable}) <- Reader.ask
+    (setup, Context {onlyConstructorLike}) <- Reader.ask
     generators <- filterGeneratorsAndGroup
             [ andGenerator
             , bottomGenerator
@@ -377,7 +377,7 @@ termGenerators = do
     symbol <- symbolGenerators
     alias <- aliasGenerators
     allBuiltin <- allBuiltinGenerators
-    if onlyNonSimplifiable
+    if onlyConstructorLike
         then return symbol
         else return
             (       generators
@@ -412,7 +412,7 @@ nullaryFreeSortOperatorGenerator builder =
         { arity = 0
         , sort = AnySort
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = True
             }
         , generator = worker
@@ -429,7 +429,7 @@ unaryOperatorGenerator builder =
         { arity = 1
         , sort = AnySort
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = True
             }
         , generator = worker
@@ -448,7 +448,7 @@ unaryFreeSortOperatorGenerator builder =
         { arity = 1
         , sort = AnySort
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = True
             }
         , generator = worker
@@ -468,7 +468,7 @@ unaryQuantifiedElementOperatorGenerator builder =
         { arity = 1
         , sort = AnySort
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = False
             }
         , generator = worker
@@ -493,7 +493,7 @@ muNuOperatorGenerator builder =
         { arity = 1
         , sort = AnySort
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = False
             }
         , generator = worker
@@ -515,7 +515,7 @@ binaryFreeSortOperatorGenerator builder =
         { arity = 2
         , sort = AnySort
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = True
             }
         , generator = worker
@@ -536,7 +536,7 @@ binaryOperatorGenerator builder =
         { arity = 2
         , sort = AnySort
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = True
             }
         , generator = worker
@@ -608,7 +608,7 @@ maybeStringLiteralGenerator Setup {maybeStringLiteralSort} =
                 { arity = 0
                 , sort = SpecificSort stringSort
                 , attributes = AttributeRequirements
-                    { isNonSimplifiable = True
+                    { isConstructorLike = True
                     , isConcrete = True
                     }
                 , generator = \_childGenerator resultSort -> do
@@ -677,7 +677,7 @@ maybeStringBuiltinGenerator Setup { maybeStringBuiltinSort } =
                 { arity = 0
                 , sort = SpecificSort stringSort
                 , attributes = AttributeRequirements
-                    { isNonSimplifiable = True
+                    { isConstructorLike = True
                     , isConcrete = True
                     }
                 , generator = stringGenerator stringSort
@@ -700,7 +700,7 @@ maybeBoolBuiltinGenerator Setup { maybeBoolSort } =
                 { arity = 0
                 , sort = SpecificSort boolSort
                 , attributes = AttributeRequirements
-                    { isNonSimplifiable = True
+                    { isConstructorLike = True
                     , isConcrete = True
                     }
                 , generator = boolGenerator boolSort
@@ -723,7 +723,7 @@ maybeIntBuiltinGenerator Setup { maybeIntSort } =
                 { arity = 0
                 , sort = SpecificSort intSort
                 , attributes = AttributeRequirements
-                    { isNonSimplifiable = True
+                    { isConstructorLike = True
                     , isConcrete = True
                     }
                 , generator = intGenerator intSort
@@ -746,8 +746,8 @@ maybeListBuiltinGenerator Setup { maybeListSorts } =
                 { arity = 5
                 , sort = SpecificSort collectionSort
                 , attributes = AttributeRequirements
-                    { isNonSimplifiable = False
-                    -- We could generate non-simplifiable or concrete lists
+                    { isConstructorLike = False
+                    -- We could generate constructor-like or concrete lists
                     -- if we wanted to.
                     , isConcrete = False
                     }
@@ -794,8 +794,8 @@ maybeMapBuiltinGenerator Setup { maybeMapSorts } =
                 { arity = 10
                 , sort = SpecificSort collectionSort
                 , attributes = AttributeRequirements
-                    { isNonSimplifiable = False
-                    -- We could generate non-simplifiable or concrete maps
+                    { isConstructorLike = False
+                    -- We could generate constructor-like or concrete maps
                     -- if we wanted to.
                     , isConcrete = False
                     }
@@ -826,8 +826,8 @@ maybeSetBuiltinGenerator Setup { maybeSetSorts } =
                 { arity = 10
                 , sort = SpecificSort collectionSort
                 , attributes = AttributeRequirements
-                    { isNonSimplifiable = False
-                    -- We could generate non-simplifiable or concrete sets
+                    { isConstructorLike = False
+                    -- We could generate constructor-like or concrete sets
                     -- if we wanted to.
                     , isConcrete = False
                     }
@@ -851,7 +851,7 @@ acGenerator
 acGenerator mapSort keySort valueGenerator childGenerator = do
     let concreteKeyGenerator :: Gen (Maybe (TermLike Concrete))
         concreteKeyGenerator =
-                requestNonSimplifiable
+                requestConstructorLike
                 $ concreteTermGenerator keySort childGenerator
     maybeConcreteMap <-
         Gen.map (Range.constant 0 5)
@@ -870,7 +870,7 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
             Map.fromList
                 (mapMaybe concreteMapElem (Map.toList maybeConcreteMap))
     mixedKeys <-
-        requestNonSimplifiable
+        requestConstructorLike
         $ Gen.set (Range.constant 0 5)
             (childGenerator keySort)
     let variableKeys :: [TermLike Variable]
@@ -925,7 +925,7 @@ symbolGenerator
         { arity = toInteger $ length applicationSortsOperands
         , sort = SpecificSort applicationSortsResult
         , attributes = AttributeRequirements
-            { isNonSimplifiable =
+            { isConstructorLike =
                 Attribute.Constructor.isConstructor
                 $ Attribute.Symbol.constructor symbolAttributes
             , isConcrete = True
@@ -938,8 +938,8 @@ symbolGenerator
         let request =
                 if BuiltinMap.isSymbolElement symbol
                     || BuiltinSet.isSymbolElement symbol
-                    then requestConcrete . requestNonSimplifiable
-                    -- TODO (virgil): also allow non-simplifiable stuff
+                    then requestConcrete . requestConstructorLike
+                    -- TODO (virgil): also allow constructor-like stuff
                     -- with variables.
                     else id
         maybeTerms <- request $ mapM termGenerator applicationSortsOperands
@@ -969,7 +969,7 @@ aliasGenerator
         { arity = toInteger $ length applicationSortsOperands
         , sort = SpecificSort applicationSortsResult
         , attributes = AttributeRequirements
-            { isNonSimplifiable = False
+            { isConstructorLike = False
             , isConcrete = False
             }
         , generator = applicationGenerator
@@ -1026,7 +1026,7 @@ elementVariableGenerators = do
             { arity = 0
             , sort = SpecificSort (extractSort variable)
             , attributes = AttributeRequirements
-                { isNonSimplifiable = False
+                { isConstructorLike = False
                 , isConcrete = False
                 }
             , generator = variableGenerator variable
@@ -1051,7 +1051,7 @@ setVariableGenerators = do
             { arity = 0
             , sort = SpecificSort (extractSort variable)
             , attributes = AttributeRequirements
-                { isNonSimplifiable = False
+                { isConstructorLike = False
                 , isConcrete = False
                 }
             , generator = variableGenerator variable
@@ -1083,11 +1083,11 @@ filterGenerators = Monad.filterM acceptGenerator
         TermGenerator {attributes}
       = do
         (_, context@(Context _ _ _ _)) <- Reader.ask
-        let Context {onlyConcrete, onlyNonSimplifiable} = context
+        let Context {onlyConcrete, onlyConstructorLike} = context
         return $ case attributes of
-            AttributeRequirements {isConcrete, isNonSimplifiable} ->
+            AttributeRequirements {isConcrete, isConstructorLike} ->
                 (not onlyConcrete || isConcrete)
-                && (not onlyNonSimplifiable || isNonSimplifiable)
+                && (not onlyConstructorLike || isConstructorLike)
 
 groupBySort :: [TermGenerator] -> Map.Map SortRequirements [TermGenerator]
 groupBySort = groupBy termGeneratorSort

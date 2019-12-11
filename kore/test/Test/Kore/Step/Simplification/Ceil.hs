@@ -388,7 +388,7 @@ test_ceilSimplification =
         assertEqual "ceil(1)" expected actual
     , testGroup "Builtin.Map"
         [ testCase "concrete keys" $ do
-            -- maps assume that their keys are non-simplifiable, so
+            -- maps assume that their keys are constructor-like, so
             -- ceil({a->b, c->d}) = ceil(b) and ceil(d)
             let original =
                     Mock.builtinMap [(constr10OfA, fOfB), (constr11OfA, gOfB)]
