@@ -426,6 +426,7 @@ logTests =
             , logEntries = mempty
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log [] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
@@ -433,6 +434,7 @@ logTests =
             , logEntries = mempty
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
@@ -440,6 +442,7 @@ logTests =
             , logEntries = Set.singleton "entry1"
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log critical [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
@@ -447,6 +450,7 @@ logTests =
             , logEntries = Set.singleton "entry1"
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log info [ entry1,  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
@@ -454,6 +458,7 @@ logTests =
             , logEntries = Set.fromList ["entry1", "entry2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     , "log info [ entry1  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
@@ -461,5 +466,6 @@ logTests =
             , logEntries = Set.fromList ["entry1", "entry2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
     ]

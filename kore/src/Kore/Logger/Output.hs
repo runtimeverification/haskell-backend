@@ -87,6 +87,11 @@ import qualified Type.Reflection as Reflection
 
 import Kore.Logger
 import Kore.Logger.DebugAppliedRule
+import Kore.Logger.DebugAxiomEvaluation
+    ( DebugAxiomEvaluationOptions
+    , filterDebugAxiomEvaluation
+    , parseDebugAxiomEvaluationOptions
+    )
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
@@ -107,6 +112,7 @@ data KoreLogOptions = KoreLogOptions
     , logEntries :: Set Text
     -- ^ extra entries to show, ignoring 'logLevel'
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
+    , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
     }
     deriving (Eq, Show)
 
@@ -138,11 +144,13 @@ koreLogFilters koreLogOptions baseLogger =
             filterEntry logEntries entry
             || filterSeverity logLevel entry
             || filterDebugAppliedRule debugAppliedRuleOptions entry
+            || filterDebugAxiomEvaluation debugAxiomEvaluationOptions entry
         )
     baseLogger
   where
     KoreLogOptions { logLevel, logEntries } = koreLogOptions
     KoreLogOptions { debugAppliedRuleOptions } = koreLogOptions
+    KoreLogOptions { debugAxiomEvaluationOptions } = koreLogOptions
 
 {- | Select the log entry types present in the active set.
  -}
@@ -174,6 +182,7 @@ parseKoreLogOptions =
     <*> (parseLevel <|> pure Warning)
     <*> (mconcat <$> many parseEntries)
     <*> parseDebugAppliedRuleOptions
+    <*> parseDebugAxiomEvaluationOptions
   where
     parseType =
         option

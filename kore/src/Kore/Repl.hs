@@ -170,6 +170,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
                     , logEntries = mempty
                     , logLevel = Logger.Warning
                     , debugAppliedRuleOptions = mempty
+                    , debugAxiomEvaluationOptions = mempty
                     }
             }
 

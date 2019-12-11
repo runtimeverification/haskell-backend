@@ -262,8 +262,14 @@ log = do
     logType <- parseLogType
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
+        debugAxiomEvaluationOptions = mempty
     pure $ Log Logger.KoreLogOptions
-        { logType, logLevel, logEntries, debugAppliedRuleOptions }
+        { logType
+        , logLevel
+        , logEntries
+        , debugAppliedRuleOptions
+        , debugAxiomEvaluationOptions
+        }
   where
     parseSeverityWithDefault =
         maybe Logger.Warning id <$> optional severity

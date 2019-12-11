@@ -300,7 +300,7 @@ nonSimplifiableAbove interesting p =
         VariableF (Const v)
             | v `Set.member` interesting -> Set.singleton v
         ApplySymbolF Application { applicationSymbolOrAlias }
-            | Symbol.isNonSimplifiable applicationSymbolOrAlias ->
+            | Symbol.isConstructorLike applicationSymbolOrAlias ->
                 dependencies
         InjF _ -> dependencies
         _ -> Set.empty

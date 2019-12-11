@@ -505,6 +505,7 @@ logUpdatesState = do
                 , logEntries = Set.fromList ["entry1", "entry2"]
                 , logType = Logger.LogStdErr
                 , debugAppliedRuleOptions = mempty
+                , debugAxiomEvaluationOptions = mempty
                 }
         command = Log options
     Result { output, continue, state } <-
@@ -685,6 +686,7 @@ mkState axioms claims claim =
             , logEntries = mempty
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
             }
         }
   where

@@ -113,9 +113,9 @@ debugAppliedRule rule =
 See also: 'parseDebugAppliedRuleOptions'
 
  -}
-data DebugAppliedRuleOptions =
+newtype DebugAppliedRuleOptions =
     DebugAppliedRuleOptions
-        { debugAppliedRules :: !(Set Id)
+        { debugAppliedRules :: Set Id
         }
     deriving (Eq, Show)
 
