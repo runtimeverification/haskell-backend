@@ -168,9 +168,7 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Internal.Builder as Text.Builder
 import qualified Data.Text.IO as Text
-import qualified Data.Text.Lazy as Text.Lazy
 import qualified GHC.Generics as GHC
 import GHC.Stack
     ( callStack
@@ -215,6 +213,10 @@ import Kore.Debug hiding
     ( debug
     )
 import qualified Kore.Logger as Logger
+import Kore.Logger.DebugSolver
+    ( logDebugSolverRecvWith
+    , logDebugSolverSendWith
+    )
 import SMT.AST
 
 -- ---------------------------------------------------------------------
@@ -272,7 +274,7 @@ newSolver exe opts logger = do
         let handler X.SomeException {} = return ()
         X.handle handler $ Monad.forever $ do
             errs <- Text.hGetLine hErr
-            debug solver ["stderr"] errs
+            debug solver errs
 
     setOption solver ":print-success" "true"
     setOption solver ":produce-models" "true"
@@ -281,48 +283,37 @@ newSolver exe opts logger = do
 
     return solver
 
-wrapScope :: [Logger.Scope] -> Logger.SomeEntry -> Logger.SomeEntry
-wrapScope scopes entry =
-    foldr (\s e -> Logger.SomeEntry $ Logger.WithScope e s) entry scopes
-
-logWith
+logMessageWith
     :: GHC.HasCallStack
     => Logger.Severity
     -> Solver
-    -> [Logger.Scope]
     -> Text
     -> IO ()
-logWith severity Solver { logger } scope a =
+logMessageWith severity Solver { logger } a =
     logger Colog.<& message
   where
     message =
-        wrapScope scope
-            $ Logger.SomeEntry
-                $ Logger.WithScope
-                    { entry =
-                        Logger.SomeEntry
-                            $ Logger.LogMessage a severity callStack
-                    , scope = Logger.Scope "SimpleSMT"
-                    }
+        Logger.SomeEntry
+        $ Logger.LogMessage a severity callStack
 
-debug :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
-debug = logWith Logger.Debug
+debug :: GHC.HasCallStack => Solver -> Text -> IO ()
+debug = logMessageWith Logger.Debug
 
-warn :: GHC.HasCallStack => Solver -> [Logger.Scope] -> Text -> IO ()
-warn = logWith Logger.Warning
+warn :: GHC.HasCallStack => Solver -> Text -> IO ()
+warn = logMessageWith Logger.Warning
 
 send :: Solver -> SExpr -> IO ()
-send solver@Solver { hIn } command' = do
-    debug solver ["send"] (buildText command')
+send Solver { hIn, logger } command' = do
+    logDebugSolverSendWith logger command'
     sendSExpr hIn command'
     hPutChar hIn '\n'
     hFlush hIn
 
 recv :: Solver -> IO SExpr
-recv solver@Solver { hOut } = do
+recv Solver { hOut, logger } = do
     responseLines <- readResponse 0 []
     let resp = Text.unlines (reverse responseLines)
-    debug solver ["recv"] resp
+    logDebugSolverRecvWith logger resp
     readSExpr resp
   where
     {-| Reads an SMT response.
@@ -354,7 +345,7 @@ stop solver@Solver { hIn, hOut, hErr, hProc } = do
     send solver (List [Atom "exit"])
     ec <- waitForProcess hProc
     let handler :: X.IOException -> IO ()
-        handler ex = (debug solver ["stop"] . Text.pack) (show ex)
+        handler ex = (debug solver . Text.pack) (show ex)
     X.handle handler $ do
         hClose hIn
         hClose hOut
@@ -631,9 +622,6 @@ defineFun proc f as t e = do
     return (const f)
 
 
-buildText :: SExpr -> Text
-buildText = Text.Lazy.toStrict . Text.Builder.toLazyText . buildSExpr
-
 -- | Assume a fact.
 assert :: Solver -> SExpr -> IO ()
 assert proc e = ackCommand proc $ fun "assert" [e]
@@ -647,11 +635,11 @@ check solver = do
         Atom "unknown" -> do
             Monad.when featureProduceAssertions $ do
                 asserts <- command solver (List [Atom "get-assertions"])
-                warn solver ["check"] (buildText asserts)
+                warn solver (buildText asserts)
             return Unknown
         Atom "sat"     -> do
             model <- command solver (List [Atom "get-model"])
-            debug solver ["check"] (buildText model)
+            debug solver (buildText model)
             return Sat
         _ -> fail $ unlines
             [ "Unexpected result from the SMT solver:"

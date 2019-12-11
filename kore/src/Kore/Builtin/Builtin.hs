@@ -498,7 +498,7 @@ toKey :: TermLike variable -> Maybe (TermLike Concrete)
 toKey purePattern = do
     p <- TermLike.asConcrete purePattern
     -- TODO (thomas.tuegel): Use the return value as the term.
-    if TermLike.isNonSimplifiable p
+    if TermLike.isConstructorLike p
         then return p
         else Nothing
 

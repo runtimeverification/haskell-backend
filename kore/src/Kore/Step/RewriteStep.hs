@@ -327,7 +327,7 @@ finalizeRule
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule initial unifiedRule =
-    Log.withLogScope "finalizeRule" $ Monad.Unify.gather $ do
+    Monad.Unify.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions initialCondition unificationCondition

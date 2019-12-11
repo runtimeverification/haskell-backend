@@ -167,9 +167,10 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , koreLogOptions =
                 Logger.KoreLogOptions
                     { logType = Logger.LogStdErr
-                    , logScopes = mempty
+                    , logEntries = mempty
                     , logLevel = Logger.Warning
                     , debugAppliedRuleOptions = mempty
+                    , debugAxiomEvaluationOptions = mempty
                     }
             }
 
