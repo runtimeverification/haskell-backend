@@ -377,7 +377,7 @@ emptyExecutionGraph config =
 -}
 data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
-data LimitExceeded instr = LimitExceeded (Seq (Graph.Node, [instr]))
+newtype LimitExceeded instr = LimitExceeded (Seq (Graph.Node, [instr]))
     deriving (Show, Typeable)
 
 instance (Show instr, Typeable instr)
