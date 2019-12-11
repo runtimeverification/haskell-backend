@@ -48,11 +48,9 @@ instance Pretty DebugSolverRecv where
 
 instance Entry DebugSolverSend where
     entrySeverity _ = Debug
-    entryScopes _ = mempty
 
 instance Entry DebugSolverRecv where
     entrySeverity _ = Debug
-    entryScopes _ = mempty
 
 logDebugSolverSendWith
     :: LogAction m SomeEntry

@@ -42,7 +42,6 @@ instance Pretty WarnFunctionWithoutEvaluators where
 
 instance Entry WarnFunctionWithoutEvaluators where
     entrySeverity _ = Warning
-    entryScopes _ = mempty
 
 warnFunctionWithoutEvaluators :: MonadLog m => Symbol -> m ()
 warnFunctionWithoutEvaluators symbol =

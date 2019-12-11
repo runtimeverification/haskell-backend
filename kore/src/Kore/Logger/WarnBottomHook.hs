@@ -44,8 +44,6 @@ instance Pretty WarnBottomHook where
 instance Entry WarnBottomHook where
     entrySeverity _ = Warning
 
-    entryScopes _ = mempty
-
 warnBottomHook
     :: MonadLog logger
     => SimplifierVariable variable
