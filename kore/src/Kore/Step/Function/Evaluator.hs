@@ -132,8 +132,8 @@ evaluateApplication
 
     canMemoize
       | Symbol.isMemo symbol
-      , isTop childrenCondition
-      , isTop configurationCondition
+      , (isTop childrenCondition && isTop configurationCondition)
+        || all TermLike.isConstructorLike application
       = traverse asConcrete application
       | otherwise
       = Nothing
