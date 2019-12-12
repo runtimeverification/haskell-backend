@@ -1,4 +1,4 @@
-module MAP-UNIFY-FRAMING-VARIABLE
+module TEST
 
   imports DOMAINS
 
