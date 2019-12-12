@@ -1,4 +1,4 @@
-module SET-UNIFY-FRAMING-VARIABLE
+module TEST
 
   imports DOMAINS
 
