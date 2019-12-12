@@ -66,7 +66,7 @@ import Kore.Unparser
 {- | A strategy primitive: a rewrite rule or builtin simplification step.
  -}
 data Prim rewrite = Simplify | Rewrite !rewrite
-        deriving (Show)
+    deriving (Show)
 
 -- | Apply the rewrite.
 rewrite :: rewrite -> Prim rewrite
