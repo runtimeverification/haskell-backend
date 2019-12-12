@@ -19,10 +19,15 @@ KPROVE_MODULE ?= VERIFICATION
 
 TESTS ?= $(wildcard $(TEST_DIR)/*.$(EXT))
 SEARCH_TESTS ?= \
-	$(wildcard $(TEST_DIR)/*.$(EXT).search-*) \
-	$(wildcard $(TEST_DIR)/*.$(EXT).pattern-search-*)
-PROOF_TESTS ?= $(wildcard $(TEST_DIR)/*-spec.k)
+	$(wildcard $(TEST_DIR)/*.search.*.$(EXT)) \
+	$(wildcard $(TEST_DIR)/*.search-pattern.*.$(EXT))
+PROOF_TESTS ?= \
+	$(wildcard $(TEST_DIR)/*-spec.k) \
+	$(wildcard $(TEST_DIR)/*-spec.repl.k) \
+	$(wildcard $(TEST_DIR)/*-spec.repl-script.k)
 BMC_TESTS ?= $(wildcard $(TEST_DIR)/*-spec.bmc.k)
+
+OUTS = $(foreach TEST, $(TESTS) $(SEARCH_TESTS) $(PROOF_TESTS) $(BMC_TESTS), $(TEST).out)
 
 $(DEF_KORE): $(DEF).k $(K) $(KOMPILE)
 	rm -fr $(KOMPILED)
@@ -45,61 +50,93 @@ $(DEF_KORE): $(DEF).k $(K) $(KOMPILE)
 %.golden: %
 	cp $< $@
 
-%-spec.k.out: %-spec.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KPROVE)
-	$(KPROVE) $(KPROVE_OPTS) -d $(DEF_DIR) -m $(KPROVE_MODULE) $< --output-file $@ || true
-	$(DIFF) $@.golden $@
-
 %.merge.out: %.merge $(DEF_KORE) $(KORE_EXEC)
 	$(KORE_EXEC) $(DEF_KORE) --module $(MODULE) --merge-rules $< --output $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).search-final.out: %.$(EXT).search-final $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-final
+### SEARCH
+
+%.search.final.$(EXT).out: %.search.final.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-final \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).search-all.out: %.$(EXT).search-all $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-all
+%.search.star.$(EXT).out: %.search.star.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-all \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).search-one-or-more-steps.out: %.$(EXT).search-one-or-more-steps $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-one-or-more-steps
+%.search.one.$(EXT).out: %.search.one.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-one-step \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).search-one-step.out: %.$(EXT).search-one-step $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-one-step
+%.search.plus.$(EXT).out: %.search.plus.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-one-step \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).pattern-search-final.out: %.$(EXT).pattern-search-final $*.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-final --pattern "$$(cat $*.)"
+%.search-pattern.final.$(EXT).out: %.search-pattern.final.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-final --pattern "$$(cat $*.search-pattern.k)" \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).pattern-search-all.out: %.$(EXT).pattern-search-all $*.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-all --pattern "$$(cat $*.k)"
+%.search-pattern.star.$(EXT).out: %.search-pattern.star.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-all --pattern "$$(cat $*.search-pattern.k)" \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).pattern-search-one-step.out: %.$(EXT).pattern-search-one-step $*.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-one-step --pattern "$$(cat $*.k)"
+%.search-pattern.one.$(EXT).out: %.search-pattern.one.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-one-step --pattern "$$(cat $*.search-pattern.k)" \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%.$(EXT).pattern-search-one-or-more-steps.out: %.$(EXT).pattern-search-one-or-more-steps $*.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KRUN)
-	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) $< --output-file $@ --search-one-or-more-steps --pattern "$$(cat $*.k)"
+%.search-pattern.plus.$(EXT).out: %.search-pattern.plus.$(EXT) $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KRUN) $(KRUN_OPTS) -d $(DEF_DIR) \
+		--search-one-or-more-steps --pattern "$$(cat $*.search-pattern.k)" \
+		$< --output-file $@
 	$(DIFF) $@.golden $@
 
-%-spec.k.repl.out: %-spec.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KPROVE)
-	$(KPROVE) $(KPROVE_REPL_OPTS) -d $(DEF_DIR) -m $(KPROVE_MODULE) $< --output-file $@ || true
+### PROVE
+
+%-spec.k.out: %-spec.k $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KPROVE) $(KPROVE_OPTS) -d $(DEF_DIR) -m $(KPROVE_MODULE) \
+		$< --output-file $@ \
+		|| true
 	$(DIFF) $@.golden $@
 
-%-spec.k.repl-script.out: KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) -r --repl-script $<.repl"
-%-spec.k.repl-script.out: %-spec.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KPROVE)
-	$(KPROVE) $(KPROVE_REPL_OPTS) -d $(DEF_DIR) -m $(KPROVE_MODULE) $< --output-file $@ || true
+%-spec.repl.k.out: %-spec.k $(DEF_KORE) $(KORE_EXEC) $(K)
+	$(KPROVE) $(KPROVE_REPL_OPTS) -d $(DEF_DIR) -m $(KPROVE_MODULE) \
+		$< --output-file $@ \
+		|| true
 	$(DIFF) $@.golden $@
 
-%-spec.bmc.out: %-spec.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KBMC)
-	$(KBMC) $(KPROVE_OPTS) --debug --raw-spec $< -d $(DEF_DIR) -m $(MODULE) --depth $(KBMC_DEPTH) --output-file $@ || exit 0
+%-spec.repl-script.k.out: KPROVE_REPL_OPTS = --haskell-backend-command "$(KORE_REPL) -r --repl-script $<.repl"
+%-spec.repl-script.k.out: %-spec.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KPROVE)
+	$(KPROVE) $(KPROVE_REPL_OPTS) -d $(DEF_DIR) -m $(KPROVE_MODULE) \
+		$< --output-file $@ \
+		|| true
+	$(DIFF) $@.golden $@
+
+### BMC
+
+%-spec.bmc.out: %-spec.bmc.k $(DEF_KORE) $(KORE_EXEC) $(K) $(KBMC)
+	$(KBMC) $(KPROVE_OPTS) -d $(DEF_DIR) -m $(MODULE) \
+		--debug --raw-spec --depth $(KBMC_DEPTH) \
+		$< --output-file $@ \
+		|| exit 0
+	$(DIFF) $@.golden $@
+
+### TARGETS
 
 test: test-k
-
-OUTS = $(foreach TEST, $(TESTS) $(SEARCH_TESTS) $(PROOF_TESTS) $(BMC_TESTS), $(TEST).out)
 
 test-k: $(OUTS)
 
