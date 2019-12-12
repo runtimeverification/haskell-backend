@@ -77,8 +77,6 @@ newtype DebugAppliedRule =
 instance Entry DebugAppliedRule where
     entrySeverity _ = Debug
 
-    entryScopes _ = mempty
-
 instance Pretty DebugAppliedRule where
     pretty DebugAppliedRule { appliedRule } =
         Pretty.vsep
@@ -113,9 +111,9 @@ debugAppliedRule rule =
 See also: 'parseDebugAppliedRuleOptions'
 
  -}
-data DebugAppliedRuleOptions =
+newtype DebugAppliedRuleOptions =
     DebugAppliedRuleOptions
-        { debugAppliedRules :: !(Set Id)
+        { debugAppliedRules :: Set Id
         }
     deriving (Eq, Show)
 
@@ -142,40 +140,30 @@ parseDebugAppliedRuleOptions =
         help = "Log every rule applied for the symbol named IDENTIFIER."
     readId = Options.maybeReader (Parsec.parseMaybe Parser.idParser)
 
-{- | Modify a 'LogAction' to display selected applied rules.
-
-The "base" 'LogAction' is used to log the applied rule whenever it matches the
-rules specified by 'DebugAppliedRuleOptions'. All other entries are forwarded to
-the "fallback" 'LogAction'.
-
+{- | Function used to modify a 'LogAction' to display selected applied rules.
  -}
 filterDebugAppliedRule
     :: DebugAppliedRuleOptions
-    -> LogAction log SomeEntry  -- ^ base 'LogAction'
-    -> LogAction log SomeEntry  -- ^ fallback 'LogAction'
-    -> LogAction log SomeEntry
-filterDebugAppliedRule debugAppliedRuleOptions baseLogAction logAction =
-    LogAction $ \entry ->
-        case matchDebugAppliedRule entry of
-            Just DebugAppliedRule { appliedRule }
-              | isSelectedRule -> unLogAction baseLogAction entry
+    -> SomeEntry
+    -> Bool
+filterDebugAppliedRule debugAppliedRuleOptions entry =
+    case matchDebugAppliedRule entry of
+        Just DebugAppliedRule { appliedRule } ->
+            isSelectedRule
               where
                 isSelectedRule =
                     maybe False (`Set.member` debugAppliedRules) appliedRuleId
+                appliedRuleId :: Maybe Id
                 appliedRuleId = do
                     axiomId <- matchAppliedRuleId appliedRule
                     case axiomId of
                         Axiom.Identifier.Application ident -> pure ident
                         _ -> empty
-            _ -> unLogAction logAction entry
+        _ -> False
   where
     DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
     matchAppliedRuleId = matchAxiomIdentifier . Rule.left . Conditional.term
 
 matchDebugAppliedRule :: SomeEntry -> Maybe DebugAppliedRule
 matchDebugAppliedRule entry =
-    fromEntry entry <|> throughScope
-  where
-    throughScope = do
-        WithScope { entry = entry' } <- fromEntry entry
-        matchDebugAppliedRule entry'
+    fromEntry entry

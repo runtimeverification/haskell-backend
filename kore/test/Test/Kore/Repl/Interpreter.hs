@@ -59,6 +59,9 @@ import Kore.Internal.TermLike
     , mkElemVar
     , mkTop_
     )
+import qualified Kore.Logger.DebugSolver as Logger
+    ( emptyDebugSolverOptions
+    )
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
@@ -502,9 +505,11 @@ logUpdatesState = do
         options =
             Logger.KoreLogOptions
                 { logLevel = Logger.Info
-                , logScopes = Set.fromList ["scope1", "scope2"]
+                , logEntries = Set.fromList ["entry1", "entry2"]
                 , logType = Logger.LogStdErr
                 , debugAppliedRuleOptions = mempty
+                , debugAxiomEvaluationOptions = mempty
+                , debugSolverOptions = Logger.emptyDebugSolverOptions
                 }
         command = Log options
     Result { output, continue, state } <-
@@ -682,9 +687,11 @@ mkState axioms claims claim =
         , aliases        = Map.empty
         , koreLogOptions = Logger.KoreLogOptions
             { logLevel = Logger.Warning
-            , logScopes = mempty
+            , logEntries = mempty
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
         }
   where

@@ -254,7 +254,7 @@ evalElement =
                 [_elem] ->
                     case Builtin.toKey _elem of
                         Just concrete ->
-                            TermLike.assertNonSimplifiableKeys [_elem]
+                            TermLike.assertConstructorLikeKeys [_elem]
                             $ returnConcreteSet
                                 resultSort
                                 (Map.singleton concrete Domain.SetValue)
@@ -411,7 +411,7 @@ evalList2set =
                         _      -> Builtin.wrongArity Set.list2setKey
             _list <- List.expectConcreteBuiltinList Set.list2setKey _list
             let _set =
-                    TermLike.assertNonSimplifiableKeys _list
+                    TermLike.assertConstructorLikeKeys _list
                         $ Map.fromList
                             $ fmap (\x -> (x, Domain.SetValue))
                             $ Foldable.toList _list

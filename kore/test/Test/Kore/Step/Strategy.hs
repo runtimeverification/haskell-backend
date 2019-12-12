@@ -10,7 +10,7 @@ module Test.Kore.Step.Strategy
     , prop_Continue
     , test_And
     , test_Or
-    , prop_stepLimit
+    , prop_depthLimit
     , prop_pickLongest
     , prop_pickFinal
     , prop_pickOne
@@ -132,7 +132,7 @@ runStrategy
     -> ExecutionGraph Natural Prim
 runStrategy strategy z =
     let
-        Identity rs = Strategy.runStrategy transitionPrim strategy z
+        Identity rs = Strategy.runStrategy Unlimited transitionPrim strategy z
     in
         rs
 
@@ -231,9 +231,8 @@ test_Or =
             expect @=? actual
         ]
 
-
-prop_stepLimit :: Integer -> Property
-prop_stepLimit i =
+prop_depthLimit :: Integer -> Property
+prop_depthLimit i =
     (i >= 0) ==> (expect === actual)
   where
     n = fromInteger i

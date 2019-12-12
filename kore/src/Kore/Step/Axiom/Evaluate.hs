@@ -7,15 +7,20 @@ module Kore.Step.Axiom.Evaluate
     ( evaluateAxioms
     ) where
 
+import qualified Control.Comonad.Trans.Cofree as Cofree
 import Control.Error
     ( maybeT
     )
 import Control.Lens.Combinators as Lens
 import qualified Control.Monad as Monad
 import Data.Function
+import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
+import qualified Kore.Attribute.Axiom as Attribute
+    ( Axiom (Axiom)
+    )
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
@@ -31,6 +36,16 @@ import Kore.Internal.TermLike
     , mkEvaluated
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Logger
+    ( MonadLog
+    )
+import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
+    ( attemptAxiom
+    , klabelIdentifier
+    )
+import Kore.Step.Axiom.Identifier
+    ( matchAxiomIdentifier
+    )
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
@@ -44,6 +59,7 @@ import Kore.Step.Remainder
 import qualified Kore.Step.Result as Result
 import Kore.Step.Rule
     ( EqualityRule (..)
+    , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -66,9 +82,11 @@ evaluateAxioms
     -> TermLike variable
     -> Predicate variable
     -> simplifier (Step.Results variable)
-evaluateAxioms definitionRules termLike predicate
-  | any ruleIsConcrete definitionRules
-  , not (TermLike.isConcrete termLike)
+evaluateAxioms equalityRules termLike predicate
+  | any ruleIsConcrete equalityRules
+  -- All of the current pattern's children (most likely an ApplicationF)
+  -- must be ConstructorLike in order to be evaluated with "concrete" rules.
+  , not (all TermLike.isConstructorLike termLikeF)
   = return notApplicable
   | otherwise
   = maybeNotApplicable $ do
@@ -78,7 +96,10 @@ evaluateAxioms definitionRules termLike predicate
         expanded :: Pattern variable
         expanded = Pattern.fromTermLike termLike
 
-    resultss <- applyRules expanded (map unwrapEqualityRule definitionRules)
+    -- TODO (virgil): Consider logging the rules in Step.unifyRules or some
+    -- similar place, especially if we start logging unification details.
+    mapM_ logAppliedRule equalityRules
+    resultss <- applyRules expanded (map unwrapEqualityRule equalityRules)
     Monad.guard (any Result.hasResults resultss)
     mapM_ rejectNarrowing resultss
 
@@ -107,6 +128,19 @@ evaluateAxioms definitionRules termLike predicate
     return simplified
 
   where
+    termLikeF = Cofree.tailF (Recursive.project termLike)
+
+    logAppliedRule :: MonadLog log => EqualityRule Variable -> log ()
+    logAppliedRule
+        (EqualityRule RulePattern
+            {left, attributes = Attribute.Axiom {sourceLocation}}
+        )
+      =
+        DebugAxiomEvaluation.attemptAxiom
+            sourceLocation
+            (matchAxiomIdentifier left)
+            (DebugAxiomEvaluation.klabelIdentifier left)
+
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete
         . Attribute.Axiom.concrete
