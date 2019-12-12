@@ -1,4 +1,4 @@
-module LIST-UNIFY-LAST-ELEM
+module TEST
 
   imports DOMAINS
 
