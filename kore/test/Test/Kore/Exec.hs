@@ -189,7 +189,7 @@ test_searchExeedingBreadthLimit =
     shouldExeedBreadthLimit searchType = do
         a <- actual searchType
         when (a == expected searchType)
-            $ assertFailure "Did not exceed bredth limit"
+            $ assertFailure "Did not exceed breadth limit"
 
     actual searchType = do
         finalPattern <-
