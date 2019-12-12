@@ -1,4 +1,4 @@
-module MAP-LOOKUP
+module TEST
 
   imports DOMAINS
 
