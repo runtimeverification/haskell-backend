@@ -4,37 +4,30 @@ endif
 
 include $(TOP)/include.mk
 
-DEF ?= test
-EXT ?= $(DEF)
-
 DEF_DIR ?= .
 TEST_DIR ?= .
 
-DIFF ?= diff -u
+DEF ?= test
+EXT ?= $(DEF)
+KPROVE_MODULE ?= VERIFICATION
+
+DIFF = diff -u
 FAILED = ( mv $@ $@.fail && false )
 
 KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
 DEF_KORE := $(KOMPILED)/definition.kore
 TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
 
-KPROVE_MODULE ?= VERIFICATION
-
-TESTS ?= \
-	$(wildcard $(TEST_DIR)/*.$(EXT)) \
-	$(wildcard $(TEST_DIR)/*.search.*.$(EXT)) \
-	$(wildcard $(TEST_DIR)/*.search-pattern.*.$(EXT)) \
-	$(wildcard $(TEST_DIR)/*-spec.k) \
-	$(wildcard $(TEST_DIR)/*-spec.repl.k) \
-	$(wildcard $(TEST_DIR)/*-spec.repl-script.k) \
-	$(wildcard $(TEST_DIR)/*-spec.bmc.k)
+TESTS = $(wildcard $(TEST_DIR)/*.$(EXT)) $(wildcard $(TEST_DIR)/*-spec.k)
 
 OUTS = $(foreach TEST, $(TESTS), $(TEST).out)
 
 KOMPILE_OPTS += -d $(DEF_DIR)
 KRUN_OPTS += -d $(DEF_DIR)
 KPROVE_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
+KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 
-$(DEF_KORE): $(DEF).k $(K)
+$(DEF_KORE): $(DEF_DIR)/$(DEF).k $(K)
 	rm -fr $(KOMPILED)
 	$(KOMPILE) $(KOMPILE_OPTS) $<
 
@@ -47,16 +40,14 @@ $(DEF_KORE): $(DEF).k $(K)
 #   patterns are preferred. To detect this feature search for 'shortest-stem'
 #   in the .FEATURES special variable.
 
-%.$(EXT).out: %.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@ || $(FAILED)
-
 %.golden: DIFF = true
 %.golden: %
 	cp $< $@
 
-%.merge.out: %.merge $(DEF_KORE) $(KORE_EXEC)
-	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
+### RUN
+
+%.$(EXT).out: $(TEST_DIR)/%.$(EXT) $(TEST_DEPS)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### SEARCH
@@ -82,30 +73,28 @@ PATTERN_OPTS = --pattern "$$(cat $*.search-pattern.k)"
 
 ### PROVE
 
-%-spec.k.out: %-spec.k $(TEST_DEPS)
+%-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
 	$(KPROVE) $(KPROVE_OPTS) $< --output-file $@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 
-%-spec.repl.k.out: %-spec.k $(TEST_DEPS)
-	$(KPROVE) $(KPROVE_REPL_OPTS) $< --output-file $@ || true
-	$(DIFF) $@.golden $@ || $(FAILED)
+%-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
-%-spec.repl-script.k.out: \
-	KPROVE_REPL_OPTS = \
+%-repl-script-spec.k.out: \
+	KPROVE_OPTS = \
+		-d $(DEF_DIR) -m $(KPROVE_MODULE) \
 		--haskell-backend-command \
 		"$(KORE_REPL) -r --repl-script $<.repl"
-%-spec.repl-script.k.out: %-spec.k $(TEST_DEPS)
-	$(KPROVE) $(KPROVE_REPL_OPTS) \
-		$< --output-file $@ \
-		|| true
-	$(DIFF) $@.golden $@
 
 ### BMC
 
-%-spec.bmc.out: KPROVE_OPTS += --debug --raw-spec
-%-spec.bmc.out: %-spec.bmc.k $(TEST_DEPS)
-	$(KBMC) $(KPROVE_OPTS) --depth $(KBMC_DEPTH) $< --output-file $@ || true
-	$(DIFF) $@.golden $@
+%-bmc-spec.k.out: KPROVE = $(KBMC)
+%-bmc-spec.k.out: KPROVE_OPTS += --debug --raw-spec --depth $(KBMC_DEPTH)
+
+### MERGE
+
+%.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE) $(KORE_EXEC)
+	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
+	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### TARGETS
 
