@@ -1,4 +1,4 @@
-module LIST-REQUIRES
+module TEST
 
   imports DOMAINS
   imports COLLECTIONS
