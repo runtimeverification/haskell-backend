@@ -21,7 +21,7 @@ import Kore.Internal.OrPattern
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.InjSimplifier
-    ( InjSimplifier (..)
+    ( simplifyInj
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 
@@ -29,14 +29,15 @@ import Kore.Step.Simplification.Simplify as Simplifier
 
 -}
 simplify
-    :: (SimplifierVariable variable, MonadSimplify simplifier)
+    :: forall variable simplifier
+    .  (SimplifierVariable variable, MonadSimplify simplifier)
     => Condition variable
     -> Inj (OrPattern variable)
     -> simplifier (OrPattern variable)
 simplify _ injOrPattern = do
     let composed = Compose . fmap liftConditional $ distributeOr injOrPattern
-    InjSimplifier { evaluateInj } <- askInjSimplifier
-    let evaluated = evaluateInj <$> composed
+    injSimplifier <- askInjSimplifier
+    let evaluated = simplifyInj injSimplifier <$> composed
     return (getCompose evaluated)
 
 distributeOr

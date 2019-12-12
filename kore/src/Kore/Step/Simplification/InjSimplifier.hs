@@ -7,10 +7,18 @@ module Kore.Step.Simplification.InjSimplifier
     ( Distinct (..)
     , InjSimplifier (..)
     , mkInjSimplifier
+    , simplifyInj
+    , embedInj
     , normalize
     ) where
 
 import qualified Control.Exception as Exception
+import Data.Bifunctor
+    ( bimap
+    )
+import Data.Function
+    ( (&)
+    )
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
@@ -56,8 +64,8 @@ data InjSimplifier =
             :: forall variable
             .  GHC.HasCallStack
             => InternalVariable variable
-            => Inj (TermLike variable)
-            -> TermLike variable
+            => Inj (Inj (TermLike variable))
+            -> Inj (TermLike variable)
         {- ^ Apply the triangle axiom to combine an 'Inj' with its 'Inj' child:
 
         @
@@ -126,32 +134,24 @@ mkInjSimplifier sortGraph =
     evaluateInj
         :: forall variable
         .  GHC.HasCallStack
-        => InternalVariable variable
-        => Inj (TermLike variable)
-        -> TermLike variable
-    evaluateInj inj
+        => Inj (Inj (TermLike variable))
+        -> Inj (TermLike variable)
+    evaluateInj inj@Inj { injChild = inj' }
       | not ignoreUnorderedInj, not (isOrderedInj inj) = unorderedInj inj
+      | not ignoreUnorderedInj, not (isOrderedInj inj') = unorderedInj inj'
       | otherwise =
-        case injChild inj of
-            Inj_ inj'
-              | not ignoreUnorderedInj, not (isOrderedInj inj') ->
-                unorderedInj inj
-              | otherwise ->
-                Exception.assert sameConstructor
-                . Exception.assert innerSortsAgree
-                . synthesize . InjF
-                $ Inj
-                    { injConstructor = injConstructor inj
-                    , injTo = injTo inj
-                    , injFrom = injFrom inj'
-                    , injChild = injChild inj'
-                    , injAttributes = injAttributes inj
-                    }
-              where
-                sameConstructor = injConstructor inj == injConstructor inj'
-                innerSortsAgree = injFrom inj == injTo inj'
-
-            _ -> synthesize $ InjF inj
+        Exception.assert sameConstructor
+        . Exception.assert innerSortsAgree
+        $ Inj
+            { injConstructor = injConstructor inj
+            , injTo = injTo inj
+            , injFrom = injFrom inj'
+            , injChild = injChild inj'
+            , injAttributes = injAttributes inj
+            }
+      where
+        sameConstructor = injConstructor inj == injConstructor inj'
+        innerSortsAgree = injFrom inj == injTo inj'
 
     evaluateCeilInj
         :: forall variable
@@ -184,12 +184,12 @@ mkInjSimplifier sortGraph =
       | injFrom2 `isSubsortOf'` injFrom1 =
         Exception.assert (injTo1 == injTo2) $ do
             let child1' = injChild inj1
-                child2' = evaluateInj inj2 { injTo = injFrom1 }
+                child2' = embedInj inj2 { injTo = injFrom1 }
             pure (Pair child1' child2' <$ inj1)
 
       | injFrom1 `isSubsortOf'` injFrom2 =
         Exception.assert (injTo1 == injTo2) $ do
-            let child1' = evaluateInj inj1 { injTo = injFrom2 }
+            let child1' = embedInj inj1 { injTo = injFrom2 }
                 child2' = injChild inj2
             pure (Pair child1' child2' <$ inj2)
 
@@ -211,15 +211,47 @@ mkInjSimplifier sortGraph =
         subsorts1 = subsortsOf sortGraph injFrom1
         subsorts2 = subsortsOf sortGraph injFrom2
 
-normalize
+simplifyInj
     :: InternalVariable variable
+    => InjSimplifier
+    -> Inj (TermLike variable)
+    -> TermLike variable
+simplifyInj InjSimplifier { evaluateInj } inj@Inj { injChild } =
+    case injChild of
+        Inj_ inj' -> evaluateInj (inj' <$ inj)
+        _ -> inj
+    & (synthesize . InjF)
+
+embedInj
+    :: InternalVariable variable
+    => Inj (TermLike variable)
+    -> TermLike variable
+embedInj = synthesize . InjF
+
+normalize
+    :: forall variable
+    .  InternalVariable variable
     => InjSimplifier
     -> TermLike variable
     -> TermLike variable
 normalize InjSimplifier { evaluateInj } =
-    Recursive.fold worker
+    unwrap . Recursive.fold worker
   where
-    worker (_ :< termLikeF) =
+    unwrap = either embedInj id
+
+    worker
+        ::  Recursive.Base
+                (TermLike variable)
+                (Either (Inj (TermLike variable)) (TermLike variable))
+        -> Either (Inj (TermLike variable)) (TermLike variable)
+    worker original@(_ :< termLikeF) =
         case termLikeF of
-            InjF inj -> evaluateInj inj
-            _ -> synthesize termLikeF
+            InjF inj -> Left (either evaluateInj id $ biparallel inj)
+            _ -> Right (either embedInj Recursive.embed $ sequence original)
+
+    -- The inverse of 'Data.Bitraversable.bisequence'.
+    biparallel
+        :: Inj (Either (Inj a) b)
+        -> Either (Inj (Inj a)) (Inj b)
+    biparallel inj@Inj { injChild } =
+        bimap (<$ inj) (<$ inj) $ injChild
