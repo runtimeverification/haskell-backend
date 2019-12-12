@@ -22,6 +22,7 @@ import Data.Maybe
 import Data.Reflection
     ( give
     )
+import Data.Typeable
 import Numeric.Natural
     ( Natural
     )
@@ -150,6 +151,7 @@ test_onePathStrategy =
         -- Normal axiom: a => c
         -- Expected: a
         [ actual ] <- runOnePathSteps
+            Unlimited
             (Limit 0)
             (makeOnePathRule
                 Mock.a
@@ -158,6 +160,7 @@ test_onePathStrategy =
             [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ actualReach ] <- runOnePathSteps
+            Unlimited
             (Limit 0)
             (makeReachabilityOnePathRule
                 Mock.a
@@ -177,11 +180,13 @@ test_onePathStrategy =
         -- Normal axiom: a => c
         -- Expected: bottom, since a becomes bottom after removing the target.
         [ _actual ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (makeOnePathRule Mock.a Mock.a)
             [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ _actualReach ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (makeReachabilityOnePathRule Mock.a Mock.a)
             [makeReachabilityOnePathRule Mock.a Mock.b]
@@ -197,11 +202,13 @@ test_onePathStrategy =
         -- Expected: c, since coinductive axioms are applied only at the second
         -- step
         [ _actual ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (makeOnePathRule Mock.a Mock.d)
             [makeOnePathRule Mock.a Mock.b]
             [simpleRewrite Mock.a Mock.c]
         [ _actualReach ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (makeReachabilityOnePathRule Mock.a Mock.d)
             [makeReachabilityOnePathRule Mock.a Mock.b]
@@ -219,6 +226,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Expected: bottom, since a->b = target
         [ _actual ] <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeOnePathRule
                 Mock.a
@@ -229,6 +237,7 @@ test_onePathStrategy =
             , simpleRewrite Mock.a Mock.b
             ]
         [ _actualReach ] <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeReachabilityOnePathRule
                 Mock.a
@@ -251,6 +260,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Expected: c, since a->b->c and b->d is ignored
         [ _actual1 ] <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeOnePathRule Mock.a Mock.e)
             [makeOnePathRule Mock.b Mock.c]
@@ -258,6 +268,7 @@ test_onePathStrategy =
             , simpleRewrite Mock.a Mock.b
             ]
         [ _actual1Reach ] <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeReachabilityOnePathRule Mock.a Mock.e)
             [makeReachabilityOnePathRule Mock.b Mock.c]
@@ -283,6 +294,7 @@ test_onePathStrategy =
         -- Normal axiom: a => b
         -- Expected: d, since a->b->d
         [ _actual ] <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeOnePathRule Mock.a Mock.e)
             [makeOnePathRule Mock.e Mock.c]
@@ -290,6 +302,7 @@ test_onePathStrategy =
             , simpleRewrite Mock.a Mock.b
             ]
         [ _actualReach ] <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeReachabilityOnePathRule Mock.a Mock.e)
             [makeReachabilityOnePathRule Mock.e Mock.c]
@@ -329,6 +342,7 @@ test_onePathStrategy =
         --      or (h(x) and x!=a and x!=b and x!=c )
         actual@[ _actual ] <-
             runOnePathSteps
+                Unlimited
                 (Limit 2)
                 (makeOnePathRule
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
@@ -349,6 +363,7 @@ test_onePathStrategy =
                 ]
         actualReach <-
             runOnePathSteps
+                Unlimited
                 (Limit 2)
                 (makeReachabilityOnePathRule
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
@@ -407,6 +422,7 @@ test_onePathStrategy =
         --      GoalRemainder (functionalConstr11(x) and x!=a and x!=b and x!=c )
         actual@[ _actual ] <-
             runOnePathSteps
+                Unlimited
                 (Limit 2)
                 (makeOnePathRule
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
@@ -421,6 +437,7 @@ test_onePathStrategy =
                 ]
         actualReach <-
             runOnePathSteps
+                Unlimited
                 (Limit 2)
                 (makeReachabilityOnePathRule
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.x))
@@ -455,6 +472,7 @@ test_onePathStrategy =
         -- Normal axiom: constr10(b) => a | f(b) == c
         -- Expected: a | f(b) == c
         actual@[ _actual1, _actual2 ] <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeOnePathRule
                 (Mock.functionalConstr10 Mock.b)
@@ -469,6 +487,7 @@ test_onePathStrategy =
                     $ Mock.f Mock.b
             ]
         actualReach <- runOnePathSteps
+            Unlimited
             (Limit 2)
             (makeReachabilityOnePathRule
                 (Mock.functionalConstr10 Mock.b)
@@ -509,6 +528,7 @@ test_onePathStrategy =
         -- Normal axiom: x => 1 if x<2
         [ _actual ] <-
             runOnePathSteps
+                Unlimited
                 (Limit 2)
                 ( makeOnePathRule
                     (Mock.builtinInt 0)
@@ -527,6 +547,7 @@ test_onePathStrategy =
                 ]
         [ _actualReach ] <-
             runOnePathSteps
+                Unlimited
                 (Limit 2)
                 ( makeReachabilityOnePathRule
                     (Mock.builtinInt 0)
@@ -556,6 +577,7 @@ test_onePathStrategy =
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Expected: a | f(b) < 0
         [ _actual ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (makeOnePathRuleFromPatterns
                 (Conditional
@@ -594,6 +616,7 @@ test_onePathStrategy =
                 )
             ]
         [ _actualReach ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (OnePath $ makeOnePathRuleFromPatterns
                 (Conditional
@@ -657,6 +680,7 @@ test_onePathStrategy =
         -- Normal axiom: constr10(b) => a | f(b) < 0
         -- Expected: a | f(b) < 0
         [ _actual ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (makeOnePathRuleFromPatterns
                 (Conditional
@@ -685,6 +709,7 @@ test_onePathStrategy =
                 )
             ]
         [ _actualReach ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             (OnePath $ makeOnePathRuleFromPatterns
                 (Conditional
@@ -760,6 +785,7 @@ test_onePathStrategy =
                         }
                     )
         [ _actual ] <- runOnePathSteps
+            Unlimited
             (Limit 1)
             goal
             []
@@ -816,7 +842,10 @@ rewriteReachabilityWithPredicate left right predicate =
 runSteps
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
-    => ( ExecutionGraph
+    => Show (Prim goal)
+    => Typeable (Prim goal)
+    => Limit Natural
+    -> ( ExecutionGraph
             (ProofState goal goal)
             (Rule goal)
        -> Maybe (ExecutionGraph b c)
@@ -826,7 +855,7 @@ runSteps
     -- ^left-hand-side of unification
     -> [Strategy (Prim goal)]
     -> IO a
-runSteps graphFilter picker goal strategy' =
+runSteps breadthLimit graphFilter picker configuration strategy' =
     (<$>) picker
     $ runSimplifier mockEnv
     $ fromMaybe (error "Unexpected missing tree") . graphFilter
@@ -834,7 +863,7 @@ runSteps graphFilter picker goal strategy' =
         give metadataTools
             $ declareSMTLemmas
             $ indexedModuleWithDefaultImports (ModuleName "TestModule") Nothing
-        runStrategy transitionRule strategy' (ProofState.Goal goal)
+        runStrategy breadthLimit transitionRule strategy' (ProofState.Goal configuration)
   where
     mockEnv = Mock.env
     Env {metadataTools} = mockEnv
@@ -843,24 +872,29 @@ runOnePathSteps
     :: Goal goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Ord goal
+    => Show (Prim goal)
+    => Typeable (Prim goal)
     => Limit Natural
+    -> Limit Natural
     -> goal
     -- ^left-hand-side of unification
     -> [goal]
     -> [Rule goal]
     -> IO [ProofState goal goal]
 runOnePathSteps
-    stepLimit
+    breadthLimit
+    depthLimit
     goal
     coinductiveRewrites
     rewrites
   = do
     result <- runSteps
+        breadthLimit
         Just
         pickFinal
         goal
         (Limit.takeWithin
-            stepLimit
+            depthLimit
             (Foldable.toList $ strategy goal coinductiveRewrites rewrites)
         )
     return (sort $ nub result)

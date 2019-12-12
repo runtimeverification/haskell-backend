@@ -21,6 +21,9 @@ import Data.Function
     )
 import Data.Functor.Identity
 import qualified Data.Graph.Inductive as Gr
+import Data.Limit
+    ( Limit (..)
+    )
 import qualified Data.Maybe as Maybe
 import Data.Sequence
     ( Seq
@@ -230,6 +233,7 @@ test_runStrategy =
         runIdentity
         . unAllPathIdentity
         $ Strategy.runStrategy
+            Unlimited
             Goal.transitionRule
             (Foldable.toList $ Goal.strategy (unRule goal) [unRule goal] axioms)
             (ProofState.Goal . unRule $ goal)
