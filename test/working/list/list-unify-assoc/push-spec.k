@@ -1,6 +1,6 @@
 module VERIFICATION
 
-  imports LIST-UNIFY-ASSOC
+  imports TEST
 
 endmodule
 

@@ -1,4 +1,4 @@
-module LIST-UNIFY-ASSOC
+module TEST
 
   imports DOMAINS
 
