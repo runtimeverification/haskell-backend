@@ -11,6 +11,7 @@ DEF_DIR ?= .
 TEST_DIR ?= .
 
 DIFF ?= diff -u
+FAILED = ( mv $@ $@.fail && false )
 
 KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
 DEF_KORE := $(KOMPILED)/definition.kore
@@ -48,7 +49,7 @@ $(DEF_KORE): $(DEF).k $(K)
 
 %.$(EXT).out: %.$(EXT) $(TEST_DEPS)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@
+	$(DIFF) $@.golden $@ || $(FAILED)
 
 %.golden: DIFF = true
 %.golden: %
@@ -56,65 +57,38 @@ $(DEF_KORE): $(DEF).k $(K)
 
 %.merge.out: %.merge $(DEF_KORE) $(KORE_EXEC)
 	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
-	$(DIFF) $@.golden $@
+	$(DIFF) $@.golden $@ || $(FAILED)
 
 ### SEARCH
 
 %.search.final.$(EXT).out: KRUN_OPTS += --search-final
-%.search.final.$(EXT).out: %.search.final.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@
 
 %.search.star.$(EXT).out: KRUN_OPTS += --search-all
-%.search.star.$(EXT).out: %.search.star.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@
 
 %.search.one.$(EXT).out: KRUN_OPTS += --search-one-step
-%.search.one.$(EXT).out: %.search.one.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@
 
 %.search.plus.$(EXT).out: KRUN_OPTS += --search-one-or-more-steps
-%.search.plus.$(EXT).out: %.search.plus.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@
 
 PATTERN_OPTS = --pattern "$$(cat $*.search-pattern.k)"
 
 %.search-pattern.final.$(EXT).out: KRUN_OPTS += --search-final $(PATTERN_OPTS)
-%.search-pattern.final.$(EXT).out: %.search-pattern.final.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@
 
 %.search-pattern.star.$(EXT).out: KRUN_OPTS += --search-all $(PATTERN_OPTS)
-%.search-pattern.star.$(EXT).out: %.search-pattern.star.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ \
-		--search-all --pattern "$$(cat $*.search-pattern.k)"
-	$(DIFF) $@.golden $@
 
 %.search-pattern.one.$(EXT).out: KRUN_OPTS += --search-one-step $(PATTERN_OPTS)
-%.search-pattern.one.$(EXT).out: %.search-pattern.one.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) \
-		--search-one-step --pattern "$$(cat $*.search-pattern.k)" \
-		$< --output-file $@
-	$(DIFF) $@.golden $@
 
 %.search-pattern.plus.$(EXT).out: \
 	KRUN_OPTS += --search-one-or-more-steps $(PATTERN_OPTS)
-%.search-pattern.plus.$(EXT).out: %.search-pattern.plus.$(EXT) $(TEST_DEPS)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@
-	$(DIFF) $@.golden $@
 
 ### PROVE
 
 %-spec.k.out: %-spec.k $(TEST_DEPS)
 	$(KPROVE) $(KPROVE_OPTS) $< --output-file $@ || true
-	$(DIFF) $@.golden $@
+	$(DIFF) $@.golden $@ || $(FAILED)
 
 %-spec.repl.k.out: %-spec.k $(TEST_DEPS)
 	$(KPROVE) $(KPROVE_REPL_OPTS) $< --output-file $@ || true
-	$(DIFF) $@.golden $@
+	$(DIFF) $@.golden $@ || $(FAILED)
 
 %-spec.repl-script.k.out: \
 	KPROVE_REPL_OPTS = \
