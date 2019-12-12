@@ -56,6 +56,7 @@ import Kore.Step.Rule
     , ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
+    , injectTermIntoRHS
     , rulePattern
     )
 import Kore.Step.Rule as RulePattern
@@ -777,11 +778,7 @@ simpleRewrite left right =
         { left = left
         , antiLeft = Nothing
         , requires = makeTruePredicate_
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures = makeTruePredicate_
-            }
+        , rhs = injectTermIntoRHS right
         , attributes = def
         }
 
@@ -803,11 +800,7 @@ rewriteWithPredicate left right predicate =
         { left = left
         , antiLeft = Nothing
         , requires = predicate
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures = makeTruePredicate_
-            }
+        , rhs = injectTermIntoRHS right
         , attributes = def
         }
 

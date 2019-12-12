@@ -27,8 +27,8 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( AllPathRule (..)
-    , RHS (..)
     , RulePattern (..)
+    , injectTermIntoRHS
     )
 import Kore.Strategies.Goal
 
@@ -309,11 +309,7 @@ simpleClaim left right =
         { left = left
         , antiLeft = Nothing
         , requires = makeTruePredicate_
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures = makeTruePredicate_
-            }
+        , rhs = injectTermIntoRHS right
         , attributes = def
         }
 
@@ -327,11 +323,7 @@ simpleTrustedClaim left right =
         { left = left
         , antiLeft = Nothing
         , requires = makeTruePredicate_
-        , rhs = RHS
-            { existentials = []
-            , right
-            , ensures = makeTruePredicate_
-            }
+        , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.trusted = Attribute.Trusted True }
         }

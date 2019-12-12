@@ -18,6 +18,7 @@ module Kore.Step.Rule
     , FromRulePattern (..)
     , allPathGlobally
     , axiomPatternToTerm
+    , injectTermIntoRHS
     , rulePattern
     , isHeatingRule
     , isCoolingRule
@@ -44,6 +45,7 @@ module Kore.Step.Rule
     , Kore.Step.Rule.freeVariables
     , Kore.Step.Rule.mapVariables
     , Kore.Step.Rule.substitute
+    , rhsFreeVariables
     , rhsSubstitute
     ) where
 
@@ -561,12 +563,20 @@ rhsToTerm
     :: InternalVariable variable
     => RHS variable
     -> TermLike.TermLike variable
-rhsToTerm (RHS existentials right ensures) =
+rhsToTerm RHS { existentials, right, ensures } =
     TermLike.mkExistsN existentials rhs
   where
     rhs = case ensures of
         Predicate.PredicateTrue -> right
         _ -> TermLike.mkAnd (Predicate.unwrapPredicate ensures) right
+
+-- | Wraps a term as a RHS
+injectTermIntoRHS
+    :: InternalVariable variable
+    => TermLike.TermLike variable
+    -> RHS variable
+injectTermIntoRHS right =
+    RHS { existentials = [], right, ensures = Predicate.makeTruePredicate_ }
 
 termToRHS
     :: InternalVariable variable
@@ -578,8 +588,7 @@ termToRHS (TermLike.Exists_ _ v pat) =
     rhs = termToRHS pat
 termToRHS (TermLike.And_ _ ensures right) =
     RHS { existentials = [], right, ensures = Predicate.wrapPredicate ensures }
-termToRHS right =
-    RHS { existentials = [], right, ensures = Predicate.makeTruePredicate_ }
+termToRHS term = injectTermIntoRHS term
 
 onePathRuleToTerm
     :: InternalVariable variable
@@ -749,11 +758,7 @@ termToAxiomPattern attributes pat =
                 { left
                 , antiLeft = Nothing
                 , requires = Predicate.makeTruePredicate_
-                , rhs = RHS
-                    { existentials =[]
-                    , right
-                    , ensures = Predicate.makeTruePredicate_
-                    }
+                , rhs = injectTermIntoRHS right
                 , attributes
                 }
         -- definedness axioms
@@ -762,11 +767,7 @@ termToAxiomPattern attributes pat =
                 { left = ceil
                 , antiLeft = Nothing
                 , requires = Predicate.makeTruePredicate_
-                , rhs = RHS
-                    { existentials = []
-                    , right = TermLike.mkTop resultSort
-                    , ensures = Predicate.makeTruePredicate_
-                    }
+                , rhs = injectTermIntoRHS (TermLike.mkTop resultSort)
                 , attributes
                 }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child
@@ -778,11 +779,7 @@ termToAxiomPattern attributes pat =
                     { left = lhs
                     , antiLeft = Nothing
                     , requires = Predicate.makeTruePredicate_
-                    , rhs = RHS
-                        { existentials = []
-                        , right = rhs
-                        , ensures = Predicate.makeTruePredicate_
-                        }
+                    , rhs = injectTermIntoRHS rhs
                     , attributes
                     }
         _
@@ -988,30 +985,27 @@ refreshRulePattern
   =
     let rename = refreshVariables (avoid <> exVars) originalFreeVariables
         subst = TermLike.mkVar <$> rename
-        subst' = foldr (Map.delete . ElemVar) subst existentials
         left' = TermLike.substitute subst left
         antiLeft' = TermLike.substitute subst <$> antiLeft
         requires' = Predicate.substitute subst requires
-        right' = TermLike.substitute subst' right
-        ensures' = Predicate.substitute subst' ensures
+        rhs' = rhsSubstitute subst rhs
         rule2 =
             rule1
                 { left = left'
                 , antiLeft = antiLeft'
                 , requires = requires'
-                , rhs = RHS { existentials, right = right', ensures = ensures' }
+                , rhs = rhs'
                 }
     in (rename, rule2)
   where
-    RulePattern
-        { left, antiLeft, requires
-        , rhs = RHS { existentials, right, ensures}
-        } = rule1
-    exVars = Set.fromList $ ElemVar <$> existentials
+    RulePattern { left, antiLeft, requires, rhs } = rule1
+    exVars = Set.fromList $ ElemVar <$> existentials rhs
     originalFreeVariables =
         FreeVariables.getFreeVariables
         $ Kore.Step.Rule.freeVariables rule1
 
+{- | Extract the free variables of a 'RHS'.
+ -}
 rhsFreeVariables
     :: InternalVariable variable
     => RHS variable
@@ -1052,7 +1046,7 @@ mapVariables mapping rule1@(RulePattern _ _ _ _ _) =
         , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
         , requires = Predicate.mapVariables mapping requires
         , rhs = RHS
-            { existentials =  fmap mapping <$> existentials
+            { existentials = fmap mapping <$> existentials
             , right = TermLike.mapVariables mapping right
             , ensures = Predicate.mapVariables mapping ensures
             }

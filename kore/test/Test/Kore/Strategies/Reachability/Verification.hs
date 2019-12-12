@@ -28,9 +28,9 @@ import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( AllPathRule (..)
     , OnePathRule (..)
-    , RHS (..)
     , ReachabilityRule (..)
     , RulePattern (..)
+    , injectTermIntoRHS
     )
 import Kore.Strategies.Goal
 
@@ -1014,11 +1014,7 @@ simpleOnePathClaim left right =
             { left = left
             , antiLeft = Nothing
             , requires = makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right
-                , ensures = makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS right
             , attributes = def
             }
 
@@ -1032,11 +1028,7 @@ simpleAllPathClaim left right =
             { left = left
             , antiLeft = Nothing
             , requires = makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right
-                , ensures = makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS right
             , attributes = def
             }
 
@@ -1051,11 +1043,7 @@ simpleOnePathTrustedClaim left right =
             { left = left
             , antiLeft = Nothing
             , requires = makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right
-                , ensures = makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS right
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }
@@ -1071,11 +1059,7 @@ simpleAllPathTrustedClaim left right =
             { left
             , antiLeft = Nothing
             , requires = makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right
-                , ensures = makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS right
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }

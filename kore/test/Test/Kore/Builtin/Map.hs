@@ -1100,11 +1100,7 @@ test_concretizeKeysAxiom =
             { left = mkPair intSort mapSort x symbolicMap
             , antiLeft = Nothing
             , requires = Predicate.makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right = v
-                , ensures = Predicate.makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS v
             , attributes = Default.def
             }
     expected = Right $ MultiOr

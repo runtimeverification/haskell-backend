@@ -48,6 +48,7 @@ import Kore.Step.Rule as RulePattern
     ( EqualityRule (..)
     , RHS (..)
     , RulePattern (..)
+    , injectTermIntoRHS
     , rulePattern
     )
 import Kore.Unification.Error
@@ -516,11 +517,7 @@ test_applyEquationalRule_ =
             { left = Mock.a
             , antiLeft = Nothing
             , requires = makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right = mkBottom Mock.testSort
-                , ensures = makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS (mkBottom Mock.testSort)
             , attributes = def
             }
 
@@ -542,11 +539,7 @@ test_applyEquationalRule_ =
             { left = Mock.a
             , antiLeft = Nothing
             , requires = makeFalsePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right = Mock.b
-                , ensures = makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS Mock.b
             , attributes = def
             }
 

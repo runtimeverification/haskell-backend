@@ -261,6 +261,7 @@ finalizeAppliedRule renamedRule appliedConditions =
     Monad.liftM OrPattern.fromPatterns . Monad.Unify.gather
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
+    ruleRHS = Rule.rhs renamedRule
     finalizeAppliedRuleWorker appliedCondition = do
         -- Combine the initial conditions, the unification conditions, and the
         -- axiom ensures clause. The axiom requires clause is included by
@@ -268,9 +269,9 @@ finalizeAppliedRule renamedRule appliedConditions =
         let
             avoidVars =
                 Condition.freeVariables appliedCondition
-                <> Rule.freeVariables renamedRule
+                <> Rule.rhsFreeVariables ruleRHS
             finalPattern =
-                Rule.topExistsToImplicitForall avoidVars (Rule.rhs renamedRule)
+                Rule.topExistsToImplicitForall avoidVars ruleRHS
             Conditional { predicate = ensures } = finalPattern
             ensuresCondition = Condition.fromPredicate ensures
             preFinalCondition = appliedCondition <> ensuresCondition

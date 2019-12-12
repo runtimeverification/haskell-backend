@@ -103,9 +103,9 @@ import Kore.Sort
     ( Sort
     )
 import Kore.Step.Rule
-    ( RHS (..)
-    , RewriteRule (RewriteRule)
+    ( RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
+    , injectTermIntoRHS
     )
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -1649,11 +1649,7 @@ test_concretizeKeysAxiom =
             { left = mkPair intSort setSort x symbolicSet
             , antiLeft = Nothing
             , requires = Predicate.makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right = x
-                , ensures = makeTruePredicate_
-                }
+            , rhs = injectTermIntoRHS x
             , attributes = Default.def
             }
     expected = Right $ MultiOr
