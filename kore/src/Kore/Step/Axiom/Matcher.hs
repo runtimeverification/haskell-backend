@@ -341,7 +341,7 @@ matchInj
     -> MaybeT (MatcherT variable unifier) ()
 matchInj (Pair (Inj_ inj1) (Inj_ inj2)) = do
     InjSimplifier { unifyInj } <- Simplifier.askInjSimplifier
-    unifyInj inj1 inj2 & maybe empty (push . injChild)
+    unifyInj inj1 inj2 & either (const empty) (push . injChild)
 matchInj _ = empty
 
 -- * Implementation

@@ -29,12 +29,10 @@ module Kore.Repl.Data
     , runUnifierWithExplanation
     , StepResult(..)
     , LogType (..)
-    , LogScope (..)
     , ReplScript (..)
     , ReplMode (..)
     , OutputFile (..)
     , makeAuxReplOutput, makeKoreReplOutput
-    , makeLogScope
     ) where
 
 import Control.Applicative
@@ -70,7 +68,6 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
-import Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -179,17 +176,6 @@ data LogType
     | LogToFile !FilePath
     deriving (Eq, Show)
 
-newtype LogScope =
-    LogScope
-    { unLogScope :: Set.Set Logger.Scope }
-    deriving (Eq, Show, Semigroup, Monoid)
-
-makeLogScope :: [String] -> LogScope
-makeLogScope scopes =
-    LogScope
-    . Set.fromList
-    $ fmap (Logger.Scope . Text.pack) scopes
-
 data RuleReference
     = ByIndex (Either AxiomIndex ClaimIndex)
     | ByName RuleName
@@ -294,79 +280,83 @@ commandSet = Set.fromList
 helpText :: String
 helpText =
     "Available commands in the Kore REPL: \n\
-    \help                                  shows this help message\n\
-    \claim [n|<name>]                      shows the nth claim, the claim with\
-                                           \ <name> or if used without args\
-                                           \ shows the currently focused claim\n\
-    \axiom <n|name>                        shows the nth axiom or the axiom\
-                                           \ with <name>\n\
-    \prove <n|name>                        initializes proof mode for the nth\
-                                           \ claim or for the claim with <name>\n\
-    \graph [file]                          shows the current proof graph (*)(**)\n\
-    \                                      (saves image in .jpeg format if file\
-                                           \ argument is given; file extension\
-                                           \ is added automatically)\n\
-    \step [n]                              attempts to run 'n' proof steps at\
-                                           \the current node (n=1 by default)\n\
-    \stepf [n]                             attempts to run 'n' proof steps at\
-                                           \ the current node, stepping through\
-                                           \ branchings (n=1 by default)\n\
-    \select <n>                            select node id 'n' from the graph\n\
-    \config [n]                            shows the config for node 'n'\
-                                           \ (defaults to current node)\n\
-    \omit [cell]                           adds or removes cell to omit list\
-                                           \ (defaults to showing the omit\
-                                           \ list)\n\
-    \leafs                                 shows unevaluated or stuck leafs\n\
-    \rule [n]                              shows the rule for node 'n'\
-                                           \ (defaults to current node)\n\
-    \prec-branch [n]                       shows first preceding branch\
-                                           \ (defaults to current node)\n\
-    \children [n]                          shows direct children of node\
-                                           \ (defaults to current node)\n\
-    \label                                 shows all node labels\n\
-    \label <l>                             jump to a label\n\
-    \label <+l> [n]                        add a new label for a node\
-                                           \ (defaults to current node)\n\
-    \label <-l>                            remove a label\n\
-    \try (<a|c><num>)|<name>               attempts <a>xiom or <c>laim at\
-                                           \ index <num> or rule with <name>\n\
-    \tryf (<a|c><num>)|<name>              attempts <a>xiom or <c>laim at\
-                                           \ index <num> or rule with <name>,\
-                                           \ and if successful, it will apply it.\n\
-    \clear [n]                             removes all node children from the\
-                                           \ proof graph\n\
-    \                                      (defaults to current node)\n\
-    \save-session file                     saves the current session to file\n\
-    \alias <name> = <command>              adds as an alias for <command>\n\
-    \<alias>                               runs an existing alias\n\
-    \load file                             loads the file as a repl script\n\
-    \proof-status                          shows status for each claim\n\
-    \log <severity> [<scope>] <type>       configures the logging output\n\
-    \                                      <severity> can be debug, info,\
-                                           \ warning, error, or critical\n\
-    \                                      [<scope>] is the list of scopes\
-                                           \ separated by white spaces or\
-                                           \ commas, e.g. '[scope1, scope2]';\n\
-    \                                      these scopes are used for filtering\
-                                           \ the logged information, for example,\
-                                           \ '[]' will log all scopes\n\
-    \                                      <type> can be 'stderr' or\n\
-                                           \'file filename'\n\
-    \exit                                  exits the repl\
+    \help                                     shows this help message\n\
+    \claim [n|<name>]                         shows the nth claim, the claim with\
+                                              \ <name> or if used without args\
+                                              \ shows the currently focused claim\n\
+    \axiom <n|name>                           shows the nth axiom or the axiom\
+                                              \ with <name>\n\
+    \prove <n|name>                           initializes proof mode for the nth\
+                                              \ claim or for the claim with <name>\n\
+    \graph [file]                             shows the current proof graph (*)(**)\n\
+    \                                         (saves image in .jpeg format if file\
+                                              \ argument is given; file extension\
+                                              \ is added automatically)\n\
+    \step [n]                                 attempts to run 'n' proof steps at\
+                                              \the current node (n=1 by default)\n\
+    \stepf [n]                                attempts to run 'n' proof steps at\
+                                              \ the current node, stepping through\
+                                              \ branchings (n=1 by default)\n\
+    \select <n>                               select node id 'n' from the graph\n\
+    \config [n]                               shows the config for node 'n'\
+                                              \ (defaults to current node)\n\
+    \omit [cell]                              adds or removes cell to omit list\
+                                              \ (defaults to showing the omit\
+                                              \ list)\n\
+    \leafs                                    shows unevaluated or stuck leafs\n\
+    \rule [n]                                 shows the rule for node 'n'\
+                                              \ (defaults to current node)\n\
+    \prec-branch [n]                          shows first preceding branch\
+                                              \ (defaults to current node)\n\
+    \children [n]                             shows direct children of node\
+                                              \ (defaults to current node)\n\
+    \label                                    shows all node labels\n\
+    \label <l>                                jump to a label\n\
+    \label <+l> [n]                           add a new label for a node\
+                                              \ (defaults to current node)\n\
+    \label <-l>                               remove a label\n\
+    \try (<a|c><num>)|<name>                  attempts <a>xiom or <c>laim at\
+                                              \ index <num> or rule with <name>\n\
+    \tryf (<a|c><num>)|<name>                 attempts <a>xiom or <c>laim at\
+                                              \ index <num> or rule with <name>,\
+                                              \ and if successful, it will apply it.\n\
+    \clear [n]                                removes all node children from the\
+                                              \ proof graph\n\
+    \                                         (defaults to current node)\n\
+    \save-session file                        saves the current session to file\n\
+    \alias <name> = <command>                 adds as an alias for <command>\n\
+    \<alias>                                  runs an existing alias\n\
+    \load file                                loads the file as a repl script\n\
+    \proof-status                             shows status for each claim\n\
+    \log <severity> \"[\"<entry>\"]\" <type>  configures the logging output\n\
+    \                                         <severity> can be debug, info,\
+                                              \ warning, error, or critical;\
+                                              \ is optional and defaults to warning\n\
+    \                                         [<entry>] is the list of entries\
+                                              \ separated by white spaces or\
+                                              \ commas, e.g. '[entry1, entry2]';\n\
+    \                                         these entries are used for filtering\
+                                              \ the logged information, for example,\
+                                              \ '[]' will log all entries with <severity>;\n\
+    \                                         '[entry1, entry2]' will only log entries of\
+                                              \ types entry1 or entry2 as well as entries of\
+                                              \ severity <severity>\n\
+    \                                         <type> can be 'stderr' or\n\
+                                              \'file filename'\n\
+    \exit                                     exits the repl\
     \\n\n\
     \Available modifiers:\n\
-    \<command> > file                      prints the output of 'command'\
-                                           \ to file\n\
-    \<command> >> file                     appends the output of 'command'\
-                                           \ to file\n\
-    \<command> | external script           pipes command to external script\
-                                           \ and prints the result in the\
-                                           \ repl\n\
-    \<command> | external script > file    pipes and then redirects the output\
-                                           \ of the piped command to a file\n\
-    \<command> | external script >> file   pipes and then appends the output\
-                                           \ of the piped command to a file\n\
+    \<command> > file                         prints the output of 'command'\
+                                              \ to file\n\
+    \<command> >> file                        appends the output of 'command'\
+                                              \ to file\n\
+    \<command> | external script              pipes command to external script\
+                                              \ and prints the result in the\
+                                              \ repl\n\
+    \<command> | external script > file       pipes and then redirects the output\
+                                              \ of the piped command to a file\n\
+    \<command> | external script >> file      pipes and then appends the output\
+                                              \ of the piped command to a file\n\
     \\n\
     \(*) If an edge is labeled as Simpl/RD it means that either the target node\n\
     \ was reached using the SMT solver or it was reached through the Remove \n\

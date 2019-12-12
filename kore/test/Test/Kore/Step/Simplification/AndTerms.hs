@@ -203,6 +203,12 @@ test_andTermsSimplification =
                     (Mock.sortInjectionSubToTop Mock.plain00Subsort)
                     (Mock.sortInjection0ToTop Mock.plain00Sort0)
             assertEqual "" expect actual
+        , testCase "different head, simplifiable subsort" $ do
+            let sub = Mock.sortInjection Mock.topSort Mock.plain00Subsort
+                other = Mock.sortInjection Mock.topSort Mock.plain00OtherSort
+                expect = ([Pattern.fromTermLike $ mkAnd sub other], Nothing)
+            actual <- simplifyUnify sub other
+            assertEqual "" expect actual
         , testCase "different head, subsort first" $ do
             let expect =
                     (   [ Pattern.fromTermLike

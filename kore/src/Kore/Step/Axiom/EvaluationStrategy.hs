@@ -32,6 +32,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike as TermLike
+import Kore.Logger.WarnBottomHook
+    ( warnBottomHook
+    )
 import Kore.Logger.WarnSimplificationWithRemainder
     ( warnSimplificationWithRemainder
     )
@@ -47,6 +50,9 @@ import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     )
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiomResults
     ( AttemptedAxiomResults (..)
+    )
+import Kore.TopBottom
+    ( isBottom
     )
 import Kore.Unparser
     ( unparse
@@ -184,6 +190,13 @@ evaluateBuiltin
                     <> " to reduce concrete pattern:"
                 , Pretty.indent 4 (unparse patt)
                 ]
+        Applied AttemptedAxiomResults { results , remainders }
+          | App_ appHead _ <- patt
+          , Just hook_ <- Attribute.getHook (symbolHook appHead)
+          , isBottom results
+          , isBottom remainders -> do
+              warnBottomHook hook_ patt
+              return result
         _ -> return result
   where
     isValue pat =
