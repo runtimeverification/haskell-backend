@@ -41,12 +41,17 @@ import Control.Monad.IO.Class
 import Control.Monad.Reader
     ( runReaderT
     )
-import qualified Control.Monad.Trans as Trans
 import Data.Functor
     ( void
     )
 import Data.Functor.Contravariant
     ( contramap
+    )
+import Data.List
+    ( foldl'
+    )
+import Data.List.NonEmpty
+    ( NonEmpty ((:|))
     )
 import Data.Set
     ( Set
@@ -81,6 +86,12 @@ import Options.Applicative
     , maybeReader
     , option
     )
+import System.IO
+    ( Handle
+    , IOMode (AppendMode, WriteMode)
+    , stderr
+    , withFile
+    )
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import qualified Type.Reflection as Reflection
@@ -92,14 +103,22 @@ import Kore.Logger.DebugAxiomEvaluation
     , filterDebugAxiomEvaluation
     , parseDebugAxiomEvaluationOptions
     )
+import Kore.Logger.DebugSolver
+    ( DebugSolverOptions (DebugSolverOptions)
+    , parseDebugSolverOptions
+    , solverTranscriptLogger
+    )
+import qualified Kore.Logger.DebugSolver as DebugSolver.DoNotUse
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
 data KoreLogType
-    = LogStdErr
-    -- ^ log to stderr (default)
+    = LogNone
+    -- ^ No logging
+    | LogStdErr
+    -- ^ Log to stderr
     | LogFileText FilePath
-    -- ^ log to specified file when '--log <filename>' is passed.
+    -- ^ Log to specified file when '--log <filename>' is passed.
     deriving (Eq, Show)
 
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
@@ -113,25 +132,117 @@ data KoreLogOptions = KoreLogOptions
     -- ^ extra entries to show, ignoring 'logLevel'
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
+    , debugSolverOptions :: DebugSolverOptions
     }
     deriving (Eq, Show)
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
 
+data LoggerStartData =
+    LoggerStartData
+        { logType :: !KoreLogType
+        , ioMode :: !IOMode
+        , handleLogger :: !(Handle -> LogAction IO SomeEntry)
+        }
+
 -- | Generates an appropriate logger for the given 'KoreLogOptions'. It uses
 -- the CPS style because some outputters require cleanup (e.g. files).
 withLogger
-    :: Trans.MonadIO m
-    => KoreLogOptions
-    -> (LogAction m SomeEntry -> IO a)
+    :: KoreLogOptions
+    -> (LogAction IO SomeEntry -> IO a)
     -> IO a
-withLogger koreLogOptions@KoreLogOptions { logType } continue =
+withLogger
+    koreLogOptions@KoreLogOptions
+        { logType
+        , debugSolverOptions = DebugSolverOptions {logFile = smtSolverLogFile}
+        }
+    continue
+  =
+    startLoggers
+        ( mainLoggerStartData :|  [ smtSolverLoggerStartData ])
+        []
+        continue
+  where
+    mainLoggerStartData = LoggerStartData
+        { logType
+        , ioMode = AppendMode
+        , handleLogger = makeMainLogger koreLogOptions
+        }
+    smtSolverLoggerStartData = LoggerStartData
+        { logType = maybe LogNone LogFileText smtSolverLogFile
+        , ioMode = WriteMode
+        , handleLogger = makeSmtSolverLogger
+        }
+
+makeSmtSolverLogger :: MonadIO m => Handle -> LogAction m SomeEntry
+makeSmtSolverLogger =
+    solverTranscriptLogger
+    . Colog.logTextHandle
+
+makeMainLogger
+    :: MonadIO m => KoreLogOptions -> Handle -> LogAction m SomeEntry
+makeMainLogger koreLogOptions =
+    koreLogFilters koreLogOptions
+    . makeKoreLogger
+    . Colog.logTextHandle
+
+startLoggers
+    :: forall a
+    .  NonEmpty LoggerStartData
+    -> [LogAction IO SomeEntry]
+    -> (LogAction IO SomeEntry -> IO a)
+    -> IO a
+startLoggers
+    (  LoggerStartData {logType, ioMode, handleLogger}
+    :| []
+    )
+    loggers
+    action
+  =
+    withLogType logType ioMode applyAction
+  where
+    applyAction :: Maybe Handle -> IO a
+    applyAction handle =
+        action
+            (foldl'
+                (Colog.divide (\a -> (a, a)))
+                (logToMaybeHandle handle handleLogger)
+                loggers
+            )
+startLoggers
+    (  LoggerStartData {logType, ioMode, handleLogger}
+    :| (handleLogger' : handleLoggers)
+    )
+    loggers
+    action
+  =
+    withLogType logType ioMode continue
+  where
+    continue :: Maybe Handle -> IO a
+    continue handle =
+        startLoggers
+            (handleLogger' :| handleLoggers)
+            (logToMaybeHandle handle handleLogger : loggers)
+            action
+
+logToMaybeHandle
+    :: Maybe Handle
+    -> (Handle -> LogAction IO SomeEntry)
+    -> LogAction IO SomeEntry
+logToMaybeHandle maybeHandle logger = maybe emptyLogger logger maybeHandle
+
+withLogType
+    :: KoreLogType
+    -> IOMode
+    -> (Maybe Handle -> IO a)
+    -> IO a
+withLogType logType ioMode action =
     case logType of
-        LogStdErr -> continue $ koreLogFilters koreLogOptions stderrLogger
+        LogNone -> action Nothing
+        LogStdErr -> action (Just stderr)
         LogFileText filename ->
-            Colog.withLogTextFile filename
-            $ continue . koreLogFilters koreLogOptions . makeKoreLogger
+            withFile filename ioMode (action . Just)
 
 koreLogFilters
     :: Applicative m
@@ -183,13 +294,22 @@ parseKoreLogOptions =
     <*> (mconcat <$> many parseEntries)
     <*> parseDebugAppliedRuleOptions
     <*> parseDebugAxiomEvaluationOptions
+    <*> parseDebugSolverOptions
   where
+    parseType :: Parser KoreLogType
     parseType =
         option
             (maybeReader parseTypeString)
             $ long "log"
             <> help "Name of the log file"
-    parseTypeString filename = pure $ LogFileText filename
+
+      where
+        parseTypeString filename =
+            case filename of
+                "none" -> pure LogNone
+                "stderr" -> pure LogStdErr
+                _ -> pure $ LogFileText filename
+
     parseLevel =
         option
             (maybeReader parseSeverity)
@@ -220,7 +340,6 @@ parseKoreLogOptions =
         pure . Text.pack $ argument
 
 -- Creates a kore logger which:
---     * filters messages that have lower severity than the provided severity
 --     * adds timestamps
 --     * formats messages: "[<severity>][<localTime>][<scope>]: <message>"
 makeKoreLogger
