@@ -1,4 +1,4 @@
-module LIST-UNIFY-FRAMING-VARIABLE-RIGHT
+module TEST
 
   imports DOMAINS
 
