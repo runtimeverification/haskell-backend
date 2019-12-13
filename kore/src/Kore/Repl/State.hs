@@ -424,7 +424,6 @@ liftSimplifierWithLogger mLogger simplifier = do
         -> t m (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
-            Logger.LogNone -> pure (Logger.emptyLogger, Nothing)
             Logger.LogStdErr -> pure (Logger.logTextStderr, Nothing)
             Logger.LogFileText file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
@@ -608,9 +607,8 @@ createOnePathClaim (claim, cpattern) =
     $ Rule.RulePattern
         { left = cpattern
         , antiLeft = Nothing
-        , right = Rule.right . toRulePattern $ claim
         , requires = Predicate.makeTruePredicate_
-        , ensures = Rule.ensures . toRulePattern $ claim
+        , rhs = Rule.rhs . toRulePattern $ claim
         , attributes = Default.def
         }
 
@@ -622,7 +620,7 @@ conjOfOnePathClaims claims sort =
     foldr
         TermLike.mkAnd
         (TermLike.mkTop sort)
-        $ fmap Rule.onePathRuleToPattern claims
+        $ fmap Rule.onePathRuleToTerm claims
 
 generateInProgressOPClaims
     :: Claim claim
@@ -691,7 +689,7 @@ currentClaimSort
 currentClaimSort = do
     claims <- Lens.use (field @"claim")
     return . TermLike.termLikeSort
-        . Rule.onePathRuleToPattern
+        . Rule.onePathRuleToTerm
         . Rule.OnePathRule
         . toRulePattern
         $ claims

@@ -30,6 +30,7 @@ import Kore.Step.Rule
     , OnePathRule (..)
     , ReachabilityRule (..)
     , RulePattern (..)
+    , injectTermIntoRHS
     )
 import Kore.Strategies.Goal
 
@@ -1067,9 +1068,8 @@ simpleOnePathClaim left right =
     $ RulePattern
             { left = left
             , antiLeft = Nothing
-            , right = mkAnd mkTop_ right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS right
             , attributes = def
             }
 
@@ -1082,9 +1082,8 @@ simpleAllPathClaim left right =
     $ RulePattern
             { left = left
             , antiLeft = Nothing
-            , right = mkAnd mkTop_ right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS right
             , attributes = def
             }
 
@@ -1098,9 +1097,8 @@ simpleOnePathTrustedClaim left right =
     $ RulePattern
             { left = left
             , antiLeft = Nothing
-            , right = right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS right
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }
@@ -1113,11 +1111,10 @@ simpleAllPathTrustedClaim left right =
     AllPath
     . AllPathRule
     $ RulePattern
-            { left = left
+            { left
             , antiLeft = Nothing
-            , right = right
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS right
             , attributes = def
                 { Attribute.trusted = Attribute.Trusted True }
             }

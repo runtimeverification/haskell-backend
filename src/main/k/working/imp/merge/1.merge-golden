@@ -25,27 +25,20 @@
             VarDotVar0:SortGeneratedCounterCell{}
         )
     ),
-    \and{SortGeneratedTopCell{}}(
-        \top{SortGeneratedTopCell{}}(),
-        Lbl'-LT-'generatedTop'-GT-'{}(
-            Lbl'-LT-'T'-GT-'{}(
-                Lbl'-LT-'k'-GT-'{}(
-                    kseq{}(VarI:SortKItem{}, VarDotVar2:SortK{})
-                ),
-                Lbl'-LT-'state'-GT-'{}(
-                    /* builtin: */
-                    Lbl'Unds'Map'Unds'{}(
-                        /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
-                            /* Inj: */ inj{SortId{}, SortKItem{}}(
-                                VarX:SortId{}
-                            ),
-                            VarI:SortKItem{}
-                        ),
-                        /* opaque child: */ VarDotVar3:SortMap{}
-                    )
+    Lbl'-LT-'generatedTop'-GT-'{}(
+        Lbl'-LT-'T'-GT-'{}(
+            Lbl'-LT-'k'-GT-'{}(kseq{}(VarI:SortKItem{}, VarDotVar2:SortK{})),
+            Lbl'-LT-'state'-GT-'{}(
+                /* builtin: */
+                Lbl'Unds'Map'Unds'{}(
+                    /* element: */ Lbl'UndsPipe'-'-GT-Unds'{}(
+                        /* Inj: */ inj{SortId{}, SortKItem{}}(VarX:SortId{}),
+                        VarI:SortKItem{}
+                    ),
+                    /* opaque child: */ VarDotVar3:SortMap{}
                 )
-            ),
-            VarDotVar0:SortGeneratedCounterCell{}
-        )
+            )
+        ),
+        VarDotVar0:SortGeneratedCounterCell{}
     )
 )

@@ -47,6 +47,7 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     )
 import Kore.Step.Rule
     ( ImplicationRule (ImplicationRule)
+    , RHS (..)
     , RewriteRule
     , RulePattern (..)
     )
@@ -113,7 +114,7 @@ checkClaim
     breadthLimit
     strategyBuilder
     searchOrder
-    (ImplicationRule RulePattern { left, right }, depthLimit)
+    (ImplicationRule RulePattern { left, rhs = RHS { right } }, depthLimit)
   = do
         let
             ApplyAlias_ Alias { aliasConstructor = alias } [prop] = right

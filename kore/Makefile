@@ -35,7 +35,7 @@ coverage:
 	$(stack) test --coverage --work-dir .stack-work-coverage
 
 ghcid:
-	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-exec"
+	$(stack) exec -- ghcid -c "stack ghci $(package) --test --work-dir .stack-work-ghci --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-exec"
 
 ghcid-repl:
 	$(stack) exec -- ghcid -c "stack ghci $(package) --test --ghci-options='-fobject-code -fno-warn-unused-do-bind' --main-is $(package):kore-repl"

@@ -92,9 +92,12 @@ class ExpandSingleConstructors rule where
 instance ExpandSingleConstructors (RulePattern Variable) where
     expandSingleConstructors
         metadataTools
-        rule@(RulePattern _ _ _ _ _ _)
+        rule@(RulePattern _ _ _ _ _)
       = case rule of
-        RulePattern {left, antiLeft, right, ensures, requires} ->
+        RulePattern
+            {left, antiLeft, requires
+            , rhs = RulePattern.RHS {existentials, right, ensures}
+            } ->
             let leftVariables :: [ElementVariable Variable]
                 leftVariables =
                     mapMaybe extractElementVariable
@@ -106,7 +109,8 @@ instance ExpandSingleConstructors (RulePattern Variable) where
                     getFreeVariables (RulePattern.freeVariables rule)
                 allElementVariables :: Set.Set (ElementVariable Variable)
                 allElementVariables = Set.fromList
-                    [ v | ElemVar v <- Set.toList allUnifiedVariables]
+                    $ [ v | ElemVar v <- Set.toList allUnifiedVariables]
+                        ++ existentials
                 expansion
                     :: Map.Map (UnifiedVariable Variable) (TermLike Variable)
                 expansion =
@@ -121,13 +125,15 @@ instance ExpandSingleConstructors (RulePattern Variable) where
                 { RulePattern.left = TermLike.substitute expansion left
                 , RulePattern.antiLeft =
                     TermLike.substitute expansion <$> antiLeft
-                , RulePattern.right = TermLike.substitute expansion right
-                , RulePattern.ensures =
-                    Predicate.substitute expansion ensures
                 , RulePattern.requires =
                     makeAndPredicate
                         (Predicate.substitute expansion requires)
                         substitutionPredicate
+                , RulePattern.rhs = RulePattern.RHS
+                    { existentials
+                    , right = TermLike.substitute expansion right
+                    , ensures = Predicate.substitute expansion ensures
+                    }
                 }
 
 instance ExpandSingleConstructors (OnePathRule Variable) where

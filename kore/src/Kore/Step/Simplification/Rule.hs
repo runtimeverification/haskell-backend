@@ -90,22 +90,18 @@ simplifyRulePattern rule = do
                 antiLeft' = TermLike.substitute subst <$> antiLeft
                   where
                     RulePattern { antiLeft } = rule
-                right' = TermLike.substitute subst right
-                  where
-                    RulePattern { right } = rule
                 requires' = TermLike.substitute subst <$> requires
                   where
                     RulePattern { requires } = rule
-                ensures' = TermLike.substitute subst <$> ensures
+                rhs' = rhsSubstitute subst rhs
                   where
-                    RulePattern { ensures } = rule
+                    RulePattern { rhs } = rule
                 RulePattern { attributes } = rule
             return RulePattern
                 { left = left'
                 , antiLeft = antiLeft'
-                , right = right'
                 , requires = requires'
-                , ensures = ensures'
+                , rhs = rhs'
                 , attributes = attributes
                 }
         _ ->
