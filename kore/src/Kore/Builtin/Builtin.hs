@@ -509,6 +509,7 @@ getAttemptedAxiom
     :: Monad m
     => MaybeT m (AttemptedAxiom variable)
     -> m (AttemptedAxiom variable)
+{-# INLINE getAttemptedAxiom #-}
 getAttemptedAxiom attempt =
     fromMaybe NotApplicable <$> runMaybeT attempt
 
