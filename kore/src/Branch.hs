@@ -4,6 +4,7 @@ License     : NCSA
 
 -}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Branch

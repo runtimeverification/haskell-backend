@@ -87,6 +87,7 @@ instance
     ) =>
     Synthetic (Pattern variable) base
   where
+    {-# INLINE synthetic #-}
     synthetic base =
         Pattern
             { patternSort = synthetic (patternSort <$> base)

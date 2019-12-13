@@ -4,6 +4,7 @@ License     : NCSA
 
 -}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Kore.Internal.TermLike
@@ -603,19 +604,25 @@ instance Corecursive (TermLike variable) where
             (getTermLike <$> projected)
     {-# INLINE embed #-}
 
-    ana coalg = TermLike . ana0
-      where
-        ana0 =
-            Recursive.ana (Compose . Identity . coalg)
+    ana coalg =
+        \seed ->
+            TermLike
+                (Recursive.ana
+                    (\seed' -> Compose (Identity (coalg seed')))
+                    seed
+                )
     {-# INLINE ana #-}
 
-    apo coalg = TermLike . apo0
-      where
-        apo0 =
-            Recursive.apo
-                (\a ->
-                     (Compose . Identity)
-                        (Bifunctor.first getTermLike <$> coalg a)
+    apo coalg =
+        \seed ->
+            TermLike
+                (Recursive.apo
+                    (\a ->
+                        Compose (Identity
+                            (Bifunctor.first getTermLike <$> coalg a)
+                        )
+                    )
+                    seed
                 )
     {-# INLINE apo #-}
 
