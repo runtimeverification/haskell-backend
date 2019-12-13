@@ -424,7 +424,6 @@ liftSimplifierWithLogger mLogger simplifier = do
         -> t m (Logger.LogAction IO Text, Maybe Handle)
     logTypeToLogger =
         \case
-            Logger.LogNone -> pure (Logger.emptyLogger, Nothing)
             Logger.LogStdErr -> pure (Logger.logTextStderr, Nothing)
             Logger.LogFileText file -> do
                 handle <- Monad.Trans.lift . liftIO $ openFile file AppendMode
