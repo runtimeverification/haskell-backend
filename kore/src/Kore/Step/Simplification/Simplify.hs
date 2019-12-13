@@ -593,6 +593,7 @@ applicationAxiomSimplifier
         -> simplifier (AttemptedAxiom variable)
         )
     -> BuiltinAndAxiomSimplifier
+{-# INLINE applicationAxiomSimplifier #-}
 applicationAxiomSimplifier applicationSimplifier =
     BuiltinAndAxiomSimplifier helper
   where
