@@ -507,9 +507,9 @@ sortInjectionAndEquals termMerger first@(Inj_ inj1) second@(Inj_ inj2) = do
     distinct Unknown = empty
     merge inj@Inj { injChild = Pair child1 child2 } = Monad.Trans.lift $ do
         childPattern <- termMerger child1 child2
-        injSimplifier <- askInjSimplifier
+        InjSimplifier { evaluateInj } <- askInjSimplifier
         let (childTerm, childCondition) = Pattern.splitTerm childPattern
-            inj' = simplifyInj injSimplifier inj { injChild = childTerm }
+            inj' = evaluateInj inj { injChild = childTerm }
         return $ Pattern.withCondition inj' childCondition
 sortInjectionAndEquals _ _ _ = empty
 
