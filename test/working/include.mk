@@ -60,7 +60,7 @@ $(DEF_KORE): $(DEF_DIR)/$(DEF).k $(K)
 
 %.search.plus.$(EXT).out: KRUN_OPTS += --search-one-or-more-steps
 
-PATTERN_OPTS = --pattern "$$(cat $*.search-pattern.k)"
+PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 %.search-pattern.final.$(EXT).out: KRUN_OPTS += --search-final $(PATTERN_OPTS)
 

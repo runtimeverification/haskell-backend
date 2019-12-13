@@ -1,6 +1,5 @@
-DEFINITION_NAME := tiny
-
+DEF = tiny
 include $(CURDIR)/../include.mk
 
-clean:
-	rm -rf $(KOMPILED)
+a-to-c-automatic-stepf-repl-script-spec.k.out: \
+	KPROVE_OPTS += --spec-module A-TO-C-SPEC
