@@ -299,10 +299,9 @@ parseLogEntries =
             <* optional (literal ",")
 
 parseLogType :: Parser Logger.KoreLogType
-parseLogType = logStdOut <|> logNone <|> logFile
+parseLogType = logStdOut <|> logFile
   where
     logStdOut = Logger.LogStdErr <$  literal "stderr"
-    logNone = Logger.LogNone <$  literal "none"
     logFile   =
         Logger.LogFileText  <$$> literal "file" *> quotedOrWordWithout ""
 
