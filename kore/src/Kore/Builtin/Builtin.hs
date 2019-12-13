@@ -307,6 +307,7 @@ type FunctionImplementation
         -> simplifier (AttemptedAxiom variable)
 
 functionEvaluator :: FunctionImplementation -> Function
+{-# INLINE functionEvaluator #-}
 functionEvaluator impl =
     applicationAxiomSimplifier evaluator
   where
