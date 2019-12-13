@@ -9,6 +9,7 @@ module Kore.Strategies.Goal
     , ClaimExtractor (..)
     , Rule (..)
     , TransitionRuleTemplate (..)
+    , GoalException (..)
     , extractClaims
     , unprovenNodes
     , proven
@@ -26,9 +27,15 @@ module Kore.Strategies.Goal
 import Control.Applicative
     ( Alternative (..)
     )
+import Control.Exception
+    ( SomeException
+    , throw
+    )
 import Control.Monad.Catch
     ( MonadCatch
     , onException
+    , Exception
+    , catch
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Coerce
@@ -43,6 +50,9 @@ import Data.Stream.Infinite
     )
 import qualified Data.Stream.Infinite as Stream
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
+    ( Typeable
+    )
 import Data.Witherable
     ( mapMaybe
     )
@@ -843,6 +853,12 @@ isTrusted =
     . RulePattern.attributes
     . toRulePattern
 
+data GoalException exception = GoalException exception (Pattern Variable)
+    deriving (Show, Typeable)
+
+instance (Show exception, Typeable exception)
+    => Exception (GoalException exception)
+
 -- | Apply 'Rule's to the goal in parallel.
 derivePar
     :: forall m goal
@@ -856,7 +872,7 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = errorBracket $ do
+derivePar rules goal = enrichEventualException $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -898,11 +914,10 @@ derivePar rules goal = errorBracket $ do
     configuration :: Pattern Variable
     configuration = getConfiguration goal
 
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
+    --enrichEventualException :: forall mc a . MonadCatch mc => mc a -> mc a
+    enrichEventualException action =
+        catch action $
+           \(e :: SomeException) -> throw (GoalException e configuration)
 
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq

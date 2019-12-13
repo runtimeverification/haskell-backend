@@ -4,8 +4,13 @@ import Control.Applicative
     ( Alternative (..)
     , optional
     )
+import Control.Exception
+    ( SomeException
+    , throw
+    )
 import Control.Monad.Catch
     ( MonadCatch
+    , catch
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -91,6 +96,7 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
+    , toTermLike
     )
 import Kore.Internal.Predicate
     ( makePredicate
@@ -120,6 +126,7 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
+import qualified Kore.Strategies.Goal as Goal
 import Kore.Syntax.Definition
     ( ModuleName (..)
     )
@@ -440,7 +447,8 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
-    (exitCode, final) <- execute execOptions mainModule $ do
+    let exeWorker :: MonadExecute exe => exe (ExitCode, TermLike Variable)
+        exeWorker = do
         let KoreExecOptions { stepLimit } = execOptions
             KoreProveOptions { graphSearch, bmc } = proveOptions
         if bmc
@@ -458,6 +466,10 @@ koreProve execOptions proveOptions = do
             else
                 either failure (const success)
                 <$> prove graphSearch stepLimit mainModule specModule
+    (exitCode, final) <- execute execOptions mainModule $
+        catch exeWorker $
+            \(Goal.GoalException (e :: SomeException) p) -> do
+                pure $ (ExitFailure 2, toTermLike p)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
