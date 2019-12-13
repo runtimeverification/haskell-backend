@@ -1099,9 +1099,8 @@ test_concretizeKeysAxiom =
         RewriteRule RulePattern
             { left = mkPair intSort mapSort x symbolicMap
             , antiLeft = Nothing
-            , right = v
             , requires = Predicate.makeTruePredicate_
-            , ensures = Predicate.makeTruePredicate_
+            , rhs = injectTermIntoRHS v
             , attributes = Default.def
             }
     expected = Right $ MultiOr
