@@ -9,7 +9,6 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Logger
     ( LogMessage (..)
     , Severity (..)
-    , Scope (..)
     , WithLog
     , LogAction (..)
     , log
@@ -21,6 +20,7 @@ module Kore.Logger
     , liftLogAction
     , hoistLogAction
     , logWith
+    , entryTypeText
     , LoggerT (..)
     , SomeEntry (..)
     , someEntry
@@ -66,16 +66,10 @@ import qualified Control.Monad.Trans.State.Strict as Strict
 import Data.Functor.Contravariant
     ( contramap
     )
-import Data.Set
-    ( Set
-    )
-import qualified Data.Set as Set
-import Data.String
-    ( IsString
-    )
 import Data.Text
     ( Text
     )
+import qualified Data.Text as Text
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
@@ -90,6 +84,7 @@ import qualified GHC.Stack as GHC
 import Prelude hiding
     ( log
     )
+import qualified Type.Reflection as Reflection
 
 import Control.Monad.Counter
     ( CounterT
@@ -112,14 +107,6 @@ data Severity
 
 instance Pretty.Pretty Severity where
     pretty = Pretty.pretty . show
-
--- | Logging scope, used by 'LogMessage'.
-newtype Scope = Scope
-    { unScope :: Text
-    } deriving (Eq, Ord, Read, Show, Semigroup, Monoid, IsString)
-
-instance Pretty.Pretty Scope where
-    pretty = Pretty.pretty . unScope
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
@@ -216,12 +203,8 @@ class (Pretty entry, Typeable entry) => Entry entry where
 
     entrySeverity :: entry -> Severity
 
-    entryScopes :: entry -> Set Scope
-
 instance Entry LogMessage where
     entrySeverity LogMessage { severity } = severity
-
-    entryScopes _ = Set.empty
 
 instance Pretty LogMessage where
     pretty LogMessage { message, callstack } =
@@ -248,8 +231,6 @@ data SomeEntry where
 
 instance Entry SomeEntry where
     entrySeverity (SomeEntry entry) = entrySeverity entry
-
-    entryScopes (SomeEntry entry) = entryScopes entry
 
 instance Pretty SomeEntry where
     pretty (SomeEntry entry) = Pretty.pretty entry
@@ -308,3 +289,7 @@ logWith
     -> m ()
 logWith logger entry =
     logger Colog.<& toEntry entry
+
+entryTypeText :: SomeEntry -> Text
+entryTypeText (SomeEntry entry) =
+    Text.pack . show . Reflection.typeOf $ entry

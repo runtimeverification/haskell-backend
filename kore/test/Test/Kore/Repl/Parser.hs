@@ -10,6 +10,9 @@ import Test.Tasty
     )
 
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.DebugSolver as Logger
+    ( emptyDebugSolverOptions
+    )
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Parser
@@ -423,33 +426,55 @@ logTests =
     [ "log debug [] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Debug
-            , logScopes = mempty
+            , logEntries = mempty
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
-    , "log critical [scope1] stderr"
+    , "log [] stderr"
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Warning
+            , logEntries = mempty
+            , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            }
+    , "log [entry1] stderr"
+        `parsesTo_` Log Logger.KoreLogOptions
+            { logLevel = Logger.Warning
+            , logEntries = Set.singleton "entry1"
+            , logType = Logger.LogStdErr
+            , debugAppliedRuleOptions = mempty
+            , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            }
+    , "log critical [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Critical
-            , logScopes = Set.singleton "scope1"
+            , logEntries = Set.singleton "entry1"
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
-    , "log info [ scope1,  scope2 ] file \"f s\""
+    , "log info [ entry1,  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
-            , logScopes = Set.fromList ["scope1", "scope2"]
+            , logEntries = Set.fromList ["entry1", "entry2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
-    , "log info [ scope1  scope2 ] file \"f s\""
+    , "log info [ entry1  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
-            , logScopes = Set.fromList ["scope1", "scope2"]
+            , logEntries = Set.fromList ["entry1", "entry2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
+            , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     ]

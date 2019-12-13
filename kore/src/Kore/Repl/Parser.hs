@@ -23,7 +23,13 @@ import Data.Functor
 import Data.List
     ( nub
     )
+import Data.Set
+    ( Set
+    )
 import qualified Data.Set as Set
+import Data.Text
+    ( Text
+    )
 import qualified Data.Text as Text
 import Prelude hiding
     ( log
@@ -44,6 +50,9 @@ import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.DebugSolver as Logger
+    ( emptyDebugSolverOptions
+    )
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 
@@ -251,17 +260,24 @@ saveSession =
 log :: Parser ReplCommand
 log = do
     literal "log"
-    logLevel <- severity
-    logScopes <- unLogScope <$> logScope
+    logLevel <- parseSeverityWithDefault
+    logEntries <- parseLogEntries
     logType <- parseLogType
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
         debugAxiomEvaluationOptions = mempty
+        debugSolverOptions = Logger.emptyDebugSolverOptions
     pure $ Log Logger.KoreLogOptions
-        { logType, logLevel, logScopes
+        { logType
+        , logLevel
+        , logEntries
         , debugAppliedRuleOptions
         , debugAxiomEvaluationOptions
+        , debugSolverOptions
         }
+  where
+    parseSeverityWithDefault =
+        maybe Logger.Warning id <$> optional severity
 
 severity :: Parser Logger.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
@@ -272,20 +288,21 @@ severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
     sError    = Logger.Error    <$ literal "error"
     sCritical = Logger.Critical <$ literal "critical"
 
-logScope :: Parser LogScope
-logScope =
-    LogScope . Set.fromList
-        <$$> literal "[" *> many scope <* literal "]"
+parseLogEntries :: Parser (Set Text)
+parseLogEntries =
+    Set.fromList
+        <$$> literal "[" *> many entry <* literal "]"
   where
-      scope =
-          Logger.Scope . Text.pack
+      entry =
+          Text.pack
             <$$> wordWithout ['[', ']', ',']
             <* optional (literal ",")
 
 parseLogType :: Parser Logger.KoreLogType
-parseLogType = logStdOut <|> logFile
+parseLogType = logStdOut <|> logNone <|> logFile
   where
     logStdOut = Logger.LogStdErr <$  literal "stderr"
+    logNone = Logger.LogNone <$  literal "none"
     logFile   =
         Logger.LogFileText  <$$> literal "file" *> quotedOrWordWithout ""
 

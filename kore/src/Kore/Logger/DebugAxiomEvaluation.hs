@@ -71,13 +71,11 @@ import Kore.Internal.TermLike
     , TermLike
     )
 import Kore.Logger
-    ( Entry (fromEntry, toEntry)
-    , LogAction (LogAction)
+    ( Entry (fromEntry)
     , MonadLog
     , Severity (..)
     , SomeEntry
     , logM
-    , unLogAction
     )
 import qualified Kore.Logger as Log.DoNotUse
 import Kore.Step.Axiom.Identifier
@@ -94,7 +92,6 @@ data DebugAxiomEvaluation =
     { identifier :: !(Maybe AxiomIdentifier)
     , secondaryIdentifier :: !(Maybe Text)
     , state :: !AxiomEvaluationState
-    , severity :: !Severity
     }
     deriving (Eq, Typeable)
 
@@ -107,9 +104,7 @@ data AxiomEvaluationState
     deriving Eq
 
 instance Entry DebugAxiomEvaluation where
-    entrySeverity DebugAxiomEvaluation {severity} = severity
-
-    entryScopes _ = Set.singleton "AxiomEvaluation"
+    entrySeverity _ = Debug
 
 instance Pretty DebugAxiomEvaluation where
     pretty DebugAxiomEvaluation { identifier, state } =
@@ -189,7 +184,6 @@ logState state identifier secondaryIdentifier =
         { identifier
         , secondaryIdentifier
         , state
-        , severity = Info
         }
 
 {- | Options (from the command-line) specifying when to log specific axiom
@@ -222,39 +216,31 @@ parseDebugAxiomEvaluationOptions =
             (  Options.metavar "SIMPLIFICATION_IDENTIFIER"
             <> Options.long "debug-simplification-axiom"
             <> Options.help
-                (  "Log at the info level every rule applied for the "
+                (  "Log every rule applied for the "
                 <> "SIMPLIFICATION_IDENTIFIER."
                 )
             )
 
-{- | Modify a 'LogAction' to display selected applied rules.
-
-The "base" 'LogAction' is used to log the applied rule whenever it matches the
-rules specified by 'DebugAppliedRuleOptions'. All other entries are forwarded to
-the "fallback" 'LogAction'.
-
+{- | Function to modify a 'LogAction' to display selected applied rules.
  -}
 filterDebugAxiomEvaluation
     :: DebugAxiomEvaluationOptions
-    -> LogAction log SomeEntry  -- ^ base 'LogAction'
-    -> LogAction log SomeEntry
+    -> SomeEntry
+    -> Bool
 filterDebugAxiomEvaluation
     debugAxiomEvaluationOptions
-    baseLogAction
+    entry
   =
-    LogAction $ \entry ->
-        unLogAction baseLogAction (fixEntry entry)
+    fromMaybe False findAxiomEvaluation
   where
-    fixEntry :: SomeEntry -> SomeEntry
-    fixEntry entry = fromMaybe entry (fixAxiomEvaluation entry)
-
-    fixAxiomEvaluation :: SomeEntry -> Maybe SomeEntry
-    fixAxiomEvaluation entry = do
-        axiomEvaluation@DebugAxiomEvaluation
-            { identifier, secondaryIdentifier, severity = Info }
+    findAxiomEvaluation :: Maybe Bool
+    findAxiomEvaluation = do
+        DebugAxiomEvaluation
+            { identifier, secondaryIdentifier }
                 <- fromEntry entry
         let textIdentifier :: Maybe Text
-            textIdentifier = (Text.pack . show . Pretty.pretty) <$> identifier
+            textIdentifier =
+                Text.pack . show . Pretty.pretty <$> identifier
 
             isSelectedIdentifier :: Text -> Bool
             isSelectedIdentifier toCheck =
@@ -266,9 +252,7 @@ filterDebugAxiomEvaluation
                     isSelectedIdentifier
                     (catMaybes [textIdentifier, secondaryIdentifier])
 
-        if isSelected
-            then return entry
-            else return (toEntry axiomEvaluation {severity = Debug})
+        return isSelected
 
     DebugAxiomEvaluationOptions { debugAxiomEvaluation } =
         debugAxiomEvaluationOptions
