@@ -30,7 +30,7 @@ module Kore.Internal.TermLike
     , asConcrete
     , isConcrete
     , fromConcrete
-    , substitute
+    , Substitute.substitute
     , externalizeFreshVariables
     -- * Utility functions for dealing with sorts
     , forceSort
@@ -665,8 +665,8 @@ instance InternalVariable variable => Binding (TermLike variable) where
       where
         _ :< termLikeF = Recursive.project termLike
 
-freeVariables :: TermLike variable -> FreeVariables variable
-freeVariables = Attribute.freeVariables . extractAttributes
+instance HasFreeVariables (TermLike variable) variable where
+    freeVariables = freeVariables . extractAttributes
 
 hasFreeVariable
     :: Ord variable
@@ -684,7 +684,7 @@ refreshVariables
     (FreeVariables.getFreeVariables -> avoid)
     term
   =
-    substitute subst term
+    Substitute.substitute subst term
   where
     rename = Fresh.refreshVariables avoid originalFreeVariables
     originalFreeVariables = FreeVariables.getFreeVariables (freeVariables term)
@@ -840,23 +840,6 @@ fromConcrete
     -> TermLike variable
 fromConcrete = mapVariables (\case {})
 
-{- | Traverse the pattern from the top down and apply substitutions.
-
-The 'freeVariables' annotation is used to avoid traversing subterms that
-contain none of the targeted variables.
-
-The substitution must be normalized, i.e. no target (left-hand side) variable
-may appear in the right-hand side of any substitution, but this is not checked.
-
- -}
--- TODO (thomas.tuegel): This should normalize internal representations.
-substitute
-    ::  Substitute.SubstitutionVariable variable
-    =>  Map (UnifiedVariable variable) (TermLike variable)
-    ->  TermLike variable
-    ->  TermLike variable
-substitute = Substitute.substitute freeVariables
-
 {- | Reset the 'variableCounter' of all 'Variables'.
 
 @externalizeFreshVariables@ resets the 'variableCounter' of all variables, while
@@ -946,7 +929,7 @@ externalizeFreshVariables termLike =
                 (TermLike Variable)
     externalizeFreshVariablesWorker (attrs :< patt) = do
         attrs' <- Attribute.traverseVariables lookupVariable attrs
-        let freeVariables' = Attribute.freeVariables attrs'
+        let freeVariables' = freeVariables attrs'
         patt' <-
             case patt of
                 ExistsF exists -> do

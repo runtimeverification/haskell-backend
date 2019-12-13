@@ -25,7 +25,7 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( OnePathRule (..)
     , RulePattern (..)
     , injectTermIntoRHS

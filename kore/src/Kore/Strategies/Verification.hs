@@ -36,7 +36,7 @@ import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
     )
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RHS
     )
 import Kore.Step.Rule.Expand

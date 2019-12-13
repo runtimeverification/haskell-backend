@@ -49,7 +49,7 @@ import Kore.ModelChecker.Simplification
     )
 import qualified Kore.Step.Result as StepResult
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , allPathGlobally
     )

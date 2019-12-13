@@ -53,10 +53,12 @@ import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import Kore.Step.Rule
+import Kore.Step.EqualityPattern
     ( EqualityRule (EqualityRule)
-    , QualifiedAxiomPattern (AllPathClaimPattern, FunctionAxiomPattern, ImplicationAxiomPattern, OnePathClaimPattern, RewriteAxiomPattern)
-    , RulePattern (RulePattern)
+    , EqualityPattern (..)
+    )
+import Kore.Step.Rule
+    ( QualifiedAxiomPattern (..)
     )
 import qualified Kore.Step.Rule as Rule
 import Kore.Step.Simplification.Simplify
@@ -115,9 +117,11 @@ axiomToIdAxiomPatternPair axiom =
     case Rule.fromSentenceAxiom axiom of
         Left _ -> Nothing
         Right
-            (FunctionAxiomPattern axiomPat@(EqualityRule RulePattern { left }))
+            (FunctionAxiomPattern
+                axiomPat@(EqualityRule EqualityPattern { eqLeft })
+            )
           -> do
-            identifier <- AxiomIdentifier.matchAxiomIdentifier left
+            identifier <- AxiomIdentifier.matchAxiomIdentifier eqLeft
             return (identifier, axiomPat)
         Right (RewriteAxiomPattern _) -> Nothing
         Right (OnePathClaimPattern _) -> Nothing
@@ -149,7 +153,7 @@ axiomPatternsToEvaluators =
         (simplifications, filter (not . ignoreDefinition) -> evaluations) =
             partition isSimplificationRule equalities
           where
-            isSimplificationRule (EqualityRule RulePattern { attributes }) =
+            isSimplificationRule (EqualityRule EqualityPattern { attributes }) =
                 isSimplification
               where
                 Simplification { isSimplification } =
@@ -173,7 +177,7 @@ axiom.
 
  -}
 ignoreEqualityRule :: EqualityRule Variable -> Bool
-ignoreEqualityRule (EqualityRule RulePattern { attributes })
+ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
   | isAssoc = True
   | isComm = True
   -- TODO (thomas.tuegel): Add unification cases for builtin units and enable
@@ -192,8 +196,8 @@ ignoreEqualityRule (EqualityRule RulePattern { attributes })
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
 ignoreDefinition :: EqualityRule Variable -> Bool
-ignoreDefinition (EqualityRule RulePattern { left }) =
+ignoreDefinition (EqualityRule EqualityPattern { eqLeft }) =
     Exception.assert isLeftFunctionLike False
   where
     isLeftFunctionLike =
-        (Pattern.isFunction . Pattern.function) (extractAttributes left)
+        (Pattern.isFunction . Pattern.function) (extractAttributes eqLeft)

@@ -41,14 +41,14 @@ import Kore.Internal.TermLike
     , mkCeil_
     , termLikeSort
     )
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( AllPathRule (..)
     , OnePathRule (..)
     , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (RulePattern)
     )
-import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     , applySubstitution
     )

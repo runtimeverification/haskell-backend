@@ -111,8 +111,9 @@ import qualified Kore.Step.Result as Result
     ( mergeResults
     )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule
+    , RulePattern
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
@@ -132,6 +133,9 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString
+    )
+import Kore.Variables.Target
+    ( Target
     )
 import SMT
     ( MonadSMT
@@ -294,7 +298,11 @@ runStepResult
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT (Either UnificationOrSubstitutionError (Step.Results Variable))
+    -> SMT
+        (Either
+            UnificationOrSubstitutionError
+            (Step.Results Variable (RulePattern (Target Variable)))
+        )
 runStepResult configuration axiom = do
     results <-
         runSimplifier testEnv

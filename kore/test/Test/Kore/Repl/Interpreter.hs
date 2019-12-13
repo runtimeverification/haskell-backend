@@ -66,7 +66,7 @@ import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
-import Kore.Step.Rule
+import Kore.Step.RulePattern
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )

@@ -40,7 +40,7 @@ import qualified Kore.Step.Result as Result
     ( mergeResults
     )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , RulePattern
     , isCoolingRule

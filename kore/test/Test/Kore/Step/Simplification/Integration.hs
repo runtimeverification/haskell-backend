@@ -59,11 +59,10 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
     ( axiomPatternsToEvaluators
     )
-import Kore.Step.Rule
+import Kore.Step.EqualityPattern
     ( EqualityRule (EqualityRule)
-    , RulePattern (..)
-    , injectTermIntoRHS
-    , rulePattern
+    , EqualityPattern (..)
+    , equalityPattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
     ( simplify
@@ -199,7 +198,7 @@ test_simplificationIntegration =
                     (Map.fromList
                         [   ( AxiomIdentifier.Application
                                 Mock.function20MapTestId
-                            ,   [ EqualityRule $ rulePattern
+                            ,   [ EqualityRule $ equalityPattern
                                     (Mock.function20MapTest
                                         (Mock.concatMap
                                             (Mock.elementMap
@@ -280,7 +279,7 @@ test_simplificationIntegration =
                 ( axiomPatternsToEvaluators
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ EqualityRule $ rulePattern
+                            ,   [ EqualityRule $ equalityPattern
                                     (Mock.fInt (mkElemVar Mock.xInt))
                                     (mkElemVar Mock.xInt)
                                 ]
@@ -325,7 +324,7 @@ test_simplificationIntegration =
                 ( axiomPatternsToEvaluators
                     ( Map.fromList
                         [   (AxiomIdentifier.Application Mock.fIntId
-                            ,   [ EqualityRule $ rulePattern
+                            ,   [ EqualityRule $ equalityPattern
                                     (Mock.fInt (mkElemVar Mock.xInt))
                                     (mkElemVar Mock.xInt)
                                 ]
@@ -416,7 +415,7 @@ test_simplificationIntegration =
             evaluateWithAxioms
                 (axiomPatternsToEvaluators $ Map.fromList
                     [   ( AxiomIdentifier.Application Mock.cfId
-                        ,   [ EqualityRule $ rulePattern
+                        ,   [ EqualityRule $ equalityPattern
                                 Mock.cf
                                 (Mock.f (mkElemVar Mock.x))
                             ]
@@ -959,21 +958,21 @@ simplificationRulePattern
     :: InternalVariable variable
     => TermLike variable
     -> TermLike variable
-    -> RulePattern variable
+    -> EqualityPattern variable
 simplificationRulePattern left right =
     patt & Lens.set (field @"attributes" . field @"simplification")
         (Simplification True)
   where
-    patt = rulePattern left right
+    patt = equalityPattern left right
 
 conditionalSimplificationRulePattern
     :: InternalVariable variable
     => TermLike variable
     -> Predicate.Predicate variable
     -> TermLike variable
-    -> RulePattern variable
+    -> EqualityPattern variable
 conditionalSimplificationRulePattern left requires right =
-    patt & Lens.set (field @"requires") requires
+    patt & Lens.set (field @"constraint") requires
   where
     patt = simplificationRulePattern left right
 
@@ -1169,12 +1168,11 @@ axiom
     -> TermLike Variable
     -> Predicate.Predicate Variable
     -> EqualityRule Variable
-axiom left right predicate =
-    EqualityRule RulePattern
-        { left
-        , antiLeft = Nothing
-        , requires = predicate
-        , rhs = injectTermIntoRHS right
+axiom eqLeft eqRight constraint =
+    EqualityRule EqualityPattern
+        { eqLeft
+        , constraint
+        , eqRight
         , attributes = Default.def
         }
 

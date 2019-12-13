@@ -68,16 +68,17 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import Kore.Logger.DebugAppliedRule
+import Kore.Step.AxiomPattern
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule (..)
-    , RulePattern (RulePattern, left, requires)
+    , RulePattern
     )
-import qualified Kore.Step.Rule as Rule
-import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.AxiomPattern as Rule
+import qualified Kore.Step.RulePattern as Rule
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.TopBottom as TopBottom
@@ -113,14 +114,14 @@ newtype UnificationProcedure =
         -> unifier (Condition variable)
         )
 
-withoutUnification :: UnifiedRule variable -> RulePattern variable
+withoutUnification :: UnifiedRule variable rule -> rule
 withoutUnification = Conditional.term
 
-type Result variable =
-    Step.Result (UnifiedRule (Target variable)) (Pattern variable)
+type Result variable rule =
+    Step.Result (UnifiedRule (Target variable) rule) (Pattern variable)
 
-type Results variable =
-    Step.Results (UnifiedRule (Target variable)) (Pattern variable)
+type Results variable rule =
+    Step.Results (UnifiedRule (Target variable) rule) (Pattern variable)
 
 {- | Unwrap the variables in a 'RulePattern'.
  -}
@@ -160,15 +161,18 @@ unification. The substitution is not applied to the renamed rule.
 
  -}
 unifyRule
-    :: forall unifier variable
+    :: forall unifier variable rule
     .  SimplifierVariable variable
     => MonadUnify unifier
+    => HasLeftPattern rule variable
+    => HasRequiresPredicate rule variable
+    => HasRefreshPattern rule variable
     => UnificationProcedure
     -> Pattern variable
     -- ^ Initial configuration
-    -> RulePattern variable
+    -> rule variable
     -- ^ Rule
-    -> unifier (UnifiedRule variable)
+    -> unifier (UnifiedRule variable (rule variable))
 unifyRule
     (UnificationProcedure unifyPatterns)
     initial@Conditional { term = initialTerm }
@@ -177,30 +181,32 @@ unifyRule
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
-        configVariables = Pattern.freeVariables initial
-        (_, rule') = RulePattern.refreshRulePattern configVariables rule
+        configVariables = freeVariables initial
+        (_, rule') = refreshPattern configVariables rule
     -- Unify the left-hand side of the rule with the term of the initial
     -- configuration.
     let
-        RulePattern { left = ruleLeft } = rule'
+        ruleLeft = leftPattern rule'
     unification <- unifyPatterns ruleLeft initialTerm
     -- Combine the unification solution with the rule's requirement clause,
     let
-        RulePattern { requires = ruleRequires } = rule'
+        ruleRequires = requiresPredicate rule'
         requires' = Condition.fromPredicate ruleRequires
     unification' <- simplifyPredicate (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
 
 unifyRules
-    :: forall unifier variable
-    .  SimplifierVariable variable
-    => MonadUnify unifier
+    :: forall unifier variable rule
+    .  MonadUnify unifier
+    => HasLeftPattern rule (Target variable)
+    => HasRefreshPattern rule (Target variable)
+    => HasRequiresPredicate rule (Target variable)
     => UnificationProcedure
     -> Pattern (Target variable)
     -- ^ Initial configuration
-    -> [RulePattern (Target variable)]
+    -> [rule (Target variable)]
     -- ^ Rule
-    -> unifier [UnifiedRule (Target variable)]
+    -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
 unifyRules unificationProcedure initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
@@ -267,9 +273,7 @@ finalizeAppliedRule renamedRule appliedConditions =
         -- axiom ensures clause. The axiom requires clause is included by
         -- unifyRule.
         let
-            avoidVars =
-                Condition.freeVariables appliedCondition
-                <> Rule.rhsFreeVariables ruleRHS
+            avoidVars = freeVariables appliedCondition <> freeVariables ruleRHS
             finalPattern =
                 Rule.topExistsToImplicitForall avoidVars ruleRHS
             Conditional { predicate = ensures } = finalPattern
@@ -308,7 +312,7 @@ toAxiomVariables
     :: Ord variable
     => RulePattern variable
     -> RulePattern (Target variable)
-toAxiomVariables = RulePattern.mapVariables Target.Target
+toAxiomVariables = Rule.mapVariables Target.Target
 
 toConfigurationVariables
     :: Ord variable
@@ -323,9 +327,9 @@ finalizeRule
         )
     => Pattern (Target variable)
     -- ^ Initial conditions
-    -> UnifiedRule (Target variable)
+    -> UnifiedRule (Target variable) (RulePattern (Target variable))
     -- ^ Rewriting axiom
-    -> unifier [Result variable]
+    -> unifier [Result variable (RulePattern (Target variable))]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule initial unifiedRule =
@@ -346,8 +350,8 @@ finalizeRulesParallel
     .  SimplifierVariable variable
     => MonadUnify unifier
     => Pattern (Target variable)
-    -> [UnifiedRule (Target variable)]
-    -> unifier (Results variable)
+    -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
+    -> unifier (Results variable (RulePattern (Target variable)))
 finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
@@ -361,10 +365,14 @@ finalizeRulesParallel initial unifiedRules = do
         }
 
 assertFunctionLikeResults
-    :: forall variable variable' m
-    .  (SimplifierVariable variable, SimplifierVariable variable', Monad m)
+    :: forall variable variable' rule m
+    .  SimplifierVariable variable
+    => SimplifierVariable variable'
+    => Monad m
+    => HasLeftPattern rule (Target variable')
+    => Eq (rule (Target variable'))
     => TermLike variable
-    -> Results variable'
+    -> Results variable' (rule (Target variable'))
     -> m ()
 assertFunctionLikeResults termLike results =
     let appliedRules = Result.appliedRule <$> Results.results results
@@ -377,8 +385,8 @@ finalizeRulesSequence
     .  SimplifierVariable variable
     => MonadUnify unifier
     => Pattern (Target variable)
-    -> [UnifiedRule (Target variable)]
-    -> unifier (Results variable)
+    -> [UnifiedRule (Target variable) (RulePattern (Target variable))]
+    -> unifier (Results variable (RulePattern (Target variable)))
 finalizeRulesSequence initial unifiedRules
   = do
     (results, remainder) <-
@@ -395,8 +403,11 @@ finalizeRulesSequence initial unifiedRules
   where
     initialTerm = Conditional.term initial
     finalizeRuleSequence'
-        :: UnifiedRule (Target variable)
-        -> State.StateT (Condition (Target variable)) unifier [Result variable]
+        :: UnifiedRule (Target variable) (RulePattern (Target variable))
+        -> State.StateT
+            (Condition (Target variable))
+            unifier
+            [Result variable (RulePattern (Target variable))]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
@@ -410,30 +421,32 @@ finalizeRulesSequence initial unifiedRules
         return results
 
 checkFunctionLike
-    ::  ( InternalVariable variable
-        , InternalVariable variable'
-        , Foldable f
-        , Eq (f (UnifiedRule variable'))
-        , Monoid (f (UnifiedRule variable'))
-        )
-    => f (UnifiedRule variable')
+    :: InternalVariable variable
+    => InternalVariable variable'
+    => Foldable f
+    => Eq (f (UnifiedRule variable' (rule variable')))
+    => Monoid (f (UnifiedRule variable' (rule variable')))
+    => HasLeftPattern rule variable'
+    => f (UnifiedRule variable' (rule variable'))
     -> TermLike variable
     -> Either String ()
-checkFunctionLike unifiedRules term
+checkFunctionLike unifiedRules pat
   | unifiedRules == mempty = pure ()
-  | TermLike.isFunctionPattern term =
+  | TermLike.isFunctionPattern pat =
     Foldable.traverse_ checkFunctionLikeRule unifiedRules
   | otherwise = Left . show . Pretty.vsep $
     [ "Expected function-like term, but found:"
-    , Pretty.indent 4 (unparse term)
+    , Pretty.indent 4 (unparse pat)
     ]
   where
-    checkFunctionLikeRule Conditional { term = RulePattern { left } }
+    checkFunctionLikeRule Conditional { term }
       | TermLike.isFunctionPattern left = return ()
       | otherwise = Left . show . Pretty.vsep $
         [ "Expected function-like left-hand side of rule, but found:"
         , Pretty.indent 4 (unparse left)
         ]
+      where
+        left = leftPattern term
 
 {- | Check that the final substitution covers the applied rule appropriately.
 
@@ -452,11 +465,14 @@ we added to the result.
 the axiom variables from the substitution and unwrap all the 'Target's.
 -}
 checkSubstitutionCoverage
-    :: forall variable unifier
-    .  (SimplifierVariable variable, MonadUnify unifier)
+    :: forall variable rule unifier
+    .  SimplifierVariable variable
+    => MonadUnify unifier
+    => HasLeftPattern rule (Target variable)
+    => Pretty.Pretty (rule (Target variable))
     => Pattern (Target variable)
     -- ^ Initial configuration
-    -> UnifiedRule (Target variable)
+    -> UnifiedRule (Target variable) (rule (Target variable))
     -- ^ Unified rule
     -> unifier ()
 checkSubstitutionCoverage initial unified
@@ -497,15 +513,17 @@ checkSubstitutionCoverage initial unified
 -- TODO (thomas.tuegel): Unit tests
 wouldNarrowWith
     :: Ord variable
-    => UnifiedRule variable -> Set (UnifiedVariable variable)
+    => HasLeftPattern rule variable
+    => UnifiedRule variable (rule variable)
+    -> Set (UnifiedVariable variable)
 wouldNarrowWith unified =
     Set.difference leftAxiomVariables substitutionVariables
   where
     leftAxiomVariables =
-        FreeVariables.getFreeVariables $ TermLike.freeVariables leftAxiom
+        FreeVariables.getFreeVariables $ freeVariables leftAxiom
       where
         Conditional { term = axiom } = unified
-        RulePattern { left = leftAxiom } = axiom
+        leftAxiom = leftPattern axiom
     Conditional { substitution } = unified
     substitutionVariables = Map.keysSet (Substitution.toMap substitution)
 
@@ -525,7 +543,7 @@ applyRulesParallel
     -- ^ Rewrite rules
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> unifier (Results variable)
+    -> unifier (Results variable (RulePattern (Target variable)))
 applyRulesParallel
     unificationProcedure
     -- Wrap the rule and configuration so that unification prefers to substitute
@@ -549,7 +567,7 @@ applyRewriteRulesParallel
     -- ^ Rewrite rules
     -> Pattern variable
     -- ^ Configuration being rewritten
-    -> unifier (Results variable)
+    -> unifier (Results variable (RulePattern (Target variable)))
 applyRewriteRulesParallel
     unificationProcedure
     (map getRewriteRule -> rules)
@@ -576,7 +594,7 @@ applyRulesSequence
     -- ^ Configuration being rewritten
     -> [RulePattern variable]
     -- ^ Rewrite rules
-    -> unifier (Results variable)
+    -> unifier (Results variable (RulePattern (Target variable)))
 applyRulesSequence
     unificationProcedure
     initial
@@ -600,7 +618,7 @@ applyRewriteRulesSequence
     -- ^ Configuration being rewritten
     -> [RewriteRule variable]
     -- ^ Rewrite rules
-    -> unifier (Results variable)
+    -> unifier (Results variable (RulePattern (Target variable)))
 applyRewriteRulesSequence
     unificationProcedure
     (toConfigurationVariables -> initialConfig)

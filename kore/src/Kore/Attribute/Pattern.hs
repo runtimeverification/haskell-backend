@@ -53,7 +53,7 @@ data Pattern variable =
     Pattern
         { patternSort :: !Sort
         -- ^ The sort determined by the verifier.
-        , freeVariables :: !(FreeVariables variable)
+        , freeVars :: !(FreeVariables variable)
         -- ^ The free variables of the pattern.
         , functional :: !Functional
         , function :: !Function
@@ -90,7 +90,7 @@ instance
     synthetic base =
         Pattern
             { patternSort = synthetic (patternSort <$> base)
-            , freeVariables = synthetic (freeVariables <$> base)
+            , freeVars = synthetic (freeVars <$> base)
             , functional = synthetic (functional <$> base)
             , function = synthetic (function <$> base)
             , defined = synthetic (defined <$> base)
@@ -109,7 +109,7 @@ mapVariables
     => (variable1 -> variable2)
     -> Pattern variable1 -> Pattern variable2
 mapVariables mapping =
-    Lens.over (field @"freeVariables") (mapFreeVariables mapping)
+    Lens.over (field @"freeVars") (mapFreeVariables mapping)
 
 {- | Use the provided traversal to replace the free variables in a 'Pattern'.
 
@@ -123,7 +123,7 @@ traverseVariables
     -> Pattern variable1
     -> m (Pattern variable2)
 traverseVariables traversing =
-    field @"freeVariables" (traverseFreeVariables traversing)
+    field @"freeVars" (traverseFreeVariables traversing)
 
 {- | Delete the given variable from the set of free variables.
  -}
@@ -133,4 +133,7 @@ deleteFreeVariable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =
-    Lens.over (field @"freeVariables") (bindVariable variable)
+    Lens.over (field @"freeVars") (bindVariable variable)
+
+instance HasFreeVariables (Pattern variable) variable where
+    freeVariables = freeVars

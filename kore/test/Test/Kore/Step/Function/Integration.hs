@@ -77,12 +77,12 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import qualified Kore.Step.Function.Memo as Memo
-import Kore.Step.Rule
+import Kore.Step.EqualityPattern
     ( EqualityRule (..)
     )
-import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
-    , rulePattern
+import Kore.Step.EqualityPattern as EqualityPattern
+    ( EqualityPattern (..)
+    , equalityPattern
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.InjSimplifier
@@ -1233,8 +1233,8 @@ axiom
     -> TermLike Variable
     -> Predicate Variable
     -> EqualityRule Variable
-axiom left right predicate =
-    EqualityRule (RulePattern.rulePattern left right) { requires = predicate }
+axiom left right constraint =
+    EqualityRule (EqualityPattern.equalityPattern left right) { constraint }
 
 axiom_
     :: TermLike Variable

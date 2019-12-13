@@ -105,15 +105,19 @@ import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
 import Kore.Step.Rule
+    ( extractImplicationClaims
+    , extractRewriteAxioms
+    )
+import Kore.Step.EqualityPattern
     ( EqualityRule
-    , ReachabilityRule (..)
+    )
+import Kore.Step.RulePattern
+    ( ReachabilityRule (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
-    , extractImplicationClaims
-    , extractRewriteAxioms
     , getRewriteRule
     )
-import Kore.Step.Rule as RulePattern
+import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
 import qualified Kore.Step.Rule.Combine as Rules

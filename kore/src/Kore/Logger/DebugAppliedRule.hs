@@ -10,7 +10,7 @@ module Kore.Logger.DebugAppliedRule
     , debugAppliedRule
     , DebugAppliedRuleOptions
     , parseDebugAppliedRuleOptions
-    , filterDebugAppliedRule
+--    , filterDebugAppliedRule
     ) where
 
 import Control.Applicative
@@ -42,14 +42,14 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
 import Kore.Logger
 import qualified Kore.Parser.Lexeme as Parser
-import Kore.Step.Axiom.Identifier
-    ( matchAxiomIdentifier
+--import Kore.Step.Axiom.Identifier
+--    ( matchAxiomIdentifier
+--    )
+import Kore.Step.AxiomPattern
+    ( HasMapVariables (..)
+--    , HasLeftPattern (..)
     )
-import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
-import Kore.Step.Rule
-    ( RulePattern
-    )
-import qualified Kore.Step.Rule as Rule
+--import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import Kore.Syntax.Id
     ( Id
     )
@@ -61,23 +61,23 @@ The rule's 'RulePattern.requires' clause is combined with the unification
 solution and the renamed rule is wrapped with the combined condition.
 
  -}
-type UnifiedRule variable = Conditional variable (RulePattern variable)
+type UnifiedRule = Conditional
 
 {- | A log 'Entry' when a rule is applied.
 
 We will log the applied rule and its unification or matching condition.
 
  -}
-newtype DebugAppliedRule =
+newtype DebugAppliedRule rule =
     DebugAppliedRule
-    { appliedRule :: UnifiedRule Variable
+    { appliedRule :: UnifiedRule Variable rule
     }
     deriving (Eq, Typeable)
 
-instance Entry DebugAppliedRule where
+instance (Typeable rule, Pretty rule) => Entry (DebugAppliedRule rule) where
     entrySeverity _ = Debug
 
-instance Pretty DebugAppliedRule where
+instance Pretty rule => Pretty (DebugAppliedRule rule) where
     pretty DebugAppliedRule { appliedRule } =
         Pretty.vsep
             [ "Applied rule:"
@@ -100,11 +100,14 @@ instance Pretty DebugAppliedRule where
 debugAppliedRule
     :: MonadLog log
     => InternalVariable variable
-    => UnifiedRule variable
+    => HasMapVariables rule
+    => Typeable rule
+    => Pretty (rule Variable)
+    => UnifiedRule variable (rule variable)
     -> log ()
 debugAppliedRule rule =
     logM . DebugAppliedRule
-    $ Conditional.mapVariables Rule.mapVariables toVariable rule
+    $ Conditional.mapVariables mapVariables toVariable rule
 
 {- | Options (from the command-line) specifying when to log specific rules.
 
@@ -140,15 +143,21 @@ parseDebugAppliedRuleOptions =
         help = "Log every rule applied for the symbol named IDENTIFIER."
     readId = Options.maybeReader (Parsec.parseMaybe Parser.idParser)
 
+{-
 {- | Function used to modify a 'LogAction' to display selected applied rules.
  -}
 filterDebugAppliedRule
-    :: DebugAppliedRuleOptions
+    :: forall rule variable
+     . HasLeftPattern rule variable
+    => Ord variable
+    => Debug variable
+    => Show variable
+    => DebugAppliedRuleOptions
     -> SomeEntry
     -> Bool
 filterDebugAppliedRule debugAppliedRuleOptions entry =
     case matchDebugAppliedRule entry of
-        Just DebugAppliedRule { appliedRule } ->
+        (Just DebugAppliedRule { appliedRule } :: Maybe (DebugAppliedRule (rule variable))) ->
             isSelectedRule
               where
                 isSelectedRule =
@@ -162,8 +171,9 @@ filterDebugAppliedRule debugAppliedRuleOptions entry =
         _ -> False
   where
     DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
-    matchAppliedRuleId = matchAxiomIdentifier . Rule.left . Conditional.term
+    matchAppliedRuleId = matchAxiomIdentifier . leftPattern . Conditional.term
 
-matchDebugAppliedRule :: SomeEntry -> Maybe DebugAppliedRule
+matchDebugAppliedRule :: SomeEntry -> Maybe (DebugAppliedRule rule)
 matchDebugAppliedRule entry =
     fromEntry entry
+-}

@@ -28,7 +28,7 @@ import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as Kore
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import qualified Kore.Step.Function.Evaluator as Kore
-import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.EqualityPattern as EqualityPattern
 import qualified Kore.Step.Simplification.Simplify as Kore
 import Kore.Syntax.Application
     ( Application (..)
@@ -92,8 +92,8 @@ mkApplySymbol = synthesize . TermLike.ApplySymbolF
 fEvaluator :: Kore.BuiltinAndAxiomSimplifier
 fEvaluator =
     Kore.simplificationEvaluation
-    $ RulePattern.EqualityRule
-    $ RulePattern.rulePattern left right
+    $ EqualityPattern.EqualityRule
+    $ EqualityPattern.equalityPattern left right
   where
     left = mkApplySymbol (f x)
     right = x

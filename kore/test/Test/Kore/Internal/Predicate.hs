@@ -274,8 +274,8 @@ test_predicate =
     , testCase "freeVariables"
         ( do
             assertBool "top has no free variables"
-                $ null
-                $ Predicate.freeVariables
+                $ (null :: FreeVariables.FreeVariables Variable -> Bool)
+                $ freeVariables
                     (makeTruePredicate_ :: Predicate Variable)
             assertEqual "equals predicate has two variables"
                 (Set.fromList
@@ -283,10 +283,10 @@ test_predicate =
                     , ElemVar $ b Mock.testSort
                     ]
                 )
-                (FreeVariables.getFreeVariables $ Predicate.freeVariables pr1)
+                (FreeVariables.getFreeVariables $ freeVariables pr1)
             assertBool "quantified variables are not included"
                 $ not . FreeVariables.isFreeVariable (ElemVar $ a Mock.testSort)
-                $ Predicate.freeVariables
+                $ freeVariables
                 $ makeExistsPredicate (a Mock.testSort)
                 $ makeEqualsPredicate_
                     (mkElemVar $ a Mock.testSort)

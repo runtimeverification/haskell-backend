@@ -53,6 +53,9 @@ import Debug
     ( formatExceptionInfo
     )
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.Debug
@@ -85,19 +88,21 @@ import qualified Kore.Profiler.Profile as Profile
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
+    ( QualifiedAxiomPattern (..)
+    , fromSentenceAxiom
+    )
+import Kore.Step.RulePattern
     ( AllPathRule (..)
     , FromRulePattern (..)
     , OnePathRule (..)
-    , QualifiedAxiomPattern (..)
     , RHS
     , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
-    , fromSentenceAxiom
     , topExistsToImplicitForall
     )
-import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
 import Kore.Step.Simplification.Data
@@ -138,7 +143,8 @@ import Kore.Unparser
     , unparseToText
     )
 import Kore.Variables.UnifiedVariable
-    ( extractElementVariable
+    ( UnifiedVariable
+    , extractElementVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
@@ -776,7 +782,7 @@ removeDestinationWorker stateConstructor goal = do
                     else return Proven
   where
     configuration = getConfiguration goal
-    configFreeVars = Pattern.freeVariables configuration
+    configFreeVars = freeVariables configuration
 
     RulePattern { rhs } = toRulePattern goal
 
@@ -948,7 +954,8 @@ deriveSeq rules goal = errorBracket $ do
 {- | The predicate to remove the destination from the present configuration.
  -}
 removalPredicate
-    :: SimplifierVariable variable
+    :: forall variable m
+    .  SimplifierVariable variable
     => MonadSimplify m
     => Pattern variable
     -- ^ Destination
@@ -1015,12 +1022,13 @@ removalPredicate
                     "Cannot quantify non-element variables: "
                     : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
             else remainderElementVariables config dest
+    configVariables :: Pattern variable -> Set.Set (UnifiedVariable variable)
     configVariables config =
         Attribute.FreeVariables.getFreeVariables
-        $ Pattern.freeVariables config
+        $ freeVariables config
     destVariables dest =
         Attribute.FreeVariables.getFreeVariables
-        $ Pattern.freeVariables dest
+        $ freeVariables dest
     remainderVariables config dest =
         Set.toList
         $ Set.difference

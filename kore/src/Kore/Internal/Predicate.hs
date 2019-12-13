@@ -38,7 +38,6 @@ module Kore.Internal.Predicate
     , makeTruePredicate_
     , isSimplified
     , markSimplified
-    , freeVariables
     , isFreeOf
     , freeElementVariables
     , hasFreeVariable
@@ -98,8 +97,7 @@ import Kore.Error
     , koreFail
     )
 import Kore.Internal.TermLike hiding
-    ( freeVariables
-    , hasFreeVariable
+    ( hasFreeVariable
     , isSimplified
     , mapVariables
     , markSimplified
@@ -692,10 +690,8 @@ isPredicate = Either.isRight . makePredicate
 mapVariables :: Ord to => (from -> to) -> Predicate from -> Predicate to
 mapVariables f = fmap (TermLike.mapVariables f)
 
-{- | Extract the set of free variables from a @Predicate@.
--}
-freeVariables :: Predicate variable -> FreeVariables variable
-freeVariables = TermLike.freeVariables . unwrapPredicate
+instance HasFreeVariables (Predicate variable) variable where
+    freeVariables = freeVariables . unwrapPredicate
 
 isSimplified :: Predicate variable -> Bool
 isSimplified (GenericPredicate termLike) = TermLike.isSimplified termLike
