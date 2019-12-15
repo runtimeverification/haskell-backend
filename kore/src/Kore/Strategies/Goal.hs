@@ -32,9 +32,8 @@ import Control.Exception
     , throw
     )
 import Control.Monad.Catch
-    ( MonadCatch
-    , onException
-    , Exception
+    ( Exception
+    , MonadCatch
     , catch
     )
 import qualified Control.Monad.Trans as Monad.Trans
@@ -59,9 +58,6 @@ import Data.Witherable
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
-import Debug
-    ( formatExceptionInfo
-    )
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
@@ -146,7 +142,6 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
-    , unparseToText
     )
 import Kore.Variables.UnifiedVariable
     ( extractElementVariable
@@ -776,7 +771,7 @@ removeDestinationWorker
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 removeDestinationWorker stateConstructor goal =
-    errorBracket . assertEnsuresIsTop goalAsRulePattern $ do
+    enrichEventualException . assertEnsuresIsTop goalAsRulePattern $ do
         removal <- removalPredicate (destination right') configuration
         if isTop removal
             then return . stateConstructor $ goal
@@ -805,11 +800,9 @@ removeDestinationWorker stateConstructor goal =
             }
     destination _ = error "Right hand side of claim is ill-formed."
 
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
+    enrichEventualException action =
+        catch action $
+           \(e :: SomeException) -> throw (GoalException e configuration)
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
@@ -817,7 +810,7 @@ simplify
     => FromRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = errorBracket $ do
+simplify goal = enrichEventualException $ do
     configs <-
         Monad.Trans.lift
         $ simplifyAndRemoveTopExists configuration
@@ -832,11 +825,9 @@ simplify goal = errorBracket $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
+    enrichEventualException action =
+        catch action $
+           \(e :: SomeException) -> throw (GoalException e configuration)
 
 isTriviallyValid
     :: ToRulePattern goal
@@ -914,7 +905,6 @@ derivePar rules goal = enrichEventualException $ do
     configuration :: Pattern Variable
     configuration = getConfiguration goal
 
-    --enrichEventualException :: forall mc a . MonadCatch mc => mc a -> mc a
     enrichEventualException action =
         catch action $
            \(e :: SomeException) -> throw (GoalException e configuration)
@@ -932,7 +922,7 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = errorBracket $ do
+deriveSeq rules goal = enrichEventualException $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -973,11 +963,9 @@ deriveSeq rules goal = errorBracket $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
+    enrichEventualException action =
+        catch action $
+           \(e :: SomeException) -> throw (GoalException e configuration)
 
 {- | The predicate to remove the destination from the present configuration.
  -}

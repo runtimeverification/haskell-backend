@@ -96,7 +96,6 @@ import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
-    , toTermLike
     )
 import Kore.Internal.Predicate
     ( makePredicate
@@ -373,7 +372,11 @@ parserInfoModifiers =
 main :: IO ()
 main = do
     options <- mainGlobal parseKoreExecOptions parserInfoModifiers
-    Foldable.forM_ (localOptions options) mainWithOptions
+    Foldable.forM_ (localOptions options) $ \o ->
+        catch (mainWithOptions o) $
+            \(Goal.GoalException (e :: SomeException) p) -> do
+                renderResult o ("last configuration = " <> unparse p)
+                throw e
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
@@ -447,8 +450,7 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
-    let exeWorker :: MonadExecute exe => exe (ExitCode, TermLike Variable)
-        exeWorker = do
+    (exitCode, final) <- execute execOptions mainModule $ do
         let KoreExecOptions { stepLimit } = execOptions
             KoreProveOptions { graphSearch, bmc } = proveOptions
         if bmc
@@ -466,10 +468,6 @@ koreProve execOptions proveOptions = do
             else
                 either failure (const success)
                 <$> prove graphSearch stepLimit mainModule specModule
-    (exitCode, final) <- execute execOptions mainModule $
-        catch exeWorker $
-            \(Goal.GoalException (e :: SomeException) p) -> do
-                pure $ (ExitFailure 2, toTermLike p)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
