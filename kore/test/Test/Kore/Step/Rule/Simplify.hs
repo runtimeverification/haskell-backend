@@ -33,6 +33,7 @@ import Kore.Logger.Output
     )
 import Kore.Step.Rule
     ( OnePathRule (OnePathRule)
+    , RHS (..)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.Rule as Rule.DoNotUse
@@ -57,9 +58,12 @@ instance OnePathRuleBase Pair where
     Pair (t1, p1) `rewritesTo` Pair (t2, p2) =
         OnePathRule RulePattern
             { left = t1
-            , right = t2
             , requires = p1
-            , ensures = p2
+            , rhs = RHS
+                { existentials = []
+                , right = t2
+                , ensures = p2
+                }
             , antiLeft = Nothing
             , attributes = def
             }

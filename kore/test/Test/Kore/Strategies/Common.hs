@@ -41,19 +41,22 @@ runVerification
     :: Verification.Claim claim
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
+    => Show (Rule claim)
     => Limit Natural
+    -> Limit Natural
     -> [Rule claim]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
-runVerification stepLimit axioms claims =
+runVerification breadthLimit depthLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
+        breadthLimit
         BreadthFirst
         claims
         axioms
-        (map applyStepLimit . selectUntrusted $ claims)
+        (map applyDepthLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env
-    applyStepLimit claim = (claim, stepLimit)
+    applyDepthLimit claim = (claim, depthLimit)
     selectUntrusted = filter (not . isTrusted)

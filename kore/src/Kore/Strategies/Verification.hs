@@ -32,10 +32,12 @@ import qualified Data.Stream.Infinite as Stream
 import Data.Typeable
     ( Typeable
     )
-
 import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
+    )
+import Kore.Step.Rule
+    ( RHS
     )
 import Kore.Step.Rule.Expand
 import Kore.Step.Rule.Simplify
@@ -99,14 +101,17 @@ verify
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
-    => GraphSearchOrder
+    => Show (Rule claim)
+    => Limit Natural
+    -> GraphSearchOrder
     -> [claim]
     -> [Rule claim]
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (Pattern Variable) m ()
-verify searchOrder claims axioms = mapM_ (verifyClaim searchOrder claims axioms)
+verify breadthLimit searchOrder claims axioms =
+    mapM_ (verifyClaim breadthLimit searchOrder claims axioms)
 
 verifyClaim
     :: forall claim m
@@ -114,22 +119,25 @@ verifyClaim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
-    => GraphSearchOrder
+    => Show (Rule claim)
+    => Limit Natural
+    -> GraphSearchOrder
     -> [claim]
     -> [Rule claim]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
-verifyClaim searchOrder claims axioms (goal, stepLimit) =
+verifyClaim breadthLimit searchOrder claims axioms (goal, depthLimit) =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
         destination = getDestination goal
         limitedStrategy =
             Limit.takeWithin
-                stepLimit
+                depthLimit
                 (Foldable.toList $ strategy goal claims axioms)
     executionGraph <-
         runStrategyWithSearchOrder
+            breadthLimit
             (modifiedTransitionRule destination)
             limitedStrategy
             searchOrder
@@ -138,7 +146,7 @@ verifyClaim searchOrder claims axioms (goal, stepLimit) =
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     modifiedTransitionRule
-        :: Pattern Variable
+        :: RHS Variable
         -> Prim claim
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
@@ -199,11 +207,11 @@ transitionRule'
     .  (MonadCatch m, MonadSimplify m)
     => Claim claim
     => claim
-    -> Pattern Variable
+    -> RHS Variable
     -> Prim claim
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' ruleType destination prim state = do
-    let goal = flip (makeRuleFromPatterns ruleType) destination <$> state
+    let goal = flip (configurationDestinationToRule ruleType) destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next

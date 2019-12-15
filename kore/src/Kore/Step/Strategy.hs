@@ -45,13 +45,16 @@ module Kore.Step.Strategy
     , executionHistoryStep
     , emptyExecutionGraph
     , module Kore.Step.Transition
+    , LimitExceeded (..)
     ) where
 
 import Control.Applicative
     ( Alternative (empty, (<|>))
     )
+import qualified Control.Exception as Exception
 import Control.Monad
-    ( (>=>)
+    ( when
+    , (>=>)
     )
 import Control.Monad.State.Strict
     ( MonadState
@@ -64,12 +67,17 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import Data.Limit
+    ( Limit (..)
+    , withinLimit
+    )
 import qualified Data.List as List
 import Data.Maybe
 import Data.Sequence
     ( Seq
     )
 import qualified Data.Sequence as Seq
+import Data.Typeable
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -87,6 +95,7 @@ import Prelude hiding
     )
 
 import Kore.Step.Transition
+import Numeric.Natural
 
 assert :: Bool -> a -> a
 assert b a = if b then a else error "assertion failed"
@@ -368,6 +377,12 @@ emptyExecutionGraph config =
 -}
 data GraphSearchOrder = BreadthFirst | DepthFirst deriving Eq
 
+newtype LimitExceeded instr = LimitExceeded (Seq (Graph.Node, [instr]))
+    deriving (Show, Typeable)
+
+instance (Show instr, Typeable instr)
+    => Exception.Exception (LimitExceeded instr)
+
 {- | Execute a 'Strategy'.
 
  The primitive strategy rule is used to execute the 'apply' strategy. The
@@ -387,12 +402,15 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 constructExecutionGraph
     :: forall m config rule instr
     .  MonadProfiler m
-    => (instr -> config -> TransitionT rule m config)
+    => Show instr
+    => Typeable instr
+    => Limit Natural
+    -> (instr -> config -> TransitionT rule m config)
     -> [instr]
     -> GraphSearchOrder
     -> config
     -> m (ExecutionGraph config rule)
-constructExecutionGraph transit instrs0 searchOrder0 config0 = do
+constructExecutionGraph breadthLimit transit instrs0 searchOrder0 config0 = do
     finalGraph <- State.execStateT
                     (unfoldWorker initialSeed searchOrder0)
                     initialGraph
@@ -414,6 +432,8 @@ constructExecutionGraph transit instrs0 searchOrder0 config0 = do
       | []              <- instrs = unfoldWorker rest searchOrder
       | instr : instrs' <- instrs
       = Profile.executionQueueLength (Seq.length rest) $ do
+        when (exeedsLimit rest)
+            $ Exception.throw $ LimitExceeded rest
         nodes' <- applyInstr instr node
         let seeds = map (withInstrs instrs') nodes'
         case searchOrder of
@@ -429,6 +449,8 @@ constructExecutionGraph transit instrs0 searchOrder0 config0 = do
             DepthFirst -> unfoldWorker
                               (Seq.fromList seeds <> rest)
                               searchOrder
+
+    exeedsLimit = not . withinLimit breadthLimit . fromIntegral . Seq.length
 
     withInstrs instrs nodes = (nodes, instrs)
 
@@ -512,20 +534,26 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 runStrategy
     :: forall m prim rule config
     .  MonadProfiler m
-    => (prim -> config -> TransitionT rule m config)
+    => Show prim
+    => Typeable prim
+    => Limit Natural
+    -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies
     -> config
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
-runStrategy applyPrim instrs0 config0 =
-    runStrategyWithSearchOrder applyPrim instrs0 BreadthFirst config0
+runStrategy breadthLimit applyPrim instrs0 config0 =
+    runStrategyWithSearchOrder breadthLimit applyPrim instrs0 BreadthFirst config0
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
     .  MonadProfiler m
-    => (prim -> config -> TransitionT rule m config)
+    => Show prim
+    => Typeable prim
+    => Limit Natural
+    -> (prim -> config -> TransitionT rule m config)
     -- ^ Primitive strategy rule
     -> [Strategy prim]
     -- ^ Strategies
@@ -534,8 +562,9 @@ runStrategyWithSearchOrder
     -> config
     -- ^ Initial configuration
     -> m (ExecutionGraph config rule)
-runStrategyWithSearchOrder applyPrim instrs0 searchOrder0 config0 =
+runStrategyWithSearchOrder breadthLimit applyPrim instrs0 searchOrder0 config0 =
     constructExecutionGraph
+        breadthLimit
         (transitionRule applyPrim)
         instrs0
         searchOrder0

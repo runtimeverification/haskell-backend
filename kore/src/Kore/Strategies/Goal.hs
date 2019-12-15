@@ -17,7 +17,7 @@ module Kore.Strategies.Goal
     , onePathFollowupStep
     , allPathFirstStep
     , allPathFollowupStep
-    , makeRuleFromPatterns
+    , configurationDestinationToRule
     , getConfiguration
     , getDestination
     , transitionRuleTemplate
@@ -82,10 +82,8 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
-    ( pattern And_
-    , isFunctionPattern
+    ( isFunctionPattern
     , mkAnd
-    , topExistsToImplicitForall
     )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
@@ -97,12 +95,13 @@ import Kore.Step.Rule
     , FromRulePattern (..)
     , OnePathRule (..)
     , QualifiedAxiomPattern (..)
+    , RHS
     , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
-    , assertEnsuresIsTop
     , fromSentenceAxiom
+    , topExistsToImplicitForall
     )
 import qualified Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -746,8 +745,8 @@ allPathFollowupStep claims axioms =
 
 -- | Remove the destination of the goal.
 removeDestination
-    :: MonadCatch m
-    => MonadSimplify m
+    :: MonadSimplify m
+    => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => ProofState goal goal
@@ -763,16 +762,15 @@ removeDestination =
         state -> return state
 
 removeDestinationWorker
-    :: MonadCatch m
-    => MonadSimplify m
+    :: MonadSimplify m
+    => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal =
-    enrichEventualException . assertEnsuresIsTop goalAsRulePattern $ do
-        removal <- removalPredicate (destination right') configuration
+removeDestinationWorker stateConstructor goal = enrichEventualException $ do
+        removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal
             else do
@@ -787,18 +785,9 @@ removeDestinationWorker stateConstructor goal =
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
 
-    goalAsRulePattern = toRulePattern goal
-    RulePattern { right } = goalAsRulePattern
+    RulePattern { rhs } = toRulePattern goal
 
-    right' = topExistsToImplicitForall configFreeVars right
-
-    destination (And_ _ pred' term') =
-        Conditional
-            { term = term'
-            , predicate = Predicate.wrapPredicate pred'
-            , substitution = mempty
-            }
-    destination _ = error "Right hand side of claim is ill-formed."
+    destination = topExistsToImplicitForall configFreeVars rhs
 
     enrichEventualException action =
         catch action $
@@ -816,10 +805,10 @@ simplify goal = enrichEventualException $ do
         $ simplifyAndRemoveTopExists configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
-        then pure $ makeRuleFromPatterns goal Pattern.bottom destination
+        then pure $ configurationDestinationToRule goal Pattern.bottom destination
         else do
             let simplifiedRules =
-                    fmap (flip (makeRuleFromPatterns goal) destination) filteredConfigs
+                    fmap (flip (configurationDestinationToRule goal) destination) filteredConfigs
             Foldable.asum (pure <$> simplifiedRules)
   where
     destination = getDestination goal
@@ -894,8 +883,8 @@ derivePar rules goal = enrichEventualException $ do
                         (pure . GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
-                        (flip (makeRuleFromPatterns goal) destination)
-                        (flip (makeRuleFromPatterns goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
                         (Result.mergeResults results)
             results' <-
                 traverseConfigs (mapRules onePathResults)
@@ -953,8 +942,8 @@ deriveSeq rules goal = enrichEventualException $ do
                         (pure . GoalRemainder)
             let onePathResults =
                     Result.mapConfigs
-                        (flip (makeRuleFromPatterns goal) destination)
-                        (flip (makeRuleFromPatterns goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
+                        (flip (configurationDestinationToRule goal) destination)
                         (Result.mergeResults results)
             results' <-
                 traverseConfigs (mapRules onePathResults)
@@ -1067,27 +1056,26 @@ getDestination
     :: forall goal
     .  ToRulePattern goal
     => goal
-    -> Pattern Variable
-getDestination (toRulePattern -> RulePattern { right, ensures }) =
-    Pattern.withCondition right (Conditional.fromPredicate ensures)
+    -> RHS Variable
+getDestination (toRulePattern -> RulePattern { rhs }) = rhs
 
-makeRuleFromPatterns
+{-|Given a rule to use as a prototype, a 'Pattern' to use as the configuration
+and a 'RHS' containing the destination, makes a rule out of them.
+-}
+configurationDestinationToRule
     :: forall rule
     .  FromRulePattern rule
     => rule
     -> Pattern Variable
-    -> Pattern Variable
+    -> RHS Variable
     -> rule
-makeRuleFromPatterns ruleType configuration destination =
+configurationDestinationToRule ruleType configuration rhs =
     let (left, Condition.toPredicate -> requires) =
             Pattern.splitTerm configuration
-        (right, Condition.toPredicate -> ensures) =
-            Pattern.splitTerm destination
     in fromRulePattern ruleType $ RulePattern
         { left
         , antiLeft = Nothing
-        , right
         , requires
-        , ensures
+        , rhs
         , attributes = Default.def
         }

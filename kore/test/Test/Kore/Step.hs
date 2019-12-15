@@ -16,6 +16,9 @@ import Data.Default
 import Data.Function
 import Data.Generics.Product
 
+import Data.Limit
+    ( Limit (..)
+    )
 import Data.Text
     ( Text
     )
@@ -62,6 +65,7 @@ import Kore.Step
 import Kore.Step.Rule
     ( RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
+    , injectTermIntoRHS
     )
 import Kore.Step.Rule as RulePattern
     ( RulePattern (..)
@@ -141,6 +145,7 @@ takeSteps (Start start, wrappedAxioms) =
   where
     makeExecutionGraph configuration axioms =
         Strategy.runStrategy
+            Unlimited
             transitionRule
             (repeat $ allRewrites axioms)
             (pure configuration)
@@ -368,17 +373,15 @@ test_SMT =
             [ RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
-                , right = Mock.a
-                , ensures = makeTruePredicate_
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicatePositive
+                , rhs = injectTermIntoRHS Mock.a
                 , attributes = def
                 }
             , RewriteRule RulePattern
                 { left = smtTerm (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
-                , right = Mock.c
-                , ensures = makeTruePredicate_
+                , rhs = injectTermIntoRHS Mock.c
                 , requires =
                     smtSyntaxPredicate (TermLike.mkElemVar Mock.x) PredicateNegated
                 , attributes = def
@@ -409,8 +412,7 @@ test_SMT =
             [ RewriteRule RulePattern
                 { left = Mock.functionalConstr10 (TermLike.mkElemVar Mock.x)
                 , antiLeft = Nothing
-                , right = Mock.a
-                , ensures = makeTruePredicate_
+                , rhs = injectTermIntoRHS Mock.a
                 , requires =
                     makeEqualsPredicate_
                         (Mock.lessInt
@@ -531,7 +533,7 @@ runStep
 runStep configuration axioms =
     (<$>) pickFinal
     $ runSimplifier mockEnv
-    $ runStrategy transitionRule [allRewrites axioms] configuration
+    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration
 
 runStepMockEnv
     :: Pattern Variable
@@ -541,4 +543,4 @@ runStepMockEnv
 runStepMockEnv configuration axioms =
     (<$>) pickFinal
     $ runSimplifier Mock.env
-    $ runStrategy transitionRule [allRewrites axioms] configuration
+    $ runStrategy Unlimited transitionRule [allRewrites axioms] configuration
