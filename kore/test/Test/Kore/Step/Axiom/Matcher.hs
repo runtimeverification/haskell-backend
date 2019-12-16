@@ -71,6 +71,9 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
+import Debug.Trace
+import Kore.Unparser
+
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
     [ testGroup "Application"
@@ -906,6 +909,10 @@ test_matching_Map =
         , (ElemVar yInt, mkInt 1)
         , (ElemVar mMap, mkMap [(mkInt 1, mkInt 2)] [])
         ]
+    , matches "x:Int |-> 0 matches x:Int |-> y:Int"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [])
+        (mkMap [(mkElemVar xInt, mkInt 0       )] [])
+        [(ElemVar yInt, mkInt 0)]
     ]
 
 xInt, yInt, zInt, mMap :: ElementVariable Variable
@@ -961,6 +968,8 @@ withMatch
     -> TestTree
 withMatch check comment term1 term2 =
     testCase comment $ do
+        traceM (unparseToString term1)
+        traceM (unparseToString term2)
         actual <- match term1 term2
         check actual
 

@@ -36,6 +36,9 @@ import Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import Data.Function
 import Data.Generics.Product
+import Data.List
+    ( sortBy
+    )
 import Data.Map
     ( Map
     )
@@ -141,6 +144,7 @@ matchIncremental
 matchIncremental termLike1 termLike2 =
     Monad.State.evalStateT matcher initial
   where
+    matcher :: MatcherT variable unifier (Condition variable)
     matcher = pop >>= maybe done (\pair -> matchOne pair >> matcher)
 
     initial =
@@ -307,7 +311,7 @@ matchBuiltinSet
     :: (MatchingVariable variable, MonadUnify unifier)
     => Pair (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
-matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) = do
+matchBuiltinSet (Pair (BuiltinSet_ set1) (BuiltinSet_ set2)) =
     matchNormalizedAc pushSetValue wrapTermLike normalized1 normalized2
   where
     normalized1 = Builtin.unwrapAc $ Builtin.builtinAcChild set1
@@ -636,8 +640,14 @@ rightAlignLists internal1 internal2
     (head2, tail2) = Seq.splitAt (length list2 - length list1) list2
 
 matchNormalizedAc
-    :: MonadUnify unifier
-    => (Pair (Builtin.Value normalized (TermLike variable)) -> MatcherT variable unifier ())
+    :: forall normalized unifier variable
+    .   ( Builtin.AcWrapper normalized
+        , MatchingVariable variable
+        , MonadUnify unifier
+        )
+    =>  ( Pair (Builtin.Value normalized (TermLike variable))
+        -> MatcherT variable unifier ()
+        )
     ->  (Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
         -> TermLike variable
         )
@@ -645,25 +655,110 @@ matchNormalizedAc
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
-  | [] <- abstract2, [] <- opaque2
-  , [] <- abstract1
+  | [] <- excessAbstract2, [] <- opaque2
+  , [] <- excessAbstract1
   = do
-    Monad.guard (null excess1)
+    Monad.guard (null excessConcrete1)
     case opaque1 of
-        []       -> Monad.guard (null excess2)
+        []       -> do
+            Monad.guard (null excessConcrete2)
+            Monad.guard (null excessAbstract2)
         [frame1] -> push (Pair frame1 normalized2')
         _        -> empty
     Monad.Trans.lift $ Foldable.traverse_ pushValue concrete12
+    Monad.Trans.lift $ Foldable.traverse_ pushValue abstractMerge
   where
     normalized2' =
-        wrapTermLike normalized2 { Builtin.concreteElements = excess2 }
+        wrapTermLike normalized2
+            { Builtin.concreteElements = excessConcrete2
+            }
     abstract1 = Builtin.elementsWithVariables normalized1
     concrete1 = Builtin.concreteElements normalized1
     opaque1 = Builtin.opaque normalized1
     abstract2 = Builtin.elementsWithVariables normalized2
     concrete2 = Builtin.concreteElements normalized2
     opaque2 = Builtin.opaque normalized2
-    excess1 = Map.difference concrete1 concrete2
-    excess2 = Map.difference concrete2 concrete1
+
+    excessConcrete1 = Map.difference concrete1 concrete2
+    excessConcrete2 = Map.difference concrete2 concrete1
     concrete12 = Map.intersectionWith Pair concrete1 concrete2
+
+    IntersectionDifference
+        { intersection = abstractMerge
+        , excessFirst = excessAbstract1
+        , excessSecond = excessAbstract2
+        } = abstractIntersectionMerge abstract1 abstract2
+
+    abstractIntersectionMerge
+        :: [Builtin.Element normalized (TermLike variable)]
+        -> [Builtin.Element normalized (TermLike variable)]
+        -> IntersectionDifference
+            (Builtin.Element normalized (TermLike variable))
+            (Pair (Builtin.Value normalized (TermLike variable)))
+    abstractIntersectionMerge =
+        keyBasedIntersectionDifference elementKey elementMerger
+      where
+        elementKey
+            :: Builtin.Element normalized (TermLike variable)
+            -> TermLike variable
+        elementKey = fst . Builtin.unwrapElement
+        elementMerger
+            :: Builtin.Element normalized (TermLike variable)
+            -> Builtin.Element normalized (TermLike variable)
+            -> Pair (Builtin.Value normalized (TermLike variable))
+        elementMerger = Pair `on` (snd . Builtin.unwrapElement)
 matchNormalizedAc _ _ _ _ = empty
+
+data IntersectionDifference a b
+    = IntersectionDifference
+        { intersection :: ![b]
+        , excessFirst :: ![a]
+        , excessSecond :: ![a]
+        }
+
+keyBasedIntersectionDifference
+    :: forall a b k
+    .  Ord k
+    => (a -> k)
+    -> (a -> a -> b)
+    -> [a]
+    -> [a]
+    -> IntersectionDifference a b
+keyBasedIntersectionDifference keyExtractor merger firsts seconds =
+    keyBasedIntersectionDifferenceHelper
+        IntersectionDifference
+            {intersection = [], excessFirst = [], excessSecond = []}
+        (sortBy (compare `on` keyExtractor) firsts)
+        (sortBy (compare `on` keyExtractor) seconds)
+  where
+    keyBasedIntersectionDifferenceHelper
+        :: IntersectionDifference a b
+        -> [a]
+        -> [a]
+        -> IntersectionDifference a b
+    keyBasedIntersectionDifferenceHelper
+        result
+        []
+        []
+      = result
+    keyBasedIntersectionDifferenceHelper
+        result@IntersectionDifference {excessFirst}
+        firsts'
+        []
+      = result {excessFirst = firsts' ++ excessFirst}
+    keyBasedIntersectionDifferenceHelper
+        result@IntersectionDifference {excessSecond}
+        []
+        seconds'
+      = result {excessSecond = seconds' ++ excessSecond}
+    keyBasedIntersectionDifferenceHelper
+        result@IntersectionDifference{intersection, excessFirst, excessSecond}
+        (first : firsts')
+        (second : seconds')
+      =
+        keyBasedIntersectionDifferenceHelper newResult firsts' seconds'
+      where
+        newResult = case (compare `on` keyExtractor) first second of
+            LT -> result {excessFirst = first : excessFirst}
+            EQ -> result {intersection = merger first second : intersection}
+            GT -> result {excessSecond = second : excessSecond}
