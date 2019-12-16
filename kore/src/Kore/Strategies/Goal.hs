@@ -947,7 +947,7 @@ enrichEventualException
     -> m a
 enrichEventualException g action =
     catch action $
-        \(e :: SomeException) -> throw (GoalException e (getConfiguration g))
+        \(e :: SomeException) -> throw $ GoalException e (getConfiguration g)
 
 {- | The predicate to remove the destination from the present configuration.
  -}
