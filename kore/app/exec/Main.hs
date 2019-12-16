@@ -384,7 +384,7 @@ main = do
     Foldable.forM_ (localOptions options) $ \o ->
         catch (mainWithOptions o) $
             \(Goal.GoalException (e :: SomeException) p) -> do
-                renderResult o ("last configuration = " <> unparse p)
+                renderResult o ("// Last configuration:\n" <> unparse p)
                 throw e
 
 mainWithOptions :: KoreExecOptions -> IO ()

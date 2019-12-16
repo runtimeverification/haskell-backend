@@ -769,7 +769,7 @@ removeDestinationWorker
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal = enrichEventualException $ do
+removeDestinationWorker stateConstructor goal = enrichEventualException goal $ do
         removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal
@@ -789,17 +789,13 @@ removeDestinationWorker stateConstructor goal = enrichEventualException $ do
 
     destination = topExistsToImplicitForall configFreeVars rhs
 
-    enrichEventualException action =
-        catch action $
-           \(e :: SomeException) -> throw (GoalException e configuration)
-
 simplify
     :: (MonadCatch m, MonadSimplify m)
     => ToRulePattern goal
     => FromRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = enrichEventualException $ do
+simplify goal = enrichEventualException goal $ do
     configs <-
         Monad.Trans.lift
         $ simplifyAndRemoveTopExists configuration
@@ -813,10 +809,6 @@ simplify goal = enrichEventualException $ do
   where
     destination = getDestination goal
     configuration = getConfiguration goal
-
-    enrichEventualException action =
-        catch action $
-           \(e :: SomeException) -> throw (GoalException e configuration)
 
 isTriviallyValid
     :: ToRulePattern goal
@@ -852,7 +844,7 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = enrichEventualException $ do
+derivePar rules goal = enrichEventualException goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -894,10 +886,6 @@ derivePar rules goal = enrichEventualException $ do
     configuration :: Pattern Variable
     configuration = getConfiguration goal
 
-    enrichEventualException action =
-        catch action $
-           \(e :: SomeException) -> throw (GoalException e configuration)
-
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
     :: forall m goal
@@ -911,7 +899,7 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = enrichEventualException $ do
+deriveSeq rules goal = enrichEventualException goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -952,9 +940,14 @@ deriveSeq rules goal = enrichEventualException $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-    enrichEventualException action =
-        catch action $
-           \(e :: SomeException) -> throw (GoalException e configuration)
+enrichEventualException
+    :: (MonadCatch m, ToRulePattern goal)
+    => goal
+    -> m a
+    -> m a
+enrichEventualException g action =
+    catch action $
+        \(e :: SomeException) -> throw (GoalException e (getConfiguration g))
 
 {- | The predicate to remove the destination from the present configuration.
  -}
