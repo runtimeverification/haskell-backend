@@ -89,6 +89,7 @@ lexeme = L.lexeme skipWhitespace
 - @/*@ block comment (non-nested) @*/@
 -}
 skipWhitespace ::  Parser ()
+{-# INLINE skipWhitespace #-}
 skipWhitespace =
     L.space Parser.space1 lineComment blockComment
   where
@@ -565,4 +566,3 @@ illegalSurrogate
     -> String
 illegalSurrogate hs =
     "code 0x" ++ hs ++ " is an illegal surrogate"
-
