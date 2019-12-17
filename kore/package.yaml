@@ -160,7 +160,7 @@ executables:
     source-dirs:
       - app/repl
       - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
+    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
     dependencies:
       - kore
 
