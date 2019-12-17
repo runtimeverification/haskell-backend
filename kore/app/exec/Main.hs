@@ -71,6 +71,9 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import System.Directory
+    ( doesFileExist
+    )
 import System.Exit
     ( ExitCode (..)
     , exitWith
@@ -89,6 +92,7 @@ import Kore.Error
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
+    , indexedModuleRawSentences
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
@@ -120,6 +124,12 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step
+import Kore.Step.Rule
+    ( ReachabilityRule
+    )
+import qualified Kore.Step.Rule as Rule
+    ( toSentence
+    )
 import Kore.Step.Search
     ( SearchType (..)
     )
@@ -134,11 +144,11 @@ import Kore.Syntax.Definition
     ( Definition (Definition)
     , Module (Module)
     , ModuleName (ModuleName)
+    , Sentence (..)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
-    ( Unparse
-    , unparse
+    ( unparse
     )
 import SMT
     ( MonadSMT
@@ -470,6 +480,19 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
+    let KoreProveOptions { saveProofs } = proveOptions
+    maybeAlreadyProvenModule <- case saveProofs of
+        Nothing -> return Nothing
+        Just saveProofsFileName -> do
+            fileExists <- lift $ doesFileExist saveProofsFileName
+            if fileExists
+                then do
+                    savedProofsDefinition <-
+                        loadDefinitions [definitionFileName, saveProofsFileName]
+                    savedProofsModule <-
+                        loadModule savedProofsModuleName savedProofsDefinition
+                    return (Just savedProofsModule)
+                else return Nothing
     proveResult <- execute execOptions mainModule $ do
         let KoreExecOptions { breadthLimit, depthLimit } = execOptions
             KoreProveOptions { graphSearch } = proveOptions
@@ -479,11 +502,14 @@ koreProve execOptions proveOptions = do
             depthLimit
             mainModule
             specModule
+            maybeAlreadyProvenModule
 
     (exitCode, final) <- case proveResult of
         Left StuckVerification {stuckDescription, provenClaims} -> do
-            let KoreProveOptions { saveProofs } = proveOptions
-            maybe (return ()) (lift . saveProven provenClaims) saveProofs
+            maybe
+                (return ())
+                (lift . saveProven specModule provenClaims)
+                saveProofs
             return (failure stuckDescription)
         Right () -> return success
 
@@ -494,15 +520,33 @@ koreProve execOptions proveOptions = do
     success :: (ExitCode, TermLike Variable)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
 
-    saveProven :: Unparse claim => [claim] -> FilePath -> IO ()
-    saveProven provenClaims outputFile =
+    saveProven
+        :: VerifiedModule StepperAttributes Attribute.Axiom
+        -> [ReachabilityRule Variable]
+        -> FilePath
+        -> IO ()
+    saveProven specModule provenClaims outputFile =
         withFile outputFile WriteMode
             (`hPutDoc` unparse provenDefinition)
       where
+        specModuleDefinitions :: [Sentence (TermLike Variable)]
+        specModuleDefinitions =
+            filter isNotAxiomOrClaim (indexedModuleRawSentences specModule)
+
+        isNotAxiomOrClaim :: Sentence patternType -> Bool
+        isNotAxiomOrClaim (SentenceAxiomSentence  _) = False
+        isNotAxiomOrClaim (SentenceClaimSentence _) = False
+        isNotAxiomOrClaim (SentenceAliasSentence _) = True
+        isNotAxiomOrClaim (SentenceSymbolSentence _) = True
+        isNotAxiomOrClaim (SentenceImportSentence _) = True
+        isNotAxiomOrClaim (SentenceSortSentence _) = True
+        isNotAxiomOrClaim (SentenceHookSentence _) = True
+
         provenModule =
             Module
                 { moduleName = savedProofsModuleName
-                , moduleSentences = provenClaims
+                , moduleSentences =
+                    specModuleDefinitions ++ map Rule.toSentence provenClaims
                 , moduleAttributes = def
                 }
         provenDefinition = Definition
@@ -626,7 +670,7 @@ renderResult KoreExecOptions { outputFileName } doc =
         Just outputFile -> withFile outputFile WriteMode (`hPutDoc` doc)
 
 -- | IO action that parses a kore pattern from a filename, verifies it,
--- converts it to a pure patterm, and prints timing information.
+-- converts it to a pure pattern, and prints timing information.
 mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
