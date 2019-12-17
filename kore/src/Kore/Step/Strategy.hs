@@ -304,8 +304,8 @@ insChildNode configNode =
             node' = (succ . snd) (Graph.nodeRange graph)
             lnode = (node', config)
             ledges = do
-                (edge, node) <- parents
-                return (node, node', edge)
+                (_, node) <- parents
+                return (node, node', Seq.empty)
             graph' = Graph.insEdges ledges $ Graph.insNode lnode graph
         in
             (node', graph')
