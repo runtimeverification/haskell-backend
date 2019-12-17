@@ -14,6 +14,8 @@ Please refer to Section 9 (The Kore Language) of the
 <http://github.com/kframework/kore/blob/master/docs/semantics-of-k.pdf Semantics of K>.
 -}
 
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Syntax.Application
     ( SymbolOrAlias (..)
     , Application (..)
