@@ -5,8 +5,7 @@ import Control.Applicative
     , optional
     )
 import Control.Exception
-    ( SomeException
-    , throw
+    ( throw
     )
 import Control.Monad.Catch
     ( MonadCatch
@@ -381,16 +380,17 @@ parserInfoModifiers =
 main :: IO ()
 main = do
     options <- mainGlobal parseKoreExecOptions parserInfoModifiers
-    Foldable.forM_ (localOptions options) $ \o ->
-        catch (mainWithOptions o) $
-            \(Goal.GoalException (e :: SomeException) p) -> do
-                renderResult o ("// Last configuration:\n" <> unparse p)
-                throw e
+    Foldable.forM_ (localOptions options) mainWithOptions
 
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <- runLoggerT koreLogOptions go
+    exitCode <- catch (runLoggerT koreLogOptions go) $
+        \(Goal.WithConfiguration lastConfiguration someException) -> do
+            renderResult
+                execOptions
+                ("// Last configuration:\n" <> unparse lastConfiguration)
+            throw someException
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats

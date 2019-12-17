@@ -9,7 +9,7 @@ module Kore.Strategies.Goal
     , ClaimExtractor (..)
     , Rule (..)
     , TransitionRuleTemplate (..)
-    , GoalException (..)
+    , WithConfiguration (..)
     , extractClaims
     , unprovenNodes
     , proven
@@ -28,13 +28,13 @@ import Control.Applicative
     ( Alternative (..)
     )
 import Control.Exception
-    ( SomeException
-    , throw
+    ( throw
     )
 import Control.Monad.Catch
     ( Exception
     , MonadCatch
-    , catch
+    , SomeException
+    , handle
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Coerce
@@ -769,7 +769,7 @@ removeDestinationWorker
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal = enrichEventualException goal $ do
+removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
         removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal
@@ -795,7 +795,7 @@ simplify
     => FromRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = enrichEventualException goal $ do
+simplify goal = withConfiguration goal $ do
     configs <-
         Monad.Trans.lift
         $ simplifyAndRemoveTopExists configuration
@@ -825,11 +825,11 @@ isTrusted =
     . RulePattern.attributes
     . toRulePattern
 
-data GoalException exception = GoalException exception (Pattern Variable)
+-- | Exception that contains the last configuration before the error.
+data WithConfiguration = WithConfiguration (Pattern Variable) SomeException
     deriving (Show, Typeable)
 
-instance (Show exception, Typeable exception)
-    => Exception (GoalException exception)
+instance Exception WithConfiguration
 
 -- | Apply 'Rule's to the goal in parallel.
 derivePar
@@ -844,7 +844,7 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = enrichEventualException goal $ do
+derivePar rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -899,7 +899,7 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = enrichEventualException goal $ do
+deriveSeq rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -940,14 +940,10 @@ deriveSeq rules goal = enrichEventualException goal $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-enrichEventualException
-    :: (MonadCatch m, ToRulePattern goal)
-    => goal
-    -> m a
-    -> m a
-enrichEventualException g action =
-    catch action $
-        \(e :: SomeException) -> throw $ GoalException e (getConfiguration g)
+withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a
+withConfiguration goal = handle (throw . WithConfiguration configuration)
+  where
+    configuration = getConfiguration goal
 
 {- | The predicate to remove the destination from the present configuration.
  -}
