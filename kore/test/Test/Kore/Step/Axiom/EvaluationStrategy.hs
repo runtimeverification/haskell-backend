@@ -76,6 +76,9 @@ test_definitionEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.c)
         assertEqual "" expect actual
+    {-
+    Uncomment this if we ever go back to having remainders for functions.
+
     , testCase "Evaluation with remainder" $ do
         let requirement = makeEqualsPredicate Mock.testSort
                 (Mock.f Mock.a)
@@ -109,6 +112,7 @@ test_definitionEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.a)
         assertEqual "" expect actual
+    -}
     , testCase "Failed evaluation" $ do
         let expect = AttemptedAxiom.NotApplicable
         actual <-
@@ -122,6 +126,10 @@ test_definitionEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.b)
         assertEqual "" expect actual
+    {-
+    Uncomment this if we ever go back to having multiple evaluation branches
+    for functions.
+
     , testCase "Evaluation with multiple branches SMT prunes remainders" $ do
         let initial = Mock.functionalConstr10 Mock.a
             final1 = Mock.g Mock.a
@@ -151,6 +159,7 @@ test_definitionEvaluation =
                     }
         actual <- evaluate evaluator initial
         assertEqual "" expect actual
+    -}
     , testCase "Does not evaluate concrete axiom with symbolic input" $ do
         let expectConcrete =
                 AttemptedAxiom.Applied
@@ -371,6 +380,10 @@ test_firstFullEvaluation =
                 (Mock.functionalConstr10 Mock.a)
                 not_requirement
         assertEqual "" expect actual
+    {-
+    Uncomment this if we ever go back to allowing multiple results for equality
+    simplification.
+
     , testCase "Error with multiple results" $ do
         let requirement = makeEqualsPredicate_ (Mock.f Mock.a) (Mock.g Mock.b)
         assertErrorIO
@@ -395,6 +408,7 @@ test_firstFullEvaluation =
                 )
                 (Mock.functionalConstr10 Mock.a)
             )
+    -}
     ]
 
 test_simplifierWithFallback :: [TestTree]
@@ -426,6 +440,9 @@ test_simplifierWithFallback =
                 )
                 (Mock.functionalConstr10 Mock.a)
         assertEqual "" expect actual
+    {-
+    Uncomment this if we ever go back to having remainders for equality axioms.
+
     , testCase "Uses first with remainder" $ do
         let requirement = makeEqualsPredicate Mock.testSort
                 (Mock.f Mock.a)
@@ -468,6 +485,7 @@ test_simplifierWithFallback =
                 )
                 (Mock.functionalConstr10 Mock.a)
         assertEqual "" expect actual
+    -}
     , testCase "Falls back to second" $ do
         let expect =
                 AttemptedAxiom.Applied

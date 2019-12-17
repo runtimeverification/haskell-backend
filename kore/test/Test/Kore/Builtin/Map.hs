@@ -1106,10 +1106,7 @@ test_concretizeKeysAxiom =
     expected = Right $ MultiOr
         [ Conditional
             { term = val
-            , predicate =
-                -- The sort is broken because the axiom is broken: the
-                -- rhs should have the same sort as the lhs.
-                makeTruePredicate (termLikeSort (pair symbolicKey symbolicMap))
+            , predicate = makeTruePredicate intSort
             , substitution = mempty
             }
         ]

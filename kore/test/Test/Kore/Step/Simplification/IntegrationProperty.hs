@@ -26,6 +26,7 @@ import Data.List
 import qualified Data.Map.Strict as Map
 import Debug.Trace
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -89,7 +90,8 @@ evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> SMT.SMT (OrPattern Variable)
-evaluateWithAxioms axioms = Simplification.runSimplifier env . Pattern.simplify
+evaluateWithAxioms axioms =
+    Simplification.runSimplifier env . Pattern.simplify Condition.top
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap

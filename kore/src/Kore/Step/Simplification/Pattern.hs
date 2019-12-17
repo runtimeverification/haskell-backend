@@ -4,11 +4,17 @@ License     : NCSA
 
 -}
 module Kore.Step.Simplification.Pattern
-    ( simplifyAndRemoveTopExists
+    ( simplifyTopConfigurationAndRemoveTopExists
     , simplify
     ) where
 
 import Branch
+import Kore.Internal.Condition
+    ( Condition
+    )
+import qualified Kore.Internal.Condition as Condition
+    ( topTODO
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -28,13 +34,14 @@ import Kore.Step.Simplification.Simplify
     , simplifyConditionalTermToOr
     )
 
-simplifyAndRemoveTopExists
-    :: SimplifierVariable variable
+simplifyTopConfigurationAndRemoveTopExists
+    :: forall variable simplifier
+    .  SimplifierVariable variable
     => MonadSimplify simplifier
     => Pattern variable
     -> simplifier (OrPattern variable)
-simplifyAndRemoveTopExists patt = do
-    simplified <- simplify patt
+simplifyTopConfigurationAndRemoveTopExists patt = do
+    simplified <- simplify Condition.topTODO patt
     return (removeTopExists <$> simplified)
   where
     removeTopExists :: Pattern variable -> Pattern variable
@@ -47,12 +54,14 @@ simplifyAndRemoveTopExists patt = do
 simplify
     :: SimplifierVariable variable
     => MonadSimplify simplifier
-    => Pattern variable
+    => Condition variable
+    -> Pattern variable
     -> simplifier (OrPattern variable)
-simplify pattern' = do
+simplify sideCondition pattern' = do
     orSimplifiedTerms <- simplifyConditionalTermToOr predicate term
     fmap OrPattern.fromPatterns . Branch.gather $ do
         simplifiedTerm <- Branch.scatter orSimplifiedTerms
-        simplifyCondition $ Conditional.andCondition simplifiedTerm predicate
+        simplifyCondition sideCondition
+            (Conditional.andCondition simplifiedTerm predicate)
   where
     (term, predicate) = Conditional.splitTerm pattern'

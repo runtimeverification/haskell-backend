@@ -11,6 +11,7 @@ import Kore.Internal.Condition
     , Conditional (..)
     )
 import qualified Kore.Internal.Condition as Conditional
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.OrCondition
     ( OrCondition
@@ -272,7 +273,7 @@ runSimplifier
 runSimplifier patternSimplifierMap predicate =
     fmap MultiOr.make
     $ Test.runSimplifierBranch env
-    $ simplifier predicate
+    $ simplifier Condition.top predicate
   where
     env = Mock.env { Test.simplifierAxioms = patternSimplifierMap }
     ConditionSimplifier simplifier =

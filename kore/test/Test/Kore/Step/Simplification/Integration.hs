@@ -22,6 +22,7 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -1111,7 +1112,7 @@ evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> IO (OrPattern Variable)
-evaluateWithAxioms axioms = runSimplifier env . Pattern.simplify
+evaluateWithAxioms axioms = runSimplifier env . Pattern.simplify Condition.top
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap

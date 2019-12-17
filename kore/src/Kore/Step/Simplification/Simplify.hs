@@ -163,7 +163,8 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
 
     simplifyCondition
         :: SimplifierVariable variable
-        => Conditional variable term
+        => Condition variable
+        -> Conditional variable term
         -> BranchT m (Conditional variable term)
     default simplifyCondition
         ::  ( SimplifierVariable variable
@@ -171,12 +172,13 @@ class (WithLog LogMessage m, MonadSMT m, MonadProfiler m)
             , MonadSimplify n
             , m ~ trans n
             )
-        =>  Conditional variable term
+        =>  Condition variable
+        ->  Conditional variable term
         ->  BranchT m (Conditional variable term)
-    simplifyCondition conditional = do
+    simplifyCondition sideCondition conditional = do
         results <-
             Monad.Trans.lift . Monad.Trans.lift
-            $ Branch.gather $ simplifyCondition conditional
+            $ Branch.gather $ simplifyCondition sideCondition conditional
         Branch.scatter results
     {-# INLINE simplifyCondition #-}
 
@@ -349,22 +351,24 @@ newtype ConditionSimplifier monad =
         { getConditionSimplifier
             :: forall variable term
             .  SimplifierVariable variable
-            => Conditional variable term
+            => Condition variable
+            -> Conditional variable term
             -> BranchT monad (Conditional variable term)
         }
 
 emptyConditionSimplifier :: ConditionSimplifier monad
-emptyConditionSimplifier = ConditionSimplifier return
+emptyConditionSimplifier =
+    ConditionSimplifier (\_ predicate -> return predicate)
 
 liftConditionSimplifier
     :: (Monad monad, MonadTrans trans, Monad (trans monad))
     => ConditionSimplifier monad
     -> ConditionSimplifier (trans monad)
 liftConditionSimplifier (ConditionSimplifier simplifier) =
-    ConditionSimplifier $ \predicate -> do
+    ConditionSimplifier $ \sideCondition predicate -> do
         results <-
             Monad.Trans.lift . Monad.Trans.lift
-            $ Branch.gather $ simplifier predicate
+            $ Branch.gather $ simplifier sideCondition predicate
         Branch.scatter results
 
 -- * Builtin and axiom simplifiers

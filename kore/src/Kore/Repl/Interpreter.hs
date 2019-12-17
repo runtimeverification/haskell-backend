@@ -133,8 +133,8 @@ import Kore.Attribute.RuleIndex
 import Kore.Internal.Condition
     ( Condition
     )
-import Kore.Internal.Conditional
-    ( Conditional (..)
+import Kore.Internal.Pattern
+    ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.TermLike
@@ -865,12 +865,18 @@ tryAxiomClaimWorker mode ref = do
                 proofState
                     ProofStateTransformer
                         { provenValue        = putStrLn' "Cannot unify bottom"
-                        , goalTransformer    = runUnifier' first . term
-                        , goalRemainderTransformer = runUnifier' first . term
-                        , goalRewrittenTransformer = runUnifier' first . term
-                        , goalStuckTransformer = runUnifier' first . term
+                        , goalTransformer = patternUnifier
+                        , goalRemainderTransformer = patternUnifier
+                        , goalRewrittenTransformer = patternUnifier
+                        , goalStuckTransformer = patternUnifier
                         }
                     second
+              where
+                patternUnifier :: Pattern Variable -> ReplM claim m ()
+                patternUnifier
+                    (Pattern.splitTerm -> (secondTerm, secondCondition))
+                  =
+                    runUnifier' secondCondition first secondTerm
 
     tryForceAxiomOrClaim
         :: Either axiom claim
@@ -892,11 +898,12 @@ tryAxiomClaimWorker mode ref = do
                 updateExecutionGraph graph
 
     runUnifier'
-        :: TermLike Variable
+        :: Condition Variable
+        -> TermLike Variable
         -> TermLike Variable
         -> ReplM claim m ()
-    runUnifier' first second =
-        runUnifier first' second
+    runUnifier' topCondition first second =
+        runUnifier topCondition first' second
         >>= tell . formatUnificationMessage
       where
         first' = TermLike.refreshVariables (freeVariables second) first

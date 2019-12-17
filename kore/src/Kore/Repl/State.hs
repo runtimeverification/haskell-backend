@@ -486,15 +486,16 @@ runUnifier
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => TermLike Variable
+    => Condition Variable
+    -> TermLike Variable
     -> TermLike Variable
     -> t m (Either ReplOutput (NonEmpty (Condition Variable)))
-runUnifier first second = do
+runUnifier topCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger
     liftSimplifierWithLogger mvar
         . runUnifierWithExplanation
-        $ unifier first second
+        $ unifier topCondition first second
 
 getNodeState :: InnerGraph axiom -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =

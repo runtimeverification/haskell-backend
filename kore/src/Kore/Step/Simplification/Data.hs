@@ -128,9 +128,9 @@ instance
             env { simplifierTermLike = locally simplifierTermLike }
     {-# INLINE localSimplifierTermLike #-}
 
-    simplifyCondition conditional = do
+    simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition
-        simplify conditional
+        simplify topCondition conditional
     {-# INLINE simplifyCondition #-}
 
     askSimplifierAxioms = asks simplifierAxioms

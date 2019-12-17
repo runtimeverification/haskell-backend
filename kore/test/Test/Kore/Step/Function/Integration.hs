@@ -565,6 +565,9 @@ test_functionIntegration =
                 )
                 (Mock.f (mkElemVar Mock.x))
         assertEqual "" expect actual
+{-
+    Uncomment this if we ever go back to allowing branches for function
+    evaluation.
 
     , testCase "Multiple definition branches." $ do
         let expect =
@@ -592,7 +595,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqual "" expect actual
+        assertEqual "" expect actual-}
     ]
   where
     evaluate
