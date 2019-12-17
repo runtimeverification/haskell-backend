@@ -11,6 +11,7 @@ module Kore.Repl
     ) where
 
 import Control.Concurrent.MVar
+import Control.DeepSeq
 import Control.Exception
     ( AsyncException (UserInterrupt)
     )
@@ -96,7 +97,8 @@ import Kore.Unparser
 -- execution of proofs. Currently works via stdin/stdout interaction.
 runRepl
     :: forall claim axiom m
-    .  MonadSimplify m
+    .  NFData (Rule claim)
+    => MonadSimplify m
     => MonadIO m
     => MonadCatch m
     => Claim claim

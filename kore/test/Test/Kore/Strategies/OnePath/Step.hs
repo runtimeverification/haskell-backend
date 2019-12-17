@@ -4,6 +4,7 @@ module Test.Kore.Strategies.OnePath.Step
 
 import Test.Tasty
 
+import Control.DeepSeq
 import Data.Coerce
     ( coerce
     )
@@ -839,7 +840,7 @@ rewriteReachabilityWithPredicate left right predicate =
     coerce (rewriteWithPredicate left right predicate)
 
 runSteps
-    :: Goal goal
+    :: (NFData goal, Goal goal, NFData (Rule goal))
     => ProofState goal goal ~ ProofState.ProofState goal
     => Show (Prim goal)
     => Typeable (Prim goal)
@@ -868,7 +869,7 @@ runSteps breadthLimit graphFilter picker configuration strategy' =
     Env {metadataTools} = mockEnv
 
 runOnePathSteps
-    :: Goal goal
+    :: (NFData goal, Goal goal, NFData (Rule goal))
     => ProofState goal goal ~ ProofState.ProofState goal
     => Ord goal
     => Show (Prim goal)

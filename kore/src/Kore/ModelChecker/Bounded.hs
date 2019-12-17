@@ -61,6 +61,7 @@ import Kore.Step.Strategy
     , pickFinal
     , runStrategyWithSearchOrder
     )
+import Kore.Strategies.ProofState ()
 import Kore.Syntax.Id
     ( Id (..)
     )

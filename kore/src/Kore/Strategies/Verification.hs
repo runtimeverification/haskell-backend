@@ -14,6 +14,7 @@ module Kore.Strategies.Verification
     , toRulePattern
     ) where
 
+import Control.DeepSeq
 import Control.Monad.Catch
     ( MonadCatch
     )
@@ -97,7 +98,8 @@ If the verification succeeds, it returns ().
 
 verify
     :: forall claim m
-    .  Claim claim
+    .  NFData (Rule claim)
+    => Claim claim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
@@ -115,7 +117,7 @@ verify breadthLimit searchOrder claims axioms =
 
 verifyClaim
     :: forall claim m
-    .  (MonadCatch m, MonadSimplify m)
+    .  (NFData (Rule claim), MonadCatch m, MonadSimplify m)
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
@@ -162,6 +164,7 @@ verifyClaim breadthLimit searchOrder claims axioms (goal, depthLimit) =
 verifyClaimStep
     :: forall claim m
     .  (MonadCatch m, MonadSimplify m)
+    => NFData (Rule claim)
     => Claim claim
     => claim
     -- ^ claim that is being proven

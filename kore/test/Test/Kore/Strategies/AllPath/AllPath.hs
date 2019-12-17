@@ -11,6 +11,7 @@ module Test.Kore.Strategies.AllPath.AllPath
 import Test.Tasty
 
 import Control.Applicative
+import Control.DeepSeq
 import Control.Monad.Catch
     ( MonadCatch (catch)
     , MonadThrow (throwM)
@@ -287,6 +288,8 @@ insEdge = Strategy.insEdge
 data K = BorC | A | B | C | D | E | F | Bot
     deriving (Eq, GHC.Generic, Ord, Show)
 
+instance NFData K
+
 instance SOP.Generic K
 
 instance SOP.HasDatatypeInfo K
@@ -372,6 +375,8 @@ instance Goal.Goal Goal where
                 , deriveSeqTemplate =
                     deriveSeq
                 }
+
+instance NFData (Goal.Rule Goal)
 
 instance SOP.Generic (Goal.Rule Goal)
 

@@ -3,6 +3,7 @@ module Test.Kore.Strategies.Common
     , runVerification
     ) where
 
+import Control.DeepSeq
 import Control.Monad.Trans.Except
     ( runExceptT
     )
@@ -38,7 +39,7 @@ simpleRewrite left right =
     RewriteRule $ rulePattern left right
 
 runVerification
-    :: Verification.Claim claim
+    :: (NFData (Rule claim), Verification.Claim claim)
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
     => Show (Rule claim)

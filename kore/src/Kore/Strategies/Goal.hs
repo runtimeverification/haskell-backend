@@ -26,6 +26,7 @@ module Kore.Strategies.Goal
 import Control.Applicative
     ( Alternative (..)
     )
+import Control.DeepSeq
 import Control.Monad.Catch
     ( MonadCatch
     , onException
@@ -302,6 +303,8 @@ instance Goal (OnePathRule Variable) where
             . getOnePathRule
             <$> goals
 
+instance NFData (Rule (OnePathRule Variable))
+
 instance SOP.Generic (Rule (OnePathRule Variable))
 
 instance SOP.HasDatatypeInfo (Rule (OnePathRule Variable))
@@ -362,6 +365,8 @@ instance Goal (AllPathRule Variable) where
             . RewriteRule
             . getAllPathRule
             <$> goals
+
+instance NFData (Rule (AllPathRule Variable))
 
 instance SOP.Generic (Rule (AllPathRule Variable))
 
@@ -467,6 +472,8 @@ instance Goal (ReachabilityRule Variable) where
                     rule
                     (mapMaybe maybeAllPath claims)
                     (fmap ruleReachabilityToRuleAllPath axioms)
+
+instance NFData (Rule (ReachabilityRule Variable))
 
 instance SOP.Generic (Rule (ReachabilityRule Variable))
 

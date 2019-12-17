@@ -18,6 +18,9 @@ module Kore.ModelChecker.Step
 import Control.Applicative
     ( Alternative (..)
     )
+import Control.DeepSeq
+    ( NFData
+    )
 import Control.Monad
     ( when
     )
@@ -107,6 +110,8 @@ data ProofState patt
 
 -- | A 'ProofState' instantiated to 'Pattern Variable' for convenience.
 type CommonProofState = ProofState (Pattern Variable)
+
+instance NFData patt => NFData (ProofState patt)
 
 instance Hashable patt => Hashable (ProofState patt)
 

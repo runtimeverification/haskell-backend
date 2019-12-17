@@ -11,6 +11,7 @@ module Kore.Strategies.ProofState
     , ProofStateTransformer (..)
     ) where
 
+import Control.DeepSeq
 import Data.Hashable
 import Data.Witherable
     ( Filterable (..)
@@ -37,6 +38,9 @@ data Prim rule
     | DerivePar [rule]
     | DeriveSeq [rule]
     deriving (Show, Functor)
+    deriving (GHC.Generic)
+
+instance NFData rule => NFData (Prim rule)
 
 instance Filterable Prim where
     mapMaybe _ CheckProven        = CheckProven
@@ -67,6 +71,8 @@ data ProofState a
     deriving (Eq, Show, Ord, Functor, GHC.Generic)
 
 instance Hashable goal => Hashable (ProofState goal)
+
+instance NFData goal => NFData (ProofState goal)
 
 instance SOP.Generic (ProofState a)
 

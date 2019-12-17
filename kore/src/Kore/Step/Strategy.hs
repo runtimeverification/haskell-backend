@@ -51,6 +51,7 @@ module Kore.Step.Strategy
 import Control.Applicative
     ( Alternative (empty, (<|>))
     )
+import Control.DeepSeq
 import qualified Control.Exception as Exception
 import Control.Monad
     ( when
@@ -78,6 +79,7 @@ import Data.Sequence
     )
 import qualified Data.Sequence as Seq
 import Data.Typeable
+import qualified GHC.Generics as GHC
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -257,13 +259,16 @@ data ExecutionGraph config rule = ExecutionGraph
 -- Well, it was intended to be temporary, but for the purpose of making
 -- 'pickLongest' fast it turns out to be useful to keep it around.
 data ChildNode config rule = ChildNode
-    { config :: config
-    , parents :: [(Seq rule, Graph.Node)]
+    { config :: !config
+    , parents :: ![(Seq rule, Graph.Node)]
     -- ^ The predecessor configurations in the execution graph and the sequence
     -- of rules applied from the parent configuration to the present
     -- configuration.
     }
     deriving (Eq, Show, Functor)
+    deriving (GHC.Generic)
+
+instance (NFData config, NFData rule) => NFData (ChildNode config rule)
 
 {- | Insert a node into the execution graph.
 
@@ -291,21 +296,21 @@ insEdge (fromNode, toNode) exe@ExecutionGraph { graph } =
     exe { graph = Graph.insEdge (fromNode, toNode, mempty) graph }
 
 insChildNode
-    :: MonadState (Gr config (Seq rule)) m
+    :: (NFData config, NFData rule)
+    => MonadState (Gr config (Seq rule)) m
     => ChildNode config rule
     -> m Graph.Node
-insChildNode configNode =
-    State.state insChildNodeWorker
+insChildNode childNode =
+    deepseq childNode (State.state insChildNodeWorker)
   where
-    ChildNode { config } = configNode
-    ChildNode { parents } = configNode
+    ChildNode { config, parents } = childNode
     insChildNodeWorker graph =
         let
             node' = (succ . snd) (Graph.nodeRange graph)
             lnode = (node', config)
             ledges = do
-                (_, node) <- parents
-                return (node, node', Seq.empty)
+                (edge, node) <- parents
+                return (node, node', edge)
             graph' = Graph.insEdges ledges $ Graph.insNode lnode graph
         in
             (node', graph')
@@ -319,7 +324,8 @@ insChildNode configNode =
 -- allow merging of states, loop detection, etc.
 executionHistoryStep
     :: forall m config rule prim
-    .  Monad m
+    .  (NFData config, NFData rule)
+    => Monad m
     => (prim -> config -> TransitionT rule m config)
     -- ^ Transition rule
     -> Strategy prim
@@ -401,7 +407,8 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 constructExecutionGraph
     :: forall m config rule instr
-    .  MonadProfiler m
+    .  (NFData config, NFData rule)
+    => MonadProfiler m
     => Show instr
     => Typeable instr
     => Limit Natural
@@ -533,7 +540,8 @@ See also: 'pickLongest', 'pickFinal', 'pickOne', 'pickStar', 'pickPlus'
 
 runStrategy
     :: forall m prim rule config
-    .  MonadProfiler m
+    .  (NFData config, NFData rule)
+    => MonadProfiler m
     => Show prim
     => Typeable prim
     => Limit Natural
@@ -549,7 +557,8 @@ runStrategy breadthLimit applyPrim instrs0 config0 =
 
 runStrategyWithSearchOrder
     :: forall m prim rule config
-    .  MonadProfiler m
+    .  (NFData config, NFData rule)
+    => MonadProfiler m
     => Show prim
     => Typeable prim
     => Limit Natural

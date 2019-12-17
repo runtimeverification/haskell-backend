@@ -26,9 +26,11 @@ import Test.Tasty.QuickCheck
 import Control.Applicative
     ( Alternative (..)
     )
+import Control.DeepSeq
 import Data.Functor.Identity
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Sequence as Seq
+import qualified GHC.Generics as GHC
 import Numeric.Natural
 import Prelude hiding
     ( and
@@ -54,6 +56,9 @@ data Prim
     | Succ
     | Throw
     deriving (Eq, Ord, Show)
+    deriving (GHC.Generic)
+
+instance NFData Prim
 
 instance Arbitrary Prim where
     arbitrary = do
