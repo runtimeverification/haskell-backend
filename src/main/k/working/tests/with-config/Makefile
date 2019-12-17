@@ -2,7 +2,7 @@ DEFINITION_NAME := with-config
 
 include $(CURDIR)/../../include.mk
 
-test-prove: prove/one-spec.kprove
+test-prove: prove/one-spec.kprove prove/owise-spec.kprove
 
 test-k: test-prove
 
