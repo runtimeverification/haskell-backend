@@ -7,9 +7,11 @@ module Kore.Step.Simplification.InjSimplifier
     ( Distinct (..)
     , InjSimplifier (..)
     , mkInjSimplifier
+    , normalize
     ) where
 
 import qualified Control.Exception as Exception
+import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Set as Set
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
@@ -208,3 +210,16 @@ mkInjSimplifier sortGraph =
         Inj { injFrom = injFrom2, injTo = injTo2 } = inj2
         subsorts1 = subsortsOf sortGraph injFrom1
         subsorts2 = subsortsOf sortGraph injFrom2
+
+normalize
+    :: InternalVariable variable
+    => InjSimplifier
+    -> TermLike variable
+    -> TermLike variable
+normalize InjSimplifier { evaluateInj } =
+    Recursive.fold worker
+  where
+    worker (_ :< termLikeF) =
+        case termLikeF of
+            InjF inj -> evaluateInj inj
+            _ -> synthesize termLikeF

@@ -20,6 +20,9 @@ prove_tests := \
 	sum-div-spec \
 	double-sum-spec \
 
+broken_prove_tests := \
+	disjunction-in-simplification-spec
+
 merge_tests := \
     1 \
     2
@@ -28,9 +31,12 @@ test: $(foreach test, $(all_tests), tests/$(test).test)
 
 test-k: $(foreach test, $(k_tests), tests/$(test).test) \
 	test-prove \
+	test-broken-prove \
 	test-merge
 
 test-prove: $(foreach test, $(prove_tests), prove/$(test).kprove)
+
+test-broken-prove: $(foreach test, $(broken_prove_tests), prove/$(test).kbroken-prove)
 
 golden: $(foreach test, $(all_tests), tests/$(test).output.golden)
 

@@ -1,5 +1,6 @@
 module Test.Kore.Step.Simplification.InjSimplifier
     ( test_unifyInj
+    , test_normalize
     ) where
 
 import Test.Tasty
@@ -147,3 +148,20 @@ test_unifyInj =
     test testName inj1 inj2 expect =
         testCase testName (assertEqual "" expect (unifyInj inj1 inj2))
     InjSimplifier { unifyInj } = injSimplifier
+
+test_normalize :: [TestTree]
+test_normalize =
+    [ test "nested sort injection"
+        (mkInj topSort (mkInj testSort (mkInj subSort ctorSubSub)))
+        (mkInj topSort ctorSubSub)
+    ]
+  where
+    test
+        :: GHC.HasCallStack
+        => TestName
+        -> TermLike Variable
+        -> TermLike Variable
+        -> TestTree
+    test testName original expect =
+        let actual = normalize injSimplifier original
+        in testCase testName (assertEqual "" expect actual)
