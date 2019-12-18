@@ -354,12 +354,14 @@ enableDisableFlag name enabledVal disabledVal defaultVal helpSuffix =
 
 -- | Time a pure computation and print results.
 clockSomething :: String -> a -> Main a
+{-# INLINE clockSomething #-}
 clockSomething description something =
     clockSomethingIO description (evaluate something)
 
 
 -- | Time an IO computation and print results.
 clockSomethingIO :: String -> IO a -> Main a
+{-# INLINE clockSomethingIO #-}
 clockSomethingIO description something = do
     start  <- lift $ getTime Monotonic
     x      <- lift   something
