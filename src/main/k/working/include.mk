@@ -25,6 +25,9 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.kprove: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $<
 
+%.kbroken-prove: %.k $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $< | 	diff -u $<.golden -
+
 %.kmerge: %.merge $(DEFINITION) $(KORE_EXEC)
 	$(KORE_EXEC) --definition $(DEFINITION) --merge-rules $<
 
