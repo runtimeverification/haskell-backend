@@ -208,6 +208,13 @@ matchEqualHeads (Pair (Endianness_ symbol1) (Endianness_ symbol2)) =
     Monad.guard (symbol1 == symbol2)
 matchEqualHeads (Pair (Signedness_ symbol1) (Signedness_ symbol2)) =
     Monad.guard (symbol1 == symbol2)
+matchEqualHeads
+    ( Pair
+        (InternalBytes_ sort1 byteString1)
+        (InternalBytes_ sort2 byteString2)
+    )
+  =
+    Monad.guard (sort1 == sort2 && byteString1 == byteString2)
 -- Non-terminal patterns
 matchEqualHeads (Pair (Ceil_ _ _ term1) (Ceil_ _ _ term2)) =
     push (Pair term1 term2)
