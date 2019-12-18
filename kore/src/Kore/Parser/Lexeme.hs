@@ -13,6 +13,9 @@ Conventions used:
 All exported parsers consume the whitespace after the parsed element and expect
 no whitespace before.
 -}
+
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Parser.Lexeme
     (
     -- * Parsers

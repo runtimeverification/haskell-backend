@@ -14,6 +14,9 @@ Conventions used:
 3. All parsers consume the whitespace after the parsed element and expect no
    whitespace before.
 -}
+
+{-# OPTIONS_GHC -fno-prof-auto #-}
+
 module Kore.Parser.Parser
     ( koreDefinitionParser
     , korePatternParser
