@@ -26,11 +26,6 @@ module Kore.Builtin.InternalBytes
     , concatKey
     ) where
 
-import Debug.Trace
-import Kore.Unparser
-    ( unparseToString
-    )
-
 import Control.Applicative
     ( Alternative (..)
     )
@@ -176,9 +171,8 @@ dotBytesVerifier =
     worker application = do
         Monad.unless (null arguments)
             (Kore.Error.koreFail "expected zero arguments")
-        let x = (InternalBytesF . Const) InternalBytes { bytesSort, bytesValue = Encoding.encode8Bit "" }
-        -- traceM . unparseToString $ x
-        return x
+        (return . InternalBytesF . Const)
+            InternalBytes { bytesSort, bytesValue = Encoding.encode8Bit "" }
       where
         arguments = applicationChildren application
         symbol = applicationSymbolOrAlias application

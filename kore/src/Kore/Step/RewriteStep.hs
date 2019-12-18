@@ -34,11 +34,6 @@ module Kore.Step.RewriteStep
     , assertFunctionLikeResults
     ) where
 
-import Debug.Trace
-import Kore.Unparser
-    ( unparseToString
-    )
-
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State.Strict as State
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -188,10 +183,7 @@ unifyRule
     -- configuration.
     let
         RulePattern { left = ruleLeft } = rule'
-    traceM $ "\n\nRule left:\n" <> show ruleLeft
-            <> "\n\nInitial term:\n" <> show initialTerm
     unification <- unifyPatterns ruleLeft initialTerm
-    traceM $ "\n\nUnifier:\n" <> unparseToString unification
     -- Combine the unification solution with the rule's requirement clause,
     let
         RulePattern { requires = ruleRequires } = rule'

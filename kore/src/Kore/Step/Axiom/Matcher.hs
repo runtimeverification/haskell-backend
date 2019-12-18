@@ -13,8 +13,6 @@ module Kore.Step.Axiom.Matcher
     , matchIncremental
     ) where
 
-import Debug.Trace
-
 import Control.Applicative
     ( Alternative (..)
     )
@@ -175,7 +173,6 @@ matchIncremental termLike1 termLike2 =
         return solution
 
     throwUnknown = do
-        traceM "\n\nUnknown match case\n\n"
         Monad.Trans.lift
         $ Monad.Unify.throwUnificationError
         $ unsupportedPatterns "Unknown match case" termLike1 termLike2
