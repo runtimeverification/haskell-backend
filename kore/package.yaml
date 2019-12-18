@@ -23,6 +23,12 @@ extra-source-files:
 # common to point users to the README.md file.
 description: Please see the [README](README.md) file.
 
+flags:
+  threaded:
+    description: Use the threaded runtime. Recommended to disable for profiling.
+    manual: true
+    default: true
+
 dependencies:
   - base >=4.7
   - aeson >=1.4
@@ -127,58 +133,65 @@ ghc-options:
 library:
   source-dirs: src
 
+_common-exe: &common-exe
+  when:
+    - condition: flag(threaded)
+      then:
+        ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn8"
+      else:
+        ghc-options: -rtsopts "-with-rtsopts=-A32M"
+
 executables:
   kore-parser:
     main: Main.hs
     source-dirs:
       - app/parser
       - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
+    <<: *common-exe
 
   kore-exec:
     main: Main.hs
     source-dirs:
       - app/exec
       - app/share
-    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
     dependencies:
       - kore
+    <<: *common-exe
 
   kore-format:
     main: Main.hs
     source-dirs:
       - app/format
       - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
+    <<: *common-exe
 
   kore-repl:
     main: Main.hs
     source-dirs:
       - app/repl
       - app/share
-    ghc-options: -rtsopts "-with-rtsopts=-A32M -T"
     dependencies:
       - kore
+    <<: *common-exe
 
   kore-profiler:
     main: Main.hs
     source-dirs:
       - app/profiler
       - app/share
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
+    <<: *common-exe
 
 tests:
   kore-test:
     main: Test.hs
     source-dirs:
       - test
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8 -T"
     dependencies:
       - kore
       - QuickCheck >=2.13
@@ -193,6 +206,7 @@ tests:
       - tasty-quickcheck >=0.10
       - template-haskell >=2.14
       - temporary >=1.3
+    <<: *common-exe
 
 benchmarks:
   kore-parser-benchmark:
@@ -202,11 +216,11 @@ benchmarks:
     source-dirs:
       - bench/parser
       - test
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
       - criterion >=1.5
       - template-haskell >=2.14
+    <<: *common-exe
 
   kore-exec-benchmark:
     main: Main.hs
@@ -215,9 +229,9 @@ benchmarks:
     source-dirs:
       - bench/exec
       - test
-    ghc-options: -threaded -rtsopts "-with-rtsopts=-N -A32M -qn8"
     dependencies:
       - kore
       - criterion >=1.5
       - template-haskell >=2.14
       - temporary >=1.3
+    <<: *common-exe
