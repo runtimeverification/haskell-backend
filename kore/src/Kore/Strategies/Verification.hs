@@ -105,7 +105,7 @@ If the verification succeeds, it returns ().
 
 data StuckVerification patt claim
     = StuckVerification
-        { stuckPattern :: !patt
+        { stuckDescription :: !patt
         , provenClaims :: ![claim]
         }
     deriving (Eq, GHC.Generic, Show)
@@ -148,8 +148,8 @@ verify breadthLimit searchOrder claims axioms =
       where
         wrapStuckPattern
             :: Pattern Variable -> StuckVerification (Pattern Variable) claim
-        wrapStuckPattern stuckPattern =
-            StuckVerification { stuckPattern, provenClaims }
+        wrapStuckPattern stuckDescription =
+            StuckVerification { stuckDescription, provenClaims }
 
 verifyClaim
     :: forall claim m

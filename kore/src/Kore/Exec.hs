@@ -327,9 +327,9 @@ prove searchOrder breadthLimit depthLimit definitionModule specModule =
         :: StuckVerification (Pattern Variable) claim
         -> StuckVerification (TermLike Variable) claim
     stuckVerificationPatternToTerm
-        stuck@StuckVerification {stuckPattern}
+        stuck@StuckVerification {stuckDescription}
       =
-        stuck {StuckVerification.stuckPattern = Pattern.toTermLike stuckPattern}
+        stuck {StuckVerification.stuckDescription = Pattern.toTermLike stuckDescription}
 
 
 -- | Initialize and run the repl with the main and spec modules. This will loop

@@ -55,7 +55,7 @@ runVerificationToPattern breadthLimit depthLimit axioms claims = do
     stuck <- runVerification breadthLimit depthLimit axioms claims
     return (toPattern stuck)
   where
-    toPattern (Left StuckVerification {stuckPattern}) = Left stuckPattern
+    toPattern (Left StuckVerification {stuckDescription}) = Left stuckDescription
     toPattern (Right a) = Right a
 
 

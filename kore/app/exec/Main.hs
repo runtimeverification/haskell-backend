@@ -475,10 +475,10 @@ koreProve execOptions proveOptions = do
             specModule
 
     (exitCode, final) <- case proveResult of
-        Left StuckVerification {stuckPattern, provenClaims} -> do
+        Left StuckVerification {stuckDescription, provenClaims} -> do
             let KoreProveOptions { saveProofs } = proveOptions
             maybe (return ()) (lift . saveProven provenClaims) saveProofs
-            return (failure stuckPattern)
+            return (failure stuckDescription)
         Right () -> return success
 
     lift $ renderResult execOptions (unparse final)

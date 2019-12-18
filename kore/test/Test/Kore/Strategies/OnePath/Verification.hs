@@ -223,7 +223,7 @@ test_onePathVerification =
             ]
         assertEqual ""
             (Left StuckVerification
-                { stuckPattern = Pattern.fromTermLike Mock.c
+                { stuckDescription = Pattern.fromTermLike Mock.c
                 , provenClaims = []
                 }
             )
@@ -247,7 +247,7 @@ test_onePathVerification =
             ]
         assertEqual ""
             (Left StuckVerification
-                { stuckPattern = Pattern.fromTermLike Mock.e
+                { stuckDescription = Pattern.fromTermLike Mock.e
                 , provenClaims = [simpleClaim Mock.a Mock.c]
                 }
             )

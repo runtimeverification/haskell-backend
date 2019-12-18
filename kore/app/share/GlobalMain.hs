@@ -153,6 +153,8 @@ data KoreProveOptions =
         , bmc :: !Bool
         -- ^ Whether to use bounded model checker
         , saveProofs :: !(Maybe FilePath)
+        -- ^ The file in which to save the proven claims in case the prover
+        -- fails.
         }
 
 parseKoreProveOptions :: Parser KoreProveOptions
