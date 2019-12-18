@@ -5,7 +5,8 @@ License     : NCSA
 -}
 
 module Kore.Logger.WarnBottomHook
-    ( warnBottomHook
+    ( WarnBottomHook (..)
+    , warnBottomHook
     ) where
 
 import Data.Text
