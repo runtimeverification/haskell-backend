@@ -10,7 +10,8 @@ module Kore.Logger.DebugAppliedRule
     , debugAppliedRule
     , DebugAppliedRuleOptions
     , parseDebugAppliedRuleOptions
---    , filterDebugAppliedRule
+    , filterDebugAppliedRule
+    , filterDebugAppliedEquality
     ) where
 
 import Control.Applicative
@@ -42,14 +43,23 @@ import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
 import Kore.Logger
 import qualified Kore.Parser.Lexeme as Parser
---import Kore.Step.Axiom.Identifier
---    ( matchAxiomIdentifier
---    )
+import Kore.Step.Axiom.Identifier
+    ( matchAxiomIdentifier
+    )
 import Kore.Step.AxiomPattern
     ( HasMapVariables (..)
---    , HasLeftPattern (..)
+    , HasLeftPattern (..)
     )
---import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
+import Kore.Step.EqualityPattern
+    ( EqualityPattern
+    )
+import Kore.Step.Simplification.Simplify
+    ( SimplifierVariable
+    )
+import Kore.Step.RulePattern
+    ( RulePattern
+    )
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import Kore.Syntax.Id
     ( Id
     )
@@ -143,37 +153,50 @@ parseDebugAppliedRuleOptions =
         help = "Log every rule applied for the symbol named IDENTIFIER."
     readId = Options.maybeReader (Parsec.parseMaybe Parser.idParser)
 
-{-
 {- | Function used to modify a 'LogAction' to display selected applied rules.
  -}
 filterDebugAppliedRule
-    :: forall rule variable
-     . HasLeftPattern rule variable
-    => Ord variable
-    => Debug variable
-    => Show variable
-    => DebugAppliedRuleOptions
+    :: DebugAppliedRuleOptions
     -> SomeEntry
     -> Bool
-filterDebugAppliedRule debugAppliedRuleOptions entry =
-    case matchDebugAppliedRule entry of
-        (Just DebugAppliedRule { appliedRule } :: Maybe (DebugAppliedRule (rule variable))) ->
-            isSelectedRule
-              where
-                isSelectedRule =
-                    maybe False (`Set.member` debugAppliedRules) appliedRuleId
-                appliedRuleId :: Maybe Id
-                appliedRuleId = do
-                    axiomId <- matchAppliedRuleId appliedRule
-                    case axiomId of
-                        Axiom.Identifier.Application ident -> pure ident
-                        _ -> empty
-        _ -> False
+filterDebugAppliedRule debugAppliedRuleOptions entry
+  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedRule entry
+    = isSelectedRule debugAppliedRuleOptions appliedRule
+  | otherwise = False
+    
+isSelectedRule
+    :: forall rule variable
+    .  SimplifierVariable variable
+    => HasLeftPattern rule variable
+    => DebugAppliedRuleOptions
+    -> Conditional variable (rule variable)
+    -> Bool
+isSelectedRule debugAppliedRuleOptions =
+    maybe False (`Set.member` debugAppliedRules) . appliedRuleId
   where
-    DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
     matchAppliedRuleId = matchAxiomIdentifier . leftPattern . Conditional.term
+    appliedRuleId appliedRule = do
+        axiomId <- matchAppliedRuleId appliedRule
+        case axiomId of
+            Axiom.Identifier.Application ident -> pure ident
+            _ -> empty
+    DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
 
-matchDebugAppliedRule :: SomeEntry -> Maybe (DebugAppliedRule rule)
+{- | Function used to modify a 'LogAction' to display selected applied rules.
+ -}
+filterDebugAppliedEquality
+    :: DebugAppliedRuleOptions
+    -> SomeEntry
+    -> Bool
+filterDebugAppliedEquality debugAppliedRuleOptions entry
+  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedEquality entry
+    = isSelectedRule debugAppliedRuleOptions appliedRule
+  | otherwise = False
+
+matchDebugAppliedRule :: SomeEntry -> Maybe (DebugAppliedRule (RulePattern Variable))
 matchDebugAppliedRule entry =
     fromEntry entry
--}
+
+matchDebugAppliedEquality :: SomeEntry -> Maybe (DebugAppliedRule (EqualityPattern Variable))
+matchDebugAppliedEquality entry =
+    fromEntry entry
