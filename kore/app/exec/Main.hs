@@ -4,12 +4,10 @@ import Control.Applicative
     ( Alternative (..)
     , optional
     )
-import Control.Exception
-    ( throw
-    )
 import Control.Monad.Catch
     ( MonadCatch
     , catch
+    , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -390,7 +388,7 @@ mainWithOptions execOptions = do
             renderResult
                 execOptions
                 ("// Last configuration:\n" <> unparse lastConfiguration)
-            throw someException
+            throwM someException
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
