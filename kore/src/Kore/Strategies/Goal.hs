@@ -9,6 +9,7 @@ module Kore.Strategies.Goal
     , ClaimExtractor (..)
     , Rule (..)
     , TransitionRuleTemplate (..)
+    , WithConfiguration (..)
     , extractClaims
     , unprovenNodes
     , proven
@@ -27,9 +28,14 @@ import Control.Applicative
     ( Alternative (..)
     )
 import Control.DeepSeq
+import Control.Exception
+    ( throw
+    )
 import Control.Monad.Catch
-    ( MonadCatch
-    , onException
+    ( Exception
+    , MonadCatch
+    , SomeException
+    , handle
     )
 import qualified Control.Monad.Trans as Monad.Trans
 import Data.Coerce
@@ -44,15 +50,15 @@ import Data.Stream.Infinite
     )
 import qualified Data.Stream.Infinite as Stream
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
+    ( Typeable
+    )
 import Data.Witherable
     ( mapMaybe
     )
 import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
-import Debug
-    ( formatExceptionInfo
-    )
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
@@ -136,7 +142,6 @@ import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( Unparse
     , unparse
-    , unparseToText
     )
 import Kore.Variables.UnifiedVariable
     ( extractElementVariable
@@ -748,6 +753,7 @@ allPathFollowupStep claims axioms =
 -- | Remove the destination of the goal.
 removeDestination
     :: MonadSimplify m
+    => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => ProofState goal goal
@@ -764,12 +770,13 @@ removeDestination =
 
 removeDestinationWorker
     :: MonadSimplify m
+    => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal = do
+removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
         removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal
@@ -795,7 +802,7 @@ simplify
     => FromRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = errorBracket $ do
+simplify goal = withConfiguration goal $ do
     configs <-
         Monad.Trans.lift
         $ simplifyAndRemoveTopExists configuration
@@ -809,12 +816,6 @@ simplify goal = errorBracket $ do
   where
     destination = getDestination goal
     configuration = getConfiguration goal
-
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
 
 isTriviallyValid
     :: ToRulePattern goal
@@ -831,6 +832,12 @@ isTrusted =
     . RulePattern.attributes
     . toRulePattern
 
+-- | Exception that contains the last configuration before the error.
+data WithConfiguration = WithConfiguration (Pattern Variable) SomeException
+    deriving (Show, Typeable)
+
+instance Exception WithConfiguration
+
 -- | Apply 'Rule's to the goal in parallel.
 derivePar
     :: forall m goal
@@ -844,7 +851,7 @@ derivePar
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = errorBracket $ do
+derivePar rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -886,12 +893,6 @@ derivePar rules goal = errorBracket $ do
     configuration :: Pattern Variable
     configuration = getConfiguration goal
 
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
-
 -- | Apply 'Rule's to the goal in sequence.
 deriveSeq
     :: forall m goal
@@ -905,7 +906,7 @@ deriveSeq
     => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = errorBracket $ do
+deriveSeq rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -946,11 +947,10 @@ deriveSeq rules goal = errorBracket $ do
     destination = getDestination goal
     configuration = getConfiguration goal
 
-    errorBracket action =
-        onException action
-            (formatExceptionInfo
-                ("configuration=" <> unparseToText configuration)
-            )
+withConfiguration :: MonadCatch m => ToRulePattern goal => goal -> m a -> m a
+withConfiguration goal = handle (throw . WithConfiguration configuration)
+  where
+    configuration = getConfiguration goal
 
 {- | The predicate to remove the destination from the present configuration.
  -}
