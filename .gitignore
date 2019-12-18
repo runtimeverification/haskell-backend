@@ -31,6 +31,7 @@ tags
 .dir-locals.el
 *.prof
 .kprove-*
+.krun-*
 /coverage_report
 /haskell_documentation
 test-results.xml
