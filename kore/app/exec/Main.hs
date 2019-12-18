@@ -20,6 +20,9 @@ import Control.Monad.Trans
     ( lift
     )
 import qualified Data.Char as Char
+import Data.Default
+    ( def
+    )
 import qualified Data.Foldable as Foldable
 import Data.Limit
     ( Limit (..)
@@ -128,8 +131,10 @@ import Kore.Strategies.Verification
     )
 import qualified Kore.Strategies.Verification as Verification.DoNotUse
 import Kore.Syntax.Definition
-    ( ModuleName (..)
+    ( Module (Module)
+    , ModuleName (ModuleName)
     )
+import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
     ( Unparse
     , unparse
@@ -491,7 +496,14 @@ koreProve execOptions proveOptions = do
     saveProven :: Unparse claim => [claim] -> FilePath -> IO ()
     saveProven provenClaims outputFile =
         withFile outputFile WriteMode
-            (`hPutDoc` (vsep (map unparse provenClaims)))
+            (`hPutDoc` unparse provenModule)
+      where
+        provenModule =
+            Module
+                { moduleName = savedProofsModuleName
+                , moduleSentences = provenClaims
+                , moduleAttributes = def
+                }
 
 koreBmc :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreBmc execOptions proveOptions = do
@@ -633,3 +645,7 @@ mainParseSearchPattern indexedModule patternFileName = do
                 , substitution = mempty
                 }
         _ -> error "Unexpected non-conjunctive pattern"
+
+savedProofsModuleName :: ModuleName
+savedProofsModuleName = ModuleName
+    "haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d"
