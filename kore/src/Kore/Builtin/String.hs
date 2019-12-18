@@ -229,7 +229,7 @@ evalSubstr = Builtin.functionEvaluator evalSubstr0
             _start <- fromInteger <$> Int.expectBuiltinInt substrKey _start
             _end   <- fromInteger <$> Int.expectBuiltinInt substrKey _end
             let len = _end - _start
-            let !substr = {-# SCC evalSubstr_substr #-} Text.take len (Text.drop _start _str)
+            let !substr = Text.take len (Text.drop _start _str)
             Builtin.appliedFunction $ asPattern resultSort substr
     evalSubstr0 _ _ = Builtin.wrongArity substrKey
 
