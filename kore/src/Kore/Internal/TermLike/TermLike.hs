@@ -428,13 +428,6 @@ mapVariablesF
     -> TermLikeF variable2 child
 mapVariablesF mapping = runIdentity . traverseVariablesF (Identity . mapping)
 
-{- | Reset the 'variableCounter' of all 'Variables'.
-
-@externalizeFreshVariables@ resets the 'variableCounter' of all variables, while
-ensuring that no 'Variable' in the result is accidentally captured.
-
- -}
-
 {- | Use the provided traversal to replace all variables in a 'TermLikeF' head.
 
 __Warning__: @traverseVariablesF@ will capture variables if the provided
@@ -524,6 +517,12 @@ mapVariables mapping =
     mapVariablesWorker (attrs :< pat) =
         Attribute.mapVariables mapping attrs :< mapVariablesF mapping pat
 
+{- | Reset the 'variableCounter' of all 'Variables'.
+
+@externalizeFreshVariables@ resets the 'variableCounter' of all variables, while
+ensuring that no 'Variable' in the result is accidentally captured.
+
+ -}
 externalizeFreshVariables :: TermLike Variable -> TermLike Variable
 externalizeFreshVariables termLike =
     Reader.runReader
