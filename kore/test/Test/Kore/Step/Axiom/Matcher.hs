@@ -71,9 +71,6 @@ import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
-import Debug.Trace
-import Kore.Unparser
-
 test_matcherEqualHeads :: [TestTree]
 test_matcherEqualHeads =
     [ testGroup "Application"
@@ -909,10 +906,62 @@ test_matching_Map =
         , (ElemVar yInt, mkInt 1)
         , (ElemVar mMap, mkMap [(mkInt 1, mkInt 2)] [])
         ]
-    , matches "x:Int |-> 0 matches x:Int |-> y:Int"
+
+    , matches "x:Int |-> y:Int matches x:Int |-> 0"
         (mkMap [(mkElemVar xInt, mkElemVar yInt)] [])
         (mkMap [(mkElemVar xInt, mkInt 0       )] [])
         [(ElemVar yInt, mkInt 0)]
+    , matches "x:Int |-> y:Int 1 -> z:Int matches x:Int |-> 0  1 -> 2"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt), (mkInt 1, mkElemVar zInt)] [])
+        (mkMap [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2       )] [])
+        [(ElemVar yInt, mkInt 0), (ElemVar zInt, mkInt 2)]
+    , doesn'tMatch "x:Int |-> y:Int doesn't match x:Int |-> 0  1 |-> 2"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [])
+        (mkMap [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2)] [])
+    , doesn'tMatch "x:Int |-> y:Int  1 |-> 2 doesn't match x:Int |-> 0"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt), (mkInt 1, mkInt 2)] [])
+        (mkMap [(mkElemVar xInt, mkInt 0       )] [])
+
+    , matches "m:Map matches x:Int |-> 0"
+        (mkMap [] [mkElemVar mMap])
+        (mkMap [(mkElemVar xInt, mkInt 0       )] [])
+        [(ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0       )] [])]
+    , matches "x:Int |-> y:Int  m:Map matches x:Int |-> 0"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
+        (mkMap [(mkElemVar xInt, mkInt 0       )] [])
+        [(ElemVar yInt, mkInt 0), (ElemVar mMap, mkMap [] [])]
+    , matches "x:Int |-> y:Int 1 -> z:Int  m:Map matches x:Int |-> 0  1 -> 2"
+        (mkMap
+            [(mkElemVar xInt, mkElemVar yInt), (mkInt 1, mkElemVar zInt)]
+            [mkElemVar mMap]
+        )
+        (mkMap
+            [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2       )]
+            []
+        )
+        [ (ElemVar yInt, mkInt 0)
+        , (ElemVar zInt, mkInt 2)
+        , (ElemVar mMap, mkMap [] [])
+        ]
+    , matches "x:Int |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2"
+        (mkMap [(mkElemVar xInt, mkElemVar yInt)] [mkElemVar mMap])
+        (mkMap [(mkElemVar xInt, mkInt 0       ), (mkInt 1, mkInt 2)] [])
+        [ (ElemVar yInt, mkInt 0)
+        , (ElemVar mMap, mkMap [(mkInt 1, mkInt 2)] [])
+        ]
+    , matches "1 |-> y:Int  m:Map matches x:Int |-> 0  1 |-> 2"
+        (mkMap [(mkInt 1, mkElemVar yInt)] [mkElemVar mMap])
+        (mkMap [(mkElemVar xInt, mkInt 0), (mkInt 1, mkInt 2)] [])
+        [ (ElemVar yInt, mkInt 2)
+        , (ElemVar mMap, mkMap [(mkElemVar xInt, mkInt 0)] [])
+        ]
+    , doesn'tMatch "x:Int |-> y:Int  1 |-> 2   m:Map doesn't match x:Int |-> 0"
+        (mkMap
+            [(mkElemVar xInt, mkElemVar yInt), (mkInt 1, mkInt 2)]
+            [mkElemVar mMap])
+        (mkMap
+            [(mkElemVar xInt, mkInt 0       )] []
+        )
     ]
 
 xInt, yInt, zInt, mMap :: ElementVariable Variable
@@ -968,8 +1017,6 @@ withMatch
     -> TestTree
 withMatch check comment term1 term2 =
     testCase comment $ do
-        traceM (unparseToString term1)
-        traceM (unparseToString term2)
         actual <- match term1 term2
         check actual
 

@@ -33,11 +33,14 @@ import qualified Control.Monad.Trans as Monad.Trans
 import Control.Monad.Trans.Maybe
     ( MaybeT (..)
     )
+import qualified Data.Align as Align
+    ( align
+    )
 import qualified Data.Foldable as Foldable
 import Data.Function
 import Data.Generics.Product
 import Data.List
-    ( sortBy
+    ( foldl'
     )
 import Data.Map
     ( Map
@@ -54,6 +57,9 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import Data.These
+    ( These (..)
+    )
 import qualified GHC.Generics as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
@@ -655,7 +661,7 @@ matchNormalizedAc
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
-  | [] <- excessAbstract2, [] <- opaque2
+  | [] <- opaque2
   , [] <- excessAbstract1
   = do
     Monad.guard (null excessConcrete1)
@@ -671,6 +677,7 @@ matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
     normalized2' =
         wrapTermLike normalized2
             { Builtin.concreteElements = excessConcrete2
+            , Builtin.elementsWithVariables = excessAbstract2
             }
     abstract1 = Builtin.elementsWithVariables normalized1
     concrete1 = Builtin.concreteElements normalized1
@@ -695,9 +702,27 @@ matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
         -> IntersectionDifference
             (Builtin.Element normalized (TermLike variable))
             (Pair (Builtin.Value normalized (TermLike variable)))
-    abstractIntersectionMerge =
-        keyBasedIntersectionDifference elementKey elementMerger
+    abstractIntersectionMerge first second =
+        keyBasedIntersectionDifference
+            elementMerger
+            (toMap first)
+            (toMap second)
       where
+        toMap
+            :: [Builtin.Element normalized (TermLike variable)]
+            -> Map
+                (TermLike variable)
+                (Builtin.Element normalized (TermLike variable))
+        toMap elements =
+            let elementMap =
+                    Map.fromList
+                        (map
+                            (\ value -> (elementKey value, value))
+                            elements
+                        )
+            in if length elementMap == length elements
+                then elementMap
+                else error "Invalid map: duplicated keys."
         elementKey
             :: Builtin.Element normalized (TermLike variable)
             -> TermLike variable
@@ -716,49 +741,36 @@ data IntersectionDifference a b
         , excessSecond :: ![a]
         }
 
+emptyIntersectionDifference :: IntersectionDifference a b
+emptyIntersectionDifference = IntersectionDifference
+    {intersection = [], excessFirst = [], excessSecond = []}
+
 keyBasedIntersectionDifference
     :: forall a b k
     .  Ord k
-    => (a -> k)
-    -> (a -> a -> b)
-    -> [a]
-    -> [a]
+    => (a -> a -> b)
+    -> Map k a
+    -> Map k a
     -> IntersectionDifference a b
-keyBasedIntersectionDifference keyExtractor merger firsts seconds =
-    keyBasedIntersectionDifferenceHelper
-        IntersectionDifference
-            {intersection = [], excessFirst = [], excessSecond = []}
-        (sortBy (compare `on` keyExtractor) firsts)
-        (sortBy (compare `on` keyExtractor) seconds)
+keyBasedIntersectionDifference merger firsts seconds =
+    foldl'
+        helper
+        emptyIntersectionDifference
+        (Map.elems $ Align.align firsts seconds)
   where
-    keyBasedIntersectionDifferenceHelper
+    helper
         :: IntersectionDifference a b
-        -> [a]
-        -> [a]
+        -> These a a
         -> IntersectionDifference a b
-    keyBasedIntersectionDifferenceHelper
-        result
-        []
-        []
-      = result
-    keyBasedIntersectionDifferenceHelper
+    helper
         result@IntersectionDifference {excessFirst}
-        firsts'
-        []
-      = result {excessFirst = firsts' ++ excessFirst}
-    keyBasedIntersectionDifferenceHelper
+        (This first)
+      = result {excessFirst = first : excessFirst}
+    helper
         result@IntersectionDifference {excessSecond}
-        []
-        seconds'
-      = result {excessSecond = seconds' ++ excessSecond}
-    keyBasedIntersectionDifferenceHelper
-        result@IntersectionDifference{intersection, excessFirst, excessSecond}
-        (first : firsts')
-        (second : seconds')
-      =
-        keyBasedIntersectionDifferenceHelper newResult firsts' seconds'
-      where
-        newResult = case (compare `on` keyExtractor) first second of
-            LT -> result {excessFirst = first : excessFirst}
-            EQ -> result {intersection = merger first second : intersection}
-            GT -> result {excessSecond = second : excessSecond}
+        (That second)
+      = result {excessSecond = second : excessSecond}
+    helper
+        result@IntersectionDifference{intersection}
+        (These first second)
+      = result {intersection = merger first second : intersection}
