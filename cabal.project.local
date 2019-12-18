@@ -1,4 +1,0 @@
-profiling: True
-
-package kore
-  ghc-options: -ddump-simpl -ddump-to-file

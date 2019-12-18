@@ -38,3 +38,4 @@ test-results.xml
 .directory
 /dist-newstyle/
 /dist/
+cabal.project.local
