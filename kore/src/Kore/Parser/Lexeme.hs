@@ -271,6 +271,7 @@ sourcePosToFileLocation
    and returns an 'Id' annotated with position.
 -}
 stringParserToIdParser :: Parser String -> Parser Id
+{-# INLINE stringParserToIdParser #-}
 stringParserToIdParser stringRawParser = do
     pos <- sourcePosToFileLocation <$> getSourcePos
     name <- lexeme stringRawParser
