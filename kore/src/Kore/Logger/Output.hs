@@ -166,7 +166,6 @@ koreLogFilters koreLogOptions baseLogger =
             filterEntry logEntries entry
             || filterSeverity logLevel entry
             || filterDebugAppliedRule debugAppliedRuleOptions entry
-            || filterDebugAppliedEquality debugAppliedRuleOptions entry
             || filterDebugAxiomEvaluation debugAxiomEvaluationOptions entry
         )
     baseLogger

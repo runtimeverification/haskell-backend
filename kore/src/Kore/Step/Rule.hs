@@ -1,3 +1,9 @@
+{-|
+Description : Parsing axiom patterns into rules (and unparsing)
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+-}
 module Kore.Step.Rule
     ( AxiomPatternError (..)
     , allPathGlobally
@@ -94,6 +100,8 @@ import Kore.Unparser
     )
 import qualified Kore.Verified as Verified
 
+{-| Error encountered when parsing patterns
+-}
 newtype AxiomPatternError = AxiomPatternError ()
     deriving (GHC.Generic)
 
@@ -149,6 +157,7 @@ extractRewriteAxiomFrom sentence =
         Right (RewriteAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
 
+-- | Extracts a 'ReachabilityRule' axioms from a 'Verified.SentenceClaim'
 extractReachabilityRule
     :: Verified.SentenceClaim
     -- ^ Sentence to extract axiom pattern from
@@ -335,6 +344,9 @@ termToAxiomPattern attributes pat =
           where
             headName = getId (aliasConstructor symbol)
 
+{-| Reverses an 'QualifiedAxiomPattern' back into its 'Pattern' representation.
+  Should be the inverse of 'termToAxiomPattern'.
+-}
 
 axiomPatternToTerm
     :: Debug variable

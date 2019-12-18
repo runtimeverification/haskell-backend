@@ -708,6 +708,7 @@ markSimplified :: Predicate variable -> Predicate variable
 markSimplified (GenericPredicate termLike) =
     GenericPredicate (TermLike.markSimplified termLike)
 
+-- |Is the predicate free of the given variables?
 isFreeOf
     :: Ord variable
     => Predicate variable

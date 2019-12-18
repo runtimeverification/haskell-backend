@@ -11,7 +11,6 @@ module Kore.Logger.DebugAppliedRule
     , DebugAppliedRuleOptions
     , parseDebugAppliedRuleOptions
     , filterDebugAppliedRule
-    , filterDebugAppliedEquality
     ) where
 
 import Control.Applicative
@@ -162,6 +161,8 @@ filterDebugAppliedRule
 filterDebugAppliedRule debugAppliedRuleOptions entry
   | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedRule entry
     = isSelectedRule debugAppliedRuleOptions appliedRule
+  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedEquality entry
+    = isSelectedRule debugAppliedRuleOptions appliedRule
   | otherwise = False
 
 isSelectedRule
@@ -181,17 +182,6 @@ isSelectedRule debugAppliedRuleOptions =
             Axiom.Identifier.Application ident -> pure ident
             _ -> empty
     DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
-
-{- | Function used to modify a 'LogAction' to display selected applied rules.
- -}
-filterDebugAppliedEquality
-    :: DebugAppliedRuleOptions
-    -> SomeEntry
-    -> Bool
-filterDebugAppliedEquality debugAppliedRuleOptions entry
-  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedEquality entry
-    = isSelectedRule debugAppliedRuleOptions appliedRule
-  | otherwise = False
 
 matchDebugAppliedRule :: SomeEntry -> Maybe (DebugAppliedRule (RulePattern Variable))
 matchDebugAppliedRule entry =

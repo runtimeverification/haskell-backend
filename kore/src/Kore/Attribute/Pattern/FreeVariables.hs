@@ -103,8 +103,8 @@ getFreeElementVariables :: FreeVariables variable -> [ElementVariable variable]
 getFreeElementVariables =
     mapMaybe extractElementVariable . Set.toList . getFreeVariables
 
+-- | Class for extracting the free variables of a pattern, term, rule, ...
 class HasFreeVariables pat variable where
-    -- | Extract the free variables of a pattern
     freeVariables :: pat -> FreeVariables variable
 
 instance Ord variable => HasFreeVariables () variable where

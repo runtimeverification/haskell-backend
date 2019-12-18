@@ -1,6 +1,6 @@
 {-|
-Description : Rewrite and equality rules
-Copyright   : (c) Runtime Verification, 2018
+Description : Rewrite rules
+Copyright   : (c) Runtime Verification, 2019
 License     : NCSA
 
 -}
@@ -228,6 +228,7 @@ instance TopBottom (RulePattern variable) where
     isTop _ = False
     isBottom _ = False
 
+-- | Creates a basic, unconstrained, Equality pattern
 rulePattern
     :: InternalVariable variable
     => TermLike.TermLike variable
@@ -266,7 +267,7 @@ isNormalRule RulePattern { attributes } =
         Attribute.Normal -> True
         _ -> False
 
-
+-- | Converts the 'RHS' back to the term form.
 rhsToTerm
     :: InternalVariable variable
     => RHS variable
@@ -286,6 +287,7 @@ injectTermIntoRHS
 injectTermIntoRHS right =
     RHS { existentials = [], right, ensures = Predicate.makeTruePredicate_ }
 
+-- | Parses a term representing a RHS into a RHS
 termToRHS
     :: InternalVariable variable
     => TermLike.TermLike variable
@@ -341,6 +343,7 @@ instance
             <> freeVariables requires
             <> freeVariables rhs
 
+-- |Is the rule free of the given variables?
 isFreeOf
     :: InternalVariable variable
     => RulePattern variable
@@ -585,6 +588,9 @@ instance FromRulePattern (ReachabilityRule Variable) where
     fromRulePattern (AllPath _) rulePat =
         AllPath $ coerce rulePat
 
+{-| Reverses an 'RewriteRule' back into its 'Pattern' representation.
+  Should be the inverse of 'Rule.termToAxiomPattern'.
+-}
 rewriteRuleToTerm
     :: Debug variable
     => Ord variable
@@ -615,6 +621,7 @@ rewriteRuleToTerm
         (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
         (rhsToTerm rhs)
 
+-- | Converts a 'OnePathRule' into its term representation
 onePathRuleToTerm
     :: Debug variable
     => Ord variable
@@ -637,6 +644,7 @@ onePathRuleToTerm
   where
     op = wEF $ TermLike.termLikeSort left
 
+-- | Converts an 'AllPathRule' into its term representation
 allPathRuleToTerm
     :: Debug variable
     => Ord variable
@@ -659,6 +667,7 @@ allPathRuleToTerm
   where
     op = wAF $ TermLike.termLikeSort left
 
+-- | Converts an 'ImplicationRule' into its term representation
 implicationRuleToTerm
     :: Debug variable
     => Ord variable
@@ -673,6 +682,7 @@ implicationRuleToTerm
     TermLike.mkImplies left right
 
 
+-- | 'Alias' construct for weak exist finally
 wEF :: Sort -> Alias (TermLike.TermLike Variable)
 wEF sort = Alias
     { aliasConstructor = Id
@@ -688,6 +698,7 @@ wEF sort = Alias
     , aliasRight = TermLike.mkTop sort
     }
 
+-- | 'Alias' construct for weak always finally
 wAF :: Sort -> Alias (TermLike.TermLike Variable)
 wAF sort = Alias
     { aliasConstructor = Id
@@ -703,6 +714,7 @@ wAF sort = Alias
     , aliasRight = TermLike.mkTop sort
     }
 
+-- | 'Alias' construct for all path globally
 aPG :: Sort -> Alias (TermLike.TermLike Variable)
 aPG sort = Alias
     { aliasConstructor = Id
@@ -718,13 +730,15 @@ aPG sort = Alias
     , aliasRight = TermLike.mkTop sort
     }
 
--- | modalities
+-- | weak exist finally modality symbol
 weakExistsFinally :: Text
 weakExistsFinally = "weakExistsFinally"
 
+-- | weak always finally modality symbol
 weakAlwaysFinally :: Text
 weakAlwaysFinally = "weakAlwaysFinally"
 
+-- | all path globallt modality symbol
 allPathGlobally :: Text
 allPathGlobally = "allPathGlobally"
 

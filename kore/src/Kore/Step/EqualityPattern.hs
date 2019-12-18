@@ -1,3 +1,9 @@
+{-|
+Description : Equality rules
+Copyright   : (c) Runtime Verification, 2019
+License     : NCSA
+
+-}
 module Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     , EqualityRule (..)
@@ -92,6 +98,7 @@ instance TopBottom (EqualityPattern variable) where
     isTop _ = False
     isBottom _ = False
 
+-- | Creates a basic, unconstrained, Equality pattern
 equalityPattern
     :: InternalVariable variable
     => TermLike.TermLike variable
@@ -129,6 +136,9 @@ instance
     unparse2 = unparse2 . equalityRuleToTerm
 
 
+{-| Reverses an 'EqualityRule' back into its 'Pattern' representation.
+  Should be the inverse of 'Rule.termToAxiomPattern'.
+-}
 equalityRuleToTerm
     :: Debug variable
     => Ord variable
