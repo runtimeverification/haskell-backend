@@ -131,7 +131,8 @@ import Kore.Strategies.Verification
     )
 import qualified Kore.Strategies.Verification as Verification.DoNotUse
 import Kore.Syntax.Definition
-    ( Module (Module)
+    ( Definition (Definition)
+    , Module (Module)
     , ModuleName (ModuleName)
     )
 import qualified Kore.Syntax.Definition as Definition.DoNotUse
@@ -496,7 +497,7 @@ koreProve execOptions proveOptions = do
     saveProven :: Unparse claim => [claim] -> FilePath -> IO ()
     saveProven provenClaims outputFile =
         withFile outputFile WriteMode
-            (`hPutDoc` unparse provenModule)
+            (`hPutDoc` unparse provenDefinition)
       where
         provenModule =
             Module
@@ -504,6 +505,10 @@ koreProve execOptions proveOptions = do
                 , moduleSentences = provenClaims
                 , moduleAttributes = def
                 }
+        provenDefinition = Definition
+            { definitionAttributes = def
+            , definitionModules = [provenModule]
+            }
 
 koreBmc :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreBmc execOptions proveOptions = do
