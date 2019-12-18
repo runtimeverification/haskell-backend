@@ -353,8 +353,8 @@ verifyAxiomSentenceWorker sentence = do
     variables <- buildDeclaredSortVariables sortParams
     context <- askPatternContext variables
     field @"sentenceAxiomPattern" (verifyStandalonePattern Nothing) sentence
-            & runPatternVerifier context
-            & either throwError return
+        & runPatternVerifier context
+        & either throwError return
 
 verifyClaims
     :: [ParsedSentence]
