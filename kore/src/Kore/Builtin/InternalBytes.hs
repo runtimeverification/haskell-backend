@@ -178,7 +178,6 @@ dotBytesVerifier =
         symbol = applicationSymbolOrAlias application
         bytesSort = applicationSortsResult . symbolSorts $ symbol
 
-
 matchBuiltinBytes :: Monad m => TermLike variable -> MaybeT m ByteString
 matchBuiltinBytes (InternalBytes_ _ byteString) = return byteString
 matchBuiltinBytes _ = empty
