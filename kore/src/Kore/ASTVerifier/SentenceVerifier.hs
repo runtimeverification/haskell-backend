@@ -21,11 +21,6 @@ module Kore.ASTVerifier.SentenceVerifier
     , verifyAliasSentence
     ) where
 
-import Debug.Trace
-import Kore.Unparser
-    ( unparseToString
-    )
-
 import Control.Applicative
     ( Alternative (..)
     )
@@ -357,11 +352,9 @@ verifyAxiomSentenceWorker sentence = do
     let sortParams = sentenceAxiomParameters sentence
     variables <- buildDeclaredSortVariables sortParams
     context <- askPatternContext variables
-    x <- field @"sentenceAxiomPattern" (verifyStandalonePattern Nothing) sentence
+    field @"sentenceAxiomPattern" (verifyStandalonePattern Nothing) sentence
             & runPatternVerifier context
             & either throwError return
-    -- traceM $ "\n\n" <> unparseToString x <> "\n\n"
-    return x
 
 verifyClaims
     :: [ParsedSentence]

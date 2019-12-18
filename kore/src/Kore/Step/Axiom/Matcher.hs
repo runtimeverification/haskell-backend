@@ -172,7 +172,7 @@ matchIncremental termLike1 termLike2 =
             solution = predicate' <> substitution'
         return solution
 
-    throwUnknown = do
+    throwUnknown =
         Monad.Trans.lift
         $ Monad.Unify.throwUnificationError
         $ unsupportedPatterns "Unknown match case" termLike1 termLike2
