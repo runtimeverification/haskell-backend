@@ -250,10 +250,10 @@ continue :: Strategy prim
 continue = Continue
 
 data ExecutionGraph config rule = ExecutionGraph
-    { root :: Graph.Node
-    , graph :: Gr config (Seq rule)
+    { root :: !Graph.Node
+    , graph :: !(Gr config (Seq rule))
     }
-    deriving(Eq, Show)
+    deriving (Eq, Show)
 
 -- | A temporary data structure used to construct the 'ExecutionGraph'.
 -- Well, it was intended to be temporary, but for the purpose of making
@@ -300,8 +300,11 @@ insChildNode
     => MonadState (Gr config (Seq rule)) m
     => ChildNode config rule
     -> m Graph.Node
-insChildNode childNode =
-    deepseq childNode (State.state insChildNodeWorker)
+insChildNode childNode = do
+    graph <- deepseq childNode State.get
+    let (node', graph') = insChildNodeWorker graph
+    deepseq graph' (State.put graph')
+    return node'
   where
     ChildNode { config, parents } = childNode
     insChildNodeWorker graph =
