@@ -145,10 +145,6 @@ symbolVerifiers =
     string  = String.assertSort
     anySort = Builtin.acceptAnySort
 
-                -- if bytesValue == "Lbl'Stop'Bytes'Unds'BYTES-HOOKED'Unds'Bytes"
-                --     then traceM "\n\nyay\n\n"
-                --     else return ()
-
 {- | Verify that domain value patterns are well-formed.
  -}
 patternVerifierHook :: Builtin.PatternVerifierHook
