@@ -154,8 +154,7 @@ patternVerifierHook =
                 bytesValue <- Builtin.parseString Encoding.parseBase16 literal
                 (return . InternalBytesF . Const)
                     InternalBytes { bytesSort, bytesValue }
-            _ ->
-                Kore.Error.koreFail "Expected literal string"
+            _ -> Kore.Error.koreFail "Expected literal string"
       where
         DomainValue { domainValueSort = bytesSort } = external
         DomainValue { domainValueChild = externalChild } = external
