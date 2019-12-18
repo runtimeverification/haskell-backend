@@ -387,13 +387,13 @@ instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance InternalVariable variable => Unparse (OnePathRule variable) where
     unparse =
-        (("claim" <> Pretty.line') <>)
+        (("claim {}" <> Pretty.line') <>)
         . Pretty.nest 4
         . unparse
         . axiomPatternToTerm
         . OnePathClaimPattern
     unparse2 =
-        ("claim" Pretty.<+>)
+        ("claim {}" Pretty.<+>)
         . unparse2
         . axiomPatternToTerm
         . OnePathClaimPattern
@@ -447,13 +447,13 @@ instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance InternalVariable variable => Unparse (AllPathRule variable) where
     unparse =
-        (("claim" <> Pretty.line') <>)
+        (("claim {}" <> Pretty.line') <>)
         . Pretty.nest 4
         . unparse
         . axiomPatternToTerm
         . AllPathClaimPattern
     unparse2 =
-        ("claim" Pretty.<+>)
+        ("claim {}" Pretty.<+>)
         . unparse2
         . axiomPatternToTerm
         . AllPathClaimPattern
