@@ -54,8 +54,8 @@ import Kore.Step.Axiom.Identifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.EqualityPattern
-    ( EqualityRule (EqualityRule)
-    , EqualityPattern (..)
+    ( EqualityPattern (..)
+    , EqualityRule (EqualityRule)
     )
 import Kore.Step.Rule
     ( QualifiedAxiomPattern (..)

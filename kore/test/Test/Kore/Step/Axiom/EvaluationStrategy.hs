@@ -34,8 +34,8 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
 import Kore.Step.EqualityPattern
-    ( EqualityRule (EqualityRule)
-    , EqualityPattern (..)
+    ( EqualityPattern (..)
+    , EqualityRule (EqualityRule)
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom

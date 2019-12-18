@@ -36,11 +36,11 @@ import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
     )
+import Kore.Step.Rule.Expand
+import Kore.Step.Rule.Simplify
 import Kore.Step.RulePattern
     ( RHS
     )
-import Kore.Step.Rule.Expand
-import Kore.Step.Rule.Simplify
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
 import Kore.Step.Transition

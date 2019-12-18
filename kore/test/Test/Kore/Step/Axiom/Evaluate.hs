@@ -35,12 +35,12 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Evaluate as Kore
-import qualified Kore.Step.Result as Results
 import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    , EqualityPattern (..)
+    ( EqualityPattern (..)
+    , EqualityRule (..)
     , equalityPattern
     )
+import qualified Kore.Step.Result as Results
 import Kore.Step.Simplification.Simplify
 import Kore.Unparser
 

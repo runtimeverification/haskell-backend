@@ -49,6 +49,14 @@ import Kore.Step.Axiom.Identifier
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
+import Kore.Step.EqualityPattern
+    ( EqualityPattern (EqualityPattern)
+    , EqualityRule (..)
+    )
+import qualified Kore.Step.EqualityPattern as EqualityPattern
+    ( EqualityPattern (..)
+    , mapVariables
+    )
 import Kore.Step.EquationalStep
     ( UnificationProcedure (..)
     )
@@ -57,14 +65,6 @@ import Kore.Step.Remainder
     ( ceilChildOfApplicationOrTop
     )
 import qualified Kore.Step.Result as Result
-import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    , EqualityPattern (EqualityPattern)
-    )
-import qualified Kore.Step.EqualityPattern as EqualityPattern
-    ( EqualityPattern (..)
-    , mapVariables
-    )
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify

@@ -46,20 +46,20 @@ import qualified Kore.Parser.Lexeme as Parser
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
     )
+import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
 import Kore.Step.AxiomPattern
-    ( HasMapVariables (..)
-    , HasLeftPattern (..)
+    ( HasLeftPattern (..)
+    , HasMapVariables (..)
     )
 import Kore.Step.EqualityPattern
     ( EqualityPattern
     )
-import Kore.Step.Simplification.Simplify
-    ( SimplifierVariable
-    )
 import Kore.Step.RulePattern
     ( RulePattern
     )
-import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
+import Kore.Step.Simplification.Simplify
+    ( SimplifierVariable
+    )
 import Kore.Syntax.Id
     ( Id
     )
@@ -163,7 +163,7 @@ filterDebugAppliedRule debugAppliedRuleOptions entry
   | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedRule entry
     = isSelectedRule debugAppliedRuleOptions appliedRule
   | otherwise = False
-    
+
 isSelectedRule
     :: forall rule variable
     .  SimplifierVariable variable

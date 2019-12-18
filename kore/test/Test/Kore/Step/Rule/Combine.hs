@@ -29,13 +29,13 @@ import Kore.Internal.TermLike
 import Kore.Logger.Output
     ( emptyLogger
     )
+import Kore.Step.Rule.Combine
 import Kore.Step.RulePattern
     ( RHS (..)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     )
 import qualified Kore.Step.RulePattern as Rule.DoNotUse
-import Kore.Step.Rule.Combine
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )

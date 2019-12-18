@@ -18,23 +18,33 @@ module Kore.Step.Rule
 import Control.DeepSeq
     ( NFData
     )
+import Data.Maybe
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import Data.Maybe
 
-import Kore.Debug
+import qualified Data.Text.Prettyprint.Doc as Pretty
+import qualified Kore.Attribute.Axiom as Attribute
+import Kore.Attribute.Axiom.Constructor
+    ( isConstructor
+    )
+import Kore.Attribute.Functional
+    ( isDeclaredFunctional
+    )
 import qualified Kore.Attribute.Parser as Attribute.Parser
+import Kore.Attribute.Priority
+    ( getPriority
+    )
+import Kore.Attribute.Subsort
+    ( getSubsorts
+    )
+import Kore.Debug
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
 import Kore.Internal.Alias
     ( Alias (..)
     )
-import Kore.IndexedModule.IndexedModule
 import qualified Kore.Internal.Predicate as Predicate
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Attribute.Axiom as Attribute
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
 import Kore.Internal.Variable
     ( SortedVariable
     , Variable
@@ -43,56 +53,46 @@ import Kore.Sort
     ( Sort (..)
     , SortVariable (SortVariable)
     )
-import Kore.Syntax.Id
-    ( Id (..)
-    )
-import Kore.Step.Simplification.ExpandAlias
-    ( substituteInAlias
-    )
-import Kore.Unparser
-    ( Unparse
-    , unparse
-    )
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     , EqualityRule (..)
     , equalityRuleToTerm
     )
 import Kore.Step.RulePattern
-    ( RulePattern (..)
-    , RewriteRule (..)
-    , OnePathRule (..)
-    , AllPathRule (..)
-    , ReachabilityRule (..)
+    ( AllPathRule (..)
     , ImplicationRule (..)
-    , termToRHS
-    , injectTermIntoRHS
-    , rewriteRuleToTerm
-    , onePathRuleToTerm
+    , OnePathRule (..)
+    , ReachabilityRule (..)
+    , RewriteRule (..)
+    , RulePattern (..)
+    , allPathGlobally
     , allPathRuleToTerm
     , implicationRuleToTerm
-    , weakExistsFinally
+    , injectTermIntoRHS
+    , onePathRuleToTerm
+    , rewriteRuleToTerm
+    , termToRHS
     , weakAlwaysFinally
-    , allPathGlobally
+    , weakExistsFinally
     )
-import Kore.Attribute.Subsort
-    ( getSubsorts
+import Kore.Step.Simplification.ExpandAlias
+    ( substituteInAlias
     )
-import Kore.Attribute.Axiom.Constructor
-    ( isConstructor
+import Kore.Substitute
+    ( SubstitutionVariable
     )
-import Kore.Attribute.Functional
-    ( isDeclaredFunctional
+import qualified Kore.Syntax.Definition as Syntax
+import Kore.Syntax.Id
+    ( Id (..)
     )
-import Kore.Attribute.Priority
-    ( getPriority
+import Kore.TopBottom
+    ( TopBottom (..)
+    )
+import Kore.Unparser
+    ( Unparse
+    , unparse
     )
 import qualified Kore.Verified as Verified
-import qualified Kore.Syntax.Definition as Syntax
-import Kore.Error
 
 newtype AxiomPatternError = AxiomPatternError ()
     deriving (GHC.Generic)

@@ -76,7 +76,6 @@ import Kore.Step.Axiom.Identifier
     ( AxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
-import qualified Kore.Step.Function.Memo as Memo
 import Kore.Step.EqualityPattern
     ( EqualityRule (..)
     )
@@ -84,6 +83,7 @@ import Kore.Step.EqualityPattern as EqualityPattern
     ( EqualityPattern (..)
     , equalityPattern
     )
+import qualified Kore.Step.Function.Memo as Memo
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.InjSimplifier
 import qualified Kore.Step.Simplification.Simplifier as Simplifier

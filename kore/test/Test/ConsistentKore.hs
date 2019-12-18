@@ -39,6 +39,10 @@ import Data.Text
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
     ( Constructor (..)
     )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , freeVariables
+    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -73,10 +77,6 @@ import Kore.IndexedModule.MetadataTools
     )
 import qualified Kore.Internal.Alias as Internal
     ( Alias (Alias)
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
-    , freeVariables
     )
 import qualified Kore.Internal.Alias as Alias.DoNotUse
 import Kore.Internal.ApplicationSorts

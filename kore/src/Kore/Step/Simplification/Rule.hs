@@ -28,11 +28,11 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.RulePattern
 import Kore.Step.EqualityPattern
-    ( EqualityRule (..)
-    , EqualityPattern (..)
+    ( EqualityPattern (..)
+    , EqualityRule (..)
     )
+import Kore.Step.RulePattern
 import qualified Kore.Step.Simplification.Pattern as Pattern
 import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify

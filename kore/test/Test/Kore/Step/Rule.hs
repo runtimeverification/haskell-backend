@@ -12,48 +12,48 @@ import Control.DeepSeq
 import Control.Exception
     ( evaluate
     )
-import qualified Data.Map as Map
 import Control.Lens
     ( (.~)
     )
+import Data.Default
 import Data.Function
     ( (&)
     )
+import Data.Generics.Product
+import qualified Data.Map as Map
 import Data.Maybe
     ( fromMaybe
     )
-import Data.Generics.Product
-import Data.Default
 import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
 
-import Kore.Step.RulePattern
-import Kore.Error
-import Kore.Step.EqualityPattern
-import qualified Kore.Internal.Predicate as Predicate
-import Kore.Internal.ApplicationSorts
-    ( ApplicationSorts (..)
-    )
-import Kore.Internal.TermLike
-import Kore.Step.Rule
-import Kore.IndexedModule.IndexedModule
-import qualified Kore.Verified as Verified
-import qualified Kore.Builtin as Builtin
+import Kore.ASTVerifier.DefinitionVerifier
 import qualified Kore.Attribute.Axiom as Attribute
 import qualified Kore.Attribute.Pattern as Attribute
 import qualified Kore.Attribute.Symbol as Attribute
+import qualified Kore.Builtin as Builtin
+import Kore.Error
+import Kore.IndexedModule.IndexedModule
+import Kore.Internal.ApplicationSorts
+    ( ApplicationSorts (..)
+    )
+import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
+import Kore.Step.EqualityPattern
+import Kore.Step.Rule
+import Kore.Step.RulePattern
 import Kore.Syntax.Definition hiding
     ( Alias (..)
     )
-import Kore.ASTVerifier.DefinitionVerifier
+import qualified Kore.Verified as Verified
 
 import Test.Kore
     ( testId
     )
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.ASTVerifier.DefinitionVerifier
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_axiomPatterns :: [TestTree]
 test_axiomPatterns =

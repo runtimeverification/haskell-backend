@@ -69,6 +69,7 @@ import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import Kore.Logger.DebugAppliedRule
 import Kore.Step.AxiomPattern
+import qualified Kore.Step.AxiomPattern as Rule
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
@@ -77,7 +78,6 @@ import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern
     )
-import qualified Kore.Step.AxiomPattern as Rule
 import qualified Kore.Step.RulePattern as Rule
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator

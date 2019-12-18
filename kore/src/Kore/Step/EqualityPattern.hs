@@ -9,34 +9,35 @@ module Kore.Step.EqualityPattern
 import Control.DeepSeq
     ( NFData
     )
+import qualified Data.Default as Default
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
-import qualified Data.Default as Default 
 
-import Kore.Debug
-import Kore.Internal.Predicate
-    ( Predicate
+import Data.Text.Prettyprint.Doc
+    ( Pretty
     )
-import Kore.Substitute
-    ( SubstitutionVariable
-    )
-import qualified Kore.Internal.Predicate as Predicate
-import qualified Kore.Internal.TermLike as TermLike
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Pattern.FreeVariables
     ( HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
-import Data.Text.Prettyprint.Doc
-    ( Pretty
+import Kore.Debug
+import Kore.Internal.Predicate
+    ( Predicate
     )
-import qualified Data.Text.Prettyprint.Doc as Pretty
-import Kore.TopBottom
-    ( TopBottom (..)
-    )
+import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     , SortedVariable
+    )
+import Kore.Step.AxiomPattern
+import Kore.Substitute
+    ( SubstitutionVariable
+    )
+import Kore.TopBottom
+    ( TopBottom (..)
     )
 import Kore.Unparser
     ( Unparse
@@ -44,7 +45,6 @@ import Kore.Unparser
     , unparse2
     )
 import qualified Kore.Variables.Fresh as Fresh
-import Kore.Step.AxiomPattern
 
 {- | Function axioms
 
@@ -127,8 +127,8 @@ instance
   where
     unparse = unparse . equalityRuleToTerm
     unparse2 = unparse2 . equalityRuleToTerm
-    
-    
+
+
 equalityRuleToTerm
     :: Debug variable
     => Ord variable
@@ -182,7 +182,7 @@ instance HasLeftPattern EqualityPattern variable where
 
 instance HasRequiresPredicate EqualityPattern variable where
     requiresPredicate = constraint
-    
+
 instance
     SubstitutionVariable variable
     => HasRefreshPattern EqualityPattern variable

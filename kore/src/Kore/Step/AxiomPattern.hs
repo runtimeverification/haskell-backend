@@ -5,27 +5,27 @@ module Kore.Step.AxiomPattern
     , HasMapVariables (..)
     ) where
 
-import Kore.Internal.TermLike
-    ( TermLike
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables (..)
     )
 import Kore.Internal.Predicate
     ( Predicate
     )
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import Kore.Substitute
     ( SubstitutionVariable
-    )
-import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables (..)
     )
 import Kore.Variables.Fresh
     ( Renaming
     )
 
 class HasLeftPattern rule variable where
-    leftPattern :: rule variable -> TermLike variable 
+    leftPattern :: rule variable -> TermLike variable
 
 class HasRequiresPredicate rule variable where
-    requiresPredicate :: rule variable -> Predicate variable 
+    requiresPredicate :: rule variable -> Predicate variable
 
 class SubstitutionVariable variable => HasRefreshPattern rule variable where
     {- | Refresh the variables of a rule

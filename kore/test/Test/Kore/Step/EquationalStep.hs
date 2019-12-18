@@ -23,13 +23,17 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
     , makeCeilPredicate_
---    , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate_
     , makeNotPredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
+import Kore.Step.EqualityPattern as EqualityPattern
+    ( EqualityPattern (..)
+    , EqualityRule (..)
+    , equalityPattern
+    )
 import Kore.Step.EquationalStep
     ( UnificationProcedure (..)
     )
@@ -42,11 +46,6 @@ import qualified Kore.Step.RewriteStep as Step
     , remainders
     , result
     , results
-    )
-import Kore.Step.EqualityPattern as EqualityPattern
-    ( EqualityRule (..)
-    , EqualityPattern (..)
-    , equalityPattern
     )
 import Kore.Unification.Error
     ( SubstitutionError (..)

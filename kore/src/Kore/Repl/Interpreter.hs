@@ -126,6 +126,9 @@ import qualified Kore.Attribute.Axiom as Attribute
     , sourceLocation
     )
 import qualified Kore.Attribute.Label as AttrLabel
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    )
 import Kore.Attribute.RuleIndex
 import Kore.Internal.Condition
     ( Condition
@@ -134,9 +137,6 @@ import Kore.Internal.Conditional
     ( Conditional (..)
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Attribute.Pattern.FreeVariables
-    ( freeVariables
-    )
 import Kore.Internal.TermLike
     ( TermLike
     )

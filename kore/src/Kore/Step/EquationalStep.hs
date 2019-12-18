@@ -46,6 +46,10 @@ import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import Kore.Logger.DebugAppliedRule
+import Kore.Step.EqualityPattern
+    ( EqualityPattern (..)
+    )
+import qualified Kore.Step.EqualityPattern as EqualityPattern
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
@@ -64,10 +68,6 @@ import Kore.Step.RewriteStep
     , unifyRules
     , wouldNarrowWith
     )
-import Kore.Step.EqualityPattern
-    ( EqualityPattern (..)
-    )
-import qualified Kore.Step.EqualityPattern as EqualityPattern
 import qualified Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Unification.Substitution as Substitution

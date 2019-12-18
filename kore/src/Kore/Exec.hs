@@ -104,21 +104,12 @@ import qualified Kore.Profiler.Profile as Profiler
 import qualified Kore.Repl as Repl
 import qualified Kore.Repl.Data as Repl.Data
 import Kore.Step
-import Kore.Step.Rule
-    ( extractImplicationClaims
-    , extractRewriteAxioms
-    )
 import Kore.Step.EqualityPattern
     ( EqualityRule
     )
-import Kore.Step.RulePattern
-    ( ReachabilityRule (..)
-    , RewriteRule (RewriteRule)
-    , RulePattern (RulePattern)
-    , getRewriteRule
-    )
-import Kore.Step.RulePattern as RulePattern
-    ( RulePattern (..)
+import Kore.Step.Rule
+    ( extractImplicationClaims
+    , extractRewriteAxioms
     )
 import qualified Kore.Step.Rule.Combine as Rules
     ( mergeRules
@@ -129,6 +120,15 @@ import Kore.Step.Rule.Expand
     )
 import Kore.Step.Rule.Simplify
     ( SimplifyRuleLHS (..)
+    )
+import Kore.Step.RulePattern
+    ( ReachabilityRule (..)
+    , RewriteRule (RewriteRule)
+    , RulePattern (RulePattern)
+    , getRewriteRule
+    )
+import Kore.Step.RulePattern as RulePattern
+    ( RulePattern (..)
     )
 import Kore.Step.Search
     ( searchGraph

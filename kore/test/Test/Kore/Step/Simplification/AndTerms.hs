@@ -47,8 +47,8 @@ import Kore.Step.Axiom.Registry
     ( axiomPatternsToEvaluators
     )
 import Kore.Step.EqualityPattern
-    ( EqualityRule (EqualityRule)
-    , EqualityPattern (..)
+    ( EqualityPattern (..)
+    , EqualityRule (EqualityRule)
     , equalityPattern
     )
 import Kore.Step.Simplification.And

@@ -18,10 +18,10 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import qualified Test.Kore.Step.MockSymbols as Mock
 import Kore.Step.AxiomPattern
     ( refreshPattern
     )
+import qualified Test.Kore.Step.MockSymbols as Mock
 
 test_freeVariables :: TestTree
 test_freeVariables =
