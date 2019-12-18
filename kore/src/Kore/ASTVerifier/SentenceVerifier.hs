@@ -360,7 +360,7 @@ verifyAxiomSentenceWorker sentence = do
     x <- field @"sentenceAxiomPattern" (verifyStandalonePattern Nothing) sentence
             & runPatternVerifier context
             & either throwError return
-    traceM $ "\n\n" <> unparseToString x <> "\n\n"
+    -- traceM $ "\n\n" <> unparseToString x <> "\n\n"
     return x
 
 verifyClaims

@@ -177,7 +177,7 @@ dotBytesVerifier =
         Monad.unless (null arguments)
             (Kore.Error.koreFail "expected zero arguments")
         let x = (InternalBytesF . Const) InternalBytes { bytesSort, bytesValue = Encoding.encode8Bit "" }
-        traceM . unparseToString $ x
+        -- traceM . unparseToString $ x
         return x
       where
         arguments = applicationChildren application
