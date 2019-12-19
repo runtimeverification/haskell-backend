@@ -150,13 +150,11 @@ instance (Monad f, Foldable f) => Foldable (ListT f) where
         fold $ foldListT as (\a r -> mappend (f a) <$> r) (pure mempty)
 
 cons :: a -> ListT m a -> ListT m a
-{-# INLINE cons #-}
 cons a as = ListT $ \yield -> yield a . foldListT as yield
 
 {- | Collect all values produced by a @'ListT' m@ as a list in @m@.
  -}
 gather :: Monad m => ListT m a -> m [a]
-{-# INLINE gather #-}
 gather as = foldListT as (\a mr -> (a :) <$> mr) (pure [])
 
 {- | Distribute a 'Foldable' collection of values as a @'ListT' m@ stream.
@@ -165,7 +163,6 @@ Usually, @f ~ []@.
 
  -}
 scatter :: Foldable f => f a -> ListT m a
-{-# INLINE scatter #-}
 scatter = foldr cons empty
 
 {- | Apply a transformation of the 'Monad' @m@ underlying @'ListT' m@.
@@ -185,5 +182,4 @@ mapListT
     => (forall x. m x -> n x)
     -> ListT m a
     -> ListT n a
-{-# INLINE mapListT #-}
 mapListT mapping as = (lift . mapping) (gather as) >>= scatter
