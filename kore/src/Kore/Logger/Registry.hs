@@ -95,7 +95,7 @@ registry =
           else
             error
                 "Failure to create Kore.Logger.Registry.registry.\
-                \ The entry maps 'textToType' and 'typeToText'\
+                \ The maps 'textToType' and 'typeToText'\
                 \ should be inverses of eachother."
   where
     register :: SomeTypeRep -> (Text, SomeTypeRep)

@@ -259,7 +259,7 @@ parseKoreLogOptions =
     itemParser = do
         argument <- some (Parser.noneOf [',', ' '])
         _ <- void (Parser.char ',') <|> Parser.eof
-        parseEntryType $ Text.pack argument
+        parseEntryType . Text.pack $ argument
 
 listOfEntries :: OptPretty.Doc
 listOfEntries =
