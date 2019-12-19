@@ -37,7 +37,6 @@ import Data.List.NonEmpty
     )
 import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import Data.Text
     ( pack
     )
@@ -506,7 +505,10 @@ logUpdatesState = do
         options =
             Logger.KoreLogOptions
                 { logLevel = Logger.Info
-                , logEntries = Set.fromList $ Map.elems Logger.registry
+                , logEntries =
+                    Map.keysSet
+                    . Logger.typeToText
+                    $ Logger.registry
                 , logType = Logger.LogStdErr
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty

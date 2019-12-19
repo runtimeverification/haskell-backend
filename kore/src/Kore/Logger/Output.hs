@@ -101,7 +101,8 @@ import Kore.Logger.DebugSolver
     )
 import qualified Kore.Logger.DebugSolver as DebugSolver.DoNotUse
 import Kore.Logger.Registry
-    ( parseEntryType
+    ( lookupTextFromTypeWithError
+    , parseEntryType
     , toSomeEntryType
     )
 
@@ -317,7 +318,11 @@ defaultLogPretty (SomeEntry entry) =
     Pretty.hsep
         [ Pretty.brackets (Pretty.pretty . entrySeverity $ entry)
         , ":"
-        , Pretty.brackets undefined
+        , Pretty.brackets
+            . Pretty.pretty
+            . lookupTextFromTypeWithError
+            . toSomeEntryType
+            $ entry
         , ":"
         , Pretty.pretty entry
         ]

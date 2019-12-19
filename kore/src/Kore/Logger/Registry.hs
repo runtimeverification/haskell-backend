@@ -4,11 +4,12 @@ License     : NCSA
 -}
 
 module Kore.Logger.Registry
-    ( lookupEntryWithError
-    , parseEntryType
+    ( parseEntryType
     , toSomeEntryType
-    , isElemOfRegistry
+    , lookupTextFromTypeWithError
     , registry
+    , typeToText
+    , textToType
     -- entry types
     , debugAppliedRuleType
     , debugAxiomEvaluationType
@@ -22,6 +23,9 @@ module Kore.Logger.Registry
 import Control.Applicative
     ( empty
     )
+import Data.Functor.Classes
+    ( eq2
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -30,6 +34,9 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
+import Data.Tuple
+    ( swap
+    )
 import Data.Typeable
     ( Proxy (..)
     )
@@ -63,24 +70,42 @@ import Kore.Logger.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder
     )
 
--- TODO: crash program if it logs a type which isn't here
-registry :: Map Text SomeTypeRep
+data Registry =
+    Registry
+    { textToType :: Map Text SomeTypeRep
+    , typeToText :: Map SomeTypeRep Text
+    }
+
+registry :: Registry
 registry =
-    Map.fromList
-        [ register debugAppliedRuleType
-        , register debugAxiomEvaluationType
-        , register debugSolverSendType
-        , register debugSolverRecvType
-        , register warnBottomHookType
-        , register warnFunctionWithoutEvaluatorsType
-        , register warnSimplificationWithRemainderType
-        ]
+    let textToType =
+            Map.fromList
+                [ register debugAppliedRuleType
+                , register debugAxiomEvaluationType
+                , register debugSolverSendType
+                , register debugSolverRecvType
+                , register warnBottomHookType
+                , register warnFunctionWithoutEvaluatorsType
+                , register warnSimplificationWithRemainderType
+                ]
+        typeToText = makeInverse textToType
+    in if textToType `eq2` makeInverse typeToText
+          then Registry { textToType, typeToText }
+          else error "TODO error message"
   where
     register :: SomeTypeRep -> (Text, SomeTypeRep)
     register type' =
         (asText type', type')
     asText :: SomeTypeRep -> Text
     asText = Text.pack . show
+
+makeInverse
+    :: Ord k2
+    => Map k1 k2 -> Map k2 k1
+makeInverse map' =
+    Map.fromList
+    $ swap
+    <$> Map.toList map'
 
 debugAppliedRuleType
   , debugAxiomEvaluationType
@@ -106,10 +131,10 @@ warnFunctionWithoutEvaluatorsType =
 warnSimplificationWithRemainderType =
     someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
 
-lookupEntryWithError :: Text -> SomeTypeRep
-lookupEntryWithError entryText =
+lookupTextFromTypeWithError :: SomeTypeRep -> Text
+lookupTextFromTypeWithError type' =
     maybe notFoundError id
-    $ Map.lookup entryText registry
+    $ Map.lookup type' (typeToText registry)
   where
     notFoundError =
         error "Tried to log nonexistent entry type."
@@ -117,11 +142,7 @@ lookupEntryWithError entryText =
 parseEntryType :: Text -> Parser.Parsec String String SomeTypeRep
 parseEntryType entryText =
     maybe empty return
-    $ Map.lookup entryText registry
-
-isElemOfRegistry :: Entry entry => entry -> Bool
-isElemOfRegistry entry =
-    toSomeEntryType entry `elem` Map.elems registry
+    $ Map.lookup entryText (textToType registry)
 
 toSomeEntryType :: Entry entry => entry -> SomeTypeRep
 toSomeEntryType =
