@@ -386,8 +386,17 @@ instance Debug variable => Debug (OnePathRule variable)
 instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance InternalVariable variable => Unparse (OnePathRule variable) where
-    unparse = unparse . axiomPatternToTerm . OnePathClaimPattern
-    unparse2 = unparse2 .  axiomPatternToTerm . OnePathClaimPattern
+    unparse =
+        (("claim {}" <> Pretty.line') <>)
+        . Pretty.nest 4
+        . unparse
+        . axiomPatternToTerm
+        . OnePathClaimPattern
+    unparse2 =
+        ("claim {}" Pretty.<+>)
+        . unparse2
+        . axiomPatternToTerm
+        . OnePathClaimPattern
 
 instance TopBottom (OnePathRule variable) where
     isTop _ = False
@@ -437,8 +446,17 @@ instance Debug variable => Debug (AllPathRule variable)
 instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance InternalVariable variable => Unparse (AllPathRule variable) where
-    unparse = unparse . axiomPatternToTerm . AllPathClaimPattern
-    unparse2 = unparse2 . axiomPatternToTerm . AllPathClaimPattern
+    unparse =
+        (("claim {}" <> Pretty.line') <>)
+        . Pretty.nest 4
+        . unparse
+        . axiomPatternToTerm
+        . AllPathClaimPattern
+    unparse2 =
+        ("claim {}" Pretty.<+>)
+        . unparse2
+        . axiomPatternToTerm
+        . AllPathClaimPattern
 
 instance TopBottom (AllPathRule variable) where
     isTop _ = False
