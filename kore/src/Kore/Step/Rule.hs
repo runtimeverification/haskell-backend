@@ -299,6 +299,21 @@ termToAxiomPattern attributes pat =
                 , eqRight
                 , attributes
                 }
+        -- function axioms: ensures is the same as requires
+        -- TODO(traiansf): this is a frontend bug. remove onece fixed.
+        TermLike.Implies_ _ requires
+            (TermLike.And_ _
+                (TermLike.Equals_ _ _ eqLeft eqRight)
+                ensures
+            )
+          | ensures == requires
+          ->
+            pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
+                { constraint = Predicate.wrapPredicate requires
+                , eqLeft
+                , eqRight
+                , attributes
+                }
 
         -- function axioms: trivial pre- and post-conditions
         TermLike.Equals_ _ _ eqLeft eqRight ->
