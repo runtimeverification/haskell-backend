@@ -147,7 +147,9 @@ lookupTextFromTypeWithError type' =
     $ Map.lookup type' (typeToText registry)
   where
     notFoundError =
-        error "Tried to log nonexistent entry type."
+        error
+            "Tried to log nonexistent entry type.\
+            \ It should be added to Kore.Logger.Registry.registry."
 
 parseEntryType :: Text -> Parser.Parsec String String SomeTypeRep
 parseEntryType entryText =
