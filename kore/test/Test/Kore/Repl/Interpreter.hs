@@ -505,7 +505,7 @@ logUpdatesState = do
         options =
             Logger.KoreLogOptions
                 { logLevel = Logger.Info
-                , logEntries = Set.fromList ["entry1", "entry2"]
+                , logEntries = undefined -- Set.fromList ["entry1", "entry2"]
                 , logType = Logger.LogStdErr
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty

@@ -4,7 +4,9 @@ License     : NCSA
 -}
 
 module Kore.Logger.Registry
-    ( registry
+    ( lookupEntryWithError
+    , toSomeEntryType
+    , isElemOfRegistry
     ) where
 
 import Data.Map.Strict
@@ -19,10 +21,14 @@ import Data.Typeable
     ( Proxy (..)
     )
 import Type.Reflection
-    ( SomeTypeRep
+    ( SomeTypeRep (..)
     , someTypeRep
+    , typeOf
     )
 
+import Kore.Logger
+    ( Entry
+    )
 import Kore.Logger.DebugAppliedRule
     ( DebugAppliedRule
     )
@@ -43,6 +49,7 @@ import Kore.Logger.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder
     )
 
+-- TODO: crash program if it logs a type which isn't here
 registry :: Map Text SomeTypeRep
 registry =
     Map.fromList
@@ -75,3 +82,19 @@ registry =
         (asText type', type')
     asText :: SomeTypeRep -> Text
     asText = Text.pack . show
+
+lookupEntryWithError :: Text -> SomeTypeRep
+lookupEntryWithError entryText =
+    maybe notFoundError id
+    $ Map.lookup entryText registry
+  where
+    notFoundError =
+        error "Tried to log nonexistent entry type."
+
+isElemOfRegistry :: Entry entry => entry -> Bool
+isElemOfRegistry entry =
+    toSomeEntryType entry `elem` Map.elems registry
+
+toSomeEntryType :: Entry entry => entry -> SomeTypeRep
+toSomeEntryType =
+    SomeTypeRep . typeOf

@@ -53,7 +53,11 @@ import qualified Kore.Logger as Logger
 import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )
+import Kore.Logger.Output
+    ( EntryTypes
+    )
 import qualified Kore.Logger.Output as Logger
+import qualified Kore.Logger.Registry as Logger
 import Kore.Repl.Data
 
 type Parser = Parsec String String
@@ -288,13 +292,13 @@ severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
     sError    = Logger.Error    <$ literal "error"
     sCritical = Logger.Critical <$ literal "critical"
 
-parseLogEntries :: Parser (Set Text)
+parseLogEntries :: Parser EntryTypes
 parseLogEntries =
     Set.fromList
         <$$> literal "[" *> many entry <* literal "]"
   where
       entry =
-          Text.pack
+          (Logger.lookupEntryWithError . Text.pack)
             <$$> wordWithout ['[', ']', ',']
             <* optional (literal ",")
 

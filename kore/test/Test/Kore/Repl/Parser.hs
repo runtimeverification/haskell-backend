@@ -420,7 +420,7 @@ initScriptTests =
       in
         script1 `parsesTo_` commands1
     ]
-
+-- TODO: use real entry types
 logTests :: [ParserTest ReplCommand]
 logTests =
     [ "log debug [] stderr"
@@ -444,7 +444,7 @@ logTests =
     , "log [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Warning
-            , logEntries = Set.singleton "entry1"
+            , logEntries = undefined -- Set.singleton "entry1"
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -453,7 +453,7 @@ logTests =
     , "log critical [entry1] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Critical
-            , logEntries = Set.singleton "entry1"
+            , logEntries = undefined -- Set.singleton "entry1"
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -462,7 +462,7 @@ logTests =
     , "log info [ entry1,  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
-            , logEntries = Set.fromList ["entry1", "entry2"]
+            , logEntries = undefined -- Set.fromList ["entry1", "entry2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -471,7 +471,7 @@ logTests =
     , "log info [ entry1  entry2 ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
-            , logEntries = Set.fromList ["entry1", "entry2"]
+            , logEntries = undefined -- Set.fromList ["entry1", "entry2"]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
