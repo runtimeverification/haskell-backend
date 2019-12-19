@@ -5,10 +5,23 @@ License     : NCSA
 
 module Kore.Logger.Registry
     ( lookupEntryWithError
+    , parseEntryType
     , toSomeEntryType
     , isElemOfRegistry
+    , registry
+    -- entry types
+    , debugAppliedRuleType
+    , debugAxiomEvaluationType
+    , debugSolverSendType
+    , debugSolverRecvType
+    , warnBottomHookType
+    , warnFunctionWithoutEvaluatorsType
+    , warnSimplificationWithRemainderType
     ) where
 
+import Control.Applicative
+    ( empty
+    )
 import Data.Map.Strict
     ( Map
     )
@@ -20,6 +33,7 @@ import qualified Data.Text as Text
 import Data.Typeable
     ( Proxy (..)
     )
+import qualified Text.Megaparsec as Parser
 import Type.Reflection
     ( SomeTypeRep (..)
     , someTypeRep
@@ -62,26 +76,35 @@ registry =
         , register warnSimplificationWithRemainderType
         ]
   where
-    debugAppliedRuleType =
-        someTypeRep (Proxy :: Proxy DebugAppliedRule)
-    debugAxiomEvaluationType =
-        someTypeRep (Proxy :: Proxy DebugAxiomEvaluation)
-    debugSolverSendType =
-        someTypeRep (Proxy :: Proxy DebugSolverSend)
-    debugSolverRecvType =
-        someTypeRep (Proxy :: Proxy DebugSolverRecv)
-    warnBottomHookType =
-        someTypeRep (Proxy :: Proxy WarnBottomHook)
-    warnFunctionWithoutEvaluatorsType =
-        someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
-    warnSimplificationWithRemainderType =
-        someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
-
     register :: SomeTypeRep -> (Text, SomeTypeRep)
     register type' =
         (asText type', type')
     asText :: SomeTypeRep -> Text
     asText = Text.pack . show
+
+debugAppliedRuleType
+  , debugAxiomEvaluationType
+  , debugSolverSendType
+  , debugSolverRecvType
+  , warnBottomHookType
+  , warnFunctionWithoutEvaluatorsType
+  , warnSimplificationWithRemainderType
+  :: SomeTypeRep
+
+debugAppliedRuleType =
+    someTypeRep (Proxy :: Proxy DebugAppliedRule)
+debugAxiomEvaluationType =
+    someTypeRep (Proxy :: Proxy DebugAxiomEvaluation)
+debugSolverSendType =
+    someTypeRep (Proxy :: Proxy DebugSolverSend)
+debugSolverRecvType =
+    someTypeRep (Proxy :: Proxy DebugSolverRecv)
+warnBottomHookType =
+    someTypeRep (Proxy :: Proxy WarnBottomHook)
+warnFunctionWithoutEvaluatorsType =
+    someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
+warnSimplificationWithRemainderType =
+    someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
 
 lookupEntryWithError :: Text -> SomeTypeRep
 lookupEntryWithError entryText =
@@ -90,6 +113,11 @@ lookupEntryWithError entryText =
   where
     notFoundError =
         error "Tried to log nonexistent entry type."
+
+parseEntryType :: Text -> Parser.Parsec String String SomeTypeRep
+parseEntryType entryText =
+    maybe empty return
+    $ Map.lookup entryText registry
 
 isElemOfRegistry :: Entry entry => entry -> Bool
 isElemOfRegistry entry =

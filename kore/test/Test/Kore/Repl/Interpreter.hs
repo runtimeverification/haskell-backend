@@ -63,6 +63,7 @@ import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )
 import qualified Kore.Logger.Output as Logger
+import qualified Kore.Logger.Registry as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
@@ -505,7 +506,7 @@ logUpdatesState = do
         options =
             Logger.KoreLogOptions
                 { logLevel = Logger.Info
-                , logEntries = undefined -- Set.fromList ["entry1", "entry2"]
+                , logEntries = Set.fromList $ Map.elems Logger.registry
                 , logType = Logger.LogStdErr
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty

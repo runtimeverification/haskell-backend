@@ -23,13 +23,7 @@ import Data.Functor
 import Data.List
     ( nub
     )
-import Data.Set
-    ( Set
-    )
 import qualified Data.Set as Set
-import Data.Text
-    ( Text
-    )
 import qualified Data.Text as Text
 import Prelude hiding
     ( log
@@ -48,6 +42,9 @@ import Text.Megaparsec
     )
 import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
+import Type.Reflection
+    ( SomeTypeRep
+    )
 
 import qualified Kore.Logger as Logger
 import qualified Kore.Logger.DebugSolver as Logger
@@ -293,14 +290,17 @@ severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
     sCritical = Logger.Critical <$ literal "critical"
 
 parseLogEntries :: Parser EntryTypes
-parseLogEntries =
-    Set.fromList
-        <$$> literal "[" *> many entry <* literal "]"
+parseLogEntries = do
+    literal "["
+    entries <- many entry
+    literal "]"
+    return . Set.fromList $ entries
   where
-      entry =
-          (Logger.lookupEntryWithError . Text.pack)
-            <$$> wordWithout ['[', ']', ',']
-            <* optional (literal ",")
+      entry :: Parser SomeTypeRep
+      entry = do
+          item <- wordWithout ['[', ']', ',']
+          _ <- optional (literal ",")
+          Logger.parseEntryType . Text.pack $ item
 
 parseLogType :: Parser Logger.KoreLogType
 parseLogType = logStdOut <|> logFile

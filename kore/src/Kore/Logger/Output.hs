@@ -101,7 +101,7 @@ import Kore.Logger.DebugSolver
     )
 import qualified Kore.Logger.DebugSolver as DebugSolver.DoNotUse
 import Kore.Logger.Registry
-    ( lookupEntryWithError
+    ( parseEntryType
     , toSomeEntryType
     )
 
@@ -254,7 +254,7 @@ parseKoreLogOptions =
     itemParser = do
         argument <- some (Parser.noneOf [',', ' '])
         _ <- void (Parser.char ',') <|> Parser.eof
-        return . lookupEntryWithError $ Text.pack argument
+        parseEntryType $ Text.pack argument
 
 -- Creates a kore logger which:
 --     * adds timestamps
