@@ -10,6 +10,7 @@ module Kore.Logger.Registry
     , registry
     , typeToText
     , textToType
+    , getEntryTypesAsText
     -- entry types
     , debugAppliedRuleType
     , debugAxiomEvaluationType
@@ -91,13 +92,18 @@ registry =
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
           then Registry { textToType, typeToText }
-          else error "TODO error message"
+          else
+            error
+                "Failure to create Kore.Logger.Registry.registry.\
+                \ The entry maps 'textToType' and 'typeToText'\
+                \ should be inverses of eachother."
   where
     register :: SomeTypeRep -> (Text, SomeTypeRep)
     register type' =
         (asText type', type')
-    asText :: SomeTypeRep -> Text
-    asText = Text.pack . show
+
+asText :: SomeTypeRep -> Text
+asText = Text.pack . show
 
 makeInverse
     :: Ord k2
@@ -147,3 +153,6 @@ parseEntryType entryText =
 toSomeEntryType :: Entry entry => entry -> SomeTypeRep
 toSomeEntryType =
     SomeTypeRep . typeOf
+
+getEntryTypesAsText :: [Text]
+getEntryTypesAsText = Map.keys . textToType $ registry

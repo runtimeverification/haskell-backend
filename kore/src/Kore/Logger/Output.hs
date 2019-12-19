@@ -77,10 +77,12 @@ import Data.Time.LocalTime
 import Options.Applicative
     ( Parser
     , help
+    , helpDoc
     , long
     , maybeReader
     , option
     )
+import qualified Options.Applicative.Help.Pretty as OptPretty
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
 import Type.Reflection
@@ -101,7 +103,8 @@ import Kore.Logger.DebugSolver
     )
 import qualified Kore.Logger.DebugSolver as DebugSolver.DoNotUse
 import Kore.Logger.Registry
-    ( lookupTextFromTypeWithError
+    ( getEntryTypesAsText
+    , lookupTextFromTypeWithError
     , parseEntryType
     , toSomeEntryType
     )
@@ -244,8 +247,9 @@ parseKoreLogOptions =
         option
             parseCommaSeparatedEntries
             $ long "log-entries"
-            <> help "Log entries: logs entries of supplied types"
-            -- TODO: add here list of accepted types?
+            <> helpDoc
+               ( Just listOfEntries )
+
     parseCommaSeparatedEntries = maybeReader $ Parser.parseMaybe entryParser
     entryParser :: Parser.Parsec String String EntryTypes
     entryParser = do
@@ -256,6 +260,16 @@ parseKoreLogOptions =
         argument <- some (Parser.noneOf [',', ' '])
         _ <- void (Parser.char ',') <|> Parser.eof
         parseEntryType $ Text.pack argument
+
+listOfEntries :: OptPretty.Doc
+listOfEntries =
+    OptPretty.vsep $
+        [ "Log entries: logs entries of supplied types"
+        , "Available entry types:"
+        ]
+        <> fmap
+            (OptPretty.indent 4 . OptPretty.text . Text.unpack)
+            getEntryTypesAsText
 
 -- Creates a kore logger which:
 --     * adds timestamps
