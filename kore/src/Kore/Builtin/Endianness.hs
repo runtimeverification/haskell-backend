@@ -27,7 +27,9 @@ import Data.String
     )
 
 import qualified Kore.Attribute.Symbol as Attribute.Symbol
-import Kore.Builtin.Builtin
+import Kore.Builtin.Builtin hiding
+    ( verifiers
+    )
 import Kore.Builtin.Endianness.Endianness
 import Kore.Error
 import Kore.Internal.Pattern
