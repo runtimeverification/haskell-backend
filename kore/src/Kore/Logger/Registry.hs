@@ -77,6 +77,10 @@ data Registry =
     , typeToText :: Map SomeTypeRep Text
     }
 
+-- | A registry of log entry types and their textual representations.
+-- It is used for user input validation in kore-exec and kore-repl and
+-- for pretty printing information about log entries.
+-- When adding a new entry type you should register it here.
 registry :: Registry
 registry =
     let textToType =
