@@ -18,8 +18,8 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
-import Kore.Step.AxiomPattern
-    ( refreshPattern
+import Kore.Step.Step
+    ( refreshRule
     )
 import qualified Test.Kore.Step.MockSymbols as Mock
 
@@ -37,7 +37,7 @@ test_refreshRulePattern =
     testCase "Rename target variables" $ do
         let avoiding = freeVariables testRulePattern
             (renaming, rulePattern') =
-                refreshPattern avoiding testRulePattern
+                refreshRule avoiding testRulePattern
             renamed = Set.fromList (Foldable.toList renaming)
             free' = freeVariables rulePattern'
             notAvoided x = not (FreeVariables.isFreeVariable x avoiding)

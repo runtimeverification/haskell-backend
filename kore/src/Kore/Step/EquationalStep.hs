@@ -46,6 +46,8 @@ import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import Kore.Logger.DebugAppliedRule
+    ( debugAppliedRule
+    )
 import Kore.Step.EqualityPattern
     ( EqualityPattern (..)
     )
@@ -54,10 +56,13 @@ import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
-import Kore.Step.RewriteStep
+import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+import Kore.Step.Step
     ( Result
     , Results
     , UnificationProcedure (..)
+    , UnifiedRule
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
@@ -68,8 +73,6 @@ import Kore.Step.RewriteStep
     , unifyRules
     , wouldNarrowWith
     )
-import qualified Kore.Step.Simplification.Simplify as Simplifier
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
     ( MonadUnify
@@ -96,7 +99,7 @@ from the left-hand side of the rule.
  -}
 isNarrowingResult
     :: Ord variable
-    => Result variable (EqualityPattern (Target variable))
+    => Result EqualityPattern variable
     -> Bool
 isNarrowingResult Step.Result { appliedRule } =
     (not . Set.null) (wouldNarrowWith appliedRule)
@@ -190,7 +193,7 @@ finalizeRule
     -- ^ Initial conditions
     -> UnifiedRule (Target variable) (EqualityPattern (Target variable))
     -- ^ Rewriting axiom
-    -> unifier [Result variable (EqualityPattern (Target variable))]
+    -> unifier [Result EqualityPattern variable]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule initial unifiedRule =
@@ -218,7 +221,7 @@ recoveryFunctionLikeResults
     .  SimplifierVariable variable
     => Simplifier.MonadSimplify simplifier
     => Pattern (Target variable)
-    -> Results variable (EqualityPattern (Target variable))
+    -> Results EqualityPattern variable
     -> simplifier ()
 recoveryFunctionLikeResults initial results = do
     let appliedRules = Result.appliedRule <$> Results.results results
@@ -286,7 +289,7 @@ finalizeRulesSequence
     => MonadUnify unifier
     => Pattern (Target variable)
     -> [UnifiedRule (Target variable) (EqualityPattern (Target variable))]
-    -> unifier (Results variable (EqualityPattern (Target variable)))
+    -> unifier (Results EqualityPattern variable)
 finalizeRulesSequence initial unifiedRules
   = do
     (results, remainder) <-
@@ -307,7 +310,7 @@ finalizeRulesSequence initial unifiedRules
         -> State.StateT
             (Condition (Target variable))
             unifier
-            [Result variable (EqualityPattern (Target variable))]
+            [Result EqualityPattern variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
@@ -336,7 +339,7 @@ applyRulesSequence
     -- ^ Configuration being rewritten
     -> [EqualityPattern variable]
     -- ^ Rewrite rules
-    -> unifier (Results variable (EqualityPattern (Target variable)))
+    -> unifier (Results EqualityPattern variable)
 applyRulesSequence
     unificationProcedure
     initial

@@ -41,7 +41,7 @@ import qualified Kore.Step.EquationalStep as Step
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
-import qualified Kore.Step.RewriteStep as Step
+import qualified Kore.Step.Step as Step
     ( gatherResults
     , remainders
     , result
@@ -65,9 +65,6 @@ import Kore.Unification.UnifierT
 import Kore.Variables.Fresh
     ( nextVariable
     )
-import Kore.Variables.Target
-    ( Target
-    )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
@@ -83,7 +80,7 @@ applyEquationalRule_
           -> IO
             (Either
                 UnificationOrSubstitutionError
-                (Step.Results Variable (EqualityPattern (Target Variable)))
+                (Step.Results EqualityPattern Variable)
             )
         )
     -- ^ 'EquationalRule'
@@ -102,7 +99,7 @@ applyEquationalRules_
           -> IO
             (Either
                 UnificationOrSubstitutionError
-                (Step.Results Variable (EqualityPattern (Target Variable)))
+                (Step.Results EqualityPattern Variable)
             )
         )
     -- ^ 'EquationalRule's
@@ -576,7 +573,7 @@ test_applyEquationalRule_ =
 checkResults
     :: HasCallStack
     => MultiOr (Pattern Variable)
-    -> Step.Results Variable (EqualityPattern (Target Variable))
+    -> Step.Results EqualityPattern Variable
     -> Assertion
 checkResults expect actual =
     assertEqual "compare results"
@@ -586,7 +583,7 @@ checkResults expect actual =
 checkRemainders
     :: HasCallStack
     => MultiOr (Pattern Variable)
-    -> Step.Results Variable (EqualityPattern (Target Variable))
+    -> Step.Results EqualityPattern Variable
     -> Assertion
 checkRemainders expect actual =
     assertEqual "compare remainders"
@@ -625,7 +622,7 @@ applyEquationalRulesSequence_
     -- ^ Configuration being rewritten
     -> [EqualityRule variable]
     -- ^ Rewrite rules
-    -> unifier (Step.Results variable (EqualityPattern (Target variable)))
+    -> unifier (Step.Results EqualityPattern variable)
 applyEquationalRulesSequence_
     unificationProcedure
     (Step.toConfigurationVariables -> initialConfig)
@@ -645,7 +642,7 @@ applyEquationalRulesSequence
     -> IO
       (Either
           UnificationOrSubstitutionError
-          (Step.Results Variable (EqualityPattern (Target Variable)))
+          (Step.Results EqualityPattern Variable)
       )
 applyEquationalRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults

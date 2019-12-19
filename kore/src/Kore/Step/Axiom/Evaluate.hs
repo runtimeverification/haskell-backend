@@ -72,9 +72,6 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
-import Kore.Variables.Target
-    ( Target
-    )
 
 evaluateAxioms
     :: forall variable simplifier
@@ -84,7 +81,7 @@ evaluateAxioms
     => [EqualityRule Variable]
     -> TermLike variable
     -> Predicate variable
-    -> simplifier (Step.Results variable (EqualityPattern (Target variable)))
+    -> simplifier (Step.Results EqualityPattern variable)
 evaluateAxioms equalityRules termLike predicate
   | any ruleIsConcrete equalityRules
   -- All of the current pattern's children (most likely an ApplicationF)

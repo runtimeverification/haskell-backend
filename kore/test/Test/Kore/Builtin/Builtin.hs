@@ -122,6 +122,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
+import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
     ( ModuleName
     , ParsedDefinition
@@ -133,9 +134,6 @@ import qualified Kore.Unification.Procedure as Unification
 import qualified Kore.Unification.UnifierT as Monad.Unify
 import Kore.Unparser
     ( unparseToString
-    )
-import Kore.Variables.Target
-    ( Target
     )
 import SMT
     ( MonadSMT
@@ -301,7 +299,7 @@ runStepResult
     -> SMT
         (Either
             UnificationOrSubstitutionError
-            (Step.Results Variable (RulePattern (Target Variable)))
+            (Step.Results RulePattern Variable)
         )
 runStepResult configuration axiom = do
     results <-

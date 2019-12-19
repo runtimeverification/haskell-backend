@@ -42,9 +42,6 @@ import Kore.Internal.TermLike
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
-import Kore.Step.RewriteStep
-    ( UnificationProcedure (..)
-    )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.RulePattern
     ( RHS (..)
@@ -54,6 +51,10 @@ import Kore.Step.RulePattern
     , rulePattern
     )
 import qualified Kore.Step.RulePattern as RulePattern
+import Kore.Step.Step
+    ( UnificationProcedure (..)
+    )
+import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationOrSubstitutionError (..)
@@ -70,9 +71,6 @@ import Kore.Unification.UnifierT
     )
 import Kore.Variables.Fresh
     ( nextVariable
-    )
-import Kore.Variables.Target
-    ( Target
     )
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
@@ -217,7 +215,7 @@ applyRewriteRule_
           -> IO
             (Either
                 UnificationOrSubstitutionError
-                (Step.Results Variable (RulePattern (Target Variable)))
+                (Step.Results RulePattern Variable)
             )
         )
     -- ^ 'RewriteRule'
@@ -236,7 +234,7 @@ applyRewriteRules_
           -> IO
             (Either
                 UnificationOrSubstitutionError
-                (Step.Results Variable (RulePattern (Target Variable)))
+                (Step.Results RulePattern Variable)
             )
         )
     -- ^ 'RewriteRule's
@@ -741,7 +739,7 @@ applyRewriteRulesParallel
     -> IO
       (Either
           UnificationOrSubstitutionError
-          (Step.Results Variable (RulePattern (Target Variable)))
+          (Step.Results RulePattern Variable)
       )
 applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
@@ -755,7 +753,7 @@ applyRewriteRulesParallel initial rules =
 checkResults
     :: HasCallStack
     => MultiOr (Pattern Variable)
-    -> Step.Results Variable (RulePattern (Target Variable))
+    -> Step.Results RulePattern Variable
     -> Assertion
 checkResults expect actual =
     assertEqual "compare results"
@@ -765,7 +763,7 @@ checkResults expect actual =
 checkRemainders
     :: HasCallStack
     => MultiOr (Pattern Variable)
-    -> Step.Results Variable (RulePattern (Target Variable))
+    -> Step.Results RulePattern Variable
     -> Assertion
 checkRemainders expect actual =
     assertEqual "compare remainders"
@@ -1110,7 +1108,7 @@ applyRewriteRulesSequence
     -> IO
       (Either
           UnificationOrSubstitutionError
-          (Step.Results Variable (RulePattern (Target Variable)))
+          (Step.Results RulePattern Variable)
       )
 applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults

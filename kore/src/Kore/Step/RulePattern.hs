@@ -91,7 +91,9 @@ import Kore.Internal.Variable
 import Kore.Sort
     ( Sort (..)
     )
-import Kore.Step.AxiomPattern
+import Kore.Step.Step
+    ( UnifyingRule (..)
+    )
 import Kore.Substitute
     ( SubstitutionVariable
     )
@@ -300,32 +302,6 @@ termToRHS (TermLike.And_ _ ensures right) =
     RHS { existentials = [], right, ensures = Predicate.wrapPredicate ensures }
 termToRHS term = injectTermIntoRHS term
 
-instance SubstitutionVariable variable => HasRefreshPattern RulePattern variable
-  where
-    refreshPattern
-        (FreeVariables.getFreeVariables -> avoid)
-        rule1@(RulePattern _ _ _ _ _)
-      =
-        let rename = refreshVariables (avoid <> exVars) originalFreeVariables
-            subst = TermLike.mkVar <$> rename
-            left' = TermLike.substitute subst left
-            antiLeft' = TermLike.substitute subst <$> antiLeft
-            requires' = Predicate.substitute subst requires
-            rhs' = rhsSubstitute subst rhs
-            rule2 =
-                rule1
-                    { left = left'
-                    , antiLeft = antiLeft'
-                    , requires = requires'
-                    , rhs = rhs'
-                    }
-        in (rename, rule2)
-      where
-        RulePattern { left, antiLeft, requires, rhs } = rule1
-        exVars = Set.fromList $ ElemVar <$> existentials rhs
-        originalFreeVariables =
-            FreeVariables.getFreeVariables $ freeVariables rule1
-
 instance
     InternalVariable variable
     => HasFreeVariables (RHS variable) variable
@@ -351,24 +327,6 @@ isFreeOf
     -> Bool
 isFreeOf rule =
     Set.disjoint (getFreeVariables $ freeVariables rule)
-
-instance HasMapVariables RulePattern where
-    mapVariables mapping rule1@(RulePattern _ _ _ _ _) =
-        rule1
-            { left = TermLike.mapVariables mapping left
-            , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
-            , requires = Predicate.mapVariables mapping requires
-            , rhs = RHS
-                { existentials = fmap mapping <$> existentials
-                , right = TermLike.mapVariables mapping right
-                , ensures = Predicate.mapVariables mapping ensures
-                }
-            }
-      where
-        RulePattern
-            { left, antiLeft, requires
-            , rhs = RHS { existentials, right, ensures }
-            } = rule1
 
 {- | Apply the substitution to the right-hand-side of a rule.
  -}
@@ -742,9 +700,49 @@ weakAlwaysFinally = "weakAlwaysFinally"
 allPathGlobally :: Text
 allPathGlobally = "allPathGlobally"
 
-instance HasLeftPattern RulePattern variable where
-    leftPattern = left
+instance UnifyingRule RulePattern where
+    matchingPattern = left
 
-instance HasRequiresPredicate RulePattern variable where
-    requiresPredicate = requires
+    precondition = requires
+
+    refreshRule
+        (FreeVariables.getFreeVariables -> avoid)
+        rule1@(RulePattern _ _ _ _ _)
+      =
+        let rename = refreshVariables (avoid <> exVars) originalFreeVariables
+            subst = TermLike.mkVar <$> rename
+            left' = TermLike.substitute subst left
+            antiLeft' = TermLike.substitute subst <$> antiLeft
+            requires' = Predicate.substitute subst requires
+            rhs' = rhsSubstitute subst rhs
+            rule2 =
+                rule1
+                    { left = left'
+                    , antiLeft = antiLeft'
+                    , requires = requires'
+                    , rhs = rhs'
+                    }
+        in (rename, rule2)
+      where
+        RulePattern { left, antiLeft, requires, rhs } = rule1
+        exVars = Set.fromList $ ElemVar <$> existentials rhs
+        originalFreeVariables =
+            FreeVariables.getFreeVariables $ freeVariables rule1
+
+    mapVariables mapping rule1@(RulePattern _ _ _ _ _) =
+        rule1
+            { left = TermLike.mapVariables mapping left
+            , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft
+            , requires = Predicate.mapVariables mapping requires
+            , rhs = RHS
+                { existentials = fmap mapping <$> existentials
+                , right = TermLike.mapVariables mapping right
+                , ensures = Predicate.mapVariables mapping ensures
+                }
+            }
+      where
+        RulePattern
+            { left, antiLeft, requires
+            , rhs = RHS { existentials, right, ensures }
+            } = rule1
 

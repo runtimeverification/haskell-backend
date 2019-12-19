@@ -50,9 +50,6 @@ import Kore.Internal.TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     )
-import Kore.Step.AxiomPattern
-    ( refreshPattern
-    )
 import Kore.Step.RulePattern
     ( RHS (RHS)
     , RewriteRule (RewriteRule)
@@ -69,6 +66,9 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.SMT.Evaluator as SMT
     ( evaluate
+    )
+import Kore.Step.Step
+    ( refreshRule
     )
 import Kore.Substitute
     ( SubstitutionVariable
@@ -163,7 +163,7 @@ renameRuleVariable
     (FreeVariables newRuleVariables) = freeVariables newRulePattern
 
     (_, newRulePattern) =
-        refreshPattern (FreeVariables usedVariables) rulePattern
+        refreshRule (FreeVariables usedVariables) rulePattern
 
 mergeRules
     :: (MonadSimplify simplifier, SimplifierVariable variable)

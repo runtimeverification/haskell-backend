@@ -123,6 +123,7 @@ import Kore.Step.Simplification.Simplify
     ( simplifyTerm
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     )

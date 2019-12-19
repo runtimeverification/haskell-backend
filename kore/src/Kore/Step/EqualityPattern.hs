@@ -38,9 +38,8 @@ import Kore.Internal.Variable
     ( InternalVariable
     , SortedVariable
     )
-import Kore.Step.AxiomPattern
-import Kore.Substitute
-    ( SubstitutionVariable
+import Kore.Step.Step
+    ( UnifyingRule (..)
     )
 import Kore.TopBottom
     ( TopBottom (..)
@@ -177,7 +176,7 @@ equalityRuleToTerm
         (Predicate.unwrapPredicate requires)
         (TermLike.mkAnd (TermLike.mkEquals_ left right) TermLike.mkTop_)
 
-instance HasMapVariables EqualityPattern where
+instance UnifyingRule EqualityPattern where
     mapVariables mapping rule1@(EqualityPattern _ _ _ _) =
         rule1
             { constraint = Predicate.mapVariables mapping constraint
@@ -187,17 +186,11 @@ instance HasMapVariables EqualityPattern where
       where
         EqualityPattern { constraint, eqLeft, eqRight } = rule1
 
-instance HasLeftPattern EqualityPattern variable where
-    leftPattern = eqLeft
+    matchingPattern = eqLeft
 
-instance HasRequiresPredicate EqualityPattern variable where
-    requiresPredicate = constraint
+    precondition = constraint
 
-instance
-    SubstitutionVariable variable
-    => HasRefreshPattern EqualityPattern variable
-  where
-    refreshPattern
+    refreshRule
         (FreeVariables.getFreeVariables -> avoid)
         rule1@(EqualityPattern _ _ _ _)
       =

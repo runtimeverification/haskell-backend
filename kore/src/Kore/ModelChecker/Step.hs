@@ -62,6 +62,7 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
     ( filterMultiOr
     )
+import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     , TransitionT
