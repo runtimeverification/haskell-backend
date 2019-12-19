@@ -6,6 +6,8 @@ import Control.Applicative
     )
 import Control.Monad.Catch
     ( MonadCatch
+    , catch
+    , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -120,6 +122,7 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
+import qualified Kore.Strategies.Goal as Goal
 import Kore.Syntax.Definition
     ( ModuleName (..)
     )
@@ -380,7 +383,12 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <- runLoggerT koreLogOptions go
+    exitCode <- catch (runLoggerT koreLogOptions go) $
+        \(Goal.WithConfiguration lastConfiguration someException) -> do
+            renderResult
+                execOptions
+                ("// Last configuration:\n" <> unparse lastConfiguration)
+            throwM someException
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
