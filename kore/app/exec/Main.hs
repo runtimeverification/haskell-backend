@@ -20,6 +20,9 @@ import Control.Monad.Trans
     ( lift
     )
 import qualified Data.Char as Char
+import Data.Default
+    ( def
+    )
 import qualified Data.Foldable as Foldable
 import Data.Limit
     ( Limit (..)
@@ -123,11 +126,19 @@ import Kore.Step.Search
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
 import qualified Kore.Strategies.Goal as Goal
-import Kore.Syntax.Definition
-    ( ModuleName (..)
+import Kore.Strategies.Verification
+    ( StuckVerification (StuckVerification)
     )
+import qualified Kore.Strategies.Verification as Verification.DoNotUse
+import Kore.Syntax.Definition
+    ( Definition (Definition)
+    , Module (Module)
+    , ModuleName (ModuleName)
+    )
+import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
-    ( unparse
+    ( Unparse
+    , unparse
     )
 import SMT
     ( MonadSMT
@@ -398,8 +409,10 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
     go
-      | Just proveOptions <- koreProveOptions =
-        koreProve execOptions proveOptions
+      | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
+        if bmc
+            then koreBmc execOptions proveOptions
+            else koreProve execOptions proveOptions
 
       | Just searchOptions <- koreSearchOptions =
         koreSearch execOptions searchOptions
@@ -457,30 +470,69 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
+    proveResult <- execute execOptions mainModule $ do
+        let KoreExecOptions { breadthLimit, depthLimit } = execOptions
+            KoreProveOptions { graphSearch } = proveOptions
+        prove
+            graphSearch
+            breadthLimit
+            depthLimit
+            mainModule
+            specModule
+
+    (exitCode, final) <- case proveResult of
+        Left StuckVerification {stuckDescription, provenClaims} -> do
+            let KoreProveOptions { saveProofs } = proveOptions
+            maybe (return ()) (lift . saveProven provenClaims) saveProofs
+            return (failure stuckDescription)
+        Right () -> return success
+
+    lift $ renderResult execOptions (unparse final)
+    return exitCode
+  where
+    failure pat = (ExitFailure 1, pat)
+    success :: (ExitCode, TermLike Variable)
+    success = (ExitSuccess, mkTop $ mkSortVariable "R")
+
+    saveProven :: Unparse claim => [claim] -> FilePath -> IO ()
+    saveProven provenClaims outputFile =
+        withFile outputFile WriteMode
+            (`hPutDoc` unparse provenDefinition)
+      where
+        provenModule =
+            Module
+                { moduleName = savedProofsModuleName
+                , moduleSentences = provenClaims
+                , moduleAttributes = def
+                }
+        provenDefinition = Definition
+            { definitionAttributes = def
+            , definitionModules = [provenModule]
+            }
+
+koreBmc :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
+koreBmc execOptions proveOptions = do
+    let KoreExecOptions { definitionFileName } = execOptions
+        KoreProveOptions { specFileName } = proveOptions
+    definition <- loadDefinitions [definitionFileName, specFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
+    let KoreProveOptions { specMainModule } = proveOptions
+    specModule <- loadModule specMainModule definition
     (exitCode, final) <- execute execOptions mainModule $ do
         let KoreExecOptions { breadthLimit, depthLimit } = execOptions
-            KoreProveOptions { graphSearch, bmc } = proveOptions
-        if bmc
-            then do
-                checkResult <-
-                    boundedModelCheck
-                        breadthLimit
-                        depthLimit
-                        mainModule
-                        specModule
-                        graphSearch
-                case checkResult of
-                    Bounded.Proved -> return success
-                    Bounded.Unknown -> return unknown
-                    Bounded.Failed final -> return (failure final)
-            else
-                either failure (const success)
-                <$> prove
-                        graphSearch
-                        breadthLimit
-                        depthLimit
-                        mainModule
-                        specModule
+            KoreProveOptions { graphSearch } = proveOptions
+        checkResult <-
+            boundedModelCheck
+                breadthLimit
+                depthLimit
+                mainModule
+                specModule
+                graphSearch
+        case checkResult of
+            Bounded.Proved -> return success
+            Bounded.Unknown -> return unknown
+            Bounded.Failed final -> return (failure final)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -598,3 +650,7 @@ mainParseSearchPattern indexedModule patternFileName = do
                 , substitution = mempty
                 }
         _ -> error "Unexpected non-conjunctive pattern"
+
+savedProofsModuleName :: ModuleName
+savedProofsModuleName = ModuleName
+    "haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d"
