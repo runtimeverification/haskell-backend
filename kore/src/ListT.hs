@@ -9,7 +9,6 @@ This module implements the list monad transformer.
 
 -}
 
-{-# OPTIONS_GHC -fno-prof-auto #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module ListT
