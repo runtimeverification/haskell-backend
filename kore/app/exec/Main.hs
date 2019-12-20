@@ -6,6 +6,8 @@ import Control.Applicative
     )
 import Control.Monad.Catch
     ( MonadCatch
+    , catch
+    , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -18,7 +20,13 @@ import Control.Monad.Trans
     ( lift
     )
 import qualified Data.Char as Char
+import Data.Default
+    ( def
+    )
 import qualified Data.Foldable as Foldable
+import Data.Limit
+    ( Limit (..)
+    )
 import Data.List
     ( intercalate
     )
@@ -72,9 +80,6 @@ import System.IO
     , withFile
     )
 
-import Data.Limit
-    ( Limit (..)
-    )
 import qualified Data.Limit as Limit
 import qualified Kore.Attribute.Axiom as Attribute
 import Kore.Attribute.Symbol as Attribute
@@ -120,11 +125,20 @@ import Kore.Step.Search
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
-import Kore.Syntax.Definition
-    ( ModuleName (..)
+import qualified Kore.Strategies.Goal as Goal
+import Kore.Strategies.Verification
+    ( StuckVerification (StuckVerification)
     )
+import qualified Kore.Strategies.Verification as Verification.DoNotUse
+import Kore.Syntax.Definition
+    ( Definition (Definition)
+    , Module (Module)
+    , ModuleName (ModuleName)
+    )
+import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
-    ( unparse
+    ( Unparse
+    , unparse
     )
 import SMT
     ( MonadSMT
@@ -207,12 +221,12 @@ applyKoreSearchOptions koreSearchOptions@(Just koreSearchOpts) koreExecOpts =
         , strategy =
             -- Search relies on exploring the entire space of states.
             allRewrites
-        , stepLimit = min stepLimit searchTypeStepLimit
+        , depthLimit = min depthLimit searchTypeDepthLimit
         }
   where
     KoreSearchOptions { searchType } = koreSearchOpts
-    KoreExecOptions { stepLimit } = koreExecOpts
-    searchTypeStepLimit =
+    KoreExecOptions { depthLimit } = koreExecOpts
+    searchTypeDepthLimit =
         case searchType of
             ONE -> Limit 1
             _ -> Unlimited
@@ -247,7 +261,8 @@ data KoreExecOptions = KoreExecOptions
     , smtTimeOut          :: !SMT.TimeOut
     , smtPrelude          :: !(Maybe FilePath)
     , smtSolver           :: !Solver
-    , stepLimit           :: !(Limit Natural)
+    , breadthLimit        :: !(Limit Natural)
+    , depthLimit          :: !(Limit Natural)
     , strategy            :: !([Rewrite] -> Strategy (Prim Rewrite))
     , koreLogOptions      :: !KoreLogOptions
     , koreSearchOptions   :: !(Maybe KoreSearchOptions)
@@ -299,7 +314,8 @@ parseKoreExecOptions =
                 )
             )
         <*> parseSolver
-        <*> parseStepLimit
+        <*> parseBreadthLimit
+        <*> parseDepthLimit
         <*> parseStrategy
         <*> parseKoreLogOptions
         <*> pure Nothing
@@ -312,7 +328,8 @@ parseKoreExecOptions =
         if i <= 0
             then readerError "smt-timeout must be a positive integer."
             else return $ SMT.TimeOut $ Limit i
-    parseStepLimit = Limit <$> depth <|> pure Unlimited
+    parseBreadthLimit = Limit <$> breadth <|> pure Unlimited
+    parseDepthLimit = Limit <$> depth <|> pure Unlimited
     parseStrategy =
         option (readSum "strategy" strategies)
             (  metavar "STRATEGY"
@@ -329,6 +346,12 @@ parseKoreExecOptions =
             , ("any-heating-cooling", heatingCooling anyRewrite)
             , ("all-heating-cooling", heatingCooling allRewrites)
             ]
+    breadth =
+        option auto
+            (  metavar "BREADTH"
+            <> long "breadth"
+            <> help "Allow up to BREADTH parallel execution branches."
+            )
     depth =
         option auto
             (  metavar "DEPTH"
@@ -371,7 +394,12 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <- runLoggerT koreLogOptions go
+    exitCode <- catch (runLoggerT koreLogOptions go) $
+        \(Goal.WithConfiguration lastConfiguration someException) -> do
+            renderResult
+                execOptions
+                ("// Last configuration:\n" <> unparse lastConfiguration)
+            throwM someException
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
@@ -381,8 +409,10 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
     go
-      | Just proveOptions <- koreProveOptions =
-        koreProve execOptions proveOptions
+      | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
+        if bmc
+            then koreBmc execOptions proveOptions
+            else koreProve execOptions proveOptions
 
       | Just searchOptions <- koreSearchOptions =
         koreSearch execOptions searchOptions
@@ -404,14 +434,14 @@ koreSearch execOptions searchOptions = do
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     final <- execute execOptions mainModule $ do
-        search mainModule strategy' initial target config
+        search breadthLimit mainModule strategy' initial target config
     lift $ renderResult execOptions (unparse final)
     return ExitSuccess
   where
     KoreSearchOptions { bound, searchType } = searchOptions
     config = Search.Config { bound, searchType }
-    KoreExecOptions { stepLimit, strategy } = execOptions
-    strategy' = Limit.replicate stepLimit . strategy
+    KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
+    strategy' = Limit.replicate depthLimit . strategy
 
 koreRun :: KoreExecOptions -> Main ExitCode
 koreRun execOptions = do
@@ -422,14 +452,14 @@ koreRun execOptions = do
     let KoreExecOptions { patternFileName } = execOptions
     initial <- loadPattern mainModule patternFileName
     (exitCode, final) <- execute execOptions mainModule $ do
-        final <- exec mainModule strategy' initial
+        final <- exec breadthLimit mainModule strategy' initial
         exitCode <- execGetExitCode mainModule strategy' final
         return (exitCode, final)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
-    KoreExecOptions { stepLimit, strategy } = execOptions
-    strategy' = Limit.replicate stepLimit . strategy
+    KoreExecOptions { breadthLimit, depthLimit, strategy } = execOptions
+    strategy' = Limit.replicate depthLimit . strategy
 
 koreProve :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
 koreProve execOptions proveOptions = do
@@ -440,24 +470,69 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
+    proveResult <- execute execOptions mainModule $ do
+        let KoreExecOptions { breadthLimit, depthLimit } = execOptions
+            KoreProveOptions { graphSearch } = proveOptions
+        prove
+            graphSearch
+            breadthLimit
+            depthLimit
+            mainModule
+            specModule
+
+    (exitCode, final) <- case proveResult of
+        Left StuckVerification {stuckDescription, provenClaims} -> do
+            let KoreProveOptions { saveProofs } = proveOptions
+            maybe (return ()) (lift . saveProven provenClaims) saveProofs
+            return (failure stuckDescription)
+        Right () -> return success
+
+    lift $ renderResult execOptions (unparse final)
+    return exitCode
+  where
+    failure pat = (ExitFailure 1, pat)
+    success :: (ExitCode, TermLike Variable)
+    success = (ExitSuccess, mkTop $ mkSortVariable "R")
+
+    saveProven :: Unparse claim => [claim] -> FilePath -> IO ()
+    saveProven provenClaims outputFile =
+        withFile outputFile WriteMode
+            (`hPutDoc` unparse provenDefinition)
+      where
+        provenModule =
+            Module
+                { moduleName = savedProofsModuleName
+                , moduleSentences = provenClaims
+                , moduleAttributes = def
+                }
+        provenDefinition = Definition
+            { definitionAttributes = def
+            , definitionModules = [provenModule]
+            }
+
+koreBmc :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
+koreBmc execOptions proveOptions = do
+    let KoreExecOptions { definitionFileName } = execOptions
+        KoreProveOptions { specFileName } = proveOptions
+    definition <- loadDefinitions [definitionFileName, specFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
+    let KoreProveOptions { specMainModule } = proveOptions
+    specModule <- loadModule specMainModule definition
     (exitCode, final) <- execute execOptions mainModule $ do
-        let KoreExecOptions { stepLimit } = execOptions
-            KoreProveOptions { graphSearch, bmc } = proveOptions
-        if bmc
-            then do
-                checkResult <-
-                    boundedModelCheck
-                        stepLimit
-                        mainModule
-                        specModule
-                        graphSearch
-                case checkResult of
-                    Bounded.Proved -> return success
-                    Bounded.Unknown -> return unknown
-                    Bounded.Failed final -> return (failure final)
-            else
-                either failure (const success)
-                <$> prove graphSearch stepLimit mainModule specModule
+        let KoreExecOptions { breadthLimit, depthLimit } = execOptions
+            KoreProveOptions { graphSearch } = proveOptions
+        checkResult <-
+            boundedModelCheck
+                breadthLimit
+                depthLimit
+                mainModule
+                specModule
+                graphSearch
+        case checkResult of
+            Bounded.Proved -> return success
+            Bounded.Unknown -> return unknown
+            Bounded.Failed final -> return (failure final)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -575,3 +650,7 @@ mainParseSearchPattern indexedModule patternFileName = do
                 , substitution = mempty
                 }
         _ -> error "Unexpected non-conjunctive pattern"
+
+savedProofsModuleName :: ModuleName
+savedProofsModuleName = ModuleName
+    "haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d"

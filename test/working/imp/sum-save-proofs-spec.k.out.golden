@@ -1,0 +1,15 @@
+  <T>
+    <k>
+      .
+    </k>
+    <state>
+      n |-> 0
+      sum |-> 0 +Int ( N +Int 1 ) *Int N
+    </state>
+  </T>
+#And
+  {
+    N >=Int 0
+  #Equals
+    true
+  }

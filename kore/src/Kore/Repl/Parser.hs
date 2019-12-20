@@ -50,6 +50,9 @@ import qualified Text.Megaparsec.Char as Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import qualified Kore.Logger as Logger
+import qualified Kore.Logger.DebugSolver as Logger
+    ( emptyDebugSolverOptions
+    )
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 
@@ -263,12 +266,14 @@ log = do
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
         debugAxiomEvaluationOptions = mempty
+        debugSolverOptions = Logger.emptyDebugSolverOptions
     pure $ Log Logger.KoreLogOptions
         { logType
         , logLevel
         , logEntries
         , debugAppliedRuleOptions
         , debugAxiomEvaluationOptions
+        , debugSolverOptions
         }
   where
     parseSeverityWithDefault =

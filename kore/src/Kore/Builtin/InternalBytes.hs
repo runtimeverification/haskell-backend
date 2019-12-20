@@ -32,6 +32,7 @@ import Control.Applicative
 import Control.Error
     ( MaybeT
     )
+import qualified Control.Monad as Monad
 import Data.ByteString
     ( ByteString
     )
@@ -42,6 +43,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.String
+    ( IsString
+    )
 import Data.Text
     ( Text
     )
@@ -57,8 +61,15 @@ import Kore.Builtin.InternalBytes.InternalBytes
 import Kore.Builtin.Signedness.Signedness
 import qualified Kore.Builtin.String as String
 import qualified Kore.Error
+import Kore.Internal.ApplicationSorts
+    ( applicationSortsResult
+    )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.Symbol
+    ( symbolSorts
+    )
 import Kore.Internal.TermLike
+import qualified Kore.Verified as Verified
 
 -- | Verify that the sort is hooked to the @Bytes@ sort.
 -- | See also: 'sort', 'Builtin.verifySort'.
@@ -134,6 +145,8 @@ symbolVerifiers =
 patternVerifierHook :: Builtin.PatternVerifierHook
 patternVerifierHook =
     Builtin.domainValuePatternVerifierHook sort patternVerifierWorker
+    <> (Builtin.applicationPatternVerifierHooks . HashMap.fromList)
+        [ (Builtin.HookedSymbolKey dotBytes, dotBytesVerifier ) ]
   where
     patternVerifierWorker external =
         case externalChild of
@@ -145,6 +158,24 @@ patternVerifierHook =
       where
         DomainValue { domainValueSort = bytesSort } = external
         DomainValue { domainValueChild = externalChild } = external
+
+dotBytes :: IsString str => str
+dotBytes = "BYTES.empty"
+
+dotBytesVerifier
+    :: Builtin.ApplicationVerifier Verified.Pattern
+dotBytesVerifier =
+    Builtin.ApplicationVerifier worker
+  where
+    worker application = do
+        Monad.unless (null arguments)
+            (Kore.Error.koreFail "expected zero arguments")
+        (return . InternalBytesF . Const)
+            InternalBytes { bytesSort, bytesValue = Encoding.encode8Bit "" }
+      where
+        arguments = applicationChildren application
+        symbol = applicationSymbolOrAlias application
+        bytesSort = applicationSortsResult . symbolSorts $ symbol
 
 matchBuiltinBytes :: Monad m => TermLike variable -> MaybeT m ByteString
 matchBuiltinBytes (InternalBytes_ _ byteString) = return byteString

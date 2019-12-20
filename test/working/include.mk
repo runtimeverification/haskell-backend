@@ -74,8 +74,12 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### PROVE
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
+	rm -f $(@:.out=.save-proofs)
 	$(KPROVE) $(KPROVE_OPTS) $< --output-file $@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
+	! [[ -f $(@:.out=.save-proofs) ]] \
+		|| $(DIFF) $(@:.out=.save-proofs).golden $(@:.out=.save-proofs) \
+		|| $(FAILED)
 
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
@@ -84,6 +88,12 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 		-d $(DEF_DIR) -m $(KPROVE_MODULE) \
 		--haskell-backend-command \
 		"$(KORE_REPL) -r --repl-script $<.repl"
+
+%-save-proofs-spec.k.out: \
+	KPROVE_OPTS =\
+		-d $(DEF_DIR) -m $(KPROVE_MODULE) \
+		--haskell-backend-command \
+		"$(KORE_EXEC) --save-proofs $(@:.out=.save-proofs)"
 
 ### BMC
 

@@ -31,6 +31,7 @@ tags
 .dir-locals.el
 *.prof
 .kprove-*
+.krun-*
 /coverage_report
 /haskell_documentation
 test-results.xml
@@ -38,3 +39,5 @@ test-results.xml
 /dist-newstyle/
 /dist/
 *.fail
+cabal.project.local
+*.save-proofs

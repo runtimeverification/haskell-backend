@@ -1,6 +1,7 @@
 module Test.Kore.Strategies.Common
     ( simpleRewrite
     , runVerification
+    , runVerificationToPattern
     ) where
 
 import Control.Monad.Trans.Except
@@ -25,6 +26,9 @@ import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
 import Kore.Strategies.Goal
+import Kore.Strategies.Verification
+    ( StuckVerification (StuckVerification)
+    )
 import qualified Kore.Strategies.Verification as Verification
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -37,23 +41,44 @@ simpleRewrite
 simpleRewrite left right =
     RewriteRule $ rulePattern left right
 
+runVerificationToPattern
+    :: Verification.Claim claim
+    => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
+    => Show claim
+    => Show (Rule claim)
+    => Limit Natural
+    -> Limit Natural
+    -> [Rule claim]
+    -> [claim]
+    -> IO (Either (Pattern Variable) ())
+runVerificationToPattern breadthLimit depthLimit axioms claims = do
+    stuck <- runVerification breadthLimit depthLimit axioms claims
+    return (toPattern stuck)
+  where
+    toPattern (Left StuckVerification {stuckDescription}) = Left stuckDescription
+    toPattern (Right a) = Right a
+
+
 runVerification
     :: Verification.Claim claim
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
+    => Show (Rule claim)
     => Limit Natural
+    -> Limit Natural
     -> [Rule claim]
     -> [claim]
-    -> IO (Either (Pattern Variable) ())
-runVerification stepLimit axioms claims =
+    -> IO (Either (StuckVerification (Pattern Variable) claim) ())
+runVerification breadthLimit depthLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
+        breadthLimit
         BreadthFirst
         claims
         axioms
-        (map applyStepLimit . selectUntrusted $ claims)
+        (map applyDepthLimit . selectUntrusted $ claims)
   where
     mockEnv = Mock.env
-    applyStepLimit claim = (claim, stepLimit)
+    applyDepthLimit claim = (claim, depthLimit)
     selectUntrusted = filter (not . isTrusted)

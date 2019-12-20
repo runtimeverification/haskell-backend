@@ -145,7 +145,11 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Claim
+    , StuckVerification (StuckVerification)
     , verify
+    )
+import qualified Kore.Strategies.Verification as StuckVerification
+    ( StuckVerification (..)
     )
 import Kore.Unparser
     ( unparseToText
@@ -184,16 +188,17 @@ exec
         , MonadSMT smt
         , MonadUnliftIO smt
         )
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    => Limit Natural
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
     -> smt (TermLike Variable)
-exec verifiedModule strategy initialTerm =
+exec breadthLimit verifiedModule strategy initialTerm =
     evalSimplifier verifiedModule' $ do
-        execution <- execute verifiedModule' strategy initialTerm
+        execution <- execute breadthLimit verifiedModule' strategy initialTerm
         let
             Execution { executionGraph } = execution
             finalConfig = pickLongest executionGraph
@@ -233,7 +238,7 @@ execGetExitCode indexedModule strategy' finalTerm =
         Just mkExitCodeSymbol -> do
             exitCodePattern <-
                 -- TODO (thomas.tuegel): Run in original execution context.
-                exec indexedModule strategy'
+                exec (Limit 1) indexedModule strategy'
                 $ mkApplySymbol (mkExitCodeSymbol []) [finalTerm]
             case exitCodePattern of
                 Builtin_ (Domain.BuiltinInt (Domain.InternalInt _ exit))
@@ -248,7 +253,8 @@ search
         , MonadSMT smt
         , MonadUnliftIO smt
         )
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    => Limit Natural
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
@@ -259,9 +265,9 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike Variable)
-search verifiedModule strategy termLike searchPattern searchConfig =
+search breadthLimit verifiedModule strategy termLike searchPattern searchConfig =
     evalSimplifier verifiedModule $ do
-        execution <- execute verifiedModule strategy termLike
+        execution <- execute breadthLimit verifiedModule strategy termLike
         let
             Execution { executionGraph } = execution
             match target config = Search.matchWith target config
@@ -287,29 +293,44 @@ prove
         )
     => Strategy.GraphSearchOrder
     -> Limit Natural
+    -> Limit Natural
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> smt (Either (TermLike Variable) ())
-prove searchOrder limit definitionModule specModule =
+    -> smt
+        (Either
+            (StuckVerification (TermLike Variable) (ReachabilityRule Variable))
+            ()
+        )
+prove searchOrder breadthLimit depthLimit definitionModule specModule =
     evalProver definitionModule specModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         result <-
             runExceptT
             $ verify
+                breadthLimit
                 searchOrder
                 claims
                 axioms
-                (map (\x -> (x,limit)) (extractUntrustedClaims' claims))
-        return $ Bifunctor.first Pattern.toTermLike result
+                (map (\x -> (x,depthLimit)) (extractUntrustedClaims' claims))
+        return $ Bifunctor.first stuckVerificationPatternToTerm result
   where
     extractUntrustedClaims'
         :: [ReachabilityRule Variable]
         -> [ReachabilityRule Variable]
     extractUntrustedClaims' =
         filter (not . Goal.isTrusted)
+
+    stuckVerificationPatternToTerm
+        :: StuckVerification (Pattern Variable) claim
+        -> StuckVerification (TermLike Variable) claim
+    stuckVerificationPatternToTerm
+        stuck@StuckVerification {stuckDescription}
+      =
+        stuck {StuckVerification.stuckDescription = Pattern.toTermLike stuckDescription}
+
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
@@ -347,13 +368,14 @@ boundedModelCheck
         , MonadUnliftIO smt
         )
     => Limit Natural
+    -> Limit Natural
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
     -> Strategy.GraphSearchOrder
     -> smt (Bounded.CheckResult (TermLike Variable))
-boundedModelCheck limit definitionModule specModule searchOrder =
+boundedModelCheck breadthLimit depthLimit definitionModule specModule searchOrder =
     evalSimplifier definitionModule $ initialize definitionModule
     $ \initialized -> do
         let Initialized { rewriteRules } = initialized
@@ -364,9 +386,10 @@ boundedModelCheck limit definitionModule specModule searchOrder =
             claims = fmap makeClaim specClaims
 
         Bounded.checkClaim
+            breadthLimit
             (Bounded.bmcStrategy axioms)
             searchOrder
-            (head claims, limit)
+            (head claims, depthLimit)
 
 -- | Rule merging
 mergeAllRules
@@ -517,9 +540,8 @@ makeClaim (attributes, ruleType@(Goal.toRulePattern -> rule)) =
         { attributes = attributes
         , left = left rule
         , antiLeft = antiLeft rule
-        , right = right rule
         , requires = requires rule
-        , ensures = ensures rule
+        , rhs = rhs rule
         }
 
 simplifyRuleOnSecond
@@ -533,14 +555,15 @@ simplifyRuleOnSecond (atts, rule) = do
 -- | Construct an execution graph for the given input pattern.
 execute
     :: MonadSimplify simplifier
-    => VerifiedModule StepperAttributes Attribute.Axiom
+    => Limit Natural
+    -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The main module
     -> ([Rewrite] -> [Strategy (Prim Rewrite)])
     -- ^ The strategy to use for execution; see examples in "Kore.Step.Step"
     -> TermLike Variable
     -- ^ The input pattern
     -> simplifier Execution
-execute verifiedModule strategy inputPattern =
+execute breadthLimit verifiedModule strategy inputPattern =
     initialize verifiedModule $ \initialized -> do
         let Initialized { rewriteRules } = initialized
         simplifier <- Simplifier.askSimplifierTermLike
@@ -554,7 +577,8 @@ execute verifiedModule strategy inputPattern =
                     (config : _) -> config
               where
                 patternSort = termLikeSort inputPattern
-            runStrategy' = runStrategy transitionRule (strategy rewriteRules)
+            runStrategy' =
+                runStrategy breadthLimit transitionRule (strategy rewriteRules)
         executionGraph <- runStrategy' initialPattern
         return Execution
             { simplifier

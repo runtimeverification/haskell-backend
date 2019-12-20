@@ -9,33 +9,46 @@ This should be imported qualified.
 module Kore.Strategies.Verification
     ( Claim
     , CommonProofState
+    , StuckVerification (..)
     , verify
     , verifyClaimStep
     , toRulePattern
     ) where
 
+import qualified Control.Monad as Monad
+    ( foldM_
+    )
 import Control.Monad.Catch
     ( MonadCatch
     )
 import Control.Monad.Except
     ( ExceptT
+    , withExceptT
     )
 import qualified Control.Monad.Except as Monad.Except
 import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
-import Data.Limit
-    ( Limit
-    )
-import qualified Data.Limit as Limit
 import qualified Data.Stream.Infinite as Stream
 import Data.Typeable
     ( Typeable
     )
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
+import Numeric.Natural
+    ( Natural
+    )
 
+import Data.Limit
+    ( Limit
+    )
+import qualified Data.Limit as Limit
 import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
+    )
+import Kore.Step.Rule
+    ( RHS
     )
 import Kore.Step.Rule.Expand
 import Kore.Step.Rule.Simplify
@@ -51,9 +64,6 @@ import Kore.Syntax.Variable
     ( Variable
     )
 import Kore.Unparser
-import Numeric.Natural
-    ( Natural
-    )
 
 type CommonProofState  = ProofState.ProofState (Pattern Variable)
 
@@ -93,20 +103,53 @@ didn't manage to verify a claim within the its maximum number of steps.
 If the verification succeeds, it returns ().
 -}
 
+data StuckVerification patt claim
+    = StuckVerification
+        { stuckDescription :: !patt
+        , provenClaims :: ![claim]
+        }
+    deriving (Eq, GHC.Generic, Show)
+
+instance SOP.Generic (StuckVerification patt claim)
+
+instance SOP.HasDatatypeInfo (StuckVerification patt claim)
+
+instance (Debug patt, Debug claim) => Debug (StuckVerification patt claim)
+
+instance (Debug patt, Debug claim, Diff patt, Diff claim)
+    => Diff (StuckVerification patt claim)
+
 verify
     :: forall claim m
     .  Claim claim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Show claim
     => (MonadCatch m, MonadSimplify m)
-    => GraphSearchOrder
+    => Show (Rule claim)
+    => Limit Natural
+    -> GraphSearchOrder
     -> [claim]
     -> [Rule claim]
     -> [(claim, Limit Natural)]
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
-    -> ExceptT (Pattern Variable) m ()
-verify searchOrder claims axioms = mapM_ (verifyClaim searchOrder claims axioms)
+    -> ExceptT (StuckVerification (Pattern Variable) claim) m ()
+verify breadthLimit searchOrder claims axioms =
+    Monad.foldM_ verifyWorker []
+  where
+    verifyWorker
+        :: [claim]
+        -> (claim, Limit Natural)
+        -> ExceptT (StuckVerification (Pattern Variable) claim) m [claim]
+    verifyWorker provenClaims unprovenClaim@(claim, _) =
+        withExceptT wrapStuckPattern $ do
+            verifyClaim breadthLimit searchOrder claims axioms unprovenClaim
+            return (claim : provenClaims)
+      where
+        wrapStuckPattern
+            :: Pattern Variable -> StuckVerification (Pattern Variable) claim
+        wrapStuckPattern stuckDescription =
+            StuckVerification { stuckDescription, provenClaims }
 
 verifyClaim
     :: forall claim m
@@ -114,22 +157,25 @@ verifyClaim
     => ProofState claim (Pattern Variable) ~ CommonProofState
     => Claim claim
     => Show claim
-    => GraphSearchOrder
+    => Show (Rule claim)
+    => Limit Natural
+    -> GraphSearchOrder
     -> [claim]
     -> [Rule claim]
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
-verifyClaim searchOrder claims axioms (goal, stepLimit) =
+verifyClaim breadthLimit searchOrder claims axioms (goal, depthLimit) =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal
         destination = getDestination goal
         limitedStrategy =
             Limit.takeWithin
-                stepLimit
+                depthLimit
                 (Foldable.toList $ strategy goal claims axioms)
     executionGraph <-
         runStrategyWithSearchOrder
+            breadthLimit
             (modifiedTransitionRule destination)
             limitedStrategy
             searchOrder
@@ -138,7 +184,7 @@ verifyClaim searchOrder claims axioms (goal, stepLimit) =
     Foldable.traverse_ Monad.Except.throwError (unprovenNodes executionGraph)
   where
     modifiedTransitionRule
-        :: Pattern Variable
+        :: RHS Variable
         -> Prim claim
         -> CommonProofState
         -> TransitionT (Rule claim) (Verifier m) CommonProofState
@@ -199,11 +245,11 @@ transitionRule'
     .  (MonadCatch m, MonadSimplify m)
     => Claim claim
     => claim
-    -> Pattern Variable
+    -> RHS Variable
     -> Prim claim
     -> CommonProofState
     -> TransitionT (Rule claim) m CommonProofState
 transitionRule' ruleType destination prim state = do
-    let goal = flip (makeRuleFromPatterns ruleType) destination <$> state
+    let goal = flip (configurationDestinationToRule ruleType) destination <$> state
     next <- transitionRule prim goal
     pure $ fmap getConfiguration next

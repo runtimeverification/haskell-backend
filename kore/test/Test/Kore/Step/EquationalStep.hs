@@ -44,9 +44,11 @@ import qualified Kore.Step.RewriteStep as Step
     , result
     , results
     )
-import Kore.Step.Rule
+import Kore.Step.Rule as RulePattern
     ( EqualityRule (..)
+    , RHS (..)
     , RulePattern (..)
+    , injectTermIntoRHS
     , rulePattern
     )
 import Kore.Unification.Error
@@ -439,6 +441,7 @@ test_applyEquationalRule_ =
                 makeEqualsPredicate_
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
+            rhs = (RulePattern.rhs ruleId) { ensures }
             expect :: Either
                 UnificationOrSubstitutionError [OrPattern Variable]
             expect = Right
@@ -453,7 +456,7 @@ test_applyEquationalRule_ =
                     ]
                 ]
             initial = Pattern.fromTermLike (mkElemVar Mock.y)
-            axiom = EqualityRule ruleId { ensures }
+            axiom = EqualityRule ruleId { rhs }
         actual <- applyEquationalRuleParallel_ initial axiom
         assertEqual "" expect actual
 
@@ -513,9 +516,8 @@ test_applyEquationalRule_ =
         EqualityRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , right = mkBottom Mock.testSort
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS (mkBottom Mock.testSort)
             , attributes = def
             }
 
@@ -523,9 +525,12 @@ test_applyEquationalRule_ =
         EqualityRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , right = Mock.b
             , requires = makeTruePredicate_
-            , ensures = makeFalsePredicate_
+            , rhs = RHS
+                { existentials = []
+                , right = Mock.b
+                , ensures = makeFalsePredicate_
+                }
             , attributes = def
             }
 
@@ -533,9 +538,8 @@ test_applyEquationalRule_ =
         EqualityRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , right = Mock.b
             , requires = makeFalsePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS Mock.b
             , attributes = def
             }
 

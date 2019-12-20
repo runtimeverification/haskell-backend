@@ -6,6 +6,8 @@ allow-newer:
 
 package *
   ghc-options: -fhide-source-paths
+  ghc-options: -fno-prof-auto
 
 package kore
   ghc-options: -Wall -Werror
+  ghc-options: -fprof-auto-top

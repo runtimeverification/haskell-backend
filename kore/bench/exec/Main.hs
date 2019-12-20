@@ -183,7 +183,7 @@ execBenchmark root kFile definitionFile mainModuleName test =
         -> IO (TermLike Variable)
     execution (verifiedModule, purePattern) =
         SMT.runSMT SMT.defaultConfig emptyLogger
-        $ exec verifiedModule strategy purePattern
+        $ exec unlimited verifiedModule strategy purePattern
       where
         unlimited :: Limit Natural
         unlimited = Limit.Unlimited

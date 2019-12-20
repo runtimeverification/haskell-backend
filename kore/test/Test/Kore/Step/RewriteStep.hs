@@ -48,8 +48,10 @@ import Kore.Step.RewriteStep
     )
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
-    ( RewriteRule (..)
+    ( RHS (..)
+    , RewriteRule (..)
     , RulePattern (..)
+    , injectTermIntoRHS
     , rulePattern
     )
 import qualified Kore.Step.Rule as RulePattern
@@ -163,10 +165,9 @@ test_unifyRule =
                 RulePattern
                     { left = Mock.f (mkElemVar Mock.x)
                     , antiLeft = Nothing
-                    , right = Mock.g (mkElemVar Mock.x)
                     , requires =
                         Predicate.makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a
-                    , ensures = makeTruePredicate_
+                    , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
                     , attributes = Default.def
                     }
         Right unified <- unifyRule initial axiom
@@ -181,9 +182,8 @@ test_unifyRule =
                 RulePattern
                     { left = Mock.functionalConstr10 (mkElemVar Mock.x)
                     , antiLeft = Nothing
-                    , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate_
-                    , ensures = makeTruePredicate_
+                    , rhs = injectTermIntoRHS (Mock.g Mock.b)
                     , attributes = Default.def
                     }
             expect = Right [(pure axiom) { substitution }]
@@ -199,9 +199,8 @@ test_unifyRule =
                 RulePattern
                     { left = Mock.functionalConstr11 (mkElemVar Mock.x)
                     , antiLeft = Nothing
-                    , right = Mock.g Mock.b
                     , requires = Predicate.makeTruePredicate_
-                    , ensures = makeTruePredicate_
+                    , rhs = injectTermIntoRHS (Mock.g Mock.b)
                     , attributes = Default.def
                     }
             expect = Right []
@@ -306,6 +305,17 @@ test_applyRewriteRule_ =
                 RewriteRule $ rulePattern
                     (mkElemVar Mock.x)
                     (mkExists Mock.y (mkElemVar Mock.x))
+        actual <- applyRewriteRuleParallel_ initial axiom
+        assertEqual "" expect actual
+
+    , testCase "quantified rhs: non-clashing" $ do
+        let expect = Right [ OrPattern.fromPatterns [pure final] ]
+            final = mkElemVar (nextVariable . nextVariable <$> Mock.x)
+            initial = pure (mkElemVar Mock.y)
+            axiom =
+                RewriteRule $ rulePattern
+                    (mkElemVar Mock.x)
+                    (mkExists Mock.x (mkElemVar Mock.x))
         actual <- applyRewriteRuleParallel_ initial axiom
         assertEqual "" expect actual
 
@@ -584,6 +594,7 @@ test_applyRewriteRule_ =
                 makeEqualsPredicate_
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
+            rhs = (RulePattern.rhs ruleId) { ensures }
             expect :: Either
                 UnificationOrSubstitutionError [OrPattern Variable]
             expect = Right
@@ -598,7 +609,7 @@ test_applyRewriteRule_ =
                     ]
                 ]
             initial = Pattern.fromTermLike (mkElemVar Mock.y)
-            axiom = RewriteRule ruleId { ensures }
+            axiom = RewriteRule ruleId { rhs }
         actual <- applyRewriteRuleParallel_ initial axiom
         assertEqual "" expect actual
 
@@ -658,9 +669,8 @@ test_applyRewriteRule_ =
         RewriteRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , right = mkBottom Mock.testSort
             , requires = makeTruePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS (mkBottom Mock.testSort)
             , attributes = def
             }
 
@@ -668,9 +678,12 @@ test_applyRewriteRule_ =
         RewriteRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , right = Mock.b
             , requires = makeTruePredicate_
-            , ensures = makeFalsePredicate_
+            , rhs = RHS
+                { existentials = []
+                , right = Mock.b
+                , ensures = makeFalsePredicate_
+                }
             , attributes = def
             }
 
@@ -678,9 +691,8 @@ test_applyRewriteRule_ =
         RewriteRule RulePattern
             { left = Mock.a
             , antiLeft = Nothing
-            , right = Mock.b
             , requires = makeFalsePredicate_
-            , ensures = makeTruePredicate_
+            , rhs = injectTermIntoRHS Mock.b
             , attributes = def
             }
 
@@ -1026,9 +1038,8 @@ test_applyRewriteRulesParallel =
             [ RewriteRule RulePattern
                 { left = Mock.a
                 , antiLeft = Nothing
-                , right = mkElemVar Mock.x
                 , requires = makeTruePredicate_
-                , ensures = makeTruePredicate_
+                , rhs = injectTermIntoRHS (mkElemVar Mock.x)
                 , attributes = def
                 }
             ]
@@ -1047,9 +1058,8 @@ axiomSignum =
     RewriteRule RulePattern
         { left = Mock.functionalConstr10 (mkElemVar Mock.y)
         , antiLeft = Nothing
-        , right = Mock.a
         , requires = makeEqualsPredicate_ (Mock.f (mkElemVar Mock.y)) Mock.b
-        , ensures = makeTruePredicate_
+        , rhs = injectTermIntoRHS Mock.a
         , attributes = def
         }
 

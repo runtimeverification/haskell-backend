@@ -4,23 +4,48 @@ License     : NCSA
 
 -}
 module Kore.Step.Simplification.InjSimplifier
-    ( InjSimplifier (..)
+    ( Distinct (..)
+    , InjSimplifier (..)
     , mkInjSimplifier
+    , normalize
     ) where
 
 import qualified Control.Exception as Exception
+import qualified Data.Functor.Foldable as Recursive
+import qualified Data.Set as Set
+import qualified Generics.SOP as SOP
+import qualified GHC.Generics as GHC
 import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Synthetic
     ( synthesize
     )
+import Kore.Debug
 import Kore.IndexedModule.SortGraph
     ( SortGraph
     , isSubsortOf
+    , subsortsOf
     )
 import Kore.Internal.Inj
 import Kore.Internal.TermLike
 import Pair
+
+{- | Two 'Inj' are 'Distinct' if they are known not to unify.
+
+Otherwise, 'unifyInj' may return 'Unknown'.
+
+ -}
+data Distinct = Distinct | Unknown
+    deriving (Eq, Show)
+    deriving (GHC.Generic)
+
+instance SOP.Generic Distinct
+
+instance SOP.HasDatatypeInfo Distinct
+
+instance Debug Distinct
+
+instance Diff Distinct
 
 data InjSimplifier =
     InjSimplifier
@@ -45,7 +70,7 @@ data InjSimplifier =
             .  InternalVariable variable
             => Inj (TermLike variable)
             -> Inj (TermLike variable)
-            -> Maybe (Inj (Pair (TermLike variable)))
+            -> Either Distinct (Inj (Pair (TermLike variable)))
         {- ^ Push down the conjunction of 'Inj':
 
         @
@@ -54,6 +79,9 @@ data InjSimplifier =
             inj{lo, hi}(a ∧ inj{lower, lo}(b))
                 where lower < lo
         @
+
+        Returns 'Distinct' if the sort injections cannot match, or 'Unknown' if
+        further simplification could produce matching injections.
          -}
 
         , evaluateCeilInj
@@ -143,9 +171,9 @@ mkInjSimplifier sortGraph =
         .  InternalVariable variable
         => Inj (TermLike variable)
         -> Inj (TermLike variable)
-        -> Maybe (Inj (Pair (TermLike variable)))
+        -> Either Distinct (Inj (Pair (TermLike variable)))
     unifyInj inj1 inj2
-      | injTo1 /= injTo2 = Nothing
+      | injTo1 /= injTo2 = Left Distinct
 
       | injFrom1 == injFrom2 =
         Exception.assert (injTo1 == injTo2) $ do
@@ -165,7 +193,33 @@ mkInjSimplifier sortGraph =
                 child2' = injChild inj2
             pure (Pair child1' child2' <$ inj2)
 
-      | otherwise = Nothing
+      -- If the child patterns are simplifiable, then they could eventually be
+      -- simplified to produce matching sort injections, but if they are
+      -- non-simplifiable, then they will never match.
+      | hasConstructorLikeTop (injChild inj1) = Left Distinct
+      | hasConstructorLikeTop (injChild inj2) = Left Distinct
+
+      -- Even if the child patterns are simplifiable, if they do not have any
+      -- common subsorts, then they will never simplify to produce matching sort
+      -- injections.
+      | Set.disjoint subsorts1 subsorts2 = Left Distinct
+
+      | otherwise = Left Unknown
       where
         Inj { injFrom = injFrom1, injTo = injTo1 } = inj1
         Inj { injFrom = injFrom2, injTo = injTo2 } = inj2
+        subsorts1 = subsortsOf sortGraph injFrom1
+        subsorts2 = subsortsOf sortGraph injFrom2
+
+normalize
+    :: InternalVariable variable
+    => InjSimplifier
+    -> TermLike variable
+    -> TermLike variable
+normalize InjSimplifier { evaluateInj } =
+    Recursive.fold worker
+  where
+    worker (_ :< termLikeF) =
+        case termLikeF of
+            InjF inj -> evaluateInj inj
+            _ -> synthesize termLikeF

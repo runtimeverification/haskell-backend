@@ -28,6 +28,7 @@ import Kore.Internal.TermLike
 import Kore.Step.Rule
     ( AllPathRule (..)
     , RulePattern (..)
+    , injectTermIntoRHS
     )
 import Kore.Strategies.Goal
 
@@ -41,7 +42,8 @@ test_allPathVerification =
         -- Axioms: []
         -- Claims: a => a
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.a ]
@@ -52,7 +54,8 @@ test_allPathVerification =
         -- Axioms: []
         -- Claims: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.b ]
@@ -66,8 +69,9 @@ test_allPathVerification =
     --     -- Axioms: a => b
     --     -- Claims: a => b #Or c
     --     -- Expected: success
-    --     actual <- runVerification
+    --     actual <- runVerificationToPattern
     --         (Limit 2)
+    --         Unlimited
     --         [ simpleAxiom Mock.a Mock.b ]
     --         [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
     --     assertEqual ""
@@ -77,7 +81,8 @@ test_allPathVerification =
         -- Axioms: a => a
         -- Claims: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.a ]
             [ simpleClaim Mock.a Mock.b ]
@@ -93,7 +98,8 @@ test_allPathVerification =
     --     --     a => c
     --     -- Claims: a => b #Or c
     --     -- Expected: success
-    --     actual <- runVerification
+    --     actual <- runVerificationToPattern
+    --         Unlimited
     --         (Limit 2)
     --         [ simpleAxiom Mock.a Mock.b
     --         , simpleAxiom Mock.a Mock.c
@@ -108,7 +114,8 @@ test_allPathVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 2)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.a Mock.c
@@ -123,7 +130,8 @@ test_allPathVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom (Mock.functionalConstr11 (mkElemVar Mock.x)) Mock.b
@@ -138,7 +146,8 @@ test_allPathVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
             , simpleAxiom
@@ -166,7 +175,8 @@ test_allPathVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -185,7 +195,8 @@ test_allPathVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -204,7 +215,8 @@ test_allPathVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -222,7 +234,8 @@ test_allPathVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -239,7 +252,8 @@ test_allPathVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -256,7 +270,8 @@ test_allPathVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.c Mock.d
@@ -277,7 +292,8 @@ test_allPathVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerification
+        actual <- runVerificationToPattern
+            Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
@@ -307,9 +323,8 @@ simpleClaim left right =
     RulePattern
         { left = left
         , antiLeft = Nothing
-        , right = mkAnd mkTop_ right
         , requires = makeTruePredicate_
-        , ensures = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
         , attributes = def
         }
 
@@ -322,9 +337,8 @@ simpleTrustedClaim left right =
     RulePattern
         { left = left
         , antiLeft = Nothing
-        , right = right
         , requires = makeTruePredicate_
-        , ensures = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
         , attributes = def
             { Attribute.trusted = Attribute.Trusted True }
         }

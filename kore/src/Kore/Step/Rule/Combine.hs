@@ -50,7 +50,8 @@ import Kore.Internal.Variable
     ( InternalVariable
     )
 import Kore.Step.Rule
-    ( RewriteRule (RewriteRule)
+    ( RHS (RHS)
+    , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , refreshRulePattern
     )
@@ -116,7 +117,7 @@ mergeRulePairPredicate
     => (RewriteRule variable, RewriteRule variable)
     -> Predicate variable
 mergeRulePairPredicate
-    ( RewriteRule RulePattern {right = right1, ensures = ensures1}
+    ( RewriteRule RulePattern { rhs = RHS {right = right1, ensures = ensures1}}
     , RewriteRule RulePattern
         {left = left2, requires = requires2, antiLeft = Nothing}
     )
@@ -185,8 +186,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
                         { left = firstLeft
                         , requires = evaluatedPredicate
                         , antiLeft = firstAntiLeft
-                        , right = lastRight
-                        , ensures = lastEnsures
+                        , rhs = lastRHS
                         , attributes = def
                         }
 
@@ -198,7 +198,7 @@ mergeRules (renameRulesVariables . Foldable.toList -> rules) =
         {left = firstLeft, requires = firstRequires, antiLeft = firstAntiLeft}
       =
         firstRule
-    RewriteRule RulePattern {right = lastRight, ensures = lastEnsures} =
+    RewriteRule RulePattern {rhs = lastRHS} =
         last rules
 
 {-| Merge rules in consecutive batches.

@@ -82,9 +82,12 @@ axiomPatternsUnitTests =
                 (Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , right = mkAnd (mkTop sortAInt) varI2
-                    , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                    , ensures = Predicate.makeTruePredicate_
+                    , requires = Predicate.makeTruePredicate sortAInt
+                    , rhs = RHS
+                        { existentials = []
+                        , right = varI2
+                        , ensures = Predicate.makeTruePredicate sortAInt
+                        }
                     , attributes = def
                     }
                 )
@@ -95,9 +98,12 @@ axiomPatternsUnitTests =
                 ( Right $ RewriteAxiomPattern $ RewriteRule RulePattern
                     { left = varI1
                     , antiLeft = Nothing
-                    , right = mkAnd (mkTop sortAInt) varI2
-                    , requires = Predicate.wrapPredicate (mkTop sortAInt)
-                    , ensures = Predicate.makeTruePredicate_
+                    , requires = Predicate.makeTruePredicate sortAInt
+                    , rhs = RHS
+                        { existentials = []
+                        , right = varI2
+                        , ensures = Predicate.makeTruePredicate sortAInt
+                        }
                     , attributes = def
                     }
                 )
@@ -214,9 +220,12 @@ axiomPatternsIntegrationTests =
         RulePattern
             { left
             , antiLeft = Nothing
-            , right = mkAnd (mkTop sortTCell) right
-            , requires = Predicate.wrapPredicate (mkTop sortTCell)
-            , ensures = Predicate.makeTruePredicate_
+            , requires = Predicate.makeTruePredicate sortTCell
+            , rhs = RHS
+                { existentials = []
+                , right
+                , ensures = Predicate.makeTruePredicate sortTCell
+                }
             , attributes = def
             }
 
@@ -316,8 +325,8 @@ test_patternToAxiomPatternAndBack =
     ensuresP = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
     attributesWithPriority =
         def & field @"priority" .~ (Attribute.Priority (Just 0))
-    perhapsFinalPattern attribute initialPattern = axiomPatternToPattern
-        <$> patternToAxiomPattern attribute initialPattern
+    perhapsFinalPattern attribute initialPattern = axiomPatternToTerm
+        <$> termToAxiomPattern attribute initialPattern
 
 sortK, sortKItem, sortKCell, sortStateCell, sortTCell :: Sort
 sortK = simpleSort (SortName "K")
@@ -526,10 +535,11 @@ testRulePattern =
             -- Include an implicitly-quantified variable.
             mkElemVar Mock.x
         , antiLeft = Just $ mkElemVar Mock.u
-        , right =
-            -- Include a binder to ensure that we respect them.
-            mkExists Mock.y (mkElemVar Mock.y)
         , requires = Predicate.makeCeilPredicate_ (mkElemVar Mock.z)
-        , ensures = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
+        , rhs = RHS
+            { existentials = [Mock.y]
+            , right = mkElemVar Mock.y
+            , ensures = Predicate.makeCeilPredicate_ (mkElemVar Mock.t)
+            }
         , attributes = def
         }

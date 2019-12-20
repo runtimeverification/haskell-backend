@@ -62,6 +62,7 @@ import Kore.Step.Axiom.Registry
 import Kore.Step.Rule
     ( EqualityRule (EqualityRule)
     , RulePattern (..)
+    , injectTermIntoRHS
     , rulePattern
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
@@ -1172,9 +1173,8 @@ axiom left right predicate =
     EqualityRule RulePattern
         { left
         , antiLeft = Nothing
-        , right
         , requires = predicate
-        , ensures = makeTruePredicate_
+        , rhs = injectTermIntoRHS right
         , attributes = Default.def
         }
 
