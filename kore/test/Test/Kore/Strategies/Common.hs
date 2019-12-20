@@ -1,6 +1,7 @@
 module Test.Kore.Strategies.Common
     ( simpleRewrite
     , runVerification
+    , runVerificationToPattern
     ) where
 
 import Control.DeepSeq
@@ -26,6 +27,9 @@ import Kore.Step.Strategy
     ( GraphSearchOrder (..)
     )
 import Kore.Strategies.Goal
+import Kore.Strategies.Verification
+    ( StuckVerification (StuckVerification)
+    )
 import qualified Kore.Strategies.Verification as Verification
 
 import qualified Test.Kore.Step.MockSymbols as Mock
@@ -38,7 +42,7 @@ simpleRewrite
 simpleRewrite left right =
     RewriteRule $ rulePattern left right
 
-runVerification
+runVerificationToPattern
     :: (NFData (Rule claim), Verification.Claim claim)
     => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
     => Show claim
@@ -48,6 +52,24 @@ runVerification
     -> [Rule claim]
     -> [claim]
     -> IO (Either (Pattern Variable) ())
+runVerificationToPattern breadthLimit depthLimit axioms claims = do
+    stuck <- runVerification breadthLimit depthLimit axioms claims
+    return (toPattern stuck)
+  where
+    toPattern (Left StuckVerification {stuckDescription}) = Left stuckDescription
+    toPattern (Right a) = Right a
+
+
+runVerification
+    :: (NFData (Rule claim), Verification.Claim claim)
+    => ProofState claim (Pattern Variable) ~ Verification.CommonProofState
+    => Show claim
+    => Show (Rule claim)
+    => Limit Natural
+    -> Limit Natural
+    -> [Rule claim]
+    -> [claim]
+    -> IO (Either (StuckVerification (Pattern Variable) claim) ())
 runVerification breadthLimit depthLimit axioms claims =
     runSimplifier mockEnv
     $ runExceptT
