@@ -5,7 +5,7 @@ License     : NCSA
 
 -}
 
-module Kore.Builtin.Kreflection 
+module Kore.Builtin.Kreflection
     ( verifiers
     ) where
 
