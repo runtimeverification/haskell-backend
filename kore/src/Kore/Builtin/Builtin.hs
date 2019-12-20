@@ -17,7 +17,6 @@ builtin modules.
 module Kore.Builtin.Builtin
     ( Function
     , FunctionImplementation
-    , verifiers
       -- * Implementing builtin functions
     , notImplemented
     , unaryOperator
@@ -50,7 +49,6 @@ import Control.Error
     )
 import Data.Function
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.HashMap.Strict as HashMap
 import Data.Text
     ( Text
     )
@@ -132,39 +130,6 @@ import qualified Kore.Unification.Unify as Monad.Unify
     ( scatter
     )
 import Kore.Unparser
-
-
-kreflectionSort :: Text
-kreflectionSort = "KREFLECTION.kreflection"
-
-assertSort :: SortVerifier
-assertSort = verifySort kreflectionSort
-
-verifiers :: Verifiers
-verifiers =
-    Verifiers
-        { sortDeclVerifiers = mempty
-        , symbolVerifiers = symbolVerifiersKreflection
-        , patternVerifierHook = mempty
-        }
-
-symbolVerifiersKreflection :: SymbolVerifiers
-symbolVerifiersKreflection =
-    HashMap.fromList
-    [ ( "KREFLECTION.isConcrete"
-      , verifySymbolKreflection assertSort [assertSort, assertSort]
-      )
-    ]
-
-verifySymbolKreflection
-    :: SortVerifier  -- ^ Builtin result sort
-    -> [SortVerifier]  -- ^ Builtin argument sorts
-    -> SymbolVerifier
-verifySymbolKreflection _ _ =
-    SymbolVerifier $ \_ _ -> Left $ Kore.Error.Error
-        { errorContext = []
-        , errorError = "found KREFLECTION.isConcrete hook"
-        }
 
 type Function = BuiltinAndAxiomSimplifier
 
