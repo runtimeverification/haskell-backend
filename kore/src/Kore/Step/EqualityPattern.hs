@@ -55,9 +55,10 @@ import qualified Kore.Variables.Fresh as Fresh
 
  -}
 data EqualityPattern variable = EqualityPattern
-    { constraint :: !(Predicate variable)
-    , eqLeft  :: !(TermLike.TermLike variable)
-    , eqRight :: !(TermLike.TermLike variable)
+    { requires :: !(Predicate variable)
+    , left  :: !(TermLike.TermLike variable)
+    , right :: !(TermLike.TermLike variable)
+    , ensures :: !(Predicate variable)
     , attributes :: !Attribute.Axiom
     }
     deriving (GHC.Generic)
@@ -77,20 +78,23 @@ instance Debug variable => Debug (EqualityPattern variable)
 instance (Debug variable, Diff variable) => Diff (EqualityPattern variable)
 
 instance InternalVariable variable => Pretty (EqualityPattern variable) where
-    pretty rulePattern'@(EqualityPattern _ _ _ _ ) =
+    pretty rulePattern'@(EqualityPattern _ _ _ _ _) =
         Pretty.vsep
-            [ "constraint:"
-            , Pretty.indent 4 (unparse constraint)
-            , "eqLeft:"
-            , Pretty.indent 4 (unparse eqLeft)
-            , "eqRight:"
-            , Pretty.indent 4 (unparse eqRight)
+            [ "requires:"
+            , Pretty.indent 4 (unparse requires)
+            , "left:"
+            , Pretty.indent 4 (unparse left)
+            , "right:"
+            , Pretty.indent 4 (unparse right)
+            , "ensures:"
+            , Pretty.indent 4 (unparse ensures)
             ]
       where
         EqualityPattern
-            { constraint
-            , eqLeft
-            , eqRight
+            { requires
+            , left
+            , right
+            , ensures
             } = rulePattern'
 
 instance TopBottom (EqualityPattern variable) where
@@ -103,11 +107,12 @@ equalityPattern
     => TermLike.TermLike variable
     -> TermLike.TermLike variable
     -> EqualityPattern variable
-equalityPattern eqLeft eqRight =
+equalityPattern left right =
     EqualityPattern
-        { eqLeft
-        , constraint = Predicate.makeTruePredicate_
-        , eqRight
+        { left
+        , requires = Predicate.makeTruePredicate_
+        , right
+        , ensures = Predicate.makeTruePredicate_
         , attributes = Default.def
         }
 
@@ -152,6 +157,7 @@ equalityRuleToTerm
             Predicate.PredicateTrue
             left@(TermLike.Ceil_ _ resultSort1 _)
             (TermLike.Top_ resultSort2)
+            Predicate.PredicateTrue
             _
         )
     )
@@ -163,6 +169,7 @@ equalityRuleToTerm
             Predicate.PredicateTrue
             left
             right
+            Predicate.PredicateTrue
             _
         )
     )
@@ -170,44 +177,50 @@ equalityRuleToTerm
     TermLike.mkEquals_ left right
 
 equalityRuleToTerm
-    (EqualityRule (EqualityPattern requires left right _))
+    (EqualityRule (EqualityPattern requires left right ensures _))
   =
     TermLike.mkImplies
         (Predicate.unwrapPredicate requires)
-        (TermLike.mkAnd (TermLike.mkEquals_ left right) TermLike.mkTop_)
+        (TermLike.mkAnd
+            (TermLike.mkEquals_ left right)
+            (Predicate.unwrapPredicate ensures)
+        )
 
 instance UnifyingRule EqualityPattern where
-    mapVariables mapping rule1@(EqualityPattern _ _ _ _) =
+    mapVariables mapping rule1@(EqualityPattern _ _ _ _ _) =
         rule1
-            { constraint = Predicate.mapVariables mapping constraint
-            , eqLeft = TermLike.mapVariables mapping eqLeft
-            , eqRight = TermLike.mapVariables mapping eqRight
+            { requires = Predicate.mapVariables mapping requires
+            , left = TermLike.mapVariables mapping left
+            , right = TermLike.mapVariables mapping right
+            , ensures = Predicate.mapVariables mapping ensures
             }
       where
-        EqualityPattern { constraint, eqLeft, eqRight } = rule1
+        EqualityPattern { requires, left, right, ensures } = rule1
 
-    matchingPattern = eqLeft
+    matchingPattern = left
 
-    precondition = constraint
+    precondition = requires
 
     refreshRule
         (FreeVariables.getFreeVariables -> avoid)
-        rule1@(EqualityPattern _ _ _ _)
+        rule1@(EqualityPattern _ _ _ _ _)
       =
         let rename = Fresh.refreshVariables avoid originalFreeVariables
             subst = TermLike.mkVar <$> rename
-            eqLeft' = TermLike.substitute subst eqLeft
-            constraint' = Predicate.substitute subst constraint
-            eqRight' = TermLike.substitute subst eqRight
+            left' = TermLike.substitute subst left
+            requires' = Predicate.substitute subst requires
+            right' = TermLike.substitute subst right
+            ensures' = Predicate.substitute subst ensures
             rule2 =
                 rule1
-                    { eqLeft = eqLeft'
-                    , constraint = constraint'
-                    , eqRight = eqRight'
+                    { left = left'
+                    , requires = requires'
+                    , right = right'
+                    , ensures = ensures'
                     }
         in (rename, rule2)
       where
-        EqualityPattern { eqLeft, constraint, eqRight } = rule1
+        EqualityPattern { left, requires, right, ensures } = rule1
         originalFreeVariables =
             FreeVariables.getFreeVariables
             $ freeVariables rule1
@@ -216,8 +229,9 @@ instance
     InternalVariable variable
     => HasFreeVariables (EqualityPattern variable) variable
   where
-    freeVariables rule@(EqualityPattern _ _ _ _) = case rule of
-        EqualityPattern { eqLeft, constraint, eqRight } ->
-            freeVariables eqLeft
-            <> freeVariables constraint
-            <> freeVariables eqRight
+    freeVariables rule@(EqualityPattern _ _ _ _ _) = case rule of
+        EqualityPattern { left, requires, right, ensures } ->
+            freeVariables left
+            <> freeVariables requires
+            <> freeVariables right
+            <> freeVariables ensures

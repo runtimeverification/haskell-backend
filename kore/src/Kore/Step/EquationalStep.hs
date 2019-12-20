@@ -169,12 +169,14 @@ finalizeAppliedRule renamedRule appliedConditions =
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
-        let finalTerm = EqualityPattern.eqRight renamedRule
         -- Combine the initial conditions, the unification conditions, and the
         -- axiom ensures clause. The axiom requires clause is included by
         -- unifyRule.
         let
-            preFinalCondition = appliedCondition
+            finalTerm = EqualityPattern.right renamedRule
+            ensures = EqualityPattern.ensures renamedRule
+            ensuresCondition = Condition.fromPredicate ensures
+            preFinalCondition = appliedCondition <> ensuresCondition
         finalCondition <- simplifyPredicate preFinalCondition
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
@@ -244,7 +246,7 @@ recoveryFunctionLikeResults initial results = do
 
             Conditional { term = ruleTerm, substitution = ruleSubstitution } =
                 appliedRule
-            EqualityPattern { eqLeft = alpha_t', constraint = alpha_p'} = ruleTerm
+            EqualityPattern { left = alpha_t', requires = alpha_p'} = ruleTerm
 
             substitution' = Substitution.toMap ruleSubstitution
 

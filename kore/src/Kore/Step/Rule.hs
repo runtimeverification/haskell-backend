@@ -288,47 +288,49 @@ termToAxiomPattern attributes pat =
         -- function axioms: general
         TermLike.Implies_ _ requires
             (TermLike.And_ _
-                (TermLike.Equals_ _ _ eqLeft eqRight)
+                (TermLike.Equals_ _ _ left right)
                 ensures
             )
-          | isTop ensures
+          | isTop ensures || ensures == requires
           ->
             pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { constraint = Predicate.wrapPredicate requires
-                , eqLeft
-                , eqRight
+                { requires = Predicate.wrapPredicate requires
+                , left
+                , right
+                , ensures = Predicate.makeTruePredicate_
                 , attributes
                 }
         -- function axioms: ensures is the same as requires
-        -- TODO(traiansf): this is a frontend bug. remove onece fixed.
         TermLike.Implies_ _ requires
             (TermLike.And_ _
-                (TermLike.Equals_ _ _ eqLeft eqRight)
+                (TermLike.Equals_ _ _ left right)
                 ensures
             )
-          | ensures == requires
           ->
             pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { constraint = Predicate.wrapPredicate requires
-                , eqLeft
-                , eqRight
+                { requires = Predicate.wrapPredicate requires
+                , left
+                , right
+                , ensures = Predicate.wrapPredicate ensures
                 , attributes
                 }
 
         -- function axioms: trivial pre- and post-conditions
-        TermLike.Equals_ _ _ eqLeft eqRight ->
+        TermLike.Equals_ _ _ left right ->
             pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { constraint = Predicate.makeTruePredicate_
-                , eqLeft
-                , eqRight
+                { requires = Predicate.makeTruePredicate_
+                , left
+                , right
+                , ensures = Predicate.makeTruePredicate_
                 , attributes
                 }
         -- definedness axioms
-        eqLeft@(TermLike.Ceil_ _ resultSort _) ->
+        left@(TermLike.Ceil_ _ resultSort _) ->
             pure $ FunctionAxiomPattern $ EqualityRule EqualityPattern
-                { constraint = Predicate.makeTruePredicate_
-                , eqLeft
-                , eqRight = TermLike.mkTop resultSort
+                { requires = Predicate.makeTruePredicate_
+                , left
+                , right = TermLike.mkTop resultSort
+                , ensures = Predicate.makeTruePredicate_
                 , attributes
                 }
         TermLike.Forall_ _ _ child -> termToAxiomPattern attributes child

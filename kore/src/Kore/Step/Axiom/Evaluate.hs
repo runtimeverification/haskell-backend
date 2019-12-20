@@ -133,13 +133,13 @@ evaluateAxioms equalityRules termLike predicate
     logAppliedRule :: MonadLog log => EqualityRule Variable -> log ()
     logAppliedRule
         (EqualityRule EqualityPattern
-            {eqLeft, attributes = Attribute.Axiom {sourceLocation}}
+            {left, attributes = Attribute.Axiom {sourceLocation}}
         )
       =
         DebugAxiomEvaluation.attemptAxiom
             sourceLocation
-            (matchAxiomIdentifier eqLeft)
-            (DebugAxiomEvaluation.klabelIdentifier eqLeft)
+            (matchAxiomIdentifier left)
+            (DebugAxiomEvaluation.klabelIdentifier left)
 
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete

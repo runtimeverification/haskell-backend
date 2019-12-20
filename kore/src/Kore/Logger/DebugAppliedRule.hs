@@ -158,7 +158,7 @@ isSelectedRule debugAppliedRuleOptions =
     maybe False (`Set.member` debugAppliedRules) . appliedRuleId
   where
     matchAppliedRuleId =
-        matchAxiomIdentifier . Equality.eqLeft . Conditional.term
+        matchAxiomIdentifier . Equality.left . Conditional.term
     appliedRuleId appliedRule = do
         axiomId <- matchAppliedRuleId appliedRule
         case axiomId of

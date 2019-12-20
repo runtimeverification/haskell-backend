@@ -23,6 +23,7 @@ import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
     , makeCeilPredicate_
+    , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate_
     , makeNotPredicate
@@ -435,7 +436,6 @@ test_applyEquationalRule_ =
         actual <- applyEquationalRuleParallel_ initial axiomSigmaXXY
         assertEqual "" expect actual
 
-    {- TODO(traiansf): revert this when equations get ensures again
     -- x => x ensures g(x)=f(x)
     -- vs
     -- y
@@ -446,7 +446,6 @@ test_applyEquationalRule_ =
                 makeEqualsPredicate_
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
-            rhs = (RulePattern.rhs ruleId) { ensures }
             expect :: Either
                 UnificationOrSubstitutionError [OrPattern Variable]
             expect = Right
@@ -461,24 +460,23 @@ test_applyEquationalRule_ =
                     ]
                 ]
             initial = Pattern.fromTermLike (mkElemVar Mock.y)
-            axiom = EqualityRule ruleId { rhs }
+            axiom = EqualityRule ruleId { ensures }
         actual <- applyEquationalRuleParallel_ initial axiom
         assertEqual "" expect actual
-    -}
     -- x => x requires g(x)=f(x)
     -- vs
     -- a
     -- Expected: y1 and g(a)=f(a)
     , testCase "conjoin rule requirement" $ do
         let
-            constraint =
+            requires =
                 makeEqualsPredicate_
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             expect = Right
-                [ OrPattern.fromPatterns [initial { predicate = constraint }] ]
+                [ OrPattern.fromPatterns [initial { predicate = requires }] ]
             initial = pure (mkElemVar Mock.x)
-            axiom = EqualityRule ruleId { constraint }
+            axiom = EqualityRule ruleId { requires }
         actual <- applyEquationalRuleParallel_ initial axiom
         assertEqual "" expect actual
 
@@ -488,13 +486,11 @@ test_applyEquationalRule_ =
         actual <- applyEquationalRuleParallel_ initial axiomBottom
         assertEqual "" expect actual
 
-    {-TODO(traiansf):  revert this when equiations get ensures again
     , testCase "rule a => b ensures \\bottom" $ do
         let expect = Right [ OrPattern.fromPatterns [] ]
             initial = pure Mock.a
         actual <- applyEquationalRuleParallel_ initial axiomEnsuresBottom
         assertEqual "" expect actual
-    -}
     , testCase "rule a => b requires \\bottom" $ do
         let expect = Right [ ]
             initial = pure Mock.a
@@ -521,26 +517,21 @@ test_applyEquationalRule_ =
     axiomBottom =
         EqualityRule (equalityPattern Mock.a (mkBottom Mock.testSort))
 
-    {- TODO(traiansf): revert this when equiations get ensures again
     axiomEnsuresBottom =
-        EqualityRule RulePattern
+        EqualityRule EqualityPattern
             { left = Mock.a
-            , antiLeft = Nothing
             , requires = makeTruePredicate_
-            , rhs = RHS
-                { existentials = []
-                , right = Mock.b
-                , ensures = makeFalsePredicate_
-                }
+            , right = Mock.b
+            , ensures = makeFalsePredicate_
             , attributes = def
             }
-    -}
 
     axiomRequiresBottom =
         EqualityRule EqualityPattern
-            { eqLeft = Mock.a
-            , constraint = makeFalsePredicate_
-            , eqRight = Mock.b
+            { left = Mock.a
+            , requires = makeFalsePredicate_
+            , right = Mock.b
+            , ensures = makeTruePredicate_
             , attributes = def
             }
 

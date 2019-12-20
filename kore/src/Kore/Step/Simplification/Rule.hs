@@ -72,8 +72,8 @@ simplifyEqualityPattern
     => EqualityPattern variable
     -> simplifier (EqualityPattern variable)
 simplifyEqualityPattern rule = do
-    let EqualityPattern { eqLeft } = rule
-    simplifiedLeft <- simplifyPattern eqLeft
+    let EqualityPattern { left } = rule
+    simplifiedLeft <- simplifyPattern left
     case OrPattern.toPatterns simplifiedLeft of
         [ Conditional { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
@@ -81,15 +81,19 @@ simplifyEqualityPattern rule = do
                 left' = TermLike.substitute subst term
                 requires' = TermLike.substitute subst <$> requires
                   where
-                    EqualityPattern { constraint = requires } = rule
+                    EqualityPattern { requires = requires } = rule
                 rhs' = TermLike.substitute subst rhs
                   where
-                    EqualityPattern { eqRight = rhs } = rule
+                    EqualityPattern { right = rhs } = rule
+                ensures' = TermLike.substitute subst <$> ensures
+                  where
+                    EqualityPattern { ensures = ensures } = rule
                 EqualityPattern { attributes } = rule
             return EqualityPattern
-                { eqLeft = left'
-                , constraint = requires'
-                , eqRight = rhs'
+                { left = left'
+                , requires = requires'
+                , right = rhs'
+                , ensures = ensures'
                 , attributes = attributes
                 }
         _ ->

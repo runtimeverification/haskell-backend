@@ -972,7 +972,7 @@ conditionalSimplificationRulePattern
     -> TermLike variable
     -> EqualityPattern variable
 conditionalSimplificationRulePattern left requires right =
-    patt & Lens.set (field @"constraint") requires
+    patt & Lens.set (field @"requires") requires
   where
     patt = simplificationRulePattern left right
 
@@ -1168,11 +1168,12 @@ axiom
     -> TermLike Variable
     -> Predicate.Predicate Variable
     -> EqualityRule Variable
-axiom eqLeft eqRight constraint =
+axiom left right requires =
     EqualityRule EqualityPattern
-        { eqLeft
-        , constraint
-        , eqRight
+        { left
+        , requires
+        , right
+        , ensures = Predicate.makeTruePredicate_
         , attributes = Default.def
         }
 

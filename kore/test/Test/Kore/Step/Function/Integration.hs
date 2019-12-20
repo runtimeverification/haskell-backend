@@ -1233,8 +1233,8 @@ axiom
     -> TermLike Variable
     -> Predicate Variable
     -> EqualityRule Variable
-axiom left right constraint =
-    EqualityRule (EqualityPattern.equalityPattern left right) { constraint }
+axiom left right requires =
+    EqualityRule (EqualityPattern.equalityPattern left right) { requires }
 
 axiom_
     :: TermLike Variable

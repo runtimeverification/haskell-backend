@@ -118,10 +118,10 @@ axiomToIdAxiomPatternPair axiom =
         Left _ -> Nothing
         Right
             (FunctionAxiomPattern
-                axiomPat@(EqualityRule EqualityPattern { eqLeft })
+                axiomPat@(EqualityRule EqualityPattern { left })
             )
           -> do
-            identifier <- AxiomIdentifier.matchAxiomIdentifier eqLeft
+            identifier <- AxiomIdentifier.matchAxiomIdentifier left
             return (identifier, axiomPat)
         Right (RewriteAxiomPattern _) -> Nothing
         Right (OnePathClaimPattern _) -> Nothing
@@ -196,8 +196,8 @@ ignoreEqualityRule (EqualityRule EqualityPattern { attributes })
 {- | Should we ignore the 'EqualityRule' for evaluating function definitions?
  -}
 ignoreDefinition :: EqualityRule Variable -> Bool
-ignoreDefinition (EqualityRule EqualityPattern { eqLeft }) =
+ignoreDefinition (EqualityRule EqualityPattern { left }) =
     Exception.assert isLeftFunctionLike False
   where
     isLeftFunctionLike =
-        (Pattern.isFunction . Pattern.function) (extractAttributes eqLeft)
+        (Pattern.isFunction . Pattern.function) (extractAttributes left)
