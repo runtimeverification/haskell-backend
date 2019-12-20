@@ -42,7 +42,7 @@ test_allPathVerification =
         -- Axioms: []
         -- Claims: a => a
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             []
@@ -54,7 +54,7 @@ test_allPathVerification =
         -- Axioms: []
         -- Claims: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             []
@@ -69,7 +69,7 @@ test_allPathVerification =
     --     -- Axioms: a => b
     --     -- Claims: a => b #Or c
     --     -- Expected: success
-    --     actual <- runVerification
+    --     actual <- runVerificationToPattern
     --         (Limit 2)
     --         Unlimited
     --         [ simpleAxiom Mock.a Mock.b ]
@@ -81,7 +81,7 @@ test_allPathVerification =
         -- Axioms: a => a
         -- Claims: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.a ]
@@ -98,7 +98,7 @@ test_allPathVerification =
     --     --     a => c
     --     -- Claims: a => b #Or c
     --     -- Expected: success
-    --     actual <- runVerification
+    --     actual <- runVerificationToPattern
     --         Unlimited
     --         (Limit 2)
     --         [ simpleAxiom Mock.a Mock.b
@@ -114,7 +114,7 @@ test_allPathVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 2)
             [ simpleAxiom Mock.a Mock.b
@@ -130,7 +130,7 @@ test_allPathVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -146,7 +146,7 @@ test_allPathVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -175,7 +175,7 @@ test_allPathVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -195,7 +195,7 @@ test_allPathVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -215,7 +215,7 @@ test_allPathVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -234,7 +234,7 @@ test_allPathVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -252,7 +252,7 @@ test_allPathVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -270,7 +270,7 @@ test_allPathVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -292,7 +292,7 @@ test_allPathVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b

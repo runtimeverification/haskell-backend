@@ -466,8 +466,15 @@ instance Debug variable => Debug (OnePathRule variable)
 instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance InternalVariable variable => Unparse (OnePathRule variable) where
-    unparse = unparse . onePathRuleToTerm
-    unparse2 = unparse2 .  onePathRuleToTerm
+    unparse =
+        (("claim {}" <> Pretty.line') <>)
+        . Pretty.nest 4
+        . unparse
+        . onePathRuleToTerm
+    unparse2 =
+        ("claim {}" Pretty.<+>)
+        . unparse2
+        . onePathRuleToTerm
 
 instance TopBottom (OnePathRule variable) where
     isTop _ = False
@@ -517,8 +524,15 @@ instance Debug variable => Debug (AllPathRule variable)
 instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance InternalVariable variable => Unparse (AllPathRule variable) where
-    unparse = unparse . allPathRuleToTerm
-    unparse2 = unparse2 . allPathRuleToTerm
+    unparse =
+        (("claim {}" <> Pretty.line') <>)
+        . Pretty.nest 4
+        . unparse
+        . allPathRuleToTerm
+    unparse2 =
+        ("claim {}" Pretty.<+>)
+        . unparse2
+        . allPathRuleToTerm
 
 instance TopBottom (AllPathRule variable) where
     isTop _ = False

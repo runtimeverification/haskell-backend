@@ -19,7 +19,7 @@ module Kore.Step.Rule
     , mkCeilAxiom
     , termToAxiomPattern
     , onePathRuleToTerm
-    )where
+    ) where
 
 import Control.DeepSeq
     ( NFData
