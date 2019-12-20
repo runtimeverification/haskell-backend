@@ -145,7 +145,11 @@ import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
     ( Claim
+    , StuckVerification (StuckVerification)
     , verify
+    )
+import qualified Kore.Strategies.Verification as StuckVerification
+    ( StuckVerification (..)
     )
 import Kore.Unparser
     ( unparseToText
@@ -294,7 +298,11 @@ prove
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
-    -> smt (Either (TermLike Variable) ())
+    -> smt
+        (Either
+            (StuckVerification (TermLike Variable) (ReachabilityRule Variable))
+            ()
+        )
 prove searchOrder breadthLimit depthLimit definitionModule specModule =
     evalProver definitionModule specModule
     $ \initialized -> do
@@ -307,13 +315,22 @@ prove searchOrder breadthLimit depthLimit definitionModule specModule =
                 claims
                 axioms
                 (map (\x -> (x,depthLimit)) (extractUntrustedClaims' claims))
-        return $ Bifunctor.first Pattern.toTermLike result
+        return $ Bifunctor.first stuckVerificationPatternToTerm result
   where
     extractUntrustedClaims'
         :: [ReachabilityRule Variable]
         -> [ReachabilityRule Variable]
     extractUntrustedClaims' =
         filter (not . Goal.isTrusted)
+
+    stuckVerificationPatternToTerm
+        :: StuckVerification (Pattern Variable) claim
+        -> StuckVerification (TermLike Variable) claim
+    stuckVerificationPatternToTerm
+        stuck@StuckVerification {stuckDescription}
+      =
+        stuck {StuckVerification.stuckDescription = Pattern.toTermLike stuckDescription}
+
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
 -- the repl until the user exits.
