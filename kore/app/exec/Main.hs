@@ -481,18 +481,7 @@ koreProve execOptions proveOptions = do
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
     let KoreProveOptions { saveProofs } = proveOptions
-    maybeAlreadyProvenModule <- case saveProofs of
-        Nothing -> return Nothing
-        Just saveProofsFileName -> do
-            fileExists <- lift $ doesFileExist saveProofsFileName
-            if fileExists
-                then do
-                    savedProofsDefinition <-
-                        loadDefinitions [definitionFileName, saveProofsFileName]
-                    savedProofsModule <-
-                        loadModule savedProofsModuleName savedProofsDefinition
-                    return (Just savedProofsModule)
-                else return Nothing
+    maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
     proveResult <- execute execOptions mainModule $ do
         let KoreExecOptions { breadthLimit, depthLimit } = execOptions
             KoreProveOptions { graphSearch } = proveOptions
@@ -519,6 +508,22 @@ koreProve execOptions proveOptions = do
     failure pat = (ExitFailure 1, pat)
     success :: (ExitCode, TermLike Variable)
     success = (ExitSuccess, mkTop $ mkSortVariable "R")
+
+    loadProven
+        :: FilePath
+        -> Maybe FilePath
+        -> Main (Maybe (VerifiedModule StepperAttributes Attribute.Axiom))
+    loadProven _ Nothing = return Nothing
+    loadProven definitionFileName (Just saveProofsFileName) = do
+        fileExists <- lift $ doesFileExist saveProofsFileName
+        if fileExists
+            then do
+                savedProofsDefinition <-
+                    loadDefinitions [definitionFileName, saveProofsFileName]
+                savedProofsModule <-
+                    loadModule savedProofsModuleName savedProofsDefinition
+                return (Just savedProofsModule)
+            else return Nothing
 
     saveProven
         :: VerifiedModule StepperAttributes Attribute.Axiom
