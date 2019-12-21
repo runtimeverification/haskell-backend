@@ -36,7 +36,7 @@ import Control.Monad.Catch
     , SomeException
     , handle
     )
-import qualified Control.Monad.Trans as Monad.Trans
+import qualified Control.Monad.Trans as Trans
 import Data.Coerce
     ( Coercible
     , coerce
@@ -769,18 +769,19 @@ removeDestinationWorker
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
-    removal <- removalPredicate destination configuration
-    if isTop removal
-        then return . stateConstructor $ goal
-        else do
-            simplifiedRemoval <-
-                SMT.Evaluator.filterMultiOr
-                =<< simplifyAndRemoveTopExists
-                    (Conditional.andPredicate configuration removal)
-            if not (isBottom simplifiedRemoval)
-                then return . GoalStuck $ goal
-                else return Proven
+removeDestinationWorker stateConstructor goal =
+    withConfiguration goal $ Trans.lift $ do
+        removal <- removalPredicate destination configuration
+        if isTop removal
+            then return . stateConstructor $ goal
+            else do
+                simplifiedRemoval <-
+                    SMT.Evaluator.filterMultiOr
+                    =<< simplifyAndRemoveTopExists
+                        (Conditional.andPredicate configuration removal)
+                if not (isBottom simplifiedRemoval)
+                    then return . GoalStuck $ goal
+                    else return Proven
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
@@ -796,9 +797,7 @@ simplify
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = withConfiguration goal $ do
-    configs <-
-        Monad.Trans.lift
-        $ simplifyAndRemoveTopExists configuration
+    configs <- Trans.lift $ simplifyAndRemoveTopExists configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
         then pure $ configurationDestinationToRule goal Pattern.bottom destination
@@ -847,7 +846,7 @@ derivePar
 derivePar rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Monad.Trans.lift
+        Trans.lift
         . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesParallel
             (Step.UnificationProcedure Unification.unificationProcedure)
@@ -902,7 +901,7 @@ deriveSeq
 deriveSeq rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Monad.Trans.lift
+        Trans.lift
         . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesSequence
             (Step.UnificationProcedure Unification.unificationProcedure)
