@@ -12,11 +12,11 @@ kore-repl: $(KORE_REPL)
 
 k-frontend:
 	mkdir -p $(BUILD_DIR)
-	rm -rf $(K_DIST_DEFAULT) $(K_RELEASE_BIN)
-	curl --location --output $(K_RELEASE_BIN) $(K_RELEASE_BIN_URL)
-	mkdir -p $(K_DIST_DEFAULT)
-	tar --extract --file $(K_RELEASE_BIN) --strip-components 1 --directory $(K_DIST_DEFAULT)
-	cp src/main/kore/prelude.kore $(K_DIST_DEFAULT)/include/kore
+	rm -rf $(K_RELEASE_DEFAULT) $(K_RELEASE_TAR)
+	curl --location --output $(K_RELEASE_TAR) $(K_RELEASE_TAR_URL)
+	mkdir -p $(K_RELEASE_DEFAULT)
+	tar --extract --file $(K_RELEASE_TAR) --strip-components 1 --directory $(K_RELEASE_DEFAULT)
+	cp src/main/kore/prelude.kore $(K_RELEASE_DEFAULT)/include/kore
 	$(KRUN) --version
 
 docs: haddock
