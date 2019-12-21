@@ -140,8 +140,8 @@ test_transitionRule_CheckProven =
 test_transitionRule_CheckGoalRem :: [TestTree]
 test_transitionRule_CheckGoalRem =
     [ unmodified ProofState.Proven
-    , unmodified (ProofState.Goal    (A, B))
-    , done       (ProofState.GoalRemainder undefined)
+    , unmodified (ProofState.Goal          (A, B))
+    , done       (ProofState.GoalRemainder (A, B))
     ]
   where
     run = runTransitionRule ProofState.CheckGoalRemainder
