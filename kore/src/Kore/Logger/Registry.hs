@@ -73,8 +73,8 @@ import Kore.Logger.WarnSimplificationWithRemainder
 
 data Registry =
     Registry
-    { textToType :: Map Text SomeTypeRep
-    , typeToText :: Map SomeTypeRep Text
+    { textToType :: !(Map Text SomeTypeRep)
+    , typeToText :: !(Map SomeTypeRep Text)
     }
 
 -- | A registry of log entry types and their textual representations.
