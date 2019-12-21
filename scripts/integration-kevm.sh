@@ -33,16 +33,15 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell test-interactive-search
+# Small tests
+env GHCRTS='-M256M' \
+  make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell \
+    test-interactive-search \
+    tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.run-interactive \
+    tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.run-interactive \
 
-env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-add0-stats.json" \
-    make TEST_CONCRETE_BACKEND=haskell tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.run-interactive
-
-env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-pop1-stats.json" \
-    make TEST_CONCRETE_BACKEND=haskell tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.run-interactive
-
-env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-sum-to-10-stats.json" \
-    make TEST_CONCRETE_BACKEND=haskell tests/interactive/sumTo10.evm.run-interactive
-
-env KORE_EXEC_OPTS="--rts-statistics $TOP/kevm-sum-to-n-spec-stats.json" \
-    make TEST_SYMBOLIC_BACKEND=haskell tests/specs/examples/sum-to-n-spec.k.prove
+# Medium tests
+env GHCRTS='-M384M' \
+  make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell \
+    tests/interactive/sumTo10.evm.run-interactive \
+    tests/specs/examples/sum-to-n-spec.k.prove
