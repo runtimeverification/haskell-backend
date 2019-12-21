@@ -962,35 +962,34 @@ removalPredicate
   , isFunctionPattern destTerm
   = do
     unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
-    if OrPattern.isFalse unifiedConfigs
-        then return Predicate.makeTruePredicate_
-        else
-            case OrPattern.toPatterns unifiedConfigs of
-                [substPattern] -> do
-                    let extraElemVariables =
-                            getExtraElemVariables configuration substPattern
-                        remainderPattern =
-                            Pattern.fromCondition
-                            . Conditional.withoutTerm
-                            $ (const <$> destination <*> substPattern)
-                    evaluatedRemainder <-
-                        Exists.makeEvaluate extraElemVariables remainderPattern
-                    return
-                        . Predicate.makeNotPredicate
-                        . Condition.toPredicate
-                        . Conditional.withoutTerm
-                        . OrPattern.toPattern
-                        $ evaluatedRemainder
-                _ ->
-                    error . show . Pretty.vsep $
-                    [ "Unifying the terms of the configuration and the\
-                    \ destination has unexpectedly produced more than one\
-                    \ unification case."
-                    , Pretty.indent 2 "Unification cases:"
-                    ]
-                    <> fmap
-                        (Pretty.indent 4 . unparse)
-                        (Foldable.toList unifiedConfigs)
+    case OrPattern.toPatterns unifiedConfigs of
+        _ | OrPattern.isFalse unifiedConfigs ->
+            return Predicate.makeTruePredicate_
+        [substPattern] -> do
+            let extraElemVariables =
+                    getExtraElemVariables configuration substPattern
+                remainderPattern =
+                    Pattern.fromCondition
+                    . Conditional.withoutTerm
+                    $ (const <$> destination <*> substPattern)
+            evaluatedRemainder <-
+                Exists.makeEvaluate extraElemVariables remainderPattern
+            return
+                . Predicate.makeNotPredicate
+                . Condition.toPredicate
+                . Conditional.withoutTerm
+                . OrPattern.toPattern
+                $ evaluatedRemainder
+        _ ->
+            error . show . Pretty.vsep $
+            [ "Unifying the terms of the configuration and the\
+            \ destination has unexpectedly produced more than one\
+            \ unification case."
+            , Pretty.indent 2 "Unification cases:"
+            ]
+            <> fmap
+                (Pretty.indent 4 . unparse)
+                (Foldable.toList unifiedConfigs)
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
