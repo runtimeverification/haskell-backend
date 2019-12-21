@@ -51,10 +51,10 @@ coverage_report: test-kore
 	cp -r $$($(STACK_TEST) path --local-hpc-root) coverage_report
 
 test-k:
-	$(MAKE) --directory src/main/k/working test-k
+	$(MAKE) --directory test/working test
 
 test-bmc:
-	$(MAKE) --directory src/main/k/in-progress/bmc/example1 test-bmc
+	$(MAKE) --directory test/in-progress/bmc/example1 test-bmc
 
 clean:
 	$(STACK) clean --full
@@ -65,4 +65,5 @@ clean:
 	rm -rf haskell_documentation
 	rm -rf coverage_report
 	rm -rf $(BUILD_DIR)
-	$(MAKE) --directory src/main/k/working clean
+	$(MAKE) --directory test/working clean
+	$(MAKE) --directory test/in-progress/bmc/example1 clean
