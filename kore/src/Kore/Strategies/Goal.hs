@@ -770,17 +770,17 @@ removeDestinationWorker
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
 removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
-        removal <- removalPredicate destination configuration
-        if isTop removal
-            then return . stateConstructor $ goal
-            else do
-                simplifiedRemoval <-
-                    SMT.Evaluator.filterMultiOr
-                    =<< simplifyAndRemoveTopExists
-                        (Conditional.andPredicate configuration removal)
-                if not (isBottom simplifiedRemoval)
-                    then return . GoalStuck $ goal
-                    else return Proven
+    removal <- removalPredicate destination configuration
+    if isTop removal
+        then return . stateConstructor $ goal
+        else do
+            simplifiedRemoval <-
+                SMT.Evaluator.filterMultiOr
+                =<< simplifyAndRemoveTopExists
+                    (Conditional.andPredicate configuration removal)
+            if not (isBottom simplifiedRemoval)
+                then return . GoalStuck $ goal
+                else return Proven
   where
     configuration = getConfiguration goal
     configFreeVars = Pattern.freeVariables configuration
