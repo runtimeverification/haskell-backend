@@ -20,6 +20,9 @@ import Control.Monad.Trans
     ( lift
     )
 import qualified Data.Char as Char
+import Data.Default
+    ( def
+    )
 import qualified Data.Foldable as Foldable
 import Data.Limit
     ( Limit (..)
@@ -68,6 +71,9 @@ import Options.Applicative
     , value
     )
 import qualified Options.Applicative as Options
+import System.Directory
+    ( doesFileExist
+    )
 import System.Exit
     ( ExitCode (..)
     , exitWith
@@ -86,6 +92,7 @@ import Kore.Error
 import Kore.Exec
 import Kore.IndexedModule.IndexedModule
     ( VerifiedModule
+    , indexedModuleRawSentences
     )
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
@@ -117,15 +124,29 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step
+import Kore.Step.Rule
+    ( ReachabilityRule
+    )
+import qualified Kore.Step.Rule as Rule
+    ( toSentence
+    )
 import Kore.Step.Search
     ( SearchType (..)
     )
 import qualified Kore.Step.Search as Search
 import Kore.Step.SMT.Lemma
 import qualified Kore.Strategies.Goal as Goal
-import Kore.Syntax.Definition
-    ( ModuleName (..)
+import Kore.Strategies.Verification
+    ( StuckVerification (StuckVerification)
     )
+import qualified Kore.Strategies.Verification as Verification.DoNotUse
+import Kore.Syntax.Definition
+    ( Definition (Definition)
+    , Module (Module)
+    , ModuleName (ModuleName)
+    , Sentence (..)
+    )
+import qualified Kore.Syntax.Definition as Definition.DoNotUse
 import Kore.Unparser
     ( unparse
     )
@@ -398,8 +419,10 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
     go
-      | Just proveOptions <- koreProveOptions =
-        koreProve execOptions proveOptions
+      | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
+        if bmc
+            then koreBmc execOptions proveOptions
+            else koreProve execOptions proveOptions
 
       | Just searchOptions <- koreSearchOptions =
         koreSearch execOptions searchOptions
@@ -457,30 +480,108 @@ koreProve execOptions proveOptions = do
     mainModule <- loadModule mainModuleName definition
     let KoreProveOptions { specMainModule } = proveOptions
     specModule <- loadModule specMainModule definition
+    let KoreProveOptions { saveProofs } = proveOptions
+    maybeAlreadyProvenModule <- loadProven definitionFileName saveProofs
+    proveResult <- execute execOptions mainModule $ do
+        let KoreExecOptions { breadthLimit, depthLimit } = execOptions
+            KoreProveOptions { graphSearch } = proveOptions
+        prove
+            graphSearch
+            breadthLimit
+            depthLimit
+            mainModule
+            specModule
+            maybeAlreadyProvenModule
+
+    (exitCode, final) <- case proveResult of
+        Left StuckVerification {stuckDescription, provenClaims} -> do
+            maybe
+                (return ())
+                (lift . saveProven specModule provenClaims)
+                saveProofs
+            return (failure stuckDescription)
+        Right () -> return success
+
+    lift $ renderResult execOptions (unparse final)
+    return exitCode
+  where
+    failure pat = (ExitFailure 1, pat)
+    success :: (ExitCode, TermLike Variable)
+    success = (ExitSuccess, mkTop $ mkSortVariable "R")
+
+    loadProven
+        :: FilePath
+        -> Maybe FilePath
+        -> Main (Maybe (VerifiedModule StepperAttributes Attribute.Axiom))
+    loadProven _ Nothing = return Nothing
+    loadProven definitionFileName (Just saveProofsFileName) = do
+        fileExists <- lift $ doesFileExist saveProofsFileName
+        if fileExists
+            then do
+                savedProofsDefinition <-
+                    loadDefinitions [definitionFileName, saveProofsFileName]
+                savedProofsModule <-
+                    loadModule savedProofsModuleName savedProofsDefinition
+                return (Just savedProofsModule)
+            else return Nothing
+
+    saveProven
+        :: VerifiedModule StepperAttributes Attribute.Axiom
+        -> [ReachabilityRule Variable]
+        -> FilePath
+        -> IO ()
+    saveProven specModule provenClaims outputFile =
+        withFile outputFile WriteMode
+            (`hPutDoc` unparse provenDefinition)
+      where
+        specModuleDefinitions :: [Sentence (TermLike Variable)]
+        specModuleDefinitions =
+            filter isNotAxiomOrClaim (indexedModuleRawSentences specModule)
+
+        isNotAxiomOrClaim :: Sentence patternType -> Bool
+        isNotAxiomOrClaim (SentenceAxiomSentence  _) = False
+        isNotAxiomOrClaim (SentenceClaimSentence _) = False
+        isNotAxiomOrClaim (SentenceAliasSentence _) = True
+        isNotAxiomOrClaim (SentenceSymbolSentence _) = True
+        isNotAxiomOrClaim (SentenceImportSentence _) = True
+        isNotAxiomOrClaim (SentenceSortSentence _) = True
+        isNotAxiomOrClaim (SentenceHookSentence _) = True
+
+        provenModule =
+            Module
+                { moduleName = savedProofsModuleName
+                , moduleSentences =
+                    specModuleDefinitions ++ map Rule.toSentence provenClaims
+                , moduleAttributes = def
+                }
+        provenDefinition = Definition
+            { definitionAttributes = def
+            , definitionModules = [provenModule]
+            }
+
+koreBmc :: KoreExecOptions -> KoreProveOptions -> Main ExitCode
+koreBmc execOptions proveOptions = do
+    let KoreExecOptions { definitionFileName } = execOptions
+        KoreProveOptions { specFileName } = proveOptions
+    definition <- loadDefinitions [definitionFileName, specFileName]
+    let KoreExecOptions { mainModuleName } = execOptions
+    mainModule <- loadModule mainModuleName definition
+    let KoreProveOptions { specMainModule } = proveOptions
+    specModule <- loadModule specMainModule definition
     (exitCode, final) <- execute execOptions mainModule $ do
         let KoreExecOptions { breadthLimit, depthLimit } = execOptions
-            KoreProveOptions { graphSearch, bmc } = proveOptions
-        if bmc
-            then do
-                checkResult <-
-                    boundedModelCheck
-                        breadthLimit
-                        depthLimit
-                        mainModule
-                        specModule
-                        graphSearch
-                case checkResult of
-                    Bounded.Proved -> return success
-                    Bounded.Unknown -> return unknown
-                    Bounded.Failed final -> return (failure final)
-            else
-                either failure (const success)
-                <$> prove
-                        graphSearch
-                        breadthLimit
-                        depthLimit
-                        mainModule
-                        specModule
+            KoreProveOptions { graphSearch } = proveOptions
+        checkResult <-
+            boundedModelCheck
+                breadthLimit
+                depthLimit
+                mainModule
+                specModule
+                graphSearch
+        case checkResult of
+            Bounded.Proved -> return success
+            Bounded.Unknown -> return unknown
+            Bounded.Failed final -> return (failure final)
     lift $ renderResult execOptions (unparse final)
     return exitCode
   where
@@ -574,7 +675,7 @@ renderResult KoreExecOptions { outputFileName } doc =
         Just outputFile -> withFile outputFile WriteMode (`hPutDoc` doc)
 
 -- | IO action that parses a kore pattern from a filename, verifies it,
--- converts it to a pure patterm, and prints timing information.
+-- converts it to a pure pattern, and prints timing information.
 mainPatternParseAndVerify
     :: VerifiedModule StepperAttributes Attribute.Axiom
     -> String
@@ -598,3 +699,7 @@ mainParseSearchPattern indexedModule patternFileName = do
                 , substitution = mempty
                 }
         _ -> error "Unexpected non-conjunctive pattern"
+
+savedProofsModuleName :: ModuleName
+savedProofsModuleName = ModuleName
+    "haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d"

@@ -10,6 +10,6 @@ module SMT-LEMMA
   rule delayed(X:Int) => test(X)
 
   rule symInt => ?X:Int
-  
+
   rule test(X) => X >Int 5 [simplification, concrete, smt-lemma]
 endmodule

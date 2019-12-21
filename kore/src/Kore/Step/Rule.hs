@@ -27,6 +27,7 @@ module Kore.Step.Rule
     , AxiomPatternError (..)
     , fromSentenceAxiom
     , fromSentence
+    , toSentence
     , extractRewriteAxioms
     , extractReachabilityRule
     , extractImplicationClaims
@@ -386,8 +387,19 @@ instance Debug variable => Debug (OnePathRule variable)
 instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance InternalVariable variable => Unparse (OnePathRule variable) where
-    unparse = unparse . axiomPatternToTerm . OnePathClaimPattern
-    unparse2 = unparse2 .  axiomPatternToTerm . OnePathClaimPattern
+    unparse claimPattern =
+        "claim {}"
+        <> Pretty.line'
+        <> Pretty.nest 4
+            (unparse $ axiomPatternToTerm $ OnePathClaimPattern claimPattern)
+        <> Pretty.line'
+        <> "[]"
+
+    unparse2 claimPattern =
+        "claim {}"
+        Pretty.<+> unparse2
+            (axiomPatternToTerm $ OnePathClaimPattern claimPattern)
+        Pretty.<+> "[]"
 
 instance TopBottom (OnePathRule variable) where
     isTop _ = False
@@ -437,8 +449,18 @@ instance Debug variable => Debug (AllPathRule variable)
 instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance InternalVariable variable => Unparse (AllPathRule variable) where
-    unparse = unparse . axiomPatternToTerm . AllPathClaimPattern
-    unparse2 = unparse2 . axiomPatternToTerm . AllPathClaimPattern
+    unparse claimPattern =
+        "claim {}"
+        <> Pretty.line'
+        <> Pretty.nest 4
+            (unparse $ axiomPatternToTerm $ AllPathClaimPattern claimPattern)
+        <> Pretty.line'
+        <> "[]"
+    unparse2 claimPattern =
+        "claim {}"
+        Pretty.<+>
+            unparse2 (axiomPatternToTerm $ AllPathClaimPattern claimPattern)
+        Pretty.<+> "[]"
 
 instance TopBottom (AllPathRule variable) where
     isTop _ = False
@@ -540,6 +562,19 @@ extractImplicationClaimFrom sentence =
         Right (ImplicationAxiomPattern axiomPat) -> Just axiomPat
         _ -> Nothing
 
+toSentence :: ReachabilityRule Variable -> Verified.Sentence
+toSentence rule =
+    Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
+        { sentenceAxiomParameters = []
+        , sentenceAxiomPattern    = patt
+        , sentenceAxiomAttributes = Default.def
+        }
+  where
+    patt = case rule of
+        OnePath rule' -> axiomPatternToTerm (OnePathClaimPattern rule')
+        AllPath rule' -> axiomPatternToTerm (AllPathClaimPattern rule')
+
+
 -- | Attempts to extract a rule from the 'Verified.Sentence'.
 fromSentence
     :: Verified.Sentence
@@ -617,7 +652,7 @@ wEF sort = Alias
         { getId = weakExistsFinally
         , idLocation = AstLocationNone
         }
-    , aliasParams = []
+    , aliasParams = [sort]
     , aliasSorts = ApplicationSorts
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
@@ -632,7 +667,7 @@ wAF sort = Alias
         { getId = weakAlwaysFinally
         , idLocation = AstLocationNone
         }
-    , aliasParams = []
+    , aliasParams = [sort]
     , aliasSorts = ApplicationSorts
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
@@ -647,7 +682,7 @@ aPG sort = Alias
         { getId = allPathGlobally
         , idLocation = AstLocationNone
         }
-    , aliasParams = []
+    , aliasParams = [sort]
     , aliasSorts = ApplicationSorts
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort

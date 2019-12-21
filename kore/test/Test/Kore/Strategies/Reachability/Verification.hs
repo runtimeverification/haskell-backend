@@ -44,11 +44,12 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [simpleOnePathClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
@@ -56,11 +57,12 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [simpleAllPathClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
@@ -68,13 +70,14 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [ simpleOnePathClaim Mock.a Mock.b
             , simpleAllPathClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
@@ -87,11 +90,12 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleOnePathClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -104,11 +108,12 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleAllPathClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -121,13 +126,14 @@ test_reachabilityVerification =
         -- the pattern is 'a', so we didn't reach our destination yet, even if
         -- the rewrite transforms 'a' into 'b'. We detect the success at the
         -- beginning of the second step, which does not run here.
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [ simpleOnePathClaim Mock.a Mock.b
             , simpleAllPathClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -135,11 +141,12 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleOnePathClaim Mock.a Mock.d]
+            []
         assertEqual ""
             (Left . Pattern.fromTermLike $ Mock.b)
             actual
@@ -147,11 +154,12 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleAllPathClaim Mock.a Mock.d]
+            []
         assertEqual ""
             (Left . Pattern.fromTermLike $ Mock.b)
             actual
@@ -159,13 +167,14 @@ test_reachabilityVerification =
         -- Axiom: a => b or c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleAllPathClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Left . Pattern.fromTermLike $ Mock.b)
             actual
@@ -173,11 +182,12 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [simpleOnePathClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -185,11 +195,12 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [simpleAllPathClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -197,46 +208,49 @@ test_reachabilityVerification =
         -- Axiom: a => b
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [ simpleOnePathClaim Mock.a Mock.b
             , simpleAllPathClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Right ())
             actual
     , testCase "OnePath: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             []
             [ simpleOnePathTrustedClaim Mock.a Mock.b
             , simpleOnePathClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "AllPath: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             []
             [ simpleAllPathTrustedClaim Mock.a Mock.b
             , simpleAllPathClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
     , testCase "Mixed: Trusted claim cannot prove itself" $ do
         -- Trusted Claim: a => b
         -- Expected: error a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             []
@@ -245,6 +259,7 @@ test_reachabilityVerification =
             , simpleAllPathTrustedClaim Mock.a Mock.b
             , simpleAllPathClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
@@ -253,13 +268,14 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleOnePathClaim Mock.a Mock.c]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -268,13 +284,14 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleAllPathClaim Mock.a Mock.c]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -283,7 +300,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => c
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -292,6 +309,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.c
             , simpleAllPathClaim Mock.a Mock.c
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -300,13 +318,14 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleOnePathClaim Mock.a Mock.c]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -315,13 +334,14 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleAllPathClaim Mock.a Mock.c]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -330,7 +350,7 @@ test_reachabilityVerification =
         -- Axiom: b => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -339,6 +359,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.c
             , simpleAllPathClaim Mock.a Mock.c
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -348,7 +369,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -361,6 +382,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                 Mock.b
             ]
+            []
         assertEqual "" (Right ()) actual
     , testCase "AllPath: Verifies one claim with branching" $ do
         -- Axiom: constr11(a) => b
@@ -368,7 +390,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -381,6 +403,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                 Mock.b
             ]
+            []
         assertEqual "" (Right ()) actual
     , testCase "Mixed: Verifies one claim with branching" $ do
         -- Axiom: constr11(a) => b
@@ -388,7 +411,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -404,13 +427,14 @@ test_reachabilityVerification =
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                 Mock.b
             ]
+            []
         assertEqual "" (Right ()) actual
     , testCase "OnePath: Partial verification failure" $ do
         -- Axiom: constr11(a) => b
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -422,6 +446,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                 Mock.b
             ]
+            []
         assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
@@ -440,7 +465,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -452,6 +477,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                 Mock.b
             ]
+            []
         assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
@@ -470,7 +496,7 @@ test_reachabilityVerification =
         -- Axiom: constr10(x) => constr11(x)
         -- Claim: constr10(x) => b
         -- Expected: error constr11(x) and x != a
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom (Mock.functionalConstr11 Mock.a) Mock.b
@@ -485,6 +511,7 @@ test_reachabilityVerification =
                 (Mock.functionalConstr10 (mkElemVar Mock.x))
                 Mock.b
             ]
+            []
         assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
@@ -505,7 +532,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -515,6 +542,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.c
             , simpleOnePathClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -525,7 +553,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -535,6 +563,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.c
             , simpleAllPathClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -545,7 +574,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => e
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -555,6 +584,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.c
             , simpleOnePathClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -565,7 +595,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -575,6 +605,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.e
             , simpleOnePathClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
@@ -585,7 +616,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -595,6 +626,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.e
             , simpleAllPathClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
@@ -605,7 +637,7 @@ test_reachabilityVerification =
         -- Claim: a => e
         -- Claim: d => e
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -615,6 +647,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.e
             , simpleAllPathClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
@@ -625,7 +658,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -635,6 +668,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.c
             , simpleOnePathClaim Mock.d Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -645,7 +679,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -655,6 +689,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.c
             , simpleAllPathClaim Mock.d Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -665,7 +700,7 @@ test_reachabilityVerification =
         -- Claim: a => c
         -- Claim: d => c
         -- Expected: error e
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 3)
             [ simpleAxiom Mock.a Mock.b
@@ -675,6 +710,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.c
             , simpleAllPathClaim Mock.d Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -684,7 +720,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -693,6 +729,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleOnePathClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -702,7 +739,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -711,6 +748,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.d
             , simpleAllPathClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -720,7 +758,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -731,6 +769,7 @@ test_reachabilityVerification =
             , simpleAllPathClaim Mock.a Mock.d
             , simpleAllPathClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -741,7 +780,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Claim: b => c
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -750,6 +789,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleAllPathClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -759,7 +799,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -768,6 +808,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.b Mock.c
             , simpleOnePathClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -777,7 +818,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -786,6 +827,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.b Mock.c
             , simpleAllPathClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -795,7 +837,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -806,6 +848,7 @@ test_reachabilityVerification =
             , simpleAllPathClaim Mock.b Mock.c
             , simpleAllPathClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -816,7 +859,7 @@ test_reachabilityVerification =
         -- Claim: b => c
         -- Claim: a => d
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -825,6 +868,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.b Mock.c
             , simpleAllPathClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -834,7 +878,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -843,6 +887,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleOnePathTrustedClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -852,7 +897,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -861,6 +906,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.d
             , simpleAllPathTrustedClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -870,7 +916,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -881,6 +927,7 @@ test_reachabilityVerification =
             , simpleAllPathClaim Mock.a Mock.d
             , simpleAllPathTrustedClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -891,7 +938,7 @@ test_reachabilityVerification =
         -- Claim: a => d
         -- Trusted Claim: b => c
         -- Expected: error b
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -900,6 +947,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleAllPathTrustedClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -913,7 +961,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -923,6 +971,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleOnePathClaim Mock.b Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -936,7 +985,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -946,6 +995,7 @@ test_reachabilityVerification =
             [ simpleAllPathClaim Mock.a Mock.d
             , simpleAllPathClaim Mock.b Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -959,7 +1009,7 @@ test_reachabilityVerification =
         --    first verification: a=>b=>e,
         --        without second claim would be: a=>b=>c=>d
         --    second verification: b=>c=>d, not visible here
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -971,6 +1021,7 @@ test_reachabilityVerification =
             , simpleAllPathClaim Mock.a Mock.d
             , simpleAllPathClaim Mock.b Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -984,7 +1035,7 @@ test_reachabilityVerification =
         -- Expected: error d
         --    first verification: a=>b=>c=>d
         --    second verification: b=>c=>d is now visible here
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 4)
             [ simpleAxiom Mock.a Mock.b
@@ -994,6 +1045,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.d
             , simpleAllPathClaim Mock.b Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.d)
             actual
@@ -1004,13 +1056,14 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: success
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.a Mock.c
             ]
             [ simpleOnePathClaim Mock.a Mock.b ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -1021,13 +1074,14 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
             , simpleAxiom Mock.a Mock.c
             ]
             [ simpleAllPathClaim Mock.a Mock.b ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
@@ -1038,7 +1092,7 @@ test_reachabilityVerification =
         --     a => c
         -- Claim: a => b
         -- Expected: error c
-        actual <- runVerification
+        actual <- runVerificationToPattern
             Unlimited
             (Limit 5)
             [ simpleAxiom Mock.a Mock.b
@@ -1047,6 +1101,7 @@ test_reachabilityVerification =
             [ simpleOnePathClaim Mock.a Mock.b
             , simpleAllPathClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual

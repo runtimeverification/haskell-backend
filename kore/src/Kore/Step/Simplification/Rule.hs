@@ -85,6 +85,10 @@ simplifyRulePattern rule = do
     case OrPattern.toPatterns simplifiedLeft of
         [ Conditional { term, predicate, substitution } ]
           | PredicateTrue <- predicate -> do
+            -- TODO (virgil): Dropping the substitution for equations
+            -- and for rewrite rules where the substituted variables occur
+            -- in the RHS is wrong because those variables are not
+            -- existentially quantified.
             let subst = Substitution.toMap substitution
                 left' = TermLike.substitute subst term
                 antiLeft' = TermLike.substitute subst <$> antiLeft

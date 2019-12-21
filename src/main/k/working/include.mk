@@ -63,11 +63,40 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 	$(KORE_EXEC) $(DEFINITION) --module $(MODULE_NAME) --merge-rules $< \
 		--output $@
 
+%.save-proofs-output: %.k $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) \
+		--haskell-backend-command "$(KORE_EXEC) \
+			$(KORE_EXEC_OPTS) \
+			--save-proofs $@" \
+		-d . \
+		-m VERIFICATION \
+		$< \
+	|| true
+
 %.repl.output: % $(DEFINITION) $(KORE_REPL)
 	$(KPROVE) --haskell-backend-command "$(KORE_REPL) -r --repl-script $<" -d ../.. -m VERIFICATION $(SPEC_FILE) --output-file $@
 
 %.knotprove.output: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $< --output-file $@ || exit 0
+
+%.save-chain-1.output : %-1.k $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) \
+		--haskell-backend-command "$(KORE_EXEC) \
+			$(KORE_EXEC_OPTS) \
+			--save-proofs $@" \
+		-d . \
+		-m VERIFICATION \
+		$< \
+	|| true
+
+%.save-chain : %-2.k %.save-chain-1.output $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) \
+		--haskell-backend-command "$(KORE_EXEC) \
+			$(KORE_EXEC_OPTS) \
+			--save-proofs $*.save-chain-1.output" \
+		-d . \
+		-m VERIFICATION \
+		$< \
 
 %.test: %.output
 	diff -u $<.golden $<
@@ -75,10 +104,16 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 %.merge-test: %.merge-output
 	diff -u $(basename $<).merge-golden $<
 
+%.save-proofs-test: %.save-proofs-output
+	diff -u $(basename $<).save-proofs-golden $<
+
 %.output.golden: %.output
 	mv $< $<.golden
 
 %.merge-golden: %.merge-output
 	mv $< $(basename $<).merge-golden
+
+%.save-proofs-golden: %.save-proofs-output
+	mv $< $(basename $<).save-proofs-golden
 
 .PHONY: test-k test golden clean %.test %.krun

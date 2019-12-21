@@ -152,6 +152,9 @@ data KoreProveOptions =
         -- ^ Search order of the execution graph
         , bmc :: !Bool
         -- ^ Whether to use bounded model checker
+        , saveProofs :: !(Maybe FilePath)
+        -- ^ The file in which to save the proven claims in case the prover
+        -- fails.
         }
 
 parseKoreProveOptions :: Parser KoreProveOptions
@@ -174,6 +177,14 @@ parseKoreProveOptions =
     <*> switch
         ( long "bmc"
         <> help "Whether to use the bounded model checker." )
+    <*> optional
+        (strOption
+            (  long "save-proofs"
+            <> help
+                "The file in which to save the proven claims \
+                \in case the prover fails."
+            )
+        )
   where
     parseGraphSearch =
         option readGraphSearch

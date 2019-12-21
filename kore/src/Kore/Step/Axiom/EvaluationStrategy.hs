@@ -162,7 +162,6 @@ builtinEvaluation
 builtinEvaluation evaluator =
     BuiltinAndAxiomSimplifier (evaluateBuiltin evaluator)
 
-
 evaluateBuiltin
     :: forall variable simplifier
     .  ( SimplifierVariable variable
