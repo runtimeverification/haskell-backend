@@ -9,6 +9,7 @@ Maintainer  : vladimir.ciobanu@runtimeverification.com
 module Kore.Logger.Output
     ( KoreLogType (..)
     , KoreLogOptions (..)
+    , EntryTypes
     , koreLogFilters
     , withLogger
     , parseKoreLogOptions
@@ -76,13 +77,17 @@ import Data.Time.LocalTime
 import Options.Applicative
     ( Parser
     , help
+    , helpDoc
     , long
     , maybeReader
     , option
     )
+import qualified Options.Applicative.Help.Pretty as OptPretty
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
-import qualified Type.Reflection as Reflection
+import Type.Reflection
+    ( SomeTypeRep (..)
+    )
 
 import Kore.Logger
 import Kore.Logger.DebugAppliedRule
@@ -97,6 +102,12 @@ import Kore.Logger.DebugSolver
     , solverTranscriptLogger
     )
 import qualified Kore.Logger.DebugSolver as DebugSolver.DoNotUse
+import Kore.Logger.Registry
+    ( getEntryTypesAsText
+    , lookupTextFromTypeWithError
+    , parseEntryType
+    , toSomeEntryType
+    )
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
@@ -107,6 +118,8 @@ data KoreLogType
     -- ^ Log to specified file when '--log <filename>' is passed.
     deriving (Eq, Show)
 
+type EntryTypes = Set SomeTypeRep
+
 -- | 'KoreLogOptions' is the top-level options type for logging, containing the
 -- desired output method and the minimum 'Severity'.
 data KoreLogOptions = KoreLogOptions
@@ -114,7 +127,7 @@ data KoreLogOptions = KoreLogOptions
     -- ^ desired output method, see 'KoreLogType'
     , logLevel  :: Severity
     -- ^ minimal log level, passed via "--log-level"
-    , logEntries :: Set Text
+    , logEntries :: EntryTypes
     -- ^ extra entries to show, ignoring 'logLevel'
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
     , debugAxiomEvaluationOptions :: DebugAxiomEvaluationOptions
@@ -177,11 +190,11 @@ koreLogFilters koreLogOptions baseLogger =
 {- | Select the log entry types present in the active set.
  -}
 filterEntry
-    :: Set Text
+    :: EntryTypes
     -> SomeEntry
     -> Bool
-filterEntry logEntries entry =
-    entryTypeText entry `elem` logEntries
+filterEntry logEntries (SomeEntry entry) =
+    toSomeEntryType entry `elem` logEntries
 
 {- | Select log entries with 'Severity' greater than or equal to the level.
  -}
@@ -234,17 +247,29 @@ parseKoreLogOptions =
         option
             parseCommaSeparatedEntries
             $ long "log-entries"
-            <> help "Log entries: logs entries of supplied types"
+            <> helpDoc
+               ( Just listOfEntries )
+
     parseCommaSeparatedEntries = maybeReader $ Parser.parseMaybe entryParser
-    entryParser :: Parser.Parsec String String (Set Text)
+    entryParser :: Parser.Parsec String String EntryTypes
     entryParser = do
         args <- many itemParser
         pure . Set.fromList $ args
-    itemParser :: Parser.Parsec String String Text
+    itemParser :: Parser.Parsec String String SomeTypeRep
     itemParser = do
         argument <- some (Parser.noneOf [',', ' '])
         _ <- void (Parser.char ',') <|> Parser.eof
-        pure . Text.pack $ argument
+        parseEntryType . Text.pack $ argument
+
+listOfEntries :: OptPretty.Doc
+listOfEntries =
+    OptPretty.vsep $
+        [ "Log entries: logs entries of supplied types"
+        , "Available entry types:"
+        ]
+        <> fmap
+            (OptPretty.indent 4 . OptPretty.text . Text.unpack)
+            getEntryTypesAsText
 
 -- Creates a kore logger which:
 --     * adds timestamps
@@ -307,7 +332,11 @@ defaultLogPretty (SomeEntry entry) =
     Pretty.hsep
         [ Pretty.brackets (Pretty.pretty . entrySeverity $ entry)
         , ":"
-        , Pretty.brackets (Pretty.viaShow . Reflection.typeOf $ entry)
+        , Pretty.brackets
+            . Pretty.pretty
+            . lookupTextFromTypeWithError
+            . toSomeEntryType
+            $ entry
         , ":"
         , Pretty.pretty entry
         ]
