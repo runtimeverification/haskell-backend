@@ -27,9 +27,16 @@ import Kore.Step.Strategy
     )
 import Kore.Strategies.Goal
 import Kore.Strategies.Verification
-    ( StuckVerification (StuckVerification)
+    ( AllClaims (AllClaims)
+    , AlreadyProven (AlreadyProven)
+    , Axioms (Axioms)
+    , StuckVerification (StuckVerification)
+    , ToProve (ToProve)
     )
 import qualified Kore.Strategies.Verification as Verification
+import Kore.Unparser
+    ( unparseToText
+    )
 
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
@@ -50,12 +57,20 @@ runVerificationToPattern
     -> Limit Natural
     -> [Rule claim]
     -> [claim]
+    -> [claim]
     -> IO (Either (Pattern Variable) ())
-runVerificationToPattern breadthLimit depthLimit axioms claims = do
-    stuck <- runVerification breadthLimit depthLimit axioms claims
-    return (toPattern stuck)
+runVerificationToPattern breadthLimit depthLimit axioms claims alreadyProven =
+    do
+        stuck <- runVerification
+            breadthLimit
+            depthLimit
+            axioms
+            claims
+            alreadyProven
+        return (toPattern stuck)
   where
-    toPattern (Left StuckVerification {stuckDescription}) = Left stuckDescription
+    toPattern (Left StuckVerification {stuckDescription}) =
+        Left stuckDescription
     toPattern (Right a) = Right a
 
 
@@ -68,16 +83,18 @@ runVerification
     -> Limit Natural
     -> [Rule claim]
     -> [claim]
+    -> [claim]
     -> IO (Either (StuckVerification (Pattern Variable) claim) ())
-runVerification breadthLimit depthLimit axioms claims =
+runVerification breadthLimit depthLimit axioms claims alreadyProven =
     runSimplifier mockEnv
     $ runExceptT
     $ Verification.verify
         breadthLimit
         BreadthFirst
-        claims
-        axioms
-        (map applyDepthLimit . selectUntrusted $ claims)
+        (AllClaims claims)
+        (Axioms axioms)
+        (AlreadyProven (map unparseToText alreadyProven))
+        (ToProve (map applyDepthLimit . selectUntrusted $ claims))
   where
     mockEnv = Mock.env
     applyDepthLimit claim = (claim, depthLimit)
