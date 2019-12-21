@@ -960,6 +960,7 @@ removalPredicate
   | isFunctionPattern configTerm
   , isFunctionPattern destTerm
   = do
+    -- TODO (thomas.tuegel): Use unification here, not simplification.
     unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
     case OrPattern.toPatterns unifiedConfigs of
         _ | OrPattern.isFalse unifiedConfigs ->
