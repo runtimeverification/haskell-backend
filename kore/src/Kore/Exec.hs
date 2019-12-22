@@ -48,7 +48,8 @@ import Data.List.NonEmpty
     )
 import qualified Data.Map as Map
 import Data.Maybe
-    ( mapMaybe
+    ( fromMaybe
+    , mapMaybe
     )
 import Data.Text
     ( Text
@@ -148,8 +149,12 @@ import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Strategy as Strategy
 import qualified Kore.Strategies.Goal as Goal
 import Kore.Strategies.Verification
-    ( Claim
+    ( AllClaims (AllClaims)
+    , AlreadyProven (AlreadyProven)
+    , Axioms (Axioms)
+    , Claim
     , StuckVerification (StuckVerification)
+    , ToProve (ToProve)
     , verify
     )
 import qualified Kore.Strategies.Verification as StuckVerification
@@ -302,23 +307,37 @@ prove
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> Maybe (VerifiedModule StepperAttributes Attribute.Axiom)
+    -- ^ The module containing the claims that were proven in a previous run.
     -> smt
         (Either
             (StuckVerification (TermLike Variable) (ReachabilityRule Variable))
             ()
         )
-prove searchOrder breadthLimit depthLimit definitionModule specModule =
-    evalProver definitionModule specModule
+prove
+    searchOrder
+    breadthLimit
+    depthLimit
+    definitionModule
+    specModule
+    maybeAlreadyProvenModule
+  =
+    evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
-        let InitializedProver { axioms, claims } = initialized
+        let InitializedProver { axioms, claims, alreadyProven } = initialized
         result <-
             runExceptT
             $ verify
                 breadthLimit
                 searchOrder
-                claims
-                axioms
-                (map (\x -> (x,depthLimit)) (extractUntrustedClaims' claims))
+                (AllClaims claims)
+                (Axioms axioms)
+                (AlreadyProven (map unparseToText alreadyProven))
+                (ToProve
+                    (map (\x -> (x,depthLimit))
+                        (extractUntrustedClaims' claims)
+                    )
+                )
         return $ Bifunctor.first stuckVerificationPatternToTerm result
   where
     extractUntrustedClaims'
@@ -333,7 +352,10 @@ prove searchOrder breadthLimit depthLimit definitionModule specModule =
     stuckVerificationPatternToTerm
         stuck@StuckVerification {stuckDescription}
       =
-        stuck {StuckVerification.stuckDescription = Pattern.toTermLike stuckDescription}
+        stuck
+            { StuckVerification.stuckDescription =
+                Pattern.toTermLike stuckDescription
+            }
 
 
 -- | Initialize and run the repl with the main and spec modules. This will loop
@@ -343,6 +365,8 @@ proveWithRepl
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> Maybe (VerifiedModule StepperAttributes Attribute.Axiom)
+    -- ^ The module containing the claims that were proven in a previous run.
     -> MVar (Log.LogAction IO Log.SomeEntry)
     -> Repl.Data.ReplScript
     -- ^ Optional script
@@ -354,12 +378,13 @@ proveWithRepl
 proveWithRepl
     definitionModule
     specModule
+    maybeAlreadyProvenModule
     mvar
     replScript
     replMode
     outputFile
   =
-    evalProver definitionModule specModule
+    evalProver definitionModule specModule maybeAlreadyProvenModule
     $ \initialized -> do
         let InitializedProver { axioms, claims } = initialized
         Repl.runRepl axioms claims mvar replScript replMode outputFile
@@ -616,6 +641,7 @@ data InitializedProver =
     InitializedProver
         { axioms :: ![Goal.Rule (ReachabilityRule Variable)]
         , claims :: ![ReachabilityRule Variable]
+        , alreadyProven :: ![ReachabilityRule Variable]
         }
 
 data MaybeChanged a = Changed !a | Unchanged !a
@@ -630,9 +656,10 @@ initializeProver
     .  MonadSimplify simplifier
     => VerifiedModule StepperAttributes Attribute.Axiom
     -> VerifiedModule StepperAttributes Attribute.Axiom
+    -> Maybe (VerifiedModule StepperAttributes Attribute.Axiom)
     -> (InitializedProver -> simplifier a)
     -> simplifier a
-initializeProver definitionModule specModule within =
+initializeProver definitionModule specModule maybeAlreadyProvenModule within =
     initialize definitionModule
     $ \initialized -> do
         tools <- Simplifier.askMetadataTools
@@ -658,6 +685,14 @@ initializeProver definitionModule specModule within =
                 simplified <- simplifyRuleLhs rule
                 return (MultiAnd.extractPatterns simplified)
 
+            maybeClaimsAlreadyProven
+                :: Maybe [(Attribute.Axiom, ReachabilityRule Variable)]
+            maybeClaimsAlreadyProven =
+                Goal.extractClaims <$> maybeAlreadyProvenModule
+            claimsAlreadyProven
+                :: [(Attribute.Axiom, ReachabilityRule Variable)]
+            claimsAlreadyProven = fromMaybe [] maybeClaimsAlreadyProven
+
         mapM_ (logChangedClaim . snd) changedSpecClaims
 
         let specClaims :: [(Attribute.Axiom, ReachabilityRule Variable)]
@@ -672,7 +707,9 @@ initializeProver definitionModule specModule within =
             $ traverse simplifyRuleOnSecond (concat simplifiedSpecClaims)
         let claims = fmap makeClaim specAxioms
             axioms = coerce rewriteRules
-            initializedProver = InitializedProver { axioms, claims}
+            alreadyProven = fmap makeClaim claimsAlreadyProven
+            initializedProver =
+                InitializedProver {axioms, claims, alreadyProven}
         within initializedProver
   where
     expandClaim
@@ -704,9 +741,15 @@ evalProver
     -- ^ The main module
     -> VerifiedModule StepperAttributes Attribute.Axiom
     -- ^ The spec module
+    -> Maybe (VerifiedModule StepperAttributes Attribute.Axiom)
+    -- ^ The module containing the claims that were proven in a previous run.
     -> (InitializedProver -> Simplifier.SimplifierT smt a)
     -- The prover
     -> smt a
-evalProver definitionModule specModule prover =
+evalProver definitionModule specModule maybeAlreadyProvenModule prover =
     evalSimplifier definitionModule
-    $ initializeProver definitionModule specModule prover
+    $ initializeProver
+        definitionModule
+        specModule
+        maybeAlreadyProvenModule
+        prover

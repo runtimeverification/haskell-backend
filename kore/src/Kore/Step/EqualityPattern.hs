@@ -9,7 +9,6 @@ module Kore.Step.EqualityPattern
     , EqualityRule (..)
     , equalityPattern
     , equalityRuleToTerm
-    , mapVariables
     ) where
 
 import Control.DeepSeq
@@ -187,7 +186,7 @@ equalityRuleToTerm
         )
 
 instance UnifyingRule EqualityPattern where
-    mapVariables mapping rule1@(EqualityPattern _ _ _ _ _) =
+    mapRuleVariables mapping rule1@(EqualityPattern _ _ _ _ _) =
         rule1
             { requires = Predicate.mapVariables mapping requires
             , left = TermLike.mapVariables mapping left

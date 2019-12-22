@@ -11,10 +11,18 @@ module Kore.Step.Step
     , Result
     , Results
     , UnifyingRule (..)
+    , unifyRules
+    , unifyRule
     , applyInitialConditions
     , applyRemainder
     , simplifyPredicate
+    , toAxiomVariables
     , toConfigurationVariables
+    , unwrapRule
+    , assertFunctionLikeResults
+    , checkFunctionLike
+    , checkSubstitutionCoverage
+    , wouldNarrowWith
     -- Below exports are just for tests
     , Step.gatherResults
     , Step.remainders
@@ -134,208 +142,213 @@ class UnifyingRule rule where
     {-| Apply a given function to all variables in a rule. This is used for
     distinguishing rule variables from configuration variables.
     -}
-    mapVariables
+    mapRuleVariables
         :: Ord variable2
         => (variable1 -> variable2)
         -> rule variable1
         -> rule variable2
 
-        -- Minimal complete definition:
-        --   matchingPattern and precondition and refreshRule and mapVariables
 
+-- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
+unifyRules
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => UnifyingRule rule
+    => UnificationProcedure
+    -> Pattern (Target variable)
+    -- ^ Initial configuration
+    -> [rule (Target variable)]
+    -- ^ Rule
+    -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
+unifyRules unificationProcedure initial rules =
+    Monad.Unify.gather $ do
+        rule <- Monad.Unify.scatter rules
+        unifyRule unificationProcedure initial rule
 
-    -- |Unifies/matches a list a rules against a configuration. See 'unifyRule'.
-    unifyRules
-        :: SimplifierVariable variable
-        => MonadUnify unifier
-        => UnificationProcedure
-        -> Pattern (Target variable)
-        -- ^ Initial configuration
-        -> [rule (Target variable)]
-        -- ^ Rule
-        -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
-    unifyRules unificationProcedure initial rules =
-        Monad.Unify.gather $ do
-            rule <- Monad.Unify.scatter rules
-            unifyRule unificationProcedure initial rule
+{- | Attempt to unify a rule with the initial configuration.
 
-    {- | Attempt to unify a rule with the initial configuration.
+The rule variables are renamed to avoid collision with the configuration. The
+rule's 'RulePattern.requires' clause is combined with the unification
+solution. The combined condition is simplified and checked for
+satisfiability.
 
-    The rule variables are renamed to avoid collision with the configuration. The
-    rule's 'RulePattern.requires' clause is combined with the unification
-    solution. The combined condition is simplified and checked for
-    satisfiability.
+If any of these steps produces an error, then @unifyRule@ returns that error.
 
-    If any of these steps produces an error, then @unifyRule@ returns that error.
+@unifyRule@ returns the renamed rule wrapped with the combined conditions on
+unification. The substitution is not applied to the renamed rule.
 
-    @unifyRule@ returns the renamed rule wrapped with the combined conditions on
-    unification. The substitution is not applied to the renamed rule.
+ -}
+unifyRule
+    :: SimplifierVariable variable
+    => MonadUnify unifier
+    => UnifyingRule rule
+    => UnificationProcedure
+    -> Pattern variable
+    -- ^ Initial configuration
+    -> rule variable
+    -- ^ Rule
+    -> unifier (UnifiedRule variable (rule variable))
+unifyRule
+    (UnificationProcedure unifyPatterns)
+    initial@Conditional { term = initialTerm }
+    rule
+  = do
+    -- Rename free axiom variables to avoid free variables from the initial
+    -- configuration.
+    let
+        configVariables = TermLike.freeVariables initial
+        (_, rule') = refreshRule configVariables rule
+    -- Unify the left-hand side of the rule with the term of the initial
+    -- configuration.
+    let
+        ruleLeft = matchingPattern rule'
+    unification <- unifyPatterns ruleLeft initialTerm
+    -- Combine the unification solution with the rule's requirement clause,
+    let
+        ruleRequires = precondition rule'
+        requires' = Condition.fromPredicate ruleRequires
+    unification' <- simplifyPredicate (unification <> requires')
+    return (rule' `Conditional.withCondition` unification')
 
-     -}
-    unifyRule
-        :: SimplifierVariable variable
-        => MonadUnify unifier
-        => UnificationProcedure
-        -> Pattern variable
-        -- ^ Initial configuration
-        -> rule variable
-        -- ^ Rule
-        -> unifier (UnifiedRule variable (rule variable))
-    unifyRule
-        (UnificationProcedure unifyPatterns)
-        initial@Conditional { term = initialTerm }
-        rule
-      = do
-        -- Rename free axiom variables to avoid free variables from the initial
-        -- configuration.
-        let
-            configVariables = TermLike.freeVariables initial
-            (_, rule') = refreshRule configVariables rule
-        -- Unify the left-hand side of the rule with the term of the initial
-        -- configuration.
-        let
-            ruleLeft = matchingPattern rule'
-        unification <- unifyPatterns ruleLeft initialTerm
-        -- Combine the unification solution with the rule's requirement clause,
-        let
-            ruleRequires = precondition rule'
-            requires' = Condition.fromPredicate ruleRequires
-        unification' <- simplifyPredicate (unification <> requires')
-        return (rule' `Conditional.withCondition` unification')
-
-    {- | The 'Set' of variables that would be introduced by narrowing.
-     -}
-    -- TODO (thomas.tuegel): Unit tests
-    wouldNarrowWith
-        :: Ord variable
-        => UnifiedRule variable (rule variable)
-        -> Set (UnifiedVariable variable)
-    wouldNarrowWith unified =
-        Set.difference leftAxiomVariables substitutionVariables
-      where
-        leftAxiomVariables =
-            FreeVariables.getFreeVariables $ TermLike.freeVariables leftAxiom
-          where
-            Conditional { term = axiom } = unified
-            leftAxiom = matchingPattern axiom
-        Conditional { substitution } = unified
-        substitutionVariables = Map.keysSet (Substitution.toMap substitution)
-
-    -- |Renames variables to be distinguishable from those in configuration
-    toAxiomVariables
-        :: Ord variable
-        => rule variable
-        -> rule (Target variable)
-    toAxiomVariables = mapVariables Target.Target
-
-    {- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
-     -}
-    unwrapRule
-        :: Ord variable
-        => rule (Target variable) -> rule variable
-    unwrapRule = mapVariables Target.unwrapVariable
-
-    -- |Errors if configuration or matching pattern are not function-like
-    assertFunctionLikeResults
-        :: SimplifierVariable variable
-        => SimplifierVariable variable'
-        => Monad m
-        => Eq (rule (Target variable'))
-        => TermLike variable
-        -> Results rule variable'
-        -> m ()
-    assertFunctionLikeResults termLike results =
-        let appliedRules = Result.appliedRule <$> Results.results results
-        in case checkFunctionLike appliedRules termLike of
-            Left err -> error err
-            _        -> return ()
-
-    -- |Checks whether configuration and matching pattern are function-like
-    checkFunctionLike
-        :: InternalVariable variable
-        => InternalVariable variable'
-        => Foldable f
-        => Eq (f (UnifiedRule variable' (rule variable')))
-        => Monoid (f (UnifiedRule variable' (rule variable')))
-        => f (UnifiedRule variable' (rule variable'))
-        -> TermLike variable
-        -> Either String ()
-    checkFunctionLike unifiedRules pat
-      | unifiedRules == mempty = pure ()
-      | TermLike.isFunctionPattern pat =
-        Foldable.traverse_ checkFunctionLikeRule unifiedRules
-      | otherwise = Left . show . Pretty.vsep $
-        [ "Expected function-like term, but found:"
-        , Pretty.indent 4 (unparse pat)
-        ]
-      where
-        checkFunctionLikeRule Conditional { term }
-          | TermLike.isFunctionPattern left = return ()
-          | otherwise = Left . show . Pretty.vsep $
-            [ "Expected function-like left-hand side of rule, but found:"
-            , Pretty.indent 4 (unparse left)
-            ]
-          where
-            left = matchingPattern term
-
-    {- | Check that the final substitution covers the applied rule appropriately.
-
-    For normal execution, the final substitution should cover all the free
-    variables on the left-hand side of the applied rule; otherwise, we would
-    wrongly introduce existentially-quantified variables into the final
-    configuration. Failure of the coverage check indicates a problem with
-    unification, so in that case @checkSubstitutionCoverage@ throws
-    an error message with the axiom and the initial and final configurations.
-
-    For symbolic execution, we expect to replace symbolic variables with
-    more specific patterns (narrowing), so we just quantify the variables
-    we added to the result.
-
-    @checkSubstitutionCoverage@ calls @quantifyVariables@ to remove
-    the axiom variables from the substitution and unwrap all the 'Target's.
-    -}
-    checkSubstitutionCoverage
-        :: forall variable unifier
-        .  SimplifierVariable variable
-        => MonadUnify unifier
-        => Pretty.Pretty (rule (Target variable))
-        => Pattern (Target variable)
-        -- ^ Initial configuration
-        -> UnifiedRule (Target variable) (rule (Target variable))
-        -- ^ Unified rule
-        -> unifier ()
-    checkSubstitutionCoverage initial unified
-      | isCoveringSubstitution || isSymbolic = return ()
-      | otherwise =
-        -- The substitution does not cover all the variables on the left-hand side
-        -- of the rule *and* we did not generate a substitution for a symbolic
-        -- initial configuration. This is a fatal error because it indicates
-        -- something has gone horribly wrong.
-        (error . show . Pretty.vsep)
-            [ "While applying axiom:"
-            , Pretty.indent 4 (Pretty.pretty axiom)
-            , "from the initial configuration:"
-            , Pretty.indent 4 (unparse initial)
-            , "with the unifier:"
-            , Pretty.indent 4 (unparse unifier)
-            , "Failed substitution coverage check!"
-            , "The substitution (above, in the unifier) \
-              \did not cover the axiom variables:"
-            , (Pretty.indent 4 . Pretty.sep)
-                (unparse <$> Set.toAscList uncovered)
-            , "in the left-hand side of the axiom."
-            ]
+{- | The 'Set' of variables that would be introduced by narrowing.
+ -}
+-- TODO (thomas.tuegel): Unit tests
+wouldNarrowWith
+    :: Ord variable
+    => UnifyingRule rule
+    => UnifiedRule variable (rule variable)
+    -> Set (UnifiedVariable variable)
+wouldNarrowWith unified =
+    Set.difference leftAxiomVariables substitutionVariables
+  where
+    leftAxiomVariables =
+        FreeVariables.getFreeVariables $ TermLike.freeVariables leftAxiom
       where
         Conditional { term = axiom } = unified
-        unifier :: Pattern (Target variable)
-        unifier = TermLike.mkTop_ <$ Conditional.withoutTerm unified
-        Conditional { substitution } = unified
-        substitutionVariables = Map.keysSet (Substitution.toMap substitution)
-        uncovered = wouldNarrowWith unified
-        isCoveringSubstitution = Set.null uncovered
-        isSymbolic =
-            Foldable.any (foldMapVariable Target.isNonTarget)
-                substitutionVariables
+        leftAxiom = matchingPattern axiom
+    Conditional { substitution } = unified
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+
+-- |Renames variables to be distinguishable from those in configuration
+toAxiomVariables
+    :: Ord variable
+    => UnifyingRule rule
+    => rule variable
+    -> rule (Target variable)
+toAxiomVariables = mapRuleVariables Target.Target
+
+{- | Unwrap the variables in a 'RulePattern'. Inverse of 'toAxiomVariables'.
+ -}
+unwrapRule
+    :: Ord variable
+    => UnifyingRule rule
+    => rule (Target variable) -> rule variable
+unwrapRule = mapRuleVariables Target.unwrapVariable
+
+-- |Errors if configuration or matching pattern are not function-like
+assertFunctionLikeResults
+    :: SimplifierVariable variable
+    => SimplifierVariable variable'
+    => Monad m
+    => UnifyingRule rule
+    => Eq (rule (Target variable'))
+    => TermLike variable
+    -> Results rule variable'
+    -> m ()
+assertFunctionLikeResults termLike results =
+    let appliedRules = Result.appliedRule <$> Results.results results
+    in case checkFunctionLike appliedRules termLike of
+        Left err -> error err
+        _        -> return ()
+
+-- |Checks whether configuration and matching pattern are function-like
+checkFunctionLike
+    :: InternalVariable variable
+    => InternalVariable variable'
+    => Foldable f
+    => UnifyingRule rule
+    => Eq (f (UnifiedRule variable' (rule variable')))
+    => Monoid (f (UnifiedRule variable' (rule variable')))
+    => f (UnifiedRule variable' (rule variable'))
+    -> TermLike variable
+    -> Either String ()
+checkFunctionLike unifiedRules pat
+  | unifiedRules == mempty = pure ()
+  | TermLike.isFunctionPattern pat =
+    Foldable.traverse_ checkFunctionLikeRule unifiedRules
+  | otherwise = Left . show . Pretty.vsep $
+    [ "Expected function-like term, but found:"
+    , Pretty.indent 4 (unparse pat)
+    ]
+  where
+    checkFunctionLikeRule Conditional { term }
+      | TermLike.isFunctionPattern left = return ()
+      | otherwise = Left . show . Pretty.vsep $
+        [ "Expected function-like left-hand side of rule, but found:"
+        , Pretty.indent 4 (unparse left)
+        ]
+      where
+        left = matchingPattern term
+
+{- | Check that the final substitution covers the applied rule appropriately.
+
+For normal execution, the final substitution should cover all the free
+variables on the left-hand side of the applied rule; otherwise, we would
+wrongly introduce existentially-quantified variables into the final
+configuration. Failure of the coverage check indicates a problem with
+unification, so in that case @checkSubstitutionCoverage@ throws
+an error message with the axiom and the initial and final configurations.
+
+For symbolic execution, we expect to replace symbolic variables with
+more specific patterns (narrowing), so we just quantify the variables
+we added to the result.
+
+@checkSubstitutionCoverage@ calls @quantifyVariables@ to remove
+the axiom variables from the substitution and unwrap all the 'Target's.
+-}
+checkSubstitutionCoverage
+    :: forall variable unifier rule
+    .  SimplifierVariable variable
+    => MonadUnify unifier
+    => UnifyingRule rule
+    => Pretty.Pretty (rule (Target variable))
+    => Pattern (Target variable)
+    -- ^ Initial configuration
+    -> UnifiedRule (Target variable) (rule (Target variable))
+    -- ^ Unified rule
+    -> unifier ()
+checkSubstitutionCoverage initial unified
+  | isCoveringSubstitution || isSymbolic = return ()
+  | otherwise =
+    -- The substitution does not cover all the variables on the left-hand side
+    -- of the rule *and* we did not generate a substitution for a symbolic
+    -- initial configuration. This is a fatal error because it indicates
+    -- something has gone horribly wrong.
+    (error . show . Pretty.vsep)
+        [ "While applying axiom:"
+        , Pretty.indent 4 (Pretty.pretty axiom)
+        , "from the initial configuration:"
+        , Pretty.indent 4 (unparse initial)
+        , "with the unifier:"
+        , Pretty.indent 4 (unparse unifier)
+        , "Failed substitution coverage check!"
+        , "The substitution (above, in the unifier) \
+          \did not cover the axiom variables:"
+        , (Pretty.indent 4 . Pretty.sep)
+            (unparse <$> Set.toAscList uncovered)
+        , "in the left-hand side of the axiom."
+        ]
+  where
+    Conditional { term = axiom } = unified
+    unifier :: Pattern (Target variable)
+    unifier = TermLike.mkTop_ <$ Conditional.withoutTerm unified
+    Conditional { substitution } = unified
+    substitutionVariables = Map.keysSet (Substitution.toMap substitution)
+    uncovered = wouldNarrowWith unified
+    isCoveringSubstitution = Set.null uncovered
+    isSymbolic =
+        Foldable.any (foldMapVariable Target.isNonTarget)
+            substitutionVariables
 
 
 {- | Apply the initial conditions to the results of rule unification.

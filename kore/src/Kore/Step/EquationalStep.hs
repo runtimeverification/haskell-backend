@@ -73,6 +73,9 @@ import Kore.Step.Step
     , unifyRules
     , wouldNarrowWith
     )
+import qualified Kore.Step.Step as EqualityPattern
+    ( toAxiomVariables
+    )
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
     ( MonadUnify
@@ -347,12 +350,6 @@ applyRulesSequence
     initial
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
-    (map toAxiomVariables -> rules)
+    (map EqualityPattern.toAxiomVariables -> rules)
   = unifyRules unificationProcedure initial rules
     >>= finalizeRulesSequence initial
-
-toAxiomVariables
-    :: Ord variable
-    => EqualityPattern variable
-    -> EqualityPattern (Target variable)
-toAxiomVariables = EqualityPattern.mapVariables Target.Target

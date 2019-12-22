@@ -34,7 +34,12 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables hiding
+    ( freeVariables
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+    ( freeVariables
+    )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
@@ -53,7 +58,7 @@ data Pattern variable =
     Pattern
         { patternSort :: !Sort
         -- ^ The sort determined by the verifier.
-        , freeVars :: !(FreeVariables variable)
+        , freeVariables :: !(FreeVariables variable)
         -- ^ The free variables of the pattern.
         , functional :: !Functional
         , function :: !Function
@@ -90,7 +95,7 @@ instance
     synthetic base =
         Pattern
             { patternSort = synthetic (patternSort <$> base)
-            , freeVars = synthetic (freeVars <$> base)
+            , freeVariables = synthetic (freeVariables <$> base)
             , functional = synthetic (functional <$> base)
             , function = synthetic (function <$> base)
             , defined = synthetic (defined <$> base)
@@ -109,7 +114,7 @@ mapVariables
     => (variable1 -> variable2)
     -> Pattern variable1 -> Pattern variable2
 mapVariables mapping =
-    Lens.over (field @"freeVars") (mapFreeVariables mapping)
+    Lens.over (field @"freeVariables") (mapFreeVariables mapping)
 
 {- | Use the provided traversal to replace the free variables in a 'Pattern'.
 
@@ -123,7 +128,7 @@ traverseVariables
     -> Pattern variable1
     -> m (Pattern variable2)
 traverseVariables traversing =
-    field @"freeVars" (traverseFreeVariables traversing)
+    field @"freeVariables" (traverseFreeVariables traversing)
 
 {- | Delete the given variable from the set of free variables.
  -}
@@ -133,7 +138,9 @@ deleteFreeVariable
     -> Pattern variable
     -> Pattern variable
 deleteFreeVariable variable =
-    Lens.over (field @"freeVars") (bindVariable variable)
+    Lens.over (field @"freeVariables") (bindVariable variable)
+
 
 instance HasFreeVariables (Pattern variable) variable where
-    freeVariables = freeVars
+    freeVariables = freeVariables
+

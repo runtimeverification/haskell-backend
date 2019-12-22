@@ -30,6 +30,7 @@ module Kore.Step.RulePattern
     , rewriteRuleToTerm
     , onePathRuleToTerm
     , allPathRuleToTerm
+    , toSentence
     , implicationRuleToTerm
     , weakExistsFinally
     , wEF
@@ -97,6 +98,7 @@ import Kore.Step.Step
 import Kore.Substitute
     ( SubstitutionVariable
     )
+import qualified Kore.Syntax.Definition as Syntax
 import Kore.Syntax.Id
     ( AstLocation (..)
     , Id (..)
@@ -120,6 +122,7 @@ import Kore.Variables.Fresh
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
+import qualified Kore.Verified as Verified
 
 {-| Defines the right-hand-side of a rewrite rule / claim
 -}
@@ -466,15 +469,19 @@ instance Debug variable => Debug (OnePathRule variable)
 instance (Debug variable, Diff variable) => Diff (OnePathRule variable)
 
 instance InternalVariable variable => Unparse (OnePathRule variable) where
-    unparse =
-        (("claim {}" <> Pretty.line') <>)
-        . Pretty.nest 4
-        . unparse
-        . onePathRuleToTerm
-    unparse2 =
-        ("claim {}" Pretty.<+>)
-        . unparse2
-        . onePathRuleToTerm
+    unparse claimPattern =
+        "claim {}"
+        <> Pretty.line'
+        <> Pretty.nest 4
+            (unparse $ onePathRuleToTerm claimPattern)
+        <> Pretty.line'
+        <> "[]"
+
+    unparse2 claimPattern =
+        "claim {}"
+        Pretty.<+>
+            unparse2 (onePathRuleToTerm claimPattern)
+        Pretty.<+> "[]"
 
 instance TopBottom (OnePathRule variable) where
     isTop _ = False
@@ -507,6 +514,18 @@ instance TopBottom (ReachabilityRule variable) where
     isTop _ = False
     isBottom _ = False
 
+toSentence :: ReachabilityRule Variable -> Verified.Sentence
+toSentence rule =
+    Syntax.SentenceClaimSentence $ Syntax.SentenceClaim Syntax.SentenceAxiom
+        { sentenceAxiomParameters = []
+        , sentenceAxiomPattern    = patt
+        , sentenceAxiomAttributes = Default.def
+        }
+  where
+    patt = case rule of
+        OnePath rule' -> onePathRuleToTerm rule'
+        AllPath rule' -> allPathRuleToTerm rule'
+
 {-  | All-Path-Claim rule pattern.
 -}
 newtype AllPathRule variable =
@@ -524,15 +543,18 @@ instance Debug variable => Debug (AllPathRule variable)
 instance (Debug variable, Diff variable) => Diff (AllPathRule variable)
 
 instance InternalVariable variable => Unparse (AllPathRule variable) where
-    unparse =
-        (("claim {}" <> Pretty.line') <>)
-        . Pretty.nest 4
-        . unparse
-        . allPathRuleToTerm
-    unparse2 =
-        ("claim {}" Pretty.<+>)
-        . unparse2
-        . allPathRuleToTerm
+    unparse claimPattern =
+        "claim {}"
+        <> Pretty.line'
+        <> Pretty.nest 4
+            (unparse $ allPathRuleToTerm claimPattern)
+        <> Pretty.line'
+        <> "[]"
+    unparse2 claimPattern =
+        "claim {}"
+        Pretty.<+>
+            unparse2 (allPathRuleToTerm claimPattern)
+        Pretty.<+> "[]"
 
 instance TopBottom (AllPathRule variable) where
     isTop _ = False
@@ -661,7 +683,7 @@ wEF sort = Alias
         { getId = weakExistsFinally
         , idLocation = AstLocationNone
         }
-    , aliasParams = []
+    , aliasParams = [sort]
     , aliasSorts = ApplicationSorts
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
@@ -677,7 +699,7 @@ wAF sort = Alias
         { getId = weakAlwaysFinally
         , idLocation = AstLocationNone
         }
-    , aliasParams = []
+    , aliasParams = [sort]
     , aliasSorts = ApplicationSorts
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
@@ -693,7 +715,7 @@ aPG sort = Alias
         { getId = allPathGlobally
         , idLocation = AstLocationNone
         }
-    , aliasParams = []
+    , aliasParams = [sort]
     , aliasSorts = ApplicationSorts
         { applicationSortsOperands = [sort]
         , applicationSortsResult = sort
@@ -743,7 +765,7 @@ instance UnifyingRule RulePattern where
         originalFreeVariables =
             FreeVariables.getFreeVariables $ freeVariables rule1
 
-    mapVariables mapping rule1@(RulePattern _ _ _ _ _) =
+    mapRuleVariables mapping rule1@(RulePattern _ _ _ _ _) =
         rule1
             { left = TermLike.mapVariables mapping left
             , antiLeft = fmap (TermLike.mapVariables mapping) antiLeft

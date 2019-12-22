@@ -55,7 +55,6 @@ import Kore.Step.EqualityPattern
     )
 import qualified Kore.Step.EqualityPattern as EqualityPattern
     ( EqualityPattern (..)
-    , mapVariables
     )
 import Kore.Step.EquationalStep
     ( UnificationProcedure (..)
@@ -69,6 +68,9 @@ import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
+    )
+import qualified Kore.Step.Step as EqualityPattern
+    ( mapRuleVariables
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
@@ -156,7 +158,7 @@ evaluateAxioms equalityRules termLike predicate
     maybeNotApplicable = maybeT (return notApplicable) return
 
     unwrapEqualityRule (EqualityRule rule) =
-        EqualityPattern.mapVariables fromVariable rule
+        EqualityPattern.mapRuleVariables fromVariable rule
 
     rejectNarrowing (Result.results -> results) =
         (Monad.guard . not) (any Step.isNarrowingResult results)

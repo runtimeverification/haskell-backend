@@ -53,6 +53,7 @@ test_onePathVerification =
             (Limit 0)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
@@ -70,6 +71,7 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -82,6 +84,7 @@ test_onePathVerification =
             (Limit 1)
             [simpleAxiom Mock.a (mkOr Mock.b Mock.c)]
             [simpleClaim Mock.a Mock.d]
+            []
         assertEqual ""
             (Left . Pattern.fromTermLike $ Mock.b)
             actual
@@ -94,6 +97,7 @@ test_onePathVerification =
             (Limit 2)
             [simpleAxiom Mock.a Mock.b]
             [simpleClaim Mock.a Mock.b]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -107,6 +111,7 @@ test_onePathVerification =
             [ simpleTrustedClaim Mock.a Mock.b
             , simpleClaim Mock.a Mock.b
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
@@ -122,6 +127,7 @@ test_onePathVerification =
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleClaim Mock.a Mock.c]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -137,6 +143,7 @@ test_onePathVerification =
             , simpleAxiom Mock.b Mock.c
             ]
             [simpleClaim Mock.a Mock.c]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -156,6 +163,7 @@ test_onePathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
+            []
         assertEqual "" (Right ()) actual
     , testCase "Partial verification failure" $ do
         -- Axiom: constr11(a) => b
@@ -171,6 +179,7 @@ test_onePathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
+            []
         assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
@@ -201,6 +210,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -221,6 +231,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.e
             , simpleClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Left StuckVerification
                 { stuckDescription = Pattern.fromTermLike Mock.c
@@ -234,7 +245,7 @@ test_onePathVerification =
         -- Axiom: d => e
         -- Claim: a => c
         -- Claim: d => c
-        -- Expected: error e
+        -- Expected: error e, proven = [a=>c]
         actual <- runVerification
             Unlimited
             (Limit 3)
@@ -245,12 +256,32 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.c
             ]
+            []
         assertEqual ""
             (Left StuckVerification
                 { stuckDescription = Pattern.fromTermLike Mock.e
                 , provenClaims = [simpleClaim Mock.a Mock.c]
                 }
             )
+            actual
+    , testCase "skips proven claim" $ do
+        -- Axiom: d => e
+        -- Claim: a => b
+        -- Claim: d => e
+        -- Already proven: a => b
+        -- Expected: success
+        actual <- runVerification
+            Unlimited
+            (Limit 3)
+            [ simpleAxiom Mock.d Mock.e
+            ]
+            [ simpleClaim Mock.a Mock.b
+            , simpleClaim Mock.d Mock.e
+            ]
+            [ simpleClaim Mock.a Mock.b
+            ]
+        assertEqual ""
+            (Right ())
             actual
     , testCase "second proves first but fails" $ do
         -- Axiom: a => b
@@ -267,6 +298,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -285,6 +317,7 @@ test_onePathVerification =
             [ simpleClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -303,6 +336,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleTrustedClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -321,6 +355,7 @@ test_onePathVerification =
             [ simpleTrustedClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -344,6 +379,7 @@ test_onePathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -360,6 +396,7 @@ test_onePathVerification =
             , simpleAxiom Mock.a Mock.c
             ]
             [ simpleClaim Mock.a Mock.b ]
+            []
         assertEqual ""
             (Right ())
             actual

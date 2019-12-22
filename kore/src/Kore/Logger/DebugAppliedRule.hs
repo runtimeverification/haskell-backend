@@ -49,6 +49,7 @@ import Kore.Step.EqualityPattern
     ( EqualityPattern
     )
 import qualified Kore.Step.EqualityPattern as Equality
+import qualified Kore.Step.Step as Equality
 import Kore.Syntax.Id
     ( Id
     )
@@ -103,7 +104,7 @@ debugAppliedRule
     -> log ()
 debugAppliedRule rule =
     logM . DebugAppliedRule
-    $ Conditional.mapVariables Equality.mapVariables toVariable rule
+    $ Conditional.mapVariables Equality.mapRuleVariables toVariable rule
 
 {- | Options (from the command-line) specifying when to log specific rules.
 

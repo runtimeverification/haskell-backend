@@ -47,6 +47,7 @@ test_allPathVerification =
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.a ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -59,6 +60,7 @@ test_allPathVerification =
             (Limit 1)
             []
             [ simpleClaim Mock.a Mock.b ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.a)
             actual
@@ -74,6 +76,7 @@ test_allPathVerification =
     --         Unlimited
     --         [ simpleAxiom Mock.a Mock.b ]
     --         [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
+    --         []
     --     assertEqual ""
     --         (Right ())
     --         actual
@@ -86,6 +89,7 @@ test_allPathVerification =
             (Limit 3)
             [ simpleAxiom Mock.a Mock.a ]
             [ simpleClaim Mock.a Mock.b ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -105,6 +109,7 @@ test_allPathVerification =
     --         , simpleAxiom Mock.a Mock.c
     --         ]
     --         [ simpleClaim Mock.a (mkOr Mock.b Mock.c) ]
+    --         []
     --     assertEqual ""
     --         (Right ())
     --         actual
@@ -121,6 +126,7 @@ test_allPathVerification =
             , simpleAxiom Mock.a Mock.c
             ]
             [ simpleClaim Mock.a Mock.b ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
@@ -140,6 +146,7 @@ test_allPathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
+            []
         assertEqual "" (Right ()) actual
     , testCase "Partial verification failure" $ do
         -- Axiom: constr11(a) => b
@@ -155,6 +162,7 @@ test_allPathVerification =
                 (Mock.functionalConstr11 (mkElemVar Mock.x))
             ]
             [simpleClaim (Mock.functionalConstr10 (mkElemVar Mock.x)) Mock.b]
+            []
         assertEqual ""
             (Left Conditional
                 { term = Mock.functionalConstr11 (mkElemVar Mock.x)
@@ -185,6 +193,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -205,6 +214,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.e
             , simpleClaim Mock.d Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.c)
             actual
@@ -225,6 +235,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.c
             , simpleClaim Mock.d Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
@@ -243,6 +254,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.c
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -261,6 +273,7 @@ test_allPathVerification =
             [ simpleClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.b)
             actual
@@ -279,6 +292,7 @@ test_allPathVerification =
             [ simpleTrustedClaim Mock.b Mock.c
             , simpleClaim Mock.a Mock.d
             ]
+            []
         assertEqual ""
             (Right ())
             actual
@@ -302,6 +316,7 @@ test_allPathVerification =
             [ simpleClaim Mock.a Mock.d
             , simpleClaim Mock.b Mock.e
             ]
+            []
         assertEqual ""
             (Left $ Pattern.fromTermLike Mock.e)
             actual
