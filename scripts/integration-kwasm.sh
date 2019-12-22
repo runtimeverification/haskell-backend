@@ -28,8 +28,8 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-env GHCRTS='-M128M' \
-  make TEST_SYMBOLIC_BACKEND=haskell \
+env GHCRTS='-M512M' \
+  make -j8 TEST_SYMBOLIC_BACKEND=haskell \
     tests/proofs/simple-arithmetic-spec.k.prove \
     tests/proofs/loops-spec.k.prove \
     tests/proofs/memory-symbolic-type-spec.k.prove \
