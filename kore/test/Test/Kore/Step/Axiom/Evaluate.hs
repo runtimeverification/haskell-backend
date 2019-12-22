@@ -35,12 +35,12 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Evaluate as Kore
-import qualified Kore.Step.Result as Results
-import Kore.Step.Rule
-    ( EqualityRule (..)
-    , RulePattern (..)
-    , rulePattern
+import Kore.Step.EqualityPattern
+    ( EqualityPattern (..)
+    , EqualityRule (..)
+    , equalityPattern
     )
+import qualified Kore.Step.Result as Results
 import Kore.Step.Simplification.Simplify
 import Kore.Unparser
 
@@ -149,8 +149,8 @@ axiom
     -> TermLike Variable
     -> Predicate Variable
     -> EqualityRule Variable
-axiom left right predicate =
-    EqualityRule (rulePattern left right) { requires = predicate }
+axiom left right requires =
+    EqualityRule (equalityPattern left right) { requires }
 
 axiom_
     :: TermLike Variable

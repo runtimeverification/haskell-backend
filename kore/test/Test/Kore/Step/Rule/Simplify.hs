@@ -31,13 +31,13 @@ import Kore.Internal.TermLike
 import Kore.Logger.Output
     ( emptyLogger
     )
-import Kore.Step.Rule
+import Kore.Step.Rule.Simplify
+import Kore.Step.RulePattern
     ( OnePathRule (OnePathRule)
     , RHS (..)
     , RulePattern (RulePattern)
     )
-import qualified Kore.Step.Rule as Rule.DoNotUse
-import Kore.Step.Rule.Simplify
+import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Step.Simplification.Data
     ( runSimplifier
     )

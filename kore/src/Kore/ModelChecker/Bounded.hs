@@ -45,7 +45,7 @@ import qualified Kore.ModelChecker.Step as ModelChecker
     ( Transition
     , transitionRule
     )
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( ImplicationRule (ImplicationRule)
     , RHS (..)
     , RewriteRule
