@@ -85,6 +85,10 @@ import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
     )
+import Kore.Logger.DebugProofState
+    ( debugProofStateAfter
+    , debugProofStateBefore
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -603,6 +607,8 @@ transitionRuleTemplate
         :: Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+    -- TODO: add logs here when they don't depend on representation
+    -- of goal
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
 
@@ -751,15 +757,37 @@ removeDestination
     => ToRulePattern goal
     => ProofState goal goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestination =
-    \case
-        Goal goal ->
-            Profile.timeStrategy "Goal.RemoveDestination"
-            $ removeDestinationWorker Goal goal
-        GoalRemainder goal ->
-            Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-            $ removeDestinationWorker GoalRemainder goal
+removeDestination currentState =
+    case currentState of
+        Goal goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.RemoveDestination"
+                Nothing
+            result <-
+                Profile.timeStrategy "Goal.RemoveDestination"
+                $ removeDestinationWorker Goal goal
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.RemoveDestination"
+                (Just $ fmap toRulePattern result)
+            return result
+        GoalRemainder goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.RemoveDestination"
+                Nothing
+            result <-
+                Profile.timeStrategy
+                "Goal.RemoveDestinationRemainder"
+                $ removeDestinationWorker GoalRemainder goal
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.RemoveDestination"
+                (Just $ fmap toRulePattern result)
+            return result
         state -> return state
+
 
 removeDestinationWorker
     :: MonadSimplify m
