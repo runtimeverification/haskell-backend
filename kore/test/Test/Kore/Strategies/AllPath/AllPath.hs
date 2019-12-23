@@ -398,9 +398,20 @@ isTriviallyValid (src, _) = src == Bot
 derivePar
     :: MonadSimplify m
     => [Goal.Rule Goal]
+    -> ProofState
+    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
+derivePar rules (ProofState.Goal goal) =
+    deriveParWorker rules goal
+derivePar rules (ProofState.GoalRemainder goal) =
+    deriveParWorker rules goal
+derivePar _ state = return state
+
+deriveParWorker
+    :: MonadSimplify m
+    => [Goal.Rule Goal]
     -> Goal
     -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-derivePar rules (src, dst) =
+deriveParWorker rules (src, dst) =
     goals <|> goalRemainder
   where
     goal rule@(Rule (_, to)) = do
@@ -421,7 +432,7 @@ simplify = return
 deriveSeq
     :: MonadSimplify m
     => [Goal.Rule Goal]
-    -> Goal
+    -> ProofState
     -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
 deriveSeq = derivePar
 

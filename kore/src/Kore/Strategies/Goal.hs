@@ -576,11 +576,11 @@ data TransitionRuleTemplate monad goal =
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
         :: [Rule goal]
-        -> goal
+        -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , deriveSeqTemplate
         :: [Rule goal]
-        -> goal
+        -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
 
@@ -630,33 +630,11 @@ transitionRuleTemplate
     transitionRuleWorker TriviallyValid (GoalRewritten g)
       | isTriviallyValidTemplate g = return Proven
 
-    transitionRuleWorker (DerivePar rules) (Goal g) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        --
-        -- Note that in most transitions it is obvious what is being transformed
-        -- into what, e.g. that a `ResetGoal` transition transforms
-        -- `GoalRewritten` into `Goal`. However, here we're taking a `Goal`
-        -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
-        -- opaque way. I think that there's no good reason for wrapping the
-        -- results in `derivePar` as opposed to here.
-        Profile.timeStrategy "Goal.DerivePar"
-        $ deriveParTemplate rules g
-    transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveParRemainder"
-        $ deriveParTemplate rules g
+    transitionRuleWorker (DerivePar rules) goal =
+        deriveParTemplate rules goal
 
-    transitionRuleWorker (DeriveSeq rules) (Goal g) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveSeq"
-        $ deriveSeqTemplate rules g
-    transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
-        -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
-        -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveSeqRemainder"
-        $ deriveSeqTemplate rules g
+    transitionRuleWorker (DeriveSeq rules) goal =
+        deriveSeqTemplate rules goal
 
     transitionRuleWorker _ state = return state
 
@@ -906,9 +884,51 @@ derivePar
     => ToRulePattern (Rule goal)
     => FromRulePattern (Rule goal)
     => [Rule goal]
+    -> ProofState goal goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+derivePar rules currentState =
+    case currentState of
+        Goal goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.DerivePar"
+                Nothing
+            result <-
+                Profile.timeStrategy "Goal.DerivePar"
+                $ deriveParWorker rules goal
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.DerivePar"
+                (Just $ fmap toRulePattern result)
+            return result
+        GoalRemainder goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.DerivePar"
+                Nothing
+            result <-
+                Profile.timeStrategy "Goal.DeriveParRemainder"
+                $ deriveParWorker rules goal
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.DerivePar"
+                (Just $ fmap toRulePattern result)
+            return result
+        state -> return state
+
+deriveParWorker
+    :: forall m goal
+    .  (MonadCatch m, MonadSimplify m)
+    => Goal goal
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ToRulePattern goal
+    => FromRulePattern goal
+    => ToRulePattern (Rule goal)
+    => FromRulePattern (Rule goal)
+    => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-derivePar rules goal = withConfiguration goal $ do
+deriveParWorker rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
@@ -961,9 +981,51 @@ deriveSeq
     => ToRulePattern (Rule goal)
     => FromRulePattern (Rule goal)
     => [Rule goal]
+    -> ProofState goal goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+deriveSeq rules currentState =
+    case currentState of
+        Goal goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.DeriveSeq"
+                Nothing
+            result <-
+                Profile.timeStrategy "Goal.DeriveSeq"
+                $ deriveSeqWorker rules goal
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.DeriveSeq"
+                (Just $ fmap toRulePattern result)
+            return result
+        GoalRemainder goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.DeriveSeq"
+                Nothing
+            result <-
+                Profile.timeStrategy "Goal.DeriveSeqRemainder"
+                $ deriveSeqWorker rules goal
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.DeriveSeq"
+                (Just $ fmap toRulePattern result)
+            return result
+        state -> return state
+
+deriveSeqWorker
+    :: forall m goal
+    .  (MonadCatch m, MonadSimplify m)
+    => Goal goal
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ToRulePattern goal
+    => FromRulePattern goal
+    => ToRulePattern (Rule goal)
+    => FromRulePattern (Rule goal)
+    => [Rule goal]
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-deriveSeq rules goal = withConfiguration goal $ do
+deriveSeqWorker rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
         Monad.Trans.lift
