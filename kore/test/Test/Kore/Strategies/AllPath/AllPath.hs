@@ -392,8 +392,16 @@ removeDestination (ProofState.GoalRemainder (src, dst)) =
 removeDestination state = return state
 
 -- | The goal is trivially valid when the members are equal.
-isTriviallyValid :: Goal -> Bool
-isTriviallyValid (src, _) = src == Bot
+isTriviallyValid
+    :: ProofState
+    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
+isTriviallyValid (ProofState.Goal (src, _))
+  | src == Bot = return ProofState.Proven
+isTriviallyValid (ProofState.GoalRemainder (src, _))
+  | src == Bot = return ProofState.Proven
+isTriviallyValid (ProofState.GoalRewritten (src, _))
+  | src == Bot = return ProofState.Proven
+isTriviallyValid state = return state
 
 derivePar
     :: MonadSimplify m

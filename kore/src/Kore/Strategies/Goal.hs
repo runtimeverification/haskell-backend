@@ -85,6 +85,9 @@ import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
     )
+import Kore.Logger
+    ( MonadLog
+    )
 import Kore.Logger.DebugProofState
     ( debugProofStateAfter
     , debugProofStateBefore
@@ -573,7 +576,9 @@ data TransitionRuleTemplate monad goal =
     , removeDestinationTemplate
         :: ProofState goal goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
-    , isTriviallyValidTemplate :: goal -> Bool
+    , isTriviallyValidTemplate
+        :: ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , deriveParTemplate
         :: [Rule goal]
         -> ProofState goal goal
@@ -584,6 +589,8 @@ data TransitionRuleTemplate monad goal =
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
 
+-- TODO: I think I should just make this representation-dependent,
+-- current logging solution feels very awkward
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
@@ -608,7 +615,6 @@ transitionRuleTemplate
         :: Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-    -- TODO: add logs here when they don't depend on representation
     -- of goal
     transitionRuleWorker CheckProven Proven = empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
@@ -623,12 +629,8 @@ transitionRuleTemplate
     transitionRuleWorker RemoveDestination goal =
         removeDestinationTemplate goal
 
-    transitionRuleWorker TriviallyValid (Goal g)
-      | isTriviallyValidTemplate g = return Proven
-    transitionRuleWorker TriviallyValid (GoalRemainder g)
-      | isTriviallyValidTemplate g = return Proven
-    transitionRuleWorker TriviallyValid (GoalRewritten g)
-      | isTriviallyValidTemplate g = return Proven
+    transitionRuleWorker TriviallyValid goal =
+        isTriviallyValidTemplate goal
 
     transitionRuleWorker (DerivePar rules) goal =
         deriveParTemplate rules goal
@@ -854,8 +856,26 @@ simplifyWorker goal = withConfiguration goal $ do
 
 isTriviallyValid
     :: ToRulePattern goal
-    => goal -> Bool
-isTriviallyValid = isBottom . RulePattern.left . toRulePattern
+    => MonadLog m
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ProofState goal goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+isTriviallyValid currentState@(Goal goal)
+  | isBottom . RulePattern.left . toRulePattern $ goal = do
+      debugProofStateBefore (fmap toRulePattern currentState) "Goal.isTriviallyValid" Nothing
+      debugProofStateAfter (fmap toRulePattern currentState) "Goal.isTriviallyValid" (Just Proven)
+      return Proven
+isTriviallyValid currentState@(GoalRemainder goal)
+  | isBottom . RulePattern.left . toRulePattern $ goal = do
+      debugProofStateBefore (fmap toRulePattern currentState) "Goal.isTriviallyValid" Nothing
+      debugProofStateAfter (fmap toRulePattern currentState) "Goal.isTriviallyValid" (Just Proven)
+      return Proven
+isTriviallyValid currentState@(GoalRewritten goal)
+  | isBottom . RulePattern.left . toRulePattern $ goal = do
+      debugProofStateBefore (fmap toRulePattern currentState) "Goal.isTriviallyValid" Nothing
+      debugProofStateAfter (fmap toRulePattern currentState) "Goal.isTriviallyValid" (Just Proven)
+      return Proven
+isTriviallyValid state = return state
 
 isTrusted
     :: forall goal
