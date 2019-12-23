@@ -4,7 +4,13 @@ include $(CURDIR)/../../include.mk
 
 test: tests/1.test
 
-test-k: tests/1.test
+test-k: tests/1.test-error
+
+%.test-error: %.output-error
+	diff -u $<.golden $<
+
+%.output-error: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ 2>$@ || echo
 
 golden: tests/1.output.golden
 
