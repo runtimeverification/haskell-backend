@@ -568,7 +568,8 @@ ruleOnePathToRuleReachability = coerce
 data TransitionRuleTemplate monad goal =
     TransitionRuleTemplate
     { simplifyTemplate
-        :: goal -> Strategy.TransitionT (Rule goal) monad goal
+        :: ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , removeDestinationTemplate
         :: ProofState goal goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
@@ -616,12 +617,8 @@ transitionRuleTemplate
 
     transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
-    transitionRuleWorker Simplify (Goal g) =
-        Profile.timeStrategy "Goal.Simplify"
-        $ Goal <$> simplifyTemplate g
-    transitionRuleWorker Simplify (GoalRemainder g) =
-        Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplifyTemplate g
+    transitionRuleWorker Simplify goal =
+        simplifyTemplate goal
 
     transitionRuleWorker RemoveDestination goal =
         removeDestinationTemplate goal
@@ -819,11 +816,50 @@ removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
 
 simplify
     :: (MonadCatch m, MonadSimplify m)
+    => ProofState.ProofState goal ~ ProofState goal goal
+    => ToRulePattern goal
+    => FromRulePattern goal
+    => ProofState goal goal
+    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
+simplify currentState =
+    case currentState of
+        Goal goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.Simplify"
+                Nothing
+            result <-
+                Profile.timeStrategy "Goal.Simplify"
+                $ simplifyWorker goal
+            let wrappedResult = Goal result
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.Simplify"
+                (Just $ fmap toRulePattern wrappedResult)
+            return wrappedResult
+        GoalRemainder goal -> do
+            debugProofStateBefore
+                (fmap toRulePattern currentState)
+                "Goal.Simplify"
+                Nothing
+            result <-
+                Profile.timeStrategy "Goal.SimplifyRemainder"
+                $ simplifyWorker goal
+            let wrappedResult = GoalRemainder result
+            debugProofStateAfter
+                (fmap toRulePattern currentState)
+                "Goal.Simplify"
+                (Just $ fmap toRulePattern wrappedResult)
+            return wrappedResult
+        state -> return state
+
+simplifyWorker
+    :: (MonadCatch m, MonadSimplify m)
     => ToRulePattern goal
     => FromRulePattern goal
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
-simplify goal = withConfiguration goal $ do
+simplifyWorker goal = withConfiguration goal $ do
     configs <-
         Monad.Trans.lift
         $ simplifyAndRemoveTopExists configuration

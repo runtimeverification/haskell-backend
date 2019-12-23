@@ -415,7 +415,7 @@ derivePar rules (src, dst) =
     applied = Maybe.mapMaybe applyRule rules
     goals = Foldable.asum (goal <$> applied)
 
-simplify :: Goal -> Strategy.TransitionT (Goal.Rule Goal) m Goal
+simplify :: ProofState -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
 simplify = return
 
 deriveSeq
