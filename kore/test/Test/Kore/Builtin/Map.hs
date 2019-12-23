@@ -95,7 +95,7 @@ import Kore.Internal.TermLike hiding
     ( asConcrete
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.Rule
+import Kore.Step.RulePattern
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

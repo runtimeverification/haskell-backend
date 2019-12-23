@@ -224,6 +224,7 @@ mainWithOptions
                         proveWithRepl
                             indexedModule
                             specDefIndexedModule
+                            Nothing
                             mLogger
                             replScript
                             replMode

@@ -46,5 +46,5 @@ quantifyFreeVariables :: TermLike Variable -> TermLike Variable
 quantifyFreeVariables termLike =
     foldr mkForall termLike
     . getFreeElementVariables
-    . TermLike.freeVariables
+    . freeVariables
     $ termLike

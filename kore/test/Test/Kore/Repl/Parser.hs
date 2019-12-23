@@ -14,6 +14,10 @@ import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )
 import qualified Kore.Logger.Output as Logger
+import Kore.Logger.Registry
+    ( debugAppliedRuleType
+    , debugAxiomEvaluationType
+    )
 import Kore.Repl.Data
 import Kore.Repl.Parser
 
@@ -441,37 +445,39 @@ logTests =
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
-    , "log [entry1] stderr"
+    , "log [DebugAppliedRule] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Warning
-            , logEntries = Set.singleton "entry1"
+            , logEntries = Set.singleton debugAppliedRuleType
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
-    , "log critical [entry1] stderr"
+    , "log critical [DebugAppliedRule] stderr"
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Critical
-            , logEntries = Set.singleton "entry1"
+            , logEntries = Set.singleton debugAppliedRuleType
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
-    , "log info [ entry1,  entry2 ] file \"f s\""
+    , "log info [ DebugAppliedRule,  DebugAxiomEvaluation ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
-            , logEntries = Set.fromList ["entry1", "entry2"]
+            , logEntries = Set.fromList
+                [debugAppliedRuleType, debugAxiomEvaluationType]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
-    , "log info [ entry1  entry2 ] file \"f s\""
+    , "log info [ DebugAppliedRule   DebugAxiomEvaluation ] file \"f s\""
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Info
-            , logEntries = Set.fromList ["entry1", "entry2"]
+            , logEntries = Set.fromList
+                [debugAppliedRuleType, debugAxiomEvaluationType]
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty

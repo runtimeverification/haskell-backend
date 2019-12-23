@@ -33,13 +33,10 @@ import Kore.Internal.Predicate
     )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
-import Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
-    , injectTermIntoRHS
-    )
-import Kore.Step.Rule
-    ( EqualityRule (EqualityRule)
-    , RulePattern (RulePattern)
+import Kore.Step.EqualityPattern
+    ( EqualityPattern (..)
+    , EqualityRule (EqualityRule)
+    , equalityPattern
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
@@ -167,12 +164,12 @@ test_definitionEvaluation =
             expectSymbolic = AttemptedAxiom.NotApplicable
 
             evaluator = definitionEvaluation
-                [ EqualityRule RulePattern
-                    { left = Mock.functionalConstr10 (mkElemVar Mock.x)
-                    , antiLeft = Nothing
-                    , requires = makeTruePredicate_
-                    , rhs = injectTermIntoRHS (Mock.g (mkElemVar Mock.x))
-                    , attributes = def
+                [ EqualityRule
+                    (equalityPattern
+                        (Mock.functionalConstr10 (mkElemVar Mock.x))
+                        (Mock.g (mkElemVar Mock.x))
+                    )
+                    { attributes = def
                         { Attribute.Axiom.concrete = Attribute.Concrete True }
                     }
                 ]
@@ -580,12 +577,12 @@ axiom
     -> TermLike Variable
     -> Predicate Variable
     -> EqualityRule Variable
-axiom left right predicate =
-    EqualityRule RulePattern
+axiom left right requires =
+    EqualityRule EqualityPattern
         { left
-        , antiLeft = Nothing
-        , requires = predicate
-        , rhs = injectTermIntoRHS right
+        , requires
+        , right
+        , ensures = Kore.Internal.Predicate.makeTruePredicate_
         , attributes = def
         }
 

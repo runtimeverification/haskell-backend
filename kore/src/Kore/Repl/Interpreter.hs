@@ -126,6 +126,9 @@ import qualified Kore.Attribute.Axiom as Attribute
     , sourceLocation
     )
 import qualified Kore.Attribute.Label as AttrLabel
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    )
 import Kore.Attribute.RuleIndex
 import Kore.Internal.Condition
     ( Condition
@@ -142,12 +145,12 @@ import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( ReachabilityRule (..)
     , RulePattern (..)
     )
-import qualified Kore.Step.Rule as Rule
-import qualified Kore.Step.Rule as Axiom
+import qualified Kore.Step.RulePattern as Rule
+import qualified Kore.Step.RulePattern as Axiom
     ( attributes
     )
 import Kore.Step.Simplification.Data
@@ -896,7 +899,7 @@ tryAxiomClaimWorker mode ref = do
         runUnifier first' second
         >>= tell . formatUnificationMessage
       where
-        first' = TermLike.refreshVariables (TermLike.freeVariables second) first
+        first' = TermLike.refreshVariables (freeVariables second) first
 
     extractLeftPattern :: Either axiom claim -> TermLike Variable
     extractLeftPattern = left . either toRulePattern toRulePattern
