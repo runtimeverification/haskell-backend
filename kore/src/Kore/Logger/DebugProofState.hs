@@ -4,7 +4,8 @@ License     : NCSA
 -}
 
 module Kore.Logger.DebugProofState
-    ( debugProofState
+    ( DebugProofState
+    , debugProofState
     , debugProofStateBefore
     , debugProofStateAfter
     ) where
