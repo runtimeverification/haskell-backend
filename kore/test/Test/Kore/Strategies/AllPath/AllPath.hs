@@ -405,22 +405,38 @@ transitionRuleTemplate
         -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
     transitionRuleWorker ProofState.CheckProven ProofState.Proven =
         empty
-    transitionRuleWorker ProofState.CheckGoalRemainder (ProofState.GoalRemainder _) =
+    transitionRuleWorker
+        ProofState.CheckGoalRemainder
+        (ProofState.GoalRemainder _)
+      =
         empty
 
-    transitionRuleWorker ProofState.ResetGoal (ProofState.GoalRewritten goal) =
+    transitionRuleWorker
+        ProofState.ResetGoal
+        (ProofState.GoalRewritten goal)
+      =
         return (ProofState.Goal goal)
 
-    transitionRuleWorker ProofState.CheckGoalStuck (ProofState.GoalStuck _) = empty
+    transitionRuleWorker
+        ProofState.CheckGoalStuck
+        (ProofState.GoalStuck _)
+      =
+        empty
 
     transitionRuleWorker ProofState.Simplify (ProofState.Goal g) =
         ProofState.Goal <$> simplifyTemplate g
     transitionRuleWorker ProofState.Simplify (ProofState.GoalRemainder g) =
         ProofState.GoalRemainder <$> simplifyTemplate g
 
-    transitionRuleWorker ProofState.RemoveDestination (ProofState.Goal goal) =
+    transitionRuleWorker
+        ProofState.RemoveDestination
+        (ProofState.Goal goal)
+      =
         removeDestinationTemplate ProofState.Goal goal
-    transitionRuleWorker ProofState.RemoveDestination (ProofState.GoalRemainder goal) =
+    transitionRuleWorker
+        ProofState.RemoveDestination
+        (ProofState.GoalRemainder goal)
+      =
         removeDestinationTemplate ProofState.GoalRemainder goal
 
     transitionRuleWorker ProofState.TriviallyValid (ProofState.Goal g)
@@ -432,12 +448,18 @@ transitionRuleTemplate
 
     transitionRuleWorker (ProofState.DerivePar rules) (ProofState.Goal g) =
         deriveParTemplate rules g
-    transitionRuleWorker (ProofState.DerivePar rules) (ProofState.GoalRemainder g) =
+    transitionRuleWorker
+        (ProofState.DerivePar rules)
+        (ProofState.GoalRemainder g)
+      =
         deriveParTemplate rules g
 
     transitionRuleWorker (ProofState.DeriveSeq rules) (ProofState.Goal g) =
         deriveSeqTemplate rules g
-    transitionRuleWorker (ProofState.DeriveSeq rules) (ProofState.GoalRemainder g) =
+    transitionRuleWorker
+        (ProofState.DeriveSeq rules)
+        (ProofState.GoalRemainder g)
+      =
         deriveSeqTemplate rules g
 
     transitionRuleWorker _ state = return state

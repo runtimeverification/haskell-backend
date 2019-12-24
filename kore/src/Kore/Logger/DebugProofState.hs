@@ -53,7 +53,7 @@ instance Pretty DebugProofState where
         case transitionState of
             Before ->
                 Pretty.vsep
-                $ beforeText <> ["...Computing result..."]
+                $ beforeText <> ["...Applying transition..."]
             After  ->
                 Pretty.vsep afterText
             Both   ->
