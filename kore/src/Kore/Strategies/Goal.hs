@@ -589,6 +589,7 @@ data TransitionRuleTemplate monad goal =
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
+    => ToRulePattern goal
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
@@ -610,20 +611,33 @@ transitionRuleTemplate
         :: Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-    transitionRuleWorker CheckProven Proven = empty
-    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
+    transitionRuleWorker CheckProven Proven = do
+        -- TODO: debugProofState Proven CheckProven Nothing
+        empty
+    transitionRuleWorker CheckGoalRemainder (GoalRemainder goal) = do
+        -- TODO: debugProofState (GoalRemainder . toRulePattern $ goal) CheckGoalRemainder Nothing
+        empty
 
-    transitionRuleWorker ResetGoal (GoalRewritten goal) = return (Goal goal)
+    transitionRuleWorker ResetGoal (GoalRewritten goal) = do
+        -- TODO: debugProofState (GoalRewritten . toRulePattern $ goal) ResetGoal (Goal . toRulePattern $ goal)
+        return (Goal goal)
 
-    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
+    transitionRuleWorker CheckGoalStuck (GoalStuck goal) = do
+        -- TODO: debugProofState (GoalStuck . toRulePattern $ goal) CheckGoalStuck Nothing
+        empty
 
-    transitionRuleWorker Simplify (Goal g) =
+    transitionRuleWorker Simplify (Goal g) = do
+        -- TODO: debugProofStateStart (Goal . toRulePattern $ g) Simplify Nothing
+        -- + end
         Profile.timeStrategy "Goal.Simplify"
         $ Goal <$> simplifyTemplate g
     transitionRuleWorker Simplify (GoalRemainder g) =
+        -- TODO: debugProofStateStart (Goal . toRulePattern $ g) Simplify Nothing
+        -- + end
         Profile.timeStrategy "Goal.SimplifyRemainder"
         $ GoalRemainder <$> simplifyTemplate g
 
+    -- TODO: as above
     transitionRuleWorker RemoveDestination goal =
         removeDestinationTemplate goal
 
