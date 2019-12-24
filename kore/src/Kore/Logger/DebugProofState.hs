@@ -10,9 +10,6 @@ module Kore.Logger.DebugProofState
     , debugProofStateAfter
     ) where
 
-import Data.Text
-    ( Text
-    )
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
@@ -54,49 +51,56 @@ instance Pretty DebugProofState where
             }
       =
         case transitionState of
-            Before -> beforeText
-            After  -> afterText
-            Both   -> beforeText <> afterText
+            Before ->
+                Pretty.vsep
+                $ beforeText <> ["...Computing result..."]
+            After  ->
+                Pretty.vsep afterText
+            Both   ->
+                Pretty.vsep
+                $ beforeText <> afterText
       where
         beforeText =
-            Pretty.vsep
-                [ "Reached proof state with the following configuration:"
-                , Pretty.indent 4 (pretty configuration)
-                ]
+            [ "Reached proof state with the following configuration:"
+            , Pretty.indent 4 (pretty configuration)
+            ]
         afterText =
-            Pretty.vsep
-                [ "On which the following transition applies:"
-                , Pretty.indent 4 (pretty transition)
-                , "Resulting in:"
-                , Pretty.indent 4 (pretty result)
-                ]
+            [ "On which the following transition applies:"
+            , Pretty.indent 4 (pretty transition)
+            , "Resulting in:"
+            , Pretty.indent 4 (pretty result)
+            ]
 
 instance Entry DebugProofState where
     entrySeverity _ = Debug
 
 debugProofStateBefore
     :: MonadLog log
-    => Maybe (ProofState (RulePattern Variable))
+    => ProofState (RulePattern Variable)
     -> log ()
 debugProofStateBefore config =
-    logTransitionState Both config Nothing Nothing
+    logTransitionState Before (Just config) Nothing Nothing
 
 debugProofStateAfter
     :: MonadLog log
-    => Maybe (Prim (RulePattern Variable))
+    => Prim (RulePattern Variable)
     -> Maybe (ProofState (RulePattern Variable))
     -> log ()
-debugProofStateAfter =
-    logTransitionState After Nothing
+debugProofStateAfter trans result =
+    logTransitionState After Nothing (Just trans) result
 
 debugProofState
     :: MonadLog log
-    => Maybe (ProofState (RulePattern Variable))
-    -> Maybe (Prim (RulePattern Variable))
+    => ProofState (RulePattern Variable)
+    -> Prim (RulePattern Variable)
     -> Maybe (ProofState (RulePattern Variable))
     -> log ()
-debugProofState =
-    logTransitionState Both
+debugProofState config trans result =
+    logTransitionState
+        Both
+        (Just config)
+        (Just trans)
+        result
 
 logTransitionState
     :: MonadLog log
