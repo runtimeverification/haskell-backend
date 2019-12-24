@@ -88,6 +88,7 @@ import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
     )
+import Kore.Logger.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -573,7 +574,8 @@ data TransitionRuleTemplate monad goal =
     { simplifyTemplate
         :: goal -> Strategy.TransitionT (Rule goal) monad goal
     , removeDestinationTemplate
-        :: ProofState goal goal
+        :: (goal -> ProofState goal goal)
+        -> goal
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     , isTriviallyValidTemplate :: goal -> Bool
     , deriveParTemplate
@@ -590,6 +592,7 @@ transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
     => ToRulePattern goal
+    => ToRulePattern (Rule goal)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
@@ -612,43 +615,94 @@ transitionRuleTemplate
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
     transitionRuleWorker CheckProven Proven = do
-        -- TODO: debugProofState Proven CheckProven Nothing
+        debugProofState (Just Proven) (Just CheckProven) Nothing
         empty
     transitionRuleWorker CheckGoalRemainder (GoalRemainder goal) = do
-        -- TODO: debugProofState (GoalRemainder . toRulePattern $ goal) CheckGoalRemainder Nothing
+        debugProofState
+            (Just . GoalRemainder . toRulePattern $ goal)
+            (Just CheckGoalRemainder)
+            Nothing
         empty
 
     transitionRuleWorker ResetGoal (GoalRewritten goal) = do
-        -- TODO: debugProofState (GoalRewritten . toRulePattern $ goal) ResetGoal (Goal . toRulePattern $ goal)
+        debugProofState
+            (Just . GoalRewritten . toRulePattern $ goal)
+            (Just ResetGoal)
+            (Just . Goal . toRulePattern $ goal)
         return (Goal goal)
 
     transitionRuleWorker CheckGoalStuck (GoalStuck goal) = do
-        -- TODO: debugProofState (GoalStuck . toRulePattern $ goal) CheckGoalStuck Nothing
+        debugProofState
+            (Just . GoalStuck . toRulePattern $ goal)
+            (Just CheckGoalStuck)
+            Nothing
         empty
 
     transitionRuleWorker Simplify (Goal g) = do
-        -- TODO: debugProofStateStart (Goal . toRulePattern $ g) Simplify Nothing
-        -- + end
-        Profile.timeStrategy "Goal.Simplify"
-        $ Goal <$> simplifyTemplate g
-    transitionRuleWorker Simplify (GoalRemainder g) =
-        -- TODO: debugProofStateStart (Goal . toRulePattern $ g) Simplify Nothing
-        -- + end
-        Profile.timeStrategy "Goal.SimplifyRemainder"
-        $ GoalRemainder <$> simplifyTemplate g
+        debugProofStateBefore
+            (Just . Goal . toRulePattern $ g)
+        result <-
+            Profile.timeStrategy "Goal.Simplify"
+            $ Goal <$> simplifyTemplate g
+        debugProofStateAfter
+            (Just Simplify)
+            (Just . fmap toRulePattern $ result)
+        return result
+    transitionRuleWorker Simplify (GoalRemainder g) = do
+        debugProofStateBefore
+            (Just . Goal . toRulePattern $ g)
+        result <-
+            Profile.timeStrategy "Goal.SimplifyRemainder"
+            $ GoalRemainder <$> simplifyTemplate g
+        debugProofStateAfter
+            (Just Simplify)
+            (Just . fmap toRulePattern $ result)
+        return result
 
-    -- TODO: as above
-    transitionRuleWorker RemoveDestination goal =
-        removeDestinationTemplate goal
+    transitionRuleWorker RemoveDestination (Goal goal) = do
+        debugProofStateBefore
+            (Just . Goal . toRulePattern $ goal)
+        result <-
+            Profile.timeStrategy "Goal.RemoveDestination"
+            $ removeDestinationTemplate Goal goal
+        debugProofStateAfter
+            (Just Simplify)
+            (Just . fmap toRulePattern $ result)
+        return result
+    transitionRuleWorker RemoveDestination (GoalRemainder goal) = do
+        debugProofStateBefore
+            (Just . GoalRemainder . toRulePattern $ goal)
+        result <-
+            Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+            $ removeDestinationTemplate GoalRemainder goal
+        debugProofStateAfter
+            (Just RemoveDestination)
+            (Just . fmap toRulePattern $ result)
+        return result
 
     transitionRuleWorker TriviallyValid (Goal g)
-      | isTriviallyValidTemplate g = return Proven
+      | isTriviallyValidTemplate g = do
+          debugProofState
+            (Just . Goal . toRulePattern $ g)
+            (Just TriviallyValid)
+            (Just Proven)
+          return Proven
     transitionRuleWorker TriviallyValid (GoalRemainder g)
-      | isTriviallyValidTemplate g = return Proven
+      | isTriviallyValidTemplate g = do
+          debugProofState
+            (Just . GoalRemainder . toRulePattern $ g)
+            (Just TriviallyValid)
+            (Just Proven)
+          return Proven
     transitionRuleWorker TriviallyValid (GoalRewritten g)
-      | isTriviallyValidTemplate g = return Proven
+      | isTriviallyValidTemplate g = do
+          debugProofState
+            (Just . GoalRewritten . toRulePattern $ g)
+            (Just TriviallyValid)
+            (Just Proven)
+          return Proven
 
-    transitionRuleWorker (DerivePar rules) (Goal g) =
+    transitionRuleWorker (DerivePar rules) (Goal goal) = do
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         --
         -- Note that in most transitions it is obvious what is being transformed
@@ -657,24 +711,52 @@ transitionRuleTemplate
         -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
-        Profile.timeStrategy "Goal.DerivePar"
-        $ deriveParTemplate rules g
-    transitionRuleWorker (DerivePar rules) (GoalRemainder g) =
+        debugProofStateBefore
+            (Just . Goal . toRulePattern $ goal)
+        result <-
+            Profile.timeStrategy "Goal.DerivePar"
+            $ deriveParTemplate rules goal
+        debugProofStateAfter
+            (Just . DerivePar . fmap toRulePattern $ rules)
+            (Just . fmap toRulePattern $ result)
+        return result
+    transitionRuleWorker (DerivePar rules) (GoalRemainder goal) = do
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveParRemainder"
-        $ deriveParTemplate rules g
+        debugProofStateBefore
+            (Just . GoalRemainder . toRulePattern $ goal)
+        result <-
+            Profile.timeStrategy "Goal.DeriveParRemainder"
+            $ deriveParTemplate rules goal
+        debugProofStateAfter
+            (Just . DerivePar . fmap toRulePattern $ rules)
+            (Just . fmap toRulePattern $ result)
+        return result
 
-    transitionRuleWorker (DeriveSeq rules) (Goal g) =
+    transitionRuleWorker (DeriveSeq rules) (Goal goal) = do
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveSeq"
-        $ deriveSeqTemplate rules g
-    transitionRuleWorker (DeriveSeq rules) (GoalRemainder g) =
+        debugProofStateBefore
+            (Just . Goal . toRulePattern $ goal)
+        result <-
+            Profile.timeStrategy "Goal.DeriveSeq"
+            $ deriveSeqTemplate rules goal
+        debugProofStateAfter
+            (Just . DeriveSeq . fmap toRulePattern $ rules)
+            (Just . fmap toRulePattern $ result)
+        return result
+    transitionRuleWorker (DeriveSeq rules) (GoalRemainder goal) = do
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveSeqRemainder"
-        $ deriveSeqTemplate rules g
+        debugProofStateBefore
+            (Just . GoalRemainder . toRulePattern $ goal)
+        result <-
+            Profile.timeStrategy "Goal.DeriveSeqRemainder"
+            $ deriveSeqTemplate rules goal
+        debugProofStateAfter
+            (Just . DeriveSeq . fmap toRulePattern $ rules)
+            (Just . fmap toRulePattern $ result)
+        return result
 
     transitionRuleWorker _ state = return state
 
@@ -770,27 +852,10 @@ removeDestination
     => MonadCatch m
     => ProofState.ProofState goal ~ ProofState goal goal
     => ToRulePattern goal
-    => ProofState goal goal
-    -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestination =
-    \case
-        Goal goal ->
-            Profile.timeStrategy "Goal.RemoveDestination"
-            $ removeDestinationWorker Goal goal
-        GoalRemainder goal ->
-            Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-            $ removeDestinationWorker GoalRemainder goal
-        state -> return state
-
-removeDestinationWorker
-    :: MonadSimplify m
-    => MonadCatch m
-    => ProofState.ProofState goal ~ ProofState goal goal
-    => ToRulePattern goal
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
+removeDestination stateConstructor goal = withConfiguration goal $ do
         removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal

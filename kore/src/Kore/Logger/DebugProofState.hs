@@ -21,7 +21,7 @@ import Kore.Internal.TermLike
     ( Variable
     )
 import Kore.Logger
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RulePattern (..)
     )
 import Kore.Strategies.ProofState
@@ -90,7 +90,7 @@ debugProofStateAfter =
 
 debugProofState
     :: MonadLog log
-    => Maybe (ProofState (RulePattern Varable))
+    => Maybe (ProofState (RulePattern Variable))
     -> Maybe (Prim (RulePattern Variable))
     -> Maybe (ProofState (RulePattern Variable))
     -> log ()
@@ -100,7 +100,7 @@ debugProofState =
 logTransitionState
     :: MonadLog log
     => TransitionState
-    -> Maybe (ProofState (RulePattern Varable))
+    -> Maybe (ProofState (RulePattern Variable))
     -> Maybe (Prim (RulePattern Variable))
     -> Maybe (ProofState (RulePattern Variable))
     -> log ()

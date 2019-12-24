@@ -418,8 +418,10 @@ transitionRuleTemplate
     transitionRuleWorker ProofState.Simplify (ProofState.GoalRemainder g) =
         ProofState.GoalRemainder <$> simplifyTemplate g
 
-    transitionRuleWorker ProofState.RemoveDestination goal =
-        removeDestinationTemplate goal
+    transitionRuleWorker ProofState.RemoveDestination (ProofState.Goal goal) =
+        removeDestinationTemplate ProofState.Goal goal
+    transitionRuleWorker ProofState.RemoveDestination (ProofState.GoalRemainder goal) =
+        removeDestinationTemplate ProofState.GoalRemainder goal
 
     transitionRuleWorker ProofState.TriviallyValid (ProofState.Goal g)
       | isTriviallyValidTemplate g = return ProofState.Proven
@@ -442,13 +444,11 @@ transitionRuleTemplate
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination
-    :: ProofState
+    :: (Goal -> ProofState)
+    -> Goal
     -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-removeDestination (ProofState.Goal (src, dst)) =
-    return . ProofState.Goal $ (difference src dst, dst)
-removeDestination (ProofState.GoalRemainder (src, dst)) =
-    return . ProofState.GoalRemainder $ (difference src dst, dst)
-removeDestination state = return state
+removeDestination constr (src, dst) =
+    return . constr $ (difference src dst, dst)
 
 -- | The goal is trivially valid when the members are equal.
 isTriviallyValid :: Goal -> Bool
