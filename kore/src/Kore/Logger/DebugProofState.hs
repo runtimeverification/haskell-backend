@@ -4,7 +4,8 @@ License     : NCSA
 -}
 
 module Kore.Logger.DebugProofState
-    ( debugProofStateBefore
+    ( debugProofState
+    , debugProofStateBefore
     , debugProofStateAfter
     ) where
 
@@ -30,8 +31,8 @@ import Kore.Strategies.ProofState
 
 data DebugProofState =
     DebugProofState
-        { configuration :: !(ProofState (RulePattern Variable))
-        , transition :: Prim (RulePattern Variable)
+        { configuration :: !(Maybe (ProofState (RulePattern Variable)))
+        , transition :: !(Maybe (Prim (RulePattern Variable)))
         , result :: !(Maybe (ProofState (RulePattern Variable)))
         , transitionState :: TransitionState
         }
@@ -74,27 +75,33 @@ instance Entry DebugProofState where
 
 debugProofStateBefore
     :: MonadLog log
-    => ProofState (RulePattern Variable)
-    -> Text
-    -> Maybe (ProofState (RulePattern Variable))
+    => Maybe (ProofState (RulePattern Variable))
     -> log ()
-debugProofStateBefore =
-    logTransitionState Before
+debugProofStateBefore config =
+    logTransitionState Both config Nothing Nothing
 
 debugProofStateAfter
     :: MonadLog log
-    => ProofState (RulePattern Variable)
-    -> Text
+    => Maybe (Prim (RulePattern Variable))
     -> Maybe (ProofState (RulePattern Variable))
     -> log ()
 debugProofStateAfter =
-    logTransitionState After
+    logTransitionState After Nothing
+
+debugProofState
+    :: MonadLog log
+    => Maybe (ProofState (RulePattern Varable))
+    -> Maybe (Prim (RulePattern Variable))
+    -> Maybe (ProofState (RulePattern Variable))
+    -> log ()
+debugProofState =
+    logTransitionState Both
 
 logTransitionState
     :: MonadLog log
     => TransitionState
-    -> ProofState (RulePattern Variable)
-    -> Text
+    -> Maybe (ProofState (RulePattern Varable))
+    -> Maybe (Prim (RulePattern Variable))
     -> Maybe (ProofState (RulePattern Variable))
     -> log ()
 logTransitionState
