@@ -7,10 +7,10 @@ import Control.Applicative
 import Control.Monad.Catch
     ( MonadCatch
     , catch
-    , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
+    , liftIO
     )
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
@@ -105,6 +105,9 @@ import Kore.Internal.Predicate
     ( makePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Logger.CriticalExecutionError
+    ( criticalExecutionError
+    )
 import Kore.Logger.Output
     ( KoreLogOptions (..)
     , LogMessage
@@ -404,12 +407,13 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <- catch (runLoggerT koreLogOptions go) $
+    exitCode <- runLoggerT koreLogOptions $ catch go $
         \(Goal.WithConfiguration lastConfiguration someException) -> do
-            renderResult
+            liftIO $ renderResult
                 execOptions
                 ("// Last configuration:\n" <> unparse lastConfiguration)
-            throwM someException
+            criticalExecutionError someException
+            return (ExitFailure 1)
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
@@ -418,6 +422,7 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
+    go :: Main ExitCode
     go
       | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
         if bmc

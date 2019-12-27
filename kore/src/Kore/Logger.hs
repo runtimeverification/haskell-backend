@@ -36,6 +36,10 @@ import qualified Control.Lens as Lens
 import Control.Lens.Prism
     ( Prism
     )
+import Control.Monad.Catch
+    ( MonadCatch
+    , MonadThrow
+    )
 import Control.Monad.Except
     ( ExceptT
     )
@@ -271,7 +275,7 @@ instance MonadLog log => MonadLog (Strict.StateT state log)
 newtype LoggerT m a =
     LoggerT { getLoggerT :: ReaderT (LogAction m SomeEntry) m a }
     deriving (Functor, Applicative, Monad)
-    deriving (MonadIO)
+    deriving (MonadIO, MonadThrow, MonadCatch)
 
 instance Monad m => MonadLog (LoggerT m) where
     logM entry =

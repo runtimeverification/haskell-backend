@@ -51,6 +51,9 @@ import Type.Reflection
 import Kore.Logger
     ( Entry
     )
+import Kore.Logger.CriticalExecutionError
+    ( CriticalExecutionError
+    )
 import Kore.Logger.DebugAppliedRule
     ( DebugAppliedRule
     )
@@ -92,6 +95,7 @@ registry =
                 , register warnBottomHookType
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
+                , register criticalExecutionErrorType
                 ]
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
@@ -124,6 +128,7 @@ debugAppliedRuleType
   , warnBottomHookType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
+  , criticalExecutionErrorType
   :: SomeTypeRep
 
 debugAppliedRuleType =
@@ -140,6 +145,8 @@ warnFunctionWithoutEvaluatorsType =
     someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
 warnSimplificationWithRemainderType =
     someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
+criticalExecutionErrorType =
+    someTypeRep (Proxy :: Proxy CriticalExecutionError)
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =
