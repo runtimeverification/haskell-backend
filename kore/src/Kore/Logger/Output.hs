@@ -30,7 +30,17 @@ import qualified Colog
 import Control.Applicative
     ( Alternative (..)
     )
+import Control.Concurrent
+    ( forkIO
+    )
 import Control.Concurrent.MVar
+import Control.Concurrent.STM
+    ( TChan
+    , atomically
+    , newTChanIO
+    , readTChan
+    , writeTChan
+    )
 import Control.Monad.Catch
     ( MonadMask
     , bracket
@@ -207,7 +217,23 @@ filterSeverity level entry =
 
 -- | Run a 'LoggerT' with the given options.
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
-runLoggerT options = withLogger options . runReaderT . getLoggerT
+runLoggerT options logger = do
+    let x = runReaderT . getLoggerT $ logger
+    withLogger options x
+
+threadedLog :: LogAction IO a -> IO (LogAction IO a)
+threadedLog logger = do
+    tChan <- newTChanIO
+    forkIO $ do
+        val <- atomically $ readTChan tChan
+        unLogAction logger val
+        return ()
+    return . tChanLogger $ tChan
+
+tChanLogger :: TChan a -> LogAction IO a
+tChanLogger tChan =
+    LogAction $ \x ->
+        atomically $ writeTChan tChan x
 
 -- Parser for command line log options.
 parseKoreLogOptions :: Parser KoreLogOptions

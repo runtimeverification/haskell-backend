@@ -71,6 +71,7 @@ dependencies:
   - reflection >=2.1
   - semialign >=1
   - streams
+  - stm >=2.5
   - template-haskell >=2.14
   - text >=1.2
   - these >=1.0
