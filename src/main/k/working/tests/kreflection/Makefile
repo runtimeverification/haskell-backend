@@ -2,7 +2,7 @@ DEFINITION_NAME := kreflection
 
 include $(CURDIR)/../../include.mk
 
-test: tests/1.test
+test: tests/1.test-error
 
 test-k: tests/1.test-error
 
