@@ -28,6 +28,7 @@ import qualified Data.Set as Set
 import qualified Branch as BranchT
 import Kore.Attribute.Pattern.FreeVariables
     ( FreeVariables (FreeVariables)
+    , freeVariables
     )
 import qualified Kore.Internal.Condition as Condition
     ( fromPredicate
@@ -49,17 +50,15 @@ import Kore.Internal.TermLike
 import Kore.Internal.Variable
     ( InternalVariable
     )
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RHS (RHS)
     , RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
-    , refreshRulePattern
     )
-import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.RulePattern as RulePattern
     ( applySubstitution
-    , freeVariables
     )
-import qualified Kore.Step.Rule as Rule.DoNotUse
+import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
@@ -67,6 +66,9 @@ import Kore.Step.Simplification.Simplify
     )
 import qualified Kore.Step.SMT.Evaluator as SMT
     ( evaluate
+    )
+import Kore.Step.Step
+    ( refreshRule
     )
 import Kore.Substitute
     ( SubstitutionVariable
@@ -156,12 +158,12 @@ renameRuleVariable
         `Set.union` ruleVariables
         `Set.union` newRuleVariables
 
-    (FreeVariables ruleVariables) = RulePattern.freeVariables rulePattern
+    (FreeVariables ruleVariables) = freeVariables rulePattern
 
-    (FreeVariables newRuleVariables) = RulePattern.freeVariables newRulePattern
+    (FreeVariables newRuleVariables) = freeVariables newRulePattern
 
     (_, newRulePattern) =
-        refreshRulePattern (FreeVariables usedVariables) rulePattern
+        refreshRule (FreeVariables usedVariables) rulePattern
 
 mergeRules
     :: (MonadSimplify simplifier, SimplifierVariable variable)

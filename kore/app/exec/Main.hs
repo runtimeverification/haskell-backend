@@ -124,10 +124,10 @@ import Kore.Profiler.Data
     ( MonadProfiler
     )
 import Kore.Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( ReachabilityRule
     )
-import qualified Kore.Step.Rule as Rule
+import qualified Kore.Step.RulePattern as Rule
     ( toSentence
     )
 import Kore.Step.Search

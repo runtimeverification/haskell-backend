@@ -62,12 +62,12 @@ import Kore.Sort
     ( Sort (..)
     )
 import Kore.Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , injectTermIntoRHS
     )
-import Kore.Step.Rule as RulePattern
+import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     , rulePattern
     )

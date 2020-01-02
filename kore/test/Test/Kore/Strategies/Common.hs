@@ -18,7 +18,7 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.TermLike
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule (..)
     , rulePattern
     )

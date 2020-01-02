@@ -491,8 +491,8 @@ traverseVariablesF traversing =
 extractAttributes :: TermLike variable -> Attribute.Pattern variable
 extractAttributes = extract . getTermLike
 
-freeVariables :: TermLike variable -> FreeVariables variable
-freeVariables = Attribute.freeVariables . extractAttributes
+instance HasFreeVariables (TermLike variable) variable where
+    freeVariables = Attribute.freeVariables . extractAttributes
 
 {- | Use the provided mapping to replace all variables in a 'StepPattern'.
 

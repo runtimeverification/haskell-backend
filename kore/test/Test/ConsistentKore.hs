@@ -39,6 +39,10 @@ import Data.Text
 import qualified Kore.Attribute.Constructor as Attribute.Constructor
     ( Constructor (..)
     )
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , freeVariables
+    )
 import qualified Kore.Attribute.Symbol as Attribute
     ( Symbol
     )
@@ -111,7 +115,6 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
     ( asConcrete
-    , freeVariables
     )
 import Kore.Sort
     ( Sort
@@ -876,7 +879,7 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
     let variableKeys :: [TermLike Variable]
         variableKeys =
             filter
-                (not . null . TermLike.freeVariables)
+                (not . null . freeVariables')
                 (catMaybes (Set.toList mixedKeys))
     maybeVariablePairs <- mapM variablePair variableKeys
     let variablePairs :: [Domain.Element normalized (TermLike Variable)]
@@ -894,6 +897,8 @@ acGenerator mapSort keySort valueGenerator childGenerator = do
                 }
             )
   where
+    freeVariables' ::  TermLike Variable -> FreeVariables Variable
+    freeVariables' = freeVariables
     variablePair
         :: TermLike Variable
         -> Gen (Maybe (Domain.Element normalized (TermLike Variable)))

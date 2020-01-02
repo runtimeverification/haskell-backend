@@ -49,13 +49,13 @@ import Kore.Internal.TermLike
     , mkApplySymbol
     , mkElemVar
     )
-import Kore.Step.Rule
+import Kore.Step.Rule.Expand
+import Kore.Step.RulePattern
     ( OnePathRule (OnePathRule)
     , RHS (..)
     , RulePattern (RulePattern)
     )
-import qualified Kore.Step.Rule as Rule.DoNotUse
-import Kore.Step.Rule.Expand
+import qualified Kore.Step.RulePattern as Rule.DoNotUse
 import Kore.Syntax.ElementVariable
     ( ElementVariable (ElementVariable)
     )

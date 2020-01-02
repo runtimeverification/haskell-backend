@@ -26,7 +26,6 @@ module Kore.Unification.Substitution
     , variables
     , unsafeWrap
     , Kore.Unification.Substitution.filter
-    , Kore.Unification.Substitution.freeVariables
     , partition
     , reverseIfRhsIsVar
     , Normalization (..)
@@ -449,22 +448,14 @@ assertNoneAreFreeVarsInRhs lhsVariables =
         commonVars =
             Set.intersection lhsVariables
             $ getFreeVariables
-            $ TermLike.freeVariables patt
+            $ freeVariables patt
 
-{- | Return the free variables of the 'Substitution'.
-
-In a substitution of the form @variable = term@
-the free variables are @variable@ and all the free variables of @term@.
-
- -}
-freeVariables
-    :: Ord variable
-    => Substitution variable
-    -> FreeVariables variable
-freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
+instance Ord variable => HasFreeVariables (Substitution variable) variable
   where
-    freeVariablesWorker (x, t) =
-        freeVariable x <> TermLike.freeVariables t
+    freeVariables = Foldable.foldMap freeVariablesWorker . unwrap
+      where
+        freeVariablesWorker (x, t) =
+            freeVariable x <> freeVariables t
 
 -- | The left-hand side variables of the 'Substitution'.
 variables
