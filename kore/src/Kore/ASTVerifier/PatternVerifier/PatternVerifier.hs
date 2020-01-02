@@ -41,7 +41,7 @@ import qualified Control.Monad.Trans.Class as Trans
 import Control.Monad.Trans.Maybe
 import qualified Data.Foldable as Foldable
 import qualified Data.Function as Function
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Set
     ( Set
     )

@@ -9,7 +9,7 @@ import Control.Monad.Trans
 import Control.Monad.Trans.Reader
     ( runReaderT
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Semigroup
     ( (<>)
     )
