@@ -33,15 +33,9 @@ ln -s $TOP/.build/k deps/k/k-distribution/target/release
 
 make build-haskell -B
 
-# Small tests
-env GHCRTS='-M512M' \
-  make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell \
-    test-interactive-search \
-    tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.run-interactive
-
-# Medium tests
-env GHCRTS='-M1G' \
-  make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell \
-    tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.run-interactive \
-    tests/interactive/sumTo10.evm.run-interactive \
-    tests/specs/examples/sum-to-n-spec.k.prove
+make -j8 TEST_CONCRETE_BACKEND=haskell TEST_SYMBOLIC_BACKEND=haskell \
+  test-interactive-search \
+  tests/ethereum-tests/VMTests/vmIOandFlowOperations/pop1.json.run-interactive \
+  tests/ethereum-tests/VMTests/vmArithmeticTest/add0.json.run-interactive \
+  tests/interactive/sumTo10.evm.run-interactive \
+  tests/specs/examples/sum-to-n-spec.k.prove
