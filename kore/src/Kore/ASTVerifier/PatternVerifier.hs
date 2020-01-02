@@ -40,7 +40,10 @@ import Kore.AST.Error
 import Kore.ASTVerifier.Error
 import Kore.ASTVerifier.PatternVerifier.PatternVerifier
 import Kore.ASTVerifier.SortVerifier
-import qualified Kore.Attribute.Pattern as Attribute
+import Kore.Attribute.Pattern.FreeVariables
+    ( FreeVariables
+    , freeVariables
+    )
 import qualified Kore.Attribute.Sort as Attribute.Sort
 import qualified Kore.Attribute.Sort.HasDomainValues as Attribute.HasDomainValues
 import Kore.Attribute.Synthetic
@@ -489,8 +492,8 @@ verifyDomainValue domain = do
     verifyPatternSort patternSort
     verifySortHasDomainValues patternSort
     verified <- Internal.DomainValueF <$> sequence domain
-    let freeVariables' =
-            foldMap Attribute.freeVariables
+    let freeVariables' :: FreeVariables Variable =
+            foldMap freeVariables
                 (Internal.extractAttributes <$> verified)
     Monad.unless (null freeVariables')
         (koreFail "Domain value must not contain free variables.")

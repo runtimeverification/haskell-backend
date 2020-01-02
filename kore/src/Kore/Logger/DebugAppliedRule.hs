@@ -5,8 +5,7 @@ License     : NCSA
 -}
 
 module Kore.Logger.DebugAppliedRule
-    ( UnifiedRule
-    , DebugAppliedRule
+    ( DebugAppliedRule
     , debugAppliedRule
     , DebugAppliedRuleOptions
     , parseDebugAppliedRuleOptions
@@ -46,10 +45,11 @@ import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
     )
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
-import Kore.Step.Rule
-    ( RulePattern
+import Kore.Step.EqualityPattern
+    ( EqualityPattern
     )
-import qualified Kore.Step.Rule as Rule
+import qualified Kore.Step.EqualityPattern as Equality
+import qualified Kore.Step.Step as Equality
 import Kore.Syntax.Id
     ( Id
     )
@@ -61,7 +61,7 @@ The rule's 'RulePattern.requires' clause is combined with the unification
 solution and the renamed rule is wrapped with the combined condition.
 
  -}
-type UnifiedRule variable = Conditional variable (RulePattern variable)
+type UnifiedEquality variable = Conditional variable (EqualityPattern variable)
 
 {- | A log 'Entry' when a rule is applied.
 
@@ -70,7 +70,7 @@ We will log the applied rule and its unification or matching condition.
  -}
 newtype DebugAppliedRule =
     DebugAppliedRule
-    { appliedRule :: UnifiedRule Variable
+    { appliedRule :: UnifiedEquality Variable
     }
     deriving (Eq, Typeable)
 
@@ -100,11 +100,11 @@ instance Pretty DebugAppliedRule where
 debugAppliedRule
     :: MonadLog log
     => InternalVariable variable
-    => UnifiedRule variable
+    => UnifiedEquality variable
     -> log ()
 debugAppliedRule rule =
     logM . DebugAppliedRule
-    $ Conditional.mapVariables Rule.mapVariables toVariable rule
+    $ Conditional.mapVariables Equality.mapRuleVariables toVariable rule
 
 {- | Options (from the command-line) specifying when to log specific rules.
 
@@ -146,24 +146,27 @@ filterDebugAppliedRule
     :: DebugAppliedRuleOptions
     -> SomeEntry
     -> Bool
-filterDebugAppliedRule debugAppliedRuleOptions entry =
-    case matchDebugAppliedRule entry of
-        Just DebugAppliedRule { appliedRule } ->
-            isSelectedRule
-              where
-                isSelectedRule =
-                    maybe False (`Set.member` debugAppliedRules) appliedRuleId
-                appliedRuleId :: Maybe Id
-                appliedRuleId = do
-                    axiomId <- matchAppliedRuleId appliedRule
-                    case axiomId of
-                        Axiom.Identifier.Application ident -> pure ident
-                        _ -> empty
-        _ -> False
-  where
-    DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
-    matchAppliedRuleId = matchAxiomIdentifier . Rule.left . Conditional.term
+filterDebugAppliedRule debugAppliedRuleOptions entry
+  | Just DebugAppliedRule { appliedRule } <- matchDebugAppliedEquality entry
+    = isSelectedRule debugAppliedRuleOptions appliedRule
+  | otherwise = False
 
-matchDebugAppliedRule :: SomeEntry -> Maybe DebugAppliedRule
-matchDebugAppliedRule entry =
+isSelectedRule
+    :: DebugAppliedRuleOptions
+    -> UnifiedEquality Variable
+    -> Bool
+isSelectedRule debugAppliedRuleOptions =
+    maybe False (`Set.member` debugAppliedRules) . appliedRuleId
+  where
+    matchAppliedRuleId =
+        matchAxiomIdentifier . Equality.left . Conditional.term
+    appliedRuleId appliedRule = do
+        axiomId <- matchAppliedRuleId appliedRule
+        case axiomId of
+            Axiom.Identifier.Application ident -> pure ident
+            _ -> empty
+    DebugAppliedRuleOptions { debugAppliedRules } = debugAppliedRuleOptions
+
+matchDebugAppliedEquality :: SomeEntry -> Maybe DebugAppliedRule
+matchDebugAppliedEquality entry =
     fromEntry entry

@@ -5,7 +5,8 @@ License     : NCSA
 -}
 
 module Kore.Logger.WarnFunctionWithoutEvaluators
-    ( warnFunctionWithoutEvaluators
+    ( WarnFunctionWithoutEvaluators (..)
+    , warnFunctionWithoutEvaluators
     ) where
 
 import Data.Text.Prettyprint.Doc

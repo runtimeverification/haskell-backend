@@ -102,12 +102,12 @@ import Kore.Internal.TermLike
 import Kore.Sort
     ( Sort
     )
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule (RewriteRule)
     , RulePattern (RulePattern)
     , injectTermIntoRHS
     )
-import Kore.Step.Rule as RulePattern
+import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
 import Kore.Step.Simplification.AndTerms

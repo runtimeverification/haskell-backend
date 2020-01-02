@@ -163,8 +163,8 @@ matchIncremental termLike1 termLike2 =
             , targets = free1
             , avoiding = free1 <> free2
             }
-    free1 = (getFreeVariables . TermLike.freeVariables) termLike1
-    free2 = (getFreeVariables . TermLike.freeVariables) termLike2
+    free1 = (getFreeVariables . freeVariables) termLike1
+    free2 = (getFreeVariables . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
     done :: MatcherT variable unifier (Condition variable)
@@ -581,7 +581,7 @@ escapeCheck
     => TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
 escapeCheck termLike = do
-    let free = getFreeVariables (TermLike.freeVariables termLike)
+    let free = getFreeVariables (freeVariables termLike)
     MatcherState { bound } <- Monad.State.get
     Monad.guard (Set.disjoint bound free)
 

@@ -117,11 +117,11 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule (..)
     , RulePattern (..)
     )
-import Kore.Step.Rule as Rule
+import Kore.Step.RulePattern as Rule
 import Kore.Step.Simplification.Data
     ( MonadSimplify
     )

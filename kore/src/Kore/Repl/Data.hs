@@ -49,6 +49,9 @@ import qualified Data.Graph.Inductive.Graph as Graph
 import Data.Graph.Inductive.PatriciaTree
     ( Gr
     )
+import Data.List
+    ( intercalate
+    )
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
@@ -68,6 +71,7 @@ import Data.Set
     ( Set
     )
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified GHC.Generics as GHC
 import Numeric.Natural
@@ -79,6 +83,7 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Logger.Output as Logger
+import qualified Kore.Logger.Registry as Logger
 import Kore.Profiler.Data
     ( MonadProfiler
     )
@@ -328,7 +333,7 @@ helpText =
     \<alias>                                  runs an existing alias\n\
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
-    \log <severity> \"[\"<entry>\"]\" <type>  configures the logging output\n\
+    \log <severity> \"[\"<entry>\"]\" <type>      configures the logging output\n\
     \                                         <severity> can be debug, info,\
                                               \ warning, error, or critical;\
                                               \ is optional and defaults to warning\n\
@@ -340,9 +345,10 @@ helpText =
                                               \ '[]' will log all entries with <severity>;\n\
     \                                         '[entry1, entry2]' will only log entries of\
                                               \ types entry1 or entry2 as well as entries of\
-                                              \ severity <severity>\n\
+                                              \ severity <severity>.\n\
+    \                                         See available entry types below.\n\
     \                                         <type> can be 'stderr' or\n\
-                                              \'file filename'\n\
+    \                                         'file filename'\n\
     \exit                                     exits the repl\
     \\n\n\
     \Available modifiers:\n\
@@ -371,7 +377,9 @@ helpText =
     \ indexing syntax for the try and tryf commands shouldn't be added\n\
     \ (e.g. a5 as a rule name).\n\
     \Names added via b) need to be prefixed with the module name followed by\n\
-    \ dot, e.g. IMP.myName"
+    \ dot, e.g. IMP.myName\n\
+    \Available entry types:\n    "
+    <> intercalate "\n    " (fmap Text.unpack Logger.getEntryTypesAsText)
 
 -- | Determines whether the command needs to be stored or not. Commands that
 -- affect the outcome of the proof are stored.

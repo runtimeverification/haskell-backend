@@ -18,7 +18,6 @@ module Kore.Internal.Condition
     , Conditional.fromSingleSubstitution
     , Conditional.fromSubstitution
     , toPredicate
-    , freeVariables
     , hasFreeVariable
     , coerceSort
     , conditionSort
@@ -32,7 +31,7 @@ module Kore.Internal.Condition
 import qualified GHC.Stack as GHC
 
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
+    ( freeVariables
     , isFreeVariable
     )
 import Kore.Internal.Conditional
@@ -103,17 +102,6 @@ topCondition = top
 
 bottomCondition :: InternalVariable variable => Condition variable
 bottomCondition = bottom
-
-{- | Extract the set of free variables from a predicate and substitution.
-
-    See also: 'Predicate.freeVariables'.
--}
-
-freeVariables
-    :: InternalVariable variable
-    => Condition variable
-    -> FreeVariables variable
-freeVariables = Conditional.freeVariables (const mempty)
 
 hasFreeVariable
     :: InternalVariable variable

@@ -25,9 +25,9 @@ import qualified Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
-import Kore.Step.Rule
+import Kore.Step.EqualityPattern
     ( EqualityRule (..)
-    , rulePattern
+    , equalityPattern
     )
 import qualified Kore.Step.Simplification.Condition as Condition
 import Kore.Step.Simplification.Data
@@ -411,7 +411,7 @@ normalizeExcept predicated =
         Map.fromList
             [   ( Axiom.Identifier.Application Mock.functional10Id
                 , EvaluationStrategy.definitionEvaluation
-                    [ EqualityRule $ rulePattern
+                    [ EqualityRule $ equalityPattern
                         (Mock.functional10 (mkElemVar Mock.x))
                         (mkElemVar Mock.x)
                     ]

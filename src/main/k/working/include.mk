@@ -29,7 +29,7 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $< | 	diff -u $<.golden -
 
 %.kmerge: %.merge $(DEFINITION) $(KORE_EXEC)
-	$(KORE_EXEC) --definition $(DEFINITION) --merge-rules $<
+	$(KORE_EXEC) $(DEFINITION) --merge-rules $<
 
 %.search.final.output: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@ --search-final
@@ -78,6 +78,25 @@ $(DEFINITION) : $(DEFINITION_NAME).k
 
 %.knotprove.output: %.k $(DEFINITION) $(KORE_EXEC)
 	$(KPROVE) $(KPROVE_OPTS) -d . -m VERIFICATION $< --output-file $@ || exit 0
+
+%.save-chain-1.output : %-1.k $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) \
+		--haskell-backend-command "$(KORE_EXEC) \
+			$(KORE_EXEC_OPTS) \
+			--save-proofs $@" \
+		-d . \
+		-m VERIFICATION \
+		$< \
+	|| true
+
+%.save-chain : %-2.k %.save-chain-1.output $(DEFINITION) $(KORE_EXEC)
+	$(KPROVE) \
+		--haskell-backend-command "$(KORE_EXEC) \
+			$(KORE_EXEC_OPTS) \
+			--save-proofs $*.save-chain-1.output" \
+		-d . \
+		-m VERIFICATION \
+		$< \
 
 %.test: %.output
 	diff -u $<.golden $<
