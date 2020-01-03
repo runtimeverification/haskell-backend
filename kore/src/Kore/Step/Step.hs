@@ -217,8 +217,8 @@ unifyRule
         requires' = Condition.fromPredicate ruleRequires
     unification' <-
         simplifyPredicate
-            topCondition
-            (Just initialCondition)
+            (topCondition <> initialCondition)
+            Nothing
             (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
 

@@ -857,10 +857,7 @@ test_applyRewriteRulesParallel =
                             makeAndPredicate (makeCeilPredicate_ Mock.cf)
                             $ makeNotPredicate
                             $ makeAndPredicate
-                                (makeAndPredicate
-                                    (makeCeilPredicate_ Mock.cf)
-                                    (makeCeilPredicate_ Mock.cg)
-                                )
+                                (makeCeilPredicate_ Mock.cg)
                                 (makeEqualsPredicate_ (mkElemVar Mock.x) Mock.a)
                         , substitution = mempty
                         }
