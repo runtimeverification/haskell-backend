@@ -70,7 +70,7 @@ import qualified Control.Monad.Trans as Trans
 import qualified Data.Default as Default
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Sequence as Seq

@@ -8,7 +8,7 @@ import Test.Tasty.HUnit
 import Data.Default
     ( def
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom

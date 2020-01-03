@@ -5,7 +5,7 @@ module Test.Kore.Step.Simplification.Application
 import Test.Tasty
 
 import qualified Data.List as List
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 import Data.Sup
 import Kore.Internal.Condition as Condition

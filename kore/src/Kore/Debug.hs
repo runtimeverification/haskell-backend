@@ -65,10 +65,10 @@ import Control.Monad.Trans.Maybe
 import Data.List
     ( intercalate
     )
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Debug.Trace
 
 import Debug

@@ -80,10 +80,6 @@ pipeline {
         sh '''
           ./scripts/integration-kevm.sh
         '''
-        archiveArtifacts 'kevm-add0-stats.json'
-        archiveArtifacts 'kevm-pop1-stats.json'
-        archiveArtifacts 'kevm-sum-to-10-stats.json'
-        archiveArtifacts 'kevm-sum-to-n-spec-stats.json'
       }
     }
     stage('Integration: KWASM') {
@@ -94,10 +90,6 @@ pipeline {
         sh '''
           ./scripts/integration-kwasm.sh
         '''
-        archiveArtifacts 'kwasm-simple-arithmetic-spec-stats.json'
-        archiveArtifacts 'kwasm-loops-spec-stats.json'
-        archiveArtifacts 'kwasm-memory-symbolic-type-spec-stats.json'
-        archiveArtifacts 'kwasm-locals-spec-stats.json'
       }
     }
     stage('Update K Submodules') {

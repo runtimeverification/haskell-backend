@@ -7,7 +7,7 @@ module Test.Kore.Step.SMT.Representation.Helpers
 
 import Test.Tasty
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom

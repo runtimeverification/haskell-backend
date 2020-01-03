@@ -4,7 +4,7 @@ module Test.Kore.Step.SMT.Representation.All
 
 import Test.Tasty
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )

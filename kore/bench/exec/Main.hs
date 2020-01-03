@@ -9,7 +9,7 @@ import Data.Limit
     ( Limit
     )
 import qualified Data.Limit as Limit
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     )
