@@ -46,6 +46,12 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( addAssumedTrue
+    )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
@@ -89,7 +95,7 @@ evaluateApplication
     .  ( SimplifierVariable variable
        , MonadSimplify simplifier
        )
-    => Condition variable
+    => SideCondition variable
     -- ^ The predicate from the configuration
     -> Condition variable
     -- ^ Aggregated children predicate and substitution.
@@ -97,7 +103,7 @@ evaluateApplication
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplication
-    configurationCondition
+    sideCondition
     childrenCondition
     (evaluateSortInjection -> application)
   = finishT $ do
@@ -107,7 +113,7 @@ evaluateApplication
             childrenCondition
             termLike
             unevaluated
-            configurationCondition
+            sideCondition
         & maybeT (return unevaluated) return
         & Trans.lift
     Foldable.for_ canMemoize (recordOrPattern results)
@@ -132,7 +138,7 @@ evaluateApplication
 
     canMemoize
       | Symbol.isMemo symbol
-      , (isTop childrenCondition && isTop configurationCondition)
+      , (isTop childrenCondition && isTop sideCondition)
         || all TermLike.isConstructorLike application
       = traverse asConcrete application
       | otherwise
@@ -171,7 +177,7 @@ evaluatePattern
     :: forall variable simplifier
     .  SimplifierVariable variable
     => MonadSimplify simplifier
-    => Condition variable
+    => SideCondition variable
     -- ^ The predicate from the configuration
     -> Condition variable
     -- ^ Aggregated children predicate and substitution.
@@ -181,7 +187,7 @@ evaluatePattern
     -- ^ The default value
     -> simplifier (OrPattern variable)
 evaluatePattern
-    configurationCondition
+    sideCondition
     childrenCondition
     patt
     defaultValue
@@ -190,7 +196,7 @@ evaluatePattern
         childrenCondition
         patt
         defaultValue
-        configurationCondition
+        sideCondition
     & maybeT (return defaultValue) return
 
 {-| Evaluates axioms on patterns.
@@ -207,21 +213,23 @@ maybeEvaluatePattern
     -- ^ The pattern to be evaluated
     -> OrPattern variable
     -- ^ The default value
-    -> Condition variable
+    -> SideCondition variable
     -> MaybeT simplifier (OrPattern variable)
 maybeEvaluatePattern
     childrenCondition
     termLike
     defaultValue
-    configurationCondition
+    sideCondition
   = do
     BuiltinAndAxiomSimplifier evaluator <- lookupAxiomSimplifier termLike
     Trans.lift . tracing $ do
         merged <- bracketAxiomEvaluationLog $ do
-            let conditions = configurationCondition <> childrenCondition
+            let sideConditions =
+                    sideCondition
+                    `SideCondition.addAssumedTrue` childrenCondition
             result <-
                 Profile.axiomEvaluation identifier
-                $ evaluator termLike conditions
+                $ evaluator termLike sideConditions
             flattened <- case result of
                 AttemptedAxiom.NotApplicable -> do
                     DebugAxiomEvaluation.notEvaluated
@@ -252,7 +260,7 @@ maybeEvaluatePattern
                             )
             Profile.mergeSubstitutions identifier
                 $ mergeWithConditionAndSubstitution
-                    configurationCondition
+                    sideCondition
                     childrenCondition
                     flattened
         case merged of
@@ -295,7 +303,7 @@ maybeEvaluatePattern
       | toSimplify == unchangedPatt =
         return (OrPattern.fromPattern unchangedPatt)
       | otherwise =
-        reevaluateFunctions configurationCondition toSimplify
+        reevaluateFunctions sideCondition toSimplify
 
 evaluateSortInjection
     :: InternalVariable variable
@@ -355,15 +363,15 @@ was evaluated.
 reevaluateFunctions
     :: SimplifierVariable variable
     => MonadSimplify simplifier
-    => Condition variable
+    => SideCondition variable
     -> Pattern variable
     -- ^ Function evaluation result.
     -> simplifier (OrPattern variable)
-reevaluateFunctions predicate rewriting = do
+reevaluateFunctions sideCondition rewriting = do
     let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
     orResults <- BranchT.gather $ do
-        simplifiedTerm <- simplifyConditionalTerm predicate rewritingTerm
-        simplifyCondition predicate
+        simplifiedTerm <- simplifyConditionalTerm sideCondition rewritingTerm
+        simplifyCondition sideCondition
             $ Pattern.andCondition simplifiedTerm rewritingCondition
     return (OrPattern.fromPatterns orResults)
 
@@ -372,7 +380,7 @@ reevaluateFunctions predicate rewriting = do
 mergeWithConditionAndSubstitution
     :: SimplifierVariable variable
     => MonadSimplify simplifier
-    => Condition variable
+    => SideCondition variable
     -- ^ Top level condition.
     -> Condition variable
     -- ^ Condition and substitution to add.

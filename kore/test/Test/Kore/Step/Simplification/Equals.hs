@@ -39,6 +39,9 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Equals
     ( makeEvaluate
@@ -953,7 +956,7 @@ evaluateOr
     :: Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluateOr =
-    runSimplifier mockEnv . simplify Condition.top
+    runSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env
 
@@ -963,7 +966,7 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate first second =
     runSimplifier mockEnv
-    $ makeEvaluate first second Condition.top
+    $ makeEvaluate first second SideCondition.top
   where
     mockEnv = Mock.env
 
@@ -973,6 +976,6 @@ evaluateTermsGeneric
     -> IO (OrCondition Variable)
 evaluateTermsGeneric first second =
     runSimplifier mockEnv
-    $ makeEvaluateTermsToPredicate first second Condition.top
+    $ makeEvaluateTermsToPredicate first second SideCondition.top
   where
     mockEnv = Mock.env

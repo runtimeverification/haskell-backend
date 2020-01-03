@@ -78,6 +78,13 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( addAssumedTrue
+    , topTODO
+    )
 import Kore.Internal.TermLike
     ( And (..)
     , TermLike
@@ -156,7 +163,7 @@ newtype MakeAnd monad =
             .  SubstitutionVariable variable
             => TermLike variable
             -> TermLike variable
-            -> Condition variable
+            -> SideCondition variable
             -> monad (Pattern variable)
             -- ^ Construct a simplified 'And' pattern of two 'TermLike's under
             -- the given 'Predicate.Predicate'.
@@ -166,10 +173,10 @@ simplifierMakeAnd :: MonadSimplify simplifier => MakeAnd (BranchT simplifier)
 simplifierMakeAnd =
     MakeAnd { makeAnd }
   where
-    makeAnd termLike1 termLike2 condition = do
+    makeAnd termLike1 termLike2 sideCondition = do
         simplified <-
             mkAnd termLike1 termLike2
-            & simplifyConditionalTerm condition
+            & simplifyConditionalTerm sideCondition
         TopBottom.guardAgainstBottom simplified
         return simplified
 
@@ -193,11 +200,14 @@ simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
             AndF And { andFirst, andSecond } ->
                 foldM simplifyAnds' intermediate [andFirst, andSecond]
             _ -> do
+                let sideCondition =
+                        SideCondition.topTODO
+                        `SideCondition.addAssumedTrue` intermediateCondition
                 simplified <-
                     makeAnd
                         intermediateTerm
                         termLike
-                        intermediateCondition
+                        sideCondition
                 return (Pattern.andCondition simplified intermediateCondition)
       where
         (intermediateTerm, intermediateCondition) =

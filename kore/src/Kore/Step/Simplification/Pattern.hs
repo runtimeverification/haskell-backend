@@ -9,12 +9,6 @@ module Kore.Step.Simplification.Pattern
     ) where
 
 import Branch
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
-    ( topTODO
-    )
 import qualified Kore.Internal.Conditional as Conditional
 import Kore.Internal.OrPattern
     ( OrPattern
@@ -23,6 +17,13 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( addAssumedTrue
+    , topTODO
     )
 import Kore.Internal.TermLike
     ( pattern Exists_
@@ -44,7 +45,7 @@ simplifyTopConfiguration
     => Pattern variable
     -> simplifier (OrPattern variable)
 simplifyTopConfiguration patt = do
-    simplified <- simplify Condition.topTODO patt
+    simplified <- simplify SideCondition.topTODO patt
     return (removeTopExists <$> simplified)
   where
     removeTopExists :: Pattern variable -> Pattern variable
@@ -57,14 +58,16 @@ simplifyTopConfiguration patt = do
 simplify
     :: SimplifierVariable variable
     => MonadSimplify simplifier
-    => Condition variable
+    => SideCondition variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
 simplify sideCondition pattern' = do
-    orSimplifiedTerms <- simplifyConditionalTermToOr predicate term
+    -- TODO(virgil): simplify the predicate first.
+    orSimplifiedTerms <- simplifyConditionalTermToOr termSideCondition term
     fmap OrPattern.fromPatterns . Branch.gather $ do
         simplifiedTerm <- Branch.scatter orSimplifiedTerms
         simplifyCondition sideCondition
-            (Conditional.andCondition simplifiedTerm predicate)
+            (Conditional.andCondition simplifiedTerm condition)
   where
-    (term, predicate) = Conditional.splitTerm pattern'
+    (term, condition) = Conditional.splitTerm pattern'
+    termSideCondition = sideCondition `SideCondition.addAssumedTrue` condition
