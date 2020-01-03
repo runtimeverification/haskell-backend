@@ -4,10 +4,8 @@ License     : NCSA
 -}
 
 module Kore.Logger.DebugProofState
-    ( DebugProofState
-    , debugProofState
-    , debugProofStateBefore
-    , debugProofStateAfter
+    ( DebugProofState (..)
+    , TransitionState (..)
     ) where
 
 import Data.Text.Prettyprint.Doc
@@ -29,16 +27,13 @@ import Kore.Strategies.ProofState
 
 data DebugProofState =
     DebugProofState
-        { configuration :: !(Maybe (ProofState (RulePattern Variable)))
-        , transition :: !(Maybe (Prim (RulePattern Variable)))
-        , result :: !(Maybe (ProofState (RulePattern Variable)))
-        , transitionState :: TransitionState
+        { configuration :: !TransitionState
+        , transition :: !(Prim (RulePattern Variable))
         }
 
 data TransitionState
-    = Before
-    | After
-    | Both
+    = Before !(ProofState (RulePattern Variable))
+    | After  !(ProofState (RulePattern Variable))
     deriving Eq
 
 instance Pretty DebugProofState where
@@ -46,78 +41,25 @@ instance Pretty DebugProofState where
         DebugProofState
             { configuration
             , transition
-            , result
-            , transitionState
             }
       =
-        case transitionState of
-            Before ->
+        case configuration of
+            Before config ->
                 Pretty.vsep
-                $ beforeText <> ["...Applying transition..."]
-            After  ->
-                Pretty.vsep afterText
-            Both   ->
-                Pretty.vsep
-                $ beforeText <> afterText
+                $ beforeText config <> ["...Applying transition..."]
+            After dest ->
+                Pretty.vsep (afterText dest)
       where
-        beforeText =
+        beforeText config =
             [ "Reached proof state with the following configuration:"
-            , Pretty.indent 4 (pretty configuration)
+            , Pretty.indent 4 (pretty config)
             ]
-        afterText =
+        afterText dest =
             [ "On which the following transition applies:"
             , Pretty.indent 4 (pretty transition)
             , "Resulting in:"
-            , Pretty.indent 4 (pretty result)
+            , Pretty.indent 4 (pretty dest)
             ]
 
 instance Entry DebugProofState where
     entrySeverity _ = Debug
-
-debugProofStateBefore
-    :: MonadLog log
-    => ProofState (RulePattern Variable)
-    -> log ()
-debugProofStateBefore config =
-    logTransitionState Before (Just config) Nothing Nothing
-
-debugProofStateAfter
-    :: MonadLog log
-    => Prim (RulePattern Variable)
-    -> Maybe (ProofState (RulePattern Variable))
-    -> log ()
-debugProofStateAfter trans result =
-    logTransitionState After Nothing (Just trans) result
-
-debugProofState
-    :: MonadLog log
-    => ProofState (RulePattern Variable)
-    -> Prim (RulePattern Variable)
-    -> Maybe (ProofState (RulePattern Variable))
-    -> log ()
-debugProofState config trans result =
-    logTransitionState
-        Both
-        (Just config)
-        (Just trans)
-        result
-
-logTransitionState
-    :: MonadLog log
-    => TransitionState
-    -> Maybe (ProofState (RulePattern Variable))
-    -> Maybe (Prim (RulePattern Variable))
-    -> Maybe (ProofState (RulePattern Variable))
-    -> log ()
-logTransitionState
-    transitionState
-    configuration
-    transition
-    result
-  =
-    logM DebugProofState
-        { configuration
-        , transition
-        , result
-        , transitionState
-        }
