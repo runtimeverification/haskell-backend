@@ -7,11 +7,14 @@ module Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     ) where
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    , getFreeElementVariables
+    )
 import Kore.Internal.Pattern
     ( Conditional (..)
     , Pattern
@@ -78,7 +81,7 @@ checkImplicationIsTop lhs rhs =
              ]
       where
         lhsFreeVariables = Set.fromList $
-            FreeVariables.getFreeElementVariables (Pattern.freeVariables lhs)
+            getFreeElementVariables (freeVariables lhs)
         lhsMLPatt = Pattern.toTermLike lhs
 
 stripForallQuantifiers

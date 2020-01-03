@@ -51,7 +51,7 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( OnePathRule (..)
     , RHS (..)
     , ReachabilityRule (..)
@@ -60,7 +60,7 @@ import Kore.Step.Rule
     , injectTermIntoRHS
     , rulePattern
     )
-import Kore.Step.Rule as RulePattern
+import Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
 import Kore.Step.SMT.Lemma

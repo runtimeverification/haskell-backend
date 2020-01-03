@@ -36,7 +36,7 @@ import Control.Monad.Catch
     , SomeException
     , handle
     )
-import qualified Control.Monad.Trans as Monad.Trans
+import qualified Control.Monad.Trans as Trans
 import Data.Coerce
     ( Coercible
     , coerce
@@ -59,6 +59,9 @@ import qualified Generics.SOP as SOP
 import GHC.Generics as GHC
 
 import qualified Kore.Attribute.Axiom as Attribute.Axiom
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    )
 import qualified Kore.Attribute.Pattern.FreeVariables as Attribute.FreeVariables
 import qualified Kore.Attribute.Trusted as Attribute.Trusted
 import Kore.Debug
@@ -91,19 +94,21 @@ import qualified Kore.Profiler.Profile as Profile
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.RewriteStep as Step
 import Kore.Step.Rule
+    ( QualifiedAxiomPattern (..)
+    , fromSentenceAxiom
+    )
+import Kore.Step.RulePattern
     ( AllPathRule (..)
     , FromRulePattern (..)
     , OnePathRule (..)
-    , QualifiedAxiomPattern (..)
     , RHS
     , ReachabilityRule (..)
     , RewriteRule (..)
     , RulePattern (..)
     , ToRulePattern (..)
-    , fromSentenceAxiom
     , topExistsToImplicitForall
     )
-import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.RulePattern as RulePattern
     ( RulePattern (..)
     )
 import Kore.Step.Simplification.Data
@@ -118,6 +123,7 @@ import Kore.Step.Simplification.Simplify
     ( simplifyTerm
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+import qualified Kore.Step.Step as Step
 import Kore.Step.Strategy
     ( Strategy
     )
@@ -143,7 +149,8 @@ import Kore.Unparser
     , unparse
     )
 import Kore.Variables.UnifiedVariable
-    ( extractElementVariable
+    ( UnifiedVariable
+    , extractElementVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
@@ -769,7 +776,8 @@ removeDestinationWorker
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
+removeDestinationWorker stateConstructor goal =
+    withConfiguration goal $ Trans.lift $ do
         removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal
@@ -783,7 +791,7 @@ removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
                     else return Proven
   where
     configuration = getConfiguration goal
-    configFreeVars = Pattern.freeVariables configuration
+    configFreeVars = freeVariables configuration
 
     RulePattern { rhs } = toRulePattern goal
 
@@ -796,9 +804,7 @@ simplify
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = withConfiguration goal $ do
-    configs <-
-        Monad.Trans.lift
-        $ simplifyAndRemoveTopExists configuration
+    configs <- Trans.lift $ simplifyAndRemoveTopExists configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
         then pure $ configurationDestinationToRule goal Pattern.bottom destination
@@ -847,7 +853,7 @@ derivePar
 derivePar rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Monad.Trans.lift
+        Trans.lift
         . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesParallel
             (Step.UnificationProcedure Unification.unificationProcedure)
@@ -902,7 +908,7 @@ deriveSeq
 deriveSeq rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Monad.Trans.lift
+        Trans.lift
         . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesSequence
             (Step.UnificationProcedure Unification.unificationProcedure)
@@ -948,7 +954,8 @@ withConfiguration goal = handle (throw . WithConfiguration configuration)
 {- | The predicate to remove the destination from the present configuration.
  -}
 removalPredicate
-    :: SimplifierVariable variable
+    :: forall variable m
+    .  SimplifierVariable variable
     => MonadSimplify m
     => Pattern variable
     -- ^ Destination
@@ -961,36 +968,36 @@ removalPredicate
   | isFunctionPattern configTerm
   , isFunctionPattern destTerm
   = do
+    -- TODO (thomas.tuegel): Use unification here, not simplification.
     unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
-    if OrPattern.isFalse unifiedConfigs
-        then return Predicate.makeTruePredicate_
-        else
-            case OrPattern.toPatterns unifiedConfigs of
-                [substPattern] -> do
-                    let extraElemVariables =
-                            getExtraElemVariables configuration substPattern
-                        remainderPattern =
-                            Pattern.fromCondition
-                            . Conditional.withoutTerm
-                            $ (const <$> destination <*> substPattern)
-                    evaluatedRemainder <-
-                        Exists.makeEvaluate extraElemVariables remainderPattern
-                    return
-                        . Predicate.makeNotPredicate
-                        . Condition.toPredicate
-                        . Conditional.withoutTerm
-                        . OrPattern.toPattern
-                        $ evaluatedRemainder
-                _ ->
-                    error . show . Pretty.vsep $
-                    [ "Unifying the terms of the configuration and the\
-                    \ destination has unexpectedly produced more than one\
-                    \ unification case."
-                    , Pretty.indent 2 "Unification cases:"
-                    ]
-                    <> fmap
-                        (Pretty.indent 4 . unparse)
-                        (Foldable.toList unifiedConfigs)
+    case OrPattern.toPatterns unifiedConfigs of
+        _ | OrPattern.isFalse unifiedConfigs ->
+            return Predicate.makeTruePredicate_
+        [substPattern] -> do
+            let extraElemVariables =
+                    getExtraElemVariables configuration substPattern
+                remainderPattern =
+                    Pattern.fromCondition
+                    . Conditional.withoutTerm
+                    $ (const <$> destination <*> substPattern)
+            evaluatedRemainder <-
+                Exists.makeEvaluate extraElemVariables remainderPattern
+            return
+                . Predicate.makeNotPredicate
+                . Condition.toPredicate
+                . Conditional.withoutTerm
+                . OrPattern.toPattern
+                $ evaluatedRemainder
+        _ ->
+            error . show . Pretty.vsep $
+            [ "Unifying the terms of the configuration and the\
+            \ destination has unexpectedly produced more than one\
+            \ unification case."
+            , Pretty.indent 2 "Unification cases:"
+            ]
+            <> fmap
+                (Pretty.indent 4 . unparse)
+                (Foldable.toList unifiedConfigs)
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
@@ -1015,12 +1022,13 @@ removalPredicate
                     "Cannot quantify non-element variables: "
                     : fmap (Pretty.indent 4 . unparse) extraNonElemVariables
             else remainderElementVariables config dest
+    configVariables :: Pattern variable -> Set.Set (UnifiedVariable variable)
     configVariables config =
         Attribute.FreeVariables.getFreeVariables
-        $ Pattern.freeVariables config
+        $ freeVariables config
     destVariables dest =
         Attribute.FreeVariables.getFreeVariables
-        $ Pattern.freeVariables dest
+        $ freeVariables dest
     remainderVariables config dest =
         Set.toList
         $ Set.difference

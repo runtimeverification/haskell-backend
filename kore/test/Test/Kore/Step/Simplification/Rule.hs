@@ -5,7 +5,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import Kore.Internal.TermLike
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RulePattern
     , rulePattern
     )

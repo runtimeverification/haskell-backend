@@ -31,7 +31,7 @@ import Data.Set
 import qualified Data.Set as Set
 
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
+    ( HasFreeVariables (..)
     )
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Attribute.Synthetic
@@ -74,20 +74,19 @@ substitute
         , Binding patternType
         , VariableType patternType ~ UnifiedVariable variable
         , Synthetic attribute patternBase
+        , HasFreeVariables patternType variable
         )
-    => (patternType -> FreeVariables variable)
-    -- ^ View into free variables of the pattern
-    -> Map (UnifiedVariable variable) patternType
+    => Map (UnifiedVariable variable) patternType
     -- ^ Substitution
     -> patternType
     -- ^ Original pattern
     -> patternType
-substitute viewFreeVariables =
+substitute =
     substituteWorker . Map.map Left
   where
     extractFreeVariables :: patternType -> Set (UnifiedVariable variable)
     extractFreeVariables =
-        FreeVariables.getFreeVariables . viewFreeVariables
+        FreeVariables.getFreeVariables . freeVariables
 
     -- | Insert an optional variable renaming into the substitution.
     renaming
@@ -168,15 +167,15 @@ substitute viewFreeVariables =
             _ :< termLikeHead = Recursive.project termLike
             termLikeHead' = substituteWorker subst' <$> termLikeHead
 
-        freeVariables = extractFreeVariables termLike
+        freeVars = extractFreeVariables termLike
 
         -- | The substitution applied to subterms, including only the free
         -- variables below the current node. Shadowed variables are
         -- automatically omitted.
-        subst' = Map.intersection subst (Map.fromSet id freeVariables)
+        subst' = Map.intersection subst (Map.fromSet id freeVars)
 
         -- | Free variables of the original pattern that are not targeted.
-        originalVariables = Set.difference freeVariables (Map.keysSet subst')
+        originalVariables = Set.difference freeVars (Map.keysSet subst')
 
         -- | Free variables of the resulting pattern.
         freeVariables' = Set.union originalVariables targetFreeVariables

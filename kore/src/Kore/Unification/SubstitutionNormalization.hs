@@ -268,7 +268,7 @@ getDependencies interesting var termLike =
         Var_ v | v == var -> Set.empty
         _ -> Set.intersection interesting freeVars
   where
-    freeVars = FreeVariables.getFreeVariables $ TermLike.freeVariables termLike
+    freeVars = FreeVariables.getFreeVariables $ freeVariables termLike
 
 {- | Calculate the dependencies of a substitution that have only
      non-simplifiable symbols above.

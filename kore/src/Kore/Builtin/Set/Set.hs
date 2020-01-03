@@ -26,7 +26,7 @@ module Kore.Builtin.Set.Set
     , list2setKey
     ) where
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.String
     ( IsString
     )

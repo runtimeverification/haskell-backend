@@ -10,11 +10,18 @@ module Kore.Strategies.Verification
     ( Claim
     , CommonProofState
     , StuckVerification (..)
+    , AllClaims (..)
+    , Axioms (..)
+    , ToProve (..)
+    , AlreadyProven (..)
     , verify
     , verifyClaimStep
     , toRulePattern
     ) where
 
+import Control.Error
+    ( partitionEithers
+    )
 import qualified Control.Monad as Monad
     ( foldM_
     )
@@ -30,6 +37,9 @@ import qualified Control.Monad.Trans as Monad.Trans
 import qualified Data.Foldable as Foldable
 import qualified Data.Graph.Inductive.Graph as Graph
 import qualified Data.Stream.Infinite as Stream
+import Data.Text
+    ( Text
+    )
 import Data.Typeable
     ( Typeable
     )
@@ -47,11 +57,11 @@ import Kore.Debug
 import Kore.Internal.Pattern
     ( Pattern
     )
-import Kore.Step.Rule
-    ( RHS
-    )
 import Kore.Step.Rule.Expand
 import Kore.Step.Rule.Simplify
+import Kore.Step.RulePattern
+    ( RHS
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Strategy
 import Kore.Step.Transition
@@ -119,6 +129,11 @@ instance (Debug patt, Debug claim) => Debug (StuckVerification patt claim)
 instance (Debug patt, Debug claim, Diff patt, Diff claim)
     => Diff (StuckVerification patt claim)
 
+newtype AllClaims claim = AllClaims {getAllClaims :: [claim]}
+newtype Axioms claim = Axioms {getAxioms :: [Rule claim]}
+newtype ToProve claim = ToProve {getToProve :: [(claim, Limit Natural)]}
+newtype AlreadyProven = AlreadyProven {getAlreadyProven :: [Text]}
+
 verify
     :: forall claim m
     .  Claim claim
@@ -128,14 +143,71 @@ verify
     => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
-    -> [claim]
-    -> [Rule claim]
-    -> [(claim, Limit Natural)]
+    -> AllClaims claim
+    -> Axioms claim
+    -> AlreadyProven
+    -> ToProve claim
     -- ^ List of claims, together with a maximum number of verification steps
     -- for each.
     -> ExceptT (StuckVerification (Pattern Variable) claim) m ()
-verify breadthLimit searchOrder claims axioms =
-    Monad.foldM_ verifyWorker []
+verify
+    breadthLimit
+    searchOrder
+    claims
+    axioms
+    (AlreadyProven alreadyProven)
+    (ToProve toProve)
+  =
+    withExceptT addStillProven
+    $ verifyHelper breadthLimit searchOrder claims axioms unproven
+  where
+    unproven :: ToProve claim
+    stillProven :: [claim]
+    (unproven, stillProven) =
+        (ToProve newToProve, newAlreadyProven)
+      where
+        (newToProve, newAlreadyProven) =
+            partitionEithers (map lookupEither toProve)
+        lookupEither
+            :: (claim, Limit Natural)
+            -> Either (claim, Limit Natural) claim
+        lookupEither claim@(rule, _) =
+            if unparseToText rule `elem` alreadyProven
+                then Right rule
+                else Left claim
+
+    addStillProven
+        :: StuckVerification (Pattern Variable) claim
+        -> StuckVerification (Pattern Variable) claim
+    addStillProven
+        StuckVerification { stuckDescription, provenClaims }
+      =
+        StuckVerification
+            { stuckDescription, provenClaims = stillProven ++ provenClaims }
+
+verifyHelper
+    :: forall claim m
+    .  Claim claim
+    => ProofState claim (Pattern Variable) ~ CommonProofState
+    => Show claim
+    => (MonadCatch m, MonadSimplify m)
+    => Show (Rule claim)
+    => Limit Natural
+    -> GraphSearchOrder
+    -> AllClaims claim
+    -> Axioms claim
+    -> ToProve claim
+    -- ^ List of claims, together with a maximum number of verification steps
+    -- for each.
+    -> ExceptT (StuckVerification (Pattern Variable) claim) m ()
+verifyHelper
+    breadthLimit
+    searchOrder
+    claims
+    axioms
+    (ToProve toProve)
+  =
+    Monad.foldM_ verifyWorker [] toProve
   where
     verifyWorker
         :: [claim]
@@ -160,11 +232,17 @@ verifyClaim
     => Show (Rule claim)
     => Limit Natural
     -> GraphSearchOrder
-    -> [claim]
-    -> [Rule claim]
+    -> AllClaims claim
+    -> Axioms claim
     -> (claim, Limit Natural)
     -> ExceptT (Pattern Variable) m ()
-verifyClaim breadthLimit searchOrder claims axioms (goal, depthLimit) =
+verifyClaim
+    breadthLimit
+    searchOrder
+    (AllClaims claims)
+    (Axioms axioms)
+    (goal, depthLimit)
+  =
     traceExceptT D_OnePath_verifyClaim [debugArg "rule" goal] $ do
     let
         startPattern = ProofState.Goal $ getConfiguration goal

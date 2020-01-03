@@ -49,6 +49,13 @@ import Kore.Step.Axiom.Identifier
 import Kore.Step.Axiom.Matcher
     ( matchIncremental
     )
+import Kore.Step.EqualityPattern
+    ( EqualityPattern (EqualityPattern)
+    , EqualityRule (..)
+    )
+import qualified Kore.Step.EqualityPattern as EqualityPattern
+    ( EqualityPattern (..)
+    )
 import Kore.Step.EquationalStep
     ( UnificationProcedure (..)
     )
@@ -57,18 +64,13 @@ import Kore.Step.Remainder
     ( ceilChildOfApplicationOrTop
     )
 import qualified Kore.Step.Result as Result
-import Kore.Step.Rule
-    ( EqualityRule (..)
-    , RulePattern (RulePattern)
-    )
-import qualified Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
-    , mapVariables
-    )
 import qualified Kore.Step.Simplification.OrPattern as OrPattern
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
     , SimplifierVariable
+    )
+import qualified Kore.Step.Step as EqualityPattern
+    ( mapRuleVariables
     )
 import qualified Kore.Unification.UnifierT as Unifier
 import Kore.Variables.Fresh
@@ -81,7 +83,7 @@ evaluateAxioms
     => [EqualityRule Variable]
     -> TermLike variable
     -> Predicate variable
-    -> simplifier (Step.Results variable)
+    -> simplifier (Step.Results EqualityPattern variable)
 evaluateAxioms equalityRules termLike predicate
   | any ruleIsConcrete equalityRules
   -- All of the current pattern's children (most likely an ApplicationF)
@@ -132,7 +134,7 @@ evaluateAxioms equalityRules termLike predicate
 
     logAppliedRule :: MonadLog log => EqualityRule Variable -> log ()
     logAppliedRule
-        (EqualityRule RulePattern
+        (EqualityRule EqualityPattern
             {left, attributes = Attribute.Axiom {sourceLocation}}
         )
       =
@@ -144,7 +146,7 @@ evaluateAxioms equalityRules termLike predicate
     ruleIsConcrete =
         Attribute.Axiom.Concrete.isConcrete
         . Attribute.Axiom.concrete
-        . RulePattern.attributes
+        . EqualityPattern.attributes
         . getEqualityRule
 
     notApplicable =
@@ -156,7 +158,7 @@ evaluateAxioms equalityRules termLike predicate
     maybeNotApplicable = maybeT (return notApplicable) return
 
     unwrapEqualityRule (EqualityRule rule) =
-        RulePattern.mapVariables fromVariable rule
+        EqualityPattern.mapRuleVariables fromVariable rule
 
     rejectNarrowing (Result.results -> results) =
         (Monad.guard . not) (any Step.isNarrowingResult results)

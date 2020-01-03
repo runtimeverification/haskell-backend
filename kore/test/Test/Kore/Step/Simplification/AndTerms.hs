@@ -15,7 +15,7 @@ import qualified Control.Error as Error
 import Data.Default
     ( Default (..)
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
     ( Text
@@ -46,13 +46,10 @@ import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
 import Kore.Step.Axiom.Registry
     ( axiomPatternsToEvaluators
     )
-import Kore.Step.Rule
-    ( EqualityRule (EqualityRule)
-    , RulePattern (RulePattern)
-    , injectTermIntoRHS
-    )
-import qualified Kore.Step.Rule as RulePattern
-    ( RulePattern (..)
+import Kore.Step.EqualityPattern
+    ( EqualityPattern (..)
+    , EqualityRule (EqualityRule)
+    , equalityPattern
     )
 import Kore.Step.Simplification.And
     ( termAnd
@@ -1037,12 +1034,10 @@ test_equalsTermsSimplification =
             simplifiers = axiomPatternsToEvaluators $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cf
-                            , antiLeft = Nothing
-                            , requires = makeTruePredicate_
-                            , rhs = injectTermIntoRHS $
-                                mkOr
+                    ,   [ EqualityRule
+                            (equalityPattern
+                                (mkCeil sortVar Mock.cf)
+                                (mkOr
                                     (mkAnd
                                         (mkEquals_
                                             (Mock.f (mkElemVar Mock.y))
@@ -1063,7 +1058,9 @@ test_equalsTermsSimplification =
                                             Mock.b
                                         )
                                     )
-                            , attributes = def
+                                )
+                            )
+                            {attributes = def
                                 {Attribute.simplification = Simplification True}
                             }
                         ]
@@ -1131,12 +1128,10 @@ test_equalsTermsSimplification =
             simplifiers = axiomPatternsToEvaluators $ Map.fromList
                 [   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cfId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cf
-                            , antiLeft = Nothing
-                            , requires = makeTruePredicate_
-                            , rhs = injectTermIntoRHS $
-                                mkOr
+                    ,   [ EqualityRule
+                            (equalityPattern
+                                (mkCeil sortVar Mock.cf)
+                                (mkOr
                                     (mkAnd
                                         (mkEquals_
                                             (Mock.f (mkElemVar Mock.y))
@@ -1157,19 +1152,19 @@ test_equalsTermsSimplification =
                                             Mock.b
                                         )
                                     )
-                            , attributes = def
+                                )
+                            )
+                            {attributes = def
                                 {Attribute.simplification = Simplification True}
                             }
                         ]
                     )
                 ,   (   AxiomIdentifier.Ceil
                             (AxiomIdentifier.Application Mock.cgId)
-                    ,   [ EqualityRule RulePattern
-                            { left = mkCeil sortVar Mock.cg
-                            , antiLeft = Nothing
-                            , requires = makeTruePredicate_
-                            , rhs = injectTermIntoRHS $
-                                mkOr
+                    ,   [ EqualityRule
+                            (equalityPattern
+                                (mkCeil sortVar Mock.cg)
+                                (mkOr
                                     (mkAnd
                                         (mkEquals_
                                             (Mock.g (mkElemVar Mock.z))
@@ -1190,7 +1185,9 @@ test_equalsTermsSimplification =
                                             Mock.b
                                         )
                                     )
-                            , attributes = def
+                                )
+                            )
+                            { attributes = def
                                 {Attribute.simplification = Simplification True}
                             }
                         ]

@@ -21,7 +21,7 @@ import Control.Comonad.Trans.Cofree
 import Data.Foldable
     ( foldl'
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
     ( Text

@@ -42,7 +42,7 @@ import Data.Generics.Product
 import Data.List
     ( foldl'
     )
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
@@ -163,8 +163,8 @@ matchIncremental termLike1 termLike2 =
             , targets = free1
             , avoiding = free1 <> free2
             }
-    free1 = (getFreeVariables . TermLike.freeVariables) termLike1
-    free2 = (getFreeVariables . TermLike.freeVariables) termLike2
+    free1 = (getFreeVariables . freeVariables) termLike1
+    free2 = (getFreeVariables . freeVariables) termLike2
 
     -- | Check that matching is finished and construct the result.
     done :: MatcherT variable unifier (Condition variable)
@@ -581,7 +581,7 @@ escapeCheck
     => TermLike variable
     -> MaybeT (MatcherT variable unifier) ()
 escapeCheck termLike = do
-    let free = getFreeVariables (TermLike.freeVariables termLike)
+    let free = getFreeVariables (freeVariables termLike)
     MatcherState { bound } <- Monad.State.get
     Monad.guard (Set.disjoint bound free)
 
@@ -668,16 +668,22 @@ matchNormalizedAc
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
-  | [] <- opaque2
-  , [] <- excessAbstract1
+  | [] <- excessAbstract1
   = do
     Monad.guard (null excessConcrete1)
     case opaque1 of
-        []       -> do
+        [] -> do
+            Monad.guard (null opaque2)
             Monad.guard (null excessConcrete2)
             Monad.guard (null excessAbstract2)
-        [frame1] -> push (Pair frame1 normalized2')
-        _        -> empty
+        [frame1]
+          | null excessAbstract2
+          , null excessConcrete2
+          , [frame2] <- opaque2 ->
+            push (Pair frame1 frame2)
+          | otherwise ->
+            push (Pair frame1 normalized2')
+        _ -> empty
     Monad.Trans.lift $ Foldable.traverse_ pushValue concrete12
     Monad.Trans.lift $ Foldable.traverse_ pushValue abstractMerge
   where
