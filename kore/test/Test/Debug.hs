@@ -245,7 +245,7 @@ test_Debug =
 
 test_diff :: [TestTree]
 test_diff =
-    [ test (SA A, SA A)            $ Nothing
+    [ test (SA A, SA A)              Nothing
     , test (SA A, SB B)            $ Just "{- was: SA A -} SB B"
     , test (N (SA A), N (SB B))    $ Just "N {- was: (SA A) -} (SB B)"
     , test (Rn { unRn = SA A }, Rn { unRn = SB B })

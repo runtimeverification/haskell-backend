@@ -12,19 +12,15 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-    ( fromPatterns
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
     ( bottom
+    , fromPatterns
     , top
     )
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeEqualsPredicate_
     , makeTruePredicate_
-    )
-import Kore.Internal.Predicate
-    ( Predicate
     )
 import Kore.Internal.TermLike
     ( TermLike

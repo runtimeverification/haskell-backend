@@ -397,18 +397,11 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
-        let expected =
-                [ ProofState.GoalStuck
-                    $ makeOnePathRule
-                        (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
-                        (Mock.functionalConstr11 Mock.a)
-                ]
-        assertEqual ""
-            expected
-            actual
-        assertEqual "onepath == reachability onepath"
-            (fmap (fmap OnePath) actual)
-            actualReach
+        let expectedGoal =
+                makeOnePathRule
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
+                    (Mock.functionalConstr11 Mock.a)
+        assertStuck expectedGoal actual actualReach
     , testCase "Stuck pattern" $ do
         -- Goal: constr10(x) => constr11(a)
         -- Coinductive axiom: constr11(b) => f(b)
@@ -459,18 +452,11 @@ test_onePathStrategy =
                     (Mock.functionalConstr10 (TermLike.mkElemVar Mock.y))
                     (Mock.functionalConstr11 (TermLike.mkElemVar Mock.y))
                 ]
-        let expected =
-                [ ProofState.GoalStuck
-                    $ makeOnePathRule
-                        (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
-                        (Mock.functionalConstr11 Mock.a)
-                ]
-        assertEqual ""
-            expected
-            actual
-        assertEqual "onepath == reachability onepath"
-            (fmap (fmap OnePath) actual)
-            actualReach
+        let expectedGoal =
+                makeOnePathRule
+                    (Mock.functionalConstr11 (TermLike.mkElemVar Mock.x))
+                    (Mock.functionalConstr11 Mock.a)
+        assertStuck expectedGoal actual actualReach
     , testCase "Axiom with requires" $ do
         -- Goal:  constr10(b) => a
         -- Coinductive axiom: n/a
@@ -897,3 +883,15 @@ runOnePathSteps
             (Foldable.toList $ strategy goal coinductiveRewrites rewrites)
         )
     return (sort $ nub result)
+
+assertStuck
+    :: (Debug variable, Diff variable)
+    => OnePathRule variable
+    -> [ProofState.ProofState (OnePathRule variable)]
+    -> [ProofState.ProofState (ReachabilityRule variable)]
+    -> IO ()
+assertStuck expectedGoal actual actualReach = do
+    assertEqual "as one-path claim" [ ProofState.GoalStuck expectedGoal ] actual
+    assertEqual "as reachability claim" (asOnePath actual) actualReach
+  where
+    asOnePath = (fmap . fmap) OnePath

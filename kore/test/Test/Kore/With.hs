@@ -465,7 +465,7 @@ instance With Attribute.Constructors.ConstructorLike Kore.Sort
 instance With Attribute.Constructors.Constructor Kore.Sort
   where
     with
-        c@(Attribute.Constructors.Constructor {sorts}) sort
+        c@Attribute.Constructors.Constructor {sorts} sort
       =
         c{Attribute.Constructors.Constructor.sorts = sorts ++ [sort]}
 

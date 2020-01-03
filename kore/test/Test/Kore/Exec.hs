@@ -53,9 +53,7 @@ import Kore.Internal.Predicate
 import Kore.Internal.TermLike
 import Kore.Step
     ( Prim (..)
-    )
-import Kore.Step
-    ( allRewrites
+    , allRewrites
     , anyRewrite
     )
 import Kore.Step.Rule

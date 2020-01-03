@@ -34,16 +34,15 @@ mockConditionSimplifier
     => [(TermLike variable, [Pattern variable])]
     -> TermLikeSimplifier
 mockConditionSimplifier values =
-    termLikeSimplifier $ const $
-        (mockSimplifierHelper
-            (\patt -> Conditional
-                { term = mkTop_
-                , predicate = wrapPredicate patt
-                , substitution = mempty
-                }
-            )
-            values
+    termLikeSimplifier $ const
+    $ mockSimplifierHelper
+        (\patt -> Conditional
+            { term = mkTop_
+            , predicate = wrapPredicate patt
+            , substitution = mempty
+            }
         )
+        values
 
 mockSimplifierHelper
     ::  ( SimplifierVariable variable0

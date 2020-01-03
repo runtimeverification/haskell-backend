@@ -189,9 +189,7 @@ sortActualGen =
 sortGen :: Gen Sort
 sortGen = do
     Context { sorts } <- Reader.ask
-    case sorts of
-        Nothing -> randomSort
-        Just allowedSorts -> Gen.element allowedSorts
+    maybe randomSort Gen.element sorts
   where
     randomSort :: Gen Sort
     randomSort = do

@@ -158,7 +158,7 @@ gives_ predicate tuples =
 -- | 2. `error` is used, in which case the expected string is compared to
 -- |    the actual.
 throws
-    :: (HasCallStack)
+    :: HasCallStack
     => a -> String -> String -> TestTree
 throws = throws_from_expected_name
 
@@ -170,7 +170,7 @@ throws = throws_from_expected_name
 -- | 2. `error` is used, in which case the expected string is compared to
 -- |    the actual.
 throws_
-    :: (HasCallStack)
+    :: HasCallStack
     => a -> String -> TestTree
 throws_ = throws_from_expected
 
@@ -240,7 +240,7 @@ f_2_expected f tuple expected =
 
 
 throws_from_expected_name_intention
-    :: (HasCallStack)
+    :: HasCallStack
     => a -> String -> String -> String -> TestTree
 throws_from_expected_name_intention lazyValue expected name intention =
     testCase name $ do
@@ -253,13 +253,13 @@ throws_from_expected_name_intention lazyValue expected name intention =
     messageChecker (ErrorCall msg) = assertEqual intention msg expected
 
 throws_from_expected_name
-    :: (HasCallStack)
+    :: HasCallStack
     => a -> String -> String -> TestTree
 throws_from_expected_name lazyValue expected name =
     throws_from_expected_name_intention lazyValue expected name ""
 
 throws_from_expected
-    :: (HasCallStack)
+    :: HasCallStack
     => a -> String -> TestTree
 throws_from_expected lazyValue expected =
     throws_from_expected_name lazyValue expected "unnamed `throws_`"

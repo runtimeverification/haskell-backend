@@ -27,14 +27,12 @@ import qualified Kore.Internal.MultiOr as MultiOr
     )
 import Kore.Internal.Pattern
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate_
     , makeNotPredicate
     , makeTruePredicate_
-    )
-import Kore.Internal.Predicate
-    ( Predicate
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Data as Kore

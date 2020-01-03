@@ -958,7 +958,7 @@ test_andTermsSimplification =
                         , Nothing
                         )
                     x = mkVariable "x"
-                    alias = mkAlias' "alias1" x $ plain0OfA
+                    alias = mkAlias' "alias1" x plain0OfA
                     left = applyAlias' alias $ mkTop Mock.testSort
                 actual <- simplifyUnify left plain1OfA
                 assertEqual "" expect actual
