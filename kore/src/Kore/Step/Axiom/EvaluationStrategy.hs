@@ -79,11 +79,7 @@ definitionEvaluation rules =
         results' <- evaluateAxioms rules condition term
         let attempted = Results.toAttemptedAxiom results'
         Step.assertFunctionLikeResults term results'
-        case attempted of
-            Applied AttemptedAxiomResults { results, remainders }
-              | length results == 1, null remainders ->
-                return attempted
-            _ -> return NotApplicable
+        return attempted
 
 -- | Create an evaluator from a single simplification rule.
 simplificationEvaluation
