@@ -132,6 +132,10 @@ decidePredicate
     -> simplifier (Maybe Bool)
 decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
+        (logInfo . Text.pack . show . Pretty.vsep)
+            [ "Predicate sent to SMT:"
+            , Pretty.indent 4 (unparse korePredicate)
+            ]
         tools <- Simplifier.askMetadataTools
         smtPredicate <- goTranslatePredicate tools korePredicate
         result <-
