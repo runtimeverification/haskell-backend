@@ -61,6 +61,9 @@ import Kore.Logger.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
     )
+import Kore.Logger.SMTCondition
+    ( SMTCondition
+    )
 import Kore.Logger.WarnBottomHook
     ( WarnBottomHook
     )
@@ -92,6 +95,7 @@ registry =
                 , register warnBottomHookType
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
+                , register logSMTConditionType
                 ]
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
@@ -124,6 +128,7 @@ debugAppliedRuleType
   , warnBottomHookType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
+  , logSMTConditionType
   :: SomeTypeRep
 
 debugAppliedRuleType =
@@ -140,6 +145,8 @@ warnFunctionWithoutEvaluatorsType =
     someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
 warnSimplificationWithRemainderType =
     someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
+logSMTConditionType =
+    someTypeRep (Proxy :: Proxy SMTCondition)
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =

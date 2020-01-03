@@ -38,6 +38,7 @@ import Data.Set
     )
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
+import Data.Typeable
 
 import qualified Branch
 import Kore.Attribute.Pattern.FreeVariables
@@ -359,6 +360,7 @@ The rule is considered to apply if the result is not @\\bottom@.
 applyInitialConditions
     :: forall unifier variable
     .  SimplifierVariable variable
+    => Typeable variable
     => MonadUnify unifier
     => Condition variable
     -- ^ Initial conditions

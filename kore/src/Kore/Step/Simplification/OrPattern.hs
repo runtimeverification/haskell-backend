@@ -8,6 +8,7 @@ module Kore.Step.Simplification.OrPattern
     ) where
 
 import qualified Control.Comonad as Comonad
+import Data.Typeable
 
 import qualified Branch as BranchT
 import Kore.Internal.Conditional
@@ -38,7 +39,9 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 
 simplifyConditionsWithSmt
     ::  forall variable simplifier
-    .   (MonadSimplify simplifier, SimplifierVariable variable)
+    .  MonadSimplify simplifier
+    => SimplifierVariable variable
+    => Typeable variable
     => Predicate variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
