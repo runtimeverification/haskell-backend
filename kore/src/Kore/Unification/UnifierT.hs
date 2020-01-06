@@ -32,6 +32,9 @@ import Branch
     ( BranchT
     )
 import qualified Branch as BranchT
+import qualified Kore.Internal.Condition as Condition
+    ( topTODO
+    )
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Logger
     ( MonadLog (..)
@@ -95,8 +98,8 @@ instance MonadSimplify m => MonadSimplify (UnifierT m) where
                 )
     {-# INLINE localSimplifierAxioms #-}
 
-    simplifyCondition condition =
-        simplifyCondition' condition
+    simplifyCondition sideCondition condition =
+        simplifyCondition' sideCondition condition
       where
         ConditionSimplifier simplifyCondition' =
             ConditionSimplifier.create substitutionSimplifier
@@ -158,5 +161,5 @@ unificationMakeAnd =
     makeAnd termLike1 termLike2 condition = do
         unified <- termUnification termLike1 termLike2
         BranchT.alternate
-            $ Simplifier.simplifyCondition
+            $ Simplifier.simplifyCondition Condition.topTODO
             $ Pattern.andCondition unified condition

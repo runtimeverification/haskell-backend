@@ -54,7 +54,7 @@ import Kore.Step.RulePattern
     , allPathGlobally
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
@@ -168,7 +168,7 @@ transitionRule
         do
             configs <-
                 Monad.Trans.lift . Monad.Trans.lift
-                $ Pattern.simplifyAndRemoveTopExists config
+                $ Pattern.simplifyTopConfiguration config
             filteredConfigs <- SMT.Evaluator.filterMultiOr configs
             if null filteredConfigs
                 then return Proven

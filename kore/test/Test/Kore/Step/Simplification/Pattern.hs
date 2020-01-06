@@ -5,6 +5,7 @@ module Test.Kore.Step.Simplification.Pattern
 
 import Test.Tasty
 
+import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -84,8 +85,9 @@ bottomLike =
     (termLike Mock.a) { Pattern.predicate = Predicate.makeFalsePredicate_ }
 
 simplify :: Pattern Variable -> IO (OrPattern Variable)
-simplify = runSimplifier Mock.env . Pattern.simplify
+simplify = runSimplifier Mock.env . Pattern.simplify Condition.top
 
 simplifyAndRemoveTopExists :: Pattern Variable -> IO (OrPattern Variable)
 simplifyAndRemoveTopExists =
-    runSimplifier Mock.env . Pattern.simplifyAndRemoveTopExists
+    runSimplifier Mock.env
+    . Pattern.simplifyTopConfiguration
