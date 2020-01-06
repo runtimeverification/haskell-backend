@@ -8,10 +8,11 @@ License     : NCSA
 
 module Kore.Attribute.Pattern
     ( Pattern (Pattern, patternSort, freeVariables, functional, function, defined, created, constructorLike)
-    -- 'simplified' was intentionally left out above.
+    -- 'simplified' and 'constructorLike' were intentionally left out above.
     , mapVariables
     , traverseVariables
     , deleteFreeVariable
+    , isFullySimplified
     , isSimplified
     , setSimplified
     , simplifiedAttribute
@@ -46,9 +47,19 @@ import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
     )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
-import Kore.Attribute.Pattern.Simplified
+import Kore.Attribute.Pattern.Simplified hiding
+    ( isFullySimplified
+    , isSimplified
+    )
+import qualified Kore.Attribute.Pattern.Simplified as Simplified
+    ( isFullySimplified
+    , isSimplified
+    )
 import Kore.Attribute.Synthetic
 import Kore.Debug
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Sort
     ( Sort
     )
@@ -104,9 +115,15 @@ instance
             , function = synthetic (function <$> base)
             , defined = synthetic (defined <$> base)
             , created = synthetic (created <$> base)
-            , simplified = synthetic (simplified <$> base)
-            , constructorLike = synthetic (constructorLike <$> base)
+            , simplified =
+                if isConstructorLike constructorLikeAttr
+                    then fullySimplified
+                    else synthetic (simplified <$> base)
+            , constructorLike = constructorLikeAttr
             }
+      where
+        constructorLikeAttr :: ConstructorLike
+        constructorLikeAttr = synthetic (constructorLike <$> base)
 
 instance HasConstructorLike (Pattern variable) where
     extractConstructorLike
@@ -115,13 +132,24 @@ instance HasConstructorLike (Pattern variable) where
 
 simplifiedAttribute :: Pattern variable -> Simplified
 simplifiedAttribute Pattern {constructorLike, simplified}
-    | isConstructorLike constructorLike = Simplified
-    | otherwise = simplified
+  | Simplified.isFullySimplified simplified = simplified
+  | isConstructorLike constructorLike =
+    error "Inconsistent attributes, constructorLike implies fully simplified."
+  | otherwise = simplified
 
-isSimplified :: Pattern variable -> Bool
-isSimplified Pattern {constructorLike, simplified}
-  | isConstructorLike constructorLike = True
-  | otherwise = isFullySimplified simplified
+isSimplified :: SideCondition.Representation -> Pattern variable -> Bool
+isSimplified sideCondition Pattern {constructorLike, simplified}
+  | Simplified.isFullySimplified simplified = True
+  | isConstructorLike constructorLike =
+    error "Inconsistent attributes, constructorLike implies fully simplified."
+  | otherwise = Simplified.isSimplified sideCondition simplified
+
+isFullySimplified :: Pattern variable -> Bool
+isFullySimplified Pattern {constructorLike, simplified}
+  | Simplified.isFullySimplified simplified = True
+  | isConstructorLike constructorLike =
+    error "Inconsistent attributes, constructorLike implies fully simplified."
+  | otherwise = False
 
 setSimplified :: Simplified -> Pattern variable -> Pattern variable
 setSimplified simplified patt = patt { simplified }

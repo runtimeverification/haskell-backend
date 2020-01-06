@@ -368,7 +368,7 @@ test_equalsSimplification_Pattern =
                         { term = mkTop_
                         , predicate =
                             makeIffPredicate
-                                (makeEqualsPredicate_ fOfA fOfB)
+                                (makeEqualsPredicate Mock.testSort fOfA fOfB)
                                 (makeEqualsPredicate_ gOfA gOfB)
                         , substitution = mempty
                         }
@@ -956,7 +956,9 @@ evaluateOr
     :: Equals Sort (OrPattern Variable)
     -> IO (OrPattern Variable)
 evaluateOr =
-    runSimplifier mockEnv . simplify SideCondition.top
+    runSimplifier mockEnv
+    . simplify SideCondition.top
+    . fmap simplifiedOrPattern
   where
     mockEnv = Mock.env
 
@@ -966,7 +968,10 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate first second =
     runSimplifier mockEnv
-    $ makeEvaluate first second SideCondition.top
+    $ makeEvaluate
+        (simplifiedPattern first)
+        (simplifiedPattern second)
+        SideCondition.top
   where
     mockEnv = Mock.env
 
@@ -976,6 +981,9 @@ evaluateTermsGeneric
     -> IO (OrCondition Variable)
 evaluateTermsGeneric first second =
     runSimplifier mockEnv
-    $ makeEvaluateTermsToPredicate first second SideCondition.top
+    $ makeEvaluateTermsToPredicate
+        (simplifiedTerm first)
+        (simplifiedTerm second)
+        SideCondition.top
   where
     mockEnv = Mock.env

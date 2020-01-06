@@ -69,7 +69,7 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-import Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -83,6 +83,7 @@ import Kore.Internal.SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
+    , toRepresentation
     , topTODO
     )
 import Kore.Internal.Substitution
@@ -353,7 +354,7 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
         case uVar of
             SetVar _ -> return subst
             ElemVar _
-              | TermLike.isSimplified termLike -> return subst
+              | isSimplified -> return subst
               | otherwise -> do
                 termLike' <- simplifyTermLike termLike
                 -- simplifyTermLike returns the unsimplified input in the event
@@ -364,6 +365,10 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
                 --   3. we need a substitution to evaluate it, and
                 --   4. substitution resets the simplified marker.
                 return (uVar, TermLike.markSimplified termLike')
+              where
+                isSimplified = TermLike.isSimplified
+                    sideConditionRepresentation
+                    termLike
 
     simplifyTermLike
         :: TermLike variable
@@ -390,6 +395,8 @@ simplifySubstitutionWorker sideCondition makeAnd' = \substitution -> do
             & Trans.lift . Trans.lift
         addPredicate predicate
         return substitution'
+
+    sideConditionRepresentation = SideCondition.toRepresentation sideCondition
 
 data Private variable =
     Private
@@ -440,3 +447,4 @@ takeSubstitution = do
     substitution <- Lens.use (field @"accum".field @"substitution")
     Lens.assign (field @"accum".field @"substitution") mempty
     return substitution
+

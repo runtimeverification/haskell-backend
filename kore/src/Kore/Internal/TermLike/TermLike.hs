@@ -153,7 +153,7 @@ instance Synthetic syn Evaluated where
     {-# INLINE synthetic #-}
 
 instance {-# OVERLAPS #-} Synthetic Pattern.Simplified Evaluated where
-    synthetic = const Pattern.Simplified
+    synthetic = const Pattern.fullySimplified
     {-# INLINE synthetic #-}
 
 {- | 'TermLikeF' is the 'Base' functor of internal term-like patterns.

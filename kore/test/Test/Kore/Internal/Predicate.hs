@@ -11,6 +11,16 @@ import qualified Data.Set as Set
 
 import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
 import Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toRepresentation
+    , top
+    )
+import qualified Kore.Internal.SideCondition.SideCondition as SideCondition
+    ( Representation
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Variables.UnifiedVariable
@@ -19,6 +29,7 @@ import Kore.Variables.UnifiedVariable
 
 import Test.Kore
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
 
 test_predicate :: [TestTree]
@@ -341,20 +352,20 @@ test_predicate =
                 `makesPredicate`
                 (makeEqualsPredicate_ Mock.cf Mock.cg, NotSimplified)
             , testCase "simplified stays simplified" $
-                ( TermLike.markSimplified $ mkEquals_ Mock.cf Mock.cg
+                ( simplifiedTerm $ mkEquals_ Mock.cf Mock.cg
+                , IsSimplified
+                )
+                `makesPredicate`
+                (makeEqualsPredicate_ Mock.cf Mock.cg, IsSimplified)
+            , testCase "Partial predicate stays simplified" $
+                ( simplifiedTerm
+                    $ mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
                 , IsSimplified
                 )
                 `makesPredicate`
                 (makeEqualsPredicate_ Mock.cf Mock.cg, IsSimplified)
             , testCase "changed simplified becomes unsimplified" $
-                ( TermLike.markSimplified
-                    $ mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg)
-                , IsSimplified
-                )
-                `makesPredicate`
-                (makeEqualsPredicate_ Mock.cf Mock.cg, NotSimplified)
-            , testCase "changed simplified becomes unsimplified" $
-                ( TermLike.markSimplified
+                ( simplifiedTerm
                     $ mkAnd
                         (mkAnd mkTop_ (mkEquals_ Mock.cf Mock.cg))
                         (mkEquals_ Mock.cg Mock.ch)
@@ -384,10 +395,10 @@ makesPredicate
     assertEqual "Predicate equality" (Right predicate) eitherPredicate
     assertEqual "Term simplification"
         (toBool termSimplification)
-        (TermLike.isSimplified term)
+        (TermLike.isSimplified sideRepresentation term)
     assertEqual "Predicate simplification"
         (Right (toBool predicateSimplification))
-        (Predicate.isSimplified <$> eitherPredicate)
+        (Predicate.isSimplified sideRepresentation <$> eitherPredicate)
   where
     toBool IsSimplified = True
     toBool NotSimplified = False
@@ -448,3 +459,7 @@ a = ElementVariable . Variable (testId "a") mempty
 b = ElementVariable . Variable (testId "b") mempty
 c = ElementVariable . Variable (testId "c") mempty
 d = ElementVariable . Variable (testId "d") mempty
+
+sideRepresentation :: SideCondition.Representation
+sideRepresentation =
+    SideCondition.toRepresentation (SideCondition.top :: SideCondition Variable)
