@@ -221,21 +221,25 @@ runLoggerT options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
     tChan <- newTChanIO
     withLogger options $ \logger -> do
-        modifiedLogger <- threadedLogger tChan logger
+        modifiedLogger <- concurrentLogger tChan logger
         runLogger modifiedLogger
 
-threadedLogger :: TChan a -> LogAction IO a -> IO (LogAction IO a)
-threadedLogger tChan logger = do
+concurrentLogger :: TChan a -> LogAction IO a -> IO (LogAction IO a)
+concurrentLogger tChan logger = do
     forkIO $ do
         val <- atomically $ readTChan tChan
         unLogAction logger val
         return ()
-    return . tChanLogger $ tChan
+    return $ writeTChanLogger tChan logger
 
-tChanLogger :: TChan a -> LogAction IO a
-tChanLogger tChan =
-    LogAction $ \x ->
-        atomically $ writeTChan tChan x
+writeTChanLogger :: TChan a -> LogAction IO a -> LogAction IO a
+writeTChanLogger tChan logger =
+    Colog.cmapM
+        (\msg -> do
+            atomically $ writeTChan tChan msg
+            return msg
+        )
+        logger
 
 -- Parser for command line log options.
 parseKoreLogOptions :: Parser KoreLogOptions
