@@ -17,9 +17,6 @@ import qualified Data.Maybe as Maybe
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
-import Data.Text.Prettyprint.Doc
-    ( Doc
-    )
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import qualified Generics.SOP as SOP
 import GHC.Generics
@@ -62,30 +59,18 @@ instance Pretty Created where
     pretty =
         maybe "" go . getCallStackHead
       where
-        go (name, loc) =
-            Pretty.hsep
-                [ "/* Created by"
-                , Pretty.angles $ Pretty.pretty name
-                , "at"
-                , prettySrcLoc loc
-                , "*/"
-                ]
+        go (name, srcLoc) =
+            Pretty.hsep ["/* Created:", qualifiedName, "*/"]
+          where
+            qualifiedName =
+                    Pretty.pretty srcLocModule
+                <>  Pretty.dot
+                <>  Pretty.pretty name
+            SrcLoc { srcLocModule } = srcLoc
+
+instance Functor pat => Synthetic Created pat where
+    synthetic = const (Created Nothing)
 
 getCallStackHead :: Created -> Maybe (String, SrcLoc)
 getCallStackHead Created { getCreated } =
     GHC.getCallStack <$> getCreated >>= Maybe.listToMaybe
-
-prettySrcLoc :: SrcLoc -> Doc ann
-prettySrcLoc srcLoc =
-    mconcat
-        [ Pretty.pretty srcLocFile
-        , Pretty.colon
-        , Pretty.pretty srcLocStartLine
-        , Pretty.colon
-        , Pretty.pretty srcLocStartCol
-        ]
-  where
-    SrcLoc { srcLocFile, srcLocStartLine, srcLocStartCol } = srcLoc
-
-instance Functor pat => Synthetic Created pat where
-    synthetic = const (Created Nothing)
