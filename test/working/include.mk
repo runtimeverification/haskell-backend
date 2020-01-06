@@ -109,6 +109,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### MERGE
 
 %.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE) $(KORE_EXEC)
+	@echo ">>> kore-exec --merge-rules" $<
 	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 
