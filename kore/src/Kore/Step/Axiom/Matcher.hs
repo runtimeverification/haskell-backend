@@ -668,16 +668,22 @@ matchNormalizedAc
     -> Builtin.NormalizedAc normalized (TermLike Concrete) (TermLike variable)
     -> MaybeT (MatcherT variable unifier) ()
 matchNormalizedAc pushValue wrapTermLike normalized1 normalized2
-  | [] <- opaque2
-  , [] <- excessAbstract1
+  | [] <- excessAbstract1
   = do
     Monad.guard (null excessConcrete1)
     case opaque1 of
-        []       -> do
+        [] -> do
+            Monad.guard (null opaque2)
             Monad.guard (null excessConcrete2)
             Monad.guard (null excessAbstract2)
-        [frame1] -> push (Pair frame1 normalized2')
-        _        -> empty
+        [frame1]
+          | null excessAbstract2
+          , null excessConcrete2
+          , [frame2] <- opaque2 ->
+            push (Pair frame1 frame2)
+          | otherwise ->
+            push (Pair frame1 normalized2')
+        _ -> empty
     Monad.Trans.lift $ Foldable.traverse_ pushValue concrete12
     Monad.Trans.lift $ Foldable.traverse_ pushValue abstractMerge
   where
