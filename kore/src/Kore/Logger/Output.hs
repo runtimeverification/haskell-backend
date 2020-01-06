@@ -219,13 +219,13 @@ filterSeverity level entry =
 runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
-    tChan <- newTChanIO
     withLogger options $ \logger -> do
-        modifiedLogger <- concurrentLogger tChan logger
+        modifiedLogger <- concurrentLogger logger
         runLogger modifiedLogger
 
-concurrentLogger :: TChan a -> LogAction IO a -> IO (LogAction IO a)
-concurrentLogger tChan logger = do
+concurrentLogger :: LogAction IO a -> IO (LogAction IO a)
+concurrentLogger logger = do
+    tChan <- newTChanIO
     forkIO $ do
         val <- atomically $ readTChan tChan
         unLogAction logger val
