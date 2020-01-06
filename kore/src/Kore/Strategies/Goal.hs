@@ -1113,7 +1113,7 @@ debugProofStateBracket
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => ProofState goal goal
-    -- ^ current configuration
+    -- ^ current proof state
     -> Prim goal
     -- ^ transition
     -> log (ProofState goal goal)
@@ -1124,14 +1124,10 @@ debugProofStateBracket
     (coerce -> transition)
     action
   = do
-    logM DebugProofState
-        { configuration = Before proofstate
-        , transition
-        }
     result <- action
     logM DebugProofState
-        { configuration =
-            After $ toReachabilityRule <$> result
+        { proofstate
         , transition
+        , result = toReachabilityRule <$> result
         }
     return result

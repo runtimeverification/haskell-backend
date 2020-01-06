@@ -5,7 +5,6 @@ License     : NCSA
 
 module Kore.Logger.DebugProofState
     ( DebugProofState (..)
-    , TransitionState (..)
     ) where
 
 import Data.Text.Prettyprint.Doc
@@ -28,38 +27,26 @@ import Kore.Strategies.ProofState
 
 data DebugProofState =
     DebugProofState
-        { configuration :: !TransitionState
+        { proofstate :: !(ProofState (ReachabilityRule Variable))
         , transition :: !(Prim (RewriteRule Variable))
+        , result :: !(ProofState (ReachabilityRule Variable))
         }
-
-data TransitionState
-    = Before !(ProofState (ReachabilityRule Variable))
-    | After  !(ProofState (ReachabilityRule Variable))
-    deriving Eq
 
 instance Pretty DebugProofState where
     pretty
         DebugProofState
-            { configuration
+            { proofstate
             , transition
+            , result
             }
       =
-        case configuration of
-            Before config ->
-                Pretty.vsep
-                $ beforeText config <> ["...Applying transition..."]
-            After dest ->
-                Pretty.vsep (afterText dest)
-      where
-        beforeText config =
+        Pretty.vsep
             [ "Reached proof state with the following configuration:"
-            , Pretty.indent 4 (pretty config)
-            ]
-        afterText dest =
-            [ "On which the following transition applies:"
+            , Pretty.indent 4 (pretty proofstate)
+            , "On which the following transition applies:"
             , Pretty.indent 4 (pretty transition)
             , "Resulting in:"
-            , Pretty.indent 4 (pretty dest)
+            , Pretty.indent 4 (pretty result)
             ]
 
 instance Entry DebugProofState where
