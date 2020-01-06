@@ -59,15 +59,16 @@ simplify
         , MonadSimplify simplifier
         )
     =>  SubstitutionSimplifier simplifier
+    ->  Condition variable
     ->  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
-simplify SubstitutionSimplifier { simplifySubstitution } initial =
+simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
     normalize initial >>= worker
   where
     worker Conditional { term, predicate, substitution } = do
         let substitution' = Substitution.toMap substitution
             predicate' = Predicate.substitute substitution' predicate
-        simplified <- simplifyPredicate predicate'
+        simplified <- simplifyPredicate sideCondition predicate'
         TopBottom.guardAgainstBottom simplified
         let merged = simplified <> Condition.fromSubstitution substitution
         normalized <- normalize merged
@@ -106,12 +107,13 @@ simplifyPredicate
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Predicate variable
+    =>  Condition variable
+    ->  Predicate variable
     ->  BranchT simplifier (Condition variable)
-simplifyPredicate predicate = do
+simplifyPredicate sideCondition predicate = do
     patternOr <-
         Monad.Trans.lift
-        $ simplifyTerm
+        $ simplifyConditionalTermToOr sideCondition
         $ unwrapPredicate predicate
     -- Despite using Monad.Trans.lift above, we do not need to
     -- explicitly check for \bottom because patternOr is an OrPattern.

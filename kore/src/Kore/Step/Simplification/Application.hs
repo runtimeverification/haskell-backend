@@ -16,7 +16,9 @@ import Branch
     ( BranchT
     )
 import qualified Branch as Branch
-import Kore.Internal.Condition as Condition
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
@@ -101,7 +103,7 @@ makeAndEvaluateSymbolApplications
     -> simplifier (OrPattern variable)
 makeAndEvaluateSymbolApplications predicate symbol children = do
     expandedApplications <-
-        Branch.gather $ makeExpandedApplication symbol children
+        Branch.gather $ makeExpandedApplication predicate symbol children
     orResults <- traverse
         (evaluateApplicationFunction predicate)
         expandedApplications
@@ -125,12 +127,14 @@ evaluateApplicationFunction
 
 makeExpandedApplication
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Symbol
+    => Condition variable
+    -> Symbol
     -> [Pattern variable]
     -> BranchT simplifier (ExpandedApplication variable)
-makeExpandedApplication symbol children = do
+makeExpandedApplication topCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions
+            topCondition
             (map Pattern.predicate children)
             (map Pattern.substitution children)
     let term = symbolApplication symbol (Pattern.term <$> children)
