@@ -190,7 +190,8 @@ integer not in `Is`.
 
 ### Skolemization
 
-One possible approach to implementing the abovewould be through [Skolemization](https://en.wikipedia.org/wiki/Skolem_normal_form),
+One possible approach to implementing the above would be through
+[Skolemization](https://en.wikipedia.org/wiki/Skolem_normal_form),
 i.e., by replacing the existential variables with fresh uninterpreted functions
 applied to the universally quantified variables.
 
@@ -228,6 +229,9 @@ We envision two possible solutions:
       ensures notBool (arbDiffI(Is) inList{Int} Is)
     ```
 
+   However, this construction seems artificial and it might be better to have
+   it being automatically generated from the proposed syntax below.
+
 2. They are allowed, assuming that a `function` annotation in the syntax
    definition, together with the use of `?` variables in the `rhs` of the rule and
    the `ensures` clause would trigger Skolemization and the generation of
@@ -260,8 +264,8 @@ Its axiom is
 ### Frontend Syntax
 
 The symbol declaration would require a special attribute to signal the fact that
-it represent a proper ML symbol which is defined equationally. The precise
-name would have to be establishes, but let's call it here `power-function`
+it represents a proper ML symbol which is defined equationally. The precise
+name would have to be established, but let's call it here `power-function`
 to signal that it's a function interpreted in the powerset of the domain.
 
 ```
