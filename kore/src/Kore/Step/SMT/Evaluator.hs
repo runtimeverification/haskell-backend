@@ -56,7 +56,7 @@ import Kore.Internal.TermLike
     , TermLike
     )
 import Kore.Logger
-import Kore.Logger.SMTCondition
+import Kore.Logger.InfoEvaluateCondition
     ( logSMTCondition
     )
 import qualified Kore.Profiler.Profile as Profile
