@@ -20,7 +20,19 @@ test_TermLike =
     , testCase "constructor-like DomainValue" $
         domainValue `shouldBeConstructorLike` True
     , testCase "Simplifiable BuiltinSet" $
-        Mock.builtinSet [Mock.a, Mock.b] `shouldBeConstructorLike` False
+        Mock.builtinSet [] `shouldBeConstructorLike` True
+    , testCase "Simplifiable BuiltinSet" $
+        Mock.builtinSet [Mock.a, Mock.b] `shouldBeConstructorLike` True
+    , testCase "Simplifiable BuiltinSet" $
+        Mock.builtinSet [Mock.a, Mock.f Mock.b] `shouldBeConstructorLike` False
+    , testCase "Simplifiable BuiltinMap" $
+        Mock.builtinMap [] `shouldBeConstructorLike` True
+    , testCase "Simplifiable BuiltinMap" $
+        Mock.builtinMap [(Mock.a, Mock.c), (Mock.b, Mock.c)]
+        `shouldBeConstructorLike` True
+    , testCase "Simplifiable BuiltinMap" $
+        Mock.builtinMap [(Mock.a, Mock.c), (Mock.f Mock.b, Mock.c)]
+        `shouldBeConstructorLike` False
     , testCase "Single constructor is constructor-like" $
         Mock.a `shouldBeConstructorLike` True
     , testCase "constructor-like with constructor at the top" $
