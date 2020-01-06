@@ -35,6 +35,7 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Tuple
     ( swap
     )
@@ -147,9 +148,12 @@ lookupTextFromTypeWithError type' =
     $ Map.lookup type' (typeToText registry)
   where
     notFoundError =
-        error
-            "Tried to log nonexistent entry type.\
-            \ It should be added to Kore.Logger.Registry.registry."
+        (error . show . Pretty.hsep)
+            [ "Log entry type"
+            , prettyTypeRep
+            , "is not registered."
+            ]
+    prettyTypeRep = Pretty.pretty (asText type')
 
 parseEntryType :: Text -> Parser.Parsec String String SomeTypeRep
 parseEntryType entryText =
