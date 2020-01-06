@@ -1,2 +1,2 @@
 DEF = eqtest
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk

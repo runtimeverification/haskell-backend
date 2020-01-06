@@ -1,2 +1,2 @@
 DEF := priority
-include $(CURDIR)/../../working/include.mk
+include $(CURDIR)/../../include.mk

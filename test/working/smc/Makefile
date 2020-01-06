@@ -1,2 +1,2 @@
 DEF = smc
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk

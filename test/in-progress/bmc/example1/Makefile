@@ -1,5 +1,5 @@
 DEF := bmc
-include $(CURDIR)/../../../working/include.mk
+include $(CURDIR)/../../../include.mk
 
 pass-1-bmc-spec.k: KBMC_DEPTH = 20
 pass-2-bmc-spec.k: KBMC_DEPTH = 10

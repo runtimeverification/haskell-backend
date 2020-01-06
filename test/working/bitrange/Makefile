@@ -1,2 +1,2 @@
 DEF = bitrange
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk

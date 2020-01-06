@@ -1,5 +1,5 @@
 DEF := save-proofs
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk
 
 test-1-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
 

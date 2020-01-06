@@ -1,2 +1,2 @@
 DEF = smt-lemma
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk

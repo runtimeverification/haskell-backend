@@ -1,3 +1,3 @@
 DEF = imp
 MODULE = IMP
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk

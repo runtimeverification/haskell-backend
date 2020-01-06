@@ -1,3 +1,3 @@
 DEF = path
 MODULE = PATH
-include $(CURDIR)/../../../include.mk
+include $(CURDIR)/../../../../include.mk

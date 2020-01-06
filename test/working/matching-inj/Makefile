@@ -1,3 +1,3 @@
 DEF := run
 MODULE := RUN
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk

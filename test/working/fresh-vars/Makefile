@@ -1,2 +1,2 @@
 DEF = fresh-vars
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk

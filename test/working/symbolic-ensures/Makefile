@@ -1,2 +1,2 @@
 DEF = strict
-include $(CURDIR)/../include.mk
+include $(CURDIR)/../../include.mk
