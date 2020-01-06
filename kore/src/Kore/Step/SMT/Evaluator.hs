@@ -30,7 +30,6 @@ import Data.Maybe
 import Data.Reflection
 import qualified Data.Text as Text
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Typeable
 
 import qualified Control.Monad.Counter as Counter
 import qualified Kore.Attribute.Symbol as Attribute
@@ -57,7 +56,7 @@ import Kore.Internal.TermLike
     )
 import Kore.Logger
 import Kore.Logger.InfoEvaluateCondition
-    ( logSMTCondition
+    ( infoEvaluateCondition
     )
 import qualified Kore.Profiler.Profile as Profile
     ( smtDecision
@@ -86,17 +85,14 @@ class Evaluable thing where
     -}
     evaluate :: MonadSimplify m => thing -> m (Maybe Bool)
 
-instance (InternalVariable variable, Typeable variable)
-    => Evaluable (Predicate variable)
-  where
+instance InternalVariable variable => Evaluable (Predicate variable) where
     evaluate predicate =
         case predicate of
             Predicate.PredicateTrue -> return (Just True)
             Predicate.PredicateFalse -> return (Just False)
             _ -> decidePredicate predicate
 
-instance (InternalVariable variable, Typeable variable)
-    => Evaluable (Conditional variable term)
+instance InternalVariable variable => Evaluable (Conditional variable term)
   where
     evaluate conditional =
         Exception.assert (Conditional.isNormalized conditional)
@@ -110,7 +106,6 @@ filterMultiOr
         , TopBottom term
         , InternalVariable variable
         )
-    => Typeable variable
     => MultiOr (Conditional variable term)
     -> simplifier (MultiOr (Conditional variable term))
 filterMultiOr multiOr = do
@@ -136,16 +131,11 @@ decidePredicate
         ( InternalVariable variable
         , MonadSimplify simplifier
         )
-    => Typeable variable
     => Predicate variable
     -> simplifier (Maybe Bool)
 decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
-        {-(logInfo . Text.pack . show . Pretty.vsep)
-            [ "Predicate sent to SMT:"
-            , Pretty.indent 4 (unparse korePredicate)
-            ]-}
-        logSMTCondition korePredicate
+        infoEvaluateCondition korePredicate
         tools <- Simplifier.askMetadataTools
         smtPredicate <- goTranslatePredicate tools korePredicate
         result <-

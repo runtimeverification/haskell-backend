@@ -6,7 +6,7 @@ License     : NCSA
 
 module Kore.Logger.InfoEvaluateCondition
     ( InfoEvaluateCondition (..)
-    , logSMTCondition
+    , infoEvaluateCondition
     ) where
 
 import Kore.Logger
@@ -17,12 +17,12 @@ import Kore.Logger
     )
 import Kore.Internal.Predicate
     ( Predicate
+    , freshVariable
     )
-import Kore.Internal.TermLike
+import Kore.Internal.TermLike 
 import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
-import Data.Typeable
 import Kore.Unparser
 
 newtype InfoEvaluateCondition =
@@ -41,7 +41,6 @@ instance Entry InfoEvaluateCondition
 infoEvaluateCondition
     :: MonadLog log
     => InternalVariable variable
-    => Typeable variable
     => Predicate variable -> log ()
-infoEvaluateCondition =
-    logM . InfoEvaluateCondition
+infoEvaluateCondition predicate =
+    logM $ InfoEvaluateCondition $ freshVariable predicate
