@@ -6,7 +6,9 @@ import Control.Applicative
     )
 import Control.Monad.Catch
     ( MonadCatch
-    , catch
+    , SomeException
+    , handle
+    , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -407,13 +409,11 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <- runLoggerT koreLogOptions $ catch go $
-        \(Goal.WithConfiguration lastConfiguration someException) -> do
-            liftIO $ renderResult
-                execOptions
-                ("// Last configuration:\n" <> unparse lastConfiguration)
-            criticalExecutionError someException
-            return (ExitFailure 1)
+    exitCode <-
+        runLoggerT koreLogOptions
+        $ handle handleSomeException
+        $ handle handleWithConfiguration
+        $ go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
@@ -422,6 +422,21 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
+
+    handleSomeException :: SomeException -> Main ExitCode
+    handleSomeException someException = do
+        criticalExecutionError someException
+        return $ ExitFailure 1
+
+    handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
+    handleWithConfiguration
+        (Goal.WithConfiguration lastConfiguration someException)
+      = do
+        liftIO $ renderResult
+            execOptions
+            ("// Last configuration:\n" <> unparse lastConfiguration)
+        throwM someException
+
     go :: Main ExitCode
     go
       | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
