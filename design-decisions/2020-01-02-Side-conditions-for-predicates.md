@@ -1,6 +1,5 @@
-Unique function results
-=======================
-
+Side conditions for predicates
+==============================
 
 Background
 ----------
@@ -13,9 +12,9 @@ sgn(x) = 1 requires x > 0
 ```
 
 Let us also say that we're trying to simplify this top-level configuration:
-`sgn(x) and x > 0`. Then it should be obvious that this evaluates uniquely to
-`1 and x > 0`, and we can solve that by passing the top-level condition,
-`x > 0`, as a side condition to the function simplifier, which can then use it
+`sgn(x) and x > 1`. Then it should be obvious that this evaluates uniquely to
+`1 and x > 1`, and we can solve that by passing the top-level condition,
+`x > 1`, as a side condition to the function simplifier, which can then use it
 to prune the unfeasible branches.
 
 The problem
@@ -49,17 +48,20 @@ This would allow us to simplify many predicates, but would fail for `sgn(x)==1`.
 We could try to use a condition as its own side-condition.
 
 The intuition would be that, when simplifying the `sgn(x)` part from
-`sgn(x) == 1 and x > 0` the SMT can use `x>0` to prune all branches except one.
+`sgn(x) == 1 and x > 1` the SMT can use `x>1` to prune all branches except one.
 When simplifying `sgn(x) == 1`, the SMT may again prune all branches except one
 (assuming that it has the definition for `sgn`).
 
 The main problem is that the side condition cannot be used to prune unneeded
 predicates, which seems to be a priority right now. Normally, if the top-level
-predicate is `x>0` and we evaluate `sgn(x)` to `1 and x>0`, then we can safely
-drop `x>0` from the evaluation result and keep only the `1` part.
+predicate is `x>1` and we evaluate `sgn(x)` to `1 and x>0`, then, since `x>1`
+implies `x>0`, we can safely drop `x>0` from the evaluation result and keep
+only the `1` part.
 
-However, if we try that when evaluating `sgn(x)==1` with itself as a side condition, say, because `sgn(x)==1` is the top predicate, we would get just
-`top`, when we would have expected `x>0`.
+However, if we try that when evaluating `sgn(x)==1` with itself as a side
+condition, say, because `sgn(x)==1` is the top predicate, we would get just
+`top` (since `sgn(x)==1` implies `x>0` and we'll drop it), which is obviously
+wrong.
 
 ### Combining the two
 
@@ -74,6 +76,6 @@ when this document is being written). If `C` is the top-level condition:
        `φᵢ` is defined. Note that this is not always the case, since evaluating
        `sgn(x)` as part of `ceil(1/sgn(x))` with a `top` top-level condition
        will still branch.
-1. Assuming tht only one `φᵢ` is defined, we can sometimes simplify its
+1. Assuming that only one `φᵢ` is defined, we can sometimes simplify its
    condition by using `C`, i.e. if `φᵢ = tᵢ ∧ Rᵢ` with `Rᵢ` being a predicate,
    and `C` implies `Rᵢ`, then we can simply drop `Rᵢ`).
