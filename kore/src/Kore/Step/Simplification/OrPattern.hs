@@ -38,7 +38,7 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 
 simplifyConditionsWithSmt
     ::  forall variable simplifier
-    .  (MonadSimplify simplifier, SimplifierVariable variable)
+    .   (MonadSimplify simplifier, SimplifierVariable variable)
     => Predicate variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)

@@ -9,25 +9,25 @@ module Kore.Logger.InfoEvaluateCondition
     , infoEvaluateCondition
     ) where
 
-import Kore.Logger
-    ( Entry (..)
-    , Severity (Info)
-    , MonadLog
-    , logM
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
     )
 import Kore.Internal.Predicate
     ( Predicate
     , freshVariable
     )
-import Kore.Internal.TermLike 
-import Data.Text.Prettyprint.Doc
-    ( Pretty (..)
+import Kore.Internal.TermLike
+import Kore.Logger
+    ( Entry (..)
+    , MonadLog
+    , Severity (Info)
+    , logM
     )
 import Kore.Unparser
 
 newtype InfoEvaluateCondition =
     InfoEvaluateCondition
-        { getCondition :: Predicate Variable 
+        { getCondition :: Predicate Variable
         }
 
 instance Pretty InfoEvaluateCondition where
