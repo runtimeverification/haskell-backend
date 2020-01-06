@@ -182,10 +182,10 @@ evalSimplifier
     -> SimplifierT smt a
     -> smt a
 evalSimplifier verifiedModule simplifier = do
-    env <- runSimplifier earlyEnv initialize
+    !env <- runSimplifier earlyEnv initialize
     runReaderT (runSimplifierT simplifier) env
   where
-    earlyEnv =
+    !earlyEnv =
         Env
             { metadataTools = earlyMetadataTools
             , simplifierTermLike

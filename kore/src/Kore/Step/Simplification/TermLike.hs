@@ -19,7 +19,7 @@ import Control.Monad
     )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     )

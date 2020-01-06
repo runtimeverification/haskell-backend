@@ -54,7 +54,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Identity
 import Control.Monad.Trans.Maybe
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
