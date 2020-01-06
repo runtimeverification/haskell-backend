@@ -226,10 +226,10 @@ runLoggerT options loggerT = do
 concurrentLogger :: LogAction IO a -> IO (LogAction IO a)
 concurrentLogger logger = do
     tChan <- newTChanIO
-    forkIO $ do
-        val <- atomically $ readTChan tChan
-        unLogAction logger val
-        return ()
+    _ <- forkIO $ do
+            val <- atomically $ readTChan tChan
+            logger Colog.<& val
+            return ()
     return $ writeTChanLogger tChan logger
 
 writeTChanLogger :: TChan a -> LogAction IO a -> LogAction IO a
