@@ -13,7 +13,7 @@ module Kore.Step.SMT.Representation.Resolve
 import Control.Error.Safe
     ( assertMay
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )

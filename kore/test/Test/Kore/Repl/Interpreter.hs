@@ -35,7 +35,7 @@ import Data.IORef
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Data.Text
     ( pack

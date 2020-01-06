@@ -7,7 +7,7 @@ import Test.Tasty.HUnit.Ext
 
 import Data.Default
 import qualified Data.Foldable as Foldable
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import Kore.Attribute.Pattern.FreeVariables as FreeVariables
