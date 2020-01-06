@@ -34,6 +34,7 @@ KORE_EXEC_OPTS += \
 		)\
 	)
 KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
+KPROVE_SPEC = $<
 
 $(DEF_KORE): $(DEF_DIR)/$(DEF).k $(K)
 	@echo ">>> kompile" $<
@@ -87,7 +88,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	@echo ">>> kprove" $<
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS))
 	$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore))
-	$(KPROVE) $(KPROVE_OPTS) $< --output-file $@ || true
+	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) --output-file $@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
 
@@ -104,7 +105,8 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### BMC
 
 %-bmc-spec.k.out: KPROVE = $(KBMC)
-%-bmc-spec.k.out: KPROVE_OPTS += --debug --raw-spec --depth $(KBMC_DEPTH)
+%-bmc-spec.k.out: KPROVE_SPEC = --raw-spec $<
+%-bmc-spec.k.out: KPROVE_OPTS += --depth $(KBMC_DEPTH)
 
 ### MERGE
 

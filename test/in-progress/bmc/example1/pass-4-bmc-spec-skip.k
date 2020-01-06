@@ -7,7 +7,7 @@ module VERIFICATION
 endmodule
 
 
-module TEST4-SPEC
+module PASS-4-BMC-SPEC
   imports VERIFICATION
   imports BMC
 
