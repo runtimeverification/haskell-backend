@@ -23,6 +23,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Unparser
+    ( Unparse (..)
+    )
 
 {- | The primitive transitions of the reachability proof strategy.
  -}
@@ -54,7 +57,7 @@ instance Filterable Prim where
     mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
 
 -- TODO: better descriptions of what each constructor represents?
-instance Pretty goal => Pretty (Prim goal) where
+instance Unparse goal => Pretty (Prim goal) where
     pretty CheckProven = "Transition CheckProven."
     pretty CheckGoalRemainder = "Transition CheckGoalRemainder."
     pretty CheckGoalStuck = "Transition CheckGoalStuck."
@@ -65,11 +68,11 @@ instance Pretty goal => Pretty (Prim goal) where
     pretty (DerivePar rules) =
         Pretty.vsep
             $ ["Transition DerivePar with rules:"]
-            <> fmap (Pretty.indent 4 . pretty) rules
+            <> fmap (Pretty.indent 4 . unparse) rules
     pretty (DeriveSeq rules) =
         Pretty.vsep
             $ ["Transition DeriveSeq with rules:"]
-            <> fmap (Pretty.indent 4 . pretty) rules
+            <> fmap (Pretty.indent 4 . unparse) rules
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
@@ -99,26 +102,26 @@ instance Debug a => Debug (ProofState a)
 instance (Debug a, Diff a) => Diff (ProofState a)
 
 -- TODO: better descriptions of what each constructor represents?
-instance Pretty goal => Pretty (ProofState goal) where
+instance Unparse goal => Pretty (ProofState goal) where
     pretty (Goal goal) =
         Pretty.vsep
             ["Proof state Goal:"
-            , Pretty.indent 4 $ pretty goal
+            , Pretty.indent 4 $ unparse goal
             ]
     pretty (GoalRemainder goal) =
         Pretty.vsep
             ["Proof state GoalRemainder:"
-            , Pretty.indent 4 $ pretty goal
+            , Pretty.indent 4 $ unparse goal
             ]
     pretty (GoalRewritten goal) =
         Pretty.vsep
             ["Proof state GoalRewritten:"
-            , Pretty.indent 4 $ pretty goal
+            , Pretty.indent 4 $ unparse goal
             ]
     pretty (GoalStuck goal) =
         Pretty.vsep
             ["Proof state GoalStuck:"
-            , Pretty.indent 4 $ pretty goal
+            , Pretty.indent 4 $ unparse goal
             ]
     pretty Proven = "Proof state Proven."
 

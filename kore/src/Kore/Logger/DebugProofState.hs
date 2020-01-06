@@ -18,7 +18,8 @@ import Kore.Internal.TermLike
     )
 import Kore.Logger
 import Kore.Step.RulePattern
-    ( RulePattern (..)
+    ( ReachabilityRule (..)
+    , RewriteRule (..)
     )
 import Kore.Strategies.ProofState
     ( Prim (..)
@@ -28,12 +29,12 @@ import Kore.Strategies.ProofState
 data DebugProofState =
     DebugProofState
         { configuration :: !TransitionState
-        , transition :: !(Prim (RulePattern Variable))
+        , transition :: !(Prim (RewriteRule Variable))
         }
 
 data TransitionState
-    = Before !(ProofState (RulePattern Variable))
-    | After  !(ProofState (RulePattern Variable))
+    = Before !(ProofState (ReachabilityRule Variable))
+    | After  !(ProofState (ReachabilityRule Variable))
     deriving Eq
 
 instance Pretty DebugProofState where

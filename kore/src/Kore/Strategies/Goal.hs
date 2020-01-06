@@ -594,8 +594,8 @@ data TransitionRuleTemplate monad goal =
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
-    => ToRulePattern goal
-    => ToRulePattern (Rule goal)
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
@@ -1097,10 +1097,19 @@ configurationDestinationToRule ruleType configuration rhs =
         , attributes = Default.def
         }
 
+class ToReachabilityRule rule where
+    toReachabilityRule :: rule -> ReachabilityRule Variable
+
+instance ToReachabilityRule (OnePathRule Variable) where
+    toReachabilityRule = OnePath
+
+instance ToReachabilityRule (AllPathRule Variable) where
+    toReachabilityRule = AllPath
+
 debugProofStateBracket
     :: MonadLog log
-    => ToRulePattern goal
-    => ToRulePattern (Rule goal)
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => ProofState goal goal
@@ -1111,18 +1120,18 @@ debugProofStateBracket
     -- ^ action to be computed
     -> log (ProofState goal goal)
 debugProofStateBracket
-    (fmap toRulePattern -> config)
-    (fmap toRulePattern -> transition)
+    (fmap toReachabilityRule -> proofstate)
+    (coerce -> transition)
     action
   = do
     logM DebugProofState
-        { configuration = Before config
+        { configuration = Before proofstate
         , transition
         }
     result <- action
     logM DebugProofState
         { configuration =
-            After $ toRulePattern <$> result
+            After $ toReachabilityRule <$> result
         , transition
         }
     return result
