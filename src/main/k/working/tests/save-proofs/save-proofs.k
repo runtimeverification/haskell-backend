@@ -1,5 +1,6 @@
 module SAVE-PROOFS
-  imports DOMAINS
+
+  imports INT
 
   syntax KItem ::= "AA" "(" Int ")"
   syntax KItem ::= "BB" "(" Int ")"

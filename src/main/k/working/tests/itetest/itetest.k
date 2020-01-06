@@ -1,6 +1,6 @@
 module ITETEST
   imports K-EQUAL
-  imports DOMAINS
+  imports INT
   syntax S ::= "test" | Int
   configuration <k> $PGM:K </k>
 

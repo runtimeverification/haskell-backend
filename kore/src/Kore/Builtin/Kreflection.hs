@@ -29,7 +29,5 @@ symbolVerifiers =
 
 rejectSymbolIsConcrete :: Builtin.SymbolVerifier
 rejectSymbolIsConcrete =
-    Builtin.SymbolVerifier $ \_ _ -> Left $ Kore.Error.Error
-        { errorContext = []
-        , errorError = "found KREFLECTION.isConcrete hook"
-        }
+    Builtin.SymbolVerifier $ \_ _ ->
+        Kore.Error.koreFail "found KREFLECTION.isConcrete hook"

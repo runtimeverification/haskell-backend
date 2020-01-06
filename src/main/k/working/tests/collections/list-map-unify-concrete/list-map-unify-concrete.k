@@ -1,7 +1,5 @@
 module LIST-MAP-UNIFY-CONCRETE
 
-    imports DOMAINS
-
     configuration <k> $PGM:Program </k>
                   <acct> 0 </acct>
                   <accounts>

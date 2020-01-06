@@ -1,6 +1,6 @@
 module SETVARS
   imports K-EQUAL
-  imports DOMAINS
+  imports INT
   syntax KItem ::= Int
   syntax KResult ::= Int
 

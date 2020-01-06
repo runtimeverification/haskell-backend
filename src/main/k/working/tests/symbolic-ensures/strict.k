@@ -1,5 +1,5 @@
 module STRICT
-  imports DOMAINS
+  imports INT
   syntax Exp ::= Int
                | checkInterval(Int, Int, Exp) [strict(3)]
                | interval(Int, Int)

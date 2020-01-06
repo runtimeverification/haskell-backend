@@ -8,7 +8,8 @@ simplified by evaluating the function.
 */
 module LOCALS
 
-  imports DOMAINS
+  imports INT
+  imports MAP
 
   syntax Index ::= Int
   syntax Value ::= "a" | "b"

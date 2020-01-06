@@ -1,5 +1,5 @@
 module ORD
-  imports DOMAINS
+  imports STRING
     syntax String ::= rlpEncodeString ( String )           [function]
     syntax String ::= rlpEncodeLength ( String , Int )     [function]
 
