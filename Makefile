@@ -10,14 +10,7 @@ kore-exec: $(KORE_EXEC)
 
 kore-repl: $(KORE_REPL)
 
-k-frontend:
-	mkdir -p $(BUILD_DIR)
-	rm -rf $(K_RELEASE_DEFAULT) $(K_RELEASE_TAR)
-	curl --location --output $(K_RELEASE_TAR) $(K_RELEASE_TAR_URL)
-	mkdir -p $(K_RELEASE_DEFAULT)
-	tar --extract --file $(K_RELEASE_TAR) --strip-components 1 --directory $(K_RELEASE_DEFAULT)
-	cp src/main/kore/prelude.kore $(K_RELEASE_DEFAULT)/include/kore
-	$(KRUN) --version
+k-frontend: $(K_RELEASE_DEFAULT)/lib/java/kernel-1.0-SNAPSHOT.jar
 
 docs: haddock
 
