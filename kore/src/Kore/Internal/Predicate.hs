@@ -770,7 +770,6 @@ substitute
 substitute subst (GenericPredicate termLike) =
     GenericPredicate (TermLike.substitute subst termLike)
 
-
 {- | Externalize the variables
 
 -}
@@ -779,5 +778,5 @@ freshVariable
     => Predicate variable
     -> Predicate Variable
 freshVariable predicate =
-    externalizeFreshVariables . (TermLike.mapVariables toVariable)
+    externalizeFreshVariables . TermLike.mapVariables toVariable
     <$> predicate
