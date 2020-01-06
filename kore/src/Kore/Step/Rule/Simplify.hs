@@ -56,7 +56,7 @@ import Kore.Step.Simplification.OrPattern
     ( simplifyConditionsWithSmt
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyTopConfigurationAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
@@ -79,7 +79,7 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
     simplifyRuleLhs rule@(RulePattern _ _ _ _ _) = do
         let lhsWithPredicate = Pattern.fromTermLike left
         simplifiedTerms <-
-            Pattern.simplifyTopConfigurationAndRemoveTopExists lhsWithPredicate
+            Pattern.simplifyTopConfiguration lhsWithPredicate
         fullySimplified <-
             simplifyConditionsWithSmt
                 makeTruePredicate_

@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 module Kore.Step.Simplification.Pattern
-    ( simplifyTopConfigurationAndRemoveTopExists
+    ( simplifyTopConfiguration
     , simplify
     ) where
 
@@ -34,13 +34,16 @@ import Kore.Step.Simplification.Simplify
     , simplifyConditionalTermToOr
     )
 
-simplifyTopConfigurationAndRemoveTopExists
+{-| Simplifies the pattern without a side-condition (i.e. it's top)
+and removes the exists quantifiers at the top.
+-}
+simplifyTopConfiguration
     :: forall variable simplifier
     .  SimplifierVariable variable
     => MonadSimplify simplifier
     => Pattern variable
     -> simplifier (OrPattern variable)
-simplifyTopConfigurationAndRemoveTopExists patt = do
+simplifyTopConfiguration patt = do
     simplified <- simplify Condition.topTODO patt
     return (removeTopExists <$> simplified)
   where

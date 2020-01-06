@@ -117,7 +117,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
-    ( simplifyTopConfigurationAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
     ( simplifyTerm
@@ -784,7 +784,7 @@ removeDestinationWorker stateConstructor goal =
             else do
                 simplifiedRemoval <-
                     SMT.Evaluator.filterMultiOr
-                    =<< simplifyTopConfigurationAndRemoveTopExists
+                    =<< simplifyTopConfiguration
                         (Conditional.andPredicate configuration removal)
                 if not (isBottom simplifiedRemoval)
                     then return . GoalStuck $ goal
@@ -805,7 +805,7 @@ simplify
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = withConfiguration goal $ do
     configs <- Trans.lift $
-        simplifyTopConfigurationAndRemoveTopExists configuration
+        simplifyTopConfiguration configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
         then pure $ configurationDestinationToRule goal Pattern.bottom destination

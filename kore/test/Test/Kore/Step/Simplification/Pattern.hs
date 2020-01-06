@@ -90,4 +90,4 @@ simplify = runSimplifier Mock.env . Pattern.simplify Condition.top
 simplifyAndRemoveTopExists :: Pattern Variable -> IO (OrPattern Variable)
 simplifyAndRemoveTopExists =
     runSimplifier Mock.env
-    . Pattern.simplifyTopConfigurationAndRemoveTopExists
+    . Pattern.simplifyTopConfiguration

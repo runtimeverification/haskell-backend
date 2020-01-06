@@ -33,7 +33,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyTopConfigurationAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -72,7 +72,7 @@ checkImplicationIsTop lhs rhs =
                     , substitution = mempty
                     }
             orResult <-
-                Pattern.simplifyTopConfigurationAndRemoveTopExists result
+                Pattern.simplifyTopConfiguration result
             orFinalResult <- SMT.Evaluator.filterMultiOr orResult
             return (isBottom orFinalResult)
         _ -> (error . show . Pretty.vsep)
