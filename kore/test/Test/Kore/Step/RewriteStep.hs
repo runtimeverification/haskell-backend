@@ -42,19 +42,19 @@ import Kore.Internal.TermLike
 import qualified Kore.Step.Result as Result
     ( mergeResults
     )
-import Kore.Step.RewriteStep
-    ( Results
-    , UnificationProcedure (..)
-    )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RHS (..)
     , RewriteRule (..)
     , RulePattern (..)
     , injectTermIntoRHS
     , rulePattern
     )
-import qualified Kore.Step.Rule as RulePattern
+import qualified Kore.Step.RulePattern as RulePattern
+import Kore.Step.Step
+    ( UnificationProcedure (..)
+    )
+import qualified Kore.Step.Step as Step
 import Kore.Unification.Error
     ( SubstitutionError (..)
     , UnificationOrSubstitutionError (..)
@@ -174,7 +174,7 @@ test_unifyRule =
         let actual = Conditional.term <$> unified
         assertBool ""
             $ Foldable.all (not . FreeVariables.isFreeVariable (ElemVar Mock.x))
-            $ RulePattern.freeVariables <$> actual
+            $ freeVariables <$> actual
 
     , testCase "performs unification with initial term" $ do
         let initial = pure (Mock.functionalConstr10 Mock.a)
@@ -212,7 +212,11 @@ test_unifyRule =
 applyRewriteRule_
     ::  ( Pattern Variable
           -> [RewriteRule Variable]
-          -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
+          -> IO
+            (Either
+                UnificationOrSubstitutionError
+                (Step.Results RulePattern Variable)
+            )
         )
     -- ^ 'RewriteRule'
     -> Pattern Variable
@@ -227,7 +231,11 @@ applyRewriteRule_ applyRewriteRules initial rule =
 applyRewriteRules_
     ::  ( Pattern Variable
           -> [RewriteRule Variable]
-          -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
+          -> IO
+            (Either
+                UnificationOrSubstitutionError
+                (Step.Results RulePattern Variable)
+            )
         )
     -- ^ 'RewriteRule's
     -> Pattern Variable
@@ -728,7 +736,11 @@ applyRewriteRulesParallel
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
-    -> IO (Either UnificationOrSubstitutionError (Step.Results Variable))
+    -> IO
+      (Either
+          UnificationOrSubstitutionError
+          (Step.Results RulePattern Variable)
+      )
 applyRewriteRulesParallel initial rules =
     (fmap . fmap) Result.mergeResults
     $ runSimplifier Mock.env
@@ -741,7 +753,7 @@ applyRewriteRulesParallel initial rules =
 checkResults
     :: HasCallStack
     => MultiOr (Pattern Variable)
-    -> Step.Results Variable
+    -> Step.Results RulePattern Variable
     -> Assertion
 checkResults expect actual =
     assertEqual "compare results"
@@ -751,7 +763,7 @@ checkResults expect actual =
 checkRemainders
     :: HasCallStack
     => MultiOr (Pattern Variable)
-    -> Step.Results Variable
+    -> Step.Results RulePattern Variable
     -> Assertion
 checkRemainders expect actual =
     assertEqual "compare remainders"
@@ -1093,7 +1105,11 @@ applyRewriteRulesSequence
     -- ^ Configuration
     -> [RewriteRule Variable]
     -- ^ Rewrite rule
-    -> IO (Either UnificationOrSubstitutionError (Results Variable))
+    -> IO
+      (Either
+          UnificationOrSubstitutionError
+          (Step.Results RulePattern Variable)
+      )
 applyRewriteRulesSequence initial rules =
     (fmap . fmap) Result.mergeResults
     $ runSimplifier Mock.env

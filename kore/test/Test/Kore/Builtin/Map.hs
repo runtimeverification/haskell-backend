@@ -62,10 +62,10 @@ import Data.Function
     ( (&)
     )
 import qualified Data.List as List
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
@@ -95,7 +95,7 @@ import Kore.Internal.TermLike hiding
     ( asConcrete
     )
 import qualified Kore.Internal.TermLike as TermLike
-import Kore.Step.Rule
+import Kore.Step.RulePattern
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)

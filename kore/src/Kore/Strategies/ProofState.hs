@@ -51,14 +51,14 @@ instance Filterable Prim where
 
 {- | The state of the reachability proof strategy for @goal@.
  -}
-data ProofState a
-    = Goal a
+data ProofState goal
+    = Goal !goal
     -- ^ The indicated goal is being proven.
-    | GoalRemainder a
+    | GoalRemainder !goal
     -- ^ The indicated goal remains after rewriting.
-    | GoalRewritten a
+    | GoalRewritten !goal
     -- ^ We already rewrote the goal this step.
-    | GoalStuck a
+    | GoalStuck !goal
     -- ^ If the terms unify and the condition does not imply
     -- the goal, the proof is stuck. This state should be reachable
     -- only by applying RemoveDestination.

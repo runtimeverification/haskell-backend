@@ -35,9 +35,8 @@ import Data.IORef
 import Data.List.NonEmpty
     ( NonEmpty (..)
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
 import Data.Text
     ( pack
     )
@@ -63,10 +62,11 @@ import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )
 import qualified Kore.Logger.Output as Logger
+import qualified Kore.Logger.Registry as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
-import Kore.Step.Rule
+import Kore.Step.RulePattern
 import Kore.Step.Simplification.AndTerms
     ( cannotUnifyDistinctDomainValues
     )
@@ -505,7 +505,10 @@ logUpdatesState = do
         options =
             Logger.KoreLogOptions
                 { logLevel = Logger.Info
-                , logEntries = Set.fromList ["entry1", "entry2"]
+                , logEntries =
+                    Map.keysSet
+                    . Logger.typeToText
+                    $ Logger.registry
                 , logType = Logger.LogStdErr
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty

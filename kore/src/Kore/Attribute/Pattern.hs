@@ -34,7 +34,12 @@ import qualified GHC.Generics as GHC
 import Kore.Attribute.Pattern.ConstructorLike
 import Kore.Attribute.Pattern.Created
 import Kore.Attribute.Pattern.Defined
-import Kore.Attribute.Pattern.FreeVariables
+import Kore.Attribute.Pattern.FreeVariables hiding
+    ( freeVariables
+    )
+import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+    ( freeVariables
+    )
 import Kore.Attribute.Pattern.Function
 import Kore.Attribute.Pattern.Functional
 import Kore.Attribute.Pattern.Simplified
@@ -134,3 +139,8 @@ deleteFreeVariable
     -> Pattern variable
 deleteFreeVariable variable =
     Lens.over (field @"freeVariables") (bindVariable variable)
+
+
+instance HasFreeVariables (Pattern variable) variable where
+    freeVariables = freeVariables
+

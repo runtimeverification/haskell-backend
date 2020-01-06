@@ -13,7 +13,7 @@ module Test.Kore.Step.SMT.Representation.Builders
 
 import Test.Kore.Step.SMT.Builders ()
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )

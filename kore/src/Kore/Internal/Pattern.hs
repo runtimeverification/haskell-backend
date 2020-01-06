@@ -20,7 +20,6 @@ module Kore.Internal.Pattern
     , top
     , topOf
     , fromTermLike
-    , Kore.Internal.Pattern.freeVariables
     , Kore.Internal.Pattern.freeElementVariables
     , isSimplified
     -- * Re-exports
@@ -38,7 +37,7 @@ import GHC.Stack
     )
 
 import Kore.Attribute.Pattern.FreeVariables
-    ( FreeVariables
+    ( freeVariables
     , getFreeElementVariables
     )
 import Kore.Internal.Condition
@@ -99,18 +98,12 @@ isSimplified :: Pattern variable -> Bool
 isSimplified (splitTerm -> (t, p)) =
     TermLike.isSimplified t && Condition.isSimplified p
 
-freeVariables
-    :: Ord variable
-    => Pattern variable
-    -> FreeVariables variable
-freeVariables = Conditional.freeVariables TermLike.freeVariables
-
 freeElementVariables
     :: Ord variable
     => Pattern variable
     -> [ElementVariable variable]
 freeElementVariables =
-    getFreeElementVariables . Kore.Internal.Pattern.freeVariables
+    getFreeElementVariables . freeVariables
 
 {-|'mapVariables' transforms all variables, including the quantified ones,
 in an Pattern.

@@ -46,32 +46,36 @@ import Kore.Internal.Predicate as Predicate
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import Kore.Logger.DebugAppliedRule
+    ( debugAppliedRule
+    )
+import Kore.Step.EqualityPattern
+    ( EqualityPattern (..)
+    )
+import qualified Kore.Step.EqualityPattern as EqualityPattern
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Results
 import qualified Kore.Step.Result as Step
-import Kore.Step.RewriteStep
+import qualified Kore.Step.Simplification.Simplify as Simplifier
+import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
+import Kore.Step.Step
     ( Result
     , Results
     , UnificationProcedure (..)
+    , UnifiedRule
     , applyInitialConditions
     , applyRemainder
     , assertFunctionLikeResults
     , checkFunctionLike
     , checkSubstitutionCoverage
     , simplifyPredicate
-    , toAxiomVariables
     , toConfigurationVariables
     , unifyRules
     , wouldNarrowWith
     )
-import Kore.Step.Rule
-    ( RHS (RHS)
-    , RulePattern (RulePattern, left, requires)
+import qualified Kore.Step.Step as EqualityPattern
+    ( toAxiomVariables
     )
-import qualified Kore.Step.Rule as Rule
-import qualified Kore.Step.Simplification.Simplify as Simplifier
-import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Unification.Substitution as Substitution
 import Kore.Unification.Unify
     ( MonadUnify
@@ -96,7 +100,10 @@ The result is narrowing if the unifier's substitution is missing any variable
 from the left-hand side of the rule.
 
  -}
-isNarrowingResult :: Ord variable => Result variable -> Bool
+isNarrowingResult
+    :: Ord variable
+    => Result EqualityPattern variable
+    -> Bool
 isNarrowingResult Step.Result { appliedRule } =
     (not . Set.null) (wouldNarrowWith appliedRule)
 
@@ -155,7 +162,7 @@ finalizeAppliedRule
     :: forall unifier variable
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => RulePattern variable
+    => EqualityPattern variable
     -- ^ Applied rule
     -> OrCondition variable
     -- ^ Conditions of applied rule
@@ -165,18 +172,12 @@ finalizeAppliedRule renamedRule appliedConditions =
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
     finalizeAppliedRuleWorker appliedCondition = do
-        let rhs = Rule.rhs renamedRule
-            existentials = Rule.existentials rhs
-        Monad.unless (null existentials)
-            $ (error . show. Pretty.vsep)
-               [ "Quantification in RHS of an equation is not yet supported."
-               , Pretty.indent 4 $ Pretty.list $ unparse <$> existentials
-               ]
         -- Combine the initial conditions, the unification conditions, and the
         -- axiom ensures clause. The axiom requires clause is included by
         -- unifyRule.
         let
-            RHS { ensures } = rhs
+            finalTerm = EqualityPattern.right renamedRule
+            ensures = EqualityPattern.ensures renamedRule
             ensuresCondition = Condition.fromPredicate ensures
             preFinalCondition = appliedCondition <> ensuresCondition
         finalCondition <- simplifyPredicate preFinalCondition
@@ -185,7 +186,6 @@ finalizeAppliedRule renamedRule appliedConditions =
         let
             Conditional { substitution } = finalCondition
             substitution' = Substitution.toMap substitution
-            RHS { right = finalTerm } = rhs
             finalTerm' = TermLike.substitute substitution' finalTerm
         return finalCondition { Pattern.term = finalTerm' }
 
@@ -196,9 +196,9 @@ finalizeRule
         )
     => Pattern (Target variable)
     -- ^ Initial conditions
-    -> UnifiedRule (Target variable)
+    -> UnifiedRule (Target variable) (EqualityPattern (Target variable))
     -- ^ Rewriting axiom
-    -> unifier [Result variable]
+    -> unifier [Result EqualityPattern variable]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
 finalizeRule initial unifiedRule =
@@ -226,7 +226,7 @@ recoveryFunctionLikeResults
     .  SimplifierVariable variable
     => Simplifier.MonadSimplify simplifier
     => Pattern (Target variable)
-    -> Results variable
+    -> Results EqualityPattern variable
     -> simplifier ()
 recoveryFunctionLikeResults initial results = do
     let appliedRules = Result.appliedRule <$> Results.results results
@@ -249,7 +249,7 @@ recoveryFunctionLikeResults initial results = do
 
             Conditional { term = ruleTerm, substitution = ruleSubstitution } =
                 appliedRule
-            RulePattern { left = alpha_t', requires = alpha_p'} = ruleTerm
+            EqualityPattern { left = alpha_t', requires = alpha_p'} = ruleTerm
 
             substitution' = Substitution.toMap ruleSubstitution
 
@@ -293,8 +293,8 @@ finalizeRulesSequence
     .  SimplifierVariable variable
     => MonadUnify unifier
     => Pattern (Target variable)
-    -> [UnifiedRule (Target variable)]
-    -> unifier (Results variable)
+    -> [UnifiedRule (Target variable) (EqualityPattern (Target variable))]
+    -> unifier (Results EqualityPattern variable)
 finalizeRulesSequence initial unifiedRules
   = do
     (results, remainder) <-
@@ -311,8 +311,11 @@ finalizeRulesSequence initial unifiedRules
   where
     initialTerm = Conditional.term initial
     finalizeRuleSequence'
-        :: UnifiedRule (Target variable)
-        -> State.StateT (Condition (Target variable)) unifier [Result variable]
+        :: UnifiedRule (Target variable) (EqualityPattern (Target variable))
+        -> State.StateT
+            (Condition (Target variable))
+            unifier
+            [Result EqualityPattern variable]
     finalizeRuleSequence' unifiedRule = do
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
@@ -339,14 +342,14 @@ applyRulesSequence
     => UnificationProcedure
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
-    -> [RulePattern variable]
+    -> [EqualityPattern variable]
     -- ^ Rewrite rules
-    -> unifier (Results variable)
+    -> unifier (Results EqualityPattern variable)
 applyRulesSequence
     unificationProcedure
     initial
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
-    (map toAxiomVariables -> rules)
+    (map EqualityPattern.toAxiomVariables -> rules)
   = unifyRules unificationProcedure initial rules
     >>= finalizeRulesSequence initial

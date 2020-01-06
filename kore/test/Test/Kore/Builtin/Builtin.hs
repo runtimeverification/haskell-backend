@@ -36,10 +36,10 @@ import qualified Control.Monad.Trans as Trans
 import Data.Function
     ( (&)
     )
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     )
@@ -111,8 +111,9 @@ import qualified Kore.Step.Result as Result
     ( mergeResults
     )
 import qualified Kore.Step.RewriteStep as Step
-import Kore.Step.Rule
+import Kore.Step.RulePattern
     ( RewriteRule
+    , RulePattern
     )
 import qualified Kore.Step.Simplification.Condition as Simplifier.Condition
 import Kore.Step.Simplification.Data
@@ -121,6 +122,7 @@ import qualified Kore.Step.Simplification.Simplifier as Simplifier
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.SubstitutionSimplifier as SubstitutionSimplifier
 import qualified Kore.Step.Simplification.TermLike as TermLike
+import qualified Kore.Step.Step as Step
 import Kore.Syntax.Definition
     ( ModuleName
     , ParsedDefinition
@@ -294,7 +296,11 @@ runStepResult
     -- ^ configuration
     -> RewriteRule Variable
     -- ^ axiom
-    -> SMT (Either UnificationOrSubstitutionError (Step.Results Variable))
+    -> SMT
+        (Either
+            UnificationOrSubstitutionError
+            (Step.Results RulePattern Variable)
+        )
 runStepResult configuration axiom = do
     results <-
         runSimplifier testEnv

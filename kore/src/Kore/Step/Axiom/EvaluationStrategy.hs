@@ -39,11 +39,11 @@ import Kore.Logger.WarnSimplificationWithRemainder
     ( warnSimplificationWithRemainder
     )
 import Kore.Step.Axiom.Evaluate
-import qualified Kore.Step.EquationalStep as Step
-import Kore.Step.Result as Results
-import Kore.Step.Rule
+import Kore.Step.EqualityPattern
     ( EqualityRule (..)
     )
+import qualified Kore.Step.EquationalStep as Step
+import Kore.Step.Result as Results
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.Simplify as AttemptedAxiom
     ( AttemptedAxiom (..)

@@ -19,7 +19,7 @@ import Control.Monad
     )
 import Data.Functor.Const
 import qualified Data.Functor.Foldable as Recursive
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     )
@@ -31,7 +31,10 @@ import qualified Branch as BranchT
     ( gather
     , scatter
     )
-import qualified Kore.Attribute.Pattern.FreeVariables as FreeVariables
+import Kore.Attribute.Pattern.FreeVariables
+    ( freeVariables
+    , getFreeVariables
+    )
 import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -212,8 +215,7 @@ simplifyInternal term predicate = do
         Nothing -> id
         Just identifier -> Profiler.identifierSimplification identifier
 
-    predicateFreeVars =
-        FreeVariables.getFreeVariables $ Condition.freeVariables predicate
+    predicateFreeVars = getFreeVariables $ freeVariables predicate
 
     simplifyChildren
         :: Traversable t
@@ -434,9 +436,7 @@ simplifyInternal term predicate = do
         -> Binding.Binder (UnifiedVariable variable) (TermLike variable)
     refreshBinder binder@Binding.Binder { binderVariable, binderChild }
       | binderVariable `Set.member` predicateFreeVars =
-        let existsFreeVars =
-                FreeVariables.getFreeVariables
-                $ TermLike.freeVariables binderChild
+        let existsFreeVars = getFreeVariables $ freeVariables binderChild
             fresh =
                 fromMaybe (error "guard above ensures result <> Nothing")
                     $ refreshVariable
