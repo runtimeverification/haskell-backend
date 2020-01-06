@@ -7,7 +7,7 @@ module VERIFICATION
   rule CC(X:Int) => DD(X:Int)
 endmodule
 
-module TEST-2
+module TEST-2-SPEC
   imports VERIFICATION
 
   rule BB(X:Int) => CC(X:Int)

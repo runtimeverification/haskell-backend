@@ -13,6 +13,7 @@ KPROVE_MODULE ?= VERIFICATION
 
 DIFF = diff -u
 FAILED = ( mv $@ $@.fail && false )
+FAILED_STORE_PROOFS = ( mv $(STORE_PROOFS) $(STORE_PROOFS).fail && mv $@ $@.fail && false )
 
 KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
 DEF_KORE := $(KOMPILED)/definition.kore
@@ -25,9 +26,17 @@ OUTS = $(foreach TEST, $(TESTS), $(TEST).out)
 KOMPILE_OPTS += -d $(DEF_DIR)
 KRUN_OPTS += -d $(DEF_DIR)
 KPROVE_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
+KORE_EXEC_OPTS += \
+	$(if $(STORE_PROOFS),\
+		--save-proofs $(STORE_PROOFS),\
+		$(if $(RECALL_PROOFS),\
+			--save-proofs $(@:.out=.save-proofs.kore)\
+		)\
+	)
 KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 
 $(DEF_KORE): $(DEF_DIR)/$(DEF).k $(K)
+	@echo ">>> kompile" $<
 	rm -fr $(KOMPILED)
 	$(KOMPILE) $(KOMPILE_OPTS) $<
 
@@ -47,6 +56,7 @@ $(DEF_KORE): $(DEF_DIR)/$(DEF).k $(K)
 ### RUN
 
 %.$(EXT).out: $(TEST_DIR)/%.$(EXT) $(TEST_DEPS)
+	@echo ">>> krun" $<
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 
@@ -74,26 +84,22 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### PROVE
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
-	rm -f $(@:.out=.save-proofs)
+	@echo ">>> kprove" $<
+	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS))
+	$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore))
 	$(KPROVE) $(KPROVE_OPTS) $< --output-file $@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
-	! [[ -f $(@:.out=.save-proofs) ]] \
-		|| $(DIFF) $(@:.out=.save-proofs).golden $(@:.out=.save-proofs) \
-		|| $(FAILED)
+	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))
+
+%-save-proofs-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
+
+%.save-proofs.kore: %.out
+	[ -f $@ ]
 
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
 %-repl-script-spec.k.out: \
-	KPROVE_OPTS = \
-		-d $(DEF_DIR) -m $(KPROVE_MODULE) \
-		--haskell-backend-command \
-		"$(KORE_REPL) -r --repl-script $<.repl"
-
-%-save-proofs-spec.k.out: \
-	KPROVE_OPTS =\
-		-d $(DEF_DIR) -m $(KPROVE_MODULE) \
-		--haskell-backend-command \
-		"$(KORE_EXEC) --save-proofs $(@:.out=.save-proofs)"
+	HASKELL_BACKEND_COMMAND = $(KORE_REPL) -r --repl-script $<.repl
 
 ### BMC
 
@@ -115,6 +121,6 @@ test-k: $(OUTS)
 golden: $(foreach OUT, $(OUTS), $(OUT).golden)
 
 clean:
-	rm -fr $(KOMPILED) $(TEST_DIR)/*.out
+	rm -fr $(KOMPILED) $(TEST_DIR)/*.out $(TEST_DIR)/*.save-proofs.kore
 
 .PHONY: test-k test golden clean

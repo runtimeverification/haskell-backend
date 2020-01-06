@@ -1,12 +1,7 @@
-DEFINITION_NAME := save-proofs
+DEF := save-proofs
+include $(CURDIR)/../include.mk
 
-include $(CURDIR)/../../include.mk
+test-1-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
 
-test-save-chain: save-proofs/test.save-chain
-
-test-k: test-save-chain
-
-clean:
-	rm -rf $(KOMPILED) tests/*.output
-
-.PHONY: test-k test golden clean %.test %.krun test-save-chain
+test-2-spec.k.out: private RECALL_PROOFS = test-1-spec.k.save-proofs.kore
+test-2-spec.k.out: test-1-spec.k.save-proofs.kore

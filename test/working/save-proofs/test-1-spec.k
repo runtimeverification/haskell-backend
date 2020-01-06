@@ -5,7 +5,7 @@ module VERIFICATION
   rule BB(X:Int) => CC(X:Int)
 endmodule
 
-module TEST-1
+module TEST-1-SPEC
   imports VERIFICATION
 
   rule BB(X:Int) => CC(X:Int)
