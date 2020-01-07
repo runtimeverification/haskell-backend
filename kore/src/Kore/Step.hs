@@ -48,7 +48,7 @@ import Kore.Step.RulePattern
     , isNormalRule
     )
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify as Simplifier
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -107,7 +107,7 @@ transitionRule =
     transitionSimplify config =
         do
             configs <- Monad.Trans.lift $
-                Pattern.simplifyAndRemoveTopExists config
+                Pattern.simplifyTopConfiguration config
             filteredConfigs <- SMT.Evaluator.filterMultiOr configs
             Foldable.asum (pure <$> filteredConfigs)
     transitionRewrite rule config = do

@@ -449,7 +449,8 @@ data Config claim m = Config
         -> m (ExecutionGraph (Rule claim))
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
-        :: TermLike Variable
+        :: Condition Variable
+        -> TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation m (Condition Variable)
     -- ^ Unifier function, it is a partially applied 'unificationProcedure'
