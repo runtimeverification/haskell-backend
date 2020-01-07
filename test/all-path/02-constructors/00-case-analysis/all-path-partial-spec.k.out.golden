@@ -1,0 +1,15 @@
+  #Not ( {
+    X
+  #Equals
+    a
+  } )
+#And
+  #Not ( {
+    X
+  #Equals
+    b
+  } )
+#And
+  <k>
+    partial ( X )
+  </k>
