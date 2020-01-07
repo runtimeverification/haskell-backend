@@ -10,6 +10,10 @@ module Kore.Step.Simplification.OrPattern
 import qualified Control.Comonad as Comonad
 
 import qualified Branch as BranchT
+import qualified Kore.Internal.Condition as Condition
+    ( fromPredicate
+    , top
+    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -46,12 +50,15 @@ simplifyConditionsWithSmt predicate' unsimplified = do
     simplifiedWrappedPatterns <-
         fmap MultiOr.make . BranchT.gather $ do
             unsimplified1 <- BranchT.scatter unsimplified
-            simplified <- simplifyCondition unsimplified1
+            simplified <-
+                simplifyCondition
+                    (Condition.fromPredicate predicate')
+                    unsimplified1
             -- Wrapping the original patterns as their own terms in order to be
             -- able to retrieve them unchanged after adding predicate' to them,
             -- simplification and SMT filtering
             let wrapped = addPredicate $ conditionalAsTerm simplified
-            simplifyCondition wrapped
+            simplifyCondition Condition.top wrapped
     filteredWrappedPatterns <-
         SMT.Evaluator.filterMultiOr simplifiedWrappedPatterns
     return (MultiOr.filterOr (Conditional.term <$> filteredWrappedPatterns))

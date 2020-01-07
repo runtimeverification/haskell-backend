@@ -18,6 +18,7 @@ module Kore.Step.Step
     , simplifyPredicate
     , toAxiomVariables
     , toConfigurationVariables
+    , toConfigurationVariablesCondition
     , unwrapRule
     , assertFunctionLikeResults
     , checkFunctionLike
@@ -104,7 +105,8 @@ newtype UnificationProcedure =
     UnificationProcedure
         ( forall variable unifier
         .  (SimplifierVariable variable, MonadUnify unifier)
-        => TermLike variable
+        => Condition variable
+        -> TermLike variable
         -> TermLike variable
         -> unifier (Condition variable)
         )
@@ -155,15 +157,16 @@ unifyRules
     => MonadUnify unifier
     => UnifyingRule rule
     => UnificationProcedure
+    -> Condition (Target variable)
     -> Pattern (Target variable)
     -- ^ Initial configuration
     -> [rule (Target variable)]
     -- ^ Rule
     -> unifier [UnifiedRule (Target variable) (rule (Target variable))]
-unifyRules unificationProcedure initial rules =
+unifyRules unificationProcedure topCondition initial rules =
     Monad.Unify.gather $ do
         rule <- Monad.Unify.scatter rules
-        unifyRule unificationProcedure initial rule
+        unifyRule unificationProcedure topCondition initial rule
 
 {- | Attempt to unify a rule with the initial configuration.
 
@@ -183,6 +186,8 @@ unifyRule
     => MonadUnify unifier
     => UnifyingRule rule
     => UnificationProcedure
+    -> Condition variable
+    -- ^ Top level condition.
     -> Pattern variable
     -- ^ Initial configuration
     -> rule variable
@@ -190,9 +195,11 @@ unifyRule
     -> unifier (UnifiedRule variable (rule variable))
 unifyRule
     (UnificationProcedure unifyPatterns)
-    initial@Conditional { term = initialTerm }
+    topCondition
+    initial
     rule
   = do
+    let (initialTerm, initialCondition) = Pattern.splitTerm initial
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
@@ -202,12 +209,17 @@ unifyRule
     -- configuration.
     let
         ruleLeft = matchingPattern rule'
-    unification <- unifyPatterns ruleLeft initialTerm
+    unification <-
+        unifyPatterns (topCondition <> initialCondition) ruleLeft initialTerm
     -- Combine the unification solution with the rule's requirement clause,
     let
         ruleRequires = precondition rule'
         requires' = Condition.fromPredicate ruleRequires
-    unification' <- simplifyPredicate (unification <> requires')
+    unification' <-
+        simplifyPredicate
+            (topCondition <> initialCondition)
+            Nothing
+            (unification <> requires')
     return (rule' `Conditional.withCondition` unification')
 
 {- | The 'Set' of variables that would be introduced by narrowing.
@@ -361,19 +373,21 @@ applyInitialConditions
     .  SimplifierVariable variable
     => MonadUnify unifier
     => Condition variable
+    -- ^ Top-level conditions
+    -> Maybe (Condition variable)
     -- ^ Initial conditions
     -> Condition variable
     -- ^ Unification conditions
     -> unifier (OrCondition variable)
     -- TODO(virgil): This should take advantage of the unifier's branching and
     -- not return an Or.
-applyInitialConditions initial unification = do
+applyInitialConditions topCondition initial unification = do
     -- Combine the initial conditions and the unification conditions.
     -- The axiom requires clause is included in the unification conditions.
     applied <-
         Monad.liftM MultiOr.make
         $ Monad.Unify.gather
-        $ simplifyPredicate (initial <> unification)
+        $ simplifyPredicate topCondition initial unification
     evaluated <- SMT.Evaluator.filterMultiOr applied
     -- If 'evaluated' is \bottom, the rule is considered to not apply and
     -- no result is returned. If the result is \bottom after this check,
@@ -388,6 +402,13 @@ toConfigurationVariables
     -> Pattern (Target variable)
 toConfigurationVariables = Pattern.mapVariables Target.NonTarget
 
+-- |Renames configuration variables to distinguish them from those in the rule.
+toConfigurationVariablesCondition
+    :: Ord variable
+    => Condition variable
+    -> Condition (Target variable)
+toConfigurationVariablesCondition = Condition.mapVariables Target.NonTarget
+
 {- | Apply the remainder predicate to the given initial configuration.
 
  -}
@@ -395,24 +416,51 @@ applyRemainder
     :: forall unifier variable
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => Pattern variable
+    => Condition variable
+    -- ^ Top level condition
+    -> Pattern variable
     -- ^ Initial configuration
     -> Condition variable
     -- ^ Remainder
     -> unifier (Pattern variable)
-applyRemainder initial remainder = do
-    let final = initial `Conditional.andCondition` remainder
-        finalCondition = Conditional.withoutTerm final
-        Conditional { Conditional.term = finalTerm } = final
-    normalizedCondition <- simplifyPredicate finalCondition
-    return normalizedCondition { Conditional.term = finalTerm }
+applyRemainder topCondition initial remainder = do
+    let (initialTerm, initialCondition) = Pattern.splitTerm initial
+    normalizedCondition <-
+        simplifyPredicate topCondition (Just initialCondition) remainder
+    return normalizedCondition { Conditional.term = initialTerm }
 
 -- | Simplifies the predicate obtained upon matching/unification.
 simplifyPredicate
     :: forall unifier variable term
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => Conditional variable term
+    => Condition variable
+    -> Maybe (Condition variable)
+    -> Conditional variable term
     -> unifier (Conditional variable term)
-simplifyPredicate conditional =
-    Branch.alternate (Simplifier.simplifyCondition conditional)
+simplifyPredicate topCondition (Just initialCondition) conditional = do
+    partialResult <- Branch.alternate
+        (Simplifier.simplifyCondition
+            (topCondition <> initialCondition)
+            conditional
+        )
+    -- TODO (virgil): Consider using different simplifyPredicate implementations
+    -- for rewrite rules and equational rules.
+    -- Right now this double simplification both allows using the same code for
+    -- both kinds of rules, and allows using the strongest background condition
+    -- for simplifying the `conditional`. However, it's not obvious that
+    -- using the strongest background condition actually helps in our
+    -- use cases, so we may be able to do something better for equations.
+    Branch.alternate
+        (Simplifier.simplifyCondition
+            Condition.top
+            ( partialResult
+            `Pattern.andCondition` initialCondition
+            )
+        )
+simplifyPredicate topCondition Nothing conditional =
+    Branch.alternate
+        (Simplifier.simplifyCondition
+            topCondition
+            conditional
+        )

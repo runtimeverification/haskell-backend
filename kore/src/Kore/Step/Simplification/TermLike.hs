@@ -260,7 +260,7 @@ simplifyInternal term predicate = do
                 (do
                     termPredicateList <- BranchT.gather $ do
                         termOrElement <- BranchT.scatter termOr
-                        simplified <- simplifyCondition termOrElement
+                        simplified <- simplifyCondition predicate termOrElement
                         return (applyTermSubstitution simplified)
 
                     returnIfSimplifiedOrContinue
@@ -385,7 +385,7 @@ simplifyInternal term predicate = do
                             Binding.existsBinder
                             refreshBinder
                             exists
-                in  Exists.simplify =<< simplifyChildren fresh
+                in  Exists.simplify predicate =<< simplifyChildren fresh
             IffF iffF ->
                 Iff.simplify =<< simplifyChildren iffF
             ImpliesF impliesF ->
