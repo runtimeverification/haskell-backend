@@ -22,11 +22,13 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
     ( makeAndPredicate
+    , makeCeilPredicate
     , makeCeilPredicate_
     , makeEqualsPredicate
     , makeEqualsPredicate_
     , makeFalsePredicate_
     , makeNotPredicate
+    , makeTruePredicate
     , makeTruePredicate_
     )
 import Kore.Internal.TermLike
@@ -119,20 +121,21 @@ test_applyEquationalRule_ :: [TestTree]
 test_applyEquationalRule_ =
     [ testCase "apply identity axiom" $ do
         let expect = Right [ OrPattern.fromPatterns [initial] ]
-            initial = pure (mkElemVar Mock.x)
+            initial = Pattern.fromTermLike (mkElemVar Mock.x)
         actual <- applyEquationalRuleParallel_ initial axiomId
         assertEqual "" expect actual
 
     , testCase "apply identity without renaming" $ do
         let expect = Right [ OrPattern.fromPatterns [initial] ]
-            initial = pure (mkElemVar Mock.y)
+            initial = Pattern.fromTermLike (mkElemVar Mock.y)
         actual <- applyEquationalRuleParallel_ initial axiomId
         assertEqual "" expect actual
 
     , testCase "substitute variable with itself" $ do
         let expect = Right
                 [ OrPattern.fromPatterns [initial { term = mkElemVar Mock.x }] ]
-            initial = pure (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
+            initial = Pattern.fromTermLike
+                (Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.x))
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
 
@@ -142,7 +145,7 @@ test_applyEquationalRule_ =
                 [ OrPattern.fromPatterns [initial { term, substitution }] ]
               where
                 substitution = Substitution.wrap [ (ElemVar Mock.x, term) ]
-            initial = pure (Mock.sigma (mkElemVar Mock.x) term)
+            initial = Pattern.fromTermLike (Mock.sigma (mkElemVar Mock.x) term)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
 
@@ -154,7 +157,7 @@ test_applyEquationalRule_ =
                     Substitution.wrap [ (ElemVar Mock.y, mkElemVar Mock.z) ]
             fy = Mock.functionalConstr10 (mkElemVar Mock.y)
             fz = Mock.functionalConstr10 (mkElemVar Mock.z)
-            initial = pure (Mock.sigma fy fz)
+            initial = Pattern.fromTermLike (Mock.sigma fy fz)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaId
         assertEqual "" expect actual
 
@@ -167,7 +170,7 @@ test_applyEquationalRule_ =
             xy = Mock.sigma (mkElemVar Mock.x) (mkElemVar Mock.y)
             yx = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.x)
             yy = Mock.sigma (mkElemVar Mock.y) (mkElemVar Mock.y)
-            initial = pure (Mock.sigma xy yx)
+            initial = Pattern.fromTermLike (Mock.sigma xy yx)
         actual <- applyEquationalRuleParallel_ initial axiomSigmaXXYY
         assertEqual "" expect actual
 
@@ -294,7 +297,7 @@ test_applyEquationalRule_ =
                     [ OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma zz zz
-                            , predicate = makeTruePredicate_
+                            , predicate = makeTruePredicate Mock.testSort
                             , substitution = Substitution.wrap
                                 [ (ElemVar Mock.x, zz)
                                 , (ElemVar Mock.y, mkElemVar Mock.z)
@@ -322,7 +325,7 @@ test_applyEquationalRule_ =
                     [ OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma fb fb
-                            , predicate = makeTruePredicate_
+                            , predicate = makeTruePredicate Mock.testSort
                             , substitution =
                                 Substitution.wrap [(ElemVar Mock.x, fb)]
                             }
@@ -346,7 +349,7 @@ test_applyEquationalRule_ =
                     [ OrPattern.fromPatterns
                         [ Conditional
                             { term = Mock.sigma fz fz
-                            , predicate = makeTruePredicate_
+                            , predicate = makeTruePredicate Mock.testSort
                             , substitution =
                                 Substitution.wrap
                                     [ (ElemVar Mock.x, fz)
@@ -388,7 +391,7 @@ test_applyEquationalRule_ =
     , testCase "preserve initial condition" $ do
         let expect = Right [ OrPattern.fromPatterns [initial] ]
             predicate =
-                makeEqualsPredicate_
+                makeEqualsPredicate Mock.testSort
                     (Mock.functional11 Mock.a)
                     (Mock.functional10 Mock.a)
             initial =
@@ -413,7 +416,7 @@ test_applyEquationalRule_ =
                         [ Conditional
                             { term = Mock.sigma fb fb
                             , predicate =
-                                makeEqualsPredicate_
+                                makeEqualsPredicate Mock.testSort
                                     (Mock.functional11 fb)
                                     (Mock.functional10 fb)
                             , substitution =
@@ -474,8 +477,13 @@ test_applyEquationalRule_ =
                     (Mock.functional11 (mkElemVar Mock.x))
                     (Mock.functional10 (mkElemVar Mock.x))
             expect = Right
-                [ OrPattern.fromPatterns [initial { predicate = requires }] ]
-            initial = pure (mkElemVar Mock.x)
+                [ OrPattern.fromPatterns
+                    [ initialTerm
+                    `Pattern.withCondition` Condition.fromPredicate requires
+                    ]
+                ]
+            initialTerm = mkElemVar Mock.x
+            initial = Pattern.fromTermLike initialTerm
             axiom = EqualityRule ruleId { requires }
         actual <- applyEquationalRuleParallel_ initial axiom
         assertEqual "" expect actual
@@ -619,7 +627,11 @@ applyEquationalRulesSequence_
     (Step.toConfigurationVariables -> initialConfig)
     (map getEqualityRule -> rules)
   = do
-    results <- Step.applyRulesSequence unificationProcedure initialConfig rules
+    results <- Step.applyRulesSequence
+        unificationProcedure
+        Condition.top
+        initialConfig
+        rules
     Step.assertFunctionLikeResults (term initialConfig) results
     return results
 
@@ -669,6 +681,10 @@ test_applyEquationalRulesSequence =
         let
             definedBranches =
                 makeAndPredicate
+                    (makeCeilPredicate Mock.testSort Mock.cf)
+                    (makeCeilPredicate_ Mock.cg)
+            definedBranchesUnsorted =
+                makeAndPredicate
                     (makeCeilPredicate_ Mock.cf)
                     (makeCeilPredicate_ Mock.cg)
             results =
@@ -693,7 +709,7 @@ test_applyEquationalRulesSequence =
                             Predicate.makeAndPredicate
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranches
+                                        definedBranchesUnsorted
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.a
@@ -701,7 +717,7 @@ test_applyEquationalRulesSequence =
                                 )
                                 (Predicate.makeNotPredicate
                                     $ Predicate.makeAndPredicate
-                                        definedBranches
+                                        definedBranchesUnsorted
                                         (Predicate.makeEqualsPredicate_
                                             (mkElemVar Mock.x)
                                             Mock.b

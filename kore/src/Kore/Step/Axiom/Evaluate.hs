@@ -22,15 +22,15 @@ import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom (Axiom)
     )
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
+import Kore.Internal.Condition
+    ( Condition
+    )
 import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
-import Kore.Internal.Predicate
-    ( Predicate
-    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkEvaluated
@@ -81,10 +81,10 @@ evaluateAxioms
        , MonadSimplify simplifier
        )
     => [EqualityRule Variable]
+    -> Condition variable
     -> TermLike variable
-    -> Predicate variable
     -> simplifier (Step.Results EqualityPattern variable)
-evaluateAxioms equalityRules termLike predicate
+evaluateAxioms equalityRules topCondition termLike
   | any ruleIsConcrete equalityRules
   -- All of the current pattern's children (most likely an ApplicationF)
   -- must be ConstructorLike in order to be evaluated with "concrete" rules.
@@ -118,10 +118,13 @@ evaluateAxioms equalityRules termLike predicate
         introduceDefinedness = flip Pattern.andCondition
         markRemainderEvaluated = fmap TermLike.mkEvaluated
 
-    let simplify = OrPattern.simplifyConditionsWithSmt predicate
+    let topPredicate = Condition.toPredicate topCondition
+        simplify = OrPattern.simplifyConditionsWithSmt topPredicate
     simplified <-
         return results
-        >>= Lens.traverseOf (field @"results" . Lens.traversed . field @"result") simplify
+        >>= Lens.traverseOf
+            (field @"results" . Lens.traversed . field @"result")
+            simplify
         >>= Lens.traverseOf (field @"remainders") simplify
     -- This guard is wrong: It leaves us unable to distinguish between a
     -- not-applicable result and a Bottom result. This check should be handled
@@ -131,6 +134,8 @@ evaluateAxioms equalityRules termLike predicate
 
   where
     termLikeF = Cofree.tailF (Recursive.project termLike)
+
+    targetTopCondition = Step.toConfigurationVariablesCondition topCondition
 
     logAppliedRule :: MonadLog log => EqualityRule Variable -> log ()
     logAppliedRule
@@ -165,9 +170,13 @@ evaluateAxioms equalityRules termLike predicate
 
     applyRules (Step.toConfigurationVariables -> initial) rules =
         Unifier.maybeUnifierT
-        $ Step.applyRulesSequence unificationProcedure initial rules
+        $ Step.applyRulesSequence
+            unificationProcedure
+            targetTopCondition
+            initial
+            rules
 
-    ignoreUnificationErrors unification pattern1 pattern2 =
+    ignoreUnificationErrors unification _topCondition pattern1 pattern2 =
         Unifier.runUnifierT (unification pattern1 pattern2)
         >>= either (couldNotMatch pattern1 pattern2) Unifier.scatter
 
