@@ -91,6 +91,29 @@ To run a specification test with `kore-repl` using a specific script,
 it should be named like `⟨name⟩-repl-script-spec.k`
 and the script should be in a file named `⟨name⟩-repl-script-spec.k.repl`.
 
+## Saving proofs
+
+To save intermediate proofs from a specification test,
+set the target-specific variable `STORE_PROOFS`:
+
+```
+test-1-spec.k.out: STORE_PROOFS = $(@:.out=.save-proofs.kore)
+```
+
+The test will now compare `test-1-spec.k.out` to `test-1-spec.k.out.golden`
+and compare `test-1-spec.k.save-proofs.kore` to `test-1-spec.k.save-proofs.kore.golden`.
+
+To re-use intermediates from a previous test,
+set the target-specific variable `RECALL_PROOFS`:
+
+```
+test-2-spec.k.out: private RECALL_PROOFS = test-1-spec.k.save-proofs.kore
+test-2-spec.k.out: test-1-spec.k.save-proofs.kore
+```
+
+You must add a dependency on the saved proofs
+as in the second line above!
+
 
 ## Rule merging tests
 
