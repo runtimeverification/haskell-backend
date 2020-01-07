@@ -102,5 +102,5 @@ unificationMakeAnd =
     makeAnd termLike1 termLike2 condition = do
         unified <- termUnification termLike1 termLike2
         Pattern.andCondition unified condition
-            & Simplifier.simplifyCondition
+            & Simplifier.simplifyCondition Condition.topTODO
             & BranchT.alternate

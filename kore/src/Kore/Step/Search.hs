@@ -131,13 +131,14 @@ searchGraph Config { searchType, bound } match executionGraph = do
 matchWith
     :: forall variable m
     .  (SimplifierVariable variable, MonadSimplify m)
-    => Pattern variable
+    => Condition variable
+    -> Pattern variable
     -> Pattern variable
     -> MaybeT m (OrCondition variable)
-matchWith e1 e2 = do
+matchWith topCondition e1 e2 = do
     eitherUnifiers <-
         Monad.Trans.lift $ Unifier.runUnifierT
-        $ unificationProcedure t1 t2
+        $ unificationProcedure topCondition t1 t2
     let
         maybeUnifiers :: Maybe [Condition variable]
         maybeUnifiers = hush eitherUnifiers
@@ -153,6 +154,7 @@ matchWith e1 e2 = do
         mergeAndEvaluateBranches predSubst = do
             merged <-
                 mergePredicatesAndSubstitutions
+                    topCondition
                     [ Conditional.predicate predSubst
                     , Conditional.predicate e1
                     , Conditional.predicate e2
@@ -164,6 +166,7 @@ matchWith e1 e2 = do
             case smtEvaluation of
                     Nothing ->
                         mergePredicatesAndSubstitutions
+                            topCondition
                             [ Conditional.predicate simplified ]
                             [ Conditional.substitution merged
                             , Conditional.substitution simplified

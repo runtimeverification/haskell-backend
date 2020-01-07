@@ -24,7 +24,6 @@ import qualified Kore.Attribute.Symbol as Attribute
 import Kore.Internal.Condition
     ( Condition
     )
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
     ( extractPatterns
     )
@@ -77,10 +76,9 @@ definitionEvaluation
     -> BuiltinAndAxiomSimplifier
 definitionEvaluation rules =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let predicate = Condition.toPredicate condition
-        results <- evaluateAxioms rules term predicate
-        let attempted = Results.toAttemptedAxiom results
-        Step.assertFunctionLikeResults term results
+        results' <- evaluateAxioms rules condition term
+        let attempted = Results.toAttemptedAxiom results'
+        Step.assertFunctionLikeResults term results'
         return attempted
 
 -- | Create an evaluator from a single simplification rule.
@@ -89,8 +87,7 @@ simplificationEvaluation
     -> BuiltinAndAxiomSimplifier
 simplificationEvaluation rule =
     BuiltinAndAxiomSimplifier $ \term condition -> do
-        let predicate = Condition.toPredicate condition
-        results <- evaluateAxioms [rule] term predicate
+        results <- evaluateAxioms [rule] condition term
         let initial = Step.toConfigurationVariables (Pattern.fromTermLike term)
         Step.recoveryFunctionLikeResults initial results
         return $ Results.toAttemptedAxiom results
@@ -119,8 +116,7 @@ totalDefinitionEvaluation rules =
         -> Condition variable
         -> simplifier (AttemptedAxiom variable)
     totalDefinitionEvaluationWorker term condition = do
-        let predicate = Condition.toPredicate condition
-        results <- evaluateAxioms rules term predicate
+        results <- evaluateAxioms rules condition term
         let attempted = rejectRemainders $ Results.toAttemptedAxiom results
         Step.assertFunctionLikeResults term results
         return attempted

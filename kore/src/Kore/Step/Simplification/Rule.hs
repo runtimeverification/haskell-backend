@@ -13,6 +13,9 @@ import Data.Map.Strict
     ( Map
     )
 
+import qualified Kore.Internal.Condition as Condition
+    ( top
+    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
@@ -167,4 +170,4 @@ simplifyPattern
 simplifyPattern termLike =
     Simplifier.localSimplifierTermLike (const Simplifier.create)
     $ Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplify (Pattern.fromTermLike termLike)
+    $ Pattern.simplify Condition.top (Pattern.fromTermLike termLike)

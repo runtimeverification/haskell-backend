@@ -121,7 +121,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
-    ( simplifyAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
     ( simplifyTerm
@@ -814,7 +814,7 @@ removeDestination stateConstructor goal =
             else do
                 simplifiedRemoval <-
                     SMT.Evaluator.filterMultiOr
-                    =<< simplifyAndRemoveTopExists
+                    =<< simplifyTopConfiguration
                         (Conditional.andPredicate configuration removal)
                 if not (isBottom simplifiedRemoval)
                     then return . GoalStuck $ goal
@@ -834,7 +834,8 @@ simplify
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = withConfiguration goal $ do
-    configs <- Trans.lift $ simplifyAndRemoveTopExists configuration
+    configs <- Trans.lift $
+        simplifyTopConfiguration configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
         then pure $ configurationDestinationToRule goal Pattern.bottom destination
@@ -1011,7 +1012,8 @@ removalPredicate
                     . Conditional.withoutTerm
                     $ (const <$> destination <*> substPattern)
             evaluatedRemainder <-
-                Exists.makeEvaluate extraElemVariables remainderPattern
+                Exists.makeEvaluate
+                    configPredicate extraElemVariables remainderPattern
             return
                 . Predicate.makeNotPredicate
                 . Condition.toPredicate
@@ -1040,7 +1042,7 @@ removalPredicate
           ]
   where
     Conditional { term = destTerm } = destination
-    Conditional { term = configTerm } = configuration
+    (configTerm, configPredicate) = Pattern.splitTerm configuration
     -- The variables of the destination that are missing from the
     -- configuration. These are the variables which should be existentially
     -- quantified in the removal predicate.
