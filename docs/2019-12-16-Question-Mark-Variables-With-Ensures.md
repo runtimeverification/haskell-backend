@@ -78,7 +78,7 @@ as a precondition to the rule.
    and can rewrite in one step to any item in `Is`.
 
     ```
-    \forall Is:List . \forall I . I \in Is -> randInList(Is) -> * I
+    \forall Is:List . \forall I . inList(I, Is) -> randInList(Is) -> * I
     ```
 
 1. `randNotInList(Is)` takes a list `Is` of items
