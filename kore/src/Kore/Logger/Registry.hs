@@ -35,7 +35,6 @@ import Data.Text
     ( Text
     )
 import qualified Data.Text as Text
-import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Tuple
     ( swap
     )
