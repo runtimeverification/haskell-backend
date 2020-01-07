@@ -1120,7 +1120,8 @@ instance ToReachabilityRule (ReachabilityRule Variable) where
     toReachabilityRule = id
 
 debugProofStateBracket
-    :: MonadLog log
+    :: forall monad goal
+    .  MonadLog monad
     => ToReachabilityRule goal
     => Coercible (Rule goal) (RewriteRule Variable)
     => ProofState goal goal ~ ProofState.ProofState goal
@@ -1129,18 +1130,33 @@ debugProofStateBracket
     -- ^ current proof state
     -> Prim goal
     -- ^ transition
-    -> log (ProofState goal goal)
+    -> monad (ProofState goal goal)
     -- ^ action to be computed
-    -> log (ProofState goal goal)
+    -> monad (ProofState goal goal)
 debugProofStateBracket
     (fmap toReachabilityRule -> proofstate)
     (coerce -> transition)
     action
-  = do
-    result <- action
-    logM DebugProofState
-        { proofstate
-        , transition
-        , result = toReachabilityRule <$> result
-        }
-    return result
+  =
+    if terminalTransition transition proofstate
+        then do
+            logM DebugProofState
+                { proofstate
+                , transition
+                , result = Nothing
+                }
+            action
+        else do
+            result <- action
+            logM DebugProofState
+                { proofstate
+                , transition
+                , result = Just $ toReachabilityRule <$> result
+                }
+            return result
+  where
+    terminalTransition CheckProven Proven = True
+    terminalTransition CheckGoalRemainder (GoalRemainder _) = True
+    terminalTransition CheckGoalStuck (GoalStuck _) = True
+    terminalTransition _ _ = False
+

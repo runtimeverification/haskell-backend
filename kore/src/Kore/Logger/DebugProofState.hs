@@ -29,7 +29,7 @@ data DebugProofState =
     DebugProofState
         { proofstate :: !(ProofState (ReachabilityRule Variable))
         , transition :: !(Prim (RewriteRule Variable))
-        , result :: !(ProofState (ReachabilityRule Variable))
+        , result :: !(Maybe (ProofState (ReachabilityRule Variable)))
         }
 
 instance Pretty DebugProofState where
@@ -46,7 +46,7 @@ instance Pretty DebugProofState where
             , "On which the following transition applies:"
             , Pretty.indent 4 (pretty transition)
             , "Resulting in:"
-            , Pretty.indent 4 (pretty result)
+            , Pretty.indent 4 (maybe "Terminal state." pretty result)
             ]
 
 instance Entry DebugProofState where
