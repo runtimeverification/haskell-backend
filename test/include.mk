@@ -104,6 +104,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 
 %-repl-spec.k.out: KPROVE_OPTS = $(KPROVE_REPL_OPTS)
 
+%-repl-script-spec.k.out: %-repl-script-spec.k.repl
 %-repl-script-spec.k.out: \
 	HASKELL_BACKEND_COMMAND = $(KORE_REPL) -r --repl-script $<.repl
 
