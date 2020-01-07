@@ -228,7 +228,7 @@ normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
               where
                 concreteElementsList = Map.toList concreteElements
                 pairIsConstructorLike (key, value) =
-                    isConstructorLike key && isConstructorLike value
+                    assertConstructorLike "" key $ isConstructorLike value
         _ -> ConstructorLike Nothing
 
 instance Synthetic ConstructorLike Inhabitant where
@@ -281,6 +281,12 @@ class HasConstructorLike a where
     isConstructorLike :: a -> Bool
     isConstructorLike a = case extractConstructorLike a of
         (ConstructorLike constructorLike) -> isJust constructorLike
+
+    assertConstructorLike :: String -> a -> b -> b
+    assertConstructorLike message a =
+        if not (isConstructorLike a)
+        then error ("Expecting constructor-like object. " ++ message)
+        else id
 
 instance HasConstructorLike (Value NormalizedMap ConstructorLike) where
     extractConstructorLike (MapValue result) = result
