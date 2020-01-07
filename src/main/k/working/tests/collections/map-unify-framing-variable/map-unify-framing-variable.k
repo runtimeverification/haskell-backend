@@ -1,6 +1,7 @@
 module MAP-UNIFY-FRAMING-VARIABLE
 
-  imports DOMAINS
+  imports BOOL
+  imports MAP
 
   syntax Val ::= "a" | "b" | "c"
 

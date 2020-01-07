@@ -1,6 +1,7 @@
 module MAP-UNIFY-CONCRETE
 
-  imports DOMAINS
+  imports BOOL
+  imports MAP
 
   syntax Val ::= "x" | "y" | "z"
                | "success" | "ready"

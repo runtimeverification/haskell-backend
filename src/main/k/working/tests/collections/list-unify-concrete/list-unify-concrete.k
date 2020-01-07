@@ -1,6 +1,7 @@
 module LIST-UNIFY-CONCRETE
 
-  imports DOMAINS
+  imports BOOL
+  imports LIST
 
   syntax Val ::= "x" | "y" | "z"
                | "success" | "ready"

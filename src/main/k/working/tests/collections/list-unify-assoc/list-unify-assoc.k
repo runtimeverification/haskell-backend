@@ -1,6 +1,7 @@
 module LIST-UNIFY-ASSOC
 
-  imports DOMAINS
+  imports BOOL
+  imports LIST
 
   syntax Pgm ::= push( KItem )
 

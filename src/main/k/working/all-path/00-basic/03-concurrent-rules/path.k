@@ -1,5 +1,6 @@
 module PATH
-  import DOMAINS
+  import BOOL
+  import INT
   syntax S ::= "a" | "b" | "c"
 
   rule a => b

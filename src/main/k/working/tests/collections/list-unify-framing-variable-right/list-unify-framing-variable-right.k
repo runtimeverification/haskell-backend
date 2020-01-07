@@ -1,6 +1,7 @@
 module LIST-UNIFY-FRAMING-VARIABLE-RIGHT
 
-  imports DOMAINS
+  imports BOOL
+  imports LIST
 
   syntax Val ::= "a" | "b" | "c"
 

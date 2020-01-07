@@ -1,6 +1,7 @@
 module SET-UNIFY-CONCRETE
 
-  imports DOMAINS
+  imports BOOL
+  imports SET
 
   syntax Val ::= "x" | "y" | "z"
                | "success" | "ready"

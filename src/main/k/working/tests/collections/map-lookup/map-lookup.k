@@ -1,6 +1,7 @@
 module MAP-LOOKUP
 
-  imports DOMAINS
+  imports INT
+  imports MAP
 
   syntax Int ::= #lookup ( Map , Int ) [function]
 
