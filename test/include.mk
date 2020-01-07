@@ -37,7 +37,7 @@ KPROVE_REPL_OPTS += -d $(DEF_DIR) -m $(KPROVE_MODULE)
 KPROVE_SPEC = $<
 
 $(DEF_KORE): $(DEF_DIR)/$(DEF).k $(K)
-	@echo ">>> kompile" $<
+	@echo ">>>" $(CURDIR) "kompile" $<
 	rm -fr $(KOMPILED)
 	$(KOMPILE) $(KOMPILE_OPTS) $<
 
@@ -57,7 +57,7 @@ $(DEF_KORE): $(DEF_DIR)/$(DEF).k $(K)
 ### RUN
 
 %.$(EXT).out: $(TEST_DIR)/%.$(EXT) $(TEST_DEPS)
-	@echo ">>> krun" $<
+	@echo ">>>" $(CURDIR) "krun" $<
 	$(KRUN) $(KRUN_OPTS) $< --output-file $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 
@@ -85,7 +85,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### PROVE
 
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
-	@echo ">>> kprove" $<
+	@echo ">>>" $(CURDIR) "kprove" $<
 	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS))
 	$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore))
 	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) --output-file $@ || true
@@ -111,7 +111,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 ### MERGE
 
 %.merge.out: $(TEST_DIR)/%.merge $(DEF_KORE) $(KORE_EXEC)
-	@echo ">>> kore-exec --merge-rules" $<
+	@echo ">>>" $(CURDIR) "kore-exec --merge-rules" $<
 	$(KORE_EXEC) $(DEF_KORE) --module $(KORE_MODULE) --merge-rules $< --output $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 
