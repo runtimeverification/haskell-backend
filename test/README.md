@@ -10,6 +10,7 @@ Each directory contains a number of tests based on a single K definition.
 The tests require the K frontend to be installed;
 by default a suitable version will be installed at `../.build/k`.
 
+
 ## Program tests
 
 Program tests run a concrete program with `krun`
@@ -34,6 +35,7 @@ so one may write program tests which encounter errors.
   from `⟨name⟩.⟨ext⟩.out` to `⟨name⟩.⟨ext⟩.out.fail`.
 - `make ⟨name⟩.⟨ext⟩.out.golden`:
   Run the test to construct `⟨name⟩.⟨ext⟩.out.golden`.
+
 
 ## Specification tests
 
@@ -70,6 +72,17 @@ so one may write program tests which encounter errors.
   from `⟨name⟩-spec.k.out` to `⟨name⟩-spec.k.out.fail`.
 - `make ⟨name⟩-spec.k.out.golden`:
   Run the test to construct `⟨name⟩-spec.k.out.golden`.
+
+### KBMC
+
+To run a specification test with `kbmc` instead of `kprove`,
+it should be named like `⟨name⟩-bmc-spec.k`.
+In the `Makefile`, the depth should be set by a target-specific variable:
+
+```
+⟨name⟩-bmc-spec.k: KBMC_DEPTH = 20
+```
+
 
 ## Definitions
 
