@@ -7,12 +7,17 @@ existential variables, and uses `ensures` to specify logical constraints on
 those variables.
 These variables are only allowed to appear in the RHS of a rule.
 
-When K rules are translated to Kore axioms, the `?` variables are existentially
-quantified at the top of the RHS and the `ensures` clause is and-ed to the RHS.
-In addition, the regular non-`?` variables are universally quantified at the top
-of the entire rule.
-When both `?`-variables and regular variables are present, we quantify regular
-variables first, followed by `?`-variables.
+When K rules are translated to Kore axioms,  the `ensures` clause is and-ed to
+the RHS.
+If the rules represent rewrite (semantic) steps or verification claims,
+then the `?` variables are existentially quantified at the top of the RHS;
+otherwise, if they represent equations, the `?` variables are quantified at the
+top of the entire rule.
+
+Note that when both `?`-variables and regular variables are present,
+regular variables are (implictly) universally quantified on top of the rule
+(already containing the existential quantifications).
+This essentially makes all `?` variables depend on all regular variables.
 
 This design document presents four typical language constructs or mathematical
 functions that have unspecified or nondeterministic behaviors and shows their
