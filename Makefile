@@ -10,7 +10,7 @@ kore-exec: $(KORE_EXEC)
 
 kore-repl: $(KORE_REPL)
 
-k-frontend: $(K_RELEASE_DEFAULT)/lib/java/kernel-1.0-SNAPSHOT.jar
+k-frontend: $(K)
 
 docs: haddock
 
