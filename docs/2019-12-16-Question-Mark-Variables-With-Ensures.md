@@ -24,7 +24,7 @@ behaviors.
 ### Implementation concerns
 
 Except for the `fresh` variants (Example B), none of the other are currently
-supported by either the K frontend of the Haskell backend.
+supported by either the K frontend or the Haskell backend.
 
 ## Example A: Random Number Construct `rand()`
 
