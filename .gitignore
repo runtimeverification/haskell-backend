@@ -40,4 +40,4 @@ test-results.xml
 /dist/
 *.fail
 cabal.project.local
-*.save-proofs
+*.save-proofs.kore
