@@ -52,6 +52,9 @@ import Kore.Logger
     ( Entry
     , LogMessage
     )
+import Kore.Logger.CriticalExecutionError
+    ( CriticalExecutionError
+    )
 import Kore.Logger.DebugAppliedRule
     ( DebugAppliedRule
     )
@@ -97,6 +100,7 @@ registry =
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
                 , register logInfoEvaluateConditionType
+                , register criticalExecutionErrorType
                 , register logMessageType
                 ]
         typeToText = makeInverse textToType
@@ -131,6 +135,7 @@ debugAppliedRuleType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
   , logInfoEvaluateConditionType
+  , criticalExecutionErrorType
   , logMessageType
   :: SomeTypeRep
 
@@ -150,6 +155,8 @@ warnSimplificationWithRemainderType =
     someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
 logInfoEvaluateConditionType =
     someTypeRep (Proxy :: Proxy InfoEvaluateCondition)
+criticalExecutionErrorType =
+    someTypeRep (Proxy :: Proxy CriticalExecutionError)
 logMessageType =
     someTypeRep (Proxy :: Proxy LogMessage)
 
