@@ -706,7 +706,7 @@ transitionRuleTemplate
     transitionRuleWorker (DeriveSeq rules) (GoalRemainder goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        Profile.timeStrategy "Goal.DeriveSeq"
+        Profile.timeStrategy "Goal.DeriveSeqRemainder"
         $ deriveSeqTemplate rules goal
 
     transitionRuleWorker _ state = return state
