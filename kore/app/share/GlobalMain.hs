@@ -381,7 +381,7 @@ clockSomethingIO description something = do
     logMessage end start =
         mkMessage start end
     mkMessage start end =
-        SomeEntry $ Logger.LogMessage
+        Logger.LogMessage
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
             , severity = Logger.Info

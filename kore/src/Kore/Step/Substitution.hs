@@ -10,7 +10,6 @@ Portability : portable
 module Kore.Step.Substitution
     ( mergePredicatesAndSubstitutions
     , normalize
-    , normalizeExcept
     ) where
 
 import qualified Control.Monad.Trans.Class as Monad.Trans
@@ -35,8 +34,7 @@ import Kore.Unification.Substitution
     ( Substitution
     )
 import Kore.Unification.Unify
-    ( MonadUnify
-    , SimplifierVariable
+    ( SimplifierVariable
     )
 
 -- | Normalize the substitution and predicate of 'expanded'.
@@ -54,15 +52,6 @@ normalize conditional@Conditional { substitution } = do
     SubstitutionSimplifier { simplifySubstitution } =
         SubstitutionSimplifier.substitutionSimplifier
 
-normalizeExcept
-    :: forall unifier variable term
-    .  SimplifierVariable variable
-    => MonadUnify unifier
-    => Conditional variable term
-    -> unifier (Conditional variable term)
-normalizeExcept conditional =
-    Branch.alternate (Simplifier.simplifyCondition conditional)
-
 {-|'mergePredicatesAndSubstitutions' merges a list of substitutions into
 a single one, then merges the merge side condition and the given condition list
 into a condition.
@@ -74,12 +63,15 @@ mergePredicatesAndSubstitutions
     :: forall variable simplifier
     .  SimplifierVariable variable
     => MonadSimplify simplifier
-    => [Predicate variable]
+    => Condition variable
+    -> [Predicate variable]
     -> [Substitution variable]
     -> BranchT simplifier (Condition variable)
-mergePredicatesAndSubstitutions predicates substitutions = do
-    simplifyCondition Conditional
-        { term = ()
-        , predicate = Predicate.makeMultipleAndPredicate predicates
-        , substitution = Foldable.fold substitutions
-        }
+mergePredicatesAndSubstitutions topCondition predicates substitutions =
+    simplifyCondition
+        topCondition
+        Conditional
+            { term = ()
+            , predicate = Predicate.makeMultipleAndPredicate predicates
+            , substitution = Foldable.fold substitutions
+            }

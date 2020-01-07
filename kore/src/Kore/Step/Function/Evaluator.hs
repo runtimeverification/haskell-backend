@@ -252,6 +252,7 @@ maybeEvaluatePattern
                             )
             Profile.mergeSubstitutions identifier
                 $ mergeWithConditionAndSubstitution
+                    configurationCondition
                     childrenCondition
                     flattened
         case merged of
@@ -362,7 +363,7 @@ reevaluateFunctions predicate rewriting = do
     let (rewritingTerm, rewritingCondition) = Pattern.splitTerm rewriting
     orResults <- BranchT.gather $ do
         simplifiedTerm <- simplifyConditionalTerm predicate rewritingTerm
-        simplifyCondition
+        simplifyCondition predicate
             $ Pattern.andCondition simplifiedTerm rewritingCondition
     return (OrPattern.fromPatterns orResults)
 
@@ -372,22 +373,25 @@ mergeWithConditionAndSubstitution
     :: SimplifierVariable variable
     => MonadSimplify simplifier
     => Condition variable
+    -- ^ Top level condition.
+    -> Condition variable
     -- ^ Condition and substitution to add.
     -> AttemptedAxiom variable
     -- ^ AttemptedAxiom to which the condition should be added.
     -> simplifier (AttemptedAxiom variable)
-mergeWithConditionAndSubstitution _ AttemptedAxiom.NotApplicable =
+mergeWithConditionAndSubstitution _ _ AttemptedAxiom.NotApplicable =
     return AttemptedAxiom.NotApplicable
 mergeWithConditionAndSubstitution
+    sideCondition
     toMerge
     (AttemptedAxiom.Applied AttemptedAxiomResults { results, remainders })
   = do
     evaluatedResults <- fmap OrPattern.fromPatterns . BranchT.gather $ do
         result <- BranchT.scatter results
-        simplifyCondition $ Pattern.andCondition result toMerge
+        simplifyCondition sideCondition $ Pattern.andCondition result toMerge
     evaluatedRemainders <- fmap OrPattern.fromPatterns . BranchT.gather $ do
         remainder <- BranchT.scatter remainders
-        simplifyCondition $ Pattern.andCondition remainder toMerge
+        simplifyCondition sideCondition (Pattern.andCondition remainder toMerge)
     return $ AttemptedAxiom.Applied AttemptedAxiomResults
         { results = evaluatedResults
         , remainders = evaluatedRemainders
