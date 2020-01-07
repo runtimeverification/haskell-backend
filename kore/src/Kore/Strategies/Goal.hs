@@ -288,7 +288,8 @@ instance Goal (OnePathRule Variable) where
         ProofState.ProofState a
 
     transitionRule =
-        transitionRuleTemplate
+        withDebugProofState
+        $ transitionRuleTemplate
             TransitionRuleTemplate
                 { simplifyTemplate =
                     simplify
@@ -349,7 +350,8 @@ instance Goal (AllPathRule Variable) where
         ProofState.ProofState a
 
     transitionRule =
-        transitionRuleTemplate
+        withDebugProofState
+        $ transitionRuleTemplate
             TransitionRuleTemplate
                 { simplifyTemplate =
                     simplify
@@ -455,13 +457,21 @@ instance Goal (ReachabilityRule Variable) where
                 Transition.mapRules ruleAllPathToRuleReachability
                 $ allPathProofState
                 <$> transitionRule (primRuleAllPath prim) (GoalRemainder rule)
-            GoalStuck _ ->
+            state@(GoalStuck _) ->
                 case prim of
-                    CheckGoalStuck -> empty
+                    CheckGoalStuck ->
+                        debugProofStateBracket
+                            state
+                            CheckGoalStuck
+                            empty
                     _ -> return proofstate
             Proven ->
                 case prim of
-                    CheckProven -> empty
+                    CheckProven ->
+                        debugProofStateBracket
+                            Proven
+                            CheckProven
+                            empty
                     _ -> return proofstate
 
     strategy
@@ -591,11 +601,33 @@ data TransitionRuleTemplate monad goal =
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
 
+withDebugProofState
+    :: forall monad goal
+    .  MonadLog monad
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
+    =>
+        (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        )
+    ->
+        (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        )
+withDebugProofState transitionFunc =
+    \transition state ->
+        debugProofStateBracket
+            state
+            transition
+            (transitionFunc transition state)
+
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
-    => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule Variable)
     => ProofState goal goal ~ ProofState.ProofState goal
     => Prim goal ~ ProofState.Prim (Rule goal)
     => TransitionRuleTemplate m goal
@@ -617,56 +649,39 @@ transitionRuleTemplate
         :: Prim goal
         -> ProofState goal goal
         -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-    transitionRuleWorker CheckProven Proven =
-        debugProofStateBracket Proven CheckProven empty
-    transitionRuleWorker CheckGoalRemainder config@(GoalRemainder _) =
-        debugProofStateBracket config CheckGoalRemainder empty
+    transitionRuleWorker CheckProven Proven = empty
+    transitionRuleWorker CheckGoalRemainder (GoalRemainder _) = empty
 
-    transitionRuleWorker ResetGoal config@(GoalRewritten goal) =
-        debugProofStateBracket config ResetGoal
-            $ return (Goal goal)
+    transitionRuleWorker ResetGoal (GoalRewritten goal) =
+        return (Goal goal)
 
-    transitionRuleWorker CheckGoalStuck config@(GoalStuck _) =
-        debugProofStateBracket config CheckGoalStuck empty
+    transitionRuleWorker CheckGoalStuck (GoalStuck _) = empty
 
-    transitionRuleWorker Simplify config@(Goal goal) =
-        debugProofStateBracket config Simplify
-            $ Profile.timeStrategy "Goal.Simplify"
-            $ Goal <$> simplifyTemplate goal
-    transitionRuleWorker Simplify config@(GoalRemainder goal) =
-        debugProofStateBracket config Simplify
-            $ Profile.timeStrategy "Goal.SimplifyRemainder"
-            $ GoalRemainder <$> simplifyTemplate goal
+    transitionRuleWorker Simplify (Goal goal) =
+        Profile.timeStrategy "Goal.Simplify"
+        $ Goal <$> simplifyTemplate goal
+    transitionRuleWorker Simplify (GoalRemainder goal) =
+        Profile.timeStrategy "Goal.SimplifyRemainder"
+        $ GoalRemainder <$> simplifyTemplate goal
 
-    transitionRuleWorker RemoveDestination config@(Goal goal) =
-        debugProofStateBracket config RemoveDestination
-            $ Profile.timeStrategy "Goal.RemoveDestination"
-            $ removeDestinationTemplate Goal goal
-    transitionRuleWorker RemoveDestination config@(GoalRemainder goal) =
-        debugProofStateBracket config RemoveDestination
-            $ Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-            $ removeDestinationTemplate Goal goal
+    transitionRuleWorker RemoveDestination (Goal goal) =
+        Profile.timeStrategy "Goal.RemoveDestination"
+        $ removeDestinationTemplate Goal goal
+    transitionRuleWorker RemoveDestination (GoalRemainder goal) =
+        Profile.timeStrategy "Goal.RemoveDestinationRemainder"
+        $ removeDestinationTemplate Goal goal
 
-    transitionRuleWorker TriviallyValid config@(Goal goal)
+    transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValidTemplate goal =
-            debugProofStateBracket
-                config
-                TriviallyValid
-                $ return Proven
-    transitionRuleWorker TriviallyValid config@(GoalRemainder goal)
+          return Proven
+    transitionRuleWorker TriviallyValid (GoalRemainder goal)
       | isTriviallyValidTemplate goal =
-            debugProofStateBracket
-                config
-                TriviallyValid
-                $ return Proven
-    transitionRuleWorker TriviallyValid config@(GoalRewritten goal)
+          return Proven
+    transitionRuleWorker TriviallyValid (GoalRewritten goal)
       | isTriviallyValidTemplate goal =
-            debugProofStateBracket
-                config
-                TriviallyValid
-                $ return Proven
+          return Proven
 
-    transitionRuleWorker trans@(DerivePar rules) config@(Goal goal) =
+    transitionRuleWorker (DerivePar rules) (Goal goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         --
         -- Note that in most transitions it is obvious what is being transformed
@@ -675,28 +690,24 @@ transitionRuleTemplate
         -- and transforming it into `GoalRewritten` and `GoalRemainder` in an
         -- opaque way. I think that there's no good reason for wrapping the
         -- results in `derivePar` as opposed to here.
-        debugProofStateBracket config trans
-            $ Profile.timeStrategy "Goal.DerivePar"
-            $ deriveParTemplate rules goal
-    transitionRuleWorker trans@(DerivePar rules) config@(GoalRemainder goal) =
+        Profile.timeStrategy "Goal.DerivePar"
+        $ deriveParTemplate rules goal
+    transitionRuleWorker (DerivePar rules) (GoalRemainder goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        debugProofStateBracket config trans
-            $ Profile.timeStrategy "Goal.DeriveParRemainder"
-            $ deriveParTemplate rules goal
+        Profile.timeStrategy "Goal.DeriveParRemainder"
+        $ deriveParTemplate rules goal
 
-    transitionRuleWorker trans@(DeriveSeq rules) config@(Goal goal) =
+    transitionRuleWorker (DeriveSeq rules) (Goal goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        debugProofStateBracket config trans
-            $ Profile.timeStrategy "Goal.DeriveSeq"
-            $ deriveSeqTemplate rules goal
-    transitionRuleWorker trans@(DeriveSeq rules) config@(GoalRemainder goal) =
+        Profile.timeStrategy "Goal.DeriveSeq"
+        $ deriveSeqTemplate rules goal
+    transitionRuleWorker (DeriveSeq rules) (GoalRemainder goal) =
         -- TODO (virgil): Wrap the results in GoalRemainder/GoalRewritten here.
         -- See above for an explanation.
-        debugProofStateBracket config trans
-            $ Profile.timeStrategy "Goal.DeriveSeq"
-            $ deriveSeqTemplate rules goal
+        Profile.timeStrategy "Goal.DeriveSeq"
+        $ deriveSeqTemplate rules goal
 
     transitionRuleWorker _ state = return state
 
@@ -1104,6 +1115,9 @@ instance ToReachabilityRule (OnePathRule Variable) where
 
 instance ToReachabilityRule (AllPathRule Variable) where
     toReachabilityRule = AllPath
+
+instance ToReachabilityRule (ReachabilityRule Variable) where
+    toReachabilityRule = id
 
 debugProofStateBracket
     :: MonadLog log

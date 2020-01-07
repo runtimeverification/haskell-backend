@@ -359,7 +359,7 @@ instance Goal.Goal Goal where
         claims = Rule <$> goals
 
     transitionRule =
-        transitionRuleTemplate
+        Goal.transitionRuleTemplate
             Goal.TransitionRuleTemplate
                 { simplifyTemplate =
                     simplify
@@ -380,89 +380,6 @@ instance SOP.HasDatatypeInfo (Goal.Rule Goal)
 instance Debug (Goal.Rule Goal)
 
 instance Diff (Goal.Rule Goal)
-
-transitionRuleTemplate
-    :: forall m
-    .  MonadSimplify m
-    => Goal.TransitionRuleTemplate m Goal
-    -> Prim
-    -> ProofState
-    -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-transitionRuleTemplate
-    Goal.TransitionRuleTemplate
-        { simplifyTemplate
-        , removeDestinationTemplate
-        , isTriviallyValidTemplate
-        , deriveParTemplate
-        , deriveSeqTemplate
-        }
-  =
-    transitionRuleWorker
-  where
-    transitionRuleWorker
-        :: Prim
-        -> ProofState
-        -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-    transitionRuleWorker ProofState.CheckProven ProofState.Proven =
-        empty
-    transitionRuleWorker
-        ProofState.CheckGoalRemainder
-        (ProofState.GoalRemainder _)
-      =
-        empty
-
-    transitionRuleWorker
-        ProofState.ResetGoal
-        (ProofState.GoalRewritten goal)
-      =
-        return (ProofState.Goal goal)
-
-    transitionRuleWorker
-        ProofState.CheckGoalStuck
-        (ProofState.GoalStuck _)
-      =
-        empty
-
-    transitionRuleWorker ProofState.Simplify (ProofState.Goal g) =
-        ProofState.Goal <$> simplifyTemplate g
-    transitionRuleWorker ProofState.Simplify (ProofState.GoalRemainder g) =
-        ProofState.GoalRemainder <$> simplifyTemplate g
-
-    transitionRuleWorker
-        ProofState.RemoveDestination
-        (ProofState.Goal goal)
-      =
-        removeDestinationTemplate ProofState.Goal goal
-    transitionRuleWorker
-        ProofState.RemoveDestination
-        (ProofState.GoalRemainder goal)
-      =
-        removeDestinationTemplate ProofState.GoalRemainder goal
-
-    transitionRuleWorker ProofState.TriviallyValid (ProofState.Goal g)
-      | isTriviallyValidTemplate g = return ProofState.Proven
-    transitionRuleWorker ProofState.TriviallyValid (ProofState.GoalRemainder g)
-      | isTriviallyValidTemplate g = return ProofState.Proven
-    transitionRuleWorker ProofState.TriviallyValid (ProofState.GoalRewritten g)
-      | isTriviallyValidTemplate g = return ProofState.Proven
-
-    transitionRuleWorker (ProofState.DerivePar rules) (ProofState.Goal g) =
-        deriveParTemplate rules g
-    transitionRuleWorker
-        (ProofState.DerivePar rules)
-        (ProofState.GoalRemainder g)
-      =
-        deriveParTemplate rules g
-
-    transitionRuleWorker (ProofState.DeriveSeq rules) (ProofState.Goal g) =
-        deriveSeqTemplate rules g
-    transitionRuleWorker
-        (ProofState.DeriveSeq rules)
-        (ProofState.GoalRemainder g)
-      =
-        deriveSeqTemplate rules g
-
-    transitionRuleWorker _ state = return state
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination
