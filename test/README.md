@@ -1,8 +1,88 @@
-This direcory contains some simple K definitions requiring relatively
-little effort from the execution engine:
+These are the tests for integration between the K frontend and the Haskell backend.
 
-- `function-evaluation-demo`:
-  A demo for the evaluation of functions (and nothing else).
-- `imp-monosorted`:
-  IMP without any subsorting, with user-defined (functional) state,
-  and user-defined strictness.
+`Makefile` targets:
+
+- `test`: Run the tests.
+- `golden`: Update the expected outputs.
+- `clean`
+
+Each directory contains a number of tests based on a single K definition.
+The tests require the K frontend to be installed;
+by default a suitable version will be installed at `../.build/k`.
+
+## Program tests
+
+Program tests run a concrete program with `krun`
+and compare the output to an expected ("golden") file.
+Program tests have filenames of the form `⟨name⟩.⟨ext⟩`
+where `⟨name⟩` is the (arbitrary) name of the test
+and `⟨ext⟩` is the filename extension used by the definition.
+By default, if the definition filename is `⟨def⟩.k` then `⟨ext⟩ = ⟨def⟩`,
+otherwise the `Makefile` will contain the line `EXT = ⟨ext⟩`.
+A test fails when the actual and expected output differ.
+The exit code of `krun` is not considered,
+so one may write program tests which encounter errors.
+
+`Makefile` targets:
+
+- `make ⟨name⟩.⟨ext⟩.out`:
+  Run the named test and compare the output to `⟨name⟩.⟨ext⟩.out.golden`.
+  The test passes if the expected and actual output are identical.
+  The test will not run again until the test prerequisites change
+  or `⟨name⟩.⟨ext⟩.out` is deleted.
+  If the test fails, the actual output is moved
+  from `⟨name⟩.⟨ext⟩.out` to `⟨name⟩.⟨ext⟩.out.fail`.
+- `make ⟨name⟩.⟨ext⟩.out.golden`:
+  Run the test to construct `⟨name⟩.⟨ext⟩.out.golden`.
+
+## Specification tests
+
+Specification tests prove a number of claims with `kprove`
+and compare the output to an expected ("golden") file.
+Specification tests have filenames of the form `⟨name⟩-spec.k`.
+The specification must have the following form:
+
+```.k
+module VERIFICATION
+  imports ⟨DEF⟩  // ⟨DEF⟩ is the definition module defined in ⟨def⟩.k
+endmodule
+
+module ⟨NAME⟩-SPEC  // ⟨NAME⟩ must be the upper-case of ⟨name⟩
+  imports VERIFICATION
+
+  // CLAIMS
+
+endmodule
+```
+
+A test fails when the actual and expected output differ.
+The exit code of `kprove` is not considered,
+so one may write program tests which encounter errors.
+
+`Makefile` targets:
+
+- `make ⟨name⟩-spec.k.out`:
+  Run the named test and compare the output to `⟨name⟩-spec.k.out.golden`.
+  The test passes if the expected and actual output are identical.
+  The test will not run again until the test prerequisites change
+  or `⟨name⟩-spec.k.out` is deleted.
+  If the test fails, the actual output is moved
+  from `⟨name⟩-spec.k.out` to `⟨name⟩-spec.k.out.fail`.
+- `make ⟨name⟩-spec.k.out.golden`:
+  Run the test to construct `⟨name⟩-spec.k.out.golden`.
+
+## Definitions
+
+To add a new definition, create a new directory containing one-line `Makefile`:
+
+```
+include $(CURDIR)/../include.mk
+```
+
+In the new directory, create a K definition named `test.k`.
+Add program or specification tests as described above.
+
+`Makefile` targets:
+
+- `make test-kompiled/definition.kore`:
+  `kompile` the definition.
