@@ -1,9 +1,8 @@
 TARGETS = clean test golden
 
-DIRS = in-progress working
-SUBMAKES = $(foreach DIR,$(DIRS),$(DIR)/Makefile.make)
+SUBMAKES = $(shell find . -mindepth 2 -name Makefile)
 
-$(TARGETS): $(SUBMAKES)
+$(TARGETS): $(SUBMAKES:=.make)
 
 %/Makefile.make:
 	$(MAKE) -C $* $(MAKECMDGOALS)
