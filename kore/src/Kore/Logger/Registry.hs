@@ -65,6 +65,9 @@ import Kore.Logger.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
     )
+import Kore.Logger.InfoEvaluateCondition
+    ( InfoEvaluateCondition
+    )
 import Kore.Logger.WarnBottomHook
     ( WarnBottomHook
     )
@@ -96,6 +99,7 @@ registry =
                 , register warnBottomHookType
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
+                , register logInfoEvaluateConditionType
                 , register criticalExecutionErrorType
                 , register logMessageType
                 ]
@@ -130,6 +134,7 @@ debugAppliedRuleType
   , warnBottomHookType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
+  , logInfoEvaluateConditionType
   , criticalExecutionErrorType
   , logMessageType
   :: SomeTypeRep
@@ -148,6 +153,8 @@ warnFunctionWithoutEvaluatorsType =
     someTypeRep (Proxy :: Proxy WarnFunctionWithoutEvaluators)
 warnSimplificationWithRemainderType =
     someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
+logInfoEvaluateConditionType =
+    someTypeRep (Proxy :: Proxy InfoEvaluateCondition)
 criticalExecutionErrorType =
     someTypeRep (Proxy :: Proxy CriticalExecutionError)
 logMessageType =
