@@ -19,7 +19,10 @@ KOMPILED := $(TEST_DIR)/$(DEF)-kompiled
 DEF_KORE := $(KOMPILED)/definition.kore
 TEST_DEPS = $(K) $(DEF_KORE) $(KORE_EXEC)
 
-TESTS = $(wildcard $(TEST_DIR)/*.$(EXT)) $(wildcard $(TEST_DIR)/*-spec.k)
+TESTS = \
+	$(wildcard $(TEST_DIR)/*.$(EXT)) \
+	$(wildcard $(TEST_DIR)/*-spec.k) \
+	$(wildcard $(TEST_DIR)/*.merge)
 
 OUTS = $(foreach TEST, $(TESTS), $(TEST).out)
 
