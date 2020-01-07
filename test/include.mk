@@ -91,8 +91,7 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 %-spec.k.out: $(TEST_DIR)/%-spec.k $(TEST_DEPS)
 	@echo ">>>" $(CURDIR) "kprove" $<
 	rm -f $@
-	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS))
-	$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore))
+	$(if $(STORE_PROOFS),rm -f $(STORE_PROOFS),$(if $(RECALL_PROOFS),cp $(RECALL_PROOFS) $(@:.out=.save-proofs.kore)))
 	$(KPROVE) $(KPROVE_OPTS) $(KPROVE_SPEC) --output-file $@ || true
 	$(DIFF) $@.golden $@ || $(FAILED)
 	$(if $(STORE_PROOFS),$(DIFF) $(STORE_PROOFS).golden $(STORE_PROOFS) || $(FAILED_STORE_PROOFS))

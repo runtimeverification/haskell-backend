@@ -107,7 +107,7 @@ To re-use intermediates from a previous test,
 set the target-specific variable `RECALL_PROOFS`:
 
 ```
-test-2-spec.k.out: private RECALL_PROOFS = test-1-spec.k.save-proofs.kore
+test-2-spec.k.out: RECALL_PROOFS = test-1-spec.k.save-proofs.kore
 test-2-spec.k.out: test-1-spec.k.save-proofs.kore
 ```
 
