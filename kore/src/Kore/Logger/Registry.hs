@@ -155,7 +155,7 @@ lookupTextFromTypeWithError type' =
         error
             $ "Tried to log nonexistent entry type: "
             <> show type'
-            <> "It should be added to Kore.Logger.Registry.registry."
+            <> " It should be added to Kore.Logger.Registry.registry."
 
 parseEntryType :: Text -> Parser.Parsec String String SomeTypeRep
 parseEntryType entryText =
