@@ -10,7 +10,7 @@ test-k: tests/1.test-error
 	diff -u $<.golden $<
 
 %.output-error: %.$(DEFINITION_NAME) $(DEFINITION) $(KORE_EXEC)
-	$(KRUN) $(KRUN_OPTS) $< --output-file $@ 2>$@ || echo
+	$(KRUN) $(KRUN_OPTS) $< --output-file $@ 2>$@ || true
 
 golden: tests/1.output.golden
 
