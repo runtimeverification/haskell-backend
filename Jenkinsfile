@@ -62,23 +62,13 @@ pipeline {
         }
       }
     }
-    stage('Integration: K') {
+    stage('Integration Tests') {
       options {
-        timeout(time: 32, unit: 'MINUTES')
+        timeout(time: 64, unit: 'MINUTES')
       }
       steps {
         sh '''
           ./scripts/integration-k.sh
-        '''
-      }
-    }
-    stage('Integration: KEVM') {
-      options {
-        timeout(time: 48, unit: 'MINUTES')
-      }
-      steps {
-        sh '''
-          ./scripts/integration-kevm.sh
         '''
       }
     }
