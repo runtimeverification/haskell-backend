@@ -50,6 +50,7 @@ import Type.Reflection
 
 import Kore.Logger
     ( Entry
+    , LogMessage
     )
 import Kore.Logger.CriticalExecutionError
     ( CriticalExecutionError
@@ -96,6 +97,7 @@ registry =
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
                 , register criticalExecutionErrorType
+                , register logMessageType
                 ]
         typeToText = makeInverse textToType
     in if textToType `eq2` makeInverse typeToText
@@ -129,6 +131,7 @@ debugAppliedRuleType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
   , criticalExecutionErrorType
+  , logMessageType
   :: SomeTypeRep
 
 debugAppliedRuleType =
@@ -147,6 +150,8 @@ warnSimplificationWithRemainderType =
     someTypeRep (Proxy :: Proxy WarnSimplificationWithRemainder)
 criticalExecutionErrorType =
     someTypeRep (Proxy :: Proxy CriticalExecutionError)
+logMessageType =
+    someTypeRep (Proxy :: Proxy LogMessage)
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =
@@ -155,8 +160,9 @@ lookupTextFromTypeWithError type' =
   where
     notFoundError =
         error
-            "Tried to log nonexistent entry type.\
-            \ It should be added to Kore.Logger.Registry.registry."
+            $ "Tried to log nonexistent entry type: "
+            <> show type'
+            <> " It should be added to Kore.Logger.Registry.registry."
 
 parseEntryType :: Text -> Parser.Parsec String String SomeTypeRep
 parseEntryType entryText =
