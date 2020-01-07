@@ -83,6 +83,14 @@ In the `Makefile`, the depth should be set by a target-specific variable:
 ⟨name⟩-bmc-spec.k: KBMC_DEPTH = 20
 ```
 
+### REPL
+
+To run a specification test with `kore-repl` instead of `kore-exec`,
+it should be named like `⟨name⟩-repl-spec.k`.
+To run a specification test with `kore-repl` using a specific script,
+it should be named like `⟨name⟩-repl-script-spec.k`
+and the script should be in a file named `⟨name⟩-repl-script-spec.k.repl`.
+
 
 ## Definitions
 
