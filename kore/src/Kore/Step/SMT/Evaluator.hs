@@ -55,6 +55,9 @@ import Kore.Internal.TermLike
     , TermLike
     )
 import Kore.Logger
+import Kore.Logger.InfoEvaluateCondition
+    ( infoEvaluateCondition
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( smtDecision
     )
@@ -132,6 +135,7 @@ decidePredicate
     -> simplifier (Maybe Bool)
 decidePredicate korePredicate =
     SMT.withSolver $ runMaybeT $ do
+        infoEvaluateCondition korePredicate
         tools <- Simplifier.askMetadataTools
         smtPredicate <- goTranslatePredicate tools korePredicate
         result <-

@@ -1,6 +1,6 @@
 \rewrites{SortGeneratedTopCell{}}(
     \and{SortGeneratedTopCell{}}(
-        /* Created by <makeAndPredicate> at src/Kore/Internal/Predicate.hs:574:32 */
+        /* Created: Kore.Internal.Predicate.makeAndPredicate */
         \and{SortGeneratedTopCell{}}(
             \ceil{SortMap{}, SortGeneratedTopCell{}}(
                 /* builtin: */

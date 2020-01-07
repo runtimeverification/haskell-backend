@@ -9,6 +9,7 @@ module Kore.Internal.Predicate
     , pattern PredicateFalse
     , pattern PredicateTrue
     , compactPredicatePredicate
+    , freshVariable
     , isFalse
     , makePredicate
     , isPredicate
@@ -104,6 +105,9 @@ import Kore.Internal.TermLike hiding
     , substitute
     )
 import qualified Kore.Internal.TermLike as TermLike
+import Kore.Syntax.Variable
+    ( Variable
+    )
 import Kore.TopBottom
     ( TopBottom (..)
     )
@@ -765,3 +769,14 @@ substitute
     -> Predicate variable
 substitute subst (GenericPredicate termLike) =
     GenericPredicate (TermLike.substitute subst termLike)
+
+{- | Externalize the variables
+
+-}
+freshVariable
+    :: SortedVariable variable
+    => Predicate variable
+    -> Predicate Variable
+freshVariable predicate =
+    externalizeFreshVariables . TermLike.mapVariables toVariable
+    <$> predicate
