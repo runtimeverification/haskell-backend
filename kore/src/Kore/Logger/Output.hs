@@ -41,6 +41,9 @@ import Control.Concurrent.STM
     , readTChan
     , writeTChan
     )
+import Control.Monad
+    ( forever
+    )
 import Control.Monad.Catch
     ( MonadMask
     , bracket
@@ -226,20 +229,15 @@ runLoggerT options loggerT = do
 concurrentLogger :: LogAction IO a -> IO (LogAction IO a)
 concurrentLogger logger = do
     tChan <- newTChanIO
-    _ <- forkIO $ do
+    _ <- forkIO $ forever $ do
             val <- atomically $ readTChan tChan
             logger Colog.<& val
-            return ()
-    return $ writeTChanLogger tChan logger
+    return $ writeTChanLogger tChan
 
-writeTChanLogger :: TChan a -> LogAction IO a -> LogAction IO a
-writeTChanLogger tChan logger =
-    Colog.cmapM
-        (\msg -> do
-            atomically $ writeTChan tChan msg
-            return msg
-        )
-        logger
+writeTChanLogger :: TChan a -> LogAction IO a
+writeTChanLogger tChan =
+    LogAction $ \msg -> do
+        atomically $ writeTChan tChan msg
 
 -- Parser for command line log options.
 parseKoreLogOptions :: Parser KoreLogOptions
