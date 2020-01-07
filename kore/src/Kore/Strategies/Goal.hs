@@ -669,7 +669,7 @@ transitionRuleTemplate
         $ removeDestinationTemplate Goal goal
     transitionRuleWorker RemoveDestination (GoalRemainder goal) =
         Profile.timeStrategy "Goal.RemoveDestinationRemainder"
-        $ removeDestinationTemplate Goal goal
+        $ removeDestinationTemplate GoalRemainder goal
 
     transitionRuleWorker TriviallyValid (Goal goal)
       | isTriviallyValidTemplate goal =
