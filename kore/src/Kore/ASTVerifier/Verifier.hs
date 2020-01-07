@@ -27,10 +27,10 @@ import Control.Monad.RWS.Strict
     )
 import qualified Control.Monad.State.Strict as State
 import Data.Generics.Product
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified GHC.Generics as GHC
 
 import Kore.AST.Error

@@ -16,7 +16,7 @@ import qualified Data.Foldable as Foldable
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )
@@ -25,6 +25,7 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
@@ -268,7 +269,7 @@ unificationProcedureSuccessWithSimplifiers
             runSMT
             $ runSimplifier mockEnv
             $ Monad.Unify.runUnifierT
-            $ unificationProcedure term1 term2
+            $ unificationProcedure Condition.topTODO term1 term2
         let
             normalize
                 ::  Condition Variable
@@ -843,7 +844,7 @@ simplifyPattern (UnificationTerm term) = do
     return $ UnificationTerm term'
   where
     simplifier = do
-        simplifiedPatterns <- Pattern.simplify expandedPattern
+        simplifiedPatterns <- Pattern.simplify Condition.top expandedPattern
         case MultiOr.extractPatterns simplifiedPatterns of
             [] -> return Pattern.bottom
             (config : _) -> return config

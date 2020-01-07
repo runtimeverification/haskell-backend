@@ -12,7 +12,7 @@ import Control.DeepSeq
 import qualified Data.Foldable as Foldable
 import Data.Functor.Const
 import Data.Hashable
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Monoid
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC

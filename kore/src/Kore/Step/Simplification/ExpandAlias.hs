@@ -17,7 +17,7 @@ import Control.Error.Util
 import Control.Exception
     ( assert
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     )

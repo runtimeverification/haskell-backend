@@ -128,9 +128,9 @@ instance
             env { simplifierTermLike = locally simplifierTermLike }
     {-# INLINE localSimplifierTermLike #-}
 
-    simplifyCondition conditional = do
+    simplifyCondition topCondition conditional = do
         ConditionSimplifier simplify <- asks simplifierCondition
-        simplify conditional
+        simplify topCondition conditional
     {-# INLINE simplifyCondition #-}
 
     askSimplifierAxioms = asks simplifierAxioms
@@ -182,10 +182,10 @@ evalSimplifier
     -> SimplifierT smt a
     -> smt a
 evalSimplifier verifiedModule simplifier = do
-    env <- runSimplifier earlyEnv initialize
+    !env <- runSimplifier earlyEnv initialize
     runReaderT (runSimplifierT simplifier) env
   where
-    earlyEnv =
+    !earlyEnv =
         Env
             { metadataTools = earlyMetadataTools
             , simplifierTermLike

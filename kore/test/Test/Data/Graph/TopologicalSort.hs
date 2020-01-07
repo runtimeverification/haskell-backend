@@ -3,7 +3,7 @@ module Test.Data.Graph.TopologicalSort
 
 import Test.Tasty
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 import Data.Graph.TopologicalSort
 

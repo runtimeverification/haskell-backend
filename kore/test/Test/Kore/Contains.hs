@@ -4,10 +4,10 @@ module Test.Kore.Contains
 
 import Test.Tasty
 
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 import qualified Kore.Step.SMT.AST as AST
     ( Declarations (Declarations)

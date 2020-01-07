@@ -40,10 +40,10 @@ import Data.Functor
     ( ($>)
     )
 import qualified Data.HashMap.Strict as HashMap
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Text
     ( Text
     )

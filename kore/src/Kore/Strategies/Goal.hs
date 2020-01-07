@@ -36,7 +36,7 @@ import Control.Monad.Catch
     , SomeException
     , handle
     )
-import qualified Control.Monad.Trans as Monad.Trans
+import qualified Control.Monad.Trans as Trans
 import Data.Coerce
     ( Coercible
     , coerce
@@ -117,7 +117,7 @@ import Kore.Step.Simplification.Data
     )
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
-    ( simplifyAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
     ( simplifyTerm
@@ -776,14 +776,15 @@ removeDestinationWorker
     => (goal -> ProofState goal goal)
     -> goal
     -> Strategy.TransitionT (Rule goal) m (ProofState goal goal)
-removeDestinationWorker stateConstructor goal = withConfiguration goal $ do
+removeDestinationWorker stateConstructor goal =
+    withConfiguration goal $ Trans.lift $ do
         removal <- removalPredicate destination configuration
         if isTop removal
             then return . stateConstructor $ goal
             else do
                 simplifiedRemoval <-
                     SMT.Evaluator.filterMultiOr
-                    =<< simplifyAndRemoveTopExists
+                    =<< simplifyTopConfiguration
                         (Conditional.andPredicate configuration removal)
                 if not (isBottom simplifiedRemoval)
                     then return . GoalStuck $ goal
@@ -803,9 +804,8 @@ simplify
     => goal
     -> Strategy.TransitionT (Rule goal) m goal
 simplify goal = withConfiguration goal $ do
-    configs <-
-        Monad.Trans.lift
-        $ simplifyAndRemoveTopExists configuration
+    configs <- Trans.lift $
+        simplifyTopConfiguration configuration
     filteredConfigs <- SMT.Evaluator.filterMultiOr configs
     if null filteredConfigs
         then pure $ configurationDestinationToRule goal Pattern.bottom destination
@@ -854,7 +854,7 @@ derivePar
 derivePar rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Monad.Trans.lift
+        Trans.lift
         . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesParallel
             (Step.UnificationProcedure Unification.unificationProcedure)
@@ -909,7 +909,7 @@ deriveSeq
 deriveSeq rules goal = withConfiguration goal $ do
     let rewrites = RewriteRule . toRulePattern <$> rules
     eitherResults <-
-        Monad.Trans.lift
+        Trans.lift
         . Monad.Unify.runUnifierT
         $ Step.applyRewriteRulesSequence
             (Step.UnificationProcedure Unification.unificationProcedure)
@@ -969,36 +969,37 @@ removalPredicate
   | isFunctionPattern configTerm
   , isFunctionPattern destTerm
   = do
+    -- TODO (thomas.tuegel): Use unification here, not simplification.
     unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
-    if OrPattern.isFalse unifiedConfigs
-        then return Predicate.makeTruePredicate_
-        else
-            case OrPattern.toPatterns unifiedConfigs of
-                [substPattern] -> do
-                    let extraElemVariables =
-                            getExtraElemVariables configuration substPattern
-                        remainderPattern =
-                            Pattern.fromCondition
-                            . Conditional.withoutTerm
-                            $ (const <$> destination <*> substPattern)
-                    evaluatedRemainder <-
-                        Exists.makeEvaluate extraElemVariables remainderPattern
-                    return
-                        . Predicate.makeNotPredicate
-                        . Condition.toPredicate
-                        . Conditional.withoutTerm
-                        . OrPattern.toPattern
-                        $ evaluatedRemainder
-                _ ->
-                    error . show . Pretty.vsep $
-                    [ "Unifying the terms of the configuration and the\
-                    \ destination has unexpectedly produced more than one\
-                    \ unification case."
-                    , Pretty.indent 2 "Unification cases:"
-                    ]
-                    <> fmap
-                        (Pretty.indent 4 . unparse)
-                        (Foldable.toList unifiedConfigs)
+    case OrPattern.toPatterns unifiedConfigs of
+        _ | OrPattern.isFalse unifiedConfigs ->
+            return Predicate.makeTruePredicate_
+        [substPattern] -> do
+            let extraElemVariables =
+                    getExtraElemVariables configuration substPattern
+                remainderPattern =
+                    Pattern.fromCondition
+                    . Conditional.withoutTerm
+                    $ (const <$> destination <*> substPattern)
+            evaluatedRemainder <-
+                Exists.makeEvaluate
+                    configPredicate extraElemVariables remainderPattern
+            return
+                . Predicate.makeNotPredicate
+                . Condition.toPredicate
+                . Conditional.withoutTerm
+                . OrPattern.toPattern
+                $ evaluatedRemainder
+        _ ->
+            error . show . Pretty.vsep $
+            [ "Unifying the terms of the configuration and the\
+            \ destination has unexpectedly produced more than one\
+            \ unification case."
+            , Pretty.indent 2 "Unification cases:"
+            ]
+            <> fmap
+                (Pretty.indent 4 . unparse)
+                (Foldable.toList unifiedConfigs)
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
@@ -1011,7 +1012,7 @@ removalPredicate
           ]
   where
     Conditional { term = destTerm } = destination
-    Conditional { term = configTerm } = configuration
+    (configTerm, configPredicate) = Pattern.splitTerm configuration
     -- The variables of the destination that are missing from the
     -- configuration. These are the variables which should be existentially
     -- quantified in the removal predicate.

@@ -42,10 +42,10 @@ import Control.Lens.Iso
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import Data.Hashable
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Sequence
     ( Seq
     )

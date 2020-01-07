@@ -10,7 +10,7 @@ import Data.Default
 import Data.Function
     ( (&)
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 
 import Data.Sup
     ( Sup (Element)
