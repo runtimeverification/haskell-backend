@@ -1,0 +1,35 @@
+[]
+module haskell-backend-saved-claims-43943e50-f723-47cd-99fd-07104d664c6d
+    import VERIFICATION []
+    import kore []
+    claim {} \implies{SortGeneratedTopCell{}}(
+        \and{SortGeneratedTopCell{}}(
+            \top{SortGeneratedTopCell{}}(),
+            Lbl'-LT-'generatedTop'-GT-'{}(
+                Lbl'-LT-'k'-GT-'{}(
+                    kseq{}(
+                        LblBB'LParUndsRParUnds'SAVE-PROOFS'Unds'KItem'Unds'Int{}(
+                            VarX:SortInt{}
+                        ),
+                        VarDotVar1:SortK{}
+                    )
+                ),
+                Lbl'-LT-'generatedCounter'-GT-'{}(VarDotVar00:SortInt{})
+            )
+        ),
+        weakExistsFinally{SortGeneratedTopCell{}}(
+            Lbl'-LT-'generatedTop'-GT-'{}(
+                Lbl'-LT-'k'-GT-'{}(
+                    kseq{}(
+                        LblCC'LParUndsRParUnds'SAVE-PROOFS'Unds'KItem'Unds'Int{}(
+                            VarX:SortInt{}
+                        ),
+                        VarDotVar1:SortK{}
+                    )
+                ),
+                Lbl'-LT-'generatedCounter'-GT-'{}(VarDotVar00:SortInt{})
+            )
+        )
+    ) []
+endmodule
+[]
