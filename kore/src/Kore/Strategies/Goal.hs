@@ -31,9 +31,9 @@ import Control.Exception
     ( throw
     )
 import Control.Monad.Catch
-    ( Exception
+    ( Exception (..)
     , MonadCatch
-    , SomeException
+    , SomeException (..)
     , handle
     )
 import qualified Control.Monad.Trans as Trans
@@ -1137,7 +1137,7 @@ debugProofStateBracket
     -> monad (ProofState goal goal)
 debugProofStateBracket
     (fmap toReachabilityRule -> proofstate)
-    (coerce -> transition)
+    (coerce -> transition :: ProofState.Prim (RewriteRule Variable))
     action
   =
     if terminalTransition transition proofstate
