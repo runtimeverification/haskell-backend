@@ -453,7 +453,8 @@ test_ceilSimplification =
             expected = OrPattern.fromPatterns [ Pattern.top ]
         actual <- makeEvaluate
             Conditional
-                { term = Mock.builtinSet [asConcrete' fOfA, asConcrete' fOfB]
+                { term = Mock.builtinSet
+                    [asConcrete' Mock.a, asConcrete' Mock.b]
                 , predicate = makeTruePredicate_
                 , substitution = mempty
                 }
@@ -558,6 +559,7 @@ test_ceilSimplification =
         , predicate = makeTruePredicate_
         , substitution = mempty
         }
+    asConcrete' :: TermLike Variable -> TermLike Concrete
     asConcrete' p =
         fromMaybe (error "Expected concrete pattern") (TermLike.asConcrete p)
     asInternalSet =
