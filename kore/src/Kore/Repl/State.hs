@@ -409,11 +409,11 @@ liftSimplifierWithLogger
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
     ReplState { koreLogOptions } <- get
-    let Logger.KoreLogOptions { logType } = koreLogOptions
+    let Logger.KoreLogOptions { logType, timestampsSwitch } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
             Logger.koreLogFilters koreLogOptions
-            $ Logger.makeKoreLogger textLogger
+            $ Logger.makeKoreLogger timestampsSwitch textLogger
     _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
