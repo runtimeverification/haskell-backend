@@ -4,9 +4,6 @@ import Control.Applicative
     ( Alternative (..)
     , optional
     )
-import Control.Concurrent.Async
-    ( wait
-    )
 import Control.Monad.Catch
     ( MonadCatch
     , SomeException

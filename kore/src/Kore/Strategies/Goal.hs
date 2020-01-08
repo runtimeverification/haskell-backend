@@ -600,36 +600,6 @@ data TransitionRuleTemplate monad goal =
         -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
     }
 
-withDebugProofState
-    :: forall monad goal
-    .  MonadLog monad
-    => ToReachabilityRule goal
-    => Coercible (Rule goal) (RewriteRule Variable)
-    => ProofState goal goal ~ ProofState.ProofState goal
-    => Prim goal ~ ProofState.Prim (Rule goal)
-    =>
-        (  Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
-        )
-    ->
-        (  Prim goal
-        -> ProofState goal goal
-        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
-        )
-withDebugProofState transitionFunc =
-    \transition state ->
-        Transition.orElse
-            (debugProofStateBracket
-                state
-                transition
-                (transitionFunc transition state)
-            )
-            (debugProofStateFinal
-                state
-                transition
-            )
-
 transitionRuleTemplate
     :: forall m goal
     .  MonadSimplify m
@@ -1176,3 +1146,34 @@ debugProofStateFinal
         , result = Nothing
         }
     empty
+
+withDebugProofState
+    :: forall monad goal
+    .  MonadLog monad
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
+    =>
+        (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        )
+    ->
+        (  Prim goal
+        -> ProofState goal goal
+        -> Strategy.TransitionT (Rule goal) monad (ProofState goal goal)
+        )
+withDebugProofState transitionFunc =
+    \transition state ->
+        Transition.orElse
+            (debugProofStateBracket
+                state
+                transition
+                (transitionFunc transition state)
+            )
+            (debugProofStateFinal
+                state
+                transition
+            )
+
