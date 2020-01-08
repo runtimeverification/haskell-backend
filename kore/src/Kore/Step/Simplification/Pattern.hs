@@ -22,7 +22,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( addAssumedTrue
+    ( andCondition
     , topTODO
     )
 import Kore.Internal.TermLike
@@ -70,4 +70,4 @@ simplify sideCondition pattern' = do
             (Conditional.andCondition simplifiedTerm condition)
   where
     (term, condition) = Conditional.splitTerm pattern'
-    termSideCondition = sideCondition `SideCondition.addAssumedTrue` condition
+    termSideCondition = sideCondition `SideCondition.andCondition` condition

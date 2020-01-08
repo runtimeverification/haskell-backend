@@ -26,7 +26,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( addAssumedTrue
+    ( andCondition
     )
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
@@ -80,7 +80,7 @@ unificationProcedure sideCondition p1 p2
     TopBottom.guardAgainstBottom pat
     let (term, conditions) = Conditional.splitTerm pat
         mergedSideCondition =
-            sideCondition `SideCondition.addAssumedTrue` conditions
+            sideCondition `SideCondition.andCondition` conditions
     orCeil <- Ceil.makeEvaluateTerm mergedSideCondition term
     ceil' <- Monad.Unify.scatter orCeil
     BranchT.alternate . simplifyCondition sideCondition

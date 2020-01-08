@@ -82,7 +82,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( addAssumedTrue
+    ( andCondition
     , topTODO
     )
 import Kore.Internal.TermLike
@@ -202,7 +202,7 @@ simplifyAnds MakeAnd { makeAnd } (NonEmpty.sort -> patterns) =
             _ -> do
                 let sideCondition =
                         SideCondition.topTODO
-                        `SideCondition.addAssumedTrue` intermediateCondition
+                        `SideCondition.andCondition` intermediateCondition
                 simplified <-
                     makeAnd
                         intermediateTerm

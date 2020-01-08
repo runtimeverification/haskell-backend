@@ -50,7 +50,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( addAssumedTrue
+    ( andCondition
     )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike as TermLike
@@ -226,7 +226,7 @@ maybeEvaluatePattern
         merged <- bracketAxiomEvaluationLog $ do
             let sideConditions =
                     sideCondition
-                    `SideCondition.addAssumedTrue` childrenCondition
+                    `SideCondition.andCondition` childrenCondition
             result <-
                 Profile.axiomEvaluation identifier
                 $ evaluator termLike sideConditions

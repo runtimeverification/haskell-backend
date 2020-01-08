@@ -5,7 +5,7 @@ License     : NCSA
 
 module Kore.Internal.SideCondition
     ( SideCondition  -- Constructor not exported on purpose
-    , addAssumedTrue
+    , andCondition
     , assumeTrueCondition
     , assumeTruePredicate
     , mapVariables
@@ -40,6 +40,13 @@ import Kore.Unparser
     ( Unparse (..)
     )
 
+{-| Side condition used in the evaluation context.
+
+It is not added to the result.
+
+It is usually used to remove infeasible branches, but it may also be used for
+other purposes, say, to remove redundant parts of the result predicate.
+-}
 newtype SideCondition variable =
     SideCondition
         { assumedTrue :: Condition variable }
@@ -83,19 +90,18 @@ top = SideCondition
 topTODO :: InternalVariable variable => SideCondition variable
 topTODO = top
 
-addAssumedTrue
+andCondition
     :: InternalVariable variable
     => SideCondition variable
     -> Condition variable
     -> SideCondition variable
-addAssumedTrue sideCondition@SideCondition {assumedTrue} newCondition =
+andCondition sideCondition@SideCondition {assumedTrue} newCondition =
     sideCondition
         { assumedTrue = assumedTrue `Condition.andCondition` newCondition }
 
-assumeTrueCondition
-    :: InternalVariable variable => Condition variable -> SideCondition variable
+assumeTrueCondition :: Condition variable -> SideCondition variable
 assumeTrueCondition condition =
-    addAssumedTrue top condition
+    SideCondition { assumedTrue = condition }
 
 assumeTruePredicate
     :: InternalVariable variable => Predicate variable -> SideCondition variable

@@ -68,7 +68,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import qualified Kore.Internal.SideCondition as SideCondition
-    ( addAssumedTrue
+    ( andCondition
     , mapVariables
     )
 import Kore.Internal.TermLike
@@ -208,7 +208,7 @@ unifyRule
   = do
     let (initialTerm, initialCondition) = Pattern.splitTerm initial
         mergedSideCondition =
-            sideCondition `SideCondition.addAssumedTrue` initialCondition
+            sideCondition `SideCondition.andCondition` initialCondition
     -- Rename free axiom variables to avoid free variables from the initial
     -- configuration.
     let
@@ -446,7 +446,7 @@ simplifyPredicate
 simplifyPredicate sideCondition (Just initialCondition) conditional = do
     partialResult <- Branch.alternate
         (Simplifier.simplifyCondition
-            (sideCondition `SideCondition.addAssumedTrue` initialCondition)
+            (sideCondition `SideCondition.andCondition` initialCondition)
             conditional
         )
     -- TODO (virgil): Consider using different simplifyPredicate implementations
