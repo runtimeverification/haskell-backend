@@ -25,13 +25,9 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Options.Applicative
     ( Parser
-    , flag'
-    , help
-    , helpDoc
-    , long
-    , maybeReader
     , option
     )
+import qualified Options.Applicative as Options
 import qualified Options.Applicative.Help.Pretty as OptPretty
 import qualified Text.Megaparsec as Parser
 import qualified Text.Megaparsec.Char as Parser
@@ -54,8 +50,8 @@ import Kore.Log.Registry
     )
 import Log
 
--- | 'KoreLogOptions' is the top-level options type for logging, containing the
--- desired output method and the minimum 'Severity'.
+{- | Command line options for logging.
+ -}
 data KoreLogOptions = KoreLogOptions
     { logType   :: KoreLogType
     -- ^ desired output method, see 'KoreLogType'
@@ -80,83 +76,96 @@ data KoreLogType
     -- ^ Log to specified file when '--log <filename>' is passed.
     deriving (Eq, Show)
 
+parseKoreLogType :: Parser KoreLogType
+parseKoreLogType =
+    LogFileText <$> Options.strOption info
+  where
+    info =
+        mempty
+        <> Options.long "log"
+        <> Options.help "Name of the log file"
+
 type EntryTypes = Set SomeTypeRep
 
 -- | Enable or disable timestamps
 data TimestampsSwitch = TimestampsEnable | TimestampsDisable
     deriving (Eq, Show)
 
--- Parser for command line log options.
+parseTimestampsSwitch :: Parser TimestampsSwitch
+parseTimestampsSwitch =
+    parseTimestampsEnable <|> parseTimestampsDisable
+  where
+    parseTimestampsEnable =
+        let info =
+                mempty
+                <> Options.long "enable-log-timestamps"
+                <> Options.help "Enable log timestamps"
+        in Options.flag' TimestampsEnable info
+    parseTimestampsDisable =
+        let info =
+                mempty
+                <> Options.long "disable-log-timestamps"
+                <> Options.help "Disable log timestamps"
+        in Options.flag' TimestampsDisable info
+
+-- | Parse 'KoreLogOptions'.
 parseKoreLogOptions :: Parser KoreLogOptions
 parseKoreLogOptions =
     KoreLogOptions
-    <$> (parseType <|> pure LogStdErr)
-    <*> (parseLevel <|> pure Warning)
-    <*> (parseTimestampsOption <|> pure TimestampsEnable)
-    <*> (mconcat <$> many parseEntries)
+    <$> (parseKoreLogType <|> pure LogStdErr)
+    <*> (parseSeverity <|> pure Warning)
+    <*> (parseTimestampsSwitch <|> pure TimestampsEnable)
+    <*> (mconcat <$> many parseEntryTypes)
     <*> parseDebugAppliedRuleOptions
     <*> parseDebugAxiomEvaluationOptions
     <*> parseDebugSolverOptions
+
+parseEntryTypes :: Parser EntryTypes
+parseEntryTypes =
+    option parseCommaSeparatedEntries info
   where
-    parseType :: Parser KoreLogType
-    parseType =
-        option
-            (maybeReader parseTypeString)
-            $ long "log"
-            <> help "Name of the log file"
+    info =
+        mempty
+        <> Options.long "log-entries"
+        <> Options.helpDoc ( Just allEntryTypes )
 
-      where
-        parseTypeString filename = pure $ LogFileText filename
+    allEntryTypes :: OptPretty.Doc
+    allEntryTypes =
+        OptPretty.vsep
+            [ "Log entries: logs entries of supplied types"
+            , "Available entry types:"
+            , (OptPretty.indent 4 . OptPretty.vsep)
+                (OptPretty.text . Text.unpack <$> getEntryTypesAsText)
+            ]
 
-    parseLevel =
-        option
-            (maybeReader parseSeverity)
-            $ long "log-level"
-            <> help "Log level: debug, info, warning, error, or critical"
-    parseSeverity =
-        \case
-            "debug"    -> pure Debug
-            "info"     -> pure Info
-            "warning"  -> pure Warning
-            "error"    -> pure Error
-            "critical" -> pure Critical
-            _          -> Nothing
-    parseTimestampsOption :: Parser TimestampsSwitch
-    parseTimestampsOption = parseTimestampsEnable <|> parseTimestampsDisable
-      where
-        parseTimestampsEnable =
-            flag' TimestampsEnable
-                (  long "enable-log-timestamps"
-                <> help "Enable log timestamps" )
-        parseTimestampsDisable =
-            flag' TimestampsDisable
-                (  long "disable-log-timestamps"
-                <> help "Disable log timestamps" )
+    parseCommaSeparatedEntries =
+        Options.maybeReader $ Parser.parseMaybe parseEntryTypes'
 
-    parseEntries =
-        option
-            parseCommaSeparatedEntries
-            $ long "log-entries"
-            <> helpDoc
-               ( Just listOfEntries )
+    parseEntryTypes' :: Parser.Parsec String String EntryTypes
+    parseEntryTypes' = Set.fromList <$> Parser.sepEndBy parseSomeTypeRep comma
 
-    parseCommaSeparatedEntries = maybeReader $ Parser.parseMaybe entryParser
-    entryParser :: Parser.Parsec String String EntryTypes
-    entryParser = do
-        args <- many itemParser
-        pure . Set.fromList $ args
-    itemParser :: Parser.Parsec String String SomeTypeRep
-    itemParser = do
-        argument <- some (Parser.noneOf [',', ' '])
-        _ <- void (Parser.char ',') <|> Parser.eof
-        parseEntryType . Text.pack $ argument
+    comma = void (Parser.char ',')
 
-listOfEntries :: OptPretty.Doc
-listOfEntries =
-    OptPretty.vsep $
-        [ "Log entries: logs entries of supplied types"
-        , "Available entry types:"
-        ]
-        <> fmap
-            (OptPretty.indent 4 . OptPretty.text . Text.unpack)
-            getEntryTypesAsText
+    parseSomeTypeRep :: Parser.Parsec String String SomeTypeRep
+    parseSomeTypeRep =
+        Parser.takeWhile1P (Just "SomeTypeRep") (flip notElem [',', ' '])
+        >>= parseEntryType . Text.pack
+
+parseSeverity :: Parser Severity
+parseSeverity =
+    option (Options.maybeReader readSeverity) info
+  where
+    info =
+        mempty
+        <> Options.long "log-level"
+        <> Options.help "Log level: debug, info, warning, error, or critical"
+
+readSeverity :: String -> Maybe Severity
+readSeverity =
+    \case
+        "debug"    -> pure Debug
+        "info"     -> pure Info
+        "warning"  -> pure Warning
+        "error"    -> pure Error
+        "critical" -> pure Critical
+        _          -> Nothing
