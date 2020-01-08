@@ -8,6 +8,7 @@ module Kore.Attribute.Pattern.ConstructorLike
     ( ConstructorLike (..)
     , ConstructorLikeHead (..)
     , HasConstructorLike (..)
+    , assertConstructorLike
     ) where
 
 import Control.DeepSeq
@@ -282,15 +283,15 @@ class HasConstructorLike a where
     isConstructorLike a = case extractConstructorLike a of
         (ConstructorLike constructorLike) -> isJust constructorLike
 
-    assertConstructorLike :: String -> a -> b -> b
-    assertConstructorLike message a =
-        if not (isConstructorLike a)
-        then error ("Expecting constructor-like object. " ++ message)
-        else id
-
 instance HasConstructorLike (Value NormalizedMap ConstructorLike) where
     extractConstructorLike (MapValue result) = result
 
 instance HasConstructorLike (Value NormalizedSet ConstructorLike) where
     extractConstructorLike SetValue =
         ConstructorLike . Just $ ConstructorLikeHead
+
+assertConstructorLike :: HasConstructorLike a => String -> a -> b -> b
+assertConstructorLike message a =
+    if not (isConstructorLike a)
+    then error ("Expecting constructor-like object. " ++ message)
+    else id

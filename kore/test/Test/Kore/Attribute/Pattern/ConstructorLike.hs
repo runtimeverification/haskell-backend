@@ -3,7 +3,6 @@ module Test.Kore.Attribute.Pattern.ConstructorLike
     ) where
 
 import Test.Tasty
---import Test.Tasty.HUnit
 
 import GHC.Stack
     ( HasCallStack
