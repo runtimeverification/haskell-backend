@@ -123,31 +123,6 @@ PATTERN_OPTS = --pattern "$$(cat $*.k)"
 	$(KORE_EXEC) $(DEF_KORE) $(KORE_EXEC_OPTS) --module $(KORE_MODULE) --merge-rules $< --output $@
 	$(DIFF) $@.golden $@ || $(FAILED)
 
-# ### KORE-EXEC
-
-# %.kore.out: KORE_EXEC_OPTS += --output $@
-# %.kore.out: KORE_EXEC_OPTS += --module $(KORE_MODULE)
-# %.kore.out: $(TEST_DIR)/%.kore
-
-# %-pgm.kore.out: $(DEF_KORE)
-# %-pgm.kore.out: KORE_EXEC_OPTS += --pattern $(TEST_DIR)/$(@:.out=)
-
-# %-search-pgm.kore.out: $(TEST_DIR)/%-pattern.kore
-# %-search-pgm.kore.out: KORE_EXEC_OPTS += --searchType FINAL
-# %-search-pgm.kore.out: KORE_EXEC_OPTS += --search $(TEST_DIR)/$(@:-search-pgm.kore.out=-pattern.kore)
-
-# %-spec.kore.out: $(TEST_DIR)/$(@:-spec.kore.out:-vdefinition.kore)
-# %-spec.kore.out: DEF_KORE = $(TEST_DIR)/$(@:-spec.kore.out:-vdefinition.kore)
-# %-spec.kore.out: KORE_MODULE = VERIFICATION
-# %-spec.kore.out: KORE_EXEC_OPTS += --spec-module $$(echo $(@:.kore.out=) | tr [[:lower:]] [[:upper:]])
-# %-spec.kore.out: KORE_EXEC_OPTS += --prove $(TEST_DIR)/$(@:.out=)
-
-# %-pgm.kore.out %-spec.kore.out: $(KORE_EXEC)
-# 	@echo ">>>" $(CURDIR) "kore-exec" $(@:.out=)
-# 	rm -f $@
-# 	$(KORE_EXEC) $(DEF_KORE) $(KORE_EXEC_OPTS) || true
-# 	$(DIFF) $@.golden $@ || $(FAILED)
-
 ### SCRIPTS
 
 test-%.sh.out: $(KORE_EXEC) $(TEST_DIR)/test-%.sh $(TEST_DIR)/test-%-*
