@@ -9,7 +9,6 @@ module Kore.Internal.Condition
     , markSimplified
     , eraseConditionalTerm
     , top
-    , topTODO
     , bottom
     , topCondition
     , bottomCondition
@@ -84,10 +83,6 @@ top =
         , predicate = Predicate.makeTruePredicate_
         , substitution = mempty
         }
-
--- | A 'top' 'Condition' for refactoring which should eventually be removed.
-topTODO :: InternalVariable variable => Condition variable
-topTODO = top
 
 bottom :: InternalVariable variable => Condition variable
 bottom =

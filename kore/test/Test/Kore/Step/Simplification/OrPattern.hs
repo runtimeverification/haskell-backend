@@ -12,19 +12,18 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
-    ( fromPatterns
-    )
-import qualified Kore.Internal.OrPattern as OrPattern
     ( bottom
+    , fromPatterns
     , top
     )
 import Kore.Internal.Predicate
-    ( makeAndPredicate
+    ( Predicate
+    , makeAndPredicate
     , makeEqualsPredicate_
     , makeTruePredicate_
     )
-import Kore.Internal.Predicate
-    ( Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTruePredicate
     )
 import Kore.Internal.TermLike
     ( TermLike
@@ -124,4 +123,6 @@ runSimplifyPredicates
     -> IO (OrPattern Variable)
 runSimplifyPredicates predicate orPattern =
     Test.runSimplifier Mock.env
-    $ simplifyConditionsWithSmt predicate orPattern
+    $ simplifyConditionsWithSmt
+        (SideCondition.assumeTruePredicate predicate)
+        orPattern

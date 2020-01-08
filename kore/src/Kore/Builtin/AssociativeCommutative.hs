@@ -93,6 +93,9 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
+    )
 import Kore.Internal.Symbol
     ( Symbol
     )
@@ -970,7 +973,8 @@ unifyEqualsNormalizedAc
         return (terms, predicate)
 
     simplify :: TermLike variable -> unifier (Pattern variable)
-    simplify term = alternate $ simplifyConditionalTerm Condition.top term
+    simplify term =
+        alternate $ simplifyConditionalTerm SideCondition.topTODO term
 
     simplifyPair
         :: (TermLike variable, Domain.Value normalized (TermLike variable))
@@ -1009,7 +1013,7 @@ unifyEqualsNormalizedAc
       where
         simplifyTermLike :: TermLike variable -> unifier (Pattern variable)
         simplifyTermLike term =
-            alternate $ simplifyConditionalTerm Condition.top term
+            alternate $ simplifyConditionalTerm SideCondition.topTODO term
 
 buildResultFromUnifiers
     :: forall normalized unifier variable

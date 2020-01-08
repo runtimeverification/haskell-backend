@@ -11,9 +11,6 @@ module Kore.Step.Simplification.In
     ( simplify
     ) where
 
-import Kore.Internal.Condition as Condition
-    ( Condition
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -24,6 +21,9 @@ import Kore.Internal.Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
     ( markSimplified
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
     )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -46,11 +46,14 @@ TODO(virgil): It does not have yet a special case for children with top terms.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -> In Sort (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify predicate In { inContainedChild = first, inContainingChild = second } =
-    simplifyEvaluatedIn predicate first second
+simplify
+    sideCondition
+    In { inContainedChild = first, inContainingChild = second }
+  =
+    simplifyEvaluatedIn sideCondition first second
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -68,30 +71,30 @@ carry around.
 simplifyEvaluatedIn
     :: forall variable simplifier
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -> OrPattern variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluatedIn predicate first second
+simplifyEvaluatedIn sideCondition first second
   | OrPattern.isFalse first  = return OrPattern.bottom
   | OrPattern.isFalse second = return OrPattern.bottom
 
-  | OrPattern.isTrue first = Ceil.simplifyEvaluated predicate second
-  | OrPattern.isTrue second = Ceil.simplifyEvaluated predicate first
+  | OrPattern.isTrue first = Ceil.simplifyEvaluated sideCondition second
+  | OrPattern.isTrue second = Ceil.simplifyEvaluated sideCondition first
 
   | otherwise =
     OrPattern.flatten <$> sequence
-                            (makeEvaluateIn predicate <$> first <*> second)
+                            (makeEvaluateIn sideCondition <$> first <*> second)
 
 makeEvaluateIn
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -> Pattern variable
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluateIn predicate first second
-  | Pattern.isTop first = Ceil.makeEvaluate predicate second
-  | Pattern.isTop second = Ceil.makeEvaluate predicate first
+makeEvaluateIn sideCondition first second
+  | Pattern.isTop first = Ceil.makeEvaluate sideCondition second
+  | Pattern.isTop second = Ceil.makeEvaluate sideCondition first
   | Pattern.isBottom first || Pattern.isBottom second = return OrPattern.bottom
   | otherwise = return $ makeEvaluateNonBoolIn first second
 

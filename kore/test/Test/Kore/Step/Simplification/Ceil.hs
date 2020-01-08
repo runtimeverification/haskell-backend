@@ -24,6 +24,12 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate_
     , makeTruePredicate_
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
     ( AxiomIdentifier (..)
@@ -574,7 +580,7 @@ mockEvaluator
     :: MonadSimplify simplifier
     => AttemptedAxiom variable
     -> TermLike variable
-    -> Condition variable
+    -> SideCondition variable
     -> simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ = return evaluation
 
@@ -602,7 +608,7 @@ evaluate
     -> IO (OrPattern Variable)
 evaluate ceil =
     runSimplifier mockEnv
-    $ Ceil.simplify Condition.top ceil
+    $ Ceil.simplify SideCondition.top ceil
   where
     mockEnv = Mock.env
 
@@ -618,6 +624,6 @@ makeEvaluateWithAxioms
     -> IO (OrPattern Variable)
 makeEvaluateWithAxioms axiomIdToSimplifier child =
     runSimplifier mockEnv
-    $ Ceil.makeEvaluate Condition.top child
+    $ Ceil.makeEvaluate SideCondition.top child
   where
     mockEnv = Mock.env { simplifierAxioms = axiomIdToSimplifier }

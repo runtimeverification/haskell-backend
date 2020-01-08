@@ -40,9 +40,11 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Identifier as AxiomIdentifier
@@ -324,7 +326,7 @@ test_functionRegistry =
         let expect = mkApplySymbol sHead []
         simplified <-
             runSimplifier testEnv
-            $ Pattern.simplify Condition.top
+            $ Pattern.simplify SideCondition.top
             $ makePattern $ mkApplySymbol gHead []
         let actual =
                 Pattern.term $ head

@@ -79,6 +79,9 @@ import Numeric.Natural
 import Kore.Internal.Condition
     ( Condition
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -451,7 +454,7 @@ data Config claim m = Config
         -> m (ExecutionGraph (Rule claim))
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
-        :: Condition Variable
+        :: SideCondition Variable
         -> TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation m (Condition Variable)
