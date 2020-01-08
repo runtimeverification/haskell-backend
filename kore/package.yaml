@@ -138,7 +138,7 @@ _common-exe: &common-exe
   when:
     - condition: flag(threaded)
       then:
-        ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn8"
+        ghc-options: -threaded -rtsopts "-with-rtsopts=-N -T -A32M -qn4"
       else:
         ghc-options: -rtsopts "-with-rtsopts=-A32M"
 

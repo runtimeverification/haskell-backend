@@ -17,10 +17,10 @@ import Data.Function
 import Data.Hashable
     ( Hashable
     )
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 

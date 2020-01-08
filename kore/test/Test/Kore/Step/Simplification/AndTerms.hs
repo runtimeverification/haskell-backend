@@ -15,7 +15,7 @@ import qualified Control.Error as Error
 import Data.Default
     ( Default (..)
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Data.Text
     ( Text

@@ -15,10 +15,10 @@ import Test.Tasty
 import qualified Control.Lens as Lens
 import Data.Function
 import Data.Generics.Product
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
 import qualified Data.Text.Prettyprint.Doc as Pretty
 import Prelude hiding
@@ -565,6 +565,9 @@ test_functionIntegration =
                 )
                 (Mock.f (mkElemVar Mock.x))
         assertEqual "" expect actual
+{-
+    Uncomment this if we ever go back to allowing branches for function
+    evaluation.
 
     , testCase "Multiple definition branches." $ do
         let expect =
@@ -592,7 +595,7 @@ test_functionIntegration =
                     ]
                 )
                 (Mock.f (mkElemVar Mock.x))
-        assertEqual "" expect actual
+        assertEqual "" expect actual-}
     ]
   where
     evaluate

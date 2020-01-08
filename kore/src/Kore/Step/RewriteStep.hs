@@ -132,8 +132,9 @@ finalizeAppliedRule renamedRule appliedConditions =
                 Rule.topExistsToImplicitForall avoidVars ruleRHS
             Conditional { predicate = ensures } = finalPattern
             ensuresCondition = Condition.fromPredicate ensures
-            preFinalCondition = appliedCondition <> ensuresCondition
-        finalCondition <- simplifyPredicate preFinalCondition
+        finalCondition <-
+            simplifyPredicate
+                Condition.top (Just appliedCondition) ensuresCondition
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
@@ -141,7 +142,7 @@ finalizeAppliedRule renamedRule appliedConditions =
             substitution' = Substitution.toMap substitution
             Conditional { term = finalTerm} = finalPattern
             finalTerm' = TermLike.substitute substitution' finalTerm
-        return finalCondition { Pattern.term = finalTerm' }
+        return (finalTerm' `Pattern.withCondition` finalCondition)
 
 finalizeRule
     ::  ( SimplifierVariable variable
@@ -159,7 +160,10 @@ finalizeRule initial unifiedRule =
     Monad.Unify.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
-        applied <- applyInitialConditions initialCondition unificationCondition
+        applied <- applyInitialConditions
+            Condition.top
+            (Just initialCondition)
+            unificationCondition
         checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
         final <- finalizeAppliedRule renamedRule applied
@@ -177,7 +181,8 @@ finalizeRulesParallel initial unifiedRules = do
     results <- Foldable.fold <$> traverse (finalizeRule initial) unifiedRules
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
-    remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
+    remainders' <- Monad.Unify.gather $
+        applyRemainder Condition.top initial remainder
     return Step.Results
         { results = Seq.fromList results
         , remainders =
@@ -198,7 +203,8 @@ finalizeRulesSequence initial unifiedRules
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
-    remainders' <- Monad.Unify.gather $ applyRemainder initial remainder
+    remainders' <- Monad.Unify.gather $
+        applyRemainder Condition.top initial remainder
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -247,7 +253,7 @@ applyRulesParallel
     -- axiom variables.
     (map toAxiomVariables -> rules)
     initial
-  = unifyRules unificationProcedure initial rules
+  = unifyRules unificationProcedure Condition.top initial rules
     >>= finalizeRulesParallel initial
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -298,7 +304,7 @@ applyRulesSequence
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
     (map toAxiomVariables -> rules)
-  = unifyRules unificationProcedure initial rules
+  = unifyRules unificationProcedure Condition.top initial rules
     >>= finalizeRulesSequence initial
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.

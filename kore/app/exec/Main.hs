@@ -6,11 +6,13 @@ import Control.Applicative
     )
 import Control.Monad.Catch
     ( MonadCatch
-    , catch
+    , SomeException
+    , handle
     , throwM
     )
 import Control.Monad.IO.Class
     ( MonadIO
+    , liftIO
     )
 import Control.Monad.IO.Unlift
     ( MonadUnliftIO
@@ -105,6 +107,9 @@ import Kore.Internal.Predicate
     ( makePredicate
     )
 import Kore.Internal.TermLike
+import Kore.Logger.CriticalExecutionError
+    ( criticalExecutionError
+    )
 import Kore.Logger.Output
     ( KoreLogOptions (..)
     , LogMessage
@@ -404,12 +409,11 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <- catch (runLoggerT koreLogOptions go) $
-        \(Goal.WithConfiguration lastConfiguration someException) -> do
-            renderResult
-                execOptions
-                ("// Last configuration:\n" <> unparse lastConfiguration)
-            throwM someException
+    exitCode <-
+        runLoggerT koreLogOptions
+        $ handle handleSomeException
+        $ handle handleWithConfiguration
+        $ go
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
@@ -418,6 +422,22 @@ mainWithOptions execOptions = do
     KoreExecOptions { koreProveOptions } = execOptions
     KoreExecOptions { koreSearchOptions } = execOptions
     KoreExecOptions { koreMergeOptions } = execOptions
+
+    handleSomeException :: SomeException -> Main ExitCode
+    handleSomeException someException = do
+        criticalExecutionError someException
+        return $ ExitFailure 1
+
+    handleWithConfiguration :: Goal.WithConfiguration -> Main ExitCode
+    handleWithConfiguration
+        (Goal.WithConfiguration lastConfiguration someException)
+      = do
+        liftIO $ renderResult
+            execOptions
+            ("// Last configuration:\n" <> unparse lastConfiguration)
+        throwM someException
+
+    go :: Main ExitCode
     go
       | Just proveOptions@KoreProveOptions{bmc} <- koreProveOptions =
         if bmc

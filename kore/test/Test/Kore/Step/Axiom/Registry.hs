@@ -13,7 +13,7 @@ import qualified Data.Default as Default
 import Data.Function
     ( (&)
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     )
@@ -40,6 +40,7 @@ import Kore.IndexedModule.MetadataTools
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
+import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.MultiOr as MultiOr
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Symbol as Symbol
@@ -323,7 +324,8 @@ test_functionRegistry =
         let expect = mkApplySymbol sHead []
         simplified <-
             runSimplifier testEnv
-            $ Pattern.simplify $ makePattern $ mkApplySymbol gHead []
+            $ Pattern.simplify Condition.top
+            $ makePattern $ mkApplySymbol gHead []
         let actual =
                 Pattern.term $ head
                 $ MultiOr.extractPatterns simplified

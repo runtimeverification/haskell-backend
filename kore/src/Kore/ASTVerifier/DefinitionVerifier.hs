@@ -17,7 +17,7 @@ import Control.Monad
     ( foldM
     )
 import qualified Data.Foldable as Foldable
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map

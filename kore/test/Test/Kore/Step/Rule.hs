@@ -20,7 +20,7 @@ import Data.Function
     ( (&)
     )
 import Data.Generics.Product
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     )

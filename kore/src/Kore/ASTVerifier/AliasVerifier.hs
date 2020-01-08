@@ -18,10 +18,10 @@ import qualified Data.Foldable as Foldable
 import Data.Function
 import qualified Data.Functor.Foldable as Recursive
 import Data.Generics.Product
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
 import Data.Set
     ( Set

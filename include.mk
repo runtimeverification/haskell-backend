@@ -5,19 +5,19 @@ export TOP  # so that sub-makes do not invoke git again
 UPSTREAM_BRANCH = origin/master
 
 BUILD_DIR = $(TOP)/.build
-K_RELEASE_BIN = $(BUILD_DIR)/k-nightly.tar.gz
-K_RELEASE_BIN_URL = $(shell cat deps/k_release)/k-nightly.tar.gz
-K_DIST_DEFAULT = $(BUILD_DIR)/k
-K_DIST ?= $(K_DIST_DEFAULT)
-K_DIST_BIN = $(K_DIST)/bin
-K_DIST_LIB = $(K_DIST)/lib
+K_RELEASE_TAR = $(BUILD_DIR)/k-nightly.tar.gz
+K_RELEASE_TAR_URL = $(shell cat deps/k_release)/k-nightly.tar.gz
+K_RELEASE_DEFAULT = $(BUILD_DIR)/k
+K_RELEASE ?= $(K_RELEASE_DEFAULT)
+K_RELEASE_BIN = $(K_RELEASE)/bin
+K_RELEASE_LIB = $(K_RELEASE)/lib
 
 # The kernel JAR is used as a build timestamp.
-K = $(K_DIST_LIB)/java/kernel-1.0-SNAPSHOT.jar
-KOMPILE = $(K_DIST_BIN)/kompile
-KRUN = $(K_DIST_BIN)/krun
-KPROVE = $(K_DIST_BIN)/kprove
-KBMC = $(K_DIST_BIN)/kbmc
+K = $(K_RELEASE_LIB)/java/kernel-1.0-SNAPSHOT.jar
+KOMPILE = $(K_RELEASE_BIN)/kompile
+KRUN = $(K_RELEASE_BIN)/krun
+KPROVE = $(K_RELEASE_BIN)/kprove
+KBMC = $(K_RELEASE_BIN)/kbmc
 
 KOMPILE_OPTS = --backend haskell
 KRUN_OPTS = --haskell-backend-command "$(KORE_EXEC) $(KORE_EXEC_OPTS)"
@@ -42,3 +42,12 @@ $(KORE_EXEC):
 
 $(KORE_REPL):
 	$(STACK) $(STACK_BUILD) $(STACK_NO_PROFILE) --copy-bins kore:exe:kore-repl
+
+$(K_RELEASE_DEFAULT)/lib/java/kernel-1.0-SNAPSHOT.jar:
+	mkdir -p $(BUILD_DIR)
+	rm -rf $(K_RELEASE_DEFAULT) $(K_RELEASE_TAR)
+	curl --location --output $(K_RELEASE_TAR) $(K_RELEASE_TAR_URL)
+	mkdir -p $(K_RELEASE_DEFAULT)
+	tar --extract --file $(K_RELEASE_TAR) --strip-components 1 --directory $(K_RELEASE_DEFAULT)
+	cp src/main/kore/prelude.kore $(K_RELEASE_DEFAULT)/include/kore
+	$(KRUN) --version

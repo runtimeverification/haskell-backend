@@ -46,7 +46,7 @@ import Data.Coerce
 import Data.List.NonEmpty
     ( NonEmpty ((:|))
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( fromMaybe
     , mapMaybe
@@ -281,7 +281,10 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig 
             Execution { executionGraph } = execution
             match target config = Search.matchWith target config
         solutionsLists <-
-            searchGraph searchConfig (match searchPattern) executionGraph
+            searchGraph
+                searchConfig
+                (match Condition.topTODO searchPattern)
+                executionGraph
         let
             solutions = concatMap MultiOr.extractPatterns solutionsLists
             orPredicate =
@@ -598,7 +601,7 @@ execute breadthLimit verifiedModule strategy inputPattern =
         simplifier <- Simplifier.askSimplifierTermLike
         axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         simplifiedPatterns <-
-            Pattern.simplify (Pattern.fromTermLike inputPattern)
+            Pattern.simplify Condition.top (Pattern.fromTermLike inputPattern)
         let
             initialPattern =
                 case MultiOr.extractPatterns simplifiedPatterns of

@@ -40,10 +40,10 @@ import Data.Function
 import Data.List
     ( intercalate
     )
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import Data.Semigroup
     ( (<>)
     )
@@ -381,7 +381,7 @@ clockSomethingIO description something = do
     logMessage end start =
         mkMessage start end
     mkMessage start end =
-        SomeEntry $ Logger.LogMessage
+        Logger.LogMessage
             { message =
                 pack $ description ++" "++ show (diffTimeSpec end start)
             , severity = Logger.Info

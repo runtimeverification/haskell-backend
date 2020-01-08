@@ -140,10 +140,11 @@ The simplification of exists x . (pat and pred and subst) is equivalent to:
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Exists Sort variable (OrPattern variable)
+    => Condition variable
+    -> Exists Sort variable (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify Exists { existsVariable, existsChild } =
-    simplifyEvaluated existsVariable existsChild
+simplify topCondition Exists { existsVariable, existsChild } =
+    simplifyEvaluated topCondition existsVariable existsChild
 
 {- TODO (virgil): Preserve pattern sorts under simplification.
 
@@ -160,14 +161,15 @@ even more useful to carry around.
 -}
 simplifyEvaluated
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable
+    => Condition variable
+    -> ElementVariable variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyEvaluated variable simplified
+simplifyEvaluated topCondition variable simplified
   | OrPattern.isTrue simplified  = return simplified
   | OrPattern.isFalse simplified = return simplified
   | otherwise = do
-    evaluated <- traverse (makeEvaluate [variable]) simplified
+    evaluated <- traverse (makeEvaluate topCondition [variable]) simplified
     return (OrPattern.flatten evaluated)
 
 {-| Evaluates a multiple 'Exists' given a pattern and a list of
@@ -180,10 +182,11 @@ See 'simplify' for detailed documentation.
 makeEvaluate
     :: forall simplifier variable
     .  (SimplifierVariable variable, MonadSimplify simplifier)
-    => [ElementVariable variable]
+    => Condition variable
+    -> [ElementVariable variable]
     -> Pattern variable
     -> simplifier (OrPattern variable)
-makeEvaluate variables original = do
+makeEvaluate topCondition variables original = do
     let sortedVariables = sortBy substVariablesFirst variables
     fmap OrPattern.fromPatterns
         . Branch.gather
@@ -194,11 +197,12 @@ makeEvaluate variables original = do
         -> Pattern variable
         -> BranchT simplifier (Pattern variable)
     makeEvaluateWorker variable original' = do
-        normalized <- simplifyCondition original'
+        normalized <- simplifyCondition topCondition original'
         let Conditional { substitution = normalizedSubstitution } = normalized
         case splitSubstitution variable normalizedSubstitution of
             (Left boundTerm, freeSubstitution) ->
                 makeEvaluateBoundLeft
+                    topCondition
                     variable
                     boundTerm
                     normalized { Conditional.substitution = freeSubstitution }
@@ -214,7 +218,8 @@ makeEvaluate variables original = do
                     else makeEvaluateBoundRight
                         variable
                         freeSubstitution
-                        normalized { Conditional.substitution = boundSubstitution }
+                        normalized
+                            { Conditional.substitution = boundSubstitution }
 
     substVariablesFirst
         :: ElementVariable variable
@@ -296,11 +301,12 @@ See also: 'quantifyPattern'
  -}
 makeEvaluateBoundLeft
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => ElementVariable variable  -- ^ quantified variable
+    => Condition variable
+    -> ElementVariable variable  -- ^ quantified variable
     -> TermLike variable  -- ^ substituted term
     -> Pattern variable
     -> BranchT simplifier (Pattern variable)
-makeEvaluateBoundLeft variable boundTerm normalized
+makeEvaluateBoundLeft topCondition variable boundTerm normalized
   = withoutFreeVariable (ElemVar variable) boundTerm $ do
         let
             boundSubstitution = Map.singleton (ElemVar variable) boundTerm
@@ -313,7 +319,8 @@ makeEvaluateBoundLeft variable boundTerm normalized
                         Predicate.substitute boundSubstitution
                         $ Conditional.predicate normalized
                     }
-        orPattern <- Monad.Trans.lift $ Pattern.simplify substituted
+        orPattern <-
+            Monad.Trans.lift $ Pattern.simplify topCondition substituted
         Branch.scatter (MultiOr.extractPatterns orPattern)
 
 {- | Existentially quantify a variable in the given 'Pattern'.

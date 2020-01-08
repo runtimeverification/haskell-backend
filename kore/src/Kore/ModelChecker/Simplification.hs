@@ -7,7 +7,7 @@ module Kore.ModelChecker.Simplification
     ( checkImplicationIsTop
     ) where
 
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
@@ -33,7 +33,7 @@ import Kore.Internal.TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
 import qualified Kore.Step.Simplification.Pattern as Pattern
-    ( simplifyAndRemoveTopExists
+    ( simplifyTopConfiguration
     )
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
@@ -71,7 +71,8 @@ checkImplicationIsTop lhs rhs =
                     , predicate = Predicate.makeTruePredicate_
                     , substitution = mempty
                     }
-            orResult <- Pattern.simplifyAndRemoveTopExists result
+            orResult <-
+                Pattern.simplifyTopConfiguration result
             orFinalResult <- SMT.Evaluator.filterMultiOr orResult
             return (isBottom orFinalResult)
         _ -> (error . show . Pretty.vsep)

@@ -62,10 +62,10 @@ import Data.Function
     ( (&)
     )
 import qualified Data.List as List
-import Data.Map
+import Data.Map.Strict
     ( Map
     )
-import qualified Data.Map as Map
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Reflection as Reflection
 import qualified Data.Set as Set
@@ -1106,10 +1106,7 @@ test_concretizeKeysAxiom =
     expected = Right $ MultiOr
         [ Conditional
             { term = val
-            , predicate =
-                -- The sort is broken because the axiom is broken: the
-                -- rhs should have the same sort as the lhs.
-                makeTruePredicate (termLikeSort (pair symbolicKey symbolicMap))
+            , predicate = makeTruePredicate intSort
             , substitution = mempty
             }
         ]
