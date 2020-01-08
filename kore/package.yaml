@@ -71,6 +71,7 @@ dependencies:
   - recursion-schemes >=5.1
   - reflection >=2.1
   - semialign >=1
+  - sqlite-simple >=0.4
   - streams
   - stm >=2.5
   - template-haskell >=2.14

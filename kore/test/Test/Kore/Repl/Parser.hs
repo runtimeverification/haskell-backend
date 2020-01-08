@@ -2,6 +2,7 @@ module Test.Kore.Repl.Parser
     ( test_replParser
     ) where
 
+import Data.Default
 import qualified Data.GraphViz as Graph
 import qualified Data.Set as Set
 import Numeric.Natural
@@ -11,9 +12,6 @@ import Test.Tasty
     )
 
 import qualified Kore.Log as Log
-import qualified Kore.Log.DebugSolver as Log
-    ( emptyDebugSolverOptions
-    )
 import Kore.Log.Registry
     ( debugAppliedRuleType
     , debugAxiomEvaluationType
@@ -434,65 +432,41 @@ initScriptTests =
 logTests :: [ParserTest ReplCommand]
 logTests =
     [ "log debug [] stderr"
-        `parsesTo_` Log Log.KoreLogOptions
-            { logLevel = Log.Debug
-            , logEntries = mempty
-            , timestampsSwitch = Log.TimestampsEnable
-            , logType = Log.LogStdErr
-            , debugAppliedRuleOptions = mempty
-            , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Log.emptyDebugSolverOptions
+        `parsesTo_` Log def
+            { Log.logLevel = Log.Debug
+            , Log.logType = Log.LogStdErr
             }
     , "log [] stderr"
-        `parsesTo_` Log Log.KoreLogOptions
-            { logLevel = Log.Warning
-            , logEntries = mempty
-            , timestampsSwitch = Log.TimestampsEnable
-            , logType = Log.LogStdErr
-            , debugAppliedRuleOptions = mempty
-            , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Log.emptyDebugSolverOptions
+        `parsesTo_` Log def
+            { Log.logLevel = Log.Warning
+            , Log.logType = Log.LogStdErr
             }
     , "log [DebugAppliedRule] stderr"
-        `parsesTo_` Log Log.KoreLogOptions
-            { logLevel = Log.Warning
-            , logEntries = Set.singleton debugAppliedRuleType
-            , timestampsSwitch = Log.TimestampsEnable
-            , logType = Log.LogStdErr
-            , debugAppliedRuleOptions = mempty
-            , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Log.emptyDebugSolverOptions
+        `parsesTo_` Log def
+            { Log.logLevel = Log.Warning
+            , Log.logType = Log.LogStdErr
+            , Log.logEntries = Set.singleton debugAppliedRuleType
             }
     , "log critical [DebugAppliedRule] stderr"
-        `parsesTo_` Log Log.KoreLogOptions
-            { logLevel = Log.Critical
-            , logEntries = Set.singleton debugAppliedRuleType
-            , timestampsSwitch = Log.TimestampsEnable
-            , logType = Log.LogStdErr
-            , debugAppliedRuleOptions = mempty
-            , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Log.emptyDebugSolverOptions
+        `parsesTo_` Log def
+            { Log.logLevel = Log.Critical
+            , Log.logType = Log.LogStdErr
+            , Log.logEntries = Set.singleton debugAppliedRuleType
             }
     , "log info [ DebugAppliedRule,  DebugAxiomEvaluation ] file \"f s\""
-        `parsesTo_` Log Log.KoreLogOptions
-            { logLevel = Log.Info
-            , logEntries = Set.fromList
-                [debugAppliedRuleType, debugAxiomEvaluationType]
-            , timestampsSwitch = Log.TimestampsEnable
-            , logType = Log.LogFileText "f s"
-            , debugAppliedRuleOptions = mempty
-            , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Log.emptyDebugSolverOptions
+        `parsesTo_` Log def
+            { Log.logLevel = Log.Info
+            , Log.logType = Log.LogFileText "f s"
+            , Log.logEntries =
+                Set.fromList
+                    [debugAppliedRuleType, debugAxiomEvaluationType]
             }
     , "log info [ DebugAppliedRule   DebugAxiomEvaluation ] file \"f s\""
-        `parsesTo_` Log Log.KoreLogOptions
-            { logLevel = Log.Info
-            , logEntries = Set.fromList
-                [debugAppliedRuleType, debugAxiomEvaluationType]
-            , timestampsSwitch = Log.TimestampsEnable
-            , logType = Log.LogFileText "f s"
-            , debugAppliedRuleOptions = mempty
-            , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Log.emptyDebugSolverOptions
+        `parsesTo_` Log def
+            { Log.logLevel = Log.Info
+            , Log.logType = Log.LogFileText "f s"
+            , Log.logEntries =
+                Set.fromList
+                    [debugAppliedRuleType, debugAxiomEvaluationType]
             }
     ]
