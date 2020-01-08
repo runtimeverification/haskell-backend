@@ -31,7 +31,7 @@ pipeline {
         '''
       }
     }
-    stage('Build') {
+    stage('Stages') {
       failFast true
       parallel {
         stage('Documentation') {
@@ -41,35 +41,28 @@ pipeline {
             '''
           }
         }
-        stage('Executables') {
+        stage('Unit Tests') {
           steps {
             sh '''
-              ./scripts/kore-exec.sh
+              ./scripts/unit-test.sh
+            '''
+          }
+          post {
+            always {
+              junit 'kore/test-results.xml'
+            }
+          }
+        }
+        stage('Integration Tests') {
+          options {
+            timeout(time: 32, unit: 'MINUTES')
+          }
+          steps {
+            sh '''
+              ./scripts/integration-k.sh
             '''
           }
         }
-      }
-    }
-    stage('Unit Tests') {
-      steps {
-        sh '''
-          ./scripts/unit-test.sh
-        '''
-      }
-      post {
-        always {
-          junit 'kore/test-results.xml'
-        }
-      }
-    }
-    stage('Integration Tests') {
-      options {
-        timeout(time: 64, unit: 'MINUTES')
-      }
-      steps {
-        sh '''
-          ./scripts/integration-k.sh
-        '''
       }
     }
     stage('Update K Submodules') {
