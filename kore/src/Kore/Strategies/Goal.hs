@@ -461,18 +461,16 @@ instance Goal (ReachabilityRule Variable) where
             state@(GoalStuck _) ->
                 case prim of
                     CheckGoalStuck ->
-                        debugProofStateBracket
+                        debugProofStateFinal
                             state
                             CheckGoalStuck
-                            empty
                     _ -> return proofstate
             Proven ->
                 case prim of
                     CheckProven ->
-                        debugProofStateBracket
+                        debugProofStateFinal
                             Proven
                             CheckProven
-                            empty
                     _ -> return proofstate
 
     strategy
@@ -621,10 +619,16 @@ withDebugProofState
         )
 withDebugProofState transitionFunc =
     \transition state ->
-        debugProofStateBracket
-            state
-            transition
-            (transitionFunc transition state)
+        Transition.orElse
+            (debugProofStateBracket
+                state
+                transition
+                (transitionFunc transition state)
+            )
+            (debugProofStateFinal
+                state
+                transition
+            )
 
 transitionRuleTemplate
     :: forall m goal
@@ -1140,26 +1144,35 @@ debugProofStateBracket
     (fmap toReachabilityRule -> proofState)
     (coerce -> transition)
     action
-  =
-    if terminalTransition transition proofState
-        then do
-            logM DebugProofState
-                { proofState
-                , transition
-                , result = Nothing
-                }
-            action
-        else do
-            result <- action
-            logM DebugProofState
-                { proofState
-                , transition
-                , result = Just $ toReachabilityRule <$> result
-                }
-            return result
-  where
-    terminalTransition CheckProven Proven = True
-    terminalTransition CheckGoalRemainder (GoalRemainder _) = True
-    terminalTransition CheckGoalStuck (GoalStuck _) = True
-    terminalTransition _ _ = False
+  = do
+    result <- action
+    logM DebugProofState
+        { proofState
+        , transition
+        , result = Just $ toReachabilityRule <$> result
+        }
+    return result
 
+debugProofStateFinal
+    :: forall monad goal
+    .  Alternative monad
+    => MonadLog monad
+    => ToReachabilityRule goal
+    => Coercible (Rule goal) (RewriteRule Variable)
+    => ProofState goal goal ~ ProofState.ProofState goal
+    => Prim goal ~ ProofState.Prim (Rule goal)
+    => ProofState goal goal
+    -- ^ current proof state
+    -> Prim goal
+    -- ^ transition
+    -> monad (ProofState goal goal)
+debugProofStateFinal
+    (fmap toReachabilityRule -> proofState)
+    (coerce -> transition)
+  = do
+    logM DebugProofState
+        { proofState
+        , transition
+        , result = Nothing
+        }
+    empty
