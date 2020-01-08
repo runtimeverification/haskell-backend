@@ -56,7 +56,6 @@ instance Filterable Prim where
     mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
     mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
 
--- TODO: better descriptions of what each constructor represents?
 instance Unparse goal => Pretty (Prim goal) where
     pretty CheckProven = "Transition CheckProven."
     pretty CheckGoalRemainder = "Transition CheckGoalRemainder."
@@ -101,7 +100,6 @@ instance Debug a => Debug (ProofState a)
 
 instance (Debug a, Diff a) => Diff (ProofState a)
 
--- TODO: better descriptions of what each constructor represents?
 instance Unparse goal => Pretty (ProofState goal) where
     pretty (Goal goal) =
         Pretty.vsep
