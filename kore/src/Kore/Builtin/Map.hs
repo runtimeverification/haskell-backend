@@ -281,8 +281,7 @@ evalLookupOrDefault =
             _map <- expectConcreteBuiltinMap Map.lookupKey _map
             Builtin.appliedFunction
                 . Pattern.fromTermLike
-                . fromMaybe _def
-                . fmap Domain.getMapValue
+                . maybe _def Domain.getMapValue
                 $ Map.lookup _key _map
     evalLookupOrDefault0 _ _ = Builtin.wrongArity Map.lookupOrDefaultKey
 

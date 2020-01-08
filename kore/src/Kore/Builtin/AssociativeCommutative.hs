@@ -598,8 +598,8 @@ elementListAsInternal
     -> Sort
     -> [(TermLike variable, Domain.Value normalized (TermLike variable))]
     -> Maybe (TermLike variable)
-elementListAsInternal tools sort1 terms = do
-    (asInternal tools sort1 . Domain.wrapAc)
+elementListAsInternal tools sort1 terms =
+    asInternal tools sort1 . Domain.wrapAc
     <$> elementListAsNormalized terms
 
 elementListAsNormalized

@@ -15,6 +15,7 @@ module Kore.Step.Simplification.Ceil
     , Ceil (..)
     ) where
 
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Foldable as Recursive
 import qualified Data.Map.Strict as Map
@@ -316,7 +317,7 @@ makeEvaluateNormalizedAc
             ]
     concreteElementsList =
         map
-            (\(a, b) -> (TermLike.fromConcrete a, b))
+            (Bifunctor.first TermLike.fromConcrete)
             (Map.toList concreteElements)
     (variableKeys, variableValues) =
         unzip (Domain.unwrapElement <$> elementsWithVariables)

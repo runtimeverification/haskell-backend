@@ -54,7 +54,7 @@ expandAlias
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-expandAlias recurse t1 t2 = do
+expandAlias recurse t1 t2 =
     case (expandSingleAlias t1, expandSingleAlias t2) of
         (Nothing, Nothing) -> nothing
         (t1', t2') -> recurse (fromMaybe t1 t1') (fromMaybe t2 t2')

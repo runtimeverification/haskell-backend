@@ -24,7 +24,7 @@ import Kore.Sort
 import Kore.Unparser
 
 -- | 'Inhabitant' symbolizes the inhabitants of a sort.
-data Inhabitant child = Inhabitant { inhSort :: !Sort }
+newtype Inhabitant child = Inhabitant { inhSort :: Sort }
     deriving (Eq, Foldable, Functor, GHC.Generic, Ord, Show, Traversable)
 
 instance Hashable (Inhabitant child)

@@ -31,6 +31,9 @@ import Data.Map.Strict
     ( Map
     )
 import qualified Data.Map.Strict as Map
+import Data.Maybe
+    ( fromMaybe
+    )
 import Data.Text
     ( Text
     )
@@ -162,7 +165,7 @@ logMessageType =
 
 lookupTextFromTypeWithError :: SomeTypeRep -> Text
 lookupTextFromTypeWithError type' =
-    maybe notFoundError id
+    fromMaybe notFoundError
     $ Map.lookup type' (typeToText registry)
   where
     notFoundError =

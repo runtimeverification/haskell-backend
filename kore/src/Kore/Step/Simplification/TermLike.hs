@@ -211,9 +211,9 @@ simplifyInternal term predicate = do
         )
     return result
   where
-    tracer termLike = case AxiomIdentifier.matchAxiomIdentifier termLike of
-        Nothing -> id
-        Just identifier -> Profiler.identifierSimplification identifier
+    tracer termLike =
+        maybe id Profiler.identifierSimplification
+        $ AxiomIdentifier.matchAxiomIdentifier termLike
 
     predicateFreeVars = getFreeVariables $ freeVariables predicate
 

@@ -46,7 +46,7 @@ import Data.Map.Strict
     )
 import qualified Data.Map.Strict as Map
 import Data.Maybe
-    ( isJust
+    ( isNothing
     )
 import Data.Monoid
     ( Any (..)
@@ -224,7 +224,7 @@ deduplicateSubstitution makeAnd' =
         where
             isProblematic = getAny . Map.foldMapWithKey
                 (\k v -> Any $ isSetVar k && isNotSingleton v)
-            isNotSingleton = not . isJust . getSingleton
+            isNotSingleton = isNothing . getSingleton
 
     simplifyAnds' = simplifyAnds makeAnd'
 

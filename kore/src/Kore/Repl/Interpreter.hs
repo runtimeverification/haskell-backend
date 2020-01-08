@@ -611,9 +611,10 @@ allProofs = do
     findProofStatus :: Map.Map NodeState [Graph.Node] -> GraphProofStatus
     findProofStatus m =
         case Map.lookup StuckNode m of
-            Nothing -> case Map.lookup UnevaluatedNode m of
-                           Nothing -> Completed
-                           Just ns -> InProgress ns
+            Nothing ->
+                case Map.lookup UnevaluatedNode m of
+                    Nothing -> Completed
+                    Just ns -> InProgress ns
             Just ns -> StuckProof ns
 
 showRule
@@ -1148,12 +1149,9 @@ showRewriteRule rule =
   where
     rule' = toRulePattern rule
 
-    extractSourceAndLocation
-        :: RulePattern Variable
-        -> SourceLocation
-    extractSourceAndLocation
-        (RulePattern { Axiom.attributes }) =
-            Attribute.sourceLocation attributes
+    extractSourceAndLocation :: RulePattern Variable -> SourceLocation
+    extractSourceAndLocation RulePattern { Axiom.attributes } =
+        Attribute.sourceLocation attributes
 
 -- | Unparses a strategy node, using an omit list to hide specified children.
 unparseStrategy

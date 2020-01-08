@@ -236,8 +236,7 @@ concurrentLogger logger = do
 
 writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
-    LogAction $ \msg -> do
-        atomically $ writeTChan tChan msg
+    LogAction $ \msg -> atomically $ writeTChan tChan msg
 
 -- Parser for command line log options.
 parseKoreLogOptions :: Parser KoreLogOptions

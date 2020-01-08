@@ -227,9 +227,9 @@ makeEvaluate topCondition variables original = do
         -> Ordering
     substVariablesFirst var1 var2
         | var1 `elem` substVariables
-        , not (var2 `elem` substVariables)
+        , notElem var2 substVariables
         = LT
-        | not (var1 `elem` substVariables)
+        | notElem var1 substVariables
         , var2 `elem` substVariables
         = GT
         | otherwise = EQ
