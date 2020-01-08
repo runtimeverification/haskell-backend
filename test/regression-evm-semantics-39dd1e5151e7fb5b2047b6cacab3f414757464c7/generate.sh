@@ -38,5 +38,3 @@ kollect sum-to-n \
     ./kevm prove --backend haskell \
         tests/specs/examples/sum-to-n-spec.k \
         --format-failures --def-module VERIFICATION
-
-mv test-*.sh *.kore $KORE/test/regression-evm-semantics/
