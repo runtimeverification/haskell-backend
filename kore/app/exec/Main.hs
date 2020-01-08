@@ -412,12 +412,11 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    (asyncThread, exitCode) <-
+    exitCode <-
         runLoggerT koreLogOptions
         $ handle handleSomeException
         $ handle handleWithConfiguration
         $ go
-    wait asyncThread
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats

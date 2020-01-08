@@ -33,6 +33,7 @@ import Control.Applicative
 import Control.Concurrent.Async
     ( Async
     , async
+    , wait
     )
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
@@ -42,12 +43,16 @@ import Control.Concurrent.STM
     , readTChan
     , writeTChan
     )
+import Control.Exception
+    ( BlockedIndefinitelyOnSTM (..)
+    )
 import Control.Monad
     ( forever
     )
 import Control.Monad.Catch
     ( MonadMask
     , bracket
+    , catch
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -220,22 +225,25 @@ filterSeverity level entry =
     entrySeverity entry >= level
 
 -- | Run a 'LoggerT' with the given options.
-runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO (Async (), a)
+runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
     withLogger options $ \logger -> do
         (asyncThread, modifiedLogger) <- concurrentLogger logger
         result <- runLogger modifiedLogger
-        return (asyncThread, result)
-    -- withLogger options . runReaderT . getLoggerT $ loggerT
+        wait asyncThread
+        return result
 
 concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
 concurrentLogger logger = do
     tChan <- newTChanIO
     asyncThread <-
-        async $ forever $ do
-            val <- atomically $ readTChan tChan
-            logger Colog.<& val
+        async $ catch
+            ( forever $ do
+                    val <- atomically $ readTChan tChan
+                    logger Colog.<& val
+            )
+            (\BlockedIndefinitelyOnSTM -> return ())
     return (asyncThread, writeTChanLogger tChan)
 
 writeTChanLogger :: TChan a -> LogAction IO a
