@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.WarnSimplificationWithRemainder
+module Kore.Log.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder (..)
     , warnSimplificationWithRemainder
     ) where

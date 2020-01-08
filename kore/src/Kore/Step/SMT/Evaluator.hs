@@ -54,7 +54,7 @@ import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     )
-import Kore.Logger.InfoEvaluateCondition
+import Kore.Log.InfoEvaluateCondition
     ( infoEvaluateCondition
     )
 import qualified Kore.Profiler.Profile as Profile

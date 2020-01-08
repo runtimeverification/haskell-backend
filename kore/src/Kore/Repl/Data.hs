@@ -86,7 +86,7 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import Kore.Log
-import qualified Kore.Logger.Registry as Log
+import qualified Kore.Log.Registry as Log
 import Kore.Profiler.Data
     ( MonadProfiler
     )

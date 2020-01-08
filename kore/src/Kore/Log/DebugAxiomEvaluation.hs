@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.DebugAxiomEvaluation
+module Kore.Log.DebugAxiomEvaluation
     ( AxiomEvaluationState (..)
     , DebugAxiomEvaluation (..)
     , DebugAxiomEvaluationOptions (..)

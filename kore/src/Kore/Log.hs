@@ -109,19 +109,19 @@ import Type.Reflection
     ( SomeTypeRep (..)
     )
 
-import Kore.Logger.DebugAppliedRule
-import Kore.Logger.DebugAxiomEvaluation
+import Kore.Log.DebugAppliedRule
+import Kore.Log.DebugAxiomEvaluation
     ( DebugAxiomEvaluationOptions
     , filterDebugAxiomEvaluation
     , parseDebugAxiomEvaluationOptions
     )
-import Kore.Logger.DebugSolver
+import Kore.Log.DebugSolver
     ( DebugSolverOptions (DebugSolverOptions)
     , parseDebugSolverOptions
     , solverTranscriptLogger
     )
-import qualified Kore.Logger.DebugSolver as DebugSolver.DoNotUse
-import Kore.Logger.Registry
+import qualified Kore.Log.DebugSolver as DebugSolver.DoNotUse
+import Kore.Log.Registry
     ( getEntryTypesAsText
     , lookupTextFromTypeWithError
     , parseEntryType

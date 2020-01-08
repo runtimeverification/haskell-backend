@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.DebugAppliedRule
+module Kore.Log.DebugAppliedRule
     ( DebugAppliedRule
     , debugAppliedRule
     , DebugAppliedRuleOptions

@@ -91,10 +91,7 @@ import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
     )
-import Kore.Logger
-    ( MonadLog (..)
-    )
-import Kore.Logger.DebugProofState
+import Kore.Log.DebugProofState
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
@@ -162,6 +159,9 @@ import Kore.Variables.UnifiedVariable
     , isElemVar
     )
 import qualified Kore.Verified as Verified
+import Log
+    ( MonadLog (..)
+    )
 
 {- | The final nodes of an execution graph which were not proven.
 
@@ -1180,4 +1180,3 @@ withDebugProofState transitionFunc =
                 state
                 transition
             )
-

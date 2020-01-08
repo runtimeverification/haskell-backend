@@ -50,10 +50,10 @@ import Kore.Log
     ( EntryTypes
     )
 import qualified Kore.Log as Log
-import qualified Kore.Logger.DebugSolver as Logger
+import qualified Kore.Log.DebugSolver as Log
     ( emptyDebugSolverOptions
     )
-import qualified Kore.Logger.Registry as Logger
+import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 
 type Parser = Parsec String String
@@ -267,7 +267,7 @@ log = do
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
         debugAxiomEvaluationOptions = mempty
-        debugSolverOptions = Logger.emptyDebugSolverOptions
+        debugSolverOptions = Log.emptyDebugSolverOptions
     pure $ Log Log.KoreLogOptions
         { logType
         , logLevel
@@ -303,7 +303,7 @@ parseLogEntries = do
       entry = do
           item <- wordWithout ['[', ']', ',']
           _ <- optional (literal ",")
-          Logger.parseEntryType . Text.pack $ item
+          Log.parseEntryType . Text.pack $ item
 
 parseLogType :: Parser Log.KoreLogType
 parseLogType = logStdOut <|> logFile

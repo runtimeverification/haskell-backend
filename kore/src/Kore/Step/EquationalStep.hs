@@ -48,7 +48,7 @@ import Kore.Internal.SideCondition
     ( SideCondition
     )
 import Kore.Internal.TermLike as TermLike
-import Kore.Logger.DebugAppliedRule
+import Kore.Log.DebugAppliedRule
     ( debugAppliedRule
     )
 import Kore.Step.EqualityPattern

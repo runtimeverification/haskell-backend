@@ -38,7 +38,7 @@ import Kore.Internal.TermLike
     , mkEvaluated
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger.DebugAxiomEvaluation as DebugAxiomEvaluation
+import qualified Kore.Log.DebugAxiomEvaluation as DebugAxiomEvaluation
     ( attemptAxiom
     , klabelIdentifier
     )

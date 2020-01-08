@@ -10,10 +10,10 @@ import Test.Tasty
     )
 
 import qualified Kore.Log as Log
-import qualified Kore.Logger.DebugSolver as Logger
+import qualified Kore.Log.DebugSolver as Log
     ( emptyDebugSolverOptions
     )
-import Kore.Logger.Registry
+import Kore.Log.Registry
     ( debugAppliedRuleType
     , debugAxiomEvaluationType
     )
@@ -434,7 +434,7 @@ logTests =
             , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
     , "log [] stderr"
         `parsesTo_` Log Log.KoreLogOptions
@@ -444,7 +444,7 @@ logTests =
             , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
     , "log [DebugAppliedRule] stderr"
         `parsesTo_` Log Log.KoreLogOptions
@@ -454,7 +454,7 @@ logTests =
             , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
     , "log critical [DebugAppliedRule] stderr"
         `parsesTo_` Log Log.KoreLogOptions
@@ -464,7 +464,7 @@ logTests =
             , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
     , "log info [ DebugAppliedRule,  DebugAxiomEvaluation ] file \"f s\""
         `parsesTo_` Log Log.KoreLogOptions
@@ -475,7 +475,7 @@ logTests =
             , logType = Log.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
     , "log info [ DebugAppliedRule   DebugAxiomEvaluation ] file \"f s\""
         `parsesTo_` Log Log.KoreLogOptions
@@ -486,6 +486,6 @@ logTests =
             , logType = Log.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
     ]

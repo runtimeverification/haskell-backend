@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.WarnBottomHook
+module Kore.Log.WarnBottomHook
     ( WarnBottomHook (..)
     , warnBottomHook
     ) where

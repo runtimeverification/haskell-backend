@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.DebugSolver
+module Kore.Log.DebugSolver
     ( DebugSolverSend (..)
     , DebugSolverRecv (..)
     , logDebugSolverSendWith

@@ -115,7 +115,7 @@ import Kore.Log
     , parseKoreLogOptions
     , runLoggerT
     )
-import Kore.Logger.CriticalExecutionError
+import Kore.Log.CriticalExecutionError
     ( criticalExecutionError
     )
 import qualified Kore.ModelChecker.Bounded as Bounded

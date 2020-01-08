@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.WarnFunctionWithoutEvaluators
+module Kore.Log.WarnFunctionWithoutEvaluators
     ( WarnFunctionWithoutEvaluators (..)
     , warnFunctionWithoutEvaluators
     ) where

@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.CriticalExecutionError
+module Kore.Log.CriticalExecutionError
     ( CriticalExecutionError
     , criticalExecutionError
     ) where

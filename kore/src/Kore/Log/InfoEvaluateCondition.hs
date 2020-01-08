@@ -4,7 +4,7 @@ License     : NCSA
 
 -}
 
-module Kore.Logger.InfoEvaluateCondition
+module Kore.Log.InfoEvaluateCondition
     ( InfoEvaluateCondition (..)
     , infoEvaluateCondition
     ) where

@@ -59,10 +59,10 @@ import Kore.Internal.TermLike
     , mkTop_
     )
 import qualified Kore.Log as Log
-import qualified Kore.Logger.DebugSolver as Logger
+import qualified Kore.Log.DebugSolver as Log
     ( emptyDebugSolverOptions
     )
-import qualified Kore.Logger.Registry as Logger
+import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.State
@@ -507,13 +507,13 @@ logUpdatesState = do
                 { logLevel = Log.Info
                 , logEntries =
                     Map.keysSet
-                    . Logger.typeToText
-                    $ Logger.registry
+                    . Log.typeToText
+                    $ Log.registry
                 , timestampsSwitch = Log.TimestampsEnable
                 , logType = Log.LogStdErr
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty
-                , debugSolverOptions = Logger.emptyDebugSolverOptions
+                , debugSolverOptions = Log.emptyDebugSolverOptions
                 }
         command = Log options
     Result { output, continue, state } <-
@@ -696,7 +696,7 @@ mkState axioms claims claim =
             , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
-            , debugSolverOptions = Logger.emptyDebugSolverOptions
+            , debugSolverOptions = Log.emptyDebugSolverOptions
             }
         }
   where

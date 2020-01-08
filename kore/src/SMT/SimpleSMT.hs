@@ -212,7 +212,7 @@ import Text.Read
 import Kore.Debug hiding
     ( debug
     )
-import Kore.Logger.DebugSolver
+import Kore.Log.DebugSolver
     ( logDebugSolverRecvWith
     , logDebugSolverSendWith
     )
