@@ -289,7 +289,7 @@ parseKoreLogOptions =
             flag' TimestampsEnable
                 (  long "enable-log-timestamps"
                 <> help "Enable log timestamps" )
-        pasreTimestampsDisable =
+        parseTimestampsDisable =
             flag' TimestampsDisable
                 (  long "disable-log-timestamps"
                 <> help "Disable log timestamps" )
