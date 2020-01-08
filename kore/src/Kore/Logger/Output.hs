@@ -56,9 +56,6 @@ import Control.Monad.IO.Class
 import Control.Monad.Reader
     ( runReaderT
     )
-import Data.Default
-    ( Default (..)
-    )
 import Data.Functor
     ( void
     )
@@ -286,16 +283,16 @@ parseKoreLogOptions =
             "critical" -> pure Critical
             _          -> Nothing
     parseTimestampsOption :: Parser TimestampsSwitch
-    parseTimestampsOption = paseTimestampsDisable <|> parseTimestampsEnable
+    parseTimestampsOption = parseTimestampsEnable <|> paseTimestampsDisable
       where
-        paseTimestampsDisable =
-            flag' TimestampsDisable
-                (  long "disable-log-timestamps"
-                <> help "Disable log timestamps" )
         parseTimestampsEnable =
             flag' TimestampsEnable
                 (  long "enable-log-timestamps"
                 <> help "Enable log timestamps" )
+        paseTimestampsDisable =
+            flag' TimestampsDisable
+                (  long "disable-log-timestamps"
+                <> help "Disable log timestamps" )
 
     parseEntries =
         option
@@ -325,11 +322,9 @@ listOfEntries =
             (OptPretty.indent 4 . OptPretty.text . Text.unpack)
             getEntryTypesAsText
 
+-- | Enable or disable timestamps
 data TimestampsSwitch = TimestampsEnable | TimestampsDisable
     deriving (Eq, Show)
-
-instance Default TimestampsSwitch where
-    def = TimestampsEnable
 
 -- Creates a kore logger which:
 --     * adds timestamps
