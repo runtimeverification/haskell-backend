@@ -264,6 +264,7 @@ log = do
     logLevel <- parseSeverityWithDefault
     logEntries <- parseLogEntries
     logType <- parseLogType
+    timestampsSwitch <- parseTimestampSwitchWithDefault
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
     let debugAppliedRuleOptions = mempty
         debugAxiomEvaluationOptions = mempty
@@ -271,6 +272,7 @@ log = do
     pure $ Log Logger.KoreLogOptions
         { logType
         , logLevel
+        , timestampsSwitch
         , logEntries
         , debugAppliedRuleOptions
         , debugAxiomEvaluationOptions
@@ -279,6 +281,8 @@ log = do
   where
     parseSeverityWithDefault =
         maybe Logger.Warning id <$> optional severity
+    parseTimestampSwitchWithDefault =
+        maybe Logger.TimestampsEnable id <$> optional parseTimestampSwitch
 
 severity :: Parser Logger.Severity
 severity = sDebug <|> sInfo <|> sWarning <|> sError <|> sCritical
@@ -308,6 +312,12 @@ parseLogType = logStdOut <|> logFile
     logStdOut = Logger.LogStdErr <$  literal "stderr"
     logFile   =
         Logger.LogFileText  <$$> literal "file" *> quotedOrWordWithout ""
+
+parseTimestampSwitch :: Parser Logger.TimestampsSwitch
+parseTimestampSwitch = disable <|> enable
+  where
+    disable = Logger.TimestampsDisable <$ literal "disable-log-timestamps"
+    enable  = Logger.TimestampsEnable  <$ literal "enable-log-timestamps"
 
 redirect :: ReplCommand -> Parser ReplCommand
 redirect cmd =
