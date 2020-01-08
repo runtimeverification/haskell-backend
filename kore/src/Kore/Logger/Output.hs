@@ -283,13 +283,13 @@ parseKoreLogOptions =
             "critical" -> pure Critical
             _          -> Nothing
     parseTimestampsOption :: Parser TimestampsSwitch
-    parseTimestampsOption = parseTimestampsEnable <|> paseTimestampsDisable
+    parseTimestampsOption = parseTimestampsEnable <|> parseTimestampsDisable
       where
         parseTimestampsEnable =
             flag' TimestampsEnable
                 (  long "enable-log-timestamps"
                 <> help "Enable log timestamps" )
-        paseTimestampsDisable =
+        pasreTimestampsDisable =
             flag' TimestampsDisable
                 (  long "disable-log-timestamps"
                 <> help "Disable log timestamps" )
