@@ -4,6 +4,9 @@ import Control.Applicative
     ( Alternative (..)
     , optional
     )
+import Control.Concurrent.Async
+    ( wait
+    )
 import Control.Monad.Catch
     ( MonadCatch
     , SomeException
@@ -409,11 +412,12 @@ main = do
 mainWithOptions :: KoreExecOptions -> IO ()
 mainWithOptions execOptions = do
     let KoreExecOptions { koreLogOptions } = execOptions
-    exitCode <-
+    (asyncThread, exitCode) <-
         runLoggerT koreLogOptions
         $ handle handleSomeException
         $ handle handleWithConfiguration
         $ go
+    wait asyncThread
     let KoreExecOptions { rtsStatistics } = execOptions
     Foldable.forM_ rtsStatistics $ \filePath ->
         writeStats filePath =<< getStats
