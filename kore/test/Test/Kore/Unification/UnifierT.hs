@@ -380,13 +380,15 @@ merge s1 s2 =
   where
     mergeSubstitutionsExcept =
         Branch.alternate
-        . Simplifier.simplifyCondition
+        . Simplifier.simplifyCondition Condition.top
         . Condition.fromSubstitution
         . mconcat
     mockEnv = Mock.env
 
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
-normalize = Test.runSimplifierBranch mockEnv . Condition.simplifyCondition
+normalize =
+    Test.runSimplifierBranch mockEnv
+    . Condition.simplifyCondition Condition.top
   where
     mockEnv = Mock.env
 
@@ -402,7 +404,7 @@ normalizeExcept predicated =
     $ Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
     $ Branch.alternate
-    $ Simplifier.simplifyCondition predicated
+    $ Simplifier.simplifyCondition Condition.top predicated
   where
     mockEnv = Mock.env { simplifierAxioms }
     simplifierAxioms =

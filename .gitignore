@@ -38,4 +38,6 @@ test-results.xml
 .directory
 /dist-newstyle/
 /dist/
+*.fail
 cabal.project.local
+*.save-proofs.kore

@@ -1,0 +1,23 @@
+  <T>
+    <k>
+      .
+    </k>
+    <state>
+      max |-> ?I:Int
+      x |-> ?I:Int
+      y |-> ?I0:Int
+      z |-> ?I1:Int
+    </state>
+  </T>
+#And
+  {
+    false
+  #Equals
+    ?I <=Int ?I0
+  }
+#And
+  {
+    false
+  #Equals
+    ?I <=Int ?I1
+  }

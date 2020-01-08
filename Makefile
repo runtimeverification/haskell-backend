@@ -10,14 +10,7 @@ kore-exec: $(KORE_EXEC)
 
 kore-repl: $(KORE_REPL)
 
-k-frontend:
-	mkdir -p $(BUILD_DIR)
-	rm -rf $(K_DIST_DEFAULT) $(K_RELEASE_BIN)
-	curl --location --output $(K_RELEASE_BIN) $(K_RELEASE_BIN_URL)
-	mkdir -p $(K_DIST_DEFAULT)
-	tar --extract --file $(K_RELEASE_BIN) --strip-components 1 --directory $(K_DIST_DEFAULT)
-	cp src/main/kore/prelude.kore $(K_DIST_DEFAULT)/include/kore
-	$(KRUN) --version
+k-frontend: $(K)
 
 docs: haddock
 
@@ -51,10 +44,7 @@ coverage_report: test-kore
 	cp -r $$($(STACK_TEST) path --local-hpc-root) coverage_report
 
 test-k:
-	$(MAKE) --directory src/main/k/working test-k
-
-test-bmc:
-	$(MAKE) --directory src/main/k/in-progress/bmc/example1 test-bmc
+	$(MAKE) -C test test
 
 clean:
 	$(STACK) clean --full
@@ -65,4 +55,4 @@ clean:
 	rm -rf haskell_documentation
 	rm -rf coverage_report
 	rm -rf $(BUILD_DIR)
-	$(MAKE) --directory src/main/k/working clean
+	$(MAKE) -C test clean
