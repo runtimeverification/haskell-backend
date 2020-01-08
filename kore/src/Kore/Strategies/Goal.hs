@@ -136,6 +136,7 @@ import qualified Kore.Step.Transition as Transition
 import Kore.Strategies.ProofState hiding
     ( Prim
     , ProofState
+    , proofState
     )
 import qualified Kore.Strategies.ProofState as ProofState
 import qualified Kore.Syntax.Sentence as Syntax
@@ -1136,14 +1137,14 @@ debugProofStateBracket
     -- ^ action to be computed
     -> monad (ProofState goal goal)
 debugProofStateBracket
-    (fmap toReachabilityRule -> proofstate)
-    (coerce -> transition :: ProofState.Prim (RewriteRule Variable))
+    (fmap toReachabilityRule -> proofState)
+    (coerce -> transition)
     action
   =
-    if terminalTransition transition proofstate
+    if terminalTransition transition proofState
         then do
             logM DebugProofState
-                { proofstate
+                { proofState
                 , transition
                 , result = Nothing
                 }
@@ -1151,7 +1152,7 @@ debugProofStateBracket
         else do
             result <- action
             logM DebugProofState
-                { proofstate
+                { proofState
                 , transition
                 , result = Just $ toReachabilityRule <$> result
                 }

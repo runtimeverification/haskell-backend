@@ -27,7 +27,7 @@ import Kore.Strategies.ProofState
 
 data DebugProofState =
     DebugProofState
-        { proofstate :: !(ProofState (ReachabilityRule Variable))
+        { proofState :: !(ProofState (ReachabilityRule Variable))
         , transition :: !(Prim (RewriteRule Variable))
         , result :: !(Maybe (ProofState (ReachabilityRule Variable)))
         }
@@ -35,14 +35,14 @@ data DebugProofState =
 instance Pretty DebugProofState where
     pretty
         DebugProofState
-            { proofstate
+            { proofState
             , transition
             , result
             }
       =
         Pretty.vsep
             [ "Reached proof state with the following configuration:"
-            , Pretty.indent 4 (pretty proofstate)
+            , Pretty.indent 4 (pretty proofState)
             , "On which the following transition applies:"
             , Pretty.indent 4 (pretty transition)
             , "Resulting in:"
