@@ -26,6 +26,22 @@ axiomatization in Kore.
 We also propose the corresponding K frontend syntax to define some of these
 behaviors.
 
+### K-Frontend Syntax Proposal
+
+Currently, the K frontend uses the keyword `rule` to mean both rewrite
+(semantic) step axioms and equations for functions.
+As we have seen above, these two cases are treated differently, but to
+distinguish them, one needs to go back to where the PL constructs or functions
+are declared, often in a syntax module that is far away from the rules.
+In addition, it can be confusing when the same rule keyword yields completely
+different encodings when translated to backend.
+Therefore, we propose to
+1. throw a deprecation warning for using `rule` to declare equations; and
+2. define a new front-end syntax `eq LHS == RHS` for defining equations.
+
+This is also an effort towards the goal of writing explicitly KORE
+patterns in the frontend.
+
 ### Implementation concerns
 
 Except for the `fresh` variants (Example B), none of the other are currently
@@ -304,15 +320,15 @@ Hence, the proposal to support this would be to write this as a proper ML rule.
 A possible syntax for this purpose would be:
 
 ```
-axiom interval(M,N) = #Exists X:Int . X:Int
-    #And { X >=Int M #Equals true } #And { X <=Int N #Equals true }
+eq  interval(M,N)
+    ==
+    #Exists X:Int .
+        (X:Int #And { X >=Int M #Equals true } #And { X <=Int N #Equals true })
 ```
 
-Note the new keyword `axiom` and the new `=` connective.
 Additionally, the symbol declaration would require a special attribute to
 signal the fact that it is not a constructor but a _defined_ symbol.
 
-Since this feature requires a frontend syntax extension, and since it is not
-clearly needed for K users at the moment, it is only presented here as an
-example; its implementation will be postponed for such time when its usefulness
-becomes apparent.
+Since this feature is not clearly needed by K users at the moment, it is only
+presented here as an example; its implementation will be postponed for such time
+when its usefulness becomes apparent.
