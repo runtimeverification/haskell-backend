@@ -13,7 +13,7 @@ module Kore.Internal.TermLike
     , Builtin
     , extractAttributes
     , isSimplified
-    , isConstructorLike
+    , Pattern.isConstructorLike
     , assertConstructorLikeKeys
     , markSimplified
     , isFunctionPattern
@@ -410,13 +410,6 @@ fromConcrete = mapVariables (\case {})
 isSimplified :: TermLike variable -> Bool
 isSimplified = Pattern.isSimplified . Attribute.simplified . extractAttributes
 
-isConstructorLike :: TermLike variable -> Bool
-isConstructorLike =
-    isJust
-    . Pattern.isConstructorLike
-    . Attribute.constructorLike
-    . extractAttributes
-
 assertConstructorLikeKeys
     :: SortedVariable variable
     => Foldable t
@@ -424,9 +417,9 @@ assertConstructorLikeKeys
     -> a
     -> a
 assertConstructorLikeKeys keys a
-    | any (not . isConstructorLike) keys =
+    | any (not . Pattern.isConstructorLike) keys =
         let simplifiableKeys =
-                filter (not . isConstructorLike) $ Foldable.toList keys
+                filter (not . Pattern.isConstructorLike) $ Foldable.toList keys
         in
             (error . show . Pretty.vsep) $
                 [ "Map and Set may only contain constructor-like \

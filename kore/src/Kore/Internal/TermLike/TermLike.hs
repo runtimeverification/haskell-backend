@@ -61,6 +61,9 @@ import qualified GHC.Stack as GHC
 
 import Generically
 import qualified Kore.Attribute.Pattern as Attribute
+import Kore.Attribute.Pattern.ConstructorLike
+    ( HasConstructorLike (extractConstructorLike)
+    )
 import qualified Kore.Attribute.Pattern.ConstructorLike as Pattern
 import Kore.Attribute.Pattern.Created
 import qualified Kore.Attribute.Pattern.Defined as Pattern
@@ -412,6 +415,10 @@ instance InternalVariable variable => Binding (TermLike variable) where
             _ -> pure termLike
       where
         _ :< termLikeF = Recursive.project termLike
+
+instance HasConstructorLike (TermLike variable) where
+    extractConstructorLike (Recursive.project -> attrs :< _) =
+        extractConstructorLike attrs
 
 -- | The type of internal domain values.
 type Builtin = Domain.Builtin (TermLike Concrete)
