@@ -17,13 +17,13 @@ import Kore.Internal.Predicate
     , freshVariable
     )
 import Kore.Internal.TermLike
-import Kore.Logger
+import Kore.Unparser
+import Log
     ( Entry (..)
     , MonadLog
     , Severity (Info)
     , logM
     )
-import Kore.Unparser
 
 newtype InfoEvaluateCondition =
     InfoEvaluateCondition

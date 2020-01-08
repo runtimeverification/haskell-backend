@@ -25,9 +25,6 @@ import Control.Monad.State.Class
 import qualified Data.Foldable as Foldable
 import Data.Typeable
 
-import Kore.Logger
-    ( MonadLog (..)
-    )
 import Kore.Profiler.Data
     ( MonadProfiler (..)
     )
@@ -36,6 +33,9 @@ import ListT
     , mapListT
     )
 import qualified ListT
+import Log
+    ( MonadLog (..)
+    )
 import SMT
     ( MonadSMT (..)
     )

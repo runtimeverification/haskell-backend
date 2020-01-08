@@ -54,7 +54,6 @@ import Kore.Internal.TermLike
     ( InternalVariable
     , TermLike
     )
-import Kore.Logger
 import Kore.Logger.InfoEvaluateCondition
     ( infoEvaluateCondition
     )
@@ -71,6 +70,7 @@ import Kore.TopBottom
     ( TopBottom
     )
 import Kore.Unparser
+import Log
 import SMT
     ( Result (..)
     , SExpr (..)

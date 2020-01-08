@@ -39,7 +39,6 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Variable
-import Kore.Logger
 import qualified Kore.Parser.Lexeme as Parser
 import Kore.Step.Axiom.Identifier
     ( matchAxiomIdentifier
@@ -54,6 +53,7 @@ import Kore.Syntax.Id
     ( Id
     )
 import Kore.Unparser
+import Log
 
 {- | A @UnifiedRule@ has been renamed and unified with a configuration.
 

@@ -48,10 +48,6 @@ import Type.Reflection
     , typeOf
     )
 
-import Kore.Logger
-    ( Entry
-    , LogMessage
-    )
 import Kore.Logger.CriticalExecutionError
     ( CriticalExecutionError
     )
@@ -79,6 +75,10 @@ import Kore.Logger.WarnFunctionWithoutEvaluators
     )
 import Kore.Logger.WarnSimplificationWithRemainder
     ( WarnSimplificationWithRemainder
+    )
+import Log
+    ( Entry
+    , LogMessage
     )
 
 data Registry =

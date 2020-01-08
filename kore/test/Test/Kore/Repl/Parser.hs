@@ -9,7 +9,6 @@ import Test.Tasty
     , testGroup
     )
 
-import qualified Kore.Logger as Logger
 import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )

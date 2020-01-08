@@ -39,7 +39,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( topTODO
     )
 import Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger as Log
 import qualified Kore.Step.Remainder as Remainder
 import qualified Kore.Step.Result as Result
 import qualified Kore.Step.Result as Step
@@ -78,6 +77,7 @@ import qualified Kore.Variables.Target as Target
 import Kore.Variables.UnifiedVariable
     ( foldMapVariable
     )
+import qualified Log as Log
 
 withoutUnification :: UnifiedRule variable rule -> rule
 withoutUnification = Conditional.term

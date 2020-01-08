@@ -17,7 +17,7 @@ import Data.Text.Prettyprint.Doc
     ( Pretty (..)
     )
 
-import Kore.Logger
+import Log
 
 newtype CriticalExecutionError =
     CriticalExecutionError

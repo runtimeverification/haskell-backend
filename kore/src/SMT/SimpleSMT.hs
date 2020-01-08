@@ -212,11 +212,11 @@ import Text.Read
 import Kore.Debug hiding
     ( debug
     )
-import qualified Kore.Logger as Logger
 import Kore.Logger.DebugSolver
     ( logDebugSolverRecvWith
     , logDebugSolverSendWith
     )
+import qualified Log
 import SMT.AST
 
 -- ---------------------------------------------------------------------
@@ -248,7 +248,7 @@ data Value =  Bool  !Bool           -- ^ Boolean value
 
 --------------------------------------------------------------------------------
 
-type Logger = Logger.LogAction IO Logger.SomeEntry
+type Logger = Log.LogAction IO Log.SomeEntry
 
 -- | An interactive solver process.
 data Solver = Solver
@@ -285,22 +285,20 @@ newSolver exe opts logger = do
 
 logMessageWith
     :: GHC.HasCallStack
-    => Logger.Severity
+    => Log.Severity
     -> Solver
     -> Text
     -> IO ()
 logMessageWith severity Solver { logger } a =
     logger Colog.<& message
   where
-    message =
-        Logger.SomeEntry
-        $ Logger.LogMessage a severity callStack
+    message = Log.SomeEntry $ Log.LogMessage a severity callStack
 
 debug :: GHC.HasCallStack => Solver -> Text -> IO ()
-debug = logMessageWith Logger.Debug
+debug = logMessageWith Log.Debug
 
 warn :: GHC.HasCallStack => Solver -> Text -> IO ()
-warn = logMessageWith Logger.Warning
+warn = logMessageWith Log.Warning
 
 send :: Solver -> SExpr -> IO ()
 send Solver { hIn, logger } command' = do

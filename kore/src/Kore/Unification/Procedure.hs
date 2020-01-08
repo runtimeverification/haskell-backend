@@ -29,7 +29,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     ( andCondition
     )
 import Kore.Internal.TermLike
-import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -46,6 +45,7 @@ import Kore.Unification.Unify
     )
 import qualified Kore.Unification.Unify as Monad.Unify
 import Kore.Unparser
+import qualified Log
 
 -- |'unificationProcedure' attempts to simplify @t1 = t2@, assuming @t1@ and
 -- @t2@ are terms (functional patterns) to a substitution.
@@ -67,9 +67,7 @@ unificationProcedure sideCondition p1 p2
         p2
     empty
   | otherwise = do
-    Logger.logDebug
-        . Text.pack
-        . show
+    Log.logDebug . Text.pack . show
         $ Pretty.vsep
             [ "Attemptying to unify terms"
             , Pretty.indent 4 $ unparse p1

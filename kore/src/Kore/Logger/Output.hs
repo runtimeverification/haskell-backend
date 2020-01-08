@@ -20,7 +20,7 @@ module Kore.Logger.Output
     , makeKoreLogger
     , Colog.logTextStderr
     , Colog.logTextHandle
-    , module Kore.Logger
+    , module Log
     , runLoggerT
     ) where
 
@@ -111,7 +111,6 @@ import Type.Reflection
     ( SomeTypeRep (..)
     )
 
-import Kore.Logger
 import Kore.Logger.DebugAppliedRule
 import Kore.Logger.DebugAxiomEvaluation
     ( DebugAxiomEvaluationOptions
@@ -130,6 +129,7 @@ import Kore.Logger.Registry
     , parseEntryType
     , toSomeEntryType
     )
+import Log
 
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.

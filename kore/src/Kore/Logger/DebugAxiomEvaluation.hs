@@ -70,17 +70,17 @@ import Kore.Internal.TermLike
     ( pattern App_
     , TermLike
     )
-import Kore.Logger
+import Kore.Step.Axiom.Identifier
+    ( AxiomIdentifier
+    )
+import Log
     ( Entry (fromEntry)
     , MonadLog
     , Severity (..)
     , SomeEntry
     , logM
     )
-import qualified Kore.Logger as Log.DoNotUse
-import Kore.Step.Axiom.Identifier
-    ( AxiomIdentifier
-    )
+import qualified Log as Log.DoNotUse
 
 {- | A log 'Entry' when a rule is applied.
 

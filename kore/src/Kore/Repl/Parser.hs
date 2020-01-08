@@ -46,7 +46,6 @@ import Type.Reflection
     ( SomeTypeRep
     )
 
-import qualified Kore.Logger as Logger
 import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )

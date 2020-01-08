@@ -38,7 +38,7 @@ import Options.Applicative
     , strOption
     )
 
-import Kore.Logger
+import Log
     ( Entry (..)
     , LogAction (..)
     , Severity (Debug)

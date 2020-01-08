@@ -18,13 +18,13 @@ import Data.Text.Prettyprint.Doc
 import qualified Data.Text.Prettyprint.Doc as Pretty
 
 import Kore.Internal.TermLike
-import Kore.Logger
 import Kore.Step.Simplification.Simplify
     ( SimplifierVariable
     )
 import Kore.Unparser
     ( unparse
     )
+import Log
 
 data WarnBottomHook =
     WarnBottomHook

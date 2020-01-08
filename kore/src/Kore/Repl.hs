@@ -67,7 +67,6 @@ import Kore.Internal.TermLike
     , mkSortVariable
     , mkTop
     )
-import qualified Kore.Logger as Logger
 import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )
