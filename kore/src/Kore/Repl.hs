@@ -67,10 +67,10 @@ import Kore.Internal.TermLike
     , mkSortVariable
     , mkTop
     )
+import qualified Kore.Log as Log
 import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )
-import qualified Kore.Logger.Output as Logger
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
@@ -104,7 +104,7 @@ runRepl
     -- ^ list of axioms to used in the proof
     -> [claim]
     -- ^ list of claims to be proven
-    -> MVar (Logger.LogAction IO Logger.SomeEntry)
+    -> MVar (Log.LogAction IO Log.SomeEntry)
     -> ReplScript
     -- ^ optional script
     -> ReplMode
@@ -167,11 +167,11 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , labels     = Map.empty
             , aliases    = Map.empty
             , koreLogOptions =
-                Logger.KoreLogOptions
-                    { logType = Logger.LogStdErr
+                Log.KoreLogOptions
+                    { logType = Log.LogStdErr
                     , logEntries = mempty
-                    , timestampsSwitch = Logger.TimestampsEnable
-                    , logLevel = Logger.Warning
+                    , timestampsSwitch = Log.TimestampsEnable
+                    , logLevel = Log.Warning
                     , debugAppliedRuleOptions = mempty
                     , debugAxiomEvaluationOptions = mempty
                     , debugSolverOptions = Logger.emptyDebugSolverOptions

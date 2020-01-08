@@ -1,12 +1,10 @@
-{-|
-Module      : Kore.Logger.Output
-Description : Logger helpers and internals needed for Main.
+{- |
 Copyright   : (c) Runtime Verification, 2018
 License     : NCSA
-Maintainer  : vladimir.ciobanu@runtimeverification.com
+
 -}
 
-module Kore.Logger.Output
+module Kore.Log
     ( KoreLogType (..)
     , KoreLogOptions (..)
     , EntryTypes
@@ -20,8 +18,8 @@ module Kore.Logger.Output
     , makeKoreLogger
     , Colog.logTextStderr
     , Colog.logTextHandle
-    , module Log
     , runLoggerT
+    , module Log
     ) where
 
 import Colog

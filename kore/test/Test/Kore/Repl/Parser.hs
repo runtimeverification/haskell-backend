@@ -9,10 +9,10 @@ import Test.Tasty
     , testGroup
     )
 
+import qualified Kore.Log as Log
 import qualified Kore.Logger.DebugSolver as Logger
     ( emptyDebugSolverOptions
     )
-import qualified Kore.Logger.Output as Logger
 import Kore.Logger.Registry
     ( debugAppliedRuleType
     , debugAxiomEvaluationType
@@ -427,63 +427,63 @@ initScriptTests =
 logTests :: [ParserTest ReplCommand]
 logTests =
     [ "log debug [] stderr"
-        `parsesTo_` Log Logger.KoreLogOptions
-            { logLevel = Logger.Debug
+        `parsesTo_` Log Log.KoreLogOptions
+            { logLevel = Log.Debug
             , logEntries = mempty
-            , timestampsSwitch = Logger.TimestampsEnable
-            , logType = Logger.LogStdErr
+            , timestampsSwitch = Log.TimestampsEnable
+            , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log [] stderr"
-        `parsesTo_` Log Logger.KoreLogOptions
-            { logLevel = Logger.Warning
+        `parsesTo_` Log Log.KoreLogOptions
+            { logLevel = Log.Warning
             , logEntries = mempty
-            , timestampsSwitch = Logger.TimestampsEnable
-            , logType = Logger.LogStdErr
+            , timestampsSwitch = Log.TimestampsEnable
+            , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log [DebugAppliedRule] stderr"
-        `parsesTo_` Log Logger.KoreLogOptions
-            { logLevel = Logger.Warning
+        `parsesTo_` Log Log.KoreLogOptions
+            { logLevel = Log.Warning
             , logEntries = Set.singleton debugAppliedRuleType
-            , timestampsSwitch = Logger.TimestampsEnable
-            , logType = Logger.LogStdErr
+            , timestampsSwitch = Log.TimestampsEnable
+            , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log critical [DebugAppliedRule] stderr"
-        `parsesTo_` Log Logger.KoreLogOptions
-            { logLevel = Logger.Critical
+        `parsesTo_` Log Log.KoreLogOptions
+            { logLevel = Log.Critical
             , logEntries = Set.singleton debugAppliedRuleType
-            , timestampsSwitch = Logger.TimestampsEnable
-            , logType = Logger.LogStdErr
+            , timestampsSwitch = Log.TimestampsEnable
+            , logType = Log.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log info [ DebugAppliedRule,  DebugAxiomEvaluation ] file \"f s\""
-        `parsesTo_` Log Logger.KoreLogOptions
-            { logLevel = Logger.Info
+        `parsesTo_` Log Log.KoreLogOptions
+            { logLevel = Log.Info
             , logEntries = Set.fromList
                 [debugAppliedRuleType, debugAxiomEvaluationType]
-            , timestampsSwitch = Logger.TimestampsEnable
-            , logType = Logger.LogFileText "f s"
+            , timestampsSwitch = Log.TimestampsEnable
+            , logType = Log.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions
             }
     , "log info [ DebugAppliedRule   DebugAxiomEvaluation ] file \"f s\""
-        `parsesTo_` Log Logger.KoreLogOptions
-            { logLevel = Logger.Info
+        `parsesTo_` Log Log.KoreLogOptions
+            { logLevel = Log.Info
             , logEntries = Set.fromList
                 [debugAppliedRuleType, debugAxiomEvaluationType]
-            , timestampsSwitch = Logger.TimestampsEnable
-            , logType = Logger.LogFileText "f s"
+            , timestampsSwitch = Log.TimestampsEnable
+            , logType = Log.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
             , debugSolverOptions = Logger.emptyDebugSolverOptions

@@ -50,7 +50,7 @@ import Kore.Exec
 import qualified Kore.IndexedModule.MetadataToolsBuilder as MetadataTools
     ( build
     )
-import Kore.Logger.Output
+import Kore.Log
     ( emptyLogger
     , getLoggerT
     , swappableLogger

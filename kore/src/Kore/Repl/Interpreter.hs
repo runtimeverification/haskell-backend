@@ -147,7 +147,7 @@ import Kore.Internal.TermLike
     ( TermLike
     )
 import qualified Kore.Internal.TermLike as TermLike
-import qualified Kore.Logger.Output as Logger
+import qualified Kore.Log as Log
 import Kore.Repl.Data
 import Kore.Repl.Parser
 import Kore.Repl.State
@@ -490,7 +490,7 @@ loadScript file = parseEvalScript file
 
 handleLog
     :: MonadState (ReplState claim) m
-    => Logger.KoreLogOptions
+    => Log.KoreLogOptions
     -> m ()
 handleLog t = field @"koreLogOptions" .= t
 
