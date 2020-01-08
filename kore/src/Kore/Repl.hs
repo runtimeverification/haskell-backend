@@ -24,10 +24,8 @@ import Control.Monad
     )
 import Control.Monad.Catch
     ( MonadCatch
-    , catch
-    , catchAll
-    , throwM
     )
+import qualified Control.Monad.Catch as Exception
 import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
@@ -44,6 +42,7 @@ import Control.Monad.State.Strict
     , StateT
     , evalStateT
     )
+import Data.Default
 import Data.Generics.Product
 import qualified Data.Graph.Inductive.Graph as Graph
 import Data.List
@@ -68,9 +67,6 @@ import Kore.Internal.TermLike
     , mkTop
     )
 import qualified Kore.Log as Log
-import qualified Kore.Log.DebugSolver as Log
-    ( emptyDebugSolverOptions
-    )
 import Kore.Repl.Data
 import Kore.Repl.Interpreter
 import Kore.Repl.Parser
@@ -166,16 +162,7 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             , omit       = mempty
             , labels     = Map.empty
             , aliases    = Map.empty
-            , koreLogOptions =
-                Log.KoreLogOptions
-                    { logType = Log.LogStdErr
-                    , logEntries = mempty
-                    , timestampsSwitch = Log.TimestampsEnable
-                    , logLevel = Log.Warning
-                    , debugAppliedRuleOptions = mempty
-                    , debugAxiomEvaluationOptions = mempty
-                    , debugSolverOptions = Log.emptyDebugSolverOptions
-                    }
+            , koreLogOptions = def
             }
 
     config :: Config claim m
@@ -261,19 +248,19 @@ runRepl axioms' claims' logger replScript replMode outputFile = do
             else pure graph
 
     catchInterruptWithDefault :: a -> m a -> m a
-    catchInterruptWithDefault def sa =
-        catch sa $ \case
+    catchInterruptWithDefault a =
+        Exception.handle $ \case
             UserInterrupt -> do
                 liftIO $ putStrLn "Step evaluation interrupted."
-                pure def
-            e -> throwM e
+                pure a
+            e -> Exception.throwM e
 
     catchEverything :: a -> m a -> m a
-    catchEverything def sa =
-        catchAll sa $ \e -> do
+    catchEverything a =
+        Exception.handleAll $ \e -> do
             liftIO $ putStrLn "Stepper evaluation errored."
             liftIO $ putStrLn (show e)
-            pure def
+            pure a
 
     replGreeting :: m ()
     replGreeting =

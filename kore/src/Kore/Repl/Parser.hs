@@ -15,6 +15,7 @@ import Control.Applicative
     ( some
     , (<|>)
     )
+import Data.Default
 import qualified Data.Foldable as Foldable
 import Data.Functor
     ( void
@@ -50,9 +51,7 @@ import Kore.Log
     ( EntryTypes
     )
 import qualified Kore.Log as Log
-import qualified Kore.Log.DebugSolver as Log
-    ( emptyDebugSolverOptions
-    )
+import Kore.Log.KoreLogOptions
 import qualified Kore.Log.Registry as Log
 import Kore.Repl.Data
 
@@ -265,21 +264,16 @@ log = do
     logType <- parseLogType
     timestampsSwitch <- parseTimestampSwitchWithDefault
     -- TODO (thomas.tuegel): Allow the user to specify --debug-applied-rule.
-    let debugAppliedRuleOptions = mempty
-        debugAxiomEvaluationOptions = mempty
-        debugSolverOptions = Log.emptyDebugSolverOptions
-    pure $ Log Log.KoreLogOptions
+    -- TODO (thomas.tuegel): Allow the user to specify --sqlog.
+    pure $ Log (def @KoreLogOptions)
         { logType
         , logLevel
         , timestampsSwitch
         , logEntries
-        , debugAppliedRuleOptions
-        , debugAxiomEvaluationOptions
-        , debugSolverOptions
         }
   where
     parseSeverityWithDefault =
-        maybe Log.Warning id <$> optional severity
+        severity <|> pure (logLevel $ def @KoreLogOptions)
     parseTimestampSwitchWithDefault =
         maybe Log.TimestampsEnable id <$> optional parseTimestampSwitch
 
