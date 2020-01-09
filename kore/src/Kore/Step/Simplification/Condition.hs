@@ -27,6 +27,9 @@ import Kore.Internal.Predicate
     , unwrapPredicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Step.Simplification.Simplify
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -59,7 +62,7 @@ simplify
         , MonadSimplify simplifier
         )
     =>  SubstitutionSimplifier simplifier
-    ->  Condition variable
+    ->  SideCondition variable
     ->  Conditional variable any
     ->  BranchT simplifier (Conditional variable any)
 simplify SubstitutionSimplifier { simplifySubstitution } sideCondition initial =
@@ -107,7 +110,7 @@ simplifyPredicate
         , SimplifierVariable variable
         , MonadSimplify simplifier
         )
-    =>  Condition variable
+    =>  SideCondition variable
     ->  Predicate variable
     ->  BranchT simplifier (Condition variable)
 simplifyPredicate sideCondition predicate = do

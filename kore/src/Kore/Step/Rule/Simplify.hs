@@ -36,6 +36,9 @@ import qualified Kore.Internal.Predicate as Predicate
     ( coerceSort
     , unwrapPredicate
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
     ( mkAnd
     , mkCeil_
@@ -82,7 +85,7 @@ instance SimplifierVariable variable => SimplifyRuleLHS (RulePattern variable)
             Pattern.simplifyTopConfiguration lhsWithPredicate
         fullySimplified <-
             simplifyConditionsWithSmt
-                makeTruePredicate_
+                SideCondition.top
                 simplifiedTerms
         let rules =
                 map (setRuleLeft rule) (MultiOr.extractPatterns fullySimplified)

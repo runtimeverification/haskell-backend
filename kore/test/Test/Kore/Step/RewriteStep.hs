@@ -78,6 +78,9 @@ import Kore.Variables.UnifiedVariable
     ( UnifiedVariable (..)
     )
 
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 import Test.Tasty.HUnit.Ext
@@ -94,7 +97,7 @@ applyInitialConditions
 applyInitialConditions initial unification =
     (fmap . fmap) Foldable.toList
     $ evalUnifier
-    $ Step.applyInitialConditions Condition.top (Just initial) unification
+    $ Step.applyInitialConditions SideCondition.top (Just initial) unification
 
 test_applyInitialConditions :: [TestTree]
 test_applyInitialConditions =
@@ -155,7 +158,8 @@ unifyRule
             [Conditional Variable (RulePattern Variable)]
         )
 unifyRule initial rule =
-    evalUnifier $ Step.unifyRule unificationProcedure Condition.top initial rule
+    evalUnifier
+    $ Step.unifyRule unificationProcedure SideCondition.top initial rule
   where
     unificationProcedure = UnificationProcedure Unification.unificationProcedure
 

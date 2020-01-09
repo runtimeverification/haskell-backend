@@ -79,6 +79,9 @@ import Numeric.Natural
 import Kore.Internal.Condition
     ( Condition
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -334,7 +337,7 @@ helpText =
     \load file                                loads the file as a repl script\n\
     \proof-status                             shows status for each claim\n\
     \log <severity> \"[\"<entry>\"]\" <type>      configures the logging output\n\
-    \                                         <severity> can be debug, info,\
+    \    <switch-timestamp>                   <severity> can be debug, info,\
                                               \ warning, error, or critical;\
                                               \ is optional and defaults to warning\n\
     \                                         [<entry>] is the list of entries\
@@ -348,6 +351,8 @@ helpText =
                                               \ severity <severity>.\n\
     \                                         See available entry types below.\n\
     \                                         <type> can be 'stderr' or\n\
+    \                                         <switch-timestamp> can be enable-log-timestamps\
+                                              \ or disable-log-timestamps\n\
     \                                         'file filename'\n\
     \exit                                     exits the repl\
     \\n\n\
@@ -449,7 +454,7 @@ data Config claim m = Config
         -> m (ExecutionGraph (Rule claim))
     -- ^ Stepper function, it is a partially applied 'verifyClaimStep'
     , unifier
-        :: Condition Variable
+        :: SideCondition Variable
         -> TermLike Variable
         -> TermLike Variable
         -> UnifierWithExplanation m (Condition Variable)

@@ -31,6 +31,9 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.Exists as Exists
 import qualified Kore.Unification.Substitution as Substitution
@@ -355,11 +358,12 @@ testSort = Mock.testSort
 simplify
     :: Exists Sort Variable (OrPattern Variable)
     -> IO (OrPattern Variable)
-simplify = runSimplifier Mock.env . Exists.simplify Condition.top
+simplify = runSimplifier Mock.env . Exists.simplify SideCondition.top
 
 makeEvaluate
     :: ElementVariable Variable
     -> Pattern Variable
     -> IO (OrPattern Variable)
 makeEvaluate variable child =
-    runSimplifier Mock.env $ Exists.makeEvaluate Condition.top [variable] child
+    runSimplifier Mock.env
+    $ Exists.makeEvaluate SideCondition.top [variable] child

@@ -9,9 +9,6 @@ import Control.Monad
     ( void
     )
 
-import Kore.Internal.Condition as Condition
-    ( top
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -19,6 +16,9 @@ import Kore.Internal.TermLike
 import Kore.Step.Simplification.Simplify
 import qualified Kore.Step.Simplification.TermLike as TermLike
 
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import qualified Test.Kore.Step.MockSymbols as Mock
 import Test.Kore.Step.Simplification
 
@@ -30,7 +30,7 @@ test_simplifyInternal =
 
 simplifyInternalEvaluated :: TermLike Variable -> IO (OrPattern Variable)
 simplifyInternalEvaluated original =
-    runSimplifier env $ TermLike.simplifyInternal original Condition.top
+    runSimplifier env $ TermLike.simplifyInternal original SideCondition.top
   where
     env = Mock.env
         { simplifierTermLike =

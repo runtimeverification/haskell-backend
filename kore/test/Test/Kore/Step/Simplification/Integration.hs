@@ -22,7 +22,6 @@ import qualified Kore.Builtin.List as List
 import qualified Kore.Builtin.Map as Map
 import qualified Kore.Builtin.Set as Set
 import qualified Kore.Domain.Builtin as Domain
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -49,6 +48,9 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( builtinEvaluation
@@ -1112,7 +1114,8 @@ evaluateWithAxioms
     :: BuiltinAndAxiomSimplifierMap
     -> Pattern Variable
     -> IO (OrPattern Variable)
-evaluateWithAxioms axioms = runSimplifier env . Pattern.simplify Condition.top
+evaluateWithAxioms axioms =
+    runSimplifier env . Pattern.simplify SideCondition.top
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap
