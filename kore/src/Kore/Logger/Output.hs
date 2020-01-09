@@ -31,8 +31,10 @@ import qualified Colog
 import Control.Applicative
     ( Alternative (..)
     )
-import Control.Concurrent
-    ( forkIO
+import Control.Concurrent.Async
+    ( Async
+    , async
+    , wait
     )
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
@@ -42,12 +44,17 @@ import Control.Concurrent.STM
     , readTChan
     , writeTChan
     )
+import Control.Exception
+    ( BlockedIndefinitelyOnSTM (..)
+    )
 import Control.Monad
     ( forever
     )
 import Control.Monad.Catch
     ( MonadMask
     , bracket
+    , catch
+    , finally
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -231,20 +238,28 @@ runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
     withLogger options $ \logger -> do
-        modifiedLogger <- concurrentLogger logger
-        runLogger modifiedLogger
+        (asyncThread, modifiedLogger) <- concurrentLogger logger
+        finally
+            (runLogger modifiedLogger)
+            (wait asyncThread)
 
-concurrentLogger :: LogAction IO a -> IO (LogAction IO a)
+concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
 concurrentLogger logger = do
     tChan <- newTChanIO
-    _ <- forkIO $ forever $ do
-            val <- atomically $ readTChan tChan
-            logger Colog.<& val
-    return $ writeTChanLogger tChan
+    asyncThread <-
+        async $ catch
+            (runLoggerThread tChan)
+            (\BlockedIndefinitelyOnSTM -> return ())
+    return (asyncThread, writeTChanLogger tChan)
+  where
+    runLoggerThread tChan =
+        forever $ do
+              val <- atomically $ readTChan tChan
+              logger Colog.<& val
 
 writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
-    LogAction $ \msg -> do
+    LogAction $ \msg ->
         atomically $ writeTChan tChan msg
 
 -- Parser for command line log options.
