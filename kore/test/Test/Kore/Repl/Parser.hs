@@ -127,7 +127,7 @@ graphTests =
     , "graph file pdf"       `parsesTo_` ShowGraph (Just "file") (Just Graph.Pdf)
     , "graph file png"       `parsesTo_` ShowGraph (Just "file") (Just Graph.Png)
     , "graph \"f ile\""      `parsesTo_` ShowGraph (Just "f ile") Nothing
-    , "graph \"f ile\" jpg"  `parsesTo_` ShowGraph (Just "f ile") (Just Graph.Svg)
+    , "graph \"f ile\" jpg"  `parsesTo_` ShowGraph (Just "f ile") (Just Graph.Jpeg)
     , "graph f ile"          `fails`     ()
     ]
 
