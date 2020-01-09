@@ -53,6 +53,7 @@ import Control.Monad.Catch
     ( MonadMask
     , bracket
     , catch
+    , finally
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -230,21 +231,23 @@ runLoggerT options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
     withLogger options $ \logger -> do
         (asyncThread, modifiedLogger) <- concurrentLogger logger
-        result <- runLogger modifiedLogger
-        wait asyncThread
-        return result
+        finally
+            (runLogger modifiedLogger)
+            (wait asyncThread)
 
 concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
 concurrentLogger logger = do
     tChan <- newTChanIO
-    asyncThread <-
-        async $ catch
+    asyncThread <- async $ runLoggerThread tChan
+    return (asyncThread, writeTChanLogger tChan)
+  where
+    runLoggerThread tChan =
+        catch
             ( forever $ do
                     val <- atomically $ readTChan tChan
                     logger Colog.<& val
             )
             (\BlockedIndefinitelyOnSTM -> return ())
-    return (asyncThread, writeTChanLogger tChan)
 
 writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
