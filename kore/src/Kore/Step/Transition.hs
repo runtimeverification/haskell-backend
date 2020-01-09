@@ -14,6 +14,7 @@ module Kore.Step.Transition
     , addRule
     , addRules
     , mapRules
+    , orElse
     -- * Re-exports
     , Seq
     ) where
@@ -171,3 +172,12 @@ mapRules f trans = do
     results <- tryTransitionT trans
     let results' = map (fmap (fmap f)) results
     scatter results'
+
+orElse
+    :: Monad m
+    => TransitionT rule m a
+    -> TransitionT rule m a
+    -> TransitionT rule m a
+orElse first second = do
+    results <- tryTransitionT first
+    if null results then second else scatter results
