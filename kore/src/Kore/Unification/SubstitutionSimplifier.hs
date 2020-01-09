@@ -30,7 +30,6 @@ import Kore.Internal.OrCondition
     ( OrCondition
     )
 import qualified Kore.Internal.OrCondition as OrCondition
-import qualified Kore.Internal.Pattern as Pattern
 import Kore.Step.Simplification.AndTerms
     ( termUnification
     )
@@ -99,8 +98,7 @@ unificationMakeAnd :: MonadUnify unifier => MakeAnd unifier
 unificationMakeAnd =
     MakeAnd { makeAnd }
   where
-    makeAnd termLike1 termLike2 condition = do
+    makeAnd termLike1 termLike2 sideCondition = do
         unified <- termUnification termLike1 termLike2
-        Pattern.andCondition unified condition
-            & Simplifier.simplifyCondition Condition.topTODO
+        Simplifier.simplifyCondition sideCondition unified
             & BranchT.alternate

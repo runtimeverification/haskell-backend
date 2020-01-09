@@ -32,6 +32,10 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    , topTODO
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
     ( Env (..)
@@ -269,7 +273,7 @@ unificationProcedureSuccessWithSimplifiers
             runSMT
             $ runSimplifier mockEnv
             $ Monad.Unify.runUnifierT
-            $ unificationProcedure Condition.topTODO term1 term2
+            $ unificationProcedure SideCondition.topTODO term1 term2
         let
             normalize
                 ::  Condition Variable
@@ -844,7 +848,8 @@ simplifyPattern (UnificationTerm term) = do
     return $ UnificationTerm term'
   where
     simplifier = do
-        simplifiedPatterns <- Pattern.simplify Condition.top expandedPattern
+        simplifiedPatterns <-
+            Pattern.simplify SideCondition.top expandedPattern
         case MultiOr.extractPatterns simplifiedPatterns of
             [] -> return Pattern.bottom
             (config : _) -> return config

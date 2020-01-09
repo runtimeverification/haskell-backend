@@ -34,6 +34,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Simplification.AndPredicates as AndPredicates
 import qualified Kore.Step.Simplification.Ceil as Ceil
@@ -149,14 +152,14 @@ substitutionConditions subst =
 ceilChildOfApplicationOrTop
     :: forall variable m
     .  (SimplifierVariable variable, MonadSimplify m)
-    => Condition variable
+    => SideCondition variable
     -> TermLike variable
     -> m (Condition variable)
-ceilChildOfApplicationOrTop predicate patt =
+ceilChildOfApplicationOrTop sideCondition patt =
     case patt of
         App_ _ children -> do
             ceil <-
-                traverse (Ceil.makeEvaluateTerm predicate) children
+                traverse (Ceil.makeEvaluateTerm sideCondition) children
                 >>= ( AndPredicates.simplifyEvaluatedMultiPredicate
                     . MultiAnd.make
                     )

@@ -509,6 +509,7 @@ logUpdatesState = do
                     Map.keysSet
                     . Logger.typeToText
                     $ Logger.registry
+                , timestampsSwitch = Logger.TimestampsEnable
                 , logType = Logger.LogStdErr
                 , debugAppliedRuleOptions = mempty
                 , debugAxiomEvaluationOptions = mempty
@@ -691,6 +692,7 @@ mkState axioms claims claim =
         , koreLogOptions = Logger.KoreLogOptions
             { logLevel = Logger.Warning
             , logEntries = mempty
+            , timestampsSwitch = Logger.TimestampsEnable
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty

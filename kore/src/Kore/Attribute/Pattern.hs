@@ -104,6 +104,11 @@ instance
             , constructorLike = synthetic (constructorLike <$> base)
             }
 
+instance HasConstructorLike (Pattern variable) where
+    extractConstructorLike
+        Pattern {constructorLike}
+      = constructorLike
+
 {- | Use the provided mapping to replace all variables in a 'Pattern'.
 
 See also: 'traverseVariables'

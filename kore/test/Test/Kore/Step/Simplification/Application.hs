@@ -8,9 +8,6 @@ import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 
 import Data.Sup
-import Kore.Internal.Condition as Condition
-    ( top
-    )
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -22,6 +19,9 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate_
     , makeTruePredicate
     , makeTruePredicate_
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
     )
 import Kore.Internal.TermLike as TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -320,6 +320,6 @@ evaluate
     -- ^ Map from axiom IDs to axiom evaluators
     -> Application Symbol (OrPattern Variable)
     -> IO (OrPattern Variable)
-evaluate simplifierAxioms = runSimplifier mockEnv . simplify Condition.top
+evaluate simplifierAxioms = runSimplifier mockEnv . simplify SideCondition.top
   where
     mockEnv = Mock.env { simplifierAxioms }

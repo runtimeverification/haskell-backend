@@ -22,15 +22,17 @@ import qualified Kore.Attribute.Axiom as Attribute
     ( Axiom (Axiom)
     )
 import qualified Kore.Attribute.Axiom.Concrete as Attribute.Axiom.Concrete
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkEvaluated
@@ -81,10 +83,10 @@ evaluateAxioms
        , MonadSimplify simplifier
        )
     => [EqualityRule Variable]
-    -> Condition variable
+    -> SideCondition variable
     -> TermLike variable
     -> simplifier (Step.Results EqualityPattern variable)
-evaluateAxioms equalityRules topCondition termLike
+evaluateAxioms equalityRules sideCondition termLike
   | any ruleIsConcrete equalityRules
   -- All of the current pattern's children (most likely an ApplicationF)
   -- must be ConstructorLike in order to be evaluated with "concrete" rules.
@@ -105,7 +107,7 @@ evaluateAxioms equalityRules topCondition termLike
     Monad.guard (any Result.hasResults resultss)
     mapM_ rejectNarrowing resultss
 
-    ceilChild <- ceilChildOfApplicationOrTop Condition.topTODO termLike
+    ceilChild <- ceilChildOfApplicationOrTop SideCondition.topTODO termLike
     let
         results =
             Result.mergeResults resultss
@@ -118,8 +120,7 @@ evaluateAxioms equalityRules topCondition termLike
         introduceDefinedness = flip Pattern.andCondition
         markRemainderEvaluated = fmap TermLike.mkEvaluated
 
-    let topPredicate = Condition.toPredicate topCondition
-        simplify = OrPattern.simplifyConditionsWithSmt topPredicate
+    let simplify = OrPattern.simplifyConditionsWithSmt sideCondition
     simplified <-
         return results
         >>= Lens.traverseOf
@@ -135,7 +136,7 @@ evaluateAxioms equalityRules topCondition termLike
   where
     termLikeF = Cofree.tailF (Recursive.project termLike)
 
-    targetTopCondition = Step.toConfigurationVariablesCondition topCondition
+    targetSideCondition = Step.toConfigurationVariablesCondition sideCondition
 
     logAppliedRule :: MonadLog log => EqualityRule Variable -> log ()
     logAppliedRule
@@ -172,7 +173,7 @@ evaluateAxioms equalityRules topCondition termLike
         Unifier.maybeUnifierT
         $ Step.applyRulesSequence
             unificationProcedure
-            targetTopCondition
+            targetSideCondition
             initial
             rules
 

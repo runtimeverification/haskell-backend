@@ -7,10 +7,13 @@ License     : NCSA
 module Kore.Attribute.Pattern.ConstructorLike
     ( ConstructorLike (..)
     , ConstructorLikeHead (..)
+    , HasConstructorLike (..)
+    , assertConstructorLike
     ) where
 
 import Control.DeepSeq
 import Data.Hashable
+import qualified Data.Map.Strict as Map
 import Data.Maybe
     ( isJust
     )
@@ -64,7 +67,7 @@ Examples of patterns that are not constructor-like:
 -}
 newtype ConstructorLike =
     ConstructorLike
-        { isConstructorLike :: Maybe ConstructorLikeHead
+        { getConstructorLike :: Maybe ConstructorLikeHead
         }
     deriving (Eq, GHC.Generic, Ord, Show)
 
@@ -130,7 +133,7 @@ means constructor-like here).
  -}
 instance Synthetic ConstructorLike (DomainValue sort) where
     synthetic domainValue
-        | isJust . isConstructorLike $ child =
+        | isJust . getConstructorLike $ child =
             ConstructorLike . Just $ ConstructorLikeHead
         | otherwise =
             ConstructorLike Nothing
@@ -193,14 +196,41 @@ A builtin value is not technically a constructor, but it is constructor-like for
 builtin domains, at least from the perspective of normalization (normalized
 means constructor-like here).
  -}
-instance Synthetic ConstructorLike (Builtin key) where
+instance HasConstructorLike key => Synthetic ConstructorLike (Builtin key)
+  where
     synthetic =
         \case
             BuiltinInt _    -> ConstructorLike . Just $ ConstructorLikeHead
             BuiltinBool _   -> ConstructorLike . Just $ ConstructorLikeHead
             BuiltinString _ -> ConstructorLike . Just $ ConstructorLikeHead
+            (BuiltinMap InternalAc
+                    {builtinAcChild = NormalizedMap builtinMapChild}
+                ) -> normalizedAcConstructorLike builtinMapChild
+            (BuiltinSet InternalAc
+                    {builtinAcChild = NormalizedSet builtinSetChild}
+                ) -> normalizedAcConstructorLike builtinSetChild
             _               -> ConstructorLike Nothing
     {-# INLINE synthetic #-}
+
+normalizedAcConstructorLike
+    ::  ( HasConstructorLike key
+        , HasConstructorLike (Value collection ConstructorLike)
+        )
+    => NormalizedAc collection key ConstructorLike -> ConstructorLike
+normalizedAcConstructorLike ac@(NormalizedAc _ _ _) =
+    case ac of
+        NormalizedAc
+            { elementsWithVariables = []
+            , concreteElements
+            , opaque = []
+            }
+              | all pairIsConstructorLike concreteElementsList
+                -> ConstructorLike . Just $ ConstructorLikeHead
+              where
+                concreteElementsList = Map.toList concreteElements
+                pairIsConstructorLike (key, value) =
+                    assertConstructorLike "" key $ isConstructorLike value
+        _ -> ConstructorLike Nothing
 
 instance Synthetic ConstructorLike Inhabitant where
     synthetic = const (ConstructorLike Nothing)
@@ -223,7 +253,7 @@ instance Synthetic ConstructorLike (Top sort) where
 
 instance Synthetic ConstructorLike Inj where
     synthetic Inj { injChild } = ConstructorLike $ do
-        childHead <- isConstructorLike injChild
+        childHead <- getConstructorLike injChild
         case childHead of
             SortInjectionHead -> Nothing
             _                 -> pure SortInjectionHead
@@ -245,3 +275,23 @@ instance Diff ConstructorLikeHead where
 instance NFData ConstructorLikeHead
 
 instance Hashable ConstructorLikeHead
+
+class HasConstructorLike a where
+    extractConstructorLike :: a -> ConstructorLike
+
+    isConstructorLike :: a -> Bool
+    isConstructorLike a = case extractConstructorLike a of
+        (ConstructorLike constructorLike) -> isJust constructorLike
+
+instance HasConstructorLike (Value NormalizedMap ConstructorLike) where
+    extractConstructorLike (MapValue result) = result
+
+instance HasConstructorLike (Value NormalizedSet ConstructorLike) where
+    extractConstructorLike SetValue =
+        ConstructorLike . Just $ ConstructorLikeHead
+
+assertConstructorLike :: HasConstructorLike a => String -> a -> b -> b
+assertConstructorLike message a =
+    if not (isConstructorLike a)
+    then error ("Expecting constructor-like object. " ++ message)
+    else id

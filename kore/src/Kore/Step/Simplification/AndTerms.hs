@@ -63,6 +63,12 @@ import Kore.Internal.Predicate
     , makeTruePredicate_
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
+    )
 import qualified Kore.Internal.Symbol as Symbol
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
@@ -176,7 +182,7 @@ andFunctions =
     forAnd
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forAnd f = f Condition.topTODO SimplificationType.And
+    forAnd f = f SideCondition.topTODO SimplificationType.And
 
 equalsFunctions
     :: forall variable unifier
@@ -195,7 +201,7 @@ equalsFunctions =
     forEquals
         :: TermTransformation variable unifier
         -> TermTransformationOld variable unifier
-    forEquals f = f Condition.topTODO SimplificationType.Equals
+    forEquals f = f SideCondition.topTODO SimplificationType.Equals
 
 andEqualsFunctions
     :: forall variable unifier
@@ -280,7 +286,7 @@ call 'empty' unless given patterns matching their unification case.
 
  -}
 type TermTransformation variable unifier =
-       Condition variable
+       SideCondition variable
     -> SimplificationType
     -> TermSimplifier variable unifier
     -> TermLike variable
@@ -355,16 +361,16 @@ equalAndEquals _ _ = empty
 bottomTermEquals
     :: SimplifierVariable variable
     => MonadUnify unifier
-    => Condition variable
+    => SideCondition variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
 bottomTermEquals
-    predicate
+    sideCondition
     first@(Bottom_ _)
     second
   = Monad.Trans.lift $ do -- MonadUnify
-    secondCeil <- Ceil.makeEvaluateTerm predicate second
+    secondCeil <- Ceil.makeEvaluateTerm sideCondition second
 
     case MultiOr.extractPatterns secondCeil of
         [] -> return Pattern.top
@@ -394,12 +400,12 @@ See also: 'bottomTermEquals'
 termBottomEquals
     :: SimplifierVariable variable
     => MonadUnify unifier
-    => Condition variable
+    => SideCondition variable
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-termBottomEquals predicate first second =
-    bottomTermEquals predicate second first
+termBottomEquals sideCondition first second =
+    bottomTermEquals sideCondition second first
 
 {- | Unify a variable with a function pattern.
 
@@ -409,7 +415,7 @@ See also: 'isFunctionPattern'
 variableFunctionAndEquals
     :: SimplifierVariable variable
     => MonadUnify unifier
-    => Condition variable
+    => SideCondition variable
     -> SimplificationType
     -> TermLike variable
     -> TermLike variable
@@ -429,7 +435,7 @@ variableFunctionAndEquals
                 ]
         }
 variableFunctionAndEquals
-    configurationCondition
+    sideCondition
     simplificationType
     first@(ElemVar_ v)
     second
@@ -442,7 +448,7 @@ variableFunctionAndEquals
                 -- be careful to not just drop the term.
                 return Condition.top
             SimplificationType.Equals -> do
-                resultOr <- Ceil.makeEvaluateTerm configurationCondition second
+                resultOr <- Ceil.makeEvaluateTerm sideCondition second
                 case MultiOr.extractPatterns resultOr of
                     [] -> do
                         explainBottom
@@ -464,13 +470,13 @@ See also: 'variableFunctionAndEquals'
  -}
 functionVariableAndEquals
     :: (SimplifierVariable variable, MonadUnify unifier)
-    => Condition variable
+    => SideCondition variable
     -> SimplificationType
     -> TermLike variable
     -> TermLike variable
     -> MaybeT unifier (Pattern variable)
-functionVariableAndEquals predicate simplificationType first second =
-    variableFunctionAndEquals predicate simplificationType second first
+functionVariableAndEquals sideCondition simplificationType first second =
+    variableFunctionAndEquals sideCondition simplificationType second first
 
 {- | Simplify the conjunction of two sort injections.
 
