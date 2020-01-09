@@ -318,10 +318,24 @@ functionEvaluator impl =
             (Attribute.Pattern variable)
             (TermLike variable)
         -> simplifier (AttemptedAxiom variable)
-    evaluator (valid :< app) = impl resultSort applicationChildren
+    evaluator (valid :< app) =
+        impl resultSort
+        $ fmap removeEvaluated applicationChildren
       where
+        removeEvaluated :: TermLike variable -> TermLike variable
+        removeEvaluated termLike@(Recursive.project -> (_ :< termLikeF)) =
+            case termLikeF of
+                EvaluatedF (Evaluated e) -> removeEvaluated e
+                _                        -> termLike
+
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
+
+removeEvaluated :: TermLike variable -> TermLike variable
+removeEvaluated termLike@(Recursive.project -> (_ :< termLikeF)) =
+    case termLikeF of
+        EvaluatedF (Evaluated e) -> removeEvaluated e
+        _                        -> termLike
 
 {- | Run a parser on a verified domain value.
 
