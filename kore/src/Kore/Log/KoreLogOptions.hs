@@ -15,6 +15,7 @@ module Kore.Log.KoreLogOptions
 import Control.Applicative
     ( Alternative (..)
     )
+import Data.Default
 import Data.Functor
     ( void
     )
@@ -67,6 +68,18 @@ data KoreLogOptions = KoreLogOptions
     }
     deriving (Eq, Show)
 
+instance Default KoreLogOptions where
+    def =
+        KoreLogOptions
+            { logType = def @KoreLogType
+            , logLevel = Warning
+            , timestampsSwitch = def @TimestampsSwitch
+            , logEntries = mempty
+            , debugAppliedRuleOptions = def @DebugAppliedRuleOptions
+            , debugAxiomEvaluationOptions = def @DebugAxiomEvaluationOptions
+            , debugSolverOptions = def @DebugSolverOptions
+            }
+
 -- | 'KoreLogType' is passed via command line arguments and decides if and how
 -- the logger will operate.
 data KoreLogType
@@ -75,6 +88,9 @@ data KoreLogType
     | LogFileText FilePath
     -- ^ Log to specified file when '--log <filename>' is passed.
     deriving (Eq, Show)
+
+instance Default KoreLogType where
+    def = LogStdErr
 
 parseKoreLogType :: Parser KoreLogType
 parseKoreLogType =
@@ -90,6 +106,9 @@ type EntryTypes = Set SomeTypeRep
 -- | Enable or disable timestamps
 data TimestampsSwitch = TimestampsEnable | TimestampsDisable
     deriving (Eq, Show)
+
+instance Default TimestampsSwitch where
+    def = TimestampsEnable
 
 parseTimestampsSwitch :: Parser TimestampsSwitch
 parseTimestampsSwitch =

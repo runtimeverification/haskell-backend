@@ -17,6 +17,10 @@ module Kore.Log.DebugSolver
     , solverTranscriptLogger
     ) where
 
+import Control.Applicative
+    ( Alternative (..)
+    )
+import Data.Default
 import Data.Text
     ( Text
     )
@@ -34,7 +38,6 @@ import Options.Applicative
     ( Parser
     , help
     , long
-    , optional
     , strOption
     )
 
@@ -119,16 +122,19 @@ newtype DebugSolverOptions =
         }
     deriving (Eq, Show)
 
+instance Default DebugSolverOptions where
+    def = DebugSolverOptions Nothing
 
 parseDebugSolverOptions :: Parser DebugSolverOptions
 parseDebugSolverOptions =
-    DebugSolverOptions
-    <$> optional
-        (strOption
-            (  long "solver-transcript"
-            <> help "Name of the file for the SMT solver transcript."
-            )
-        )
+    (DebugSolverOptions . Just <$> parseLogFile)
+    <|> pure (def @DebugSolverOptions)
+  where
+    parseLogFile =
+        let info =
+                long "solver-transcript"
+                <> help "Name of the file for the SMT solver transcript."
+        in strOption info
 
 emptyDebugSolverOptions :: DebugSolverOptions
 emptyDebugSolverOptions = DebugSolverOptions {logFile = Nothing}

@@ -15,6 +15,7 @@ module Kore.Log.DebugAppliedRule
 import Control.Applicative
     ( Alternative (..)
     )
+import Data.Default
 import Data.Function
     ( on
     )
@@ -116,6 +117,9 @@ newtype DebugAppliedRuleOptions =
         { debugAppliedRules :: Set Id
         }
     deriving (Eq, Show)
+
+instance Default DebugAppliedRuleOptions where
+    def = mempty
 
 instance Semigroup DebugAppliedRuleOptions where
     (<>) a b =

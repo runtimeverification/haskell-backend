@@ -25,6 +25,7 @@ module Kore.Log.DebugAxiomEvaluation
 import Control.Applicative
     ( Alternative (..)
     )
+import Data.Default
 import Data.Function
     ( on
     )
@@ -197,6 +198,9 @@ newtype DebugAxiomEvaluationOptions =
         { debugAxiomEvaluation :: Set Text
         }
     deriving (Eq, Show)
+
+instance Default DebugAxiomEvaluationOptions where
+    def = mempty
 
 instance Semigroup DebugAxiomEvaluationOptions where
     (<>) a b =
