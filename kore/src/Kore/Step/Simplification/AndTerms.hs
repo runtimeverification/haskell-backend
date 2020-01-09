@@ -537,6 +537,12 @@ constructorSortInjectionAndEquals first@(Inj_ _) second@(App_ symbol2 _)
 constructorSortInjectionAndEquals first@(App_ symbol1 _) second@(Inj_ _)
   | Symbol.isConstructor symbol1 =
     Monad.Trans.lift $ noConfusionInjectionConstructor first second
+constructorSortInjectionAndEquals
+    first@(Inj_ Inj { injChild = App_ symbol1 _})
+    second@(Inj_ Inj { injChild = App_ symbol2 _})
+  | Symbol.isConstructor symbol1
+  , Symbol.isConstructor symbol2
+  = Monad.Trans.lift $ noConfusionInjectionConstructor first second
 constructorSortInjectionAndEquals _ _ = empty
 
 noConfusionInjectionConstructor
