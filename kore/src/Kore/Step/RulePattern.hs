@@ -282,7 +282,8 @@ rhsToTerm RHS { existentials, right, ensures } =
   where
     rhs = case ensures of
         Predicate.PredicateTrue -> right
-        _ -> TermLike.mkAnd (Predicate.unwrapPredicate ensures) right
+        _ -> TermLike.mkAnd (Predicate.fromPredicate sort ensures) right
+    sort = TermLike.termLikeSort right
 
 -- | Wraps a term as a RHS
 injectTermIntoRHS
@@ -630,13 +631,16 @@ onePathRuleToTerm
     )
   =
     TermLike.mkImplies
-        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
+        (TermLike.mkAnd (Predicate.fromPredicate sortLeft requires) left)
         (TermLike.mkApplyAlias
             op
-            [rhsToTerm rhs]
+            [rhsTerm]
         )
   where
-    op = wEF $ TermLike.termLikeSort left
+    op = wEF sortRight
+    sortLeft = TermLike.termLikeSort left
+    sortRight = TermLike.termLikeSort rhsTerm
+    rhsTerm = rhsToTerm rhs
 
 -- | Converts an 'AllPathRule' into its term representation
 allPathRuleToTerm
@@ -653,13 +657,16 @@ allPathRuleToTerm
     )
   =
     TermLike.mkImplies
-        (TermLike.mkAnd (Predicate.unwrapPredicate requires) left)
+        (TermLike.mkAnd (Predicate.fromPredicate sortLeft requires) left)
         (TermLike.mkApplyAlias
             op
-            [rhsToTerm rhs]
+            [rhsTerm]
         )
   where
-    op = wAF $ TermLike.termLikeSort left
+    op = wAF sortRight
+    sortLeft = TermLike.termLikeSort left
+    sortRight = TermLike.termLikeSort rhsTerm
+    rhsTerm = rhsToTerm rhs
 
 -- | Converts an 'ImplicationRule' into its term representation
 implicationRuleToTerm
