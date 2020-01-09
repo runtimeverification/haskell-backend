@@ -26,7 +26,6 @@ import Data.List
 import qualified Data.Map.Strict as Map
 import Debug.Trace
 
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
@@ -35,6 +34,9 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
     ( simplifierWithFallback
@@ -91,7 +93,7 @@ evaluateWithAxioms
     -> Pattern Variable
     -> SMT.SMT (OrPattern Variable)
 evaluateWithAxioms axioms =
-    Simplification.runSimplifier env . Pattern.simplify Condition.top
+    Simplification.runSimplifier env . Pattern.simplify SideCondition.top
   where
     env = Mock.env { simplifierAxioms }
     simplifierAxioms :: BuiltinAndAxiomSimplifierMap

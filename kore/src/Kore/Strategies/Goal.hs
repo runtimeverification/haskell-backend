@@ -84,6 +84,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTrueCondition
+    )
 import Kore.Internal.TermLike
     ( isFunctionPattern
     , mkAnd
@@ -983,7 +986,7 @@ removalPredicate
                     $ (const <$> destination <*> substPattern)
             evaluatedRemainder <-
                 Exists.makeEvaluate
-                    configPredicate extraElemVariables remainderPattern
+                    sideCondition extraElemVariables remainderPattern
             return
                 . Predicate.makeNotPredicate
                 . Condition.toPredicate
@@ -1013,6 +1016,7 @@ removalPredicate
   where
     Conditional { term = destTerm } = destination
     (configTerm, configPredicate) = Pattern.splitTerm configuration
+    sideCondition = SideCondition.assumeTrueCondition configPredicate
     -- The variables of the destination that are missing from the
     -- configuration. These are the variables which should be existentially
     -- quantified in the removal predicate.

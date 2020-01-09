@@ -431,6 +431,7 @@ logTests =
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Debug
             , logEntries = mempty
+            , timestampsSwitch = Logger.TimestampsEnable
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -440,6 +441,7 @@ logTests =
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Warning
             , logEntries = mempty
+            , timestampsSwitch = Logger.TimestampsEnable
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -449,6 +451,7 @@ logTests =
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Warning
             , logEntries = Set.singleton debugAppliedRuleType
+            , timestampsSwitch = Logger.TimestampsEnable
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -458,6 +461,7 @@ logTests =
         `parsesTo_` Log Logger.KoreLogOptions
             { logLevel = Logger.Critical
             , logEntries = Set.singleton debugAppliedRuleType
+            , timestampsSwitch = Logger.TimestampsEnable
             , logType = Logger.LogStdErr
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -468,6 +472,7 @@ logTests =
             { logLevel = Logger.Info
             , logEntries = Set.fromList
                 [debugAppliedRuleType, debugAxiomEvaluationType]
+            , timestampsSwitch = Logger.TimestampsEnable
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty
@@ -478,6 +483,7 @@ logTests =
             { logLevel = Logger.Info
             , logEntries = Set.fromList
                 [debugAppliedRuleType, debugAxiomEvaluationType]
+            , timestampsSwitch = Logger.TimestampsEnable
             , logType = Logger.LogFileText "f s"
             , debugAppliedRuleOptions = mempty
             , debugAxiomEvaluationOptions = mempty

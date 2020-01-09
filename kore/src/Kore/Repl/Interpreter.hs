@@ -137,6 +137,12 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTrueCondition
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -876,7 +882,10 @@ tryAxiomClaimWorker mode ref = do
                 patternUnifier
                     (Pattern.splitTerm -> (secondTerm, secondCondition))
                   =
-                    runUnifier' secondCondition first secondTerm
+                    runUnifier' sideCondition first secondTerm
+                  where
+                    sideCondition =
+                        SideCondition.assumeTrueCondition secondCondition
 
     tryForceAxiomOrClaim
         :: Either axiom claim
@@ -898,12 +907,12 @@ tryAxiomClaimWorker mode ref = do
                 updateExecutionGraph graph
 
     runUnifier'
-        :: Condition Variable
+        :: SideCondition Variable
         -> TermLike Variable
         -> TermLike Variable
         -> ReplM claim m ()
-    runUnifier' topCondition first second =
-        runUnifier topCondition first' second
+    runUnifier' sideCondition first second =
+        runUnifier sideCondition first' second
         >>= tell . formatUnificationMessage
       where
         first' = TermLike.refreshVariables (freeVariables second) first

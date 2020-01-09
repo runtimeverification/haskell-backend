@@ -25,6 +25,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Step.Simplification.Simplify as Simplifier
 import Kore.Step.Simplification.SubstitutionSimplifier
     ( SubstitutionSimplifier (..)
@@ -63,7 +66,7 @@ mergePredicatesAndSubstitutions
     :: forall variable simplifier
     .  SimplifierVariable variable
     => MonadSimplify simplifier
-    => Condition variable
+    => SideCondition variable
     -> [Predicate variable]
     -> [Substitution variable]
     -> BranchT simplifier (Condition variable)

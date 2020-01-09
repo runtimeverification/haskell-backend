@@ -18,6 +18,9 @@ import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
     ( Application
     , Symbol
@@ -104,7 +107,8 @@ evaluateApplication
     -> Application Symbol (TermLike Variable)
     -> IO (OrPattern Variable)
 evaluateApplication predicate =
-    Test.runSimplifier env . Kore.evaluateApplication Condition.top predicate
+    Test.runSimplifier env
+    . Kore.evaluateApplication SideCondition.top predicate
 
 simplifierAxioms :: Kore.BuiltinAndAxiomSimplifierMap
 simplifierAxioms = Map.fromList [ (fId, fEvaluator) ]

@@ -3,31 +3,52 @@ module Test.Kore.Attribute.Pattern.ConstructorLike
     ) where
 
 import Test.Tasty
-import Test.Tasty.HUnit
+
+import GHC.Stack
+    ( HasCallStack
+    )
 
 import Kore.Internal.TermLike
 
 import qualified Test.Kore.Step.MockSymbols as Mock
+import Test.Tasty.HUnit.Ext
 
 test_TermLike :: [TestTree]
 test_TermLike =
-    [ testCase "constructor-like BuiltinInt" $
+    [ testCase "Constructor-like BuiltinInt" $
         Mock.builtinInt 3 `shouldBeConstructorLike` True
-    , testCase "constructor-like BuiltinBool" $
+    , testCase "Constructor-like BuiltinBool" $
         Mock.builtinBool True `shouldBeConstructorLike` True
-    , testCase "constructor-like BuiltinString" $
+    , testCase "Constructor-like BuiltinString" $
         Mock.builtinString "test" `shouldBeConstructorLike` True
-    , testCase "constructor-like DomainValue" $
+    , testCase "Constructor-like DomainValue" $
         domainValue `shouldBeConstructorLike` True
-    , testCase "Simplifiable BuiltinSet" $
-        Mock.builtinSet [Mock.a, Mock.b] `shouldBeConstructorLike` False
+    , testCase "Simplifiable empty BuiltinSet" $
+        Mock.builtinSet [] `shouldBeConstructorLike` True
+    , testCase "Simplifiable constructor-like BuiltinSet" $
+        Mock.builtinSet [Mock.a, Mock.b] `shouldBeConstructorLike` True
+    , testCase "Simplifiable non-constructor-like BuiltinSet" $
+        assertErrorIO (assertSubstring "" "Expecting constructor-like object") $
+        Mock.builtinSet [Mock.a, Mock.f Mock.b] `shouldBeConstructorLike` False
+    , testCase "Simplifiable empty BuiltinMap" $
+        Mock.builtinMap [] `shouldBeConstructorLike` True
+    , testCase "Simplifiable constructor-like BuiltinMap" $
+        Mock.builtinMap [(Mock.a, Mock.c), (Mock.b, Mock.c)]
+        `shouldBeConstructorLike` True
+    , testCase "Simplifiable non-constructor-like key BuiltinMap" $
+        assertErrorIO (assertSubstring "" "Expecting constructor-like object") $
+        Mock.builtinMap [(Mock.a, Mock.c), (Mock.f Mock.b, Mock.c)]
+        `shouldBeConstructorLike` False
+    , testCase "Simplifiable non-constructor-like BuiltinMap" $
+        Mock.builtinMap [(Mock.a, Mock.c), (Mock.b, Mock.f Mock.c)]
+        `shouldBeConstructorLike` False
     , testCase "Single constructor is constructor-like" $
         Mock.a `shouldBeConstructorLike` True
-    , testCase "constructor-like with constructor at the top" $
+    , testCase "Constructor-like with constructor at the top" $
         Mock.constr10 (Mock.builtinInt 3) `shouldBeConstructorLike` True
     , testCase "Simplifiable pattern contains symbol which is only functional" $
         Mock.constr10 (Mock.f Mock.a) `shouldBeConstructorLike` False
-    , testCase "constructor-like pattern with constructor and sort injection" $
+    , testCase "Constructor-like pattern with constructor and sort injection" $
         Mock.constr10
             ( Mock.sortInjection
                 Mock.testSort
@@ -43,7 +64,7 @@ test_TermLike =
                 )
             )
         `shouldBeConstructorLike` False
-    , testCase "constructor-like pattern with two non-consecutive sort injections" $
+    , testCase "Constructor-like pattern with two non-consecutive sort injections" $
         Mock.sortInjection
             Mock.intSort
             ( Mock.constr10
@@ -63,7 +84,8 @@ test_TermLike =
             )
 
 shouldBeConstructorLike
-    :: TermLike Variable
+    :: HasCallStack
+    => TermLike Variable
     -> Bool
     -> IO ()
 shouldBeConstructorLike term expected = do

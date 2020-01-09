@@ -22,6 +22,12 @@ import Kore.Internal.Condition
     ( Condition
     )
 import qualified Kore.Internal.Pattern as Conditional
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( andCondition
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Logger
 import Kore.Step.Simplification.AndTerms
@@ -49,11 +55,11 @@ unificationProcedure
     ::  ( SimplifierVariable variable
         , MonadUnify unifier
         )
-    => Condition variable
+    => SideCondition variable
     -> TermLike variable
     -> TermLike variable
     -> unifier (Condition variable)
-unificationProcedure topCondition p1 p2
+unificationProcedure sideCondition p1 p2
   | p1Sort /= p2Sort = do
     Monad.Unify.explainBottom
         "Cannot unify different sorts."
@@ -73,9 +79,11 @@ unificationProcedure topCondition p1 p2
     pat <- termUnification p1 p2
     TopBottom.guardAgainstBottom pat
     let (term, conditions) = Conditional.splitTerm pat
-    orCeil <- Ceil.makeEvaluateTerm conditions term
+        mergedSideCondition =
+            sideCondition `SideCondition.andCondition` conditions
+    orCeil <- Ceil.makeEvaluateTerm mergedSideCondition term
     ceil' <- Monad.Unify.scatter orCeil
-    BranchT.alternate . simplifyCondition topCondition
+    BranchT.alternate . simplifyCondition sideCondition
         $ Conditional.andCondition ceil' conditions
   where
       p1Sort = termLikeSort p1

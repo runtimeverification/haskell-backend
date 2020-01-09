@@ -13,9 +13,6 @@ import Data.Map.Strict
     ( Map
     )
 
-import qualified Kore.Internal.Condition as Condition
-    ( top
-    )
 import Kore.Internal.Conditional
     ( Conditional (..)
     )
@@ -26,6 +23,9 @@ import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate
     ( pattern PredicateTrue
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
     )
 import Kore.Internal.TermLike
     ( TermLike
@@ -170,4 +170,4 @@ simplifyPattern
 simplifyPattern termLike =
     Simplifier.localSimplifierTermLike (const Simplifier.create)
     $ Simplifier.localSimplifierAxioms (const mempty)
-    $ Pattern.simplify Condition.top (Pattern.fromTermLike termLike)
+    $ Pattern.simplify SideCondition.topTODO (Pattern.fromTermLike termLike)
