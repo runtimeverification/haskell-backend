@@ -331,12 +331,6 @@ functionEvaluator impl =
         Application { applicationChildren } = app
         Attribute.Pattern { Attribute.patternSort = resultSort } = valid
 
-removeEvaluated :: TermLike variable -> TermLike variable
-removeEvaluated termLike@(Recursive.project -> (_ :< termLikeF)) =
-    case termLikeF of
-        EvaluatedF (Evaluated e) -> removeEvaluated e
-        _                        -> termLike
-
 {- | Run a parser on a verified domain value.
 
     Any parse failure indicates a bug in the well-formedness checker; in this
