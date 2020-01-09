@@ -12,6 +12,10 @@ module Kore.Strategies.ProofState
     ) where
 
 import Data.Hashable
+import Data.Text.Prettyprint.Doc
+    ( Pretty (..)
+    )
+import qualified Data.Text.Prettyprint.Doc as Pretty
 import Data.Witherable
     ( Filterable (..)
     )
@@ -19,6 +23,9 @@ import qualified Generics.SOP as SOP
 import qualified GHC.Generics as GHC
 
 import Kore.Debug
+import Kore.Unparser
+    ( Unparse (..)
+    )
 
 {- | The primitive transitions of the reachability proof strategy.
  -}
@@ -49,6 +56,23 @@ instance Filterable Prim where
     mapMaybe f (DerivePar rules)  = DerivePar (mapMaybe f rules)
     mapMaybe f (DeriveSeq rules)  = DeriveSeq (mapMaybe f rules)
 
+instance Unparse goal => Pretty (Prim goal) where
+    pretty CheckProven = "Transition CheckProven."
+    pretty CheckGoalRemainder = "Transition CheckGoalRemainder."
+    pretty CheckGoalStuck = "Transition CheckGoalStuck."
+    pretty ResetGoal = "Transition ResetGoal."
+    pretty Simplify = "Transition Simplify."
+    pretty RemoveDestination = "Transition RemoveDestination."
+    pretty TriviallyValid = "Transition TriviallyValid."
+    pretty (DerivePar rules) =
+        Pretty.vsep
+            $ ["Transition DerivePar with rules:"]
+            <> fmap (Pretty.indent 4 . unparse) rules
+    pretty (DeriveSeq rules) =
+        Pretty.vsep
+            $ ["Transition DeriveSeq with rules:"]
+            <> fmap (Pretty.indent 4 . unparse) rules
+
 {- | The state of the reachability proof strategy for @goal@.
  -}
 data ProofState goal
@@ -75,6 +99,29 @@ instance SOP.HasDatatypeInfo (ProofState a)
 instance Debug a => Debug (ProofState a)
 
 instance (Debug a, Diff a) => Diff (ProofState a)
+
+instance Unparse goal => Pretty (ProofState goal) where
+    pretty (Goal goal) =
+        Pretty.vsep
+            ["Proof state Goal:"
+            , Pretty.indent 4 $ unparse goal
+            ]
+    pretty (GoalRemainder goal) =
+        Pretty.vsep
+            ["Proof state GoalRemainder:"
+            , Pretty.indent 4 $ unparse goal
+            ]
+    pretty (GoalRewritten goal) =
+        Pretty.vsep
+            ["Proof state GoalRewritten:"
+            , Pretty.indent 4 $ unparse goal
+            ]
+    pretty (GoalStuck goal) =
+        Pretty.vsep
+            ["Proof state GoalStuck:"
+            , Pretty.indent 4 $ unparse goal
+            ]
+    pretty Proven = "Proof state Proven."
 
 {- | Extract the unproven goals of a 'ProofState'.
 

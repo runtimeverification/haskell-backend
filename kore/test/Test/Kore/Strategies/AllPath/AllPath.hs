@@ -383,13 +383,11 @@ instance Diff (Goal.Rule Goal)
 
 -- | The destination-removal rule for our unit test goal.
 removeDestination
-    :: ProofState
+    :: (Goal -> ProofState)
+    -> Goal
     -> Strategy.TransitionT (Goal.Rule Goal) m ProofState
-removeDestination (ProofState.Goal (src, dst)) =
-    return . ProofState.Goal $ (difference src dst, dst)
-removeDestination (ProofState.GoalRemainder (src, dst)) =
-    return . ProofState.GoalRemainder $ (difference src dst, dst)
-removeDestination state = return state
+removeDestination constr (src, dst) =
+    return . constr $ (difference src dst, dst)
 
 -- | The goal is trivially valid when the members are equal.
 isTriviallyValid :: Goal -> Bool
