@@ -238,16 +238,16 @@ runLoggerT options loggerT = do
 concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
 concurrentLogger logger = do
     tChan <- newTChanIO
-    asyncThread <- async $ runLoggerThread tChan
+    asyncThread <-
+        async $ catch
+            (runLoggerThread tChan)
+            (\BlockedIndefinitelyOnSTM -> return ())
     return (asyncThread, writeTChanLogger tChan)
   where
     runLoggerThread tChan =
-        catch
-            ( forever $ do
-                    val <- atomically $ readTChan tChan
-                    logger Colog.<& val
-            )
-            (\BlockedIndefinitelyOnSTM -> return ())
+        forever $ do
+              val <- atomically $ readTChan tChan
+              logger Colog.<& val
 
 writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
