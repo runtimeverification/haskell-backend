@@ -31,6 +31,9 @@ import Kore.Internal.Predicate as Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import Kore.Step.EqualityPattern as EqualityPattern
     ( EqualityPattern (..)
@@ -629,7 +632,7 @@ applyEquationalRulesSequence_
   = do
     results <- Step.applyRulesSequence
         unificationProcedure
-        Condition.top
+        SideCondition.top
         initialConfig
         rules
     Step.assertFunctionLikeResults (term initialConfig) results

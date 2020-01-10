@@ -93,6 +93,10 @@ import Kore.Internal.Predicate
     ( makeMultipleOrPredicate
     , unwrapPredicate
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    , topTODO
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.ModelChecker.Bounded as Bounded
@@ -274,7 +278,8 @@ search
     -> Search.Config
     -- ^ The bound on the number of search matches and the search type
     -> smt (TermLike Variable)
-search breadthLimit verifiedModule strategy termLike searchPattern searchConfig =
+search breadthLimit verifiedModule strategy termLike searchPattern searchConfig
+  =
     evalSimplifier verifiedModule $ do
         execution <- execute breadthLimit verifiedModule strategy termLike
         let
@@ -283,7 +288,7 @@ search breadthLimit verifiedModule strategy termLike searchPattern searchConfig 
         solutionsLists <-
             searchGraph
                 searchConfig
-                (match Condition.topTODO searchPattern)
+                (match SideCondition.topTODO searchPattern)
                 executionGraph
         let
             solutions = concatMap MultiOr.extractPatterns solutionsLists
@@ -601,7 +606,9 @@ execute breadthLimit verifiedModule strategy inputPattern =
         simplifier <- Simplifier.askSimplifierTermLike
         axiomIdToSimplifier <- Simplifier.askSimplifierAxioms
         simplifiedPatterns <-
-            Pattern.simplify Condition.top (Pattern.fromTermLike inputPattern)
+            Pattern.simplify
+                SideCondition.top
+                (Pattern.fromTermLike inputPattern)
         let
             initialPattern =
                 case MultiOr.extractPatterns simplifiedPatterns of

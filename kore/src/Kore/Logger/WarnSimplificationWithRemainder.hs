@@ -17,15 +17,17 @@ import Data.Typeable
     ( Typeable
     )
 
-import Kore.Internal.Condition
-    ( Condition
-    )
-import qualified Kore.Internal.Condition as Condition
 import Kore.Internal.OrPattern
     ( OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( mapVariables
+    )
 import Kore.Internal.TermLike
     ( TermLike
     )
@@ -43,7 +45,7 @@ will skip the rule in that case.
 data WarnSimplificationWithRemainder =
     WarnSimplificationWithRemainder
         { inputPattern :: TermLike Variable
-        , inputCondition :: Condition Variable
+        , sideCondition :: SideCondition Variable
         , results :: OrPattern Variable
         , remainders :: OrPattern Variable
         }
@@ -56,19 +58,19 @@ warnSimplificationWithRemainder
     :: MonadLog logger
     => InternalVariable variable
     => TermLike variable  -- ^ input pattern
-    -> Condition variable  -- ^ input condition
+    -> SideCondition variable  -- ^ input condition
     -> OrPattern variable  -- ^ results
     -> OrPattern variable  -- ^ remainders
     -> logger ()
 warnSimplificationWithRemainder
     (TermLike.mapVariables toVariable -> inputPattern)
-    (Condition.mapVariables toVariable -> inputCondition)
+    (SideCondition.mapVariables toVariable -> sideCondition)
     (fmap (Pattern.mapVariables toVariable) -> results)
     (fmap (Pattern.mapVariables toVariable) -> remainders)
   =
     logM WarnSimplificationWithRemainder
         { inputPattern
-        , inputCondition
+        , sideCondition
         , results
         , remainders
         }
@@ -84,7 +86,7 @@ instance Pretty WarnSimplificationWithRemainder where
                 [ "input pattern:"
                 , Pretty.indent 2 (unparse inputPattern)
                 , "input condition:"
-                , Pretty.indent 2 (unparse inputCondition)
+                , Pretty.indent 2 (unparse sideCondition)
                 , "results:"
                 , Pretty.indent 2 (unparseOrPattern results)
                 , "remainders:"
@@ -93,6 +95,6 @@ instance Pretty WarnSimplificationWithRemainder where
             , "Rule will be skipped."
             ]
       where
-        WarnSimplificationWithRemainder { inputPattern, inputCondition } = entry
+        WarnSimplificationWithRemainder { inputPattern, sideCondition } = entry
         WarnSimplificationWithRemainder { results, remainders } = entry
         unparseOrPattern = Pretty.vsep . map unparse . OrPattern.toPatterns

@@ -32,7 +32,6 @@ import Kore.Attribute.Pattern.FreeVariables
     )
 import qualified Kore.Internal.Condition as Condition
     ( fromPredicate
-    , topTODO
     )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
@@ -44,6 +43,9 @@ import Kore.Internal.Predicate
     , makeCeilPredicate_
     , makeMultipleAndPredicate
     , makeTruePredicate_
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
     )
 import Kore.Internal.TermLike
     ( mkAnd
@@ -174,7 +176,7 @@ mergeRules (a :| []) = return [a]
 mergeRules (renameRulesVariables . Foldable.toList -> rules) =
     BranchT.gather $ do
         Conditional {term = (), predicate, substitution} <-
-            simplifyCondition Condition.topTODO . Condition.fromPredicate
+            simplifyCondition SideCondition.topTODO . Condition.fromPredicate
             $ makeAndPredicate firstRequires mergedPredicate
         evaluation <- SMT.evaluate predicate
         evaluatedPredicate <- case evaluation of

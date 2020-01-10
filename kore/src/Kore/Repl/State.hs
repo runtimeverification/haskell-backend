@@ -110,6 +110,9 @@ import Kore.Internal.Pattern
     ( toTermLike
     )
 import Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
     ( Sort
     , TermLike
@@ -409,11 +412,11 @@ liftSimplifierWithLogger
     -> t m a
 liftSimplifierWithLogger mLogger simplifier = do
     ReplState { koreLogOptions } <- get
-    let Logger.KoreLogOptions { logType } = koreLogOptions
+    let Logger.KoreLogOptions { logType, timestampsSwitch } = koreLogOptions
     (textLogger, maybeHandle) <- logTypeToLogger logType
     let logger =
             Logger.koreLogFilters koreLogOptions
-            $ Logger.makeKoreLogger textLogger
+            $ Logger.makeKoreLogger timestampsSwitch textLogger
     _ <- Monad.Trans.lift . liftIO $ swapMVar mLogger logger
     result <- Monad.Trans.lift simplifier
     maybe (pure ()) (Monad.Trans.lift . liftIO . hClose) maybeHandle
@@ -486,16 +489,16 @@ runUnifier
     => Monad.Trans.MonadTrans t
     => MonadSimplify m
     => MonadIO m
-    => Condition Variable
+    => SideCondition Variable
     -> TermLike Variable
     -> TermLike Variable
     -> t m (Either ReplOutput (NonEmpty (Condition Variable)))
-runUnifier topCondition first second = do
+runUnifier sideCondition first second = do
     unifier <- asks unifier
     mvar <- asks logger
     liftSimplifierWithLogger mvar
         . runUnifierWithExplanation
-        $ unifier topCondition first second
+        $ unifier sideCondition first second
 
 getNodeState :: InnerGraph axiom -> Graph.Node -> Maybe (NodeState, Graph.Node)
 getNodeState graph node =

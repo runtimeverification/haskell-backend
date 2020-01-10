@@ -22,6 +22,9 @@ import Kore.Internal.Predicate
     , makeEqualsPredicate_
     , makeTruePredicate_
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTruePredicate
+    )
 import Kore.Internal.TermLike
     ( TermLike
     , mkElemVar
@@ -120,4 +123,6 @@ runSimplifyPredicates
     -> IO (OrPattern Variable)
 runSimplifyPredicates predicate orPattern =
     Test.runSimplifier Mock.env
-    $ simplifyConditionsWithSmt predicate orPattern
+    $ simplifyConditionsWithSmt
+        (SideCondition.assumeTruePredicate predicate)
+        orPattern

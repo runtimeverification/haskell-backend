@@ -64,6 +64,9 @@ import Kore.Logger.DebugAppliedRule
 import Kore.Logger.DebugAxiomEvaluation
     ( DebugAxiomEvaluation
     )
+import Kore.Logger.DebugProofState
+    ( DebugProofState
+    )
 import Kore.Logger.DebugSolver
     ( DebugSolverRecv
     , DebugSolverSend
@@ -99,6 +102,7 @@ registry =
                 , register debugAxiomEvaluationType
                 , register debugSolverSendType
                 , register debugSolverRecvType
+                , register debugProofStateType
                 , register warnBottomHookType
                 , register warnFunctionWithoutEvaluatorsType
                 , register warnSimplificationWithRemainderType
@@ -134,6 +138,7 @@ debugAppliedRuleType
   , debugAxiomEvaluationType
   , debugSolverSendType
   , debugSolverRecvType
+  , debugProofStateType
   , warnBottomHookType
   , warnFunctionWithoutEvaluatorsType
   , warnSimplificationWithRemainderType
@@ -150,6 +155,8 @@ debugSolverSendType =
     someTypeRep (Proxy :: Proxy DebugSolverSend)
 debugSolverRecvType =
     someTypeRep (Proxy :: Proxy DebugSolverRecv)
+debugProofStateType =
+    someTypeRep (Proxy :: Proxy DebugProofState)
 warnBottomHookType =
     someTypeRep (Proxy :: Proxy WarnBottomHook)
 warnFunctionWithoutEvaluatorsType =

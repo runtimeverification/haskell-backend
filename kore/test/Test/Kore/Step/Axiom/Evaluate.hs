@@ -33,6 +33,9 @@ import Kore.Internal.Predicate
     , makeOrPredicate
     , makeTruePredicate_
     )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( assumeTruePredicate
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.Evaluate as Kore
 import Kore.Step.EqualityPattern
@@ -233,4 +236,7 @@ evaluateAxioms
     -> IO (AttemptedAxiom Variable)
 evaluateAxioms axioms (termLike, predicate) =
     runSimplifier Mock.env . fmap Results.toAttemptedAxiom
-    $ Kore.evaluateAxioms axioms (Condition.fromPredicate predicate) termLike
+    $ Kore.evaluateAxioms
+        axioms
+        (SideCondition.assumeTruePredicate predicate)
+        termLike

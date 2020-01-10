@@ -10,10 +10,6 @@ module Kore.Step.Simplification.OrPattern
 import qualified Control.Comonad as Comonad
 
 import qualified Branch as BranchT
-import qualified Kore.Internal.Condition as Condition
-    ( fromPredicate
-    , top
-    )
 import Kore.Internal.Conditional
     ( Conditional (Conditional)
     )
@@ -28,8 +24,14 @@ import Kore.Internal.Pattern
     ( Pattern
     )
 import Kore.Internal.Predicate
-    ( Predicate
-    , makeAndPredicate
+    ( makeAndPredicate
+    )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( toPredicate
+    , top
     )
 import Kore.Step.Simplification.Simplify
     ( MonadSimplify
@@ -43,22 +45,19 @@ import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 simplifyConditionsWithSmt
     ::  forall variable simplifier
     .   (MonadSimplify simplifier, SimplifierVariable variable)
-    => Predicate variable
+    => SideCondition variable
     -> OrPattern variable
     -> simplifier (OrPattern variable)
-simplifyConditionsWithSmt predicate' unsimplified = do
+simplifyConditionsWithSmt sideCondition unsimplified = do
     simplifiedWrappedPatterns <-
         fmap MultiOr.make . BranchT.gather $ do
             unsimplified1 <- BranchT.scatter unsimplified
-            simplified <-
-                simplifyCondition
-                    (Condition.fromPredicate predicate')
-                    unsimplified1
+            simplified <- simplifyCondition sideCondition unsimplified1
             -- Wrapping the original patterns as their own terms in order to be
-            -- able to retrieve them unchanged after adding predicate' to them,
-            -- simplification and SMT filtering
+            -- able to retrieve them unchanged after adding the sideCondition
+            -- to them, simplification and SMT filtering
             let wrapped = addPredicate $ conditionalAsTerm simplified
-            simplifyCondition Condition.top wrapped
+            simplifyCondition SideCondition.top wrapped
     filteredWrappedPatterns <-
         SMT.Evaluator.filterMultiOr simplifiedWrappedPatterns
     return (MultiOr.filterOr (Conditional.term <$> filteredWrappedPatterns))
@@ -67,6 +66,8 @@ simplifyConditionsWithSmt predicate' unsimplified = do
         :: Pattern variable -> Conditional variable (Pattern variable)
     conditionalAsTerm = Comonad.duplicate
 
+    sidePredicate = SideCondition.toPredicate sideCondition
+
     addPredicate :: Conditional variable term -> Conditional variable term
     addPredicate c@Conditional {predicate} =
-        c {Conditional.predicate = makeAndPredicate predicate predicate'}
+        c {Conditional.predicate = makeAndPredicate predicate sidePredicate}

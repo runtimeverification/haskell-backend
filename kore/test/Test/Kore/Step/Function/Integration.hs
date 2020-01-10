@@ -63,6 +63,12 @@ import Kore.Internal.Predicate
     , makeTruePredicate
     , makeTruePredicate_
     )
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.Symbol
 import Kore.Internal.TermLike
 import Kore.Step.Axiom.EvaluationStrategy
@@ -604,7 +610,7 @@ test_functionIntegration =
         -> IO (Pattern Variable)
     evaluate functionIdToEvaluator patt =
         runSimplifier Mock.env { simplifierAxioms = functionIdToEvaluator }
-        $ TermLike.simplify patt Condition.top
+        $ TermLike.simplify patt SideCondition.top
 
 test_Nat :: [TestTree]
 test_Nat =
@@ -665,7 +671,7 @@ equals comment term results =
         assertEqual "" expect actual
 
 simplify :: TermLike Variable -> IO (OrPattern Variable)
-simplify = runSimplifier testEnv . TermLike.simplifyToOr Condition.top
+simplify = runSimplifier testEnv . TermLike.simplifyToOr SideCondition.top
 
 evaluateWith
     :: BuiltinAndAxiomSimplifier
@@ -673,7 +679,7 @@ evaluateWith
     -> IO CommonAttemptedAxiom
 evaluateWith simplifier patt =
     runSimplifier testEnv
-    $ runBuiltinAndAxiomSimplifier simplifier patt Condition.top
+    $ runBuiltinAndAxiomSimplifier simplifier patt SideCondition.top
 
 -- Applied tests: check that one or more rules applies or not
 withApplied
@@ -1268,7 +1274,7 @@ mockEvaluator
     :: Monad simplifier
     => AttemptedAxiom variable
     -> TermLike variable
-    -> Condition variable
+    -> SideCondition variable
     -> simplifier (AttemptedAxiom variable)
 mockEvaluator evaluation _ _ = return evaluation
 

@@ -44,6 +44,9 @@ import Kore.Internal.OrPattern
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
 import Kore.Internal.Predicate as Predicate
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import Kore.Logger.DebugAppliedRule
@@ -165,14 +168,14 @@ finalizeAppliedRule
     :: forall unifier variable
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => Condition variable
+    => SideCondition variable
     -- ^ Top level condition
     -> EqualityPattern variable
     -- ^ Applied rule
     -> OrCondition variable
     -- ^ Conditions of applied rule
     -> unifier (OrPattern variable)
-finalizeAppliedRule topCondition renamedRule appliedConditions =
+finalizeAppliedRule sideCondition renamedRule appliedConditions =
     fmap OrPattern.fromPatterns . Monad.Unify.gather
     $ finalizeAppliedRuleWorker =<< Monad.Unify.scatter appliedConditions
   where
@@ -185,7 +188,7 @@ finalizeAppliedRule topCondition renamedRule appliedConditions =
             ensures = EqualityPattern.ensures renamedRule
             ensuresCondition = Condition.fromPredicate ensures
         finalCondition <- simplifyPredicate
-            topCondition
+            sideCondition
             (Just appliedCondition)
             ensuresCondition
         -- Apply the normalized substitution to the right-hand side of the
@@ -201,7 +204,7 @@ finalizeRule
         , Log.WithLog Log.LogMessage unifier
         , MonadUnify unifier
         )
-    => Condition (Target variable)
+    => SideCondition (Target variable)
     -- Top-level condition
     -> Pattern (Target variable)
     -- ^ Initial conditions
@@ -210,19 +213,19 @@ finalizeRule
     -> unifier [Result EqualityPattern variable]
     -- TODO (virgil): This is broken, it should take advantage of the unifier's
     -- branching and not return a list.
-finalizeRule topCondition initial unifiedRule =
+finalizeRule sideCondition initial unifiedRule =
     Monad.Unify.gather $ do
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions
-            topCondition
+            sideCondition
             (Just initialCondition)
             unificationCondition
         -- Log unifiedRule here since ^ guards against bottom
         debugAppliedRule unifiedRule
         checkSubstitutionCoverage initial unifiedRule
         let renamedRule = Conditional.term unifiedRule
-        final <- finalizeAppliedRule topCondition renamedRule applied
+        final <- finalizeAppliedRule sideCondition renamedRule applied
         let result = unwrapAndQuantifyConfiguration <$> final
         return Step.Result { appliedRule = unifiedRule, result }
 
@@ -303,18 +306,18 @@ finalizeRulesSequence
     :: forall unifier variable
     .  SimplifierVariable variable
     => MonadUnify unifier
-    => Condition (Target variable)
+    => SideCondition (Target variable)
     -> Pattern (Target variable)
     -> [UnifiedRule (Target variable) (EqualityPattern (Target variable))]
     -> unifier (Results EqualityPattern variable)
-finalizeRulesSequence topCondition initial unifiedRules
+finalizeRulesSequence sideCondition initial unifiedRules
   = do
     (results, remainder) <-
         State.runStateT
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
     remainders' <- Monad.Unify.gather $
-        applyRemainder topCondition initial remainder
+        applyRemainder sideCondition initial remainder
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -333,7 +336,7 @@ finalizeRulesSequence topCondition initial unifiedRules
         remainder <- State.get
         let remainderPattern = Conditional.withCondition initialTerm remainder
         results <- Monad.Trans.lift $
-            finalizeRule topCondition remainderPattern unifiedRule
+            finalizeRule sideCondition remainderPattern unifiedRule
         let unification = Conditional.withoutTerm unifiedRule
             remainder' =
                 Condition.fromPredicate
@@ -354,7 +357,7 @@ applyRulesSequence
         , MonadUnify unifier
         )
     => UnificationProcedure
-    -> Condition (Target variable)
+    -> SideCondition (Target variable)
     -> Pattern (Target variable)
     -- ^ Configuration being rewritten
     -> [EqualityPattern variable]
@@ -362,10 +365,10 @@ applyRulesSequence
     -> unifier (Results EqualityPattern variable)
 applyRulesSequence
     unificationProcedure
-    topCondition
+    sideCondition
     initial
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
     (map EqualityPattern.toAxiomVariables -> rules)
-  = unifyRules unificationProcedure topCondition initial rules
-    >>= finalizeRulesSequence topCondition initial
+  = unifyRules unificationProcedure sideCondition initial rules
+    >>= finalizeRulesSequence sideCondition initial

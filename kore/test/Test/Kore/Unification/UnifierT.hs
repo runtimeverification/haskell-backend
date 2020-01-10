@@ -22,6 +22,9 @@ import Kore.Internal.MultiOr
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrCondition as OrCondition
 import qualified Kore.Internal.Predicate as Predicate
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Step.Axiom.EvaluationStrategy as EvaluationStrategy
 import qualified Kore.Step.Axiom.Identifier as Axiom.Identifier
@@ -380,7 +383,7 @@ merge s1 s2 =
   where
     mergeSubstitutionsExcept =
         Branch.alternate
-        . Simplifier.simplifyCondition Condition.top
+        . Simplifier.simplifyCondition SideCondition.top
         . Condition.fromSubstitution
         . mconcat
     mockEnv = Mock.env
@@ -388,7 +391,7 @@ merge s1 s2 =
 normalize :: Conditional Variable term -> IO [Conditional Variable term]
 normalize =
     Test.runSimplifierBranch mockEnv
-    . Condition.simplifyCondition Condition.top
+    . Condition.simplifyCondition SideCondition.top
   where
     mockEnv = Mock.env
 
@@ -404,7 +407,7 @@ normalizeExcept predicated =
     $ Test.runSimplifier mockEnv
     $ Monad.Unify.runUnifierT
     $ Branch.alternate
-    $ Simplifier.simplifyCondition Condition.top predicated
+    $ Simplifier.simplifyCondition SideCondition.top predicated
   where
     mockEnv = Mock.env { simplifierAxioms }
     simplifierAxioms =

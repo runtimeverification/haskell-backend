@@ -10,6 +10,7 @@ module Kore.Logger.Output
     ( KoreLogType (..)
     , KoreLogOptions (..)
     , EntryTypes
+    , TimestampsSwitch (..)
     , koreLogFilters
     , withLogger
     , parseKoreLogOptions
@@ -30,8 +31,10 @@ import qualified Colog
 import Control.Applicative
     ( Alternative (..)
     )
-import Control.Concurrent
-    ( forkIO
+import Control.Concurrent.Async
+    ( Async
+    , async
+    , wait
     )
 import Control.Concurrent.MVar
 import Control.Concurrent.STM
@@ -41,12 +44,17 @@ import Control.Concurrent.STM
     , readTChan
     , writeTChan
     )
+import Control.Exception
+    ( BlockedIndefinitelyOnSTM (..)
+    )
 import Control.Monad
     ( forever
     )
 import Control.Monad.Catch
     ( MonadMask
     , bracket
+    , catch
+    , finally
     )
 import Control.Monad.IO.Class
     ( MonadIO
@@ -89,6 +97,7 @@ import Data.Time.LocalTime
     )
 import Options.Applicative
     ( Parser
+    , flag'
     , help
     , helpDoc
     , long
@@ -140,6 +149,8 @@ data KoreLogOptions = KoreLogOptions
     -- ^ desired output method, see 'KoreLogType'
     , logLevel  :: Severity
     -- ^ minimal log level, passed via "--log-level"
+    , timestampsSwitch :: TimestampsSwitch
+    -- ^ enable or disable timestamps
     , logEntries :: EntryTypes
     -- ^ extra entries to show, ignoring 'logLevel'
     , debugAppliedRuleOptions :: DebugAppliedRuleOptions
@@ -166,12 +177,16 @@ withLogger
     $ \smtSolverLogger -> continue (mainLogger <> smtSolverLogger)
 
 withMainLogger :: KoreLogOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
-withMainLogger koreLogOptions@KoreLogOptions { logType } continue =
-    case logType of
-        LogStdErr -> continue $ koreLogFilters koreLogOptions stderrLogger
-        LogFileText filename ->
-            Colog.withLogTextFile filename
-            $ continue . koreLogFilters koreLogOptions . makeKoreLogger
+withMainLogger
+    koreLogOptions@KoreLogOptions { logType, timestampsSwitch } continue =
+        case logType of
+            LogStdErr -> continue
+                $ koreLogFilters koreLogOptions (stderrLogger timestampsSwitch)
+            LogFileText filename ->
+                Colog.withLogTextFile filename
+                $ continue
+                . koreLogFilters koreLogOptions
+                . makeKoreLogger timestampsSwitch
 
 withSmtSolverLogger
     :: DebugSolverOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
@@ -223,16 +238,24 @@ runLoggerT :: KoreLogOptions -> LoggerT IO a -> IO a
 runLoggerT options loggerT = do
     let runLogger = runReaderT . getLoggerT $ loggerT
     withLogger options $ \logger -> do
-        modifiedLogger <- concurrentLogger logger
-        runLogger modifiedLogger
+        (asyncThread, modifiedLogger) <- concurrentLogger logger
+        finally
+            (runLogger modifiedLogger)
+            (wait asyncThread)
 
-concurrentLogger :: LogAction IO a -> IO (LogAction IO a)
+concurrentLogger :: LogAction IO a -> IO (Async (), LogAction IO a)
 concurrentLogger logger = do
     tChan <- newTChanIO
-    _ <- forkIO $ forever $ do
-            val <- atomically $ readTChan tChan
-            logger Colog.<& val
-    return $ writeTChanLogger tChan
+    asyncThread <-
+        async $ catch
+            (runLoggerThread tChan)
+            (\BlockedIndefinitelyOnSTM -> return ())
+    return (asyncThread, writeTChanLogger tChan)
+  where
+    runLoggerThread tChan =
+        forever $ do
+              val <- atomically $ readTChan tChan
+              logger Colog.<& val
 
 writeTChanLogger :: TChan a -> LogAction IO a
 writeTChanLogger tChan =
@@ -244,6 +267,7 @@ parseKoreLogOptions =
     KoreLogOptions
     <$> (parseType <|> pure LogStdErr)
     <*> (parseLevel <|> pure Warning)
+    <*> (parseTimestampsOption <|> pure TimestampsEnable)
     <*> (mconcat <$> many parseEntries)
     <*> parseDebugAppliedRuleOptions
     <*> parseDebugAxiomEvaluationOptions
@@ -272,6 +296,18 @@ parseKoreLogOptions =
             "error"    -> pure Error
             "critical" -> pure Critical
             _          -> Nothing
+    parseTimestampsOption :: Parser TimestampsSwitch
+    parseTimestampsOption = parseTimestampsEnable <|> parseTimestampsDisable
+      where
+        parseTimestampsEnable =
+            flag' TimestampsEnable
+                (  long "enable-log-timestamps"
+                <> help "Enable log timestamps" )
+        parseTimestampsDisable =
+            flag' TimestampsDisable
+                (  long "disable-log-timestamps"
+                <> help "Disable log timestamps" )
+
     parseEntries =
         option
             parseCommaSeparatedEntries
@@ -300,15 +336,20 @@ listOfEntries =
             (OptPretty.indent 4 . OptPretty.text . Text.unpack)
             getEntryTypesAsText
 
+-- | Enable or disable timestamps
+data TimestampsSwitch = TimestampsEnable | TimestampsDisable
+    deriving (Eq, Show)
+
 -- Creates a kore logger which:
 --     * adds timestamps
 --     * formats messages: "[<severity>][<localTime>][<scope>]: <message>"
 makeKoreLogger
     :: forall m
     .  MonadIO m
-    => LogAction m Text
+    => TimestampsSwitch
+    -> LogAction m Text
     -> LogAction m SomeEntry
-makeKoreLogger logToText =
+makeKoreLogger timestampSwitch logToText =
     Colog.cmapM withTimestamp
     $ contramap messageToText logToText
   where
@@ -316,8 +357,11 @@ makeKoreLogger logToText =
     messageToText (WithTimestamp entry localTime) =
         Pretty.renderStrict
         . Pretty.layoutPretty Pretty.defaultLayoutOptions
-        $ Pretty.brackets (formattedTime localTime)
-        <> defaultLogPretty entry
+        $ timestamp <> defaultLogPretty entry
+      where
+        timestamp = case timestampSwitch of
+            TimestampsEnable -> Pretty.brackets (formattedTime localTime)
+            TimestampsDisable -> mempty
     formattedTime = formatLocalTime "%Y-%m-%d %H:%M:%S%Q"
 
 -- | Adds the current timestamp to a log entry.
@@ -336,8 +380,9 @@ formatLocalTime format = fromString . formatTime defaultTimeLocale format
 emptyLogger :: Applicative m => LogAction m msg
 emptyLogger = mempty
 
-stderrLogger :: MonadIO io => LogAction io SomeEntry
-stderrLogger = makeKoreLogger Colog.logTextStderr
+stderrLogger :: MonadIO io => TimestampsSwitch -> LogAction io SomeEntry
+stderrLogger timestampsSwitch =
+    makeKoreLogger timestampsSwitch Colog.logTextStderr
 
 {- | @swappableLogger@ delegates to the logger contained in the 'MVar'.
 

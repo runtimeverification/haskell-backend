@@ -15,10 +15,7 @@ module Kore.Step.Simplification.Application
 import Branch
     ( BranchT
     )
-import qualified Branch
-import Kore.Internal.Condition
-    ( Condition
-    )
+import qualified Branch as Branch
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
     ( fullCrossProduct
@@ -33,6 +30,9 @@ import Kore.Internal.Pattern
     , Pattern
     )
 import qualified Kore.Internal.Pattern as Pattern
+import Kore.Internal.SideCondition
+    ( SideCondition
+    )
 import Kore.Internal.TermLike
 import qualified Kore.Profiler.Profile as Profile
     ( simplificationBranching
@@ -60,13 +60,13 @@ then merging everything into an Pattern.
 -}
 simplify
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -> Application Symbol (OrPattern variable)
     -> simplifier (OrPattern variable)
-simplify predicate application = do
+simplify sideCondition application = do
     evaluated <-
         traverse
-            (makeAndEvaluateApplications predicate symbol)
+            (makeAndEvaluateApplications sideCondition symbol)
             childrenCrossProduct
     let result = OrPattern.flatten evaluated
     Profile.simplificationBranching
@@ -88,7 +88,7 @@ simplify predicate application = do
 
 makeAndEvaluateApplications
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
@@ -97,44 +97,44 @@ makeAndEvaluateApplications =
 
 makeAndEvaluateSymbolApplications
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -> Symbol
     -> [Pattern variable]
     -> simplifier (OrPattern variable)
-makeAndEvaluateSymbolApplications predicate symbol children = do
+makeAndEvaluateSymbolApplications sideCondition symbol children = do
     expandedApplications <-
-        Branch.gather $ makeExpandedApplication predicate symbol children
+        Branch.gather $ makeExpandedApplication sideCondition symbol children
     orResults <- traverse
-        (evaluateApplicationFunction predicate)
+        (evaluateApplicationFunction sideCondition)
         expandedApplications
     return (MultiOr.mergeAll orResults)
 
 evaluateApplicationFunction
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -- ^ The predicate from the configuration
     -> ExpandedApplication variable
     -- ^ The pattern to be evaluated
     -> simplifier (OrPattern variable)
 evaluateApplicationFunction
-    configurationCondition
+    sideCondition
     Conditional { term, predicate, substitution }
   =
     evaluateApplication
-        configurationCondition
+        sideCondition
         Conditional { term = (), predicate, substitution }
         term
 
 makeExpandedApplication
     :: (SimplifierVariable variable, MonadSimplify simplifier)
-    => Condition variable
+    => SideCondition variable
     -> Symbol
     -> [Pattern variable]
     -> BranchT simplifier (ExpandedApplication variable)
-makeExpandedApplication topCondition symbol children = do
+makeExpandedApplication sideCondition symbol children = do
     merged <-
         mergePredicatesAndSubstitutions
-            topCondition
+            sideCondition
             (map Pattern.predicate children)
             (map Pattern.substitution children)
     let term = symbolApplication symbol (Pattern.term <$> children)

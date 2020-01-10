@@ -34,6 +34,9 @@ import Kore.Internal.OrPattern
     )
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern as Pattern
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( topTODO
+    )
 import Kore.Internal.TermLike as TermLike
 import qualified Kore.Logger as Log
 import qualified Kore.Step.Remainder as Remainder
@@ -133,7 +136,7 @@ finalizeAppliedRule renamedRule appliedConditions =
             ensuresCondition = Condition.fromPredicate ensures
         finalCondition <-
             simplifyPredicate
-                Condition.top (Just appliedCondition) ensuresCondition
+                SideCondition.topTODO (Just appliedCondition) ensuresCondition
         -- Apply the normalized substitution to the right-hand side of the
         -- axiom.
         let
@@ -160,7 +163,7 @@ finalizeRule initial unifiedRule =
         let initialCondition = Conditional.withoutTerm initial
         let unificationCondition = Conditional.withoutTerm unifiedRule
         applied <- applyInitialConditions
-            Condition.top
+            SideCondition.topTODO
             (Just initialCondition)
             unificationCondition
         checkSubstitutionCoverage initial unifiedRule
@@ -181,7 +184,7 @@ finalizeRulesParallel initial unifiedRules = do
     let unifications = MultiOr.make (Conditional.withoutTerm <$> unifiedRules)
         remainder = Condition.fromPredicate (Remainder.remainder' unifications)
     remainders' <- Monad.Unify.gather $
-        applyRemainder Condition.top initial remainder
+        applyRemainder SideCondition.topTODO initial remainder
     return Step.Results
         { results = Seq.fromList results
         , remainders =
@@ -203,7 +206,7 @@ finalizeRulesSequence initial unifiedRules
             (traverse finalizeRuleSequence' unifiedRules)
             (Conditional.withoutTerm initial)
     remainders' <- Monad.Unify.gather $
-        applyRemainder Condition.top initial remainder
+        applyRemainder SideCondition.topTODO initial remainder
     return Step.Results
         { results = Seq.fromList $ Foldable.fold results
         , remainders =
@@ -252,7 +255,7 @@ applyRulesParallel
     -- axiom variables.
     (map toAxiomVariables -> rules)
     initial
-  = unifyRules unificationProcedure Condition.top initial rules
+  = unifyRules unificationProcedure SideCondition.topTODO initial rules
     >>= finalizeRulesParallel initial
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -303,7 +306,7 @@ applyRulesSequence
     -- Wrap the rules so that unification prefers to substitute
     -- axiom variables.
     (map toAxiomVariables -> rules)
-  = unifyRules unificationProcedure Condition.top initial rules
+  = unifyRules unificationProcedure SideCondition.topTODO initial rules
     >>= finalizeRulesSequence initial
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.

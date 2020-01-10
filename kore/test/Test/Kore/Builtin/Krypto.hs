@@ -28,10 +28,12 @@ import qualified GHC.TypeLits as TypeLits
 import qualified Kore.Attribute.Symbol as Attribute
 import qualified Kore.Builtin.Krypto as Krypto
 import qualified Kore.Builtin.String as String
-import qualified Kore.Internal.Condition as Condition
 import qualified Kore.Internal.OrPattern as OrPattern
 import Kore.Internal.Pattern
     ( Pattern
+    )
+import qualified Kore.Internal.SideCondition as SideCondition
+    ( top
     )
 import Kore.Internal.TermLike
 import Kore.Step.Simplification.Data
@@ -171,7 +173,7 @@ evaluate builtin termLike = do
         Map.lookup builtin Krypto.builtinFunctions
         & expectConstructor @"Just"
     attempt <-
-        runBuiltinAndAxiomSimplifier evaluator termLike Condition.top
+        runBuiltinAndAxiomSimplifier evaluator termLike SideCondition.top
         & runSimplifier testEnv
         & SMT.runNoSMT mempty
     attemptResults <- expectConstructor @"Applied" attempt
