@@ -260,7 +260,7 @@ test_tdiv_evaluated_arguments =
     name = "qq" <> expectHook tdivIntSymbol <> " with evaluated arguments"
     compose n f = appEndo $ stimes (n :: Integer) (Endo f)
     evaluated n x = compose n mkEvaluated $ asInternal x
-    
+
 tdiv :: Integer -> Integer -> Maybe Integer
 tdiv n d
   | d == 0 = Nothing
