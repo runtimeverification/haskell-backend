@@ -7,11 +7,7 @@ License     : NCSA
 module Log
     (
     -- * Entries
-      Entry (..)
-    , Severity (..)
-    , SomeEntry (..)
-    , someEntry
-    , entryTypeText
+      module Log.Entry
     -- * Interface
     , MonadLog (..)
     , WithLog
@@ -35,10 +31,6 @@ module Log
 import Colog
     ( LogAction (..)
     , (<&)
-    )
-import qualified Control.Lens as Lens
-import Control.Lens.Prism
-    ( Prism
     )
 import Control.Monad.Catch
     ( MonadCatch
@@ -77,44 +69,19 @@ import Data.Functor.Contravariant
 import Data.Text
     ( Text
     )
-import qualified Data.Text as Text
 import Data.Text.Prettyprint.Doc
     ( Pretty
     )
 import qualified Data.Text.Prettyprint.Doc as Pretty
-import Data.Typeable
-    ( Typeable
-    )
-import qualified Data.Typeable
-    ( cast
-    )
 import qualified GHC.Stack as GHC
 import Prelude hiding
     ( log
     )
-import qualified Type.Reflection as Reflection
 
 import Control.Monad.Counter
     ( CounterT
     )
-
--- | Log level used to describe each log message. It is also used to set the
--- minimum level to be outputted.
-data Severity
-    = Debug
-    -- ^ Lowest level used for low-level debugging.
-    | Info
-    -- ^ Used for various informative messages.
-    | Warning
-    -- ^ Used for odd/unusual cases which are recoverable.
-    | Error
-    -- ^ Used for application errors, unexpected behaviors, etc.
-    | Critical
-    -- ^ Used before shutting down the application.
-    deriving (Show, Read, Eq, Ord)
-
-instance Pretty.Pretty Severity where
-    pretty = Pretty.pretty . show
+import Log.Entry
 
 -- | This type should not be used directly, but rather should be created and
 -- dispatched through the `log` functions.
@@ -126,6 +93,26 @@ data LogMessage = LogMessage
     , callstack :: !GHC.CallStack
     -- ^ call stack of the message, when available
     }
+
+instance Entry LogMessage where
+    entrySeverity LogMessage { severity } = severity
+
+instance Pretty LogMessage where
+    pretty LogMessage { message, callstack } =
+        Pretty.hsep
+            [ Pretty.pretty message
+            , Pretty.brackets (formatCallstack callstack)
+            ]
+      where
+        formatCallstack :: GHC.CallStack -> Pretty.Doc ann
+        formatCallstack cs
+          | length (GHC.getCallStack cs) <= 1 = mempty
+          | otherwise                         = callStackToBuilder cs
+        callStackToBuilder :: GHC.CallStack -> Pretty.Doc ann
+        callStackToBuilder =
+            Pretty.pretty
+            . GHC.prettyCallStack
+            . GHC.popCallStack
 
 type WithLog msg = MonadLog
 
@@ -202,47 +189,6 @@ logCritical = log Critical
 -- ---------------------------------------------------------------------
 -- * LoggerT
 
-class (Pretty entry, Typeable entry) => Entry entry where
-    toEntry :: entry -> SomeEntry
-    toEntry = SomeEntry
-
-    fromEntry :: SomeEntry -> Maybe entry
-    fromEntry (SomeEntry entry) = Data.Typeable.cast entry
-
-    entrySeverity :: entry -> Severity
-
-instance Entry LogMessage where
-    entrySeverity LogMessage { severity } = severity
-
-instance Pretty LogMessage where
-    pretty LogMessage { message, callstack } =
-        Pretty.hsep
-            [ Pretty.pretty message
-            , Pretty.brackets (formatCallstack callstack)
-            ]
-      where
-        formatCallstack :: GHC.CallStack -> Pretty.Doc ann
-        formatCallstack cs
-          | length (GHC.getCallStack cs) <= 1 = mempty
-          | otherwise                         = callStackToBuilder cs
-        callStackToBuilder :: GHC.CallStack -> Pretty.Doc ann
-        callStackToBuilder =
-            Pretty.pretty
-            . GHC.prettyCallStack
-            . GHC.popCallStack
-
-someEntry :: (Entry e1, Entry e2) => Prism SomeEntry SomeEntry e1 e2
-someEntry = Lens.prism' toEntry fromEntry
-
-data SomeEntry where
-    SomeEntry :: Entry entry => entry -> SomeEntry
-
-instance Entry SomeEntry where
-    entrySeverity (SomeEntry entry) = entrySeverity entry
-
-instance Pretty SomeEntry where
-    pretty (SomeEntry entry) = Pretty.pretty entry
-
 class Monad m => MonadLog m where
     logM :: Entry entry => entry -> m ()
     default logM
@@ -297,7 +243,3 @@ logWith
     -> m ()
 logWith logger entry =
     logger Colog.<& toEntry entry
-
-entryTypeText :: SomeEntry -> Text
-entryTypeText (SomeEntry entry) =
-    Text.pack . show . Reflection.typeOf $ entry
