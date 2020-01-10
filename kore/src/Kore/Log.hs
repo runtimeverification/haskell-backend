@@ -47,6 +47,10 @@ import Control.Monad.Catch
     , catch
     , finally
     )
+import Control.Monad.Cont
+    ( ContT (..)
+    , runContT
+    )
 import Control.Monad.IO.Class
     ( MonadIO
     , liftIO
@@ -94,6 +98,7 @@ import Kore.Log.Registry
     , toSomeEntryType
     )
 import Log
+import Log.SQLite
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
@@ -104,13 +109,13 @@ withLogger
     :: KoreLogOptions
     -> (LogAction IO SomeEntry -> IO a)
     -> IO a
-withLogger
-    koreLogOptions@KoreLogOptions { debugSolverOptions }
-    continue
-  =
-    withMainLogger koreLogOptions
-    $ \mainLogger -> withSmtSolverLogger debugSolverOptions
-    $ \smtSolverLogger -> continue (mainLogger <> smtSolverLogger)
+withLogger koreLogOptions = runContT $ do
+    mainLogger <- ContT $ withMainLogger koreLogOptions
+    let KoreLogOptions { debugSolverOptions } = koreLogOptions
+    smtSolverLogger <- ContT $ withSmtSolverLogger debugSolverOptions
+    let KoreLogOptions { logSQLiteOptions } = koreLogOptions
+    logSQLite <- ContT $ withLogSQLite logSQLiteOptions
+    return $ mainLogger <> smtSolverLogger <> logSQLite
 
 withMainLogger :: KoreLogOptions -> (LogAction IO SomeEntry -> IO a) -> IO a
 withMainLogger
