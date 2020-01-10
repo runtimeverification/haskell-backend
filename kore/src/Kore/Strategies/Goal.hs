@@ -76,6 +76,9 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
+import Kore.Logger.WarnRemoveDestinationUnification
+    ( warnRemoveDestinationUnification
+    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -89,7 +92,6 @@ import qualified Kore.Internal.SideCondition as SideCondition
     )
 import Kore.Internal.TermLike
     ( isFunctionPattern
-    , mkAnd
     )
 import Kore.Logger
     ( MonadLog (..)
@@ -125,9 +127,6 @@ import Kore.Step.Simplification.Data
 import qualified Kore.Step.Simplification.Exists as Exists
 import Kore.Step.Simplification.Pattern
     ( simplifyTopConfiguration
-    )
-import Kore.Step.Simplification.Simplify
-    ( simplifyTerm
     )
 import qualified Kore.Step.SMT.Evaluator as SMT.Evaluator
 import qualified Kore.Step.Step as Step
@@ -977,12 +976,17 @@ removalPredicate
   | isFunctionPattern configTerm
   , isFunctionPattern destTerm
   = do
-    -- TODO (thomas.tuegel): Use unification here, not simplification.
-    unifiedConfigs <- simplifyTerm (mkAnd configTerm destTerm)
-    case OrPattern.toPatterns unifiedConfigs of
-        _ | OrPattern.isFalse unifiedConfigs ->
+    unifiedConfigs <-
+        Monad.Unify.runUnifierT
+        $ Unification.unificationProcedure sideCondition configTerm destTerm
+    case unifiedConfigs of
+        Left err -> do
+            warnRemoveDestinationUnification
+                configTerm destTerm sideCondition err
             return Predicate.makeTruePredicate_
-        [substPattern] -> do
+        Right [] ->
+            return Predicate.makeTruePredicate_
+        Right [substPattern] -> do
             let extraElemVariables =
                     getExtraElemVariables configuration substPattern
                 remainderPattern =
@@ -998,7 +1002,7 @@ removalPredicate
                 . Conditional.withoutTerm
                 . OrPattern.toPattern
                 $ evaluatedRemainder
-        _ ->
+        Right substPatterns ->
             error . show . Pretty.vsep $
             [ "Unifying the terms of the configuration and the\
             \ destination has unexpectedly produced more than one\
@@ -1007,7 +1011,7 @@ removalPredicate
             ]
             <> fmap
                 (Pretty.indent 4 . unparse)
-                (Foldable.toList unifiedConfigs)
+                substPatterns
   | otherwise =
       error . show . Pretty.vsep $
           [ "The remove destination step expects\
