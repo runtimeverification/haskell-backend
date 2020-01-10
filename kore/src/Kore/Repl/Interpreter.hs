@@ -439,7 +439,7 @@ showGraph
     -> MonadState (ReplState claim) m
     => m ()
 showGraph mfile out = do
-    let format = maybe Graph.Svg id out
+    let format = fromMaybe Graph.Svg out
     graph <- getInnerGraph
     axioms <- Lens.use (field @"axioms")
     installed <- liftIO Graph.isGraphvizInstalled
