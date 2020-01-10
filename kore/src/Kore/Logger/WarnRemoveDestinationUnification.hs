@@ -17,9 +17,6 @@ import Data.Typeable
     ( Typeable
     )
 
-import Kore.Unification.Error
-    ( UnificationOrSubstitutionError
-    )
 import Kore.Internal.SideCondition
     ( SideCondition
     )
@@ -32,6 +29,9 @@ import Kore.Internal.TermLike
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
 import Kore.Logger
+import Kore.Unification.Error
+    ( UnificationOrSubstitutionError
+    )
 import Kore.Unparser
 
 {- | A log 'Entry' when a simplification rule has remainders.

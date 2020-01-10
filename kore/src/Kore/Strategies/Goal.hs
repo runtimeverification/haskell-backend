@@ -76,9 +76,6 @@ import Kore.Internal.Conditional
 import qualified Kore.Internal.Conditional as Conditional
 import qualified Kore.Internal.MultiOr as MultiOr
 import qualified Kore.Internal.OrPattern as OrPattern
-import Kore.Logger.WarnRemoveDestinationUnification
-    ( warnRemoveDestinationUnification
-    )
 import Kore.Internal.Pattern
     ( Pattern
     )
@@ -97,6 +94,9 @@ import Kore.Logger
     ( MonadLog (..)
     )
 import Kore.Logger.DebugProofState
+import Kore.Logger.WarnRemoveDestinationUnification
+    ( warnRemoveDestinationUnification
+    )
 import qualified Kore.Profiler.Profile as Profile
     ( timeStrategy
     )
