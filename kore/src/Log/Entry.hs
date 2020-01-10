@@ -69,6 +69,8 @@ data SomeEntry where
     SomeEntry :: Entry entry => entry -> SomeEntry
 
 instance Entry SomeEntry where
+    toEntry = id
+    fromEntry = Just
     entrySeverity (SomeEntry entry) = entrySeverity entry
 
 instance Pretty SomeEntry where
