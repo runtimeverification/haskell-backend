@@ -49,11 +49,11 @@ import Kore.Log.Registry
     ( getEntryTypesAsText
     , parseEntryType
     )
-import Log
-import Log.SQLite
+import Kore.Log.SQLite
     ( LogSQLiteOptions
     , parseLogSQLiteOptions
     )
+import Log
 
 {- | Command line options for logging.
  -}

@@ -97,8 +97,8 @@ import Kore.Log.Registry
     ( lookupTextFromTypeWithError
     , toSomeEntryType
     )
+import Kore.Log.SQLite
 import Log
-import Log.SQLite
 
 -- | Internal type used to add timestamps to a 'LogMessage'.
 data WithTimestamp = WithTimestamp SomeEntry LocalTime
