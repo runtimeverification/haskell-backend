@@ -257,7 +257,7 @@ test_tdiv_evaluated_arguments =
             $ mkApplySymbol tdivIntSymbol [evaluated na a, evaluated nb b]
         (===) expect actual
   where
-    name = "qq" <> expectHook tdivIntSymbol <> " with evaluated arguments"
+    name = expectHook tdivIntSymbol <> " with evaluated arguments"
     compose n f = appEndo $ stimes (n :: Integer) (Endo f)
     evaluated n x = compose n mkEvaluated $ asInternal x
 
