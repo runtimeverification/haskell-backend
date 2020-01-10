@@ -1,5 +1,27 @@
 #!/usr/bin/env bash
 
+# Collect the intermediate files produced by `krun` and `kprove`
+# to produce a standalone Kore test.
+
+# Usage:
+#
+# krun ... --debug --dry-run | xargs kollect.sh NAME
+#
+# or
+#
+# kprove ... --debug --dry-run | xargs kollect.sh NAME
+#
+# Output:
+#   on standard output:
+#     A command to run `kore-exec` equivalent to the `krun` or `kprove` command.
+#     The `kore-exec` command is replaced by `$KORE_EXEC`, so that variable must
+#     be set at runtime.
+#   file NAME-definition.kore: `krun` only
+#   file NAME-pgm.kore: `krun` only
+#   file NAME-pattern.kore: `krun --search` only
+#   file NAME-spec.kore: `kprove` only
+#   file NAME-vdefinition.kore: `kprove` only
+
 set -euo pipefail
 
 kollect=
@@ -10,7 +32,7 @@ while [[ $# -gt 0 ]]
 do
     case "$1" in
         *kore-exec)
-            echo -n 'exec $KORE_EXEC '
+            echo -n '$KORE_EXEC '
             ;;
         */definition.kore)
             cp "$1" "$name-definition.kore"
