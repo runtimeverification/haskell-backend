@@ -261,7 +261,7 @@ applyRulesParallel
     initial
   = do
       results <- unifyRules unificationProcedure SideCondition.topTODO initial rules
-      debugAppliedRewriteRules results
+      debugAppliedRewriteRules initial results
       finalizeRulesParallel initial results
 
 {- | Apply the given rewrite rules to the initial configuration in parallel.
@@ -314,7 +314,7 @@ applyRulesSequence
     (map toAxiomVariables -> rules)
   = do
       results <- unifyRules unificationProcedure SideCondition.topTODO initial rules
-      debugAppliedRewriteRules results
+      debugAppliedRewriteRules initial results
       finalizeRulesSequence initial results
 
 {- | Apply the given rewrite rules to the initial configuration in sequence.
