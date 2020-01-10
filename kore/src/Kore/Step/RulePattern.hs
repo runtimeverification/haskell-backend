@@ -85,6 +85,9 @@ import Kore.Internal.Predicate
     ( Predicate
     )
 import qualified Kore.Internal.Predicate as Predicate
+import Kore.Internal.TermLike
+    ( TermLike
+    )
 import qualified Kore.Internal.TermLike as TermLike
 import Kore.Internal.Variable
     ( InternalVariable
@@ -625,22 +628,26 @@ onePathRuleToTerm
     => SortedVariable variable
     => OnePathRule variable
     -> TermLike.TermLike variable
-onePathRuleToTerm
-    (OnePathRule
-        (RulePattern left _ requires rhs _)
-    )
-  =
+onePathRuleToTerm (OnePathRule (RulePattern left _ requires rhs _)) =
+    mkImpliesRule left requires (Just wEF) rhs
+
+mkImpliesRule
+    :: InternalVariable variable
+    => TermLike variable                         -- ^ left-hand term
+    -> Predicate variable                        -- ^ left-hand requires
+    -> Maybe (Sort -> Alias (TermLike Variable)) -- ^ modality
+    -> RHS variable                              -- ^ right-hand term
+    -> TermLike variable
+mkImpliesRule left requires mode right =
     TermLike.mkImplies
         (TermLike.mkAnd (Predicate.fromPredicate sortLeft requires) left)
-        (TermLike.mkApplyAlias
-            op
-            [rhsTerm]
-        )
+        (maybeApplyMode rhsTerm)
   where
-    op = wEF sortRight
+    maybeApplyMode = maybe id applyMode mode
+    applyMode mkOp r = TermLike.mkApplyAlias (mkOp sortRight) [r]
     sortLeft = TermLike.termLikeSort left
     sortRight = TermLike.termLikeSort rhsTerm
-    rhsTerm = rhsToTerm rhs
+    rhsTerm = rhsToTerm right
 
 -- | Converts an 'AllPathRule' into its term representation
 allPathRuleToTerm
@@ -651,22 +658,8 @@ allPathRuleToTerm
     => SortedVariable variable
     => AllPathRule variable
     -> TermLike.TermLike variable
-allPathRuleToTerm
-    (AllPathRule
-        (RulePattern left _ requires rhs _)
-    )
-  =
-    TermLike.mkImplies
-        (TermLike.mkAnd (Predicate.fromPredicate sortLeft requires) left)
-        (TermLike.mkApplyAlias
-            op
-            [rhsTerm]
-        )
-  where
-    op = wAF sortRight
-    sortLeft = TermLike.termLikeSort left
-    sortRight = TermLike.termLikeSort rhsTerm
-    rhsTerm = rhsToTerm rhs
+allPathRuleToTerm (AllPathRule (RulePattern left _ requires rhs _)) =
+    mkImpliesRule left requires (Just wAF) rhs
 
 -- | Converts an 'ImplicationRule' into its term representation
 implicationRuleToTerm
@@ -788,4 +781,3 @@ instance UnifyingRule RulePattern where
             { left, antiLeft, requires
             , rhs = RHS { existentials, right, ensures }
             } = rule1
-
