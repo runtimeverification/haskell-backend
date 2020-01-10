@@ -650,7 +650,7 @@ forceSorts operandSorts children =
         , Pretty.indent 4 (Unparser.arguments children)
         ]
 
-{- | Remove Evaluated if it appears on the top of the Term
+{- | Remove `Evaluated` if it appears on the top of the `TermLike`.
 -}
 removeEvaluated :: TermLike variable -> TermLike variable
 removeEvaluated termLike@(Recursive.project -> (_ :< termLikeF)) =
