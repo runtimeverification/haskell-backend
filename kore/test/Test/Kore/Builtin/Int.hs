@@ -10,6 +10,7 @@ module Test.Kore.Builtin.Int
     , test_and, test_or, test_xor, test_not
     , test_shl, test_shr
     , test_pow, test_powmod, test_log2
+    , test_tdiv_evaluated_arguments
     , test_unifyEqual_NotEqual
     , test_unifyEqual_Equal
     , test_unifyAnd_NotEqual
@@ -42,6 +43,10 @@ import Data.Bits
     , xor
     , (.&.)
     , (.|.)
+    )
+import Data.Semigroup
+    ( Endo (..)
+    , stimes
     )
 import qualified Data.Text as Text
 import GHC.Integer
@@ -239,6 +244,22 @@ test_abs = testUnary absIntSymbol abs
 -- Division
 test_tdiv :: TestTree
 test_tdiv = testPartialBinary tdivIntSymbol tdiv
+
+test_tdiv_evaluated_arguments :: TestTree
+test_tdiv_evaluated_arguments =
+    testPropertyWithSolver (Text.unpack name) $ do
+        a <- forAll genInteger
+        b <- forAll genInteger
+        na <- forAll $ Gen.integral (Range.linear 0 5)
+        nb <- forAll $ Gen.integral (Range.linear 0 5)
+        let expect = asPartialPattern $ tdiv a b
+        actual <- evaluateT
+            $ mkApplySymbol tdivIntSymbol [evaluated na a, evaluated nb b]
+        (===) expect actual
+  where
+    name = expectHook tdivIntSymbol <> " with evaluated arguments"
+    compose n f = appEndo $ stimes (n :: Integer) (Endo f)
+    evaluated n x = compose n mkEvaluated $ asInternal x
 
 tdiv :: Integer -> Integer -> Maybe Integer
 tdiv n d
